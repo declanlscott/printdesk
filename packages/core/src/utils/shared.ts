@@ -88,11 +88,3 @@ export const costSchema = v.pipe(
   v.union([v.number(), v.pipe(v.string(), v.decimal())]),
   v.transform(Number),
 );
-
-export const getBase64UrlEncoded = <TValue extends Record<string, unknown>>(
-  input: TValue,
-) =>
-  btoa(JSON.stringify(input))
-    .replace(/\+/g, "-") // Convert '+' to '-'
-    .replace(/\//g, "_") // Convert '/' to '_'
-    .replace(/=+$/, ""); // Remove padding '='

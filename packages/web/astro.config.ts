@@ -20,7 +20,5 @@ export default defineConfig({
     icon(),
   ],
   vite: { plugins: [TanStackRouterVite()] },
-  security: {
-    checkOrigin: true,
-  },
+  security: { checkOrigin: true },
 });

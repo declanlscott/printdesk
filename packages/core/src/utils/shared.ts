@@ -88,3 +88,12 @@ export const costSchema = v.pipe(
   v.union([v.number(), v.pipe(v.string(), v.decimal())]),
   v.transform(Number),
 );
+
+export const objectsTuple = <const TObjects extends Array<v.ObjectEntries>>(
+  ...objects: TObjects
+): v.TupleSchema<
+  {
+    [K in keyof TObjects]: v.ObjectSchema<TObjects[K], undefined>;
+  },
+  undefined
+> => v.tuple(R.map(objects, (entries) => v.object(entries)));

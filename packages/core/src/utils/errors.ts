@@ -77,7 +77,6 @@ export namespace ApplicationError {
 
 export namespace HttpError {
   export type ErrorName =
-    | "Http.Error"
     | "BadRequest"
     | "Unauthorized"
     | "Forbidden"
@@ -88,6 +87,7 @@ export namespace HttpError {
     | "TooManyRequests"
     | "InternalServerError"
     | "NotImplemented"
+    | "BadGateway"
     | "ServiceUnavailable";
 
   export class Error extends globalThis.Error {
@@ -191,6 +191,15 @@ export namespace HttpError {
     }
   }
 
+  export class BadGateway extends HttpError.Error {
+    public readonly name = "BadGateway";
+    public readonly statusCode = 502;
+
+    constructor(message = "Bad gateway") {
+      super(message, 502);
+    }
+  }
+
   export class ServiceUnavailable extends HttpError.Error {
     public readonly name = "ServiceUnavailable";
     public readonly statusCode = 503;
@@ -286,6 +295,28 @@ export namespace DatabaseError {
         message ??
           "Failed to execute transaction after maximum number of retries, giving up.",
       );
+    }
+  }
+}
+
+export namespace XmlRpcError {
+  export type ErrorName = "Fault";
+
+  export class Error extends globalThis.Error {
+    declare public readonly name: ErrorName;
+
+    constructor(message: string) {
+      super(message);
+    }
+  }
+
+  export class Fault extends XmlRpcError.Error {
+    public readonly name = "Fault";
+    public readonly code: number;
+
+    constructor(message: string, code: number) {
+      super(message);
+      this.code = code;
     }
   }
 }

@@ -4,63 +4,46 @@ import { Papercut } from ".";
 import { Api } from "../api";
 import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
-import { HttpError } from "../utils/errors";
+import { HttpError, XmlRpcError } from "../utils/errors";
+import { objectsTuple } from "../utils/shared";
+import { xmlRpcResponseTuple } from "./shared";
 
 export namespace PapercutRpc {
   const path = "/papercut/rpc/api/xmlrpc";
 
   const faultResponseSchema = v.pipe(
-    v.tuple([
-      v.object({
-        "?xml": v.tuple([v.object({ "#text": v.literal("") })]),
-      }),
-      v.object({
-        methodResponse: v.tuple([
-          v.object({
-            fault: v.tuple([
-              v.object({
-                value: v.tuple([
-                  v.object({
-                    struct: v.tuple([
-                      v.object({
-                        member: v.tuple([
-                          v.object({
-                            name: v.tuple([
-                              v.object({ "#text": v.literal("faultString") }),
-                            ]),
-                          }),
-                          v.object({
-                            value: v.tuple([v.object({ "#text": v.string() })]),
-                          }),
-                        ]),
-                      }),
-                      v.object({
-                        member: v.tuple([
-                          v.object({
-                            name: v.tuple([
-                              v.object({ "#text": v.literal("faultCode") }),
-                            ]),
-                          }),
-                          v.object({
-                            value: v.tuple([
-                              v.object({
-                                int: v.tuple([
-                                  v.object({ "#text": v.number() }),
-                                ]),
-                              }),
-                            ]),
-                          }),
-                        ]),
-                      }),
-                    ]),
+    xmlRpcResponseTuple({
+      fault: objectsTuple({
+        value: objectsTuple({
+          struct: objectsTuple(
+            {
+              member: objectsTuple(
+                {
+                  name: objectsTuple({
+                    "#text": v.literal("faultString"),
                   }),
-                ]),
-              }),
-            ]),
-          }),
-        ]),
+                },
+                { value: objectsTuple({ "#text": v.string() }) },
+              ),
+            },
+            {
+              member: objectsTuple(
+                {
+                  name: objectsTuple({
+                    "#text": v.literal("faultCode"),
+                  }),
+                },
+                {
+                  value: objectsTuple({
+                    int: objectsTuple({ "#text": v.number() }),
+                  }),
+                },
+              ),
+            },
+          ),
+        }),
       }),
-    ]),
+    }),
     v.transform((xml) => {
       const [string, code] = xml[1].methodResponse[0].fault[0].value[0].struct;
 
@@ -74,32 +57,17 @@ export namespace PapercutRpc {
   );
 
   const booleanResponseSchema = v.pipe(
-    v.tuple([
-      v.object({
-        "?xml": v.tuple([v.object({ "#text": v.literal("") })]),
-      }),
-      v.object({
-        methodResponse: v.tuple([
-          v.object({
-            params: v.tuple([
-              v.object({
-                param: v.tuple([
-                  v.object({
-                    value: v.tuple([
-                      v.object({
-                        boolean: v.tuple([
-                          v.object({ "#text": v.picklist([0, 1]) }),
-                        ]),
-                      }),
-                    ]),
-                  }),
-                ]),
-              }),
-            ]),
+    xmlRpcResponseTuple({
+      params: objectsTuple({
+        param: objectsTuple({
+          value: objectsTuple({
+            boolean: objectsTuple({
+              "#text": v.picklist([0, 1]),
+            }),
           }),
-        ]),
+        }),
       }),
-    ]),
+    }),
     v.transform((xml) => ({
       boolean:
         xml[1].methodResponse[0].params[0].param[0].value[0].boolean[0][
@@ -108,22 +76,33 @@ export namespace PapercutRpc {
     })),
   );
 
-  const listResponseSchema = v.object({
-    ["?xml"]: v.literal(""),
-    methodResponse: v.object({
-      params: v.object({
-        param: v.object({
-          value: v.object({
-            array: v.object({
-              data: v.object({
-                value: v.array(v.string()),
-              }),
+  const listResponseSchema = v.pipe(
+    xmlRpcResponseTuple({
+      params: objectsTuple({
+        param: objectsTuple({
+          value: objectsTuple({
+            array: objectsTuple({
+              data: v.array(
+                v.object({
+                  value: v.tuple([v.unknown()]),
+                }),
+              ),
             }),
           }),
         }),
       }),
     }),
-  });
+    v.transform((xml) => ({
+      list: xml[1].methodResponse[0].params[0].param[0].value[0].array[0].data.map(
+        (data) => {
+          const value = data.value[0];
+
+          if (!!value && typeof value === "object" && "#text" in value)
+            return value["#text"];
+        },
+      ),
+    })),
+  );
 
   export async function adjustSharedAccountAccountBalance(
     sharedAccountName: string,
@@ -149,14 +128,23 @@ export namespace PapercutRpc {
         },
       }),
     });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok) {
+      console.error(
+        "PapercutRpc.adjustSharedAccountAccountBalance error: ",
+        res.status,
+        res.statusText,
+        await res.text(),
+      );
+
+      throw new HttpError.BadGateway();
+    }
 
     const success = v.parse(
       v.pipe(
         v.union([booleanResponseSchema, faultResponseSchema]),
         v.transform((xml) => {
           if ("fault" in xml)
-            throw new HttpError.InternalServerError(xml.fault.string);
+            throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
           return xml.boolean;
         }),
@@ -167,10 +155,10 @@ export namespace PapercutRpc {
     return success;
   }
 
-  export async function getSharedAccountProperties(
-    sharedAccountName: string,
-    propertyNames: Array<string>,
-  ) {
+  export async function getSharedAccountProperties<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TProperties extends Array<any>,
+  >(sharedAccountName: string, propertyNames: Array<string>) {
     const authToken = await Papercut.getServerAuthToken();
 
     const res = await Api.send(path, {
@@ -187,9 +175,7 @@ export namespace PapercutRpc {
                 value: {
                   array: {
                     data: {
-                      value: propertyNames.map((name) => ({
-                        string: name,
-                      })),
+                      value: propertyNames.map((name) => ({ string: name })),
                     },
                   },
                 },
@@ -199,59 +185,27 @@ export namespace PapercutRpc {
         },
       }),
     });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok) {
+      console.error(
+        "PapercutRpc.getSharedAccountProperties error: ",
+        res.status,
+        res.statusText,
+        await res.text(),
+      );
+
+      throw new HttpError.BadGateway();
+    }
 
     const properties = v.parse(
       v.pipe(
-        v.union([
-          v.tuple([
-            v.object({
-              "?xml": v.tuple([v.object({ "#text": v.literal("") })]),
-            }),
-            v.object({
-              methodResponse: v.tuple([
-                v.object({
-                  params: v.tuple([
-                    v.object({
-                      param: v.tuple([
-                        v.object({
-                          value: v.tuple([
-                            v.object({
-                              array: v.tuple([
-                                v.object({
-                                  data: v.array(
-                                    v.object({
-                                      value: v.tuple([
-                                        v.object({
-                                          "#text": v.union([
-                                            v.string(),
-                                            v.number(),
-                                          ]),
-                                        }),
-                                      ]),
-                                    }),
-                                  ),
-                                }),
-                              ]),
-                            }),
-                          ]),
-                        }),
-                      ]),
-                    }),
-                  ]),
-                }),
-              ]),
-            }),
-          ]),
-          faultResponseSchema,
-        ]),
+        v.union([listResponseSchema, faultResponseSchema]),
         v.transform((xml) => {
           if ("fault" in xml)
-            throw new HttpError.InternalServerError(xml.fault.string);
+            throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
-          return xml[1].methodResponse[0].params[0].param[0].value[0].array[0].data.map(
-            (data) => data.value[0]["#text"],
-          );
+          return xml.list as {
+            [K in keyof TProperties]: TProperties[K] | undefined;
+          };
         }),
       ),
       Utils.xmlParser.parse(await res.text()),
@@ -268,77 +222,61 @@ export namespace PapercutRpc {
         methodCall: { methodName: "api.getTaskStatus" },
       }),
     });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok) {
+      console.error(
+        "PapercutRpc.getTaskStatus error: ",
+        res.status,
+        res.statusText,
+        await res.text(),
+      );
+
+      throw new HttpError.BadGateway();
+    }
 
     const taskStatus = v.parse(
       v.pipe(
         v.union([
-          v.tuple([
-            v.object({
-              "?xml": v.tuple([v.object({ "#text": v.literal("") })]),
-            }),
-            v.object({
-              methodResponse: v.tuple([
-                v.object({
-                  params: v.tuple([
-                    v.object({
-                      param: v.tuple([
-                        v.object({
-                          value: v.tuple([
-                            v.object({
-                              struct: v.tuple([
-                                v.object({
-                                  member: v.tuple([
-                                    v.object({
-                                      name: v.tuple([
-                                        v.object({
-                                          "#text": v.literal("completed"),
-                                        }),
-                                      ]),
-                                    }),
-                                    v.object({
-                                      value: v.tuple([
-                                        v.object({
-                                          boolean: v.tuple([
-                                            v.object({
-                                              "#text": v.picklist([0, 1]),
-                                            }),
-                                          ]),
-                                        }),
-                                      ]),
-                                    }),
-                                  ]),
-                                }),
-                                v.object({
-                                  member: v.tuple([
-                                    v.object({
-                                      name: v.tuple([
-                                        v.object({
-                                          "#text": v.literal("message"),
-                                        }),
-                                      ]),
-                                    }),
-                                    v.object({
-                                      value: v.tuple([v.unknown()]),
-                                    }),
-                                  ]),
-                                }),
-                              ]),
+          xmlRpcResponseTuple({
+            params: objectsTuple({
+              param: objectsTuple({
+                value: objectsTuple({
+                  struct: objectsTuple(
+                    {
+                      member: objectsTuple(
+                        {
+                          name: objectsTuple({
+                            "#text": v.literal("completed"),
+                          }),
+                        },
+                        {
+                          value: objectsTuple({
+                            boolean: objectsTuple({
+                              "#text": v.picklist([0, 1]),
                             }),
-                          ]),
-                        }),
-                      ]),
-                    }),
-                  ]),
+                          }),
+                        },
+                      ),
+                    },
+                    {
+                      member: objectsTuple(
+                        {
+                          name: objectsTuple({
+                            "#text": v.literal("message"),
+                          }),
+                        },
+                        { value: v.tuple([v.unknown()]) },
+                      ),
+                    },
+                  ),
                 }),
-              ]),
+              }),
             }),
-          ]),
+          }),
           faultResponseSchema,
         ]),
         v.transform((xml) => {
           if ("fault" in xml)
-            throw new HttpError.InternalServerError(xml.fault.string);
+            throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
           return {
             completed:
@@ -376,18 +314,25 @@ export namespace PapercutRpc {
           },
         }),
       });
-      if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+      if (!res.ok) {
+        console.error(
+          "PapercutRpc.listSharedAccounts error: ",
+          res.status,
+          res.statusText,
+          await res.text(),
+        );
+
+        throw new HttpError.BadGateway();
+      }
 
       const sharedAccounts = v.parse(
         v.pipe(
           v.union([listResponseSchema, faultResponseSchema]),
           v.transform((xml) => {
-            if ("fault" in xml.methodResponse)
-              throw new HttpError.InternalServerError(
-                xml.methodResponse.fault.value.struct.member[0].value,
-              );
+            if ("fault" in xml)
+              throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
-            return xml.methodResponse.params.param.value.array.data.value;
+            return xml.list as Array<string>;
           }),
         ),
         await res.text(),
@@ -426,18 +371,25 @@ export namespace PapercutRpc {
           },
         }),
       });
-      if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+      if (!res.ok) {
+        console.error(
+          "PapercutRpc.listUserAccounts error: ",
+          res.status,
+          res.statusText,
+          await res.text(),
+        );
+
+        throw new HttpError.BadGateway();
+      }
 
       const userAccounts = v.parse(
         v.pipe(
           v.union([listResponseSchema, faultResponseSchema]),
           v.transform((xml) => {
-            if ("fault" in xml.methodResponse)
-              throw new HttpError.InternalServerError(
-                xml.methodResponse.fault.value.struct.member[0].value,
-              );
+            if ("fault" in xml)
+              throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
-            return xml.methodResponse.params.param.value.array.data.value;
+            return xml.list as Array<string>;
           }),
         ),
         await res.text(),
@@ -478,18 +430,25 @@ export namespace PapercutRpc {
           },
         }),
       });
-      if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+      if (!res.ok) {
+        console.error(
+          "PapercutRpc.listUserSharedAccounts error: ",
+          res.status,
+          res.statusText,
+          await res.text(),
+        );
+
+        throw new HttpError.BadGateway();
+      }
 
       const userSharedAccounts = v.parse(
         v.pipe(
           v.union([listResponseSchema, faultResponseSchema]),
           v.transform((xml) => {
-            if ("fault" in xml.methodResponse)
-              throw new HttpError.InternalServerError(
-                xml.methodResponse.fault.value.struct.member[0].value,
-              );
+            if ("fault" in xml)
+              throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
-            return xml.methodResponse.params.param.value.array.data.value;
+            return xml.list as Array<string>;
           }),
         ),
         await res.text(),

@@ -21,3 +21,8 @@ export class Function extends sst.aws.Function {
     };
   }
 }
+
+$transform(Function, (args) => {
+  args.architecture ??= "arm64";
+  args.runtime ??= "nodejs22.x";
+});

@@ -90,6 +90,7 @@ if (
           }
         : undefined,
     architecture: "arm64",
+    runtime: "nodejs22.x",
     install: ["sharp"],
   },
 });

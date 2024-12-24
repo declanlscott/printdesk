@@ -12,6 +12,7 @@ export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
     timeout: "10 seconds",
     link: [dsqlCluster],
     architecture: "arm64",
+    runtime: "nodejs22.x",
   },
   schedule: "rate(1 day)",
 });

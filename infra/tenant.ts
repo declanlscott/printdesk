@@ -46,7 +46,6 @@ export const usersSync = new custom.aws.Function("UsersSync", {
   handler: "packages/functions/node/src/users-sync.handler",
   timeout: "20 seconds",
   link: [appData, cloudfrontPrivateKey, dsqlCluster],
-  architecture: "arm64",
 });
 new aws.lambda.Permission("UsersSyncSchedulePermission", {
   function: usersSync.name,
@@ -70,7 +69,6 @@ export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
     dsqlCluster,
     invoicesProcessorDeadLetterQueue,
   ],
-  architecture: "arm64",
 });
 new aws.lambda.Permission("InvoicesProcessorRulePermission", {
   function: invoicesProcessor.name,
@@ -228,6 +226,5 @@ export const tenantInfraDispatcher = new sst.aws.Function(
     handler: "packages/functions/node/src/tenant/infra-dispatcher.handler",
     url: { authorization: "iam" },
     link: [dsqlCluster, tenantInfraQueue],
-    architecture: "arm64",
   },
 );

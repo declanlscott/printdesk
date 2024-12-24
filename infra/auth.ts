@@ -81,6 +81,7 @@ export const auth = new sst.aws.Auth("Auth", {
     handler: "packages/functions/node/src/authorizer.handler",
     link: [dsqlCluster, oauth2],
     architecture: "arm64",
+    runtime: "nodejs22.x",
   },
   domain: {
     name: $interpolate`auth.${appFqdn}`,

@@ -34,6 +34,11 @@ export default $config({
     };
   },
   async run() {
+    $transform(sst.aws.Function, (args) => {
+      args.architecture ??= "arm64";
+      args.runtime ??= "nodejs22.x";
+    });
+
     const outputs = {};
 
     for (const dir of readdirSync("./infra")) {

@@ -1,9 +1,10 @@
 import { withActor } from "@printworks/core/actors/context";
 import { Api } from "@printworks/core/api";
+import { PapercutSync } from "@printworks/core/papercut/sync";
 import { Realtime } from "@printworks/core/realtime";
 import { formatChannel } from "@printworks/core/realtime/shared";
-import { Users } from "@printworks/core/users";
 import { SignatureV4, Sts, withAws } from "@printworks/core/utils/aws";
+import { withXml } from "@printworks/core/utils/xml";
 import { Resource } from "sst";
 import * as v from "valibot";
 
@@ -37,7 +38,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
       }),
       async () => {
         try {
-          await Users.sync();
+          await withXml(PapercutSync.users);
         } catch (e) {
           console.error(e);
 

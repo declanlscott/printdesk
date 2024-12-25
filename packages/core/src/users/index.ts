@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
@@ -7,14 +7,12 @@ import {
   billingAccountManagerAuthorizationsTable,
   billingAccountsTable,
 } from "../billing-accounts/sql";
-import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { ordersTable } from "../orders/sql";
-import { PapercutRpc } from "../papercut/rpc";
 import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
-import { ApplicationError, HttpError } from "../utils/errors";
+import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   deleteUserProfileMutationArgsSchema,
@@ -30,56 +28,6 @@ import type { UserRole } from "./shared";
 import type { User, UserProfilesTable } from "./sql";
 
 export namespace Users {
-  export async function sync() {
-    const tenant = useTenant();
-
-    // Avoid syncing with papercut if papercut itself is still syncing
-    const taskStatus = await PapercutRpc.getTaskStatus();
-    if (!taskStatus.completed)
-      throw new HttpError.ServiceUnavailable(taskStatus.message);
-
-    const next = new Set(await PapercutRpc.listUserAccounts());
-
-    await useTransaction(async (tx) => {
-      const prev = await tx
-        .select({
-          username: usersTable.username,
-        })
-        .from(usersTable)
-        .where(eq(usersTable.tenantId, tenant.id))
-        .then((rows) => new Set(R.map(rows, R.prop("username"))));
-
-      const puts: Array<User["username"]> = [];
-      const dels: Array<User["username"]> = [];
-
-      for (const username of next) if (!prev.has(username)) puts.push(username);
-      for (const username of prev) if (!next.has(username)) dels.push(username);
-
-      await tx
-        .insert(usersTable)
-        .values([
-          ...puts.map((username) => ({
-            username,
-            tenantId: tenant.id,
-            deletedAt: null,
-          })),
-          ...dels.map((username) => ({
-            username,
-            tenantId: tenant.id,
-            deletedAt: sql`now()`,
-          })),
-        ])
-        .onConflictDoUpdate({
-          target: [usersTable.username, usersTable.tenantId],
-          set: buildConflictUpdateColumns(usersTable, [
-            "username",
-            "tenantId",
-            "deletedAt",
-          ]),
-        });
-    });
-  }
-
   export const createProfile = async (
     profile: InferInsertModel<UserProfilesTable>,
   ) =>

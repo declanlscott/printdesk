@@ -22,6 +22,7 @@ export namespace Constants {
   export const AUTH_CALLBACK_PATH = "/api/auth/callback";
 
   export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
+  export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
 
   export const POKE = "poke";
 

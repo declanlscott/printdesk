@@ -128,16 +128,16 @@ export namespace PapercutRpc {
         },
       }),
     });
-    if (!res.ok) {
-      console.error(
-        "PapercutRpc.adjustSharedAccountAccountBalance error: ",
-        res.status,
-        res.statusText,
-        await res.text(),
-      );
 
-      throw new HttpError.BadGateway();
-    }
+    const text = await res.text();
+
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text,
+        },
+      });
 
     const success = v.parse(
       v.pipe(
@@ -185,16 +185,16 @@ export namespace PapercutRpc {
         },
       }),
     });
-    if (!res.ok) {
-      console.error(
-        "PapercutRpc.getSharedAccountProperties error: ",
-        res.status,
-        res.statusText,
-        await res.text(),
-      );
 
-      throw new HttpError.BadGateway();
-    }
+    const text = await res.text();
+
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text,
+        },
+      });
 
     const properties = v.parse(
       v.pipe(
@@ -222,16 +222,16 @@ export namespace PapercutRpc {
         methodCall: { methodName: "api.getTaskStatus" },
       }),
     });
-    if (!res.ok) {
-      console.error(
-        "PapercutRpc.getTaskStatus error: ",
-        res.status,
-        res.statusText,
-        await res.text(),
-      );
 
-      throw new HttpError.BadGateway();
-    }
+    const text = await res.text();
+
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text,
+        },
+      });
 
     const taskStatus = v.parse(
       v.pipe(
@@ -314,16 +314,16 @@ export namespace PapercutRpc {
           },
         }),
       });
-      if (!res.ok) {
-        console.error(
-          "PapercutRpc.listSharedAccounts error: ",
-          res.status,
-          res.statusText,
-          await res.text(),
-        );
 
-        throw new HttpError.BadGateway();
-      }
+      const text = await res.text();
+
+      if (!res.ok)
+        throw new HttpError.BadGateway({
+          upstream: {
+            error: new HttpError.Error(res.statusText, res.status),
+            text,
+          },
+        });
 
       const sharedAccounts = v.parse(
         v.pipe(
@@ -371,16 +371,16 @@ export namespace PapercutRpc {
           },
         }),
       });
-      if (!res.ok) {
-        console.error(
-          "PapercutRpc.listUserAccounts error: ",
-          res.status,
-          res.statusText,
-          await res.text(),
-        );
 
-        throw new HttpError.BadGateway();
-      }
+      const text = await res.text();
+
+      if (!res.ok)
+        throw new HttpError.BadGateway({
+          upstream: {
+            error: new HttpError.Error(res.statusText, res.status),
+            text,
+          },
+        });
 
       const userAccounts = v.parse(
         v.pipe(
@@ -430,16 +430,16 @@ export namespace PapercutRpc {
           },
         }),
       });
-      if (!res.ok) {
-        console.error(
-          "PapercutRpc.listUserSharedAccounts error: ",
-          res.status,
-          res.statusText,
-          await res.text(),
-        );
 
-        throw new HttpError.BadGateway();
-      }
+      const text = await res.text();
+
+      if (!res.ok)
+        throw new HttpError.BadGateway({
+          upstream: {
+            error: new HttpError.Error(res.statusText, res.status),
+            text,
+          },
+        });
 
       const userSharedAccounts = v.parse(
         v.pipe(

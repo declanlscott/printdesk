@@ -194,9 +194,23 @@ export namespace HttpError {
   export class BadGateway extends HttpError.Error {
     public readonly name = "BadGateway";
     public readonly statusCode = 502;
+    public readonly upstream: {
+      error: HttpError.Error;
+      text: string;
+    };
 
-    constructor(message = "Bad gateway") {
+    constructor({
+      message = "Bad gateway",
+      upstream,
+    }: {
+      message?: string;
+      upstream: {
+        error: HttpError.Error;
+        text: string;
+      };
+    }) {
       super(message, 502);
+      this.upstream = upstream;
     }
   }
 

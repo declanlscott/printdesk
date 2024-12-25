@@ -14,7 +14,13 @@ export namespace Api {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.account-id.txt`,
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return res.text();
   }
@@ -23,7 +29,13 @@ export namespace Api {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.cloudfront-key-pair-id.txt`,
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return res.text();
   }
@@ -32,7 +44,13 @@ export namespace Api {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.appsync-http-domain-name.txt`,
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return res.text();
   }
@@ -41,7 +59,13 @@ export namespace Api {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.appsync-realtime-domain-name.txt`,
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return res.text();
   }
@@ -50,7 +74,13 @@ export namespace Api {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.buckets.json`,
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return v.parse(
       v.object({
@@ -63,7 +93,13 @@ export namespace Api {
 
   export async function syncUsers() {
     const res = await send("/users/sync", { method: "POST" });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     const result = v.safeParse(
       v.object({
@@ -96,7 +132,13 @@ export namespace Api {
       method: "POST",
       body: JSON.stringify({ paths }),
     });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
   }
 
   export async function send<TPath extends string>(

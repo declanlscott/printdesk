@@ -29,7 +29,13 @@ export namespace Documents {
       `/parameters${Constants.DOCUMENTS_MIME_TYPES_PARAMETER_NAME}`,
       { method: "GET" },
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return v.parse(v.array(v.string()), await res.json());
   }
@@ -51,7 +57,13 @@ export namespace Documents {
       `/parameters${Constants.DOCUMENTS_SIZE_LIMIT_PARAMETER_NAME}`,
       { method: "GET" },
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return v.parse(v.number(), await res.text());
   }

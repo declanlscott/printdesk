@@ -22,7 +22,13 @@ export namespace Papercut {
     const res = await Api.send(
       `/parameters${Constants.PAPERCUT_SERVER_AUTH_TOKEN_PARAMETER_NAME}?withDecryption=true`,
     );
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    if (!res.ok)
+      throw new HttpError.BadGateway({
+        upstream: {
+          error: new HttpError.Error(res.statusText, res.status),
+          text: await res.text(),
+        },
+      });
 
     return res.text();
   }

@@ -15,7 +15,7 @@
     "@hono/valibot-validator": "^0.5.1",
     "@iconify-json/lucide": "^1.2.19",
     "@internationalized/date": "^3.6.0",
-    "@monaco-editor/react": "^4.6.0",
+    "@monaco-editor/react": "next",
     "@printworks/core": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.2",
     "@tailwindcss/typography": "^0.5.15",

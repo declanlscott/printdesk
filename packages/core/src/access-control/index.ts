@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, eq, isNull, or, sql } from "drizzle-orm";
+import { and, arrayOverlaps, eq, isNull, or } from "drizzle-orm";
 
 import { announcementsTable } from "../announcements/sql";
 import {
@@ -7,6 +7,7 @@ import {
   billingAccountsTable,
 } from "../billing-accounts/sql";
 import { commentsTable } from "../comments/sql";
+import { getRowVersionColumn } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
 import { invoicesTable } from "../invoices/sql";
 import { ordersTableName } from "../orders/shared";
@@ -21,7 +22,6 @@ import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
 import { useUser } from "../users/context";
 import { userProfilesTable, usersTable } from "../users/sql";
-import { Constants } from "../utils/constants";
 
 import type { SQL } from "drizzle-orm";
 import type { PgSelectBase } from "drizzle-orm/pg-core";
@@ -55,7 +55,7 @@ export namespace AccessControl {
       tx
         .select({
           id: announcementsTable.id,
-          rowVersion: sql<number>`"${announcementsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(announcementsTable._.name),
         })
         .from(announcementsTable)
         .where(eq(announcementsTable.tenantId, useTenant().id))
@@ -64,7 +64,7 @@ export namespace AccessControl {
       tx
         .select({
           id: billingAccountsTable.id,
-          rowVersion: sql<number>`"${billingAccountsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(billingAccountsTable._.name),
         })
         .from(billingAccountsTable)
         .where(eq(billingAccountsTable.tenantId, useTenant().id))
@@ -73,7 +73,9 @@ export namespace AccessControl {
       tx
         .select({
           id: billingAccountCustomerAuthorizationsTable.id,
-          rowVersion: sql<number>`"${billingAccountCustomerAuthorizationsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(
+            billingAccountCustomerAuthorizationsTable._.name,
+          ),
         })
         .from(billingAccountCustomerAuthorizationsTable)
         .where(
@@ -87,7 +89,9 @@ export namespace AccessControl {
       tx
         .select({
           id: billingAccountManagerAuthorizationsTable.id,
-          rowVersion: sql<number>`"${billingAccountManagerAuthorizationsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(
+            billingAccountManagerAuthorizationsTable._.name,
+          ),
         })
         .from(billingAccountManagerAuthorizationsTable)
         .where(
@@ -98,7 +102,7 @@ export namespace AccessControl {
       tx
         .select({
           id: commentsTable.id,
-          rowVersion: sql<number>`"${commentsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}`,
+          rowVersion: getRowVersionColumn(commentsTable._.name),
         })
         .from(commentsTable)
         .where(eq(commentsTable.tenantId, useTenant().id))
@@ -107,7 +111,7 @@ export namespace AccessControl {
       tx
         .select({
           id: deliveryOptionsTable.id,
-          rowVersion: sql<number>`"${deliveryOptionsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(deliveryOptionsTable._.name),
         })
         .from(deliveryOptionsTable)
         .where(eq(deliveryOptionsTable.tenantId, useTenant().id))
@@ -116,7 +120,7 @@ export namespace AccessControl {
       tx
         .select({
           id: invoicesTable.id,
-          rowVersion: sql<number>`"${invoicesTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(invoicesTable._.name),
         })
         .from(invoicesTable)
         .where(eq(invoicesTable.tenantId, useTenant().id))
@@ -125,7 +129,7 @@ export namespace AccessControl {
       tx
         .select({
           id: ordersTable.id,
-          rowVersion: sql<number>`"${ordersTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(ordersTable._.name),
         })
         .from(ordersTable)
         .where(
@@ -139,7 +143,7 @@ export namespace AccessControl {
       tx
         .select({
           id: productsTable.id,
-          rowVersion: sql<number>`"${productsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(productsTable._.name),
         })
         .from(productsTable)
         .where(eq(productsTable.tenantId, useTenant().id))
@@ -148,7 +152,7 @@ export namespace AccessControl {
       tx
         .select({
           id: roomsTable.id,
-          rowVersion: sql<number>`"${roomsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(roomsTable._.name),
         })
         .from(roomsTable)
         .where(eq(roomsTable.tenantId, useTenant().id))
@@ -157,7 +161,7 @@ export namespace AccessControl {
       tx
         .select({
           id: tenantsTable.id,
-          rowVersion: sql<number>`"${tenantsTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(tenantsTable._.name),
         })
         .from(tenantsTable)
         .where(eq(tenantsTable.id, useTenant().id))
@@ -166,7 +170,7 @@ export namespace AccessControl {
       tx
         .select({
           id: usersTable.id,
-          rowVersion: sql<number>`"${userProfilesTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(usersTable._.name),
         })
         .from(usersTable)
         .innerJoin(
@@ -187,7 +191,7 @@ export namespace AccessControl {
       tx
         .select({
           id: workflowStatusesTable.id,
-          rowVersion: sql<number>`"${workflowStatusesTable._.name}"."${Constants.ROW_VERSION_COLUMN_NAME}"`,
+          rowVersion: getRowVersionColumn(workflowStatusesTable._.name),
         })
         .from(workflowStatusesTable)
         .where(and(eq(workflowStatusesTable.tenantId, useTenant().id)))

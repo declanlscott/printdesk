@@ -61,3 +61,6 @@ export function buildConflictUpdateColumns<
 }
 
 export type OmitTimestamps<TTable> = Omit<TTable, keyof typeof timestamps>;
+
+export const getRowVersionColumn = (tableName: string) =>
+  sql<number>`"${tableName}"."${Constants.ROW_VERSION_COLUMN_NAME}"`;

@@ -32,14 +32,9 @@ export namespace Invoices {
         body: JSON.stringify({ invoiceId: values.id }),
       });
       if (!res.ok)
-        tx.update(invoicesTable)
-          .set({ status: "error" })
-          .where(
-            and(
-              eq(invoicesTable.id, values.id),
-              eq(invoicesTable.tenantId, useTenant().id),
-            ),
-          );
+        throw new Error(
+          `Failed enqueueing invoice ${values.id} for order ${values.orderId}.`,
+        );
 
       await afterTransaction(() =>
         Replicache.poke(users.map((u) => formatChannel("user", u.id))),

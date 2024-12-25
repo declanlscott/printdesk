@@ -6,14 +6,9 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
-
 import { ApplicationError } from "./errors";
 
 export namespace Utils {
-  export const xmlBuilder = new XMLBuilder();
-  export const xmlParser = new XMLParser({ preserveOrder: true });
-
   export function createContext<TContext>(name: string) {
     const storage = new AsyncLocalStorage<TContext>();
 

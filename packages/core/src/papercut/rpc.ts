@@ -2,10 +2,10 @@ import * as v from "valibot";
 
 import { Papercut } from ".";
 import { Api } from "../api";
-import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
 import { HttpError, XmlRpcError } from "../utils/errors";
 import { objectsTuple } from "../utils/shared";
+import { useXml } from "../utils/xml";
 import { xmlRpcResponseTuple } from "./shared";
 
 export namespace PapercutRpc {
@@ -114,7 +114,7 @@ export namespace PapercutRpc {
     const res = await Api.send(path, {
       method: "POST",
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: Utils.xmlBuilder.build({
+      body: useXml().builder.build({
         methodCall: {
           methodName: "api.adjustSharedAccountAccountBalance",
           params: {
@@ -149,7 +149,7 @@ export namespace PapercutRpc {
           return xml.boolean;
         }),
       ),
-      await res.text(),
+      useXml().parser.parse(text),
     );
 
     return success;
@@ -164,7 +164,7 @@ export namespace PapercutRpc {
     const res = await Api.send(path, {
       method: "POST",
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: Utils.xmlBuilder.build({
+      body: useXml().builder.build({
         methodCall: {
           methodName: "api.getSharedAccountProperties",
           params: {
@@ -208,7 +208,7 @@ export namespace PapercutRpc {
           };
         }),
       ),
-      Utils.xmlParser.parse(await res.text()),
+      useXml().parser.parse(text),
     );
 
     return properties;
@@ -218,7 +218,7 @@ export namespace PapercutRpc {
     const res = await Api.send(path, {
       method: "POST",
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: Utils.xmlBuilder.build({
+      body: useXml().builder.build({
         methodCall: { methodName: "api.getTaskStatus" },
       }),
     });
@@ -285,7 +285,7 @@ export namespace PapercutRpc {
           };
         }),
       ),
-      await res.text(),
+      useXml().parser.parse(text),
     );
 
     return taskStatus;
@@ -301,7 +301,7 @@ export namespace PapercutRpc {
       const res = await Api.send(path, {
         method: "POST",
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        body: Utils.xmlBuilder.build({
+        body: useXml().builder.build({
           methodCall: {
             methodName: "api.listSharedAccounts",
             params: {
@@ -335,7 +335,7 @@ export namespace PapercutRpc {
             return xml.list as Array<string>;
           }),
         ),
-        await res.text(),
+        useXml().parser.parse(text),
       );
 
       all.push(...sharedAccounts);
@@ -358,7 +358,7 @@ export namespace PapercutRpc {
       const res = await Api.send(path, {
         method: "POST",
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        body: Utils.xmlBuilder.build({
+        body: useXml().builder.build({
           methodCall: {
             methodName: "api.listUserAccounts",
             params: {
@@ -392,7 +392,7 @@ export namespace PapercutRpc {
             return xml.list as Array<string>;
           }),
         ),
-        await res.text(),
+        useXml().parser.parse(text),
       );
 
       all.push(...userAccounts);
@@ -417,7 +417,7 @@ export namespace PapercutRpc {
       const res = await Api.send(path, {
         method: "POST",
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        body: Utils.xmlBuilder.build({
+        body: useXml().builder.build({
           methodCall: {
             methodName: "api.listUserSharedAccounts",
             params: [
@@ -451,7 +451,7 @@ export namespace PapercutRpc {
             return xml.list as Array<string>;
           }),
         ),
-        await res.text(),
+        useXml().parser.parse(text),
       );
 
       all.push(...userSharedAccounts);

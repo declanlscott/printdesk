@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@printworks/core": "workspace:*",
-    "@pulumi/aws": "^6.65.0",
+    "@pulumi/aws": "^6.66.1",
     "@pulumi/cloudflare": "^5.45.0",
     "@pulumi/pulumi": "^3.144.1"
   },

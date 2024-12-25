@@ -13,9 +13,9 @@
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.38.2",
     "hono": "^4.6.14",
-    "remeda": "^2.18.0",
+    "remeda": "^2.19.0",
     "replicache": "^15.0.1",
-    "sst": "^3.4.27",
+    "sst": "^3.4.30",
     "superjson": "^2.2.2",
     "valibot": "beta"
   },

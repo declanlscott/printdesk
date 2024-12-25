@@ -2,7 +2,7 @@ import { HttpRequest } from "@smithy/protocol-http";
 import * as R from "remeda";
 
 import { Api } from "../api";
-import { useAws, Util } from "../utils/aws";
+import { SignatureV4, Util } from "../utils/aws";
 
 export namespace Realtime {
   export const getUrl = async () =>
@@ -22,7 +22,8 @@ export namespace Realtime {
     const hostname = await Api.getAppsyncHttpDomainName();
 
     for (const batch of R.chunk(events, 5)) {
-      const req = await useAws("sigv4").signer.sign(
+      const req = await SignatureV4.sign(
+        "appsync",
         new HttpRequest({
           method: "POST",
           protocol: "https:",

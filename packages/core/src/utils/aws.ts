@@ -41,6 +41,7 @@ import { DsqlSigner } from "@aws-sdk/dsql-signer";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
+import * as R from "remeda";
 
 import { Utils } from ".";
 
@@ -78,7 +79,7 @@ export type AwsContext = {
   dsql?: { signer: DsqlSigner };
   sqs?: { client: SQSClient };
   s3?: { client: S3Client };
-  sigv4?: { signer: _SignatureV4 };
+  sigv4?: { signers: Record<string, _SignatureV4> };
   ssm?: { client: SSMClient };
   sts?: { client: STSClient };
 };
@@ -95,7 +96,7 @@ export function useAws<TServiceName extends keyof AwsContext>(
   return service;
 }
 
-export const withAws = async <
+export async function withAws<
   TGetContext extends () => AwsContext | Promise<AwsContext>,
   TCallback extends () => ReturnType<TCallback>,
   TGetDependencies extends () => AwsContext | Promise<AwsContext>,
@@ -103,12 +104,23 @@ export const withAws = async <
   getContext: TGetContext,
   callback: TCallback,
   getDependencies?: TGetDependencies,
-) =>
-  getDependencies
-    ? AwsContext.with(await Promise.resolve(getDependencies()), async () =>
-        AwsContext.with(await Promise.resolve(getContext()), callback),
-      )
-    : AwsContext.with(await Promise.resolve(getContext()), callback);
+) {
+  if (getDependencies) {
+    const dependencies = await Promise.resolve(getDependencies());
+
+    return AwsContext.with(dependencies, async () =>
+      AwsContext.with(
+        R.mergeDeep(
+          dependencies,
+          await Promise.resolve(getContext()),
+        ) as AwsContext,
+        callback,
+      ),
+    );
+  }
+
+  return AwsContext.with(await Promise.resolve(getContext()), callback);
+}
 
 export namespace Appsync {
   export const Client = AppSyncClient;
@@ -212,6 +224,11 @@ export namespace SignatureV4 {
     service,
   }: BuildSignerProps) =>
     new _SignatureV4({ credentials, sha256, region, service });
+
+  export const sign = (
+    service: string,
+    ...args: Parameters<_SignatureV4["sign"]>
+  ) => useAws("sigv4").signers[service].sign(...args);
 }
 
 export namespace Sqs {

@@ -1,3 +1,4 @@
+import { HttpRequest } from "@smithy/protocol-http";
 import { addMinutes } from "date-fns";
 import { Resource } from "sst";
 import * as v from "valibot";
@@ -150,20 +151,20 @@ export namespace Api {
       path: `/api${path}`,
     });
 
-    const req = await SignatureV4.buildSigner({
-      region: Resource.Aws.region,
-      service: "execute-api",
-    }).sign({
-      hostname: url.hostname,
-      protocol: url.protocol,
-      method: init?.method ?? "GET",
-      path: url.pathname,
-      query: Object.fromEntries(
-        new URLSearchParams(url.searchParams).entries(),
-      ),
-      headers: Object.fromEntries(new Headers(init?.headers).entries()),
-      body: init?.body,
-    });
+    const req = await SignatureV4.sign(
+      "execute-api",
+      new HttpRequest({
+        method: init?.method ?? "GET",
+        protocol: url.protocol,
+        hostname: url.hostname,
+        path: url.pathname,
+        query: Object.fromEntries(
+          new URLSearchParams(url.searchParams).entries(),
+        ),
+        headers: Object.fromEntries(new Headers(init?.headers).entries()),
+        body: init?.body,
+      }),
+    );
 
     // NOTE: Requests to `/.well-known` should not use a signed URL
     if (path.startsWith("/.well-known"))

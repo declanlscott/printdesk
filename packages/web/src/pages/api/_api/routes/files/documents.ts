@@ -5,7 +5,7 @@ import { Hono } from "hono";
 import * as v from "valibot";
 
 import { authn, authz } from "~/api/middleware/auth";
-import { s3Client, ssmClient } from "~/api/middleware/aws";
+import { executeApiSigner, s3Client, ssmClient } from "~/api/middleware/aws";
 
 export default new Hono()
   .put(
@@ -19,7 +19,7 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/mime-types", authn, async (c) => {
+  .get("/mime-types", authn, executeApiSigner, async (c) => {
     const mimeTypes = await Documents.getMimeTypes();
 
     return c.json({ mimeTypes }, 200);
@@ -63,7 +63,7 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/size-limit", authn, async (c) => {
+  .get("/size-limit", authn, executeApiSigner, async (c) => {
     const byteSize = await Documents.getSizeLimit();
 
     return c.json({ byteSize }, 200);

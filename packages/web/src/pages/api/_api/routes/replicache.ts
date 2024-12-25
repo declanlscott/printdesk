@@ -7,6 +7,7 @@ import {
 import { Hono } from "hono";
 
 import { authn } from "~/api/middleware/auth";
+import { executeApiSigner } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
 
 export default new Hono()
@@ -20,7 +21,7 @@ export default new Hono()
 
     return c.json(pullResponse, 200);
   })
-  .post("/push", async (c) => {
+  .post("/push", executeApiSigner, async (c) => {
     const pushRequest: unknown = await c.req.json();
 
     const pushResponse =

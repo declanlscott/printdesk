@@ -24,16 +24,18 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
     withAws(
       async () => ({
         sigv4: {
-          signer: SignatureV4.buildSigner({
-            region: Resource.Aws.region,
-            service: "appsync",
-            credentials: await Sts.getAssumeRoleCredentials({
-              type: "name",
-              accountId: await Api.getAccountId(),
-              roleName: Resource.Aws.tenant.realtimePublisherRole.name,
-              roleSessionName: "UsersSync",
+          signers: {
+            appsync: SignatureV4.buildSigner({
+              region: Resource.Aws.region,
+              service: "appsync",
+              credentials: await Sts.getAssumeRoleCredentials({
+                type: "name",
+                accountId: await Api.getAccountId(),
+                roleName: Resource.Aws.tenant.realtimePublisherRole.name,
+                roleSessionName: "UsersSync",
+              }),
             }),
-          }),
+          },
         },
       }),
       async () => {
@@ -52,7 +54,17 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
 
         await Realtime.publish(channel, [JSON.stringify({ success: true })]);
       },
-      () => ({ sts: { client: new Sts.Client() } }),
+      () => ({
+        sigv4: {
+          signers: {
+            "execute-api": SignatureV4.buildSigner({
+              region: Resource.Aws.region,
+              service: "execute-api",
+            }),
+          },
+        },
+        sts: { client: new Sts.Client() },
+      }),
     ),
   );
 };

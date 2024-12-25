@@ -160,9 +160,8 @@ export namespace Replicache {
       ),
     );
 
-    results
-      .filter((result) => result.status === "rejected")
-      .forEach(({ reason }) => console.error(reason));
+    for (const result of results)
+      if (result.status === "rejected") console.error(result.reason);
   }
 
   type PullTransactionResult = {

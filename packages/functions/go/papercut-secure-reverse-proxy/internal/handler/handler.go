@@ -12,7 +12,7 @@ func Handler(
 	ctx context.Context,
 	req events.APIGatewayProxyRequest,
 ) (events.APIGatewayProxyResponse, error) {
-	req.Path = strings.TrimPrefix(req.Path, "/papercut")
+	req.Path = strings.TrimPrefix(req.Path, "/papercut/server")
 
 	return lifecycle.HandlerAdapter.ProxyWithContext(ctx, req)
 }

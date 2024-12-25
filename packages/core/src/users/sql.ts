@@ -1,18 +1,23 @@
-import { index, text, unique } from "drizzle-orm/pg-core";
+import { eq } from "drizzle-orm";
+import { index, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
-import { userRole } from "../utils/sql";
+import { userRole, userType } from "../utils/sql";
 import { userProfilesTableName, usersTableName } from "./shared";
 
 import type { InferSelectModel } from "drizzle-orm";
 
 export const usersTable = tenantTable(
   usersTableName,
-  { username: text("username").notNull() },
+  {
+    type: userType("type").notNull(),
+    username: text("username").notNull(),
+  },
   (table) => [
-    unique("unique_username").on(table.username, table.tenantId),
-    index("username_idx").on(table.username),
+    uniqueIndex("unique_papercut_user_idx")
+      .on(table.type, table.username, table.tenantId)
+      .where(eq(table.type, "papercut")),
   ],
 );
 

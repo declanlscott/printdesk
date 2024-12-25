@@ -1,7 +1,7 @@
 import { auth } from "./auth";
 import { dsqlCluster } from "./db";
 import { appFqdn } from "./dns";
-import { appData, aws_, client } from "./misc";
+import { appData, aws_, client, cloudfrontPrivateKey } from "./misc";
 import { tenantInfraQueue } from "./queues";
 
 export const reverseProxy = new sst.cloudflare.Worker("ReverseProxy", {
@@ -47,7 +47,14 @@ sst.Linkable.wrap(sst.aws.Astro, (astro) => ({
 export const web = new sst.aws.Astro("Web", {
   path: "packages/web",
   buildCommand: "pnpm build",
-  link: [appData, auth, client, dsqlCluster, tenantInfraQueue],
+  link: [
+    appData,
+    auth,
+    client,
+    cloudfrontPrivateKey,
+    dsqlCluster,
+    tenantInfraQueue,
+  ],
   permissions: [
     {
       actions: ["execute-api:Invoke"],

@@ -92,8 +92,8 @@ export namespace Api {
     );
   }
 
-  export async function syncUsers() {
-    const res = await send("/users/sync", { method: "POST" });
+  export async function papercutSync() {
+    const res = await send("/papercut/sync", { method: "POST" });
     if (!res.ok)
       throw new HttpError.BadGateway({
         upstream: {
@@ -116,14 +116,14 @@ export namespace Api {
       await res.json(),
     );
     if (!result.success)
-      throw new HttpError.InternalServerError("Invalid sync users response");
+      throw new HttpError.InternalServerError("Invalid papercut sync response");
 
     if (result.output.FailedEntryCount > 0)
-      throw new HttpError.InternalServerError("Sync users event failure");
+      throw new HttpError.InternalServerError("Papercut sync event failure");
 
     const eventId = result.output.Entries.at(0)?.EventId;
     if (!eventId)
-      throw new HttpError.InternalServerError("Missing sync users event id");
+      throw new HttpError.InternalServerError("Missing papercut sync event id");
 
     return { eventId };
   }

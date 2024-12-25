@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { bigint, index, numeric, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { id } from "../drizzle/columns";
@@ -22,8 +22,10 @@ export const billingAccountsTable = tenantTable(
   },
   (table) => [
     uniqueIndex("unique_papercut_account_idx")
-      .on(table.name, table.papercutAccountId, table.tenantId)
-      .where(sql`${table.papercutAccountId} IS NOT NULL`),
+      .on(table.type, table.name, table.papercutAccountId, table.tenantId)
+      .where(
+        and(eq(table.type, "papercut"), isNotNull(table.papercutAccountId))!,
+      ),
   ],
 );
 export type BillingAccountsTable = typeof billingAccountsTable;

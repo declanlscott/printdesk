@@ -6,7 +6,7 @@ import { invoiceStatuses } from "../invoices/shared";
 import { productStatuses } from "../products/shared";
 import { roomStatuses, workflowStatusTypes } from "../rooms/shared";
 import { licenseStatuses, tenantStatuses } from "../tenants/shared";
-import { userRoles } from "../users/shared";
+import { userRoles, userTypes } from "../users/shared";
 
 export const licenseStatus = pgEnum("license_status", licenseStatuses);
 
@@ -18,6 +18,7 @@ export const workflowStatusType = pgEnum(
   workflowStatusTypes,
 );
 
+export const userType = pgEnum("user_type", userTypes);
 export const userRole = pgEnum("user_role", userRoles);
 
 export const oauth2ProviderType = pgEnum(

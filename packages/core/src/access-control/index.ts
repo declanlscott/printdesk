@@ -709,6 +709,11 @@ export namespace AccessControl {
         update: true,
         delete: true,
       },
+      "papercut-sync": {
+        create: true,
+        update: false,
+        delete: false,
+      },
       [productsTable._.name]: {
         create: true,
         update: true,
@@ -816,6 +821,11 @@ export namespace AccessControl {
         create: true,
         update: true,
         delete: true,
+      },
+      "papercut-sync": {
+        create: false,
+        update: false,
+        delete: false,
       },
       [productsTable._.name]: {
         create: true,
@@ -1132,6 +1142,11 @@ export namespace AccessControl {
               .then((rows) => rows.length > 0),
           ),
       },
+      "papercut-sync": {
+        create: false,
+        update: false,
+        delete: false,
+      },
       [productsTable._.name]: {
         create: false,
         update: false,
@@ -1324,6 +1339,11 @@ export namespace AccessControl {
               )
               .then((rows) => rows.length > 0),
           ),
+      },
+      "papercut-sync": {
+        create: false,
+        update: false,
+        delete: false,
       },
       [productsTable._.name]: {
         create: false,

@@ -4,6 +4,8 @@ import { nanoIdSchema, tenantTableSchema } from "../utils/shared";
 
 export const usersTableName = "users";
 
+export const userTypes = ["papercut", "internal"] as const;
+
 export const userRoles = [
   "administrator",
   "operator",

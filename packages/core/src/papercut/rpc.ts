@@ -11,7 +11,7 @@ import { xmlRpcResponseTuple } from "./shared";
 import type { SharedAccountPropertyTypeMap } from "./shared";
 
 export namespace PapercutRpc {
-  const path = "/papercut/rpc/api/xmlrpc";
+  const path = "/papercut/server/rpc/api/xmlrpc";
 
   const faultResponseSchema = v.pipe(
     xmlRpcResponseTuple({

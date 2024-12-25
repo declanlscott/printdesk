@@ -50,14 +50,13 @@ export class Api extends pulumi.ComponentResource {
   private _parametersProxyResponses: Responses;
   private _parametersProxyCorsRoute: CorsRoute;
 
-  private _usersResource: aws.apigateway.Resource;
-  private _usersSyncRoute: EventRoute;
-
   private _papercutResource: aws.apigateway.Resource;
-  private _papercutProxyResource: aws.apigateway.Resource;
-  private _papercutProxyMethod: aws.apigateway.Method;
-  private _papercutProxyIntegration: aws.apigateway.Integration;
-  private _papercutProxyCorsRoute: CorsRoute;
+  private _papercutServerResource: aws.apigateway.Resource;
+  private _papercutServerProxyResource: aws.apigateway.Resource;
+  private _papercutServerProxyMethod: aws.apigateway.Method;
+  private _papercutServerProxyIntegration: aws.apigateway.Integration;
+  private _papercutServerProxyCorsRoute: CorsRoute;
+  private _papercutSyncRoute: EventRoute;
 
   private _invoicesResource: aws.apigateway.Resource;
   private _enqueueInvoiceRequestValidator: aws.apigateway.RequestValidator;
@@ -407,21 +406,76 @@ export class Api extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this._usersResource = new aws.apigateway.Resource(
-      "UsersResource",
+    this._papercutResource = new aws.apigateway.Resource(
+      "PapercutResource",
       {
         restApi: args.gateway.id,
         parentId: args.gateway.rootResourceId,
-        pathPart: "users",
+        pathPart: "papercut",
       },
       { parent: this },
     );
 
-    this._usersSyncRoute = new EventRoute(
-      "UsersSync",
+    this._papercutServerResource = new aws.apigateway.Resource(
+      "PapercutServerResource",
+      {
+        restApi: args.gateway.id,
+        parentId: this._papercutResource.id,
+        pathPart: "server",
+      },
+      { parent: this },
+    );
+
+    this._papercutServerProxyResource = new aws.apigateway.Resource(
+      "PapercutServerProxyResource",
+      {
+        restApi: args.gateway.id,
+        parentId: this._papercutServerResource.id,
+        pathPart: "{proxy+}",
+      },
+      { parent: this },
+    );
+
+    this._papercutServerProxyMethod = new aws.apigateway.Method(
+      "PapercutServerProxyMethod",
+      {
+        restApi: args.gateway.id,
+        resourceId: this._papercutServerProxyResource.id,
+        httpMethod: "ANY",
+        authorization: "AWS_IAM",
+      },
+      { parent: this },
+    );
+
+    this._papercutServerProxyIntegration = new aws.apigateway.Integration(
+      "PapercutServerProxyIntegration",
+      {
+        restApi: args.gateway.id,
+        resourceId: this._papercutServerProxyResource.id,
+        httpMethod: this._papercutServerProxyMethod.httpMethod,
+        type: "AWS_PROXY",
+        integrationHttpMethod: "POST",
+        passthroughBehavior: "WHEN_NO_TEMPLATES",
+        uri: args.papercutSecureReverseProxyFunction.invokeArn,
+        credentials: this._role.arn,
+      },
+      { parent: this },
+    );
+
+    this._papercutServerProxyCorsRoute = new CorsRoute(
+      "PapercutServerProxy",
       {
         restApiId: args.gateway.id,
-        parentId: this._usersResource.id,
+        resourceId: this._papercutServerProxyResource.id,
+      },
+      { parent: this },
+    );
+
+    this._papercutSyncRoute = new EventRoute(
+      "PapercutSync",
+      {
+        restApiId: args.gateway.id,
+        parentId: this._papercutResource.id,
         pathPart: "sync",
         executionRoleArn: this._role.arn,
         requestTemplate: pulumi.all([args.tenantId, args.domainName]).apply(
@@ -437,61 +491,6 @@ export class Api extends pulumi.ComponentResource {
   ]
 }`,
         ),
-      },
-      { parent: this },
-    );
-
-    this._papercutResource = new aws.apigateway.Resource(
-      "PapercutResource",
-      {
-        restApi: args.gateway.id,
-        parentId: args.gateway.rootResourceId,
-        pathPart: "papercut",
-      },
-      { parent: this },
-    );
-
-    this._papercutProxyResource = new aws.apigateway.Resource(
-      "PapercutProxyResource",
-      {
-        restApi: args.gateway.id,
-        parentId: this._papercutResource.id,
-        pathPart: "{proxy+}",
-      },
-      { parent: this },
-    );
-
-    this._papercutProxyMethod = new aws.apigateway.Method(
-      "PapercutProxyMethod",
-      {
-        restApi: args.gateway.id,
-        resourceId: this._papercutProxyResource.id,
-        httpMethod: "ANY",
-        authorization: "AWS_IAM",
-      },
-      { parent: this },
-    );
-
-    this._papercutProxyIntegration = new aws.apigateway.Integration(
-      "PapercutProxyIntegration",
-      {
-        restApi: args.gateway.id,
-        resourceId: this._papercutProxyResource.id,
-        httpMethod: this._papercutProxyMethod.httpMethod,
-        type: "AWS_PROXY",
-        integrationHttpMethod: "POST",
-        passthroughBehavior: "WHEN_NO_TEMPLATES",
-        uri: args.papercutSecureReverseProxyFunction.invokeArn,
-        credentials: this._role.arn,
-      },
-      { parent: this },
-    );
-
-    this._papercutProxyCorsRoute = new CorsRoute(
-      "PapercutProxy",
-      {
-        restApiId: args.gateway.id,
-        resourceId: this._papercutProxyResource.id,
       },
       { parent: this },
     );
@@ -784,14 +783,13 @@ export class Api extends pulumi.ComponentResource {
         ...this._parametersProxyResponses.triggers,
         ...this._parametersProxyCorsRoute.triggers,
 
-        this._usersResource,
-        ...this._usersSyncRoute.triggers,
-
         this._papercutResource,
-        this._papercutProxyResource,
-        this._papercutProxyMethod,
-        this._papercutProxyIntegration,
-        ...this._papercutProxyCorsRoute.triggers,
+        this._papercutServerResource,
+        this._papercutServerProxyResource,
+        this._papercutServerProxyMethod,
+        this._papercutServerProxyIntegration,
+        ...this._papercutServerProxyCorsRoute.triggers,
+        ...this._papercutSyncRoute.triggers,
 
         this._invoicesResource,
         this._enqueueInvoiceRequestValidator,
@@ -886,12 +884,11 @@ export class Api extends pulumi.ComponentResource {
       parametersProxyMethod: this._parametersProxyMethod.id,
       parametersProxyIntegration: this._parametersProxyIntegration.id,
 
-      usersResource: this._usersResource.id,
-
       papercutResource: this._papercutResource.id,
-      papercutProxyResource: this._papercutProxyResource.id,
-      papercutProxyMethod: this._papercutProxyMethod.id,
-      papercutProxyIntegration: this._papercutProxyIntegration.id,
+      papercutServerResource: this._papercutServerResource.id,
+      papercutServerProxyResource: this._papercutServerProxyResource.id,
+      papercutServerProxyMethod: this._papercutServerProxyMethod.id,
+      papercutServerProxyIntegration: this._papercutServerProxyIntegration.id,
 
       invoicesResource: this._invoicesResource.id,
       enqueueInvoiceRequestValidator: this._enqueueInvoiceRequestValidator.id,

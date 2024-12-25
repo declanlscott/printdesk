@@ -59,19 +59,16 @@ export namespace PapercutSync {
         .from(billingAccountsTable)
         .where(
           and(
-            eq(billingAccountsTable.tenantId, tenant.id),
             eq(billingAccountsTable.type, "papercut"),
             isNotNull(billingAccountsTable.papercutAccountId),
+            eq(billingAccountsTable.tenantId, tenant.id),
           ),
         )
         .then(
-          (rows) =>
-            new Map(
-              rows.map(({ papercutAccountId, name }) => [
-                papercutAccountId!,
-                { name },
-              ]),
-            ),
+          R.map((account) => ({
+            papercutAccountId: account.papercutAccountId!,
+            name: account.name,
+          })),
         );
 
       type Values = Array<InferInsertModel<BillingAccountsTable>>;
@@ -88,7 +85,7 @@ export namespace PapercutSync {
         });
 
       const deletedAt = new Date();
-      for (const [papercutAccountId, { name }] of prev)
+      for (const { papercutAccountId, name } of prev)
         if (!next.has(papercutAccountId))
           dels.push({
             papercutAccountId,
@@ -160,19 +157,30 @@ export namespace PapercutSync {
       const prevUsernames = await tx
         .select({ username: usersTable.username })
         .from(usersTable)
-        .where(eq(usersTable.tenantId, tenant.id))
-        .then((rows) => new Set(R.map(rows, R.prop("username"))));
+        .where(
+          and(
+            eq(usersTable.type, "papercut"),
+            eq(usersTable.tenantId, tenant.id),
+          ),
+        )
+        .then(R.map(R.prop("username")));
 
       type UserValues = Array<InferInsertModel<UsersTable>>;
       const userPuts: UserValues = [];
       const userDels: UserValues = [];
 
       for (const username of nextUsernames)
-        userPuts.push({ username, tenantId: tenant.id, deletedAt: null });
+        userPuts.push({
+          type: "papercut" as const,
+          username,
+          tenantId: tenant.id,
+          deletedAt: null,
+        });
 
       for (const username of prevUsernames)
         if (!nextUsernames.has(username))
           userDels.push({
+            type: "papercut" as const,
             username,
             tenantId: tenant.id,
             deletedAt,
@@ -182,14 +190,19 @@ export namespace PapercutSync {
         .insert(usersTable)
         .values([...userPuts, ...userDels])
         .onConflictDoUpdate({
-          target: [usersTable.username, usersTable.tenantId],
+          target: [usersTable.type, usersTable.username, usersTable.tenantId],
           set: buildConflictUpdateColumns(usersTable, [
+            "type",
             "username",
             "tenantId",
             "deletedAt",
           ]),
         })
-        .returning();
+        .returning({
+          id: usersTable.id,
+          username: usersTable.username,
+          deletedAt: usersTable.deletedAt,
+        });
 
       type BillingAccountCustomerAuthorizationValues = Array<
         InferInsertModel<BillingAccountCustomerAuthorizationsTable>

@@ -8,6 +8,8 @@ import { objectsTuple } from "../utils/shared";
 import { useXml } from "../utils/xml";
 import { xmlRpcResponseTuple } from "./shared";
 
+import type { SharedAccountPropertyTypeMap } from "./shared";
+
 export namespace PapercutRpc {
   const path = "/papercut/rpc/api/xmlrpc";
 
@@ -156,9 +158,8 @@ export namespace PapercutRpc {
   }
 
   export async function getSharedAccountProperties<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TProperties extends Array<any>,
-  >(sharedAccountName: string, propertyNames: Array<string>) {
+    const TPropertyNames extends Array<keyof SharedAccountPropertyTypeMap>,
+  >(sharedAccountName: string, ...propertyNames: TPropertyNames) {
     const authToken = await Papercut.getServerAuthToken();
 
     const res = await Api.send(path, {
@@ -204,7 +205,9 @@ export namespace PapercutRpc {
             throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
 
           return xml.list as {
-            [K in keyof TProperties]: TProperties[K] | undefined;
+            [K in keyof TPropertyNames]: TPropertyNames[K] extends keyof SharedAccountPropertyTypeMap
+              ? SharedAccountPropertyTypeMap[TPropertyNames[K]] | undefined
+              : never;
           };
         }),
       ),

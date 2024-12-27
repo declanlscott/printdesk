@@ -42,19 +42,19 @@ export const repository = new awsx.ecr.Repository(
   { retainOnDelete: $app.stage === "production" },
 );
 
-export const usersSync = new custom.aws.Function("UsersSync", {
-  handler: "packages/functions/node/src/users-sync.handler",
+export const papercutSync = new custom.aws.Function("PapercutSync", {
+  handler: "packages/functions/node/src/papercut-sync.handler",
   timeout: "20 seconds",
   link: [appData, cloudfrontPrivateKey, dsqlCluster],
 });
-new aws.lambda.Permission("UsersSyncSchedulePermission", {
-  function: usersSync.name,
+new aws.lambda.Permission("PapercutSyncSchedulePermission", {
+  function: papercutSync.name,
   action: "lambda:InvokeFunction",
   principal: "scheduler.amazonaws.com",
   principalOrgId: aws_.properties.organization.id,
 });
-new aws.lambda.Permission("UsersSyncRulePermission", {
-  function: usersSync.name,
+new aws.lambda.Permission("PapercutSyncRulePermission", {
+  function: papercutSync.name,
   action: "lambda:InvokeFunction",
   principal: "events.amazonaws.com",
   principalOrgId: aws_.properties.organization.id,
@@ -213,8 +213,8 @@ export const tenantInfraFunction = new aws.lambda.Function(
       CloudfrontPublicKey: cloudfrontPublicKey.properties,
       Code: code.properties,
       InvoicesProcessor: invoicesProcessor.getSSTLink().properties,
+      PapercutSync: papercutSync.getSSTLink().properties,
       PulumiBucket: pulumiBucket.getSSTLink().properties,
-      UsersSync: usersSync.getSSTLink().properties,
       Web: web.getSSTLink().properties,
     }),
   },

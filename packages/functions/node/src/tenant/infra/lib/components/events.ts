@@ -8,7 +8,7 @@ export interface EventsArgs {
   tenantId: pulumi.Input<string>;
   domainName: aws.acm.Certificate["domainName"];
   events: {
-    usersSync: {
+    papercutSync: {
       functionArn: aws.lambda.Function["arn"];
       scheduleExpression: pulumi.Input<string>;
       timezone: pulumi.Input<string>;
@@ -40,16 +40,16 @@ export class Events extends pulumi.ComponentResource {
 
     this._events.push(
       new ScheduledEvent(
-        "ScheduledUsersSync",
+        "ScheduledPapercutSync",
         {
-          scheduleExpression: args.events.usersSync.scheduleExpression,
+          scheduleExpression: args.events.papercutSync.scheduleExpression,
           flexibleTimeWindow: {
             mode: "FLEXIBLE",
             maximumWindowInMinutes: 15,
           },
-          timezone: args.events.usersSync.timezone,
+          timezone: args.events.papercutSync.timezone,
           functionTarget: {
-            arn: args.events.usersSync.functionArn,
+            arn: args.events.papercutSync.functionArn,
             input: pulumi.jsonStringify({ tenantId: args.tenantId }),
           },
         },
@@ -59,16 +59,16 @@ export class Events extends pulumi.ComponentResource {
 
     this._events.push(
       new PatternedEvent(
-        "PatternedUsersSync",
+        "PatternedPapercutSync",
         {
           pattern: pulumi.jsonStringify({
-            "detail-type": ["UsersSync"],
+            "detail-type": ["PapercutSync"],
             source: args.domainName.apply((domainName) =>
               Utils.reverseDns(domainName),
             ),
           }),
           functionTarget: {
-            arn: args.events.usersSync.functionArn,
+            arn: args.events.papercutSync.functionArn,
             createPermission: false,
           },
         },

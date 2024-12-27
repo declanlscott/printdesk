@@ -118,6 +118,13 @@ declare module "sst" {
       }
       "type": "sst.sst.Linkable"
     }
+    "PapercutSync": {
+      "arn": string
+      "invokeArn": string
+      "name": string
+      "roleArn": string
+      "type": "sst.aws.Function"
+    }
     "PulumiBucket": {
       "name": string
       "type": "sst.aws.Bucket"
@@ -142,13 +149,6 @@ declare module "sst" {
     "TenantInfraQueue": {
       "type": "sst.aws.Queue"
       "url": string
-    }
-    "UsersSync": {
-      "arn": string
-      "invokeArn": string
-      "name": string
-      "roleArn": string
-      "type": "sst.aws.Function"
     }
     "Web": {
       "server": {

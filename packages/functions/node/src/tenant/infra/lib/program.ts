@@ -16,9 +16,14 @@ import type { TenantInfraProgramInput } from "@printworks/core/tenants/shared";
 
 export const getProgram =
   (tenantId: string, input: TenantInfraProgramInput) => async () => {
-    const { usersSyncSchedule, timezone } = input;
-    const { AppData, Aws, CloudfrontPublicKey, InvoicesProcessor, UsersSync } =
-      useResource();
+    const { papercutSyncSchedule, timezone } = input;
+    const {
+      AppData,
+      Aws,
+      CloudfrontPublicKey,
+      InvoicesProcessor,
+      PapercutSync,
+    } = useResource();
 
     const account = Account.getInstance({ tenantId });
 
@@ -123,9 +128,9 @@ export const getProgram =
         tenantId,
         domainName: ssl.domainName,
         events: {
-          usersSync: {
-            functionArn: pulumi.output(UsersSync.arn),
-            scheduleExpression: `cron(${usersSyncSchedule})`,
+          papercutSync: {
+            functionArn: pulumi.output(PapercutSync.arn),
+            scheduleExpression: `cron(${papercutSyncSchedule})`,
             timezone,
           },
           invoicesProcessor: {

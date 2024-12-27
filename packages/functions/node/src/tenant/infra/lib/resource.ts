@@ -13,8 +13,8 @@ export type CustomResource = {
     | "CloudfrontPublicKey"
     | "Code"
     | "InvoicesProcessor"
+    | "PapercutSync"
     | "PulumiBucket"
-    | "UsersSync"
     | "Web"
   >]: Omit<Resource[TKey], "type">;
 };

@@ -92,7 +92,7 @@ export class Api extends pulumi.ComponentResource {
   }
 
   private constructor(...[args, opts]: Parameters<typeof Api.getInstance>) {
-    const { AppData, Aws, UsersSync, Web } = useResource();
+    const { AppData, Aws, PapercutSync, Web } = useResource();
 
     super(`${AppData.name}:tenant:aws:Api`, "Api", args, opts);
 
@@ -484,7 +484,7 @@ export class Api extends pulumi.ComponentResource {
   "Entries": [
     {
       "Detail": "{\\"tenantId\\":\\"${tenantId}\\"}",
-      "DetailType": "UsersSync",
+      "DetailType": "PapercutSync",
       "EventBusName": "default",
       "Source":"${Utils.reverseDns(domainName)}"
     }

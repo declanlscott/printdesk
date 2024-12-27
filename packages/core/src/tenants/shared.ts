@@ -18,7 +18,10 @@ export const licenseSchema = v.object({
 export const tenantMetadataTableName = "tenant_metadata";
 
 export const tenantInfraProgramInputSchema = v.object({
-  usersSyncSchedule: v.pipe(v.optional(v.string(), "55 1 * * ? *"), v.trim()),
+  papercutSyncSchedule: v.pipe(
+    v.optional(v.string(), "55 1 * * ? *"),
+    v.trim(),
+  ),
   timezone: v.picklist(Intl.supportedValuesOf("timeZone")),
 });
 export type TenantInfraProgramInput = v.InferOutput<

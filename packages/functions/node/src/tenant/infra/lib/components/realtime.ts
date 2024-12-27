@@ -8,7 +8,7 @@ export class Realtime extends pulumi.ComponentResource {
   private static _instance: Realtime;
 
   private _api: appsync.Api;
-  private _channelNamespace: appsync.ChannelNamespace;
+  private _replicacheChannelNamespace: appsync.ChannelNamespace;
   private _subscriberRole: aws.iam.Role;
   private _publisherRole: aws.iam.Role;
 
@@ -41,11 +41,11 @@ export class Realtime extends pulumi.ComponentResource {
       { parent: this },
     );
 
-    this._channelNamespace = new appsync.ChannelNamespace(
-      "ChannelNamespace",
+    this._replicacheChannelNamespace = new appsync.ChannelNamespace(
+      "ReplicacheChannelNamespace",
       {
         apiId: this._api.id,
-        name: "default",
+        name: "replicache",
       },
       { parent: this },
     );
@@ -129,7 +129,7 @@ export class Realtime extends pulumi.ComponentResource {
 
     this.registerOutputs({
       api: this._api.id,
-      channelNamespace: this._channelNamespace.id,
+      replicacheChannelNamespace: this._replicacheChannelNamespace.id,
       subscriberRole: this._subscriberRole.id,
       publisherRole: this._publisherRole.id,
     });

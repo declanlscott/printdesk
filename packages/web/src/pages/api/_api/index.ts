@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 
 import auth from "~/api/routes/auth";
 import files from "~/api/routes/files";
+import realtime from "~/api/routes/realtime";
 import replicache from "~/api/routes/replicache";
 import services from "~/api/routes/services";
 import tenants from "~/api/routes/tenants";
@@ -19,6 +20,7 @@ const api = new Hono()
   .route("/files", files)
   .route("/services", services)
   .route("/tenants", tenants)
+  .route("/realtime", realtime)
   .route("/replicache", replicache)
   .route("/users", users)
   .onError((e, c) => {

@@ -1,28 +1,77 @@
-// import { Constants } from "@printworks/core/utils/constants";
-// import usePartySocket from "partysocket/react";
+import { useCallback, useEffect, useState } from "react";
+import { ApplicationError } from "@printworks/core/utils/errors";
+import { generateId } from "@printworks/core/utils/shared";
+import { useWebSocket } from "partysocket/react";
 
-// import { useAuthenticated } from "~/app/lib/hooks/auth";
-// import { useResource } from "~/app/lib/hooks/resource";
+import { useApi } from "~/app/lib/hooks/api";
+import { useReplicache } from "~/app/lib/hooks/replicache";
 
-// type RealtimeProps = {
-//   channel: string;
-// };
+export function useRealtime(channels: Array<string>) {
+  const api = useApi();
 
-// export function useRealtime(props: RealtimeProps) {
-//   const { replicacheLicenseKey } = useResource();
+  const [auth, setAuth] = useState<Record<string, string>>();
 
-//   const { replicache } = useAuthenticated();
+  const replicache = useReplicache();
 
-//   return usePartySocket({
-//     host: realtimeUrl,
-//     room: props.channel,
-//     onMessage: (message) => {
-//       if (message.data === Constants.POKE) void replicache.pull();
-//     },
-//     query: { replicacheLicenseKey },
-//   });
-// }
+  const protocolsProvider = useCallback(async () => {
+    const res = await api.realtime.auth.$get();
+    if (!res.ok)
+      throw new ApplicationError.Error("Failed to get websocket auth protocol");
 
-import { WebSocket } from "partysocket";
+    const { auth } = await res.json();
+    setAuth(auth);
 
-const socket = new WebSocket("wss://", ["aws-appsync-event-ws", "header-"]);
+    const header = Buffer.from(JSON.stringify(auth)).toString("base64");
+
+    return ["aws-appsync-event-ws", `header-${header}`];
+  }, [api]);
+
+  const urlProvider = useCallback(async () => {
+    const res = await api.realtime.url.$get();
+    if (!res.ok)
+      throw new ApplicationError.Error("Failed to get websocket url");
+
+    const { url } = await res.json();
+
+    return url;
+  }, [api]);
+
+  const socket = useWebSocket(urlProvider, protocolsProvider);
+
+  useEffect(() => {
+    if (!auth) return;
+
+    const onOpen = (_event: WebSocketEventMap["open"]) =>
+      socket.send(JSON.stringify({ type: "connection_init" }));
+    const onMessage = (event: WebSocketEventMap["message"]) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      const data = JSON.parse(event.data as string) as any;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      if (data.type === "connection_ack") {
+        for (const channel of channels)
+          socket.send(
+            JSON.stringify({
+              type: "subscribe",
+              id: generateId(),
+              channel,
+              authorization: auth,
+            }),
+          );
+
+        return;
+      }
+
+      if (data === "poke") return void replicache.client.pull();
+    };
+
+    socket.addEventListener("open", onOpen);
+    socket.addEventListener("message", onMessage);
+
+    return () => {
+      socket.removeEventListener("open", onOpen);
+      socket.removeEventListener("message", onMessage);
+    };
+  }, [auth, socket, channels, replicache.client]);
+
+  return socket;
+}

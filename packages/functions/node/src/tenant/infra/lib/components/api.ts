@@ -178,7 +178,10 @@ export class Api extends pulumi.ComponentResource {
                 principals: [
                   {
                     type: "AWS",
-                    identifiers: [UsersSync.roleArn, Web.server.role.principal],
+                    identifiers: [
+                      PapercutSync.roleArn,
+                      Web.server.role.principal,
+                    ],
                   },
                 ],
                 actions: ["execute-api:Invoke"],
@@ -272,34 +275,19 @@ export class Api extends pulumi.ComponentResource {
 
     this._wellKnownAppSpecificRoutes.push(
       new WellKnownAppSpecificRoute(
-        "AppsyncHttpDomainName",
+        "AppsyncEventsDomainNames",
         {
           apiId: args.gateway.id,
           parentId: this._appSpecificResource.id,
           pathPart: args.domainName.apply(
             (domainName) =>
-              `${Utils.reverseDns(domainName)}.appsync-http-domain-name.txt`,
+              `${Utils.reverseDns(domainName)}.appsync-events-domain-names.json`,
           ),
           responseTemplates: {
-            "text/plain": args.appsyncDns.http,
-          },
-        },
-        { parent: this },
-      ),
-    );
-
-    this._wellKnownAppSpecificRoutes.push(
-      new WellKnownAppSpecificRoute(
-        "AppsyncRealtimeDomainName",
-        {
-          apiId: args.gateway.id,
-          parentId: this._appSpecificResource.id,
-          pathPart: args.domainName.apply(
-            (domainName) =>
-              `${Utils.reverseDns(domainName)}.appsync-realtime-domain-name.txt`,
-          ),
-          responseTemplates: {
-            "text/plain": args.appsyncDns.realtime,
+            "application/json": pulumi.jsonStringify({
+              http: args.appsyncDns.http,
+              realtime: args.appsyncDns.realtime,
+            }),
           },
         },
         { parent: this },

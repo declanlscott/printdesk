@@ -30,20 +30,23 @@ export namespace Api {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.cloudfront-key-pair-id.txt`,
     );
+
+    const text = await res.text();
+
     if (!res.ok)
       throw new HttpError.BadGateway({
         upstream: {
           error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
+          text,
         },
       });
 
-    return res.text();
+    return text;
   }
 
-  export async function getAppsyncHttpDomainName() {
+  export async function getAppsyncEventsDomainNames() {
     const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.appsync-http-domain-name.txt`,
+      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.appsync-events-domain-names.json`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -53,22 +56,13 @@ export namespace Api {
         },
       });
 
-    return res.text();
-  }
-
-  export async function getAppsyncRealtimeDomainName() {
-    const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.appsync-realtime-domain-name.txt`,
+    return v.parse(
+      v.object({
+        http: v.string(),
+        realtime: v.string(),
+      }),
+      await res.json(),
     );
-    if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
-
-    return res.text();
   }
 
   export async function getBuckets() {
@@ -102,7 +96,7 @@ export namespace Api {
         },
       });
 
-    const result = v.safeParse(
+    const output = v.parse(
       v.object({
         Entries: v.array(
           v.object({
@@ -115,13 +109,11 @@ export namespace Api {
       }),
       await res.json(),
     );
-    if (!result.success)
-      throw new HttpError.InternalServerError("Invalid papercut sync response");
 
-    if (result.output.FailedEntryCount > 0)
+    if (output.FailedEntryCount > 0)
       throw new HttpError.InternalServerError("Papercut sync event failure");
 
-    const eventId = result.output.Entries.at(0)?.EventId;
+    const eventId = output.Entries.at(0)?.EventId;
     if (!eventId)
       throw new HttpError.InternalServerError("Missing papercut sync event id");
 
@@ -166,7 +158,7 @@ export namespace Api {
       }),
     );
 
-    // NOTE: Requests to `/.well-known` should not use a signed URL
+    // NOTE: Requests to `/.well-known` should NOT use a signed URL
     if (path.startsWith("/.well-known"))
       return fetch(url, {
         method: "GET",

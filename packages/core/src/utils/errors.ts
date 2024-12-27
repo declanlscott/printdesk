@@ -56,9 +56,11 @@ export namespace ApplicationError {
 
   export class MissingContext extends ApplicationError.Error {
     public readonly name = "MissingContext";
+    public readonly contextName: string;
 
-    constructor(name: string) {
-      super(`"${name}" context not found`);
+    constructor(contextName: string) {
+      super(`"${contextName}" context not found`);
+      this.contextName = contextName;
     }
   }
 

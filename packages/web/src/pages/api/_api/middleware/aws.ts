@@ -5,7 +5,7 @@ import { Resource } from "sst";
 
 export const executeApiSigner = createMiddleware(async (_, next) =>
   withAws(
-    () => ({
+    {
       sigv4: {
         signers: {
           "execute-api": SignatureV4.buildSigner({
@@ -14,7 +14,7 @@ export const executeApiSigner = createMiddleware(async (_, next) =>
           }),
         },
       },
-    }),
+    },
     next,
   ),
 );
@@ -22,20 +22,7 @@ export const executeApiSigner = createMiddleware(async (_, next) =>
 export const s3Client = (name: string) =>
   createMiddleware(async (_, next) =>
     withAws(
-      async () => ({
-        s3: {
-          client: new S3.Client({
-            credentials: await Sts.getAssumeRoleCredentials({
-              type: "name",
-              accountId: await Api.getAccountId(),
-              roleName: Resource.Aws.tenant.bucketsAccessRole.name,
-              roleSessionName: name,
-            }),
-          }),
-        },
-      }),
-      next,
-      () => ({
+      {
         sigv4: {
           signers: {
             "execute-api": SignatureV4.buildSigner({
@@ -45,27 +32,30 @@ export const s3Client = (name: string) =>
           },
         },
         sts: { client: new Sts.Client() },
-      }),
+      },
+      async () =>
+        withAws(
+          {
+            s3: {
+              client: new S3.Client({
+                credentials: await Sts.getAssumeRoleCredentials({
+                  type: "name",
+                  accountId: await Api.getAccountId(),
+                  roleName: Resource.Aws.tenant.bucketsAccessRole.name,
+                  roleSessionName: name,
+                }),
+              }),
+            },
+          },
+          next,
+        ),
     ),
   );
 
 export const ssmClient = (name: string) =>
   createMiddleware(async (_, next) =>
     withAws(
-      async () => ({
-        ssm: {
-          client: new Ssm.Client({
-            credentials: await Sts.getAssumeRoleCredentials({
-              type: "name",
-              accountId: await Api.getAccountId(),
-              roleName: Resource.Aws.tenant.putParametersRole.name,
-              roleSessionName: name,
-            }),
-          }),
-        },
-      }),
-      next,
-      () => ({
+      {
         sigv4: {
           signers: {
             "execute-api": SignatureV4.buildSigner({
@@ -75,6 +65,22 @@ export const ssmClient = (name: string) =>
           },
         },
         sts: { client: new Sts.Client() },
-      }),
+      },
+      async () =>
+        withAws(
+          {
+            ssm: {
+              client: new Ssm.Client({
+                credentials: await Sts.getAssumeRoleCredentials({
+                  type: "name",
+                  accountId: await Api.getAccountId(),
+                  roleName: Resource.Aws.tenant.putParametersRole.name,
+                  roleSessionName: name,
+                }),
+              }),
+            },
+          },
+          next,
+        ),
     ),
   );

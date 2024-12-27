@@ -14,10 +14,10 @@ import type { SQSBatchItemFailure, SQSHandler, SQSRecord } from "aws-lambda";
 export const handler: SQSHandler = async (event) =>
   withResource(() =>
     withAws(
-      () => ({
+      {
         ssm: { client: new Ssm.Client() },
         sts: { client: new Sts.Client() },
-      }),
+      },
       async () => {
         const batchItemFailures: Array<SQSBatchItemFailure> = [];
 

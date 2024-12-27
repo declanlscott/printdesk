@@ -44,6 +44,7 @@ import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
 import * as R from "remeda";
 
 import { Utils } from ".";
+import { ApplicationError } from "./errors";
 
 import type {
   CreateApiCommandInput,
@@ -84,7 +85,8 @@ export type AwsContext = {
   sts?: { client: STSClient };
 };
 
-export const AwsContext = Utils.createContext<AwsContext>("Aws");
+const contextName = "Aws";
+export const AwsContext = Utils.createContext<AwsContext>(contextName);
 
 export function useAws<TServiceName extends keyof AwsContext>(
   serviceName: TServiceName,
@@ -97,29 +99,26 @@ export function useAws<TServiceName extends keyof AwsContext>(
 }
 
 export async function withAws<
-  TGetContext extends () => AwsContext | Promise<AwsContext>,
+  TContext extends AwsContext,
   TCallback extends () => ReturnType<TCallback>,
-  TGetDependencies extends () => AwsContext | Promise<AwsContext>,
->(
-  getContext: TGetContext,
-  callback: TCallback,
-  getDependencies?: TGetDependencies,
-) {
-  if (getDependencies) {
-    const dependencies = await Promise.resolve(getDependencies());
-
-    return AwsContext.with(dependencies, async () =>
-      AwsContext.with(
-        R.mergeDeep(
-          dependencies,
-          await Promise.resolve(getContext()),
-        ) as AwsContext,
-        callback,
-      ),
-    );
+>(context: TContext, callback: TCallback) {
+  let old: AwsContext | undefined;
+  try {
+    old = AwsContext.use();
+  } catch (e) {
+    if (
+      !(
+        e instanceof ApplicationError.MissingContext &&
+        e.contextName === contextName
+      )
+    )
+      throw e;
   }
 
-  return AwsContext.with(await Promise.resolve(getContext()), callback);
+  if (old)
+    return AwsContext.with(R.mergeDeep(old, context) as AwsContext, callback);
+
+  return AwsContext.with(context, callback);
 }
 
 export namespace Appsync {

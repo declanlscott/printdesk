@@ -11,14 +11,14 @@ export const db = drizzle(
     database: Resource.DsqlCluster.database,
     user: Resource.DsqlCluster.user,
     password: await withAws(
-      () => ({
+      {
         dsql: {
           signer: Dsql.buildSigner({
             hostname: Resource.DsqlCluster.hostname,
             region: Resource.Aws.region,
           }),
         },
-      }),
+      },
       async () => Dsql.generateToken(),
     ),
     ssl: "require",

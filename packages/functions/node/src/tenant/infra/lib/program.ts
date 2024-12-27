@@ -50,19 +50,7 @@ export const getProgram =
     // provide credentials for the appsync client via iam role chaining
     const realtime = account.assumeRoleArn.apply(async (roleArn) =>
       withAws(
-        async () => ({
-          appsync: {
-            client: new Appsync.Client({
-              credentials: await Sts.getAssumeRoleCredentials({
-                type: "arn",
-                roleArn,
-                roleSessionName: "AppsyncClient",
-              }),
-            }),
-          },
-        }),
-        () => Realtime.getInstance(),
-        async () => ({
+        {
           sts: {
             client: new Sts.Client({
               credentials: await Sts.getAssumeRoleCredentials({
@@ -72,7 +60,22 @@ export const getProgram =
               }),
             }),
           },
-        }),
+        },
+        async () =>
+          withAws(
+            {
+              appsync: {
+                client: new Appsync.Client({
+                  credentials: await Sts.getAssumeRoleCredentials({
+                    type: "arn",
+                    roleArn,
+                    roleSessionName: "AppsyncClient",
+                  }),
+                }),
+              },
+            },
+            () => Realtime.getInstance(),
+          ),
       ),
     );
 

@@ -89,7 +89,11 @@ export namespace Replicache {
     tx: WriteTransaction,
     name: TTableName,
     id: string,
-    value: DeepReadonlyObject<TableByName<TTableName>["$inferSelect"]>,
+    value: DeepReadonlyObject<
+      TTableName extends typeof usersTableName
+        ? UserWithProfile
+        : TableByName<TTableName>["$inferSelect"]
+    >,
   ) => tx.set(`${name}/${id}`, serialize(value) as Serialized);
 
   export async function del(

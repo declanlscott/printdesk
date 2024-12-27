@@ -22,8 +22,8 @@ export const Command = ({ className, ...props }: CommandProps) => (
 );
 
 export interface CommandDialogProps extends ComponentProps<typeof Dialog> {
-  commandProps: CommandProps | undefined;
-  dialogContentProps: ComponentProps<typeof DialogContent> | undefined;
+  commandProps?: CommandProps;
+  dialogContentProps?: ComponentProps<typeof DialogContent>;
 }
 export const CommandDialog = ({
   children,

@@ -5,13 +5,22 @@ import { Hono } from "hono";
 import * as v from "valibot";
 
 import { authn, authz } from "~/api/middleware/auth";
-import { executeApiSigner, s3Client, ssmClient } from "~/api/middleware/aws";
+import {
+  executeApiSigner,
+  s3Client,
+  ssmClient,
+  stsClient,
+} from "~/api/middleware/aws";
+import { user } from "~/api/middleware/user";
 
 export default new Hono()
   .put(
     "/mime-types",
+    user,
     authz("documents-mime-types", "update"),
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
+    executeApiSigner,
+    stsClient,
     ssmClient("SetDocumentsMimeTypes"),
     async (c) => {
       await Documents.setMimeTypes(c.req.valid("json").mimeTypes);
@@ -19,15 +28,16 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/mime-types", authn, executeApiSigner, async (c) => {
+  .get("/mime-types", authn, async (c) => {
     const mimeTypes = await Documents.getMimeTypes();
 
     return c.json({ mimeTypes }, 200);
   })
   .get(
     "/signed-get-url",
-    authn,
     vValidator("query", v.object({})), // TODO
+    executeApiSigner,
+    stsClient,
     s3Client("GetDocumentsSignedGetUrl"),
     async (c) => {
       const signedUrl = await S3.getSignedGetUrl({
@@ -40,8 +50,9 @@ export default new Hono()
   )
   .get(
     "/signed-put-url",
-    authn,
     vValidator("query", v.object({})), // TODO
+    executeApiSigner,
+    stsClient,
     s3Client("GetDocumentsSignedPutUrl"),
     async (c) => {
       const signedUrl = await S3.getSignedPutUrl({
@@ -54,8 +65,11 @@ export default new Hono()
   )
   .put(
     "/size-limit",
+    user,
     authz("documents-size-limit", "update"),
     vValidator("json", v.object({ byteSize: v.number() })),
+    executeApiSigner,
+    stsClient,
     ssmClient("SetDocumentsSizeLimit"),
     async (c) => {
       await Documents.setSizeLimit(c.req.valid("json").byteSize);
@@ -63,7 +77,7 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/size-limit", authn, executeApiSigner, async (c) => {
+  .get("/size-limit", executeApiSigner, async (c) => {
     const byteSize = await Documents.getSizeLimit();
 
     return c.json({ byteSize }, 200);

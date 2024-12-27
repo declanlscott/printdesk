@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import * as v from "valibot";
 
 import { authz } from "~/api/middleware/auth";
-import { ssmClient } from "~/api/middleware/aws";
+import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
 
 export default new Hono().put(
   "/oauth-client",
@@ -16,6 +16,7 @@ export default new Hono().put(
       secret: v.string(),
     }),
   ),
+  executeApiSigner,
   ssmClient("SetTailscaleOauthClient"),
   async (c) => {
     await Tailscale.setOauthClient(

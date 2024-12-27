@@ -1,19 +1,26 @@
 import { HttpRequest } from "@smithy/protocol-http";
 import * as R from "remeda";
 
+import { Api } from "../api";
 import { SignatureV4, Util } from "../utils/aws";
 
 export namespace Realtime {
-  export const getUrl = async (realtimeDomainName: string) =>
-    Util.formatUrl(
+  export async function getUrl() {
+    const { realtime: realtimeDomainName } =
+      await Api.getAppsyncEventsDomainNames();
+
+    return Util.formatUrl(
       new HttpRequest({
         protocol: "wss:",
         hostname: realtimeDomainName,
         path: "/event/realtime",
       }),
     );
+  }
 
-  export async function getAuth(httpDomainName: string, body?: unknown) {
+  export async function getAuth(body?: unknown) {
+    const { http: httpDomainName } = await Api.getAppsyncEventsDomainNames();
+
     const { headers: auth } = await SignatureV4.sign(
       "appsync",
       new HttpRequest({

@@ -11,6 +11,9 @@ export const authn = createMiddleware((_, next) => {
   return next();
 });
 
+/**
+ * Depends on user middleware
+ */
 export const authz = (resource: Resource, action: Action) =>
   createMiddleware(async (_, next) => {
     await AccessControl.enforce([resource, action], {

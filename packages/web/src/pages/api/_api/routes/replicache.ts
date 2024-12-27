@@ -5,9 +5,14 @@ import {
   ReplicacheError,
 } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
+import { Resource } from "sst";
 
 import { authn } from "~/api/middleware/auth";
-import { executeApiSigner } from "~/api/middleware/aws";
+import {
+  appsyncSigner,
+  executeApiSigner,
+  stsClient,
+} from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
 
 export default new Hono()
@@ -21,14 +26,23 @@ export default new Hono()
 
     return c.json(pullResponse, 200);
   })
-  .post("/push", executeApiSigner, async (c) => {
-    const pushRequest: unknown = await c.req.json();
+  .post(
+    "/push",
+    executeApiSigner,
+    stsClient,
+    appsyncSigner(
+      Resource.Aws.tenant.realtimeSubscriberRole.name,
+      "RealtimeSubscriberSigner",
+    ),
+    async (c) => {
+      const pushRequest: unknown = await c.req.json();
 
-    const pushResponse =
-      await Replicache.push(pushRequest).catch(rethrowHttpError);
+      const pushResponse =
+        await Replicache.push(pushRequest).catch(rethrowHttpError);
 
-    return c.json(pushResponse, 200);
-  });
+      return c.json(pushResponse, 200);
+    },
+  );
 
 function rethrowHttpError(error: Error): never {
   console.error(error);

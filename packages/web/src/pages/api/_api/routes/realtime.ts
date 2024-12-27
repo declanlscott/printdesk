@@ -1,28 +1,32 @@
-import { Api } from "@printworks/core/api";
 import { Realtime } from "@printworks/core/realtime";
 import { Hono } from "hono";
+import { Resource } from "sst";
 
 import { authn } from "~/api/middleware/auth";
-import { executeApiSigner } from "~/api/middleware/aws";
+import {
+  appsyncSigner,
+  executeApiSigner,
+  stsClient,
+} from "~/api/middleware/aws";
 
-export default new Hono<{
-  Variables: {
-    domainNames: Awaited<ReturnType<typeof Api.getAppsyncEventsDomainNames>>;
-  };
-}>()
+export default new Hono()
   .use(authn)
-  .use(executeApiSigner, async (c, next) => {
-    c.set("domainNames", await Api.getAppsyncEventsDomainNames());
+  .use(executeApiSigner)
+  .get(
+    "/auth",
+    stsClient,
+    appsyncSigner(
+      Resource.Aws.tenant.realtimeSubscriberRole.name,
+      "RealtimeSubscriberSigner",
+    ),
+    async (c) => {
+      const auth = await Realtime.getAuth();
 
-    return next();
-  })
-  .get("/auth", async (c) => {
-    const auth = await Realtime.getAuth(c.get("domainNames").http);
-
-    return c.json({ auth }, 200);
-  })
+      return c.json({ auth }, 200);
+    },
+  )
   .get("/url", async (c) => {
-    const url = await Realtime.getUrl(c.get("domainNames").realtime);
+    const url = await Realtime.getUrl();
 
     return c.json({ url }, 200);
   });

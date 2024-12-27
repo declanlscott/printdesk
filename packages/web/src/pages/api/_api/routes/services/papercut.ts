@@ -6,12 +6,15 @@ import * as v from "valibot";
 
 import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
+import { user } from "~/api/middleware/user";
 
 export default new Hono()
+  .use(user)
   .put(
     "/server/tailnet-uri",
     authz("services", "update"),
     vValidator("json", v.object({ tailnetUri: v.pipe(v.string(), v.url()) })),
+    executeApiSigner,
     ssmClient("SetTailnetPapercutServerUri"),
     async (c) => {
       await Papercut.setTailnetServerUri(c.req.valid("json").tailnetUri);
@@ -23,6 +26,7 @@ export default new Hono()
     "/server/auth-token",
     authz("services", "update"),
     vValidator("json", v.object({ authToken: v.string() })),
+    executeApiSigner,
     ssmClient("SetPapercutServerAuthToken"),
     async (c) => {
       await Papercut.setServerAuthToken(c.req.valid("json").authToken);

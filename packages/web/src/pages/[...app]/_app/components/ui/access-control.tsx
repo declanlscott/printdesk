@@ -1,8 +1,7 @@
 import { AccessControl } from "@printworks/core/access-control/client";
-import { useQuery } from "@tanstack/react-query";
 
 import { checkRoutePermission } from "~/app/lib/access-control";
-import { useReplicache } from "~/app/lib/hooks/replicache";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { useUser } from "~/app/lib/hooks/user";
 
 import type { PropsWithChildren, ReactNode } from "react";
@@ -26,7 +25,7 @@ export type EnforceAbacProps<
   resource: TResource;
   action: TAction;
   input: TPermission extends (
-    tx: WriteTransaction,
+    tx: ReadTransaction | WriteTransaction,
     user: DeepReadonlyObject<UserWithProfile>,
     ...input: infer TInput
   ) => unknown
@@ -48,23 +47,13 @@ export function EnforceAbac<
   children,
 }: EnforceAbacProps<TResource, TAction, TPermission>) {
   const user = useUser();
-  const replicache = useReplicache();
 
-  const query = useQuery({
-    queryKey: [user.id, resource, action, ...input],
-    queryFn: async () =>
-      replicache.client.query((tx) =>
-        AccessControl.check(
-          tx as WriteTransaction,
-          user,
-          resource,
-          action,
-          ...input,
-        ),
-      ),
-  });
+  const hasAccess = useSubscribe(
+    (tx) => AccessControl.check(tx, user, resource, action, ...input),
+    { defaultData: false },
+  );
 
-  if (!query.data) return <>{unauthorized}</>;
+  if (!hasAccess) return <>{unauthorized}</>;
 
   return <>{children}</>;
 }
@@ -94,17 +83,13 @@ export function EnforceRouteAbac<
   children,
 }: EnforceRouteAbacProps<TRouteId, TPermission>) {
   const user = useUser();
-  const replicache = useReplicache();
 
-  const query = useQuery({
-    queryKey: [user.id, routeId, ...input],
-    queryFn: async () =>
-      replicache.client.query((tx) =>
-        checkRoutePermission(tx, user, routeId, ...input),
-      ),
-  });
+  const hasAccess = useSubscribe(
+    (tx) => checkRoutePermission(tx, user, routeId, ...input),
+    { defaultData: false },
+  );
 
-  if (!query.data) return <>{unauthorized}</>;
+  if (!hasAccess) return <>{unauthorized}</>;
 
   return <>{children}</>;
 }

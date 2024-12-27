@@ -25,7 +25,8 @@ import {
 } from "~/app/components/ui/primitives/select";
 import { Input, TextArea } from "~/app/components/ui/primitives/text-field";
 import { Toggle } from "~/app/components/ui/primitives/toggle";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { collectionItem, onSelectionChange } from "~/app/lib/ui";
 import { labelStyles } from "~/styles/components/primitives/field";
 import { inputStyles } from "~/styles/components/primitives/text-field";
@@ -63,7 +64,9 @@ function RoomCard() {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useQuery(query.room(roomId), { defaultData: initialRoom });
+  const room = useSubscribe(query.room(roomId), {
+    defaultData: initialRoom,
+  });
 
   const [isLocked, setIsLocked] = useState(() => true);
   const [name, setName] = useState(() => room.name);
@@ -136,7 +139,7 @@ function RoomStatus() {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useQuery(query.room(roomId), {
+  const room = useSubscribe(query.room(roomId), {
     defaultData: initialRoom,
   });
 
@@ -197,7 +200,7 @@ function RoomDetails(props: RoomDetailsProps) {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useQuery(query.room(roomId), {
+  const room = useSubscribe(query.room(roomId), {
     defaultData: initialRoom,
   });
 
@@ -290,7 +293,7 @@ function DangerZoneCard() {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useQuery(query.room(roomId), {
+  const room = useSubscribe(query.room(roomId), {
     defaultData: initialRoom,
   });
 

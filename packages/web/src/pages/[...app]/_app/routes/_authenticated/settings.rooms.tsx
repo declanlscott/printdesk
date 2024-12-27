@@ -54,7 +54,8 @@ import {
   TableRow,
 } from "~/app/components/ui/primitives/table";
 import { fuzzyFilter } from "~/app/lib/fuzzy";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { collectionItem, onSelectionChange } from "~/app/lib/ui";
 
 import type { Product } from "@printworks/core/products/sql";
@@ -91,8 +92,8 @@ function RoomsCard() {
   const { initialRooms } = authenticatedRouteApi.useLoaderData();
   const { initialProducts } = Route.useLoaderData();
 
-  const rooms = useQuery(query.rooms(), { defaultData: initialRooms });
-  const products = useQuery(query.products(), {
+  const rooms = useSubscribe(query.rooms(), { defaultData: initialRooms });
+  const products = useSubscribe(query.products(), {
     defaultData: initialProducts,
   });
 

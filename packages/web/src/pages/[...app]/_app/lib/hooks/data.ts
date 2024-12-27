@@ -17,7 +17,7 @@ import { HttpError } from "@printworks/core/utils/errors";
 import * as R from "remeda";
 
 import { useApi } from "~/app/lib/hooks/api";
-import { useReplicache, useSubscribe } from "~/app/lib/hooks/replicache";
+import { useReplicache } from "~/app/lib/hooks/replicache";
 
 import type { BillingAccount } from "@printworks/core/billing-accounts/sql";
 import type { Product } from "@printworks/core/products/sql";
@@ -26,10 +26,6 @@ import type { Room } from "@printworks/core/rooms/sql";
 import type { Tenant } from "@printworks/core/tenants/sql";
 import type { User } from "@printworks/core/users/sql";
 import type { MutationOptions, Query } from "~/app/types";
-
-export const useQuery = <TData, TDefaultData = undefined>(
-  ...args: Parameters<typeof useSubscribe<TData, TDefaultData>>
-) => useSubscribe(...args);
 
 export const query = {
   billingAccounts: () => (tx) => Replicache.scan(tx, billingAccountsTableName),

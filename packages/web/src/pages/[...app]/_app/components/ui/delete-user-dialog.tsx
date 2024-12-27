@@ -11,7 +11,8 @@ import {
 } from "~/app/components/ui/primitives/dialog";
 import { Label } from "~/app/components/ui/primitives/field";
 import { Input } from "~/app/components/ui/primitives/text-field";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { useUser } from "~/app/lib/hooks/user";
 
 import type { User } from "@printworks/core/users/sql";
@@ -25,7 +26,7 @@ export interface DeleteUserDialogProps {
 export function DeleteUserDialog(props: DeleteUserDialogProps) {
   const user = useUser();
 
-  const userToDelete = useQuery(query.user(props.userId));
+  const userToDelete = useSubscribe(query.user(props.userId));
 
   const isSelf = user?.id === props.userId;
 

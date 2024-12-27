@@ -1,12 +1,13 @@
 import { useContext, useEffect } from "react";
 import { OverlayTriggerStateContext } from "react-aria-components";
-import { enforceRbac } from "@printworks/core/utils/shared";
 import { useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
 
-import { EnforceAbac } from "~/app/components/ui/access-control";
-import { EnforceRbac } from "~/app/components/ui/enforce-rbac";
+import {
+  EnforceAbac,
+  EnforceRouteAbac,
+} from "~/app/components/ui/access-control";
 import { Avatar, AvatarImage } from "~/app/components/ui/primitives/avatar";
 import {
   CommandDialog,
@@ -19,12 +20,13 @@ import {
 } from "~/app/components/ui/primitives/command";
 import { DialogOverlay } from "~/app/components/ui/primitives/dialog";
 import { selectedRoomIdAtom } from "~/app/lib/atoms";
-import { useAuthenticated, useLogout } from "~/app/lib/hooks/auth";
 import {
   useCommandBar,
   useCommandBarActions,
 } from "~/app/lib/hooks/command-bar";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
+import { useUser } from "~/app/lib/hooks/user";
 import { links } from "~/app/lib/links";
 
 import type { Room } from "@printworks/core/rooms/sql";
@@ -43,7 +45,7 @@ export function CommandBar() {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
 
-        state.toggle();
+        state?.toggle();
       }
     };
 
@@ -89,7 +91,7 @@ export function CommandBar() {
 
 type HomeCommandProps = Extract<CommandBarPage, { type: "home" }>;
 function HomeCommand(_props: HomeCommandProps) {
-  const { user, replicache } = useAuthenticated();
+  const user = useUser();
 
   const state = useContext(OverlayTriggerStateContext);
 
@@ -98,13 +100,11 @@ function HomeCommand(_props: HomeCommandProps) {
 
   const navigate = useNavigate();
 
-  const logout = useLogout();
-
-  const rooms = useQuery(query.rooms());
-  const users = useQuery(query.users());
+  const rooms = useSubscribe(query.rooms());
+  const users = useSubscribe(query.users());
 
   const handleNavigation = async (to: ToOptions) =>
-    navigate(to).then(() => state.close());
+    navigate(to).then(() => state?.close());
 
   const navigationKeywords = ["navigation", "navigate"];
 
@@ -135,14 +135,11 @@ function HomeCommand(_props: HomeCommandProps) {
             </CommandItem>
           ))}
 
-          <CommandItem
-            onSelect={() => logout()}
-            keywords={[...navigationKeywords, "log out"]}
-          >
+          {/* <CommandItem keywords={[...navigationKeywords, "log out"]}>
             <LogOut className="text-destructive mr-2 size-5" />
 
             <span className="text-destructive">Logout</span>
-          </CommandItem>
+          </CommandItem> */}
         </CommandGroup>
 
         {rooms?.length ? (
@@ -171,35 +168,36 @@ function HomeCommand(_props: HomeCommandProps) {
 
             <CommandGroup heading="Users">
               {users.map((u) => (
-                <CommandItem
-                  key={u.id}
-                  keywords={["users", "user"]}
-                  onSelect={async () => {
-                    if (enforceRbac(user, ["administrator", "operator"]))
-                      return await handleNavigation({
+                <EnforceRouteAbac
+                  routeId="/_authenticated/users/$userId"
+                  input={[u.id]}
+                  unauthorized={
+                    <CommandItem key={u.id} keywords={["users", "user"]}>
+                      <Avatar className="mr-3 size-8">
+                        <AvatarImage src={`/api/users/${u.id}/photo`} />
+                      </Avatar>
+
+                      <span>{u.profile.name}</span>
+                    </CommandItem>
+                  }
+                >
+                  <CommandItem
+                    key={u.id}
+                    keywords={["users", "user"]}
+                    onSelect={async () =>
+                      handleNavigation({
                         to: "/users/$userId",
                         params: { userId: u.id },
-                      });
-
-                    if (enforceRbac(user, ["manager"])) {
-                      const customerIds = await replicache.query(
-                        query.managedCustomerIds(user.id),
-                      );
-
-                      if (customerIds.includes(u.id))
-                        return await handleNavigation({
-                          to: "/users/$userId",
-                          params: { userId: u.id },
-                        });
+                      })
                     }
-                  }}
-                >
-                  <Avatar className="mr-3 size-8">
-                    <AvatarImage src={`/api/users/${u.id}/photo`} />
-                  </Avatar>
+                  >
+                    <Avatar className="mr-3 size-8">
+                      <AvatarImage src={`/api/users/${u.id}/photo`} />
+                    </Avatar>
 
-                  <span>{u.profile.name}</span>
-                </CommandItem>
+                    <span>{u.profile.name}</span>
+                  </CommandItem>
+                </EnforceRouteAbac>
               ))}
             </CommandGroup>
           </>
@@ -279,22 +277,22 @@ function RoomCommand(props: RoomCommandProps) {
 
   const { updateRoom } = useMutator();
 
-  const room = useQuery(query.room(props.roomId));
+  const room = useSubscribe(query.room(props.roomId));
 
   function selectRoom() {
     setSelectedRoomId(props.roomId);
 
-    state.close();
+    state?.close();
   }
 
   async function updateRoomStatus(status: Room["status"]) {
     await updateRoom({
       id: props.roomId,
       status,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date(),
     });
 
-    state.close();
+    state?.close();
   }
 
   return (
@@ -360,12 +358,12 @@ function RoomSettingsSelectRoomCommand(
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();
 
-  const rooms = useQuery(query.rooms());
+  const rooms = useSubscribe(query.rooms());
 
   const navigate = useNavigate();
 
   const handleNavigation = async (to: ToOptions) =>
-    navigate(to).then(() => state.close());
+    navigate(to).then(() => state?.close());
 
   return (
     <>
@@ -407,7 +405,7 @@ function ProductSettingsSelectRoomCommand(
   const { input } = useCommandBar();
   const { setInput, popPage, pushPage } = useCommandBarActions();
 
-  const rooms = useQuery(query.rooms());
+  const rooms = useSubscribe(query.rooms());
 
   return (
     <>
@@ -455,7 +453,7 @@ function ProductSettingsSelectProductCommand(
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();
 
-  const products = useQuery(query.products(), {
+  const products = useSubscribe(query.products(), {
     onData: (products) =>
       products.filter((product) => product.roomId === props.roomId),
   });
@@ -463,7 +461,7 @@ function ProductSettingsSelectProductCommand(
   const navigate = useNavigate();
 
   const handleNavigation = async (to: ToOptions) =>
-    navigate(to).then(() => state.close());
+    navigate(to).then(() => state?.close());
 
   return (
     <>

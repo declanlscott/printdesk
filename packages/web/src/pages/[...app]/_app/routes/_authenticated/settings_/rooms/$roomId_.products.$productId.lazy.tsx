@@ -9,7 +9,8 @@ import {
   Breadcrumbs,
   BreadcrumbSeparator,
 } from "~/app/components/ui/primitives/breadcrumbs";
-import { query, useQuery } from "~/app/lib/hooks/data";
+import { query } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { buttonStyles } from "~/styles/components/primitives/button";
 
 export const Route = createLazyFileRoute(
@@ -19,7 +20,7 @@ export const Route = createLazyFileRoute(
 function Component() {
   const { roomId } = Route.useParams();
 
-  const room = useQuery(query.room(roomId));
+  const room = useSubscribe(query.room(roomId));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">

@@ -11,7 +11,8 @@ import {
 } from "~/app/components/ui/primitives/dialog";
 import { Label } from "~/app/components/ui/primitives/field";
 import { Input } from "~/app/components/ui/primitives/text-field";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 
 import type { Room } from "@printworks/core/rooms/sql";
 import type { DialogOverlayProps } from "~/app/components/ui/primitives/dialog";
@@ -22,7 +23,7 @@ export interface DeleteRoomDialogProps {
 }
 
 export function DeleteRoomDialog(props: DeleteRoomDialogProps) {
-  const roomToDelete = useQuery(query.room(props.roomId));
+  const roomToDelete = useSubscribe(query.room(props.roomId));
 
   const { deleteRoom } = useMutator();
 
@@ -35,7 +36,7 @@ export function DeleteRoomDialog(props: DeleteRoomDialogProps) {
     if (isConfirmed)
       await deleteRoom({
         id: props.roomId,
-        deletedAt: new Date().toISOString(),
+        deletedAt: new Date(),
       });
   }
 

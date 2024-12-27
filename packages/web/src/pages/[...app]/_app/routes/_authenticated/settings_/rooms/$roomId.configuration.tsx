@@ -49,7 +49,8 @@ import {
   SelectTrigger,
 } from "~/app/components/ui/primitives/select";
 import { Input } from "~/app/components/ui/primitives/text-field";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { collectionItem } from "~/app/lib/ui";
 import { cardStyles } from "~/styles/components/primitives/card";
 
@@ -86,7 +87,7 @@ function Component() {
 function WorkflowCard() {
   const roomId = Route.useParams().roomId;
 
-  const workflow = useQuery(query.workflow(roomId), {
+  const workflow = useSubscribe(query.workflow(roomId), {
     defaultData: Route.useLoaderData().initialWorkflow,
   });
 
@@ -414,7 +415,7 @@ function WorkflowCard() {
 function DeliveryOptionsCard() {
   const { roomId } = Route.useParams();
 
-  const deliveryOptions = useQuery(query.deliveryOptions(roomId), {
+  const deliveryOptions = useSubscribe(query.deliveryOptions(roomId), {
     defaultData: Route.useLoaderData().initialDeliveryOptions,
   });
 

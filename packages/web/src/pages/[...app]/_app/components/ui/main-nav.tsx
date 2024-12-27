@@ -30,8 +30,8 @@ import {
 import { UserMenu } from "~/app/components/ui/user-menu";
 import { selectedRoomIdAtom } from "~/app/lib/atoms";
 import { useCommandBarActions } from "~/app/lib/hooks/command-bar";
-import { query, useQuery } from "~/app/lib/hooks/data";
-import { useIsSyncing } from "~/app/lib/hooks/replicache";
+import { query } from "~/app/lib/hooks/data";
+import { useIsSyncing, useSubscribe } from "~/app/lib/hooks/replicache";
 import { useSlot } from "~/app/lib/hooks/slot";
 import { useUser } from "~/app/lib/hooks/user";
 import { links } from "~/app/lib/links";
@@ -72,7 +72,7 @@ export function MainNav() {
 function RoomSelector() {
   const [selectedRoomId, setSelectedRoomId] = useAtom(selectedRoomIdAtom);
 
-  const rooms = useQuery(query.rooms(), {
+  const rooms = useSubscribe(query.rooms(), {
     defaultData: authenticatedRouteApi.useLoaderData().initialRooms,
     onData: (rooms) => {
       if (selectedRoomId && !rooms.some((room) => room.id === selectedRoomId))

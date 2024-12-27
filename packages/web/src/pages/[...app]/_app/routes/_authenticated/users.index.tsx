@@ -65,7 +65,8 @@ import {
 } from "~/app/components/ui/primitives/table";
 import { Input } from "~/app/components/ui/primitives/text-field";
 import { fuzzyFilter } from "~/app/lib/fuzzy";
-import { query, useMutator, useQuery } from "~/app/lib/hooks/data";
+import { query, useMutator } from "~/app/lib/hooks/data";
+import { useSubscribe } from "~/app/lib/hooks/replicache";
 import { useUser } from "~/app/lib/hooks/user";
 import { collectionItem, onSelectionChange } from "~/app/lib/ui";
 
@@ -171,7 +172,7 @@ const columns = [
 function UsersCard() {
   const { initialUsers } = Route.useLoaderData();
 
-  const data = useQuery(query.users(), { defaultData: initialUsers });
+  const data = useSubscribe(query.users(), { defaultData: initialUsers });
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState(() => "");

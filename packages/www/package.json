@@ -1,0 +1,17 @@
+{
+  "name": "@printworks/www",
+  "type": "module",
+  "scripts": {
+    "dev": "sst dev astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "legacy",
+    "astro-sst": "^2.45.2"
+  },
+  "devDependencies": {
+    "@printworks/eslint-config": "workspace:*"
+  }
+}

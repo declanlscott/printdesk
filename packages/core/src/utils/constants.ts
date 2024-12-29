@@ -19,8 +19,6 @@ export namespace Constants {
 
   export const VARCHAR_LENGTH = 40;
 
-  export const AUTH_CALLBACK_PATH = "/api/auth/callback";
-
   export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
 
@@ -56,9 +54,6 @@ export namespace Constants {
 
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 
-  export const SESSION_LIFETIME = {
-    days: 30,
-  } as const satisfies Duration;
   export const REPLICACHE_LIFETIME = {
     weeks: 2,
   } as const satisfies Duration;

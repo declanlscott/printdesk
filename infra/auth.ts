@@ -1,5 +1,5 @@
 import { dsqlCluster } from "./db";
-import { appFqdn, domainName } from "./dns";
+import { authFqdn, fqdn } from "./dns";
 
 const oauthAppName =
   $app.stage === "production"
@@ -13,7 +13,7 @@ export const entraIdApplication = new azuread.ApplicationRegistration(
     signInAudience: "AzureADMultipleOrgs",
     implicitAccessTokenIssuanceEnabled: true,
     implicitIdTokenIssuanceEnabled: true,
-    homepageUrl: $interpolate`https://${appFqdn}`,
+    homepageUrl: $interpolate`https://${fqdn}`,
   },
 );
 
@@ -84,7 +84,7 @@ export const auth = new sst.aws.Auth("Auth", {
     runtime: "nodejs22.x",
   },
   domain: {
-    name: $interpolate`auth.${appFqdn}`,
+    name: authFqdn,
     dns: sst.cloudflare.dns(),
   },
 });

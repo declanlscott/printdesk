@@ -6,6 +6,22 @@ import "sst"
 export {}
 declare module "sst" {
   export interface Resource {
+    "Api": {
+      "type": "sst.aws.Router"
+      "url": string
+    }
+    "ApiFunction": {
+      "arn": string
+      "invokeArn": string
+      "name": string
+      "roleArn": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
+    "ApiReverseProxy": {
+      "type": "sst.cloudflare.Worker"
+      "url": string
+    }
     "AppData": {
       "domainName": {
         "fullyQualified": string
@@ -57,12 +73,6 @@ declare module "sst" {
     "BootstrapRoleArn": {
       "type": "sst.sst.Secret"
       "value": string
-    }
-    "Client": {
-      "appFqdn": string
-      "isDev": boolean
-      "replicacheLicenseKey": string
-      "type": "sst.sst.Linkable"
     }
     "CloudfrontPrivateKey": {
       "pem": string
@@ -133,10 +143,6 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "ReverseProxy": {
-      "type": "sst.cloudflare.Worker"
-      "url": string
-    }
     "TenantInfraDeadLetterQueue": {
       "type": "sst.aws.Queue"
       "url": string
@@ -151,12 +157,7 @@ declare module "sst" {
       "url": string
     }
     "Web": {
-      "server": {
-        "role": {
-          "principal": string
-        }
-      }
-      "type": "sst.aws.Astro"
+      "type": "sst.aws.StaticSite"
       "url": string
     }
     "WebPassword": {
@@ -166,6 +167,10 @@ declare module "sst" {
     "WebUsername": {
       "type": "sst.sst.Secret"
       "value": string
+    }
+    "Www": {
+      "type": "sst.aws.Astro"
+      "url": string
     }
   }
 }

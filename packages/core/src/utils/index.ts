@@ -26,27 +26,6 @@ export namespace Utils {
     };
   }
 
-  export function parseResource<TResource extends Record<string, unknown>>(
-    prefix: string,
-    input: Record<string, string | undefined>,
-  ): TResource {
-    const raw: Record<string, unknown> = {};
-    for (const key in input) {
-      const value = input[key];
-
-      if (key.startsWith(prefix) && value)
-        raw[key.slice(prefix.length)] = JSON.parse(value);
-    }
-
-    return new Proxy(raw, {
-      get(target, prop: string) {
-        if (prop in target) return target[prop];
-
-        throw new Error(`Resource "${prop}" is not linked.`);
-      },
-    }) as TResource;
-  }
-
   export const reverseDns = (domainName: string) =>
     domainName.split(".").reverse().join(".");
 }

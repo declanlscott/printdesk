@@ -1,10 +1,14 @@
 {
   "name": "@printworks/functions",
+  "exports": {
+    "./api": "./src/api/index.ts"
+  },
   "scripts": {
     "infra:build": "esbuild ./src/tenant/infra/index.ts --platform=node --target=es2020 --format=esm --bundle --outfile=./src/tenant/infra/dist/index.js",
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@hono/valibot-validator": "^0.5.1",
     "@printworks/core": "workspace:*",
     "@pulumi/aws": "^6.66.1",
     "@pulumi/cloudflare": "^5.45.0",

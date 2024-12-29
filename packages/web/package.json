@@ -1,34 +1,23 @@
 {
   "name": "@printworks/web",
-  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "dev": "sst dev astro dev",
-    "lint": "eslint ./src/**/*.{ts,tsx,astro} --report-unused-disable-directives --max-warnings 0",
-    "build": "astro check && astro build",
-    "preview": "astro preview",
-    "astro": "astro"
+    "dev": "sst dev vite",
+    "build": "tsc -b && vite build",
+    "serve": "vite preview",
+    "vite": "vite"
   },
   "dependencies": {
-    "@astrojs/react": "^4.1.2",
-    "@astrojs/starlight": "^0.30.3",
-    "@astrojs/tailwind": "^5.1.4",
-    "@hono/valibot-validator": "^0.5.1",
-    "@iconify-json/lucide": "^1.2.20",
     "@internationalized/date": "^3.6.0",
-    "@monaco-editor/react": "next",
     "@printworks/core": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.2",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-form": "^0.40.4",
-    "@tanstack/react-query": "^5.62.10",
-    "@tanstack/react-router": "^1.92.3",
+    "@tanstack/react-query": "^5.62.11",
+    "@tanstack/react-router": "^1.92.6",
     "@tanstack/react-table": "^8.20.6",
-    "@tanstack/router-devtools": "^1.92.3",
-    "@tanstack/router-vite-plugin": "^1.91.1",
-    "astro": "^5.1.1",
-    "astro-icon": "^1.1.4",
-    "astro-sst": "^2.45.2",
+    "@tanstack/router-devtools": "^1.92.6",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "jotai": "^2.11.0",
@@ -39,7 +28,6 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.1",
     "remark-gfm": "^4.0.0",
-    "sharp": "^0.33.5",
     "sonner": "^1.7.1",
     "tailwind-merge": "^2.6.0",
     "tailwind-variants": "^0.3.0",
@@ -48,12 +36,13 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@astrojs/check": "^0.9.4",
     "@printworks/eslint-config": "workspace:*",
-    "@react-types/shared": "^3.26.0",
+    "@printworks/functions": "workspace:*",
+    "@tanstack/router-plugin": "^1.91.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.2",
     "tailwindcss-react-aria-components": "^1.2.0",
-    "typescript": "^5.7.2"
+    "vite": "^6.0.6"
   }
 }

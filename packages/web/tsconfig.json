@@ -1,18 +1,15 @@
 {
-  "extends": "astro/tsconfigs/strict",
   "compilerOptions": {
+    "strict": true,
+    "esModuleInterop": true,
     "jsx": "react-jsx",
-    "jsxImportSource": "react",
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
       "@printworks/core/*": ["../core/src/*"],
-      "~/api/*": ["src/pages/api/_api/*"],
-      "~/app/*": ["src/pages/[...app]/_app/*"],
-      "~/components/*": ["src/components/*"],
-      "~/layouts/*": ["src/layouts/*"],
-      "~/middleware/*": ["src/middleware/*"],
-      "~/pages/*": ["src/pages/*"],
-      "~/styles/*": ["src/styles/*"]
+      "~/*": ["src/*"]
     }
   }
 }

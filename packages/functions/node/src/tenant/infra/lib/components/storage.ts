@@ -22,7 +22,7 @@ export class Storage extends pulumi.ComponentResource {
   }
 
   private constructor(...[opts]: Parameters<typeof Storage.getInstance>) {
-    const { AppData, Aws, Web } = useResource();
+    const { ApiFunction, AppData, Aws } = useResource();
 
     super(`${AppData.name}:tenant:aws:Storage`, "Storage", {}, opts);
 
@@ -46,22 +46,10 @@ export class Storage extends pulumi.ComponentResource {
             principals: [
               {
                 type: "AWS",
-                identifiers: [Web.server.role.principal],
+                identifiers: [ApiFunction.roleArn],
               },
             ],
             actions: ["sts:AssumeRole"],
-            conditions:
-              Web.server.role.principal === "*"
-                ? [
-                    {
-                      test: "StringLike",
-                      variable: "aws:PrincipalArn",
-                      values: [
-                        pulumi.interpolate`arn:aws:iam::${Aws.account.id}:role/*`,
-                      ],
-                    },
-                  ]
-                : undefined,
           },
         ],
       },

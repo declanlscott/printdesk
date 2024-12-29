@@ -6,7 +6,8 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@printworks/core/*": ["../../core/src/*"]
+      "@printworks/core/*": ["../../core/src/*"],
+      "~/api/*": ["./src/api/*"]
     }
   }
 }

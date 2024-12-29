@@ -92,7 +92,7 @@ export class Api extends pulumi.ComponentResource {
   }
 
   private constructor(...[args, opts]: Parameters<typeof Api.getInstance>) {
-    const { AppData, Aws, PapercutSync, Web } = useResource();
+    const { ApiFunction, AppData, PapercutSync } = useResource();
 
     super(`${AppData.name}:tenant:aws:Api`, "Api", args, opts);
 
@@ -178,26 +178,11 @@ export class Api extends pulumi.ComponentResource {
                 principals: [
                   {
                     type: "AWS",
-                    identifiers: [
-                      PapercutSync.roleArn,
-                      Web.server.role.principal,
-                    ],
+                    identifiers: [ApiFunction.roleArn, PapercutSync.roleArn],
                   },
                 ],
                 actions: ["execute-api:Invoke"],
                 resources: [pulumi.interpolate`${args.gateway.executionArn}/*`],
-                conditions:
-                  Web.server.role.principal === "*"
-                    ? [
-                        {
-                          test: "StringLike",
-                          variable: "aws:PrincipalArn",
-                          values: [
-                            pulumi.interpolate`arn:aws.iam::${Aws.account.id}:role/*`,
-                          ],
-                        },
-                      ]
-                    : undefined,
               },
             ],
           },

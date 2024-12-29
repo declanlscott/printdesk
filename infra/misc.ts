@@ -1,4 +1,4 @@
-import { appFqdn, domainName } from "./dns";
+import { domainName, fqdn } from "./dns";
 import {
   organization,
   organizationManagementRole,
@@ -10,14 +10,6 @@ export const isDev = $dev;
 
 export const replicacheLicenseKey = new sst.Secret("ReplicacheLicenseKey");
 
-export const client = new sst.Linkable("Client", {
-  properties: {
-    appFqdn,
-    isDev,
-    replicacheLicenseKey: replicacheLicenseKey.value,
-  },
-});
-
 export const appData = new sst.Linkable("AppData", {
   properties: {
     name: $app.name,
@@ -25,7 +17,7 @@ export const appData = new sst.Linkable("AppData", {
     isDev,
     domainName: {
       value: domainName.value,
-      fullyQualified: appFqdn,
+      fullyQualified: fqdn,
     },
   },
 });

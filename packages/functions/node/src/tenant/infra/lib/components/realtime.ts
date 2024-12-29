@@ -24,7 +24,7 @@ export class Realtime extends pulumi.ComponentResource {
   private constructor(
     ...[args, opts]: Parameters<typeof Realtime.getInstance>
   ) {
-    const { AppData, Aws, Web } = useResource();
+    const { ApiFunction, AppData, Aws } = useResource();
 
     super(`${AppData.name}:tenant:aws:Realtime`, "Realtime", args, opts);
 
@@ -57,22 +57,10 @@ export class Realtime extends pulumi.ComponentResource {
             principals: [
               {
                 type: "AWS",
-                identifiers: [Web.server.role.principal],
+                identifiers: [ApiFunction.roleArn],
               },
             ],
             actions: ["sts:AssumeRole"],
-            conditions:
-              Web.server.role.principal === "*"
-                ? [
-                    {
-                      test: "StringLike",
-                      variable: "aws:PrincipalArn",
-                      values: [
-                        pulumi.interpolate`arn:aws:iam::${Aws.account.id}:role/*`,
-                      ],
-                    },
-                  ]
-                : undefined,
           },
         ],
       },

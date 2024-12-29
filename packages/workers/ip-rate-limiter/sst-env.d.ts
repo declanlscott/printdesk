@@ -7,6 +7,18 @@ export {}
 import "sst"
 declare module "sst" {
   export interface Resource {
+    "Api": {
+      "type": "sst.aws.Router"
+      "url": string
+    }
+    "ApiFunction": {
+      "arn": string
+      "invokeArn": string
+      "name": string
+      "roleArn": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
     "AppData": {
       "domainName": {
         "fullyQualified": string
@@ -58,12 +70,6 @@ declare module "sst" {
     "BootstrapRoleArn": {
       "type": "sst.sst.Secret"
       "value": string
-    }
-    "Client": {
-      "appFqdn": string
-      "isDev": boolean
-      "replicacheLicenseKey": string
-      "type": "sst.sst.Linkable"
     }
     "CloudfrontPrivateKey": {
       "pem": string
@@ -148,12 +154,7 @@ declare module "sst" {
       "url": string
     }
     "Web": {
-      "server": {
-        "role": {
-          "principal": string
-        }
-      }
-      "type": "sst.aws.Astro"
+      "type": "sst.aws.StaticSite"
       "url": string
     }
     "WebPassword": {
@@ -164,12 +165,16 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "Www": {
+      "type": "sst.aws.Astro"
+      "url": string
+    }
   }
 }
 // cloudflare 
 import * as cloudflare from "@cloudflare/workers-types";
 declare module "sst" {
   export interface Resource {
-    "ReverseProxy": cloudflare.Service
+    "ApiReverseProxy": cloudflare.Service
   }
 }

@@ -1,7 +1,5 @@
 {
   "name": "@printworks/ip-rate-limiter",
-  "version": "0.0.0",
-  "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",

@@ -1,4 +1,5 @@
 import { physicalName } from "../.sst/platform/src/components/naming";
+import { apiFunction } from "./api";
 import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import {
@@ -10,8 +11,7 @@ import {
 } from "./misc";
 import { tenantsPrincipalOrgPath } from "./organization";
 import { invoicesProcessorDeadLetterQueue, tenantInfraQueue } from "./queues";
-import { link, normalizePath } from "./utils";
-import { web } from "./web";
+import { injectLinkables, normalizePath } from "./utils";
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
   versioning: true,
@@ -207,16 +207,21 @@ export const tenantInfraFunction = new aws.lambda.Function(
       logFormat: "Text",
       logGroup: tenantInfraLogGroup.name,
     },
-    ...link({
-      AppData: appData.properties,
-      Aws: aws_.properties,
-      CloudfrontPublicKey: cloudfrontPublicKey.properties,
-      Code: code.properties,
-      InvoicesProcessor: invoicesProcessor.getSSTLink().properties,
-      PapercutSync: papercutSync.getSSTLink().properties,
-      PulumiBucket: pulumiBucket.getSSTLink().properties,
-      Web: web.getSSTLink().properties,
-    }),
+    environment: {
+      variables: injectLinkables(
+        {
+          AppData: appData.properties,
+          ApiFunction: apiFunction.getSSTLink().properties,
+          Aws: aws_.properties,
+          CloudfrontPublicKey: cloudfrontPublicKey.properties,
+          Code: code.properties,
+          InvoicesProcessor: invoicesProcessor.getSSTLink().properties,
+          PapercutSync: papercutSync.getSSTLink().properties,
+          PulumiBucket: pulumiBucket.getSSTLink().properties,
+        },
+        "FUNCTION_RESOURCE_",
+      ),
+    },
   },
 );
 

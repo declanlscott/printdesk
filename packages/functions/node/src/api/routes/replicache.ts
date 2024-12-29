@@ -19,7 +19,7 @@ export default new Hono()
   .use(authn)
   .use(user)
   .post("/pull", async (c) => {
-    const pullRequest: unknown = await c.req.json();
+    const pullRequest = await c.req.json();
 
     const pullResponse =
       await Replicache.pull(pullRequest).catch(rethrowHttpError);
@@ -35,7 +35,7 @@ export default new Hono()
       "RealtimeSubscriberSigner",
     ),
     async (c) => {
-      const pushRequest: unknown = await c.req.json();
+      const pushRequest = await c.req.json();
 
       const pushResponse =
         await Replicache.push(pushRequest).catch(rethrowHttpError);

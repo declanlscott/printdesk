@@ -3,8 +3,8 @@ import { ApplicationError } from "@printworks/core/utils/errors";
 import { generateId } from "@printworks/core/utils/shared";
 import { useWebSocket } from "partysocket/react";
 
-import { useApi } from "~/app/lib/hooks/api";
-import { useReplicache } from "~/app/lib/hooks/replicache";
+import { useApi } from "~/lib/hooks/api";
+import { useReplicache } from "~/lib/hooks/replicache";
 
 export function useRealtime(channels: Array<string>) {
   const api = useApi();
@@ -44,9 +44,8 @@ export function useRealtime(channels: Array<string>) {
     const onOpen = (_event: WebSocketEventMap["open"]) =>
       socket.send(JSON.stringify({ type: "connection_init" }));
     const onMessage = (event: WebSocketEventMap["message"]) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const data = JSON.parse(event.data as string) as any;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (data.type === "connection_ack") {
         for (const channel of channels)
           socket.send(

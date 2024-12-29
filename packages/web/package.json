@@ -10,14 +10,15 @@
   "dependencies": {
     "@internationalized/date": "^3.6.0",
     "@printworks/core": "workspace:*",
+    "@printworks/functions": "workspace:*",
     "@radix-ui/react-avatar": "^1.1.2",
     "@tailwindcss/typography": "^0.5.15",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-form": "^0.40.4",
     "@tanstack/react-query": "^5.62.11",
-    "@tanstack/react-router": "^1.92.6",
+    "@tanstack/react-router": "^1.92.9",
     "@tanstack/react-table": "^8.20.6",
-    "@tanstack/router-devtools": "^1.92.6",
+    "@tanstack/router-devtools": "^1.92.9",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
     "jotai": "^2.11.0",
@@ -37,11 +38,10 @@
   },
   "devDependencies": {
     "@printworks/eslint-config": "workspace:*",
-    "@printworks/functions": "workspace:*",
     "@tanstack/router-plugin": "^1.91.1",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "@vitejs/plugin-react": "^4.3.2",
+    "@vitejs/plugin-react": "^4.3.4",
     "tailwindcss-react-aria-components": "^1.2.0",
     "vite": "^6.0.6"
   }

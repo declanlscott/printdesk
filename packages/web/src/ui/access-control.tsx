@@ -1,8 +1,8 @@
 import { AccessControl } from "@printworks/core/access-control/client";
 
-import { checkRoutePermission } from "~/app/lib/access-control";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { useUser } from "~/app/lib/hooks/user";
+import { checkRoutePermission } from "~/lib/access-control";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { useUser } from "~/lib/hooks/user";
 
 import type { PropsWithChildren, ReactNode } from "react";
 import type { Action, Resource } from "@printworks/core/access-control/shared";
@@ -13,8 +13,8 @@ import type {
   ReadTransaction,
   WriteTransaction,
 } from "replicache";
-import type { routePermissions } from "~/app/lib/access-control";
-import type { AuthenticatedEagerRouteId } from "~/app/types";
+import type { routePermissions } from "~/lib/access-control";
+import type { AuthenticatedEagerRouteId } from "~/types";
 
 export type EnforceAbacProps<
   TResource extends Resource,

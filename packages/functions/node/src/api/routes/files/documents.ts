@@ -4,7 +4,7 @@ import { S3 } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import * as v from "valibot";
 
-import { authn, authz, authzHeader } from "~/api/middleware/auth";
+import { authn, authz } from "~/api/middleware/auth";
 import {
   executeApiSigner,
   s3Client,
@@ -12,13 +12,14 @@ import {
   stsClient,
 } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
+import { authzValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .put(
     "/mime-types",
-    authzHeader,
     user,
     authz("documents-mime-types", "update"),
+    authzValidator,
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
     executeApiSigner,
     stsClient,
@@ -36,7 +37,7 @@ export default new Hono()
   })
   .get(
     "/signed-get-url",
-    authzHeader,
+    authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
     stsClient,
@@ -52,7 +53,7 @@ export default new Hono()
   )
   .get(
     "/signed-put-url",
-    authzHeader,
+    authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
     stsClient,
@@ -68,9 +69,9 @@ export default new Hono()
   )
   .put(
     "/size-limit",
-    authzHeader,
     user,
     authz("documents-size-limit", "update"),
+    authzValidator,
     vValidator("json", v.object({ byteSize: v.number() })),
     executeApiSigner,
     stsClient,
@@ -81,7 +82,7 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/size-limit", authzHeader, executeApiSigner, async (c) => {
+  .get("/size-limit", executeApiSigner, async (c) => {
     const byteSize = await Documents.getSizeLimit();
 
     return c.json({ byteSize }, 200);

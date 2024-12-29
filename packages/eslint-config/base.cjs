@@ -43,5 +43,12 @@ module.exports = {
 
     "@typescript-eslint/prefer-namespace-keyword": "off",
     "@typescript-eslint/no-namespace": "off",
+
+    // These rules break Hono RPC even though it is safe
+    "@typescript-eslint/no-unsafe-call": "off",
+    "@typescript-eslint/no-unsafe-assignment": "off",
+    "@typescript-eslint/no-unsafe-return": "off",
+    "@typescript-eslint/no-unsafe-member-access": "off",
+    "@typescript-eslint/no-unsafe-argument": "off",
   },
 };

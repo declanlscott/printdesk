@@ -9,7 +9,7 @@ import { logger } from "hono/logger";
 import { Resource } from "sst";
 
 import type { RateLimit } from "@cloudflare/workers-types";
-import type { StatusCode } from "hono/utils/http-status";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 export default new Hono<{
   Bindings: {
@@ -51,7 +51,7 @@ export default new Hono<{
     console.error(e);
 
     if (e instanceof HttpError.Error)
-      return c.json(e.message, e.statusCode as StatusCode);
+      return c.json(e.message, e.statusCode as ContentfulStatusCode);
     if (e instanceof HTTPException) return e.getResponse();
 
     return c.json("Internal server error", 500);

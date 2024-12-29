@@ -115,7 +115,6 @@ export namespace PapercutRpc {
 
     const res = await Api.send(path, {
       method: "POST",
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       body: useXml().builder.build({
         methodCall: {
           methodName: "api.adjustSharedAccountAccountBalance",
@@ -164,7 +163,6 @@ export namespace PapercutRpc {
 
     const res = await Api.send(path, {
       method: "POST",
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       body: useXml().builder.build({
         methodCall: {
           methodName: "api.getSharedAccountProperties",
@@ -220,7 +218,6 @@ export namespace PapercutRpc {
   export async function getTaskStatus() {
     const res = await Api.send(path, {
       method: "POST",
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       body: useXml().builder.build({
         methodCall: { methodName: "api.getTaskStatus" },
       }),
@@ -303,7 +300,6 @@ export namespace PapercutRpc {
     do {
       const res = await Api.send(path, {
         method: "POST",
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         body: useXml().builder.build({
           methodCall: {
             methodName: "api.listSharedAccounts",
@@ -360,7 +356,6 @@ export namespace PapercutRpc {
     do {
       const res = await Api.send(path, {
         method: "POST",
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         body: useXml().builder.build({
           methodCall: {
             methodName: "api.listUserAccounts",
@@ -419,7 +414,6 @@ export namespace PapercutRpc {
     do {
       const res = await Api.send(path, {
         method: "POST",
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         body: useXml().builder.build({
           methodCall: {
             methodName: "api.listUserSharedAccounts",

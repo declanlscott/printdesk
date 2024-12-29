@@ -796,7 +796,6 @@ export class Api extends pulumi.ComponentResource {
         ),
       )
       .apply((resources) =>
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         Object.fromEntries(
           resources.map((resource) => [resource.urn, JSON.stringify(resource)]),
         ),

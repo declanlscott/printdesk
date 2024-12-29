@@ -50,7 +50,7 @@ export namespace Constants {
     `^[${NANOID_CUSTOM_ALPHABET}]{${NANOID_LENGTH}}$`,
   );
 
-  export const TENANT_SLUG_PATTERN = new RegExp(/^[a-zA-Z0-9-]+$/);
+  export const TENANT_SLUG_PATTERN = new RegExp(/^[a-z0-9-]+$/);
 
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 

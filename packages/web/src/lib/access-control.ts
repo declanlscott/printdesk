@@ -1,9 +1,9 @@
-import { query } from "~/app/lib/hooks/data";
+import { query } from "~/lib/hooks/data";
 
 import type { UserRole } from "@printworks/core/users/shared";
 import type { User, UserWithProfile } from "@printworks/core/users/sql";
 import type { DeepReadonlyObject, ReadTransaction } from "replicache";
-import type { AuthenticatedEagerRouteId } from "~/app/types";
+import type { AuthenticatedEagerRouteId } from "~/types";
 
 export type RoutePermissions = Record<
   UserRole,

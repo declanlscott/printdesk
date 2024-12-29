@@ -9,7 +9,9 @@
     "baseUrl": ".",
     "paths": {
       "@printworks/core/*": ["../core/src/*"],
+      "@printworks/functions/*": ["../functions/node/src/*"],
       "~/*": ["src/*"]
     }
-  }
+  },
+  "references": [{ "path": "../functions/node" }]
 }

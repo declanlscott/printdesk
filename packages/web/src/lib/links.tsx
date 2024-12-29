@@ -13,7 +13,7 @@ import {
 
 import type { Product } from "@printworks/core/products/sql";
 import type { Room } from "@printworks/core/rooms/sql";
-import type { AppLink, AppLinks } from "~/app/types";
+import type { AppLink, AppLinks } from "~/types";
 
 const dashboardLink = {
   name: "Dashboard",

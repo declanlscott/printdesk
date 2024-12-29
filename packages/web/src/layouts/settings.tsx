@@ -1,9 +1,9 @@
 import { Outlet } from "@tanstack/react-router";
 
-import { SideNav } from "~/app/components/ui/side-nav";
+import { SideNav } from "~/ui/side-nav";
 
 import type { ReactNode } from "react";
-import type { ResolvedAppLink } from "~/app/types";
+import type { ResolvedAppLink } from "~/types";
 
 export type SettingsLayoutProps = {
   header?: ReactNode;

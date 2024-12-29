@@ -1,4 +1,5 @@
 import { authorizer } from "@openauthjs/openauth";
+import { decodeJWT } from "@oslojs/jwt";
 import { Auth } from "@printworks/core/auth";
 import { subjects } from "@printworks/core/auth/shared";
 import {
@@ -37,21 +38,29 @@ export const handler = handle(
     },
     success: async (ctx, value) => {
       if (value.provider !== Constants.ENTRA_ID)
-        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`unexpected provider: ${value.provider}`);
 
-      const tenantId = value.clientID.split(":").at(1);
-      if (!tenantId) throw new Error("missing tenant id from client id");
-
+      // Entra ID provider success handler
       return withGraph(
         Graph.Client.initWithMiddleware({
           authProvider: { getAccessToken: async () => value.tokenset.access },
         }),
         async () => {
+          const { tid: tenantId, aud } = decodeJWT(value.tokenset.access) as {
+            [key: string]: unknown;
+            aud: string;
+            tid?: string;
+          };
+          if (aud !== Resource.Oauth2.entraId.clientId)
+            throw new Error("invalid audience");
+
+          if (!tenantId)
+            throw new Error("missing access token tid payload claim");
+
           const { id, userPrincipalName, preferredName, mail } =
             await Graph.me();
           if (!id || !userPrincipalName || !preferredName || !mail)
-            throw new Error("missing user data from microsoft graph");
+            throw new Error("missing graph user data");
 
           return createTransaction(async (tx) => {
             const result = await tx

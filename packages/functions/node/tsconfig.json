@@ -4,10 +4,12 @@
     "lib": ["ES2023", "ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "composite": true,
     "baseUrl": ".",
     "paths": {
       "@printworks/core/*": ["../../core/src/*"],
       "~/api/*": ["./src/api/*"]
     }
-  }
+  },
+  "references": [{ "path": "../../core" }]
 }

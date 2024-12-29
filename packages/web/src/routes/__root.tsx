@@ -10,12 +10,9 @@ import {
 } from "@tanstack/react-router";
 
 import type { QueryClient } from "@tanstack/react-query";
-import type {
-  ActorContext,
-  AuthActions,
-  ReplicacheContext,
-  ResourceContext,
-} from "~/lib/contexts";
+import type { ActorContext, AuthActions } from "~/lib/contexts";
+import type { ReplicacheContext } from "~/lib/contexts/replicache";
+import type { ResourceContext } from "~/lib/contexts/resource";
 
 const TanStackRouterDevtools = import.meta.env.DEV
   ? lazy(() =>

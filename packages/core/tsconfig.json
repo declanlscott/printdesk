@@ -3,6 +3,7 @@
   "compilerOptions": {
     "lib": ["ES2023", "ESNext"],
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "composite": true
   }
 }

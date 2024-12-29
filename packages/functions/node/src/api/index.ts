@@ -12,7 +12,7 @@ import services from "~/api/routes/services";
 import tenants from "~/api/routes/tenants";
 import users from "~/api/routes/users";
 
-import type { StatusCode } from "hono/utils/http-status";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 const api = new Hono()
   .use(logger())
@@ -27,7 +27,7 @@ const api = new Hono()
     console.error(e);
 
     if (e instanceof HttpError.Error)
-      return c.json(e.message, e.statusCode as StatusCode);
+      return c.json(e.message, e.statusCode as ContentfulStatusCode);
     if (e instanceof HTTPException) return e.getResponse();
 
     return c.json("Internal server error", 500);

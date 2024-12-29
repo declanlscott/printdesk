@@ -1,9 +1,9 @@
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { getRouteApi } from "@tanstack/react-router";
 
-import { useUserActor } from "~/app/lib/hooks/actor";
-import { query } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
+import { useUserActor } from "~/lib/hooks/actor";
+import { query } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
 
 import type { BillingAccount } from "@printworks/core/billing-accounts/sql";
 import type { User } from "@printworks/core/users/sql";

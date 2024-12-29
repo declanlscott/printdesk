@@ -4,11 +4,14 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
 
-import {
-  EnforceAbac,
-  EnforceRouteAbac,
-} from "~/app/components/ui/access-control";
-import { Avatar, AvatarImage } from "~/app/components/ui/primitives/avatar";
+import { selectedRoomIdAtom } from "~/lib/atoms";
+import { useCommandBar, useCommandBarActions } from "~/lib/hooks/command-bar";
+import { query, useMutator } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { useUser } from "~/lib/hooks/user";
+import { links } from "~/lib/links";
+import { EnforceAbac, EnforceRouteAbac } from "~/ui/access-control";
+import { Avatar, AvatarImage } from "~/ui/primitives/avatar";
 import {
   CommandDialog,
   CommandEmpty,
@@ -17,21 +20,12 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "~/app/components/ui/primitives/command";
-import { DialogOverlay } from "~/app/components/ui/primitives/dialog";
-import { selectedRoomIdAtom } from "~/app/lib/atoms";
-import {
-  useCommandBar,
-  useCommandBarActions,
-} from "~/app/lib/hooks/command-bar";
-import { query, useMutator } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { useUser } from "~/app/lib/hooks/user";
-import { links } from "~/app/lib/links";
+} from "~/ui/primitives/command";
+import { DialogOverlay } from "~/ui/primitives/dialog";
 
 import type { Room } from "@printworks/core/rooms/sql";
 import type { ToOptions } from "@tanstack/react-router";
-import type { CommandBarPage } from "~/app/types";
+import type { CommandBarPage } from "~/types";
 
 export function CommandBar() {
   const state = useContext(OverlayTriggerStateContext);

@@ -59,7 +59,6 @@ export const fn =
       output = v.parse(schema, input);
     } catch (e) {
       if (v.isValiError<TSchema>(e) && customError)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         throw new customError.Error(...customError.args);
 
       throw e;

@@ -2,16 +2,16 @@ import { Link as AriaLink, composeRenderProps } from "react-aria-components";
 import { createLazyFileRoute, Outlet } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
+import { query } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { buttonStyles } from "~/styles/components/primitives/button";
 import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbPage,
   Breadcrumbs,
   BreadcrumbSeparator,
-} from "~/components/ui/primitives/breadcrumbs";
-import { query } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
-import { buttonStyles } from "~/styles/components/primitives/button";
+} from "~/ui/primitives/breadcrumbs";
 
 export const Route = createLazyFileRoute(
   "/_authenticated/settings_/rooms/$roomId_/products/$productId",

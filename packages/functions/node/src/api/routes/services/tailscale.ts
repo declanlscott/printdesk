@@ -3,13 +3,14 @@ import { Tailscale } from "@printworks/core/tailscale";
 import { Hono } from "hono";
 import * as v from "valibot";
 
-import { authz, authzHeader } from "~/api/middleware/auth";
+import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
+import { authzValidator } from "~/api/middleware/validators";
 
 export default new Hono().put(
   "/oauth-client",
-  authzHeader,
   authz("services", "update"),
+  authzValidator,
   vValidator(
     "json",
     v.object({

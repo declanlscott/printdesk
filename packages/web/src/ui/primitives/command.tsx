@@ -5,11 +5,11 @@ import {
 import { Command as CommandPrimitive } from "cmdk";
 import { ArrowLeft, Search } from "lucide-react";
 
-import { Dialog, DialogContent } from "~/app/components/ui/primitives/dialog";
 import {
   commandBackButtonStyles,
   commandStyles,
 } from "~/styles/components/primitives/command";
+import { Dialog, DialogContent } from "~/ui/primitives/dialog";
 
 import type { ComponentProps, DetailedHTMLProps, HTMLAttributes } from "react";
 

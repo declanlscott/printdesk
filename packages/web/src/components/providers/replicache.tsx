@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import loadingIndicator from "/loading-indicator.svg";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
-import { ReplicacheContext } from "~/lib/contexts";
+import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useActor } from "~/lib/hooks/actor";
 import { useApi } from "~/lib/hooks/api";
 import { useMutators } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
-import { useSlot } from "~/lib/hooks/slot";
 import { initialLoginSearchParams } from "~/lib/schemas";
 
 import type { PropsWithChildren } from "react";
@@ -24,7 +24,7 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
     actor.type === "user" ? { status: "initializing" } : null,
   );
 
-  const { replicacheLicenseKey, isDev } = useResource();
+  const { AppData, ReplicacheLicenseKey } = useResource();
 
   const mutators = useMutators();
 
@@ -32,26 +32,21 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
 
   const { invalidate, navigate } = props.router;
 
-  // const getAuth = useCallback(async () => {
-  //   await invalidate().finally(
-  //     () => void navigate({ to: "/login", search: initialLoginSearchParams }),
-  //   );
-
-  //   return null;
-  // }, [invalidate, navigate]);
-
   useEffect(() => {
     if (actor.type !== "user") return setReplicache(() => null);
 
     const client = new Replicache({
       name: actor.properties.id,
-      licenseKey: replicacheLicenseKey,
-      logLevel: isDev ? "info" : "error",
+      licenseKey: ReplicacheLicenseKey.value,
+      logLevel: AppData.isDev ? "info" : "error",
       mutators,
-      auth: "TODO",
+      auth: "Bearer TODO",
       pullURL: "/api/replicache/pull",
       pusher: async (req) => {
         const res = await api.replicache.push.$post({
+          header: {
+            authorization: `Bearer TODO`,
+          },
           json: {
             ...req,
             mutations: req.mutations.map((mutation) => ({
@@ -89,11 +84,10 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
 
       void client.close();
     };
-  }, [actor, mutators, getAuth, replicacheLicenseKey, isDev, api]);
+  }, [actor, mutators, ReplicacheLicenseKey.value, AppData.isDev, api]);
 
-  const { loadingIndicator } = useSlot();
-
-  if (replicache?.status === "initializing") return loadingIndicator;
+  if (replicache?.status === "initializing")
+    return <img src={loadingIndicator} alt="Loading indicator" />;
 
   return (
     <ReplicacheContext.Provider value={replicache}>

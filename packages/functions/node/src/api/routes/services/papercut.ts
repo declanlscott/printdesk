@@ -4,16 +4,17 @@ import { Papercut } from "@printworks/core/papercut";
 import { Hono } from "hono";
 import * as v from "valibot";
 
-import { authz, authzHeader } from "~/api/middleware/auth";
+import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
+import { authzValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .use(user)
   .put(
     "/server/tailnet-uri",
-    authzHeader,
     authz("services", "update"),
+    authzValidator,
     vValidator("json", v.object({ tailnetUri: v.pipe(v.string(), v.url()) })),
     executeApiSigner,
     ssmClient("SetTailnetPapercutServerUri"),
@@ -25,8 +26,8 @@ export default new Hono()
   )
   .put(
     "/server/auth-token",
-    authzHeader,
     authz("services", "update"),
+    authzValidator,
     vValidator("json", v.object({ authToken: v.string() })),
     executeApiSigner,
     ssmClient("SetPapercutServerAuthToken"),
@@ -38,7 +39,6 @@ export default new Hono()
   )
   .post(
     "/sync",
-    authzHeader,
     authz("papercut-sync", "create"),
     executeApiSigner,
     async (c) => {

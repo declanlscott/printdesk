@@ -1,12 +1,6 @@
 {
   "name": "@printworks/core",
   "type": "module",
-  "exports": {
-    "./*": [
-      "./src/*/index.ts",
-      "./src/*.ts"
-    ]
-  },
   "scripts": {
     "drizzle:push": "drizzle-kit push",
     "drizzle:studio": "drizzle-kit studio",

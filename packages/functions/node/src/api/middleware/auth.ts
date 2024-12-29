@@ -1,19 +1,9 @@
-import { vValidator } from "@hono/valibot-validator";
 import { AccessControl } from "@printworks/core/access-control";
 import { assertActor } from "@printworks/core/actors/context";
 import { HttpError } from "@printworks/core/utils/errors";
 import { createMiddleware } from "hono/factory";
-import * as v from "valibot";
 
 import type { Action, Resource } from "@printworks/core/access-control/shared";
-
-/**
- * NOTE: Validates the `Authorization` header and provides type safety for hono client
- */
-export const authzHeader = vValidator(
-  "header",
-  v.looseObject({ authorization: v.string() }),
-);
 
 /**
  * NOTE: Depends on actor middleware

@@ -15,7 +15,7 @@
     "hono": "^4.6.15",
     "remeda": "^2.19.0",
     "replicache": "^15.0.1",
-    "sst": "^3.4.32",
+    "sst": "^3.4.46",
     "superjson": "^2.2.2",
     "valibot": "beta"
   },

@@ -5,11 +5,11 @@ import {
 import { Utils } from "@printworks/core/utils/client";
 import { Building2, LogOut } from "lucide-react";
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/app/components/ui/primitives/avatar";
+import { useAuthActions } from "~/lib/hooks/auth";
+import { useTenant } from "~/lib/hooks/tenant";
+import { useUser } from "~/lib/hooks/user";
+import { userMenuTriggerButtonStyles } from "~/styles/components/user-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "~/ui/primitives/avatar";
 import {
   Menu,
   MenuHeader,
@@ -18,14 +18,12 @@ import {
   MenuSection,
   MenuSeparator,
   MenuTrigger,
-} from "~/app/components/ui/primitives/menu";
-import { useTenant } from "~/app/lib/hooks/tenant";
-import { useUser } from "~/app/lib/hooks/user";
-import { userMenuTriggerButtonStyles } from "~/styles/components/user-menu";
+} from "~/ui/primitives/menu";
 
 export function UserMenu() {
   const tenant = useTenant();
   const user = useUser();
+  const { logout } = useAuthActions();
 
   return (
     <MenuTrigger>
@@ -93,11 +91,11 @@ export function UserMenu() {
           <MenuSeparator />
 
           <MenuSection>
-            {/* <MenuItem onAction={logout}>
+            <MenuItem onAction={logout}>
               <LogOut className="text-destructive mr-2 size-4" />
 
               <span className="text-destructive">Logout</span>
-            </MenuItem> */}
+            </MenuItem>
           </MenuSection>
         </Menu>
       </MenuPopover>

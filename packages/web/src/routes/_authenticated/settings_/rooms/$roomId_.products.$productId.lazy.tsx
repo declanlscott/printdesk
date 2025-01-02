@@ -15,9 +15,9 @@ import {
 
 export const Route = createLazyFileRoute(
   "/_authenticated/settings_/rooms/$roomId_/products/$productId",
-)({ component: Component });
+)({ component: RouteComponent });
 
-function Component() {
+function RouteComponent() {
   const { roomId } = Route.useParams();
 
   const room = useSubscribe(query.room(roomId));

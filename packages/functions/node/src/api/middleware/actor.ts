@@ -14,13 +14,7 @@ export const actor = createMiddleware(async (c, next) => {
 
     if (!verified.err)
       return withActor(
-        {
-          type: "user",
-          properties: {
-            id: verified.subject.properties.id,
-            tenantId: verified.subject.properties.tenantId,
-          },
-        },
+        { type: "user", properties: verified.subject.properties },
         next,
       );
   }

@@ -2,19 +2,19 @@ import { useState } from "react";
 import { Constants } from "@printworks/core/utils/constants";
 import { createFileRoute } from "@tanstack/react-router";
 
-import { Dropzone } from "~/app/components/ui/primitives/dropzone";
+import { Dropzone } from "~/ui/primitives/dropzone";
 
 const routeId = "/_authenticated/settings/images";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   const [files, setFiles] = useState<Array<string>>([]);
 
   return (

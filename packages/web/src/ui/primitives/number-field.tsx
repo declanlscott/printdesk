@@ -5,11 +5,11 @@ import {
 } from "react-aria-components";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import { Button } from "~/app/components/ui/primitives/button";
 import { numberFieldStyles } from "~/styles/components/primitives/number-field";
+import { Button } from "~/ui/primitives/button";
 
 import type { ComponentProps } from "react";
-import type { ButtonProps } from "~/app/components/ui/primitives/button";
+import type { ButtonProps } from "~/ui/primitives/button";
 
 export const NumberField = AriaNumberField;
 

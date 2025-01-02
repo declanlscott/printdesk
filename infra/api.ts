@@ -9,7 +9,7 @@ export const apiFunction = new custom.aws.Function("ApiFunction", {
   handler: "packages/functions/node/src/api/index.handler",
   url: {
     cors: {
-      allowOrigins: [$interpolate`https://${fqdn}`, "http://localhost:3000"],
+      allowOrigins: [$interpolate`https://${fqdn}`, "http://localhost:5173"],
     },
   },
   link: [appData, auth, cloudfrontPrivateKey, dsqlCluster, tenantInfraQueue],

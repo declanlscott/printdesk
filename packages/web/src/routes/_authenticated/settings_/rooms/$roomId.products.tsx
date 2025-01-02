@@ -7,9 +7,9 @@ export const Route = createFileRoute(routeId)({
     context.replicache.query((tx) =>
       context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
     ),
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return "TODO";
 }

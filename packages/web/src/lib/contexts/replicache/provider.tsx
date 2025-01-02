@@ -4,24 +4,18 @@ import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
-import { useActor } from "~/lib/hooks/actor";
 import { useApi } from "~/lib/hooks/api";
+import { useAuth, useAuthActions } from "~/lib/hooks/auth";
 import { useMutators } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
-import { initialLoginSearchParams } from "~/lib/schemas";
 
 import type { PropsWithChildren } from "react";
-import type { AppRouter } from "~/types";
 
-type ReplicacheProviderProps = PropsWithChildren<{
-  router: AppRouter;
-}>;
-
-export function ReplicacheProvider(props: ReplicacheProviderProps) {
-  const actor = useActor();
+export function ReplicacheProvider(props: PropsWithChildren) {
+  const { user } = useAuth();
 
   const [replicache, setReplicache] = useState<ReplicacheContext | null>(() =>
-    actor.type === "user" ? { status: "initializing" } : null,
+    user ? { status: "initializing" } : null,
   );
 
   const { AppData, ReplicacheLicenseKey } = useResource();
@@ -30,22 +24,22 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
 
   const api = useApi();
 
-  const { invalidate, navigate } = props.router;
+  const { getAuth, refresh } = useAuthActions();
 
   useEffect(() => {
-    if (actor.type !== "user") return setReplicache(() => null);
+    if (!user) return setReplicache(() => null);
 
     const client = new Replicache({
-      name: actor.properties.id,
+      name: `${user.id}:${user.tenantId}`,
       licenseKey: ReplicacheLicenseKey.value,
       logLevel: AppData.isDev ? "info" : "error",
       mutators,
-      auth: "Bearer TODO",
-      pullURL: "/api/replicache/pull",
+      auth: getAuth(),
+      pullURL: new URL("/replicache/pull", api.baseUrl).toString(),
       pusher: async (req) => {
-        const res = await api.replicache.push.$post({
+        const res = await api.client.replicache.push.$post({
           header: {
-            authorization: `Bearer TODO`,
+            authorization: getAuth(),
           },
           json: {
             ...req,
@@ -58,7 +52,7 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
         if (!res.ok)
           return {
             httpRequestInfo: {
-              httpStatusCode: res.status,
+              httpStatusCode: res.status as number,
               errorMessage: await res.text(),
             },
           };
@@ -75,7 +69,7 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
       },
     });
 
-    // client.getAuth = getAuth; // TODO
+    client.getAuth = async () => refresh().then(getAuth);
 
     setReplicache(() => ({ status: "ready", client }));
 
@@ -84,7 +78,15 @@ export function ReplicacheProvider(props: ReplicacheProviderProps) {
 
       void client.close();
     };
-  }, [actor, mutators, ReplicacheLicenseKey.value, AppData.isDev, api]);
+  }, [
+    api,
+    AppData.isDev,
+    getAuth,
+    mutators,
+    refresh,
+    ReplicacheLicenseKey.value,
+    user,
+  ]);
 
   if (replicache?.status === "initializing")
     return <img src={loadingIndicator} alt="Loading indicator" />;

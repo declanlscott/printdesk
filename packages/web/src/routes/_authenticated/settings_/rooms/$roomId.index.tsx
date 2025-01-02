@@ -47,10 +47,10 @@ export const Route = createFileRoute(routeId)({
 
     return { initialRoom };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return (
     <div className="grid gap-6">
       <RoomCard />

@@ -20,9 +20,9 @@ export const Route = createFileRoute(routeId)({
       initialProduct,
     };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return "TODO";
 }

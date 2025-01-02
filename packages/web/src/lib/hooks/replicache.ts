@@ -10,8 +10,8 @@ import { Tenants } from "@printworks/core/tenants/client";
 import { Users } from "@printworks/core/users/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 
-import { ReplicacheContext } from "~/lib/contexts";
-import { useActor } from "~/lib/hooks/actor";
+import { ReplicacheContext } from "~/lib/contexts/replicache";
+import { useAuth } from "~/lib/hooks/auth";
 
 import type { Replicache } from "@printworks/core/replicache/client";
 import type { MutationName } from "@printworks/core/replicache/shared";
@@ -85,7 +85,7 @@ export function useIsSyncing() {
 }
 
 export function useMutators() {
-  const actor = useActor();
+  const { user } = useAuth();
 
   const getMutator = useCallback(
     <
@@ -98,8 +98,8 @@ export function useMutators() {
       mutator: TMutator,
     ) =>
       // eslint-disable-next-line @typescript-eslint/no-empty-function
-      actor.type === "user" ? mutator(actor.properties.id) : async () => {},
-    [actor],
+      user ? mutator(user.id) : async () => {},
+    [user],
   );
 
   return useMemo(

@@ -1,22 +1,22 @@
 import { useState } from "react";
 import { TextField as AriaTextField } from "react-aria-components";
 
-import { Button } from "~/app/components/ui/primitives/button";
+import { query, useMutator } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { useUser } from "~/lib/hooks/user";
+import { Button } from "~/ui/primitives/button";
 import {
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogOverlay,
   DialogTitle,
-} from "~/app/components/ui/primitives/dialog";
-import { Label } from "~/app/components/ui/primitives/field";
-import { Input } from "~/app/components/ui/primitives/text-field";
-import { query, useMutator } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { useUser } from "~/app/lib/hooks/user";
+} from "~/ui/primitives/dialog";
+import { Label } from "~/ui/primitives/field";
+import { Input } from "~/ui/primitives/text-field";
 
 import type { User } from "@printworks/core/users/sql";
-import type { DialogOverlayProps } from "~/app/components/ui/primitives/dialog";
+import type { DialogOverlayProps } from "~/ui/primitives/dialog";
 
 export interface DeleteUserDialogProps {
   userId: User["id"];

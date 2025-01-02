@@ -9,8 +9,16 @@ import {
   Search,
 } from "lucide-react";
 
-import { CommandBar } from "~/app/components/ui/command-bar";
-import { Button } from "~/app/components/ui/primitives/button";
+import logo from "~/assets/logo.svg";
+import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
+import { useCommandBarActions } from "~/lib/hooks/command-bar";
+import { query } from "~/lib/hooks/data";
+import { useIsSyncing, useSubscribe } from "~/lib/hooks/replicache";
+import { useUser } from "~/lib/hooks/user";
+import { links } from "~/lib/links";
+import { linkStyles, logoStyles } from "~/styles/components/main-nav";
+import { CommandBar } from "~/ui/command-bar";
+import { Button } from "~/ui/primitives/button";
 import {
   BaseCombobox,
   ComboboxCollection,
@@ -18,39 +26,26 @@ import {
   ComboboxItem,
   ComboboxListBox,
   ComboboxPopover,
-} from "~/app/components/ui/primitives/combobox";
-import { DialogTrigger } from "~/app/components/ui/primitives/dialog";
-import { FieldGroup } from "~/app/components/ui/primitives/field";
-import { KeyboardShortcut } from "~/app/components/ui/primitives/keyboard-shortcut";
-import { Separator } from "~/app/components/ui/primitives/separator";
-import {
-  Tooltip,
-  TooltipTrigger,
-} from "~/app/components/ui/primitives/tooltip";
-import { UserMenu } from "~/app/components/ui/user-menu";
-import { selectedRoomIdAtom } from "~/app/lib/atoms";
-import { useCommandBarActions } from "~/app/lib/hooks/command-bar";
-import { query } from "~/app/lib/hooks/data";
-import { useIsSyncing, useSubscribe } from "~/app/lib/hooks/replicache";
-import { useSlot } from "~/app/lib/hooks/slot";
-import { useUser } from "~/app/lib/hooks/user";
-import { links } from "~/app/lib/links";
-import { linkStyles, logoStyles } from "~/styles/components/main-nav";
+} from "~/ui/primitives/combobox";
+import { DialogTrigger } from "~/ui/primitives/dialog";
+import { FieldGroup } from "~/ui/primitives/field";
+import { KeyboardShortcut } from "~/ui/primitives/keyboard-shortcut";
+import { Separator } from "~/ui/primitives/separator";
+import { Tooltip, TooltipTrigger } from "~/ui/primitives/tooltip";
+import { UserMenu } from "~/ui/user-menu";
 
 import type { ComponentProps } from "react";
 
 const authenticatedRouteApi = getRouteApi("/_authenticated");
 
 export function MainNav() {
-  const { logo } = useSlot();
-
   const isSyncing = useIsSyncing();
 
   return (
     <header className="bg-background sticky top-0 z-50 flex h-16 items-center justify-between border-b px-4">
       <nav className="flex items-center space-x-4 lg:space-x-6">
         <a href="/" className={logoStyles({ isAnimating: isSyncing })}>
-          {logo}
+          <img src={logo} alt="Printworks" />
         </a>
 
         <Separator orientation="vertical" className="h-8" />

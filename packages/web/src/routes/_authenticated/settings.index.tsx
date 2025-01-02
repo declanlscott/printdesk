@@ -4,16 +4,21 @@ import { tenantStatuses } from "@printworks/core/tenants/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock, LockOpen, Pencil, UserRoundX } from "lucide-react";
 
-import { EnforceAbac } from "~/app/components/ui/access-control";
-import { DeleteUserDialog } from "~/app/components/ui/delete-user-dialog";
-import { Button } from "~/app/components/ui/primitives/button";
+import { useMutator } from "~/lib/hooks/data";
+import { useTenant } from "~/lib/hooks/tenant";
+import { useUser } from "~/lib/hooks/user";
+import { collectionItem, onSelectionChange } from "~/lib/ui";
+import { labelStyles } from "~/styles/components/primitives/field";
+import { EnforceAbac } from "~/ui/access-control";
+import { DeleteUserDialog } from "~/ui/delete-user-dialog";
+import { Button } from "~/ui/primitives/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/app/components/ui/primitives/card";
+} from "~/ui/primitives/card";
 import {
   DialogContent,
   DialogFooter,
@@ -21,21 +26,16 @@ import {
   DialogOverlay,
   DialogTitle,
   DialogTrigger,
-} from "~/app/components/ui/primitives/dialog";
-import { Label } from "~/app/components/ui/primitives/field";
+} from "~/ui/primitives/dialog";
+import { Label } from "~/ui/primitives/field";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
-} from "~/app/components/ui/primitives/select";
-import { Input } from "~/app/components/ui/primitives/text-field";
-import { Toggle } from "~/app/components/ui/primitives/toggle";
-import { useMutator } from "~/app/lib/hooks/data";
-import { useTenant } from "~/app/lib/hooks/tenant";
-import { useUser } from "~/app/lib/hooks/user";
-import { collectionItem, onSelectionChange } from "~/app/lib/ui";
-import { labelStyles } from "~/styles/components/primitives/field";
+} from "~/ui/primitives/select";
+import { Input } from "~/ui/primitives/text-field";
+import { Toggle } from "~/ui/primitives/toggle";
 
 import type { TenantStatus } from "@printworks/core/tenants/shared";
 
@@ -44,12 +44,12 @@ const routeId = "/_authenticated/settings/";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return (
     <div className="grid gap-6">
       <EnforceAbac resource="tenants" action="update" input={[]}>

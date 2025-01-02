@@ -17,7 +17,7 @@ import type { AppLink, AppLinks } from "~/types";
 
 const dashboardLink = {
   name: "Dashboard",
-  props: { href: linkOptions({ to: "/dashboard" }) },
+  props: { href: linkOptions({ to: "/" }) },
   icon: <LayoutDashboard />,
 } satisfies AppLink;
 

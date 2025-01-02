@@ -6,16 +6,12 @@ import {
 import { Check, Minus } from "lucide-react";
 
 import {
-  Description,
-  FieldError,
-  Label,
-} from "~/app/components/ui/primitives/field";
-import {
   boxStyles,
   checkboxStyles,
   checkStyles,
 } from "~/styles/components/primitives/checkbox";
 import { composeTwRenderProps } from "~/styles/utils";
+import { Description, FieldError, Label } from "~/ui/primitives/field";
 
 import type { ComponentProps, ReactNode } from "react";
 import type { ValidationResult } from "react-aria-components";

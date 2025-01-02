@@ -18,9 +18,9 @@ import { buttonStyles } from "~/styles/components/primitives/button";
 
 export const Route = createLazyFileRoute(
   "/_authenticated/settings_/rooms/$roomId",
-)({ component: Component });
+)({ component: RouteComponent });
 
-function Component() {
+function RouteComponent() {
   const { roomId } = Route.useParams();
   const room = useSubscribe(query.room(roomId));
 

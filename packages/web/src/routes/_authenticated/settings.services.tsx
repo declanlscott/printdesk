@@ -13,14 +13,16 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { Button } from "~/app/components/ui/primitives/button";
+import { useMutationOptions } from "~/lib/hooks/data";
+import { labelStyles } from "~/styles/components/primitives/field";
+import { Button } from "~/ui/primitives/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/app/components/ui/primitives/card";
+} from "~/ui/primitives/card";
 import {
   DialogContent,
   DialogFooter,
@@ -28,28 +30,25 @@ import {
   DialogOverlay,
   DialogTitle,
   DialogTrigger,
-} from "~/app/components/ui/primitives/dialog";
-import { Label } from "~/app/components/ui/primitives/field";
-import { Input } from "~/app/components/ui/primitives/text-field";
-import { Toggle } from "~/app/components/ui/primitives/toggle";
-import { useMutationOptions } from "~/app/lib/hooks/data";
-import { labelStyles } from "~/styles/components/primitives/field";
+} from "~/ui/primitives/dialog";
+import { Label } from "~/ui/primitives/field";
+import { Input } from "~/ui/primitives/text-field";
+import { Toggle } from "~/ui/primitives/toggle";
 
-import type { ComponentProps } from "react";
-import type { ErrorRouteComponent } from "@tanstack/react-router";
+import type { ErrorComponentProps } from "@tanstack/react-router";
 
 const routeId = "/_authenticated/settings/services";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
-  component: Component,
+  component: RouteComponent,
   errorComponent: ErrorComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return (
     <div className="grid gap-6">
       <PapercutCard />
@@ -303,7 +302,7 @@ function SyncAccounts() {
   );
 }
 
-function ErrorComponent(props: ComponentProps<ErrorRouteComponent>) {
+function ErrorComponent(props: ErrorComponentProps) {
   const message =
     props.error instanceof ApplicationError.Error
       ? props.error.message

@@ -8,17 +8,17 @@ import {
 import { ChevronDown } from "lucide-react";
 
 import {
-  ListBoxCollection,
-  ListBoxHeader,
-  ListBoxItem,
-  ListBoxSection,
-} from "~/app/components/ui/primitives/list-box";
-import { Popover } from "~/app/components/ui/primitives/popover";
-import {
   selectPopoverStyles,
   selectStyles,
   selectTriggerStyles,
 } from "~/styles/components/primitives/select";
+import {
+  ListBoxCollection,
+  ListBoxHeader,
+  ListBoxItem,
+  ListBoxSection,
+} from "~/ui/primitives/list-box";
+import { Popover } from "~/ui/primitives/popover";
 
 import type { ComponentProps } from "react";
 import type {

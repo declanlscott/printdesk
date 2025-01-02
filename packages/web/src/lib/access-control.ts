@@ -21,7 +21,7 @@ export type RoutePermissions = Record<
 
 export const routePermissions = {
   administrator: {
-    "/_authenticated/dashboard": true,
+    "/_authenticated/": true,
     "/_authenticated/products/": true,
     "/_authenticated/settings/": true,
     "/_authenticated/settings/images": true,
@@ -36,7 +36,7 @@ export const routePermissions = {
     "/_authenticated/users/$userId": true,
   },
   operator: {
-    "/_authenticated/dashboard": true,
+    "/_authenticated/": true,
     "/_authenticated/products/": true,
     "/_authenticated/settings/": true,
     "/_authenticated/settings/images": true,
@@ -51,7 +51,7 @@ export const routePermissions = {
     "/_authenticated/users/$userId": true,
   },
   manager: {
-    "/_authenticated/dashboard": true,
+    "/_authenticated/": true,
     "/_authenticated/products/": true,
     "/_authenticated/settings/": true,
     "/_authenticated/settings/images": false,
@@ -76,7 +76,7 @@ export const routePermissions = {
     },
   },
   customer: {
-    "/_authenticated/dashboard": true,
+    "/_authenticated/": true,
     "/_authenticated/products/": true,
     "/_authenticated/settings/": true,
     "/_authenticated/settings/images": false,

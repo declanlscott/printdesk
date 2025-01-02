@@ -7,30 +7,26 @@ import {
 } from "react-aria-components";
 import { ChevronsUpDown } from "lucide-react";
 
-import { Button } from "~/app/components/ui/primitives/button";
 import {
-  FieldError,
-  FieldGroup,
-  Label,
-} from "~/app/components/ui/primitives/field";
+  comboboxPopoverStyles,
+  comboboxStyles,
+} from "~/styles/components/primitives/combobox";
+import { Button } from "~/ui/primitives/button";
+import { FieldError, FieldGroup, Label } from "~/ui/primitives/field";
 import {
   ListBoxCollection,
   ListBoxHeader,
   ListBoxItem,
   ListBoxSection,
-} from "~/app/components/ui/primitives/list-box";
-import { Popover } from "~/app/components/ui/primitives/popover";
-import {
-  comboboxPopoverStyles,
-  comboboxStyles,
-} from "~/styles/components/primitives/combobox";
+} from "~/ui/primitives/list-box";
+import { Popover } from "~/ui/primitives/popover";
 
 import type { ComponentProps } from "react";
 import type {
   ListBoxProps as AriaListBoxProps,
   ValidationResult,
 } from "react-aria-components";
-import type { PopoverProps } from "~/app/components/ui/primitives/popover";
+import type { PopoverProps } from "~/ui/primitives/popover";
 
 export const BaseCombobox = AriaCombobox;
 

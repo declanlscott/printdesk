@@ -4,7 +4,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
 
-import { selectedRoomIdAtom } from "~/lib/atoms";
+import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
+import { useAuthActions } from "~/lib/hooks/auth";
 import { useCommandBar, useCommandBarActions } from "~/lib/hooks/command-bar";
 import { query, useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
@@ -97,6 +98,8 @@ function HomeCommand(_props: HomeCommandProps) {
   const rooms = useSubscribe(query.rooms());
   const users = useSubscribe(query.users());
 
+  const { logout } = useAuthActions();
+
   const handleNavigation = async (to: ToOptions) =>
     navigate(to).then(() => state?.close());
 
@@ -129,11 +132,14 @@ function HomeCommand(_props: HomeCommandProps) {
             </CommandItem>
           ))}
 
-          {/* <CommandItem keywords={[...navigationKeywords, "log out"]}>
+          <CommandItem
+            keywords={[...navigationKeywords, "log out"]}
+            onSelect={logout}
+          >
             <LogOut className="text-destructive mr-2 size-5" />
 
             <span className="text-destructive">Logout</span>
-          </CommandItem> */}
+          </CommandItem>
         </CommandGroup>
 
         {rooms?.length ? (

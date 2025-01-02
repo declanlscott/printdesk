@@ -10,9 +10,10 @@ import {
 } from "@tanstack/react-router";
 
 import type { QueryClient } from "@tanstack/react-query";
-import type { ActorContext, AuthActions } from "~/lib/contexts";
+import type { ApiContext } from "~/lib/contexts/api";
 import type { ReplicacheContext } from "~/lib/contexts/replicache";
 import type { ResourceContext } from "~/lib/contexts/resource";
+import type { AuthStore } from "~/lib/stores/auth";
 
 const TanStackRouterDevtools = import.meta.env.DEV
   ? lazy(() =>
@@ -24,15 +25,15 @@ const TanStackRouterDevtools = import.meta.env.DEV
   : () => null;
 
 type RouterContext = {
-  actor: ActorContext;
-  auth: AuthActions;
+  api: ApiContext;
+  authStore: AuthStore;
   replicache: ReplicacheContext;
   resource: ResourceContext;
   queryClient: QueryClient;
 };
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-  component: Component,
+  component: RouteComponent,
   onError: (error) => {
     if (error instanceof ApplicationError.EntityNotFound) throw notFound();
 
@@ -40,7 +41,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   },
 });
 
-function Component() {
+function RouteComponent() {
   const { navigate, buildLocation } = useRouter();
 
   return (

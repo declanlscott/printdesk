@@ -1,7 +1,7 @@
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { getRouteApi } from "@tanstack/react-router";
 
-import { useUserActor } from "~/lib/hooks/actor";
+import { useUserSubject } from "~/lib/hooks/auth";
 import { query } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 
@@ -11,7 +11,7 @@ import type { User } from "@printworks/core/users/sql";
 const authenticatedRouteApi = getRouteApi("/_authenticated");
 
 export const useUser = () =>
-  useSubscribe(query.user(useUserActor().id), {
+  useSubscribe(query.user(useUserSubject().id), {
     defaultData: authenticatedRouteApi.useLoaderData().initialUser,
   });
 

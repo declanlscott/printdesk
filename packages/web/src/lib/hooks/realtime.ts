@@ -14,7 +14,7 @@ export function useRealtime(channels: Array<string>) {
   const replicache = useReplicache();
 
   const protocolsProvider = useCallback(async () => {
-    const res = await api.realtime.auth.$get();
+    const res = await api.client.realtime.auth.$get();
     if (!res.ok)
       throw new ApplicationError.Error("Failed to get websocket auth protocol");
 
@@ -27,7 +27,7 @@ export function useRealtime(channels: Array<string>) {
   }, [api]);
 
   const urlProvider = useCallback(async () => {
-    const res = await api.realtime.url.$get();
+    const res = await api.client.realtime.url.$get();
     if (!res.ok)
       throw new ApplicationError.Error("Failed to get websocket url");
 

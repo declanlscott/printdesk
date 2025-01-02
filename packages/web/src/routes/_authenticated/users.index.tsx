@@ -19,25 +19,23 @@ import {
   UserRoundX,
 } from "lucide-react";
 
-import {
-  EnforceAbac,
-  EnforceRouteAbac,
-} from "~/app/components/ui/access-control";
-import { DeleteUserDialog } from "~/app/components/ui/delete-user-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "~/app/components/ui/primitives/avatar";
-import { Badge } from "~/app/components/ui/primitives/badge";
-import { Button } from "~/app/components/ui/primitives/button";
+import { fuzzyFilter } from "~/lib/fuzzy";
+import { query, useMutator } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { useUser } from "~/lib/hooks/user";
+import { collectionItem, onSelectionChange } from "~/lib/ui";
+import { EnforceAbac, EnforceRouteAbac } from "~/ui/access-control";
+import { DeleteUserDialog } from "~/ui/delete-user-dialog";
+import { Avatar, AvatarFallback, AvatarImage } from "~/ui/primitives/avatar";
+import { Badge } from "~/ui/primitives/badge";
+import { Button } from "~/ui/primitives/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "~/app/components/ui/primitives/card";
+} from "~/ui/primitives/card";
 import {
   Menu,
   MenuCheckboxItem,
@@ -47,14 +45,14 @@ import {
   MenuSection,
   MenuSeparator,
   MenuTrigger,
-} from "~/app/components/ui/primitives/menu";
+} from "~/ui/primitives/menu";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
   SelectTrigger,
-} from "~/app/components/ui/primitives/select";
+} from "~/ui/primitives/select";
 import {
   Table,
   TableBody,
@@ -62,13 +60,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/app/components/ui/primitives/table";
-import { Input } from "~/app/components/ui/primitives/text-field";
-import { fuzzyFilter } from "~/app/lib/fuzzy";
-import { query, useMutator } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { useUser } from "~/app/lib/hooks/user";
-import { collectionItem, onSelectionChange } from "~/app/lib/ui";
+} from "~/ui/primitives/table";
+import { Input } from "~/ui/primitives/text-field";
 
 import type { UserRole } from "@printworks/core/users/shared";
 import type { UserWithProfile } from "@printworks/core/users/sql";
@@ -84,17 +77,17 @@ const routeId = "/_authenticated/users/";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
   loader: async ({ context }) => {
     const initialUsers = await context.replicache.query(query.users());
 
     return { initialUsers };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
       <div className="mx-auto w-full max-w-6xl">

@@ -18,17 +18,21 @@ import {
   View,
 } from "lucide-react";
 
-import { EnforceAbac } from "~/app/components/ui/access-control";
-import { DeleteRoomDialog } from "~/app/components/ui/delete-room-dialog";
-import { Badge } from "~/app/components/ui/primitives/badge";
-import { Button } from "~/app/components/ui/primitives/button";
+import { fuzzyFilter } from "~/lib/fuzzy";
+import { query, useMutator } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { collectionItem, onSelectionChange } from "~/lib/ui";
+import { EnforceAbac } from "~/ui/access-control";
+import { DeleteRoomDialog } from "~/ui/delete-room-dialog";
+import { Badge } from "~/ui/primitives/badge";
+import { Button } from "~/ui/primitives/button";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "~/app/components/ui/primitives/card";
+} from "~/ui/primitives/card";
 import {
   Menu,
   MenuHeader,
@@ -37,14 +41,14 @@ import {
   MenuSection,
   MenuSeparator,
   MenuTrigger,
-} from "~/app/components/ui/primitives/menu";
+} from "~/ui/primitives/menu";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
   SelectTrigger,
-} from "~/app/components/ui/primitives/select";
+} from "~/ui/primitives/select";
 import {
   Table,
   TableBody,
@@ -52,11 +56,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "~/app/components/ui/primitives/table";
-import { fuzzyFilter } from "~/app/lib/fuzzy";
-import { query, useMutator } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { collectionItem, onSelectionChange } from "~/app/lib/ui";
+} from "~/ui/primitives/table";
 
 import type { Product } from "@printworks/core/products/sql";
 import type { Room } from "@printworks/core/rooms/sql";
@@ -72,19 +72,19 @@ const routeId = "/_authenticated/settings/rooms";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
   loader: async ({ context }) => {
     const initialProducts = await context.replicache.query(query.products());
 
     return { initialProducts };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
 const authenticatedRouteApi = getRouteApi("/_authenticated");
 
-function Component() {
+function RouteComponent() {
   return <RoomsCard />;
 }
 

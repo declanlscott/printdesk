@@ -12,15 +12,19 @@ import * as R from "remeda";
 import { toast } from "sonner";
 import * as v from "valibot";
 
-import { Button } from "~/app/components/ui/primitives/button";
+import { query, useMutator } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { collectionItem } from "~/lib/ui";
+import { cardStyles } from "~/styles/components/primitives/card";
+import { Button } from "~/ui/primitives/button";
 import {
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-} from "~/app/components/ui/primitives/card";
-import { Checkbox } from "~/app/components/ui/primitives/checkbox";
+} from "~/ui/primitives/card";
+import { Checkbox } from "~/ui/primitives/checkbox";
 import {
   ColorArea,
   ColorField,
@@ -31,28 +35,24 @@ import {
   ColorSwatchPickerItem,
   ColorThumb,
   SliderTrack,
-} from "~/app/components/ui/primitives/color";
-import { Dialog, DialogTrigger } from "~/app/components/ui/primitives/dialog";
-import { FieldGroup, Label } from "~/app/components/ui/primitives/field";
-import { IconButton } from "~/app/components/ui/primitives/icon-button";
+} from "~/ui/primitives/color";
+import { Dialog, DialogTrigger } from "~/ui/primitives/dialog";
+import { FieldGroup, Label } from "~/ui/primitives/field";
+import { IconButton } from "~/ui/primitives/icon-button";
 import {
   NumberField,
   NumberFieldInput,
   NumberFieldSteppers,
-} from "~/app/components/ui/primitives/number-field";
-import { Popover } from "~/app/components/ui/primitives/popover";
+} from "~/ui/primitives/number-field";
+import { Popover } from "~/ui/primitives/popover";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
   SelectTrigger,
-} from "~/app/components/ui/primitives/select";
-import { Input } from "~/app/components/ui/primitives/text-field";
-import { query, useMutator } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { collectionItem } from "~/app/lib/ui";
-import { cardStyles } from "~/styles/components/primitives/card";
+} from "~/ui/primitives/select";
+import { Input } from "~/ui/primitives/text-field";
 
 import type { PostReviewWorkflowStatusType } from "@printworks/core/rooms/shared";
 
@@ -61,7 +61,7 @@ const routeId = "/_authenticated/settings_/rooms/$roomId/configuration";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
   loader: async ({ context, params }) => {
     const [initialDeliveryOptions, initialWorkflow] = await Promise.all([
@@ -71,10 +71,10 @@ export const Route = createFileRoute(routeId)({
 
     return { initialDeliveryOptions, initialWorkflow };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return (
     <div className="grid gap-6">
       <WorkflowCard />

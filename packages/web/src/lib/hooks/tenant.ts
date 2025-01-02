@@ -1,12 +1,12 @@
 import { getRouteApi } from "@tanstack/react-router";
 
-import { useUserActor } from "~/app/lib/hooks/actor";
-import { query } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
+import { useUserSubject } from "~/lib/hooks/auth";
+import { query } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
 
 const authenticatedRouteApi = getRouteApi("/_authenticated");
 
 export const useTenant = () =>
-  useSubscribe(query.tenant(useUserActor().tenantId), {
+  useSubscribe(query.tenant(useUserSubject().tenantId), {
     defaultData: authenticatedRouteApi.useLoaderData().initialTenant,
   });

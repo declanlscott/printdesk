@@ -4,32 +4,32 @@ import { roomStatuses } from "@printworks/core/rooms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Delete, HousePlus, Lock, LockOpen, Pencil, Save } from "lucide-react";
 
-import { EnforceAbac } from "~/app/components/ui/access-control";
-import { DeleteRoomDialog } from "~/app/components/ui/delete-room-dialog";
-import { Markdown } from "~/app/components/ui/markdown";
-import { Button } from "~/app/components/ui/primitives/button";
+import { query, useMutator } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { collectionItem, onSelectionChange } from "~/lib/ui";
+import { labelStyles } from "~/styles/components/primitives/field";
+import { inputStyles } from "~/styles/components/primitives/text-field";
+import { EnforceAbac } from "~/ui/access-control";
+import { DeleteRoomDialog } from "~/ui/delete-room-dialog";
+import { Markdown } from "~/ui/markdown";
+import { Button } from "~/ui/primitives/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "~/app/components/ui/primitives/card";
-import { DialogTrigger } from "~/app/components/ui/primitives/dialog";
-import { Label } from "~/app/components/ui/primitives/field";
+} from "~/ui/primitives/card";
+import { DialogTrigger } from "~/ui/primitives/dialog";
+import { Label } from "~/ui/primitives/field";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
-} from "~/app/components/ui/primitives/select";
-import { Input, TextArea } from "~/app/components/ui/primitives/text-field";
-import { Toggle } from "~/app/components/ui/primitives/toggle";
-import { query, useMutator } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { collectionItem, onSelectionChange } from "~/app/lib/ui";
-import { labelStyles } from "~/styles/components/primitives/field";
-import { inputStyles } from "~/styles/components/primitives/text-field";
+} from "~/ui/primitives/select";
+import { Input, TextArea } from "~/ui/primitives/text-field";
+import { Toggle } from "~/ui/primitives/toggle";
 
 import type { RoomStatus } from "@printworks/core/rooms/shared";
 
@@ -38,7 +38,7 @@ const routeId = "/_authenticated/settings_/rooms/$roomId/";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
   loader: async ({ context, params }) => {
     const initialRoom = await context.replicache.query(
@@ -47,10 +47,10 @@ export const Route = createFileRoute(routeId)({
 
     return { initialRoom };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return (
     <div className="grid gap-6">
       <RoomCard />

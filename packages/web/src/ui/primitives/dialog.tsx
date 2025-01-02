@@ -8,8 +8,8 @@ import {
 } from "react-aria-components";
 import { X } from "lucide-react";
 
-import { IconButton } from "~/app/components/ui/primitives/icon-button";
 import { dialogStyles } from "~/styles/components/primitives/dialog";
+import { IconButton } from "~/ui/primitives/icon-button";
 
 import type { ComponentProps } from "react";
 import type { DialogProps as AriaDialogProps } from "react-aria-components";

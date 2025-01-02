@@ -1,5 +1,12 @@
-import { client } from "@printworks/functions/api/client";
+import { useContext } from "react";
+import { ApplicationError } from "@printworks/core/utils/errors";
 
-import { useResource } from "~/lib/hooks/resource";
+import { ApiContext } from "~/lib/contexts/api";
 
-export const useApi = () => client(useResource().ApiReverseProxy.url);
+export function useApi() {
+  const context = useContext(ApiContext);
+
+  if (!context) throw new ApplicationError.MissingContextProvider("Api");
+
+  return context;
+}

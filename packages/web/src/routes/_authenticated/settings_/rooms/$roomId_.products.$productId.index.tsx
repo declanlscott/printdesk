@@ -7,7 +7,7 @@ const routeId = "/_authenticated/settings_/rooms/$roomId_/products/$productId/";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
   loader: async ({ context, params }) => {
     const [initialRoom, initialProduct] = await Promise.all([
@@ -20,9 +20,9 @@ export const Route = createFileRoute(routeId)({
       initialProduct,
     };
   },
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
+function RouteComponent() {
   return "TODO";
 }

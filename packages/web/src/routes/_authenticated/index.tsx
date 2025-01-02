@@ -1,15 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const routeId = "/_authenticated/dashboard";
+const routeId = "/_authenticated/";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) =>
     context.replicache.query((tx) =>
-      context.auth.authorizeRoute(tx, context.actor.properties.id, routeId),
+      context.authStore.actions.authorizeRoute(tx, routeId),
     ),
-  component: Component,
+  component: RouteComponent,
 });
 
-function Component() {
-  return "TODO";
+function RouteComponent() {
+  return <div>Dashboard</div>;
 }

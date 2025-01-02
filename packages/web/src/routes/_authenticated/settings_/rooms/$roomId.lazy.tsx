@@ -2,25 +2,25 @@ import { Link as AriaLink, composeRenderProps } from "react-aria-components";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
+import { SettingsLayout } from "~/layouts/settings";
+import { query } from "~/lib/hooks/data";
+import { useSubscribe } from "~/lib/hooks/replicache";
+import { useUser } from "~/lib/hooks/user";
+import { links } from "~/lib/links";
+import { buttonStyles } from "~/styles/components/primitives/button";
 import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbPage,
   Breadcrumbs,
   BreadcrumbSeparator,
-} from "~/app/components/ui/primitives/breadcrumbs";
-import { SettingsLayout } from "~/app/layouts/settings";
-import { query } from "~/app/lib/hooks/data";
-import { useSubscribe } from "~/app/lib/hooks/replicache";
-import { useUser } from "~/app/lib/hooks/user";
-import { links } from "~/app/lib/links";
-import { buttonStyles } from "~/styles/components/primitives/button";
+} from "~/ui/primitives/breadcrumbs";
 
 export const Route = createLazyFileRoute(
   "/_authenticated/settings_/rooms/$roomId",
-)({ component: Component });
+)({ component: RouteComponent });
 
-function Component() {
+function RouteComponent() {
   const { roomId } = Route.useParams();
   const room = useSubscribe(query.room(roomId));
 

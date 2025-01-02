@@ -14,8 +14,9 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
+import { Route as CallbackImport } from './routes/callback'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
-import { Route as AuthenticatedDashboardImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsersIndexImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedProductsIndexImport } from './routes/_authenticated/products.index'
@@ -54,9 +55,21 @@ const LoginRoute = LoginImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const CallbackRoute = CallbackImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const AuthenticatedRoute = AuthenticatedImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthenticatedIndexRoute = AuthenticatedIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 
 const AuthenticatedUsersLazyRoute = AuthenticatedUsersLazyImport.update({
@@ -82,12 +95,6 @@ const AuthenticatedProductsLazyRoute = AuthenticatedProductsLazyImport.update({
 } as any).lazy(() =>
   import('./routes/_authenticated/products.lazy').then((d) => d.Route),
 )
-
-const AuthenticatedDashboardRoute = AuthenticatedDashboardImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexImport.update({
   id: '/',
@@ -208,19 +215,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImport
       parentRoute: typeof rootRoute
     }
+    '/callback': {
+      id: '/callback'
+      path: '/callback'
+      fullPath: '/callback'
+      preLoaderRoute: typeof CallbackImport
+      parentRoute: typeof rootRoute
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
-    }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardImport
-      parentRoute: typeof AuthenticatedImport
     }
     '/_authenticated/products': {
       id: '/_authenticated/products'
@@ -241,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/users'
       fullPath: '/users'
       preLoaderRoute: typeof AuthenticatedUsersLazyImport
+      parentRoute: typeof AuthenticatedImport
+    }
+    '/_authenticated/': {
+      id: '/_authenticated/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedIndexImport
       parentRoute: typeof AuthenticatedImport
     }
     '/_authenticated/settings/images': {
@@ -436,19 +450,19 @@ const AuthenticatedSettingsRoomsRoomIdProductsProductIdLazyRouteWithChildren =
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedProductsLazyRoute: typeof AuthenticatedProductsLazyRouteWithChildren
   AuthenticatedSettingsLazyRoute: typeof AuthenticatedSettingsLazyRouteWithChildren
   AuthenticatedUsersLazyRoute: typeof AuthenticatedUsersLazyRouteWithChildren
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedSettingsRoomsRoomIdLazyRoute: typeof AuthenticatedSettingsRoomsRoomIdLazyRouteWithChildren
   AuthenticatedSettingsRoomsRoomIdProductsProductIdLazyRoute: typeof AuthenticatedSettingsRoomsRoomIdProductsProductIdLazyRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedProductsLazyRoute: AuthenticatedProductsLazyRouteWithChildren,
   AuthenticatedSettingsLazyRoute: AuthenticatedSettingsLazyRouteWithChildren,
   AuthenticatedUsersLazyRoute: AuthenticatedUsersLazyRouteWithChildren,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedSettingsRoomsRoomIdLazyRoute:
     AuthenticatedSettingsRoomsRoomIdLazyRouteWithChildren,
   AuthenticatedSettingsRoomsRoomIdProductsProductIdLazyRoute:
@@ -461,11 +475,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 export interface FileRoutesByFullPath {
   '': typeof AuthenticatedRouteWithChildren
+  '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
   '/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/users': typeof AuthenticatedUsersLazyRouteWithChildren
+  '/': typeof AuthenticatedIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
@@ -483,9 +498,9 @@ export interface FileRoutesByFullPath {
 }
 
 export interface FileRoutesByTo {
-  '': typeof AuthenticatedRouteWithChildren
+  '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/': typeof AuthenticatedIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
@@ -503,11 +518,12 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersLazyRouteWithChildren
+  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/_authenticated/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/_authenticated/settings/services': typeof AuthenticatedSettingsServicesRoute
@@ -528,11 +544,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | ''
+    | '/callback'
     | '/login'
-    | '/dashboard'
     | '/products'
     | '/settings'
     | '/users'
+    | '/'
     | '/settings/images'
     | '/settings/rooms'
     | '/settings/services'
@@ -549,9 +566,9 @@ export interface FileRouteTypes {
     | '/settings/rooms/$roomId/products/$productId/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | ''
+    | '/callback'
     | '/login'
-    | '/dashboard'
+    | '/'
     | '/settings/images'
     | '/settings/rooms'
     | '/settings/services'
@@ -567,11 +584,12 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_authenticated'
+    | '/callback'
     | '/login'
-    | '/_authenticated/dashboard'
     | '/_authenticated/products'
     | '/_authenticated/settings'
     | '/_authenticated/users'
+    | '/_authenticated/'
     | '/_authenticated/settings/images'
     | '/_authenticated/settings/rooms'
     | '/_authenticated/settings/services'
@@ -591,11 +609,13 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  CallbackRoute: typeof CallbackRoute
   LoginRoute: typeof LoginRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  CallbackRoute: CallbackRoute,
   LoginRoute: LoginRoute,
 }
 
@@ -610,26 +630,26 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/_authenticated",
+        "/callback",
         "/login"
       ]
     },
     "/_authenticated": {
       "filePath": "_authenticated.tsx",
       "children": [
-        "/_authenticated/dashboard",
         "/_authenticated/products",
         "/_authenticated/settings",
         "/_authenticated/users",
+        "/_authenticated/",
         "/_authenticated/settings_/rooms/$roomId",
         "/_authenticated/settings_/rooms/$roomId_/products/$productId"
       ]
     },
+    "/callback": {
+      "filePath": "callback.tsx"
+    },
     "/login": {
       "filePath": "login.tsx"
-    },
-    "/_authenticated/dashboard": {
-      "filePath": "_authenticated/dashboard.tsx",
-      "parent": "/_authenticated"
     },
     "/_authenticated/products": {
       "filePath": "_authenticated/products.lazy.tsx",
@@ -655,6 +675,10 @@ export const routeTree = rootRoute
         "/_authenticated/users/$userId",
         "/_authenticated/users/"
       ]
+    },
+    "/_authenticated/": {
+      "filePath": "_authenticated/index.tsx",
+      "parent": "/_authenticated"
     },
     "/_authenticated/settings/images": {
       "filePath": "_authenticated/settings.images.tsx",

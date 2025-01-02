@@ -90,10 +90,6 @@ export type Query = Record<
   (...args: Array<any>) => (tx: ReadTransaction) => Promise<any>
 >;
 
-export type QueryData<TQuerier extends Query[keyof Query]> = Awaited<
-  ReturnType<ReturnType<TQuerier>>
->;
-
 export type MutationOptions = Record<
   string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

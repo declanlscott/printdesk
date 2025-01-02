@@ -1,7 +1,12 @@
-import { useRouteContext } from "@tanstack/react-router";
+import { useContext } from "react";
+import { ApplicationError } from "@printworks/core/utils/errors";
 
-export const useResource = () =>
-  useRouteContext({
-    from: "__root__",
-    select: (ctx) => ctx.resource,
-  });
+import { ResourceContext } from "~/lib/contexts/resource";
+
+export function useResource() {
+  const context = useContext(ResourceContext);
+
+  if (!context) throw new ApplicationError.MissingContextProvider("Resource");
+
+  return context;
+}

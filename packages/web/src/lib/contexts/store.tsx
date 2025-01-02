@@ -4,7 +4,7 @@ import { ApplicationError } from "@printworks/core/utils/errors";
 import type { PropsWithChildren } from "react";
 import type { StoreApi } from "zustand";
 
-export function createZustandContext<TStore, TInput>(
+export function createStoreContext<TStore, TInput>(
   getStore: (input: TInput) => StoreApi<TStore>,
 ) {
   const Context = createContext<StoreApi<TStore> | null>(null);

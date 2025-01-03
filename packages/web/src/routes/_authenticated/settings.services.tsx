@@ -1,16 +1,13 @@
-import { useState } from "react";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { SiTailscale } from "@icons-pack/react-simple-icons";
+import {
+  updateServerAuthTokenSchema,
+  updateServerTailnetUriSchema,
+} from "@printworks/core/papercut/shared";
+import { updateTailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
 import { useForm } from "@tanstack/react-form";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Eye,
-  EyeOff,
-  HeartPulse,
-  RefreshCw,
-  RotateCw,
-  Settings2,
-} from "lucide-react";
+import { KeySquare, Link } from "lucide-react";
 import { toast } from "sonner";
 
 import { useMutationOptions } from "~/lib/hooks/data";
@@ -33,9 +30,6 @@ import {
 } from "~/ui/primitives/dialog";
 import { Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
-import { Toggle } from "~/ui/primitives/toggle";
-
-import type { ErrorComponentProps } from "@tanstack/react-router";
 
 const routeId = "/_authenticated/settings/services";
 
@@ -45,106 +39,77 @@ export const Route = createFileRoute(routeId)({
       context.authStore.actions.authorizeRoute(tx, routeId),
     ),
   component: RouteComponent,
-  errorComponent: ErrorComponent,
 });
 
 function RouteComponent() {
   return (
     <div className="grid gap-6">
+      <TailscaleCard />
+
       <PapercutCard />
     </div>
   );
 }
 
-function PapercutCard() {
-  const { papercutCredentials } = useMutationOptions();
+function TailscaleCard() {
+  const { tailscaleOauthClient } = useMutationOptions();
 
-  const isConfiguring =
+  const isUpdatingOauthClient =
     useIsMutating({
-      mutationKey: papercutCredentials().mutationKey,
+      mutationKey: tailscaleOauthClient().mutationKey,
     }) > 0;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>PaperCut</CardTitle>
+        <CardTitle>Tailscale</CardTitle>
       </CardHeader>
 
       <CardContent className="grid gap-6">
         <div className="flex justify-between gap-4">
           <div>
-            <span className={labelStyles()}>Server Credentials</span>
+            <span className={labelStyles()}>OAuth Client</span>
 
             <CardDescription>
-              Configure the credentials to access your PaperCut server.
+              Update the Tailscale OAuth client credentials used for
+              communication with the PaperCut server.
             </CardDescription>
           </div>
 
           <DialogTrigger>
-            <Button isLoading={isConfiguring}>
-              {isConfiguring ? (
-                "Configuring"
-              ) : (
-                <>
-                  <Settings2 className="mr-2 size-5" />
-                  Configure
-                </>
-              )}
+            <Button isLoading={isUpdatingOauthClient}>
+              <SiTailscale className="mr-2 size-5" />
+              {isUpdatingOauthClient ? "Updating" : "Update"}
             </Button>
 
             <DialogOverlay>
-              <ConfigureCredentials />
+              <UpdateTailscaleOauthClient />
             </DialogOverlay>
           </DialogTrigger>
-        </div>
-
-        <div className="flex justify-between gap-4">
-          <div>
-            <span className={labelStyles()}>Health Check</span>
-
-            <CardDescription>
-              Check the connection to your PaperCut server.
-            </CardDescription>
-          </div>
-
-          <HealthCheckPapercut />
-        </div>
-
-        <div className="flex justify-between gap-4">
-          <div>
-            <span className={labelStyles()}>Shared Accounts</span>
-
-            <CardDescription>
-              Sync the shared accounts from your PaperCut server.
-            </CardDescription>
-          </div>
-
-          <SyncAccounts />
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function ConfigureCredentials() {
-  const { papercutCredentials } = useMutationOptions();
+function UpdateTailscaleOauthClient() {
+  const { tailscaleOauthClient } = useMutationOptions();
 
   const { mutate } = useMutation({
-    ...papercutCredentials(),
+    ...tailscaleOauthClient(),
     onSuccess: () =>
-      toast.success("Successfully configured PaperCut server credentials."),
+      toast.success(
+        "Successfully saved the Tailscale OAuth client credentials.",
+      ),
   });
 
   const form = useForm({
     defaultValues: {
-      serverUrl: "",
-      authToken: "",
-    } satisfies PapercutParameter,
-    validatorAdapter: valibotValidator(),
+      id: "",
+      secret: "",
+    },
     onSubmit: ({ value }) => mutate(value),
   });
-
-  const [showAuthToken, setShowAuthToken] = useState(() => false);
 
   return (
     <DialogContent>
@@ -153,35 +118,32 @@ function ConfigureCredentials() {
           onSubmit={async (e) => {
             e.preventDefault();
             e.stopPropagation();
-
             await form.handleSubmit();
-
-            close();
           }}
         >
           <DialogHeader>
-            <DialogTitle>Configure Server Credentials</DialogTitle>
+            <DialogTitle>Update OAuth Client</DialogTitle>
 
             <p className="text-muted-foreground text-sm">
-              Configure the credentials to access your PaperCut server. These
-              are encrypted and{" "}
+              Update the Tailscale OAuth client credentials used for
+              communication with the PaperCut server. These are encrypted and{" "}
               <strong>will not be visible after you save them</strong>.
             </p>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
             <form.Field
-              name="serverUrl"
-              validators={{ onBlur: PapercutParameter.entries.serverUrl }}
+              name="id"
+              validators={{
+                onBlur: updateTailscaleOauthClientSchema.entries.id,
+              }}
             >
               {({ name, state, handleChange, handleBlur }) => (
                 <div>
-                  <Label htmlFor={name}>XML Web Services API URL</Label>
+                  <Label htmlFor={name}>ID</Label>
 
                   <Input
                     id={name}
-                    type="url"
-                    placeholder="https://[server_name]:9192/rpc/api/xmlrpc"
                     value={state.value}
                     onChange={(e) => handleChange(e.target.value)}
                     onBlur={handleBlur}
@@ -194,46 +156,29 @@ function ConfigureCredentials() {
               )}
             </form.Field>
 
-            <div className="flex gap-2">
-              <form.Field
-                name="authToken"
-                validators={{ onBlur: PapercutParameter.entries.authToken }}
-              >
-                {({ name, state, handleChange, handleBlur }) => (
-                  <div className="grow">
-                    <Label htmlFor={name}>Auth Token</Label>
+            <form.Field
+              name="secret"
+              validators={{
+                onBlur: updateTailscaleOauthClientSchema.entries.secret,
+              }}
+            >
+              {({ name, state, handleChange, handleBlur }) => (
+                <div>
+                  <Label htmlFor={name}>Secret</Label>
 
-                    <div className="flex gap-2">
-                      <Input
-                        id={name}
-                        type={showAuthToken ? "text" : "password"}
-                        autoComplete="off"
-                        value={state.value}
-                        onChange={(e) => handleChange(e.target.value)}
-                        onBlur={handleBlur}
-                      />
+                  <Input
+                    id={name}
+                    value={state.value}
+                    onChange={(e) => handleChange(e.target.value)}
+                    onBlur={handleBlur}
+                  />
 
-                      <Toggle
-                        onPress={() =>
-                          setShowAuthToken((showAuthToken) => !showAuthToken)
-                        }
-                        className="self-end"
-                      >
-                        {showAuthToken ? (
-                          <Eye className="size-5" />
-                        ) : (
-                          <EyeOff className="size-5" />
-                        )}
-                      </Toggle>
-                    </div>
-
-                    <span className="text-sm text-red-500">
-                      {state.meta.errors.join(", ")}
-                    </span>
-                  </div>
-                )}
-              </form.Field>
-            </div>
+                  <span className="text-sm text-red-500">
+                    {state.meta.errors.join(", ")}
+                  </span>
+                </div>
+              )}
+            </form.Field>
           </div>
 
           <DialogFooter>
@@ -255,73 +200,230 @@ function ConfigureCredentials() {
   );
 }
 
-function HealthCheckPapercut() {
-  const { healthCheckPapercut } = useMutationOptions();
+function PapercutCard() {
+  const { papercutServerTailnetUri, papercutServerAuthToken } =
+    useMutationOptions();
 
-  const { mutate, isPending } = useMutation({
-    ...healthCheckPapercut(),
-    onSuccess: () =>
-      toast.success("Health check successful. Your PaperCut server is online."),
-    onError: () => toast.error("PaperCut server health check failed."),
-  });
+  const isUpdatingTailnetUri =
+    useIsMutating({ mutationKey: papercutServerTailnetUri().mutationKey }) > 0;
 
-  return (
-    <Button onPress={() => mutate()} isLoading={isPending}>
-      {isPending ? (
-        "Checking"
-      ) : (
-        <>
-          <HeartPulse className="mr-2 size-5" />
-          Check
-        </>
-      )}
-    </Button>
-  );
-}
-
-function SyncAccounts() {
-  const { syncPapercutAccounts } = useMutationOptions();
-
-  const { mutate, isPending } = useMutation({
-    ...syncPapercutAccounts(),
-    onSuccess: () => toast.success("Successfully synced shared accounts."),
-    onError: () => toast.error("Failed to sync shared accounts."),
-  });
+  const isUpdatingAuthToken =
+    useIsMutating({
+      mutationKey: papercutServerAuthToken().mutationKey,
+    }) > 0;
 
   return (
-    <Button onPress={() => mutate()} isLoading={isPending}>
-      {isPending ? (
-        "Syncing"
-      ) : (
-        <>
-          <RefreshCw className="mr-2 size-5" />
-          Sync
-        </>
-      )}
-    </Button>
-  );
-}
+    <Card>
+      <CardHeader>
+        <CardTitle>PaperCut</CardTitle>
+      </CardHeader>
 
-function ErrorComponent(props: ErrorComponentProps) {
-  const message =
-    props.error instanceof ApplicationError.Error
-      ? props.error.message
-      : "Something went wrong...";
+      <CardContent className="grid gap-6">
+        <div className="flex justify-between gap-4">
+          <div>
+            <span className={labelStyles()}>Server Tailnet URI</span>
 
-  return (
-    <Card className="border-destructive">
-      <CardHeader className="flex-row justify-between gap-4 space-y-0">
-        <div className="flex flex-col space-y-1.5">
-          <CardTitle>Error!</CardTitle>
+            <CardDescription>
+              Update the URI of the PaperCut server on your Tailnet.
+            </CardDescription>
+          </div>
 
-          <CardDescription>{message}</CardDescription>
+          <DialogTrigger>
+            <Button isLoading={isUpdatingTailnetUri}>
+              <Link className="mr-2 size-5" />
+              {isUpdatingTailnetUri ? "Updating" : "Update"}
+            </Button>
+
+            <DialogOverlay>
+              <UpdatePapercutServerTailnetUri />
+            </DialogOverlay>
+          </DialogTrigger>
         </div>
 
-        <Button variant="destructive" onPress={props.reset}>
-          <RotateCw className="mr-2 size-5" />
-          Retry
-        </Button>
-      </CardHeader>
+        <div className="flex justify-between gap-4">
+          <div>
+            <span className={labelStyles()}>Server Auth Token</span>
+
+            <CardDescription>
+              Update the auth token of the PaperCut server.
+            </CardDescription>
+          </div>
+
+          <DialogTrigger>
+            <Button isLoading={isUpdatingAuthToken}>
+              <KeySquare className="mr-2 size-5" />
+              {isUpdatingAuthToken ? "Updating" : "Update"}
+            </Button>
+
+            <DialogOverlay>
+              <UpdatePapercutServerAuthToken />
+            </DialogOverlay>
+          </DialogTrigger>
+        </div>
+      </CardContent>
     </Card>
+  );
+}
+
+function UpdatePapercutServerTailnetUri() {
+  const { papercutServerTailnetUri } = useMutationOptions();
+
+  const { mutate } = useMutation({
+    ...papercutServerTailnetUri(),
+    onSuccess: () =>
+      toast.success("Successfully saved the PaperCut server Tailnet URI."),
+  });
+
+  const form = useForm({
+    defaultValues: {
+      tailnetUri: "",
+    },
+    onSubmit: ({ value }) => mutate(value),
+  });
+
+  return (
+    <DialogContent>
+      {({ close }) => (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await form.handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Update Server Tailnet URI</DialogTitle>
+
+            <p className="text-muted-foreground text-sm">
+              Update the URI of the PaperCut server on your tailnet. This is
+              encrypted and{" "}
+              <strong>will not be visible after you save it</strong>.
+            </p>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <form.Field
+              name="tailnetUri"
+              validators={{
+                onBlur: updateServerTailnetUriSchema.entries.tailnetUri,
+              }}
+            >
+              {({ name, state, handleChange, handleBlur }) => (
+                <div>
+                  <Label htmlFor={name}>Server Tailnet URI</Label>
+
+                  <Input
+                    id={name}
+                    type="url"
+                    placeholder="http://100.x.y.z:9191"
+                    value={state.value}
+                    onChange={(e) => handleChange(e.target.value)}
+                    onBlur={handleBlur}
+                  />
+
+                  <span className="text-sm text-red-500">
+                    {state.meta.errors.join(", ")}
+                  </span>
+                </div>
+              )}
+            </form.Field>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onPress={close}>
+              Cancel
+            </Button>
+
+            <form.Subscribe selector={({ canSubmit }) => canSubmit}>
+              {(canSubmit) => (
+                <Button type="submit" isDisabled={!canSubmit}>
+                  Save
+                </Button>
+              )}
+            </form.Subscribe>
+          </DialogFooter>
+        </form>
+      )}
+    </DialogContent>
+  );
+}
+
+function UpdatePapercutServerAuthToken() {
+  const { papercutServerAuthToken } = useMutationOptions();
+
+  const { mutate } = useMutation({
+    ...papercutServerAuthToken(),
+    onSuccess: () =>
+      toast.success("Successfully saved the PaperCut server auth token."),
+  });
+
+  const form = useForm({
+    defaultValues: {
+      authToken: "",
+    },
+    onSubmit: ({ value }) => mutate(value),
+  });
+
+  return (
+    <DialogContent>
+      {({ close }) => (
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            await form.handleSubmit();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Update Server Auth Token</DialogTitle>
+
+            <p className="text-muted-foreground text-sm">
+              Update the auth token of the PaperCut server. This is encrypted
+              and <strong>will not be visible after you save it</strong>.
+            </p>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <form.Field
+              name="authToken"
+              validators={{
+                onBlur: updateServerAuthTokenSchema.entries.authToken,
+              }}
+            >
+              {({ name, state, handleChange, handleBlur }) => (
+                <div>
+                  <Label htmlFor={name}>Server Auth Token</Label>
+
+                  <Input
+                    id={name}
+                    value={state.value}
+                    onChange={(e) => handleChange(e.target.value)}
+                    onBlur={handleBlur}
+                  />
+
+                  <span className="text-sm text-red-500">
+                    {state.meta.errors.join(", ")}
+                  </span>
+                </div>
+              )}
+            </form.Field>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onPress={close}>
+              Cancel
+            </Button>
+
+            <form.Subscribe selector={({ canSubmit }) => canSubmit}>
+              {(canSubmit) => (
+                <Button type="submit" isDisabled={!canSubmit}>
+                  Save
+                </Button>
+              )}
+            </form.Subscribe>
+          </DialogFooter>
+        </form>
+      )}
+    </DialogContent>
   );
 }

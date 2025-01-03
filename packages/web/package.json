@@ -8,6 +8,7 @@
     "vite": "vite"
   },
   "dependencies": {
+    "@icons-pack/react-simple-icons": "^10.2.0",
     "@internationalized/date": "^3.6.0",
     "@printworks/core": "workspace:*",
     "@printworks/functions": "workspace:*",

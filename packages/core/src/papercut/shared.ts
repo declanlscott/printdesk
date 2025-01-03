@@ -25,3 +25,11 @@ export const xmlRpcResponseTuple = <
     { "?xml": objectsTuple({ "#text": v.literal("") }) },
     { methodResponse: objectsTuple(...objects) },
   );
+
+export const updateServerTailnetUriSchema = v.object({
+  tailnetUri: v.pipe(v.string(), v.url()),
+});
+
+export const updateServerAuthTokenSchema = v.object({
+  authToken: v.string(),
+});

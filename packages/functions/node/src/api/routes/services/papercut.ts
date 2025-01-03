@@ -1,8 +1,11 @@
 import { vValidator } from "@hono/valibot-validator";
 import { Api } from "@printworks/core/api";
 import { Papercut } from "@printworks/core/papercut";
+import {
+  updateServerAuthTokenSchema,
+  updateServerTailnetUriSchema,
+} from "@printworks/core/papercut/shared";
 import { Hono } from "hono";
-import * as v from "valibot";
 
 import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
@@ -15,7 +18,7 @@ export default new Hono()
     "/server/tailnet-uri",
     authz("services", "update"),
     authzValidator,
-    vValidator("json", v.object({ tailnetUri: v.pipe(v.string(), v.url()) })),
+    vValidator("json", updateServerTailnetUriSchema),
     executeApiSigner,
     ssmClient("SetTailnetPapercutServerUri"),
     async (c) => {
@@ -28,7 +31,7 @@ export default new Hono()
     "/server/auth-token",
     authz("services", "update"),
     authzValidator,
-    vValidator("json", v.object({ authToken: v.string() })),
+    vValidator("json", updateServerAuthTokenSchema),
     executeApiSigner,
     ssmClient("SetPapercutServerAuthToken"),
     async (c) => {

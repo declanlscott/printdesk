@@ -5,7 +5,6 @@ import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { productsTable } from "../products/sql";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
 import { Constants } from "../utils/constants";
@@ -53,9 +52,7 @@ export namespace Rooms {
         ]),
       ]);
 
-      await afterTransaction(() =>
-        Replicache.poke([formatChannel("tenant", values.tenantId)]),
-      );
+      await afterTransaction(() => Replicache.poke(["/tenant"]));
     });
   });
 
@@ -75,8 +72,6 @@ export namespace Rooms {
   export const update = fn(
     updateRoomMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([roomsTable._.name, "update"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: roomsTable._.name, id }],
@@ -87,12 +82,10 @@ export namespace Rooms {
           .update(roomsTable)
           .set(values)
           .where(
-            and(eq(roomsTable.id, id), eq(roomsTable.tenantId, tenant.id)),
+            and(eq(roomsTable.id, id), eq(roomsTable.tenantId, useTenant().id)),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -127,16 +120,12 @@ export namespace Rooms {
             ),
         ]);
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
 
   export const restore = fn(restoreRoomMutationArgsSchema, async ({ id }) => {
-    const tenant = useTenant();
-
     await AccessControl.enforce([roomsTable._.name, "update"], {
       Error: ApplicationError.AccessDenied,
       args: [{ name: roomsTable._.name, id }],
@@ -146,11 +135,11 @@ export namespace Rooms {
       await tx
         .update(roomsTable)
         .set({ deletedAt: null })
-        .where(and(eq(roomsTable.id, id), eq(roomsTable.tenantId, tenant.id)));
+        .where(
+          and(eq(roomsTable.id, id), eq(roomsTable.tenantId, useTenant().id)),
+        );
 
-      await afterTransaction(() =>
-        Replicache.poke([formatChannel("tenant", tenant.id)]),
-      );
+      await afterTransaction(() => Replicache.poke(["/tenant"]));
     });
   });
 
@@ -219,9 +208,7 @@ export namespace Rooms {
           ),
         );
 
-      await afterTransaction(async () =>
-        Replicache.poke([formatChannel("tenant", tenant.id)]),
-      );
+      await afterTransaction(() => Replicache.poke(["/tenant"]));
     });
   });
 
@@ -294,9 +281,7 @@ export namespace Rooms {
             ),
           );
 
-        await afterTransaction(async () =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );

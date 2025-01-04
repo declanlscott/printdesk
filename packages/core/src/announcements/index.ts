@@ -2,7 +2,6 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
 import { ApplicationError } from "../utils/errors";
@@ -28,9 +27,7 @@ export namespace Announcements {
       return useTransaction(async (tx) => {
         await tx.insert(announcementsTable).values(values);
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", useTenant().id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -51,8 +48,6 @@ export namespace Announcements {
   export const update = fn(
     updateAnnouncementMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([announcementsTable._.name, "update"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: announcementsTable._.name, id }],
@@ -65,13 +60,11 @@ export namespace Announcements {
           .where(
             and(
               eq(announcementsTable.id, id),
-              eq(announcementsTable.tenantId, tenant.id),
+              eq(announcementsTable.tenantId, useTenant().id),
             ),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -79,8 +72,6 @@ export namespace Announcements {
   export const delete_ = fn(
     deleteAnnouncementMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([announcementsTable._.name, "delete"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: announcementsTable._.name, id }],
@@ -93,13 +84,11 @@ export namespace Announcements {
           .where(
             and(
               eq(announcementsTable.id, id),
-              eq(announcementsTable.tenantId, tenant.id),
+              eq(announcementsTable.tenantId, useTenant().id),
             ),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );

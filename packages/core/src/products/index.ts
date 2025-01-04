@@ -2,7 +2,6 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
 import { ApplicationError } from "../utils/errors";
@@ -26,9 +25,7 @@ export namespace Products {
     return useTransaction(async (tx) => {
       await tx.insert(productsTable).values(values);
 
-      await afterTransaction(() =>
-        Replicache.poke([formatChannel("tenant", useTenant().id)]),
-      );
+      await afterTransaction(() => Replicache.poke(["/tenant"]));
     });
   });
 
@@ -48,8 +45,6 @@ export namespace Products {
   export const update = fn(
     updateProductMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([productsTable._.name, "update"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: productsTable._.name, id }],
@@ -62,13 +57,11 @@ export namespace Products {
           .where(
             and(
               eq(productsTable.id, id),
-              eq(productsTable.tenantId, tenant.id),
+              eq(productsTable.tenantId, useTenant().id),
             ),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -76,8 +69,6 @@ export namespace Products {
   export const delete_ = fn(
     deleteProductMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([productsTable._.name, "delete"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: productsTable._.name, id }],
@@ -90,13 +81,11 @@ export namespace Products {
           .where(
             and(
               eq(productsTable.id, id),
-              eq(productsTable.tenantId, tenant.id),
+              eq(productsTable.tenantId, useTenant().id),
             ),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );

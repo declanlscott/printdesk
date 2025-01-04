@@ -2,7 +2,6 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
@@ -44,9 +43,7 @@ export namespace BillingAccounts {
           .values(values)
           .onConflictDoNothing();
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", useTenant().id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -127,12 +124,10 @@ export namespace BillingAccounts {
 
         await afterTransaction(() =>
           Replicache.poke([
-            ...adminsOps.map((u) => formatChannel("user", u.id)),
-            ...managers.map(({ managerId }) =>
-              formatChannel("user", managerId),
-            ),
-            ...customers.map(({ customerId }) =>
-              formatChannel("user", customerId),
+            ...adminsOps.map((u) => `/users/${u.id}` as const),
+            ...managers.map(({ managerId }) => `/users/${managerId}` as const),
+            ...customers.map(
+              ({ customerId }) => `/users/${customerId}` as const,
             ),
           ]),
         );
@@ -200,12 +195,10 @@ export namespace BillingAccounts {
 
         await afterTransaction(() =>
           Replicache.poke([
-            ...adminsOps.map((u) => formatChannel("user", u.id)),
-            ...managers.map(({ managerId }) =>
-              formatChannel("user", managerId),
-            ),
-            ...customers.map(({ customerId }) =>
-              formatChannel("user", customerId),
+            ...adminsOps.map((u) => `/users/${u.id}` as const),
+            ...managers.map(({ managerId }) => `/users/${managerId}` as const),
+            ...customers.map(
+              ({ customerId }) => `/users/${customerId}` as const,
             ),
           ]),
         );
@@ -237,9 +230,7 @@ export namespace BillingAccounts {
             ),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );

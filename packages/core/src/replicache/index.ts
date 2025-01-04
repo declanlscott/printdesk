@@ -5,6 +5,7 @@ import { deserialize, serialize } from "superjson";
 import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
+import { Api } from "../api";
 import { createTransaction, useTransaction } from "../drizzle/context";
 import { Realtime } from "../realtime";
 import { useTenant } from "../tenants/context";
@@ -36,8 +37,8 @@ import type {
   PushResponse,
 } from "replicache";
 import type { OmitTimestamps } from "../drizzle/columns";
-import type { Channel } from "../realtime/shared";
 import type { SyncedTable } from "../utils/tables";
+import type { StartsWith } from "../utils/types";
 import type {
   ClientViewRecord,
   ClientViewRecordEntries,
@@ -150,13 +151,19 @@ export namespace Replicache {
         ),
     );
 
-  export async function poke(channels: Array<Channel>) {
+  export async function poke<TChannel extends string>(
+    channels: Array<StartsWith<"/", TChannel>>,
+  ) {
     const uniqueChannels = R.unique(channels);
     if (uniqueChannels.length === 0) return;
 
+    const { http: httpDomainName } = await Api.getAppsyncEventsDomainNames();
+
     const results = await Promise.allSettled(
       uniqueChannels.map((channel) =>
-        Realtime.publish(channel, [Constants.POKE]),
+        Realtime.publish(httpDomainName, `/replicache${channel}`, [
+          Constants.REPLICACHE_POKE,
+        ]),
       ),
     );
 

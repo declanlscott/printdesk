@@ -2,7 +2,6 @@ import { and, eq, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
@@ -38,7 +37,7 @@ export namespace Orders {
       const users = await Users.withOrderAccess(order.id);
 
       await afterTransaction(() =>
-        Replicache.poke(users.map((u) => formatChannel("user", u.id))),
+        Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });
@@ -79,7 +78,7 @@ export namespace Orders {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke(users.map((u) => formatChannel("user", u.id))),
+          Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },
@@ -108,7 +107,7 @@ export namespace Orders {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke(users.map((u) => formatChannel("user", u.id))),
+          Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },

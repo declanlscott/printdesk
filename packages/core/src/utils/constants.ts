@@ -22,8 +22,6 @@ export namespace Constants {
   export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
 
-  export const POKE = "poke";
-
   export const DOCUMENTS_MIME_TYPES_PARAMETER_NAME =
     "/app/settings/documents/mime-types";
   export const DOCUMENTS_SIZE_LIMIT_PARAMETER_NAME =
@@ -51,6 +49,8 @@ export namespace Constants {
   );
 
   export const TENANT_SLUG_PATTERN = new RegExp(/^[a-z0-9-]+$/);
+
+  export const REPLICACHE_POKE = "replicache_poke";
 
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 

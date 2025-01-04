@@ -9,7 +9,6 @@ import {
 } from "../billing-accounts/sql";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { ordersTable } from "../orders/sql";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { useTenant } from "../tenants/context";
 import { ApplicationError } from "../utils/errors";
@@ -247,9 +246,7 @@ export namespace Users {
             ),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -272,9 +269,7 @@ export namespace Users {
             and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );
@@ -297,9 +292,7 @@ export namespace Users {
             and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
           );
 
-        await afterTransaction(() =>
-          Replicache.poke([formatChannel("tenant", tenant.id)]),
-        );
+        await afterTransaction(() => Replicache.poke(["/tenant"]));
       });
     },
   );

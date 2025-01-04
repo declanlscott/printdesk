@@ -5,6 +5,7 @@ import { dsqlCluster } from "./db";
 import {
   appData,
   aws_,
+  cloudflare_,
   cloudflareApiTokenParameter,
   cloudfrontPrivateKey,
   cloudfrontPublicKey,
@@ -12,6 +13,8 @@ import {
 import { tenantsPrincipalOrgPath } from "./organization";
 import { invoicesProcessorDeadLetterQueue, tenantInfraQueue } from "./queues";
 import { injectLinkables, normalizePath } from "./utils";
+
+export const tenantsKv = new custom.cloudflare.Kv("TenantsKv");
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
   versioning: true,
@@ -210,14 +213,16 @@ export const tenantInfraFunction = new aws.lambda.Function(
     environment: {
       variables: injectLinkables(
         {
-          AppData: appData.properties,
+          AppData: appData.getSSTLink().properties,
           ApiFunction: apiFunction.getSSTLink().properties,
-          Aws: aws_.properties,
-          CloudfrontPublicKey: cloudfrontPublicKey.properties,
-          Code: code.properties,
+          Aws: aws_.getSSTLink().properties,
+          Cloudflare: cloudflare_.getSSTLink().properties,
+          CloudfrontPublicKey: cloudfrontPublicKey.getSSTLink().properties,
+          Code: code.getSSTLink().properties,
           InvoicesProcessor: invoicesProcessor.getSSTLink().properties,
           PapercutSync: papercutSync.getSSTLink().properties,
           PulumiBucket: pulumiBucket.getSSTLink().properties,
+          TenantsKv: tenantsKv.getSSTLink().properties,
         },
         "FUNCTION_RESOURCE_",
       ),

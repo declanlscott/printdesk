@@ -8,6 +8,8 @@ import {
 
 export const isDev = $dev;
 
+export const cloudflareAccountId = new sst.Secret("CloudflareAccountId");
+
 export const replicacheLicenseKey = new sst.Secret("ReplicacheLicenseKey");
 
 export const appData = new sst.Linkable("AppData", {
@@ -54,6 +56,14 @@ export const aws_ = new sst.Linkable("Aws", {
       putParametersRole: {
         name: "TenantPutParametersRole",
       },
+    },
+  },
+});
+
+export const cloudflare_ = new sst.Linkable("Cloudflare", {
+  properties: {
+    account: {
+      id: cloudflareAccountId.value,
     },
   },
 });

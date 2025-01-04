@@ -74,6 +74,16 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "Cloudflare": {
+      "account": {
+        "id": string
+      }
+      "type": "sst.sst.Linkable"
+    }
+    "CloudflareAccountId": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "CloudfrontPrivateKey": {
       "pem": string
       "type": "tls.index/privateKey.PrivateKey"
@@ -155,6 +165,10 @@ declare module "sst" {
     "TenantInfraQueue": {
       "type": "sst.aws.Queue"
       "url": string
+    }
+    "TenantsKv": {
+      "namespaceId": string
+      "type": "sst.cloudflare.Kv"
     }
     "Web": {
       "type": "sst.aws.StaticSite"

@@ -71,6 +71,16 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "Cloudflare": {
+      "account": {
+        "id": string
+      }
+      "type": "sst.sst.Linkable"
+    }
+    "CloudflareAccountId": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "CloudfrontPrivateKey": {
       "pem": string
       "type": "tls.index/privateKey.PrivateKey"
@@ -176,5 +186,6 @@ import * as cloudflare from "@cloudflare/workers-types";
 declare module "sst" {
   export interface Resource {
     "ApiReverseProxy": cloudflare.Service
+    "TenantsKv": cloudflare.KVNamespace
   }
 }

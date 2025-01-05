@@ -1,5 +1,6 @@
 import * as v from "valibot";
 
+import { userSubjectSchema } from "../auth/shared";
 import { nanoIdSchema } from "../utils/shared";
 
 export const publicActorSchema = v.object({
@@ -10,18 +11,13 @@ export type PublicActor = v.InferOutput<typeof publicActorSchema>;
 
 export const userActorSchema = v.object({
   type: v.literal("user"),
-  properties: v.object({
-    id: nanoIdSchema,
-    tenantId: nanoIdSchema,
-  }),
+  properties: userSubjectSchema,
 });
 export type UserActor = v.InferOutput<typeof userActorSchema>;
 
 export const systemActorSchema = v.object({
   type: v.literal("system"),
-  properties: v.object({
-    tenantId: nanoIdSchema,
-  }),
+  properties: v.object({ tenantId: nanoIdSchema }),
 });
 export type SystemActor = v.InferOutput<typeof systemActorSchema>;
 

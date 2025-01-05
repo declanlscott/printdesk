@@ -3,7 +3,6 @@ import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { formatChannel } from "../realtime/shared";
 import { Replicache } from "../replicache";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
@@ -20,8 +19,6 @@ export namespace Tenants {
     );
 
   export const update = fn(updateTenantMutationArgsSchema, async (values) => {
-    const tenant = useTenant();
-
     await AccessControl.enforce([tenantsTable._.name, "update"], {
       Error: ApplicationError.AccessDenied,
       args: [{ name: tenantsTable._.name, id: values.id }],
@@ -31,22 +28,21 @@ export namespace Tenants {
       await tx
         .update(tenantsTable)
         .set(values)
-        .where(eq(tenantsTable.id, tenant.id));
+        .where(eq(tenantsTable.id, useTenant().id));
 
-      await afterTransaction(() =>
-        Replicache.poke([formatChannel("tenant", tenant.id)]),
-      );
+      await afterTransaction(() => Replicache.poke(["/tenant"]));
     });
   });
 
-  export const isSlugUnique = async (slug: Tenant["slug"]) =>
-    useTransaction((tx) =>
+  export const isValidSlug = async (slug: Tenant["slug"]) =>
+    !["api", "auth", "backend"].includes(slug) ||
+    (await useTransaction((tx) =>
       tx
         .select({})
         .from(tenantsTable)
         .where(eq(tenantsTable.slug, slug))
         .then((rows) => rows.length === 0),
-    );
+    ));
 
   export const isLicenseKeyAvailable = async (licenseKey: License["key"]) =>
     useTransaction((tx) =>

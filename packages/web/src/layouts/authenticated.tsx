@@ -11,9 +11,7 @@ export function AuthenticatedLayout() {
   useRealtime(["/replicache/tenant", `/replicache/users/${user.id}`]);
 
   return (
-    <CommandBarStore.Provider
-      initial={{ input: "", pages: [{ type: "home" }] }}
-    >
+    <CommandBarStore.Provider input={{ input: "", pages: [{ type: "home" }] }}>
       <MainNav />
 
       <main className="bg-muted/40 min-h-[calc(100vh_-_theme(spacing.16))]">

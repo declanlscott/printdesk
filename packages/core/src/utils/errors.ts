@@ -34,7 +34,7 @@ export namespace ApplicationError {
     constructor(entity?: { name: string; id: string }) {
       super(
         entity
-          ? `Entity "${entity.name}" not found with id "${entity.id}".`
+          ? `No entity of type "${entity.name}" matching identifier "${entity.id}" was found.`
           : "Entity not found.",
       );
     }

@@ -9,5 +9,3 @@ export const fqdn =
 export const apiFqdn = $interpolate`api.${fqdn}`;
 
 export const authFqdn = $interpolate`auth.${fqdn}`;
-
-export const webFqdn = $interpolate`dash.${fqdn}`;

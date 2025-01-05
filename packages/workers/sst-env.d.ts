@@ -185,7 +185,6 @@ declare module "sst" {
 import * as cloudflare from "@cloudflare/workers-types";
 declare module "sst" {
   export interface Resource {
-    "ApiReverseProxy": cloudflare.Service
-    "TenantsKv": cloudflare.KVNamespace
+    "ApiRateLimiterWorker": cloudflare.Service
   }
 }

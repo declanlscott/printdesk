@@ -1,13 +1,14 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
-import * as appsync from "../dynamic/appsync";
 import { useResource } from "../resource";
+import * as appsync from "./dynamic/aws/appsync";
 
 export class Realtime extends pulumi.ComponentResource {
   private static _instance: Realtime;
 
   private _api: appsync.Api;
+  private _eventsChannelNamespace: appsync.ChannelNamespace;
   private _replicacheChannelNamespace: appsync.ChannelNamespace;
   private _subscriberRole: aws.iam.Role;
   private _publisherRole: aws.iam.Role;
@@ -37,6 +38,15 @@ export class Realtime extends pulumi.ComponentResource {
           defaultPublishAuthModes: [{ authType: "AWS_IAM" }],
           defaultSubscribeAuthModes: [{ authType: "AWS_IAM" }],
         },
+      },
+      { parent: this },
+    );
+
+    this._eventsChannelNamespace = new appsync.ChannelNamespace(
+      "EventsChannelNamespace",
+      {
+        apiId: this._api.id,
+        name: "events",
       },
       { parent: this },
     );
@@ -117,6 +127,7 @@ export class Realtime extends pulumi.ComponentResource {
 
     this.registerOutputs({
       api: this._api.id,
+      eventsChannelNamespace: this._eventsChannelNamespace.id,
       replicacheChannelNamespace: this._replicacheChannelNamespace.id,
       subscriberRole: this._subscriberRole.id,
       publisherRole: this._publisherRole.id,

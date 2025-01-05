@@ -11,7 +11,10 @@ import * as v from "valibot";
 
 export default new Hono().get(
   "/oauth-provider-type",
-  vValidator("query", v.object({ slug: v.pipe(v.string(), v.toLowerCase()) })),
+  vValidator(
+    "query",
+    v.object({ slug: v.pipe(v.string(), v.trim(), v.toLowerCase()) }),
+  ),
   async (c) => {
     const tenant = await useTransaction((tx) =>
       tx

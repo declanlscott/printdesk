@@ -18,9 +18,8 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "ApiReverseProxy": {
+    "ApiRateLimiterWorker": {
       "type": "sst.cloudflare.Worker"
-      "url": string
     }
     "AppData": {
       "domainName": {
@@ -165,10 +164,6 @@ declare module "sst" {
     "TenantInfraQueue": {
       "type": "sst.aws.Queue"
       "url": string
-    }
-    "TenantsKv": {
-      "namespaceId": string
-      "type": "sst.cloudflare.Kv"
     }
     "Web": {
       "type": "sst.aws.StaticSite"

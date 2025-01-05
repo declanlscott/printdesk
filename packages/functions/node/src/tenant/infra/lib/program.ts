@@ -13,9 +13,10 @@ import { Storage } from "./components/storage";
 import { useResource } from "./resource";
 
 import type { TenantInfraProgramInput } from "@printworks/core/tenants/shared";
+import type { Tenant } from "@printworks/core/tenants/sql";
 
 export const getProgram =
-  (tenantId: string, input: TenantInfraProgramInput) => async () => {
+  (tenantId: Tenant["id"], input: TenantInfraProgramInput) => async () => {
     const { papercutSyncSchedule, timezone } = input;
     const {
       AppData,

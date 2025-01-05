@@ -19,9 +19,11 @@ export const oauth2ProvidersSchema = v.object({
   ...timestampsSchema.entries,
 });
 
+export const userSubjectSchema = v.object({
+  id: nanoIdSchema,
+  tenantId: nanoIdSchema,
+});
+
 export const subjects = createSubjects({
-  user: v.object({
-    id: nanoIdSchema,
-    tenantId: nanoIdSchema,
-  }),
+  user: userSubjectSchema,
 });

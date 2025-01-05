@@ -2,8 +2,8 @@ import { withActor } from "@printworks/core/actors/context";
 import { Api } from "@printworks/core/api";
 import { PapercutSync } from "@printworks/core/papercut/sync";
 import { Realtime } from "@printworks/core/realtime";
-import { formatChannel } from "@printworks/core/realtime/shared";
 import { SignatureV4, Sts, withAws } from "@printworks/core/utils/aws";
+import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { withXml } from "@printworks/core/utils/xml";
 import { Resource } from "sst";
 import * as v from "valibot";
@@ -14,11 +14,11 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
   event,
 ) => {
   const { tenantId } = v.parse(
-    v.object({ tenantId: v.string() }),
+    v.object({ tenantId: nanoIdSchema }),
     event.detail,
   );
 
-  const channel = formatChannel("event", event.id);
+  const channel = `/events/${event.id}`;
 
   return withActor({ type: "system", properties: { tenantId } }, async () =>
     withAws(

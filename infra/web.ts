@@ -1,6 +1,7 @@
-import { apiReverseProxy } from "./api";
+import { api } from "infra/api";
+import { fqdn } from "infra/dns";
+
 import { auth } from "./auth";
-import { webFqdn } from "./dns";
 import { appData, replicacheLicenseKey } from "./misc";
 import { injectLinkables } from "./utils";
 import { www } from "./www";
@@ -20,7 +21,7 @@ export const web = new sst.aws.StaticSite("Web", {
     output: "dist",
   },
   domain: {
-    name: webFqdn,
+    name: $interpolate`*.${fqdn}`,
     dns: sst.cloudflare.dns(),
   },
   edge:
@@ -45,7 +46,7 @@ if (
   environment: injectLinkables(
     {
       AppData: appData.getSSTLink().properties,
-      ApiReverseProxy: apiReverseProxy.getSSTLink().properties,
+      Api: api.getSSTLink().properties,
       Auth: auth.getSSTLink().properties,
       ReplicacheLicenseKey: replicacheLicenseKey.getSSTLink().properties,
       Www: www.getSSTLink().properties,

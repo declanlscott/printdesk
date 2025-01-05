@@ -3,6 +3,7 @@ import {
   jsonb,
   pgTable,
   text,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -31,17 +32,15 @@ export const tenantsTable = pgTable(
   tenantsTableName,
   {
     ...idPrimaryKey,
-    slug: varchar("slug", { length: Constants.VARCHAR_LENGTH })
-      .notNull()
-      .unique(),
+    slug: varchar("slug", { length: Constants.VARCHAR_LENGTH }).notNull(),
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     status: tenantStatus("status").notNull().default("initializing"),
-    oauth2ProviderId: text("oauth2_provider_id"),
+    oauth2ProviderId: text("oauth2_provider_id").notNull(),
     ...timestamps,
   },
   (table) => [
-    index("slug_idx").on(table.slug),
-    index("name_idx").on(table.name),
+    uniqueIndex("slug_idx").on(table.slug),
+    index("oauth2_provider_id_idx").on(table.oauth2ProviderId),
   ],
 );
 export type TenantsTable = typeof tenantsTable;

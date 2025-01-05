@@ -30,7 +30,6 @@ export function App() {
         resource,
         queryClient,
       },
-      defaultPreload: "intent",
     }),
   );
 

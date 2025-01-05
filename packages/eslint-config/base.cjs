@@ -50,7 +50,10 @@ module.exports = {
     "@typescript-eslint/no-unsafe-return": "off",
     "@typescript-eslint/no-unsafe-member-access": "off",
     "@typescript-eslint/no-unsafe-argument": "off",
-
+    // Not sure what is going on, but a bunch of these rules
+    // are breaking with this monorepo setup
     "@typescript-eslint/no-redundant-type-constituents": "off",
+    "@typescript-eslint/no-unnecessary-type-assertion": "off",
+    "@typescript-eslint/restrict-template-expressions": "off",
   },
 };

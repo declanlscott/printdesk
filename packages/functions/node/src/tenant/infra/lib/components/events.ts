@@ -63,9 +63,7 @@ export class Events extends pulumi.ComponentResource {
         {
           pattern: pulumi.jsonStringify({
             "detail-type": ["PapercutSync"],
-            source: args.domainName.apply((domainName) =>
-              Utils.reverseDns(domainName),
-            ),
+            source: args.domainName.apply(Utils.reverseDns),
           }),
           functionTarget: {
             arn: args.events.papercutSync.functionArn,

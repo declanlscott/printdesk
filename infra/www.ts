@@ -6,6 +6,7 @@ export const www = new sst.aws.Astro("Www", {
   domain: {
     name: fqdn,
     dns: sst.cloudflare.dns(),
+    redirects: fqdn.apply((fqdn) => [`www.${fqdn}`]),
   },
 });
 

@@ -1,4 +1,3 @@
-import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/shared";
 import { HttpError } from "@printworks/core/utils/errors";
@@ -13,8 +12,10 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 
 export default new Hono<{
   Bindings: {
-    USER_RATE_LIMITER: RateLimit;
-    IP_RATE_LIMITER: RateLimit;
+    API_RATE_LIMITERS: {
+      byIp: RateLimit["limit"];
+      byUser: RateLimit["limit"];
+    };
   };
 }>()
   .use(logger())
@@ -24,13 +25,13 @@ export default new Hono<{
     let outcome: RateLimitOutcome | undefined;
     if (accessToken) {
       const verified = await createClient({
-        clientID: "api-reverse-proxy",
+        clientID: "api-rate-limiter",
         issuer: Resource.Auth.url,
       }).verify(subjects, accessToken);
 
       if (!verified.err)
-        outcome = await c.env.USER_RATE_LIMITER.limit({
-          key: `${verified.subject.properties.tenantId}#${verified.subject.properties.id}`,
+        outcome = await c.env.API_RATE_LIMITERS.byUser({
+          key: `${verified.subject.properties.tenant.id}#${verified.subject.properties.id}`,
         });
       else console.log(verified.err.message, "rate limiting by IP");
     }
@@ -39,14 +40,14 @@ export default new Hono<{
       const ip = getConnInfo(c).remote.address;
       if (!ip) throw new Error("Missing remote address");
 
-      outcome = await c.env.IP_RATE_LIMITER.limit({ key: ip });
+      outcome = await c.env.API_RATE_LIMITERS.byIp({ key: ip });
     }
 
     if (!outcome.success) throw new HttpError.TooManyRequests();
 
     await next();
   })
-  .all("*", (c) => createFetchProxy(Resource.Api.url)(c.req.raw))
+  .all("*", (c) => fetch(c.req.raw))
   .onError((e, c) => {
     console.error(e);
 

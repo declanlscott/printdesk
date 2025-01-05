@@ -38,7 +38,7 @@ export class Ssl extends pulumi.ComponentResource {
     this._certificate = new aws.acm.Certificate(
       "Certificate",
       {
-        domainName: pulumi.interpolate`${args.tenantId}.${AppData.domainName.fullyQualified}`,
+        domainName: pulumi.interpolate`${args.tenantId}.backend.${AppData.domainName.fullyQualified}`,
         validationMethod: "DNS",
       },
       { provider: usEast1Provider, parent: this },

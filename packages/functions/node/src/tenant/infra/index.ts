@@ -14,16 +14,20 @@ import type { SQSBatchItemFailure, SQSHandler, SQSRecord } from "aws-lambda";
 export const handler: SQSHandler = async (event) =>
   withResource(() =>
     withAws(
-      {
-        ssm: { client: new Ssm.Client() },
-        sts: { client: new Sts.Client() },
-      },
+      { ssm: { client: new Ssm.Client() }, sts: { client: new Sts.Client() } },
       async () => {
         const batchItemFailures: Array<SQSBatchItemFailure> = [];
 
+        const { AppData } = useResource();
+
+        const cloudflareApiToken = await Ssm.getParameter({
+          Name: `/${AppData.name}/${AppData.stage}/cloudflare/api-token`,
+          WithDecryption: true,
+        });
+
         for (const record of event.Records) {
           try {
-            await processRecord(record);
+            await processRecord(record, cloudflareApiToken);
           } catch (e) {
             console.error("Failed to process record: ", record, e);
 
@@ -36,7 +40,7 @@ export const handler: SQSHandler = async (event) =>
     ),
   );
 
-async function processRecord(record: SQSRecord) {
+async function processRecord(record: SQSRecord, cloudflareApiToken: string) {
   const { AppData, Aws, PulumiBucket } = useResource();
 
   console.log("Parsing record body ...");
@@ -76,13 +80,6 @@ async function processRecord(record: SQSRecord) {
     stack.workspace.installPlugin("cloudflare", `v${cloudflarePluginVersion}`),
   ]);
   console.log("Successfully installed plugins");
-
-  console.log("Retrieving Cloudflare API token ...");
-  const cloudflareApiToken = await Ssm.getParameter({
-    Name: `/${AppData.name}/${AppData.stage}/cloudflare/api-token`,
-    WithDecryption: true,
-  });
-  console.log("Successfully retrieved Cloudflare API token");
 
   console.log("Setting stack configuration ...");
   await stack.setAllConfig({

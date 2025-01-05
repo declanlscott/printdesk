@@ -1,4 +1,5 @@
 import { Sqs, withAws } from "@printworks/core/utils/aws";
+import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { Resource } from "sst";
 import * as v from "valibot";
 
@@ -43,8 +44,8 @@ export const handler: EventBridgeHandler<
   });
 
 async function processRecord(record: SQSRecord) {
-  const { tenantId, orderId } = v.parse(
-    v.object({ orderId: v.string(), tenantId: v.string() }),
+  const { invoiceId, tenantId } = v.parse(
+    v.object({ invoiceId: v.string(), tenantId: nanoIdSchema }),
     record.body,
   );
 }

@@ -22,7 +22,6 @@
     "@microsoft/microsoft-graph-types": "^2.40.0",
     "@smithy/protocol-http": "^4.1.8",
     "@smithy/signature-v4": "^4.2.4",
-    "cloudflare": "^3.5.0",
     "fast-xml-parser": "^4.5.1",
     "nanoid": "^5.0.9",
     "postgres": "^3.4.5"

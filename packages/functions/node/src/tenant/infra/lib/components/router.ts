@@ -146,7 +146,6 @@ export class Router extends pulumi.ComponentResource {
       "Distribution",
       {
         enabled: true,
-        aliases: [args.domainName],
         origins: [
           {
             originId: "/api/*",
@@ -211,9 +210,7 @@ export class Router extends pulumi.ComponentResource {
           },
         },
         viewerCertificate: {
-          acmCertificateArn: args.certificateArn,
-          sslSupportMethod: "sni-only",
-          minimumProtocolVersion: "TLSv1.2_2021",
+          cloudfrontDefaultCertificate: true,
         },
         waitForDeployment: false,
       },
@@ -230,7 +227,6 @@ export class Router extends pulumi.ComponentResource {
         name: args.domainName,
         type: "CNAME",
         value: this._distribution.domainName,
-        proxied: true,
       },
       { parent: this },
     );

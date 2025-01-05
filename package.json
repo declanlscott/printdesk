@@ -8,6 +8,7 @@
     "format:write": "prettier --write ."
   },
   "dependencies": {
+    "@aws-sdk/client-appsync": "^3.721.0",
     "@aws-sdk/client-dsql": "^3.721.0",
     "@openauthjs/openauth": "^0.2.7",
     "date-fns": "^4.1.0",

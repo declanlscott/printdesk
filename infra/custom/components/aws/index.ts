@@ -1,2 +1,2 @@
-export * from "./dynamic/dsql";
+export * from "./dynamic";
 export * from "./function";

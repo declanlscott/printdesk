@@ -2,19 +2,19 @@ import { Appsync } from "@printworks/core/utils/aws";
 
 import type * as pulumi from "@pulumi/pulumi";
 
-type ChannelNamespaceInput = Parameters<
+type ChannelNamespaceInputs = Parameters<
   typeof Appsync.createChannelNamespace
 >[0];
-export type ChannelNamespaceProviderInputs = ChannelNamespaceInput;
+export type ChannelNamespaceProviderInputs = ChannelNamespaceInputs;
 
-type ChannelNamespaceOutput = Required<
+type ChannelNamespaceOutputs = Required<
   NonNullable<
     Awaited<
       ReturnType<typeof Appsync.createChannelNamespace>
     >["channelNamespace"]
   >
 >;
-export type ChannelNamespaceProviderOutputs = ChannelNamespaceOutput;
+export type ChannelNamespaceProviderOutputs = ChannelNamespaceOutputs;
 
 export class ChannelNamespaceProvider
   implements pulumi.dynamic.ResourceProvider
@@ -23,8 +23,10 @@ export class ChannelNamespaceProvider
     inputs: ChannelNamespaceProviderInputs,
   ): Promise<pulumi.dynamic.CreateResult<ChannelNamespaceProviderOutputs>> {
     const output = await Appsync.createChannelNamespace(inputs);
+    if (!output.channelNamespace)
+      throw new Error(`Failed creating channel namespace "${inputs.name}"`);
 
-    const channelNamespace = output.channelNamespace as ChannelNamespaceOutput;
+    const channelNamespace = output.channelNamespace as ChannelNamespaceOutputs;
 
     return {
       id: channelNamespace.name,
@@ -40,8 +42,10 @@ export class ChannelNamespaceProvider
       apiId: props.apiId,
       name: props.name,
     });
+    if (!output.channelNamespace)
+      throw new Error(`Failed reading channel namespace "${id}"`);
 
-    const channelNamespace = output.channelNamespace as ChannelNamespaceOutput;
+    const channelNamespace = output.channelNamespace as ChannelNamespaceOutputs;
 
     return {
       id,
@@ -50,23 +54,25 @@ export class ChannelNamespaceProvider
   }
 
   async update(
-    _name: string,
+    id: string,
     olds: ChannelNamespaceProviderOutputs,
     news: ChannelNamespaceProviderInputs,
   ): Promise<pulumi.dynamic.UpdateResult<ChannelNamespaceProviderOutputs>> {
     const output = await Appsync.updateChannelNamespace(news);
+    if (!output.channelNamespace)
+      throw new Error(`Failed updating channel namespace "${id}"`);
 
-    const channelNamespace = output.channelNamespace as ChannelNamespaceOutput;
+    const channelNamespace = output.channelNamespace as ChannelNamespaceOutputs;
 
     return {
       outs: { ...olds, ...channelNamespace },
     };
   }
 
-  async delete(name: string, props: ChannelNamespaceProviderOutputs) {
+  async delete(id: string, props: ChannelNamespaceProviderOutputs) {
     await Appsync.deleteChannelNamespace({
       apiId: props.apiId,
-      name,
+      name: id,
     });
   }
 }

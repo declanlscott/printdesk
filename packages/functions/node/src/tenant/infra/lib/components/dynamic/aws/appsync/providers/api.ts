@@ -4,15 +4,15 @@ import { logicalName, physicalName } from "../../../naming";
 
 import type * as pulumi from "@pulumi/pulumi";
 
-type ApiInput = Parameters<typeof Appsync.createApi>[0];
-export interface ApiProviderInputs extends Omit<ApiInput, "name"> {
+type ApiInputs = Parameters<typeof Appsync.createApi>[0];
+export interface ApiProviderInputs extends Omit<ApiInputs, "name"> {
   name?: string;
 }
 
-type ApiOutput = Required<
+type ApiOutputs = Required<
   NonNullable<Awaited<ReturnType<typeof Appsync.createApi>>["api"]>
 >;
-export type ApiProviderOutputs = ApiOutput;
+export type ApiProviderOutputs = ApiOutputs;
 
 export class ApiProvider implements pulumi.dynamic.ResourceProvider {
   private _logicalName: string;
@@ -22,14 +22,16 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
   }
 
   async create(
-    input: ApiProviderInputs,
+    inputs: ApiProviderInputs,
   ): Promise<pulumi.dynamic.CreateResult<ApiProviderOutputs>> {
     const output = await Appsync.createApi({
       name: physicalName(50, this._logicalName),
-      ...input,
+      ...inputs,
     });
+    if (!output.api)
+      throw new Error(`Failed creating api "${this._logicalName}"`);
 
-    const api = output.api as ApiOutput;
+    const api = output.api as ApiOutputs;
 
     return {
       id: api.apiId,
@@ -42,9 +44,9 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
     props: ApiProviderOutputs,
   ): Promise<pulumi.dynamic.ReadResult<ApiProviderOutputs>> {
     const output = await Appsync.getApi({ apiId: id });
-    if (!output.api) throw new Error("Missing api");
+    if (!output.api) throw new Error(`Failed reading api "${id}"`);
 
-    const api = output.api as ApiOutput;
+    const api = output.api as ApiOutputs;
 
     return {
       id,
@@ -62,9 +64,9 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
       name: olds.name,
       ...news,
     });
-    if (!output.api) throw new Error("Missing api");
+    if (!output.api) throw new Error(`Failed updating api "${id}"`);
 
-    const api = output.api as ApiOutput;
+    const api = output.api as ApiOutputs;
 
     return {
       outs: { ...olds, ...api },

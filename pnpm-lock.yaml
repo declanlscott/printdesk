@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@aws-sdk/client-appsync':
+        specifier: ^3.721.0
+        version: 3.721.0
       '@aws-sdk/client-dsql':
         specifier: ^3.721.0
         version: 3.721.0
@@ -69,9 +72,6 @@ importers:
       '@aws-crypto/sha256-js':
         specifier: ^5.2.0
         version: 5.2.0
-      '@aws-sdk/client-appsync':
-        specifier: ^3.721.0
-        version: 3.721.0
       '@aws-sdk/client-s3':
         specifier: ^3.722.0
         version: 3.722.0

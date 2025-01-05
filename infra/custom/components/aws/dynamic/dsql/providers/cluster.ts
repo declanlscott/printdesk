@@ -4,7 +4,6 @@ import type {
 } from "@aws-sdk/client-dsql";
 
 type ClusterInputs = CreateClusterCommandInput;
-
 export type ClusterProviderInputs = ClusterInputs;
 
 type ClusterOutputs = {
@@ -14,7 +13,6 @@ type ClusterOutputs = {
 } & {
   creationTime: string;
 };
-
 export interface ClusterProviderOutputs extends ClusterOutputs {
   tags: ClusterInputs["tags"];
 }
@@ -170,7 +168,7 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
     };
   }
 
-  async delete(id: string, _outs: ClusterProviderOutputs): Promise<void> {
+  async delete(id: string, _props: ClusterProviderOutputs): Promise<void> {
     const client = await ClusterProvider._getClient();
 
     const output = await client.send(

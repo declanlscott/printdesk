@@ -31,6 +31,13 @@ declare module "sst" {
       "stage": string
       "type": "sst.sst.Linkable"
     }
+    "AppsyncEventApi": {
+      "dns": {
+        "http": string
+        "realtime": string
+      }
+      "type": "pulumi-nodejs.dynamic.Resource"
+    }
     "Auth": {
       "type": "sst.aws.Auth"
       "url": string

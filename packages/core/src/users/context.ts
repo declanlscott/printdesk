@@ -1,3 +1,5 @@
+import * as R from "remeda";
+
 import { Users } from ".";
 import { assertActor } from "../actors/context";
 import { createTransaction } from "../drizzle/context";
@@ -14,7 +16,7 @@ export async function withUser<TCallback extends () => ReturnType<TCallback>>(
   callback: TCallback,
 ) {
   const user = await createTransaction(() =>
-    Users.read([assertActor("user").properties.id]).then((rows) => rows.at(0)),
+    Users.read([assertActor("user").properties.id]).then(R.first()),
   );
   if (!user) throw new Error("user not found");
 

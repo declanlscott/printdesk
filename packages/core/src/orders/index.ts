@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
@@ -31,7 +32,7 @@ export namespace Orders {
         .insert(ordersTable)
         .values(values)
         .returning({ id: ordersTable.id })
-        .then((rows) => rows.at(0));
+        .then(R.first());
       if (!order) throw new Error("Failed to insert order");
 
       const users = await Users.withOrderAccess(order.id);

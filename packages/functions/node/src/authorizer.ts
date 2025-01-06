@@ -16,6 +16,7 @@ import { Constants } from "@printworks/core/utils/constants";
 import { Graph, withGraph } from "@printworks/core/utils/graph";
 import { and, eq, isNull } from "drizzle-orm";
 import { handle } from "hono/aws-lambda";
+import * as R from "remeda";
 import { Resource } from "sst";
 
 export const handler = handle(
@@ -123,7 +124,7 @@ export const handler = handle(
                               eq(usersTable.username, userPrincipalName),
                             ),
                           )
-                          .then((rows) => rows.at(0));
+                          .then(R.first());
                         if (!result)
                           throw new Error("tenant not found or inactive");
                         if (!result.user) throw new Error("user not found");

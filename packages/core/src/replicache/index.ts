@@ -70,7 +70,7 @@ export namespace Replicache {
             eq(replicacheClientGroupsTable.tenantId, useTenant().id),
           ),
         )
-        .then((rows) => rows.at(0)),
+        .then(R.first()),
     );
 
   export const clientMetadataFromGroupId = async (
@@ -97,7 +97,7 @@ export namespace Replicache {
         })
         .from(replicacheClientsTable)
         .where(eq(replicacheClientsTable.id, id))
-        .then((rows) => rows.at(0)),
+        .then(R.first()),
     );
 
   export const putClientGroup = async (
@@ -217,7 +217,7 @@ export namespace Replicache {
                     eq(replicacheClientViewsTable.tenantId, useTenant().id),
                   ),
                 )
-                .then((rows) => rows.at(0))
+                .then(R.first())
             : undefined;
 
           // 2: Initialize base client view record

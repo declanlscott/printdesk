@@ -13,7 +13,7 @@ import type { StartsWith } from "../utils/types";
 export namespace Api {
   export async function getAccountId() {
     const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.account-id.txt`,
+      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.account-id.txt`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -28,7 +28,7 @@ export namespace Api {
 
   export async function getCloudfrontKeyPairId() {
     const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.cloudfront-key-pair-id.txt`,
+      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.cloudfront-key-pair-id.txt`,
     );
 
     const text = await res.text();
@@ -46,7 +46,7 @@ export namespace Api {
 
   export async function getAppsyncEventsDomainNames() {
     const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.appsync-events-domain-names.json`,
+      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.appsync-events-domain-names.json`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -67,7 +67,7 @@ export namespace Api {
 
   export async function getBuckets() {
     const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getFqdn())}.buckets.json`,
+      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.buckets.json`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -139,7 +139,7 @@ export namespace Api {
     init?: RequestInit,
   ): Promise<Response> {
     const url = Cloudfront.buildUrl({
-      fqdn: Tenants.getFqdn(),
+      fqdn: Tenants.getBackendFqdn(),
       path: `/api${path}`,
     });
 

@@ -1,4 +1,4 @@
-import { Api } from "@printworks/core/api";
+import { Api } from "@printworks/core/tenants/api";
 import { S3, SignatureV4, Ssm, Sts, withAws } from "@printworks/core/utils/aws";
 import { createMiddleware } from "hono/factory";
 import { Resource } from "sst";

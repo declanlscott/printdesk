@@ -1,9 +1,9 @@
 import { and, eq, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
-import { Api } from "../api";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { Replicache } from "../replicache";
+import { Api } from "../tenants/api";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { ApplicationError } from "../utils/errors";

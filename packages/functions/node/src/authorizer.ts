@@ -1,6 +1,5 @@
 import { authorizer } from "@openauthjs/openauth";
 import { decodeJWT } from "@oslojs/jwt";
-import { Api } from "@printworks/core/api";
 import { Auth } from "@printworks/core/auth";
 import { subjects } from "@printworks/core/auth/shared";
 import {
@@ -8,6 +7,7 @@ import {
   createTransaction,
 } from "@printworks/core/drizzle/context";
 import { Replicache } from "@printworks/core/replicache";
+import { Api } from "@printworks/core/tenants/api";
 import { tenantsTable } from "@printworks/core/tenants/sql";
 import { Users } from "@printworks/core/users";
 import { userProfilesTable, usersTable } from "@printworks/core/users/sql";

@@ -5,9 +5,9 @@ import { deserialize, serialize } from "superjson";
 import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
-import { Api } from "../api";
 import { createTransaction, useTransaction } from "../drizzle/context";
 import { Realtime } from "../realtime";
+import { Api } from "../tenants/api";
 import { useTenant } from "../tenants/context";
 import { useUser } from "../users/context";
 import { Utils } from "../utils";

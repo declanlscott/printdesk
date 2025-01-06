@@ -1,7 +1,7 @@
 import { withActor } from "@printworks/core/actors/context";
-import { Api } from "@printworks/core/api";
 import { PapercutSync } from "@printworks/core/papercut/sync";
 import { Realtime } from "@printworks/core/realtime";
+import { Api } from "@printworks/core/tenants/api";
 import { SignatureV4, Sts, withAws } from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { withXml } from "@printworks/core/utils/xml";

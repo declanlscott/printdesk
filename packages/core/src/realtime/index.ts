@@ -1,7 +1,7 @@
 import { HttpRequest } from "@smithy/protocol-http";
 import * as R from "remeda";
 
-import { Api } from "../api";
+import { Api } from "../tenants/api";
 import { SignatureV4, Util } from "../utils/aws";
 
 export namespace Realtime {

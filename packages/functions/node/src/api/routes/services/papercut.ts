@@ -1,10 +1,10 @@
 import { vValidator } from "@hono/valibot-validator";
-import { Api } from "@printworks/core/api";
 import { Papercut } from "@printworks/core/papercut";
 import {
   updateServerAuthTokenSchema,
   updateServerTailnetUriSchema,
 } from "@printworks/core/papercut/shared";
+import { Api } from "@printworks/core/tenants/api";
 import { Hono } from "hono";
 
 import { authz } from "~/api/middleware/auth";

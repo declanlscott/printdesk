@@ -59,6 +59,6 @@ export namespace Tenants {
         .then((rows) => rows.length === 1),
     );
 
-  export const getFqdn = () =>
-    `${useTenant().id}.${Resource.AppData.domainName.fullyQualified}`;
+  export const getBackendFqdn = () =>
+    `${useTenant().id}.backend.${Resource.AppData.domainName.fullyQualified}`;
 }

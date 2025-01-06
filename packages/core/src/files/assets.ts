@@ -1,4 +1,4 @@
-import { Api } from "../api";
+import { Api } from "../tenants/api";
 import { Constants } from "../utils/constants";
 
 export namespace Assets {

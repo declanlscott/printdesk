@@ -1,51 +1,57 @@
 import { vValidator } from "@hono/valibot-validator";
-import { useOauth2 } from "@printworks/core/oauth2/context";
-import { EntraId } from "@printworks/core/oauth2/entra-id";
-import { Google } from "@printworks/core/oauth2/google";
-import { ENTRA_ID, GOOGLE } from "@printworks/core/oauth2/shared";
+import { EntraId } from "@printworks/core/auth";
+import { Users } from "@printworks/core/users";
+import { useUser } from "@printworks/core/users/context";
+import { Constants } from "@printworks/core/utils/constants";
 import { HttpError } from "@printworks/core/utils/errors";
+import { Graph, withGraph } from "@printworks/core/utils/graph";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { Hono } from "hono";
+import * as R from "remeda";
 import * as v from "valibot";
 
-import { authorization, provider } from "~/api/middleware";
+import { user } from "~/api/middleware/user";
 
-export default new Hono()
-  .use(authorization())
-  .use(provider)
-  .get(
-    "/:id/photo",
-    vValidator("param", v.object({ id: nanoIdSchema })),
-    async (c) => {
-      const userId = c.req.valid("param").id;
-      const oauth2 = useOauth2();
+export default new Hono().get(
+  "/:id/photo",
+  vValidator("param", v.object({ id: nanoIdSchema })),
+  user,
+  async (c) => {
+    const userId = c.req.valid("param").id;
 
-      let res: Response;
-      switch (oauth2.provider.variant) {
-        case ENTRA_ID:
-          res = await EntraId.photo(userId);
-          break;
-        case GOOGLE:
-          res = await Google.photo(userId);
-          break;
-        default: {
-          oauth2.provider.variant satisfies never;
+    const currentUser = useUser();
+    const isSelf = userId === currentUser.id;
 
-          throw new HttpError.NotImplemented(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `Provider variant "${oauth2.provider.variant}" not implemented`,
-          );
-        }
-      }
+    const user = isSelf
+      ? currentUser
+      : await Users.read([userId]).then(R.first());
+    if (!user) throw new HttpError.NotFound();
 
-      const contentType = res.headers.get("Content-Type");
+    switch (user.oauth2Provider.type) {
+      case Constants.ENTRA_ID:
+        return withGraph(
+          Graph.Client.init({
+            authProvider: async (done) => {
+              if (currentUser.oauth2Provider.type === Constants.ENTRA_ID)
+                return done(
+                  null,
+                  c.req.header("Authorization")!.replace("Bearer ", ""),
+                );
 
-      return c.body(res.body, {
-        status: res.status,
-        headers: {
-          ...(contentType ? { "Content-type": contentType } : undefined),
-          "Cache-Control": "max-age=2592000",
-        },
-      });
-    },
-  );
+              return EntraId.applicationAccessToken(user.oauth2Provider.id)
+                .then((accessToken) => done(null, accessToken))
+                .catch((e) => done(e, null));
+            },
+          }),
+          async () => {
+            const res = await Graph.photoResponse(user.profile.oauth2UserId);
+            res.headers.set("Cache-Control", "max-age=2592000");
+
+            return res;
+          },
+        );
+      default:
+        throw new HttpError.NotImplemented();
+    }
+  },
+);

@@ -46,6 +46,9 @@ export const entraIdApplicationApiAccess = new azuread.ApplicationApiAccess(
       "User.Read",
       "User.ReadBasic.All",
     ].map((scope) => graphServicePrincipal.oauth2PermissionScopeIds[scope]),
+    roleIds: ["User.ReadBasic.All"].map(
+      (role) => graphServicePrincipal.appRoleIds[role],
+    ),
   },
 );
 

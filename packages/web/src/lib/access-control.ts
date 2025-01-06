@@ -1,7 +1,7 @@
 import { query } from "~/lib/hooks/data";
 
 import type { UserRole } from "@printworks/core/users/shared";
-import type { User, UserWithProfile } from "@printworks/core/users/sql";
+import type { User, UserData } from "@printworks/core/users/sql";
 import type { DeepReadonlyObject, ReadTransaction } from "replicache";
 import type { AuthenticatedEagerRouteId } from "~/types";
 
@@ -12,7 +12,7 @@ export type RoutePermissions = Record<
     | boolean
     | ((
         tx: ReadTransaction,
-        user: DeepReadonlyObject<UserWithProfile>,
+        user: DeepReadonlyObject<UserData>,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...input: Array<any>
       ) => boolean | Promise<boolean>)
@@ -98,11 +98,11 @@ export async function checkRoutePermission<
   TPermission extends (typeof routePermissions)[UserRole][TRouteId],
 >(
   tx: ReadTransaction,
-  user: DeepReadonlyObject<UserWithProfile>,
+  user: DeepReadonlyObject<UserData>,
   routeId: TRouteId,
   ...input: TPermission extends (
     tx: ReadTransaction,
-    user: DeepReadonlyObject<UserWithProfile>,
+    user: DeepReadonlyObject<UserData>,
     ...input: infer TInput
   ) => unknown
     ? TInput

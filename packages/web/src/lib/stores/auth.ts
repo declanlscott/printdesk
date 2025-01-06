@@ -14,7 +14,7 @@ import type { Challenge, Client, Tokens } from "@openauthjs/openauth/client";
 import type { SubjectPayload } from "@openauthjs/openauth/session";
 import type { Oauth2ProviderType } from "@printworks/core/auth/shared";
 import type { UserRole } from "@printworks/core/users/shared";
-import type { UserWithProfile } from "@printworks/core/users/sql";
+import type { UserData } from "@printworks/core/users/sql";
 import type { DeepReadonlyObject, ReadTransaction } from "replicache";
 import type { routePermissions } from "~/lib/access-control";
 import type { AuthenticatedEagerRouteId } from "~/types";
@@ -47,7 +47,7 @@ export type AuthStore = {
       routeId: TRouteId,
       ...input: TPermission extends (
         tx: ReadTransaction,
-        user: DeepReadonlyObject<UserWithProfile>,
+        user: DeepReadonlyObject<UserData>,
         ...input: infer TInput
       ) => unknown
         ? TInput

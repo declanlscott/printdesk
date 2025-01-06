@@ -16,10 +16,7 @@ export type UserRole = (typeof userRoles)[number];
 
 export const userSchema = v.object({
   ...tenantTableSchema.entries,
-  providerId: v.string(),
-  role: v.picklist(userRoles),
-  name: v.string(),
-  email: v.string(),
+  type: v.picklist(userTypes),
   username: v.string(),
 });
 
@@ -58,6 +55,7 @@ export const userProfilesTableName = "user_profiles";
 export const userProfileSchema = v.object({
   ...tenantTableSchema.entries,
   oauth2UserId: v.string(),
+  oauth2ProviderId: v.string(),
   role: v.picklist(userRoles),
   name: v.string(),
   email: v.string(),

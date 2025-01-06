@@ -7,6 +7,7 @@ import { userRole, userType } from "../utils/sql";
 import { userProfilesTableName, usersTableName } from "./shared";
 
 import type { InferSelectModel } from "drizzle-orm";
+import type { Oauth2Provider } from "../auth/sql";
 
 export const usersTable = tenantTable(
   usersTableName,
@@ -30,6 +31,7 @@ export const userProfilesTable = tenantTable(
   {
     userId: id("user_id").notNull(),
     oauth2UserId: text("oauth2_user_id").notNull(),
+    oauth2ProviderId: text("oauth2_provider_id").notNull(),
     role: userRole("role").notNull().default("customer"),
     name: text("name").notNull(),
     email: text("email").notNull(),
@@ -39,6 +41,7 @@ export const userProfilesTable = tenantTable(
     unique("unique_oauth2_user_id").on(table.oauth2UserId, table.tenantId),
     unique("unique_email").on(table.email, table.tenantId),
     index("oauth2_user_id_idx").on(table.oauth2UserId),
+    index("oauth2_provider_id_idx").on(table.oauth2ProviderId),
     index("role_idx").on(table.role),
   ],
 );
@@ -47,6 +50,7 @@ export type UserProfilesTable = typeof userProfilesTable;
 
 export type UserProfile = InferSelectModel<UserProfilesTable>;
 
-export interface UserWithProfile extends User {
+export interface UserData extends User {
   profile: UserProfile;
+  oauth2Provider: Oauth2Provider;
 }

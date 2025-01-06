@@ -64,7 +64,7 @@ import {
 import { Input } from "~/ui/primitives/text-field";
 
 import type { UserRole } from "@printworks/core/users/shared";
-import type { UserWithProfile } from "@printworks/core/users/sql";
+import type { UserData } from "@printworks/core/users/sql";
 import type {
   ColumnDef,
   SortingState,
@@ -160,7 +160,7 @@ const columns = [
     enableHiding: false,
     cell: ({ row }) => <UserActionsMenu user={row.original} />,
   },
-] satisfies Array<ColumnDef<DeepReadonlyObject<UserWithProfile>>>;
+] satisfies Array<ColumnDef<DeepReadonlyObject<UserData>>>;
 
 function UsersCard() {
   const { initialUsers } = Route.useLoaderData();
@@ -324,7 +324,7 @@ function UsersCard() {
 }
 
 interface UserRoleCellProps {
-  user: DeepReadonlyObject<UserWithProfile>;
+  user: DeepReadonlyObject<UserData>;
 }
 function UserRoleCell(props: UserRoleCellProps) {
   const role = props.user.profile.role;
@@ -377,7 +377,7 @@ function UserRoleCell(props: UserRoleCellProps) {
 }
 
 interface UserActionsMenuProps {
-  user: DeepReadonlyObject<UserWithProfile>;
+  user: DeepReadonlyObject<UserData>;
 }
 function UserActionsMenu(props: UserActionsMenuProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(() => false);

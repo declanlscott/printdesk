@@ -103,6 +103,10 @@ export const handler = handle(
                             userProfile: userProfilesTable,
                           })
                           .from(tenantsTable)
+                          .innerJoin(
+                            oauth2ProvidersTable,
+                            eq(oauth2ProvidersTable.tenantId, tenantsTable.id),
+                          )
                           .leftJoin(
                             usersTable,
                             eq(usersTable.tenantId, tenantsTable.id),
@@ -113,7 +117,7 @@ export const handler = handle(
                           )
                           .where(
                             and(
-                              eq(tenantsTable.oauth2ProviderId, tid),
+                              eq(oauth2ProvidersTable.id, tid),
                               eq(tenantsTable.status, "active"),
                               isNull(tenantsTable.deletedAt),
                               eq(usersTable.username, userPrincipalName),
@@ -137,6 +141,7 @@ export const handler = handle(
                           await Users.createProfile({
                             userId: user.id,
                             oauth2UserId: id,
+                            oauth2ProviderId: tid,
                             name: preferredName,
                             email: mail,
                             tenantId,

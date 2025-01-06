@@ -10,7 +10,7 @@ import type {
   ReadTransaction,
   WriteTransaction,
 } from "replicache";
-import type { User, UserWithProfile } from "../users/sql";
+import type { User, UserData } from "../users/sql";
 import type { SyncedTableName, TableByName } from "../utils/tables";
 import type { Serialized } from "./shared";
 
@@ -25,7 +25,7 @@ export namespace Replicache {
       TSchema extends v.GenericSchema,
       TAuthorizer extends (
         tx: WriteTransaction,
-        user: DeepReadonlyObject<UserWithProfile>,
+        user: DeepReadonlyObject<UserData>,
         args: v.InferOutput<TSchema>,
       ) => ReturnType<TAuthorizer>,
       TMutator extends OptimisticMutator<TSchema>,
@@ -33,7 +33,7 @@ export namespace Replicache {
       schema: TSchema,
       authorizer: TAuthorizer,
       getMutator: (context: {
-        user: DeepReadonlyObject<UserWithProfile>;
+        user: DeepReadonlyObject<UserData>;
         authorized: Awaited<ReturnType<TAuthorizer>>;
       }) => TMutator,
     ) =>
@@ -61,7 +61,7 @@ export namespace Replicache {
     return deserialize<
       DeepReadonlyObject<
         TTableName extends typeof usersTableName
-          ? UserWithProfile
+          ? UserData
           : TableByName<TTableName>["$inferSelect"]
       >
     >(value);
@@ -78,7 +78,7 @@ export namespace Replicache {
         deserialize<
           DeepReadonlyObject<
             TTableName extends typeof usersTableName
-              ? UserWithProfile
+              ? UserData
               : TableByName<TTableName>["$inferSelect"]
           >
         >,
@@ -91,7 +91,7 @@ export namespace Replicache {
     id: string,
     value: DeepReadonlyObject<
       TTableName extends typeof usersTableName
-        ? UserWithProfile
+        ? UserData
         : TableByName<TTableName>["$inferSelect"]
     >,
   ) => tx.set(`${name}/${id}`, serialize(value) as Serialized);

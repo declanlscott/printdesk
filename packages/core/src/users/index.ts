@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
+import { oauth2ProvidersTable } from "../auth/sql";
 import {
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
@@ -24,7 +25,7 @@ import type { InferInsertModel } from "drizzle-orm";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "./shared";
-import type { User, UserProfilesTable } from "./sql";
+import type { User, UserData, UserProfilesTable } from "./sql";
 
 export namespace Users {
   export const createProfile = async (
@@ -35,15 +36,18 @@ export namespace Users {
         .insert(userProfilesTable)
         .values(profile)
         .returning({ id: userProfilesTable.id })
-        .then((rows) => rows.at(0)),
+        .then(R.first()),
     );
 
-  export const read = async (ids: Array<User["id"]>) =>
+  export const read = async (
+    ids: Array<User["id"]>,
+  ): Promise<Array<UserData>> =>
     useTransaction((tx) =>
       tx
         .select({
           user: usersTable,
           profile: userProfilesTable,
+          oauth2Provider: oauth2ProvidersTable,
         })
         .from(usersTable)
         .innerJoin(
@@ -53,6 +57,13 @@ export namespace Users {
             eq(usersTable.tenantId, userProfilesTable.tenantId),
           ),
         )
+        .innerJoin(
+          oauth2ProvidersTable,
+          and(
+            eq(userProfilesTable.oauth2ProviderId, oauth2ProvidersTable.id),
+            eq(userProfilesTable.tenantId, oauth2ProvidersTable.tenantId),
+          ),
+        )
         .where(
           and(
             inArray(usersTable.id, ids),
@@ -60,7 +71,11 @@ export namespace Users {
           ),
         )
         .then((rows) =>
-          rows.map(({ user, profile }) => ({ ...user, profile })),
+          rows.map(({ user, profile, oauth2Provider }) => ({
+            ...user,
+            profile,
+            oauth2Provider,
+          })),
         ),
     );
 

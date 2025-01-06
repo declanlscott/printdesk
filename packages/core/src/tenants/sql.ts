@@ -1,8 +1,6 @@
 import {
-  index,
   jsonb,
   pgTable,
-  text,
   uniqueIndex,
   uuid,
   varchar,
@@ -35,13 +33,9 @@ export const tenantsTable = pgTable(
     slug: varchar("slug", { length: Constants.VARCHAR_LENGTH }).notNull(),
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     status: tenantStatus("status").notNull().default("initializing"),
-    oauth2ProviderId: text("oauth2_provider_id").notNull(),
     ...timestamps,
   },
-  (table) => [
-    uniqueIndex("slug_idx").on(table.slug),
-    index("oauth2_provider_id_idx").on(table.oauth2ProviderId),
-  ],
+  (table) => [uniqueIndex("slug_idx").on(table.slug)],
 );
 export type TenantsTable = typeof tenantsTable;
 export type Tenant = InferSelectModel<TenantsTable>;

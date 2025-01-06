@@ -3,9 +3,9 @@ import { assertActor } from "../actors/context";
 import { createTransaction } from "../drizzle/context";
 import { Utils } from "../utils";
 
-import type { UserWithProfile } from "./sql";
+import type { UserData } from "./sql";
 
-export type UserContext = UserWithProfile;
+export type UserContext = UserData;
 export const UserContext = Utils.createContext<UserContext>("User");
 
 export const useUser = UserContext.use;

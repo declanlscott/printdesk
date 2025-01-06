@@ -28,7 +28,7 @@ import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "../users/shared";
-import type { User, UserWithProfile } from "../users/sql";
+import type { User, UserData } from "../users/sql";
 import type { AnyError, CustomError, InferCustomError } from "../utils/types";
 import type { Action, Resource } from "./shared";
 
@@ -42,7 +42,7 @@ export namespace AccessControl {
         | boolean
         | ((
             tx: ReadTransaction | WriteTransaction,
-            user: DeepReadonlyObject<UserWithProfile>,
+            user: DeepReadonlyObject<UserData>,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ...input: Array<any>
           ) => boolean | Promise<boolean>)
@@ -681,12 +681,12 @@ export namespace AccessControl {
     TPermission extends (typeof permissions)[UserRole][TResource][TAction],
   >(
     tx: ReadTransaction | WriteTransaction,
-    user: DeepReadonlyObject<UserWithProfile>,
+    user: DeepReadonlyObject<UserData>,
     resource: TResource,
     action: TAction,
     ...input: TPermission extends (
       tx: ReadTransaction | WriteTransaction,
-      user: DeepReadonlyObject<UserWithProfile>,
+      user: DeepReadonlyObject<UserData>,
       ...input: infer TInput
     ) => unknown
       ? TInput

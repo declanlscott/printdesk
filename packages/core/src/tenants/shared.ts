@@ -55,14 +55,7 @@ export const updateTenantMutationArgsSchema = v.object({
   id: nanoIdSchema,
   updatedAt: v.date(),
   ...v.partial(
-    v.omit(tenantSchema, [
-      "id",
-      "licenseKey",
-      "oauth2ProviderId",
-      "createdAt",
-      "updatedAt",
-      "deletedAt",
-    ]),
+    v.omit(tenantSchema, ["id", "createdAt", "updatedAt", "deletedAt"]),
   ).entries,
 });
 export type UpdateTenantMutationArgs = v.InferOutput<

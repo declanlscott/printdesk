@@ -6,7 +6,11 @@ import { Resource } from "sst";
 /**
  * NOTE: Depends on sts client and execute-api signer
  */
-export const appsyncSigner = (roleName: string, roleSessionName: string) =>
+export const appsyncSigner = (
+  props:
+    | { forTenant: true; role: { name: string; sessionName: string } }
+    | { forTenant: false },
+) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
@@ -15,12 +19,14 @@ export const appsyncSigner = (roleName: string, roleSessionName: string) =>
             appsync: SignatureV4.buildSigner({
               region: Resource.Aws.region,
               service: "appsync",
-              credentials: await Sts.getAssumeRoleCredentials({
-                type: "name",
-                accountId: await Api.getAccountId(),
-                roleName,
-                roleSessionName,
-              }),
+              credentials: props.forTenant
+                ? await Sts.getAssumeRoleCredentials({
+                    type: "name",
+                    accountId: await Api.getAccountId(),
+                    roleName: props.role.name,
+                    roleSessionName: props.role.sessionName,
+                  })
+                : undefined,
             }),
           },
         },

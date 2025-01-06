@@ -30,22 +30,22 @@ export type TenantInfraProgramInput = v.InferOutput<
 
 export const tenantsTableName = "tenants";
 
+export const tenantSlugSchema = v.pipe(
+  v.string(),
+  v.regex(
+    Constants.TENANT_SLUG_PATTERN,
+    "Invalid format, only alphanumeric characters and hyphens are allowed",
+  ),
+);
+
 export const tenantStatuses = ["initializing", "active", "suspended"] as const;
 export type TenantStatus = (typeof tenantStatuses)[number];
 
 export const tenantSchema = v.object({
   id: nanoIdSchema,
-  slug: v.pipe(
-    v.string(),
-    v.regex(
-      Constants.TENANT_SLUG_PATTERN,
-      "Invalid format, only alphanumeric characters and hyphens are allowed",
-    ),
-  ),
+  slug: tenantSlugSchema,
   name: v.string(),
   status: v.picklist(tenantStatuses),
-  licenseKey: v.pipe(v.string(), v.uuid()),
-  oauth2ProviderId: v.nullable(v.string()),
   ...timestampsSchema.entries,
 });
 

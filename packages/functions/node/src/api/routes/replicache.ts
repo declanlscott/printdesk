@@ -7,7 +7,6 @@ import {
 import { Hono } from "hono";
 import { Resource } from "sst";
 
-import { authn } from "~/api/middleware/auth";
 import {
   appsyncSigner,
   executeApiSigner,
@@ -16,7 +15,6 @@ import {
 import { user } from "~/api/middleware/user";
 
 export default new Hono()
-  .use(authn)
   .use(user)
   .post("/pull", async (c) => {
     const pullRequest = await c.req.json();
@@ -30,10 +28,13 @@ export default new Hono()
     "/push",
     executeApiSigner,
     stsClient,
-    appsyncSigner(
-      Resource.Aws.tenant.realtimePublisherRole.name,
-      "RealtimePublisherSigner",
-    ),
+    appsyncSigner({
+      forTenant: true,
+      role: {
+        name: Resource.Aws.tenant.realtimePublisherRole.name,
+        sessionName: "RealtimePublisherSigner",
+      },
+    }),
     async (c) => {
       const pushRequest = await c.req.json();
 

@@ -34,8 +34,8 @@ export namespace Tenants {
     });
   });
 
-  export const isValidSlug = async (slug: Tenant["slug"]) =>
-    !["api", "auth", "backend"].includes(slug) ||
+  export const isSlugAvailable = async (slug: Tenant["slug"]) =>
+    ["api", "auth", "backend"].includes(slug) ||
     (await useTransaction((tx) =>
       tx
         .select({})

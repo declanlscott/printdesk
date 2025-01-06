@@ -4,7 +4,7 @@ import { S3 } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import * as v from "valibot";
 
-import { authn, authz } from "~/api/middleware/auth";
+import { authz } from "~/api/middleware/auth";
 import {
   executeApiSigner,
   s3Client,
@@ -30,7 +30,7 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/mime-types", authn, async (c) => {
+  .get("/mime-types", async (c) => {
     const mimeTypes = await Documents.getMimeTypes();
 
     return c.json({ mimeTypes }, 200);

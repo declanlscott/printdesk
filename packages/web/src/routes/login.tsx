@@ -35,9 +35,9 @@ export const Route = createFileRoute("/login")({
       )[0];
     }
 
-    const res = await context.api.client.tenants["oauth-provider-type"].$get({
-      query: { slug },
-    });
+    const res = await context.api.client.public.tenants[
+      "oauth-provider-types"
+    ].$get({ query: { slug } });
     if (!res.ok) {
       switch (res.status as number) {
         case 404:
@@ -54,16 +54,18 @@ export const Route = createFileRoute("/login")({
       }
     }
 
-    const { oauthProviderType } = await res.json();
+    const { oauthProviderTypes } = await res.json();
 
     // Start the OAuth flow
     const url = await context.authStore.actions.authorize(
-      oauthProviderType,
+      oauthProviderTypes[0],
       deps.search.from,
     );
 
     throw redirect({ href: url, reloadDocument: true });
   },
 });
+
+// TODO: If there are multiple providers, render a component that allows the user to choose
 
 // TODO: Error component

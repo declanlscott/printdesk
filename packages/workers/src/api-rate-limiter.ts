@@ -31,7 +31,7 @@ export default new Hono<{
 
       if (!verified.err)
         outcome = await c.env.API_RATE_LIMITERS.byUser({
-          key: `${verified.subject.properties.tenant.id}#${verified.subject.properties.id}`,
+          key: `${verified.subject.properties.tenantId}#${verified.subject.properties.id}`,
         });
       else console.log(verified.err.message, "rate limiting by IP");
     }

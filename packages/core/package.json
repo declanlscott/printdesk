@@ -17,6 +17,7 @@
     "@aws-sdk/dsql-signer": "^3.721.0",
     "@aws-sdk/s3-request-presigner": "^3.722.0",
     "@aws-sdk/util-format-url": "^3.714.0",
+    "@azure/msal-node": "^2.16.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@microsoft/microsoft-graph-types": "^2.40.0",
     "@smithy/protocol-http": "^4.1.8",

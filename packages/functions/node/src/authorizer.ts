@@ -1,7 +1,8 @@
 import { authorizer } from "@openauthjs/openauth";
 import { decodeJWT } from "@oslojs/jwt";
-import { Auth } from "@printworks/core/auth";
+import { EntraId } from "@printworks/core/auth";
 import { subjects } from "@printworks/core/auth/shared";
+import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
 import {
   afterTransaction,
   createTransaction,
@@ -23,7 +24,7 @@ export const handler = handle(
   authorizer({
     subjects,
     providers: {
-      [Constants.ENTRA_ID]: Auth.entraIdAdapter({
+      [Constants.ENTRA_ID]: EntraId.adapter({
         tenant: "organizations",
         clientID: Resource.Oauth2.entraId.clientId,
         clientSecret: Resource.Oauth2.entraId.clientSecret,
@@ -72,10 +73,8 @@ export const handler = handle(
               switch (value.provider) {
                 case Constants.ENTRA_ID:
                   return withGraph(
-                    Graph.Client.initWithMiddleware({
-                      authProvider: {
-                        getAccessToken: async () => value.tokenset.access,
-                      },
+                    Graph.Client.init({
+                      authProvider: (done) => done(null, value.tokenset.access),
                     }),
                     async () => {
                       const { tid, aud } = decodeJWT(value.tokenset.access) as {

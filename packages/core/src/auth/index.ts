@@ -1,49 +1,17 @@
+import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Oauth2Adapter } from "@openauthjs/openauth/adapter/oauth2";
+import { Resource } from "sst";
 
 import { Constants } from "../utils/constants";
-import { generateId } from "../utils/shared";
 
 import type { Oauth2WrappedConfig } from "@openauthjs/openauth/adapter/oauth2";
-import type { Tokens } from "@openauthjs/openauth/client";
 
-export namespace Auth {
-  export const generateSessionToken = generateId;
-
-  export function buildTokensCookieAttributes(authTokens: Tokens) {
-    const tokensCookieAttributes: Array<
-      [
-        string,
-        string,
-        {
-          httpOnly: boolean;
-          sameSite: "lax" | "strict" | "none";
-          path: string;
-          maxAge: number;
-        },
-      ]
-    > = [];
-
-    const tokens = { ...authTokens, session: generateSessionToken() };
-    for (const tokenName in tokens)
-      tokensCookieAttributes.push([
-        `${tokenName}_token`,
-        tokens[tokenName as keyof typeof tokens],
-        {
-          httpOnly: true,
-          sameSite: "lax",
-          path: "/",
-          maxAge: 31449600, // 1 year
-        },
-      ]);
-
-    return tokensCookieAttributes;
-  }
-
-  export interface EntraIdAdapterConfig extends Oauth2WrappedConfig {
+export namespace EntraId {
+  export interface AdapterConfig extends Oauth2WrappedConfig {
     tenant: string;
   }
 
-  export const entraIdAdapter = ({ tenant, ...config }: EntraIdAdapterConfig) =>
+  export const adapter = ({ tenant, ...config }: AdapterConfig) =>
     Oauth2Adapter({
       ...config,
       type: Constants.ENTRA_ID,
@@ -53,5 +21,24 @@ export namespace Auth {
       },
     });
 
-  // TODO: Google provider
+  export async function applicationAccessToken(tenantId: string) {
+    const cca = new ConfidentialClientApplication({
+      auth: {
+        clientId: Resource.Oauth2.entraId.clientId,
+        clientSecret: Resource.Oauth2.entraId.clientSecret,
+        authority: `https://login.microsoftonline.com/${tenantId}`,
+      },
+    });
+
+    const result = await cca.acquireTokenByClientCredential({
+      scopes: ["https://graph.microsoft.com/.default"],
+    });
+    if (!result) throw new Error("Failed to acquire application access token");
+
+    return result.accessToken;
+  }
+}
+
+export namespace Google {
+  // TODO
 }

@@ -1,4 +1,4 @@
-import { Api } from "../api";
+import { Api } from "../tenants/api";
 import { Ssm } from "../utils/aws";
 import { Constants } from "../utils/constants";
 import { HttpError } from "../utils/errors";

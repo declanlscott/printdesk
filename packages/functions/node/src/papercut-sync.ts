@@ -44,8 +44,10 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
                   credentials: await Sts.getAssumeRoleCredentials({
                     type: "name",
                     accountId: await Api.getAccountId(),
-                    roleName: Resource.Aws.tenant.realtimePublisherRole.name,
-                    roleSessionName: "PapercutSync",
+                    role: {
+                      name: Resource.Aws.tenant.realtimePublisherRole.name,
+                      sessionName: "PapercutSync",
+                    },
                   }),
                 }),
               },

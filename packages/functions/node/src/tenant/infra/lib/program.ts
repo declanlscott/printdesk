@@ -56,8 +56,10 @@ export const getProgram =
             client: new Sts.Client({
               credentials: await Sts.getAssumeRoleCredentials({
                 type: "arn",
-                roleArn: Aws.organization.managementRole.arn,
-                roleSessionName: "StsClient",
+                role: {
+                  arn: Aws.organization.managementRole.arn,
+                  sessionName: "StsClient",
+                },
               }),
             }),
           },
@@ -69,8 +71,10 @@ export const getProgram =
                 client: new Appsync.Client({
                   credentials: await Sts.getAssumeRoleCredentials({
                     type: "arn",
-                    roleArn,
-                    roleSessionName: "AppsyncClient",
+                    role: {
+                      arn: roleArn,
+                      sessionName: "AppsyncClient",
+                    },
                   }),
                 }),
               },

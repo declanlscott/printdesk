@@ -4,7 +4,7 @@ import { createMiddleware } from "hono/factory";
 import { Resource } from "sst";
 
 /**
- * NOTE: Depends on sts client and execute-api signer
+ * NOTE: Tenant signer depends on sts client and execute-api signer
  */
 export const appsyncSigner = (
   props:
@@ -23,8 +23,7 @@ export const appsyncSigner = (
                 ? await Sts.getAssumeRoleCredentials({
                     type: "name",
                     accountId: await Api.getAccountId(),
-                    roleName: props.role.name,
-                    roleSessionName: props.role.sessionName,
+                    role: props.role,
                   })
                 : undefined,
             }),
@@ -52,20 +51,28 @@ export const executeApiSigner = createMiddleware(async (_, next) =>
 );
 
 /**
- * NOTE: Depends on sts client and execute-api signer
+ * NOTE: Tenant client depends on sts client and execute-api signer
  */
-export const s3Client = (roleSessionName: string) =>
+export const s3Client = (
+  props:
+    | { forTenant: true; role: { sessionName: string } }
+    | { forTenant: false },
+) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
         s3: {
           client: new S3.Client({
-            credentials: await Sts.getAssumeRoleCredentials({
-              type: "name",
-              accountId: await Api.getAccountId(),
-              roleName: Resource.Aws.tenant.bucketsAccessRole.name,
-              roleSessionName,
-            }),
+            credentials: props.forTenant
+              ? await Sts.getAssumeRoleCredentials({
+                  type: "name",
+                  accountId: await Api.getAccountId(),
+                  role: {
+                    name: Resource.Aws.tenant.bucketsAccessRole.name,
+                    sessionName: props.role.sessionName,
+                  },
+                })
+              : undefined,
           }),
         },
       },
@@ -74,20 +81,28 @@ export const s3Client = (roleSessionName: string) =>
   );
 
 /**
- * NOTE: Depends on sts client and execute-api signer
+ * NOTE: Tenant client depends on sts client and execute-api signer
  */
-export const ssmClient = (roleSessionName: string) =>
+export const ssmClient = (
+  props:
+    | { forTenant: true; role: { sessionName: string } }
+    | { forTenant: false },
+) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
         ssm: {
           client: new Ssm.Client({
-            credentials: await Sts.getAssumeRoleCredentials({
-              type: "name",
-              accountId: await Api.getAccountId(),
-              roleName: Resource.Aws.tenant.putParametersRole.name,
-              roleSessionName,
-            }),
+            credentials: props.forTenant
+              ? await Sts.getAssumeRoleCredentials({
+                  type: "name",
+                  accountId: await Api.getAccountId(),
+                  role: {
+                    name: Resource.Aws.tenant.putParametersRole.name,
+                    sessionName: props.role.sessionName,
+                  },
+                })
+              : undefined,
           }),
         },
       },

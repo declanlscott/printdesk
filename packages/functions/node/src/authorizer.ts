@@ -62,8 +62,10 @@ export const handler = handle(
                     credentials: await Sts.getAssumeRoleCredentials({
                       type: "name",
                       accountId: await Api.getAccountId(),
-                      roleName: Resource.Aws.tenant.realtimePublisherRole.name,
-                      roleSessionName: "Authorizer",
+                      role: {
+                        name: Resource.Aws.tenant.realtimePublisherRole.name,
+                        sessionName: "Authorizer",
+                      },
                     }),
                   }),
                 },

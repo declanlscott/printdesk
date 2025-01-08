@@ -20,7 +20,10 @@ export default new Hono()
     authzValidator,
     vValidator("json", updateServerTailnetUriSchema),
     executeApiSigner,
-    ssmClient("SetTailnetPapercutServerUri"),
+    ssmClient({
+      forTenant: true,
+      role: { sessionName: "SetTailnetPapercutServerUri" },
+    }),
     async (c) => {
       await Papercut.setTailnetServerUri(c.req.valid("json").tailnetUri);
 
@@ -33,7 +36,10 @@ export default new Hono()
     authzValidator,
     vValidator("json", updateServerAuthTokenSchema),
     executeApiSigner,
-    ssmClient("SetPapercutServerAuthToken"),
+    ssmClient({
+      forTenant: true,
+      role: { sessionName: "SetPapercutServerAuthToken" },
+    }),
     async (c) => {
       await Papercut.setServerAuthToken(c.req.valid("json").authToken);
 

@@ -281,18 +281,16 @@ export namespace Sts {
 
   export async function getAssumeRoleCredentials(
     input: (
-      | { type: "arn"; roleArn: string }
-      | { type: "name"; accountId: string; roleName: string }
-    ) & {
-      roleSessionName: string;
-    },
+      | { type: "arn"; role: { arn: string } }
+      | { type: "name"; accountId: string; role: { name: string } }
+    ) & { role: { sessionName: string } },
   ) {
     const { Credentials } = await assumeRole({
       RoleArn:
         input.type === "arn"
-          ? input.roleArn
-          : `arn:aws:iam::${input.accountId}:role/${input.roleName}`,
-      RoleSessionName: input.roleSessionName,
+          ? input.role.arn
+          : `arn:aws:iam::${input.accountId}:role/${input.role.name}`,
+      RoleSessionName: input.role.sessionName,
     });
 
     if (!Credentials?.AccessKeyId || !Credentials.SecretAccessKey)

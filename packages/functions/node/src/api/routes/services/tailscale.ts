@@ -13,7 +13,10 @@ export default new Hono().put(
   authzValidator,
   vValidator("json", updateTailscaleOauthClientSchema),
   executeApiSigner,
-  ssmClient("SetTailscaleOauthClient"),
+  ssmClient({
+    forTenant: true,
+    role: { sessionName: "SetTailscaleOauthClient" },
+  }),
   async (c) => {
     await Tailscale.setOauthClient(
       c.req.valid("json").id,

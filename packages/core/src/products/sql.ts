@@ -1,13 +1,12 @@
-import { index, jsonb, varchar } from "drizzle-orm/pg-core";
+import { index, varchar } from "drizzle-orm/pg-core";
 
-import { id } from "../drizzle/columns";
+import { id, jsonb } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
 import { productStatus } from "../utils/sql";
-import { productsTableName } from "./shared";
+import { productConfigurationSchema, productsTableName } from "./shared";
 
 import type { InferSelectModel } from "drizzle-orm";
-import type { ProductConfiguration } from "./shared";
 
 export const productsTable = tenantTable(
   productsTableName,
@@ -15,7 +14,7 @@ export const productsTable = tenantTable(
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     status: productStatus("status").notNull(),
     roomId: id("room_id").notNull(),
-    config: jsonb("config").$type<ProductConfiguration>().notNull(),
+    config: jsonb("config", productConfigurationSchema).notNull(),
   },
   (table) => [
     index("status_idx").on(table.status),

@@ -34,13 +34,13 @@ importers:
         version: 15.0.1
       sst:
         specifier: ^3.4.54
-        version: 3.4.54(hono@4.6.15)(valibot@1.0.0-beta.8(typescript@5.7.2))
+        version: 3.4.54(hono@4.6.15)(valibot@1.0.0-beta.11(typescript@5.7.2))
       superjson:
         specifier: ^2.2.2
         version: 2.2.2
       valibot:
         specifier: beta
-        version: 1.0.0-beta.8(typescript@5.7.2)
+        version: 1.0.0-beta.11(typescript@5.7.2)
     devDependencies:
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.4.0
@@ -117,6 +117,9 @@ importers:
       fast-xml-parser:
         specifier: ^4.5.1
         version: 4.5.1
+      msgpackr:
+        specifier: ^1.11.2
+        version: 1.11.2
       nanoid:
         specifier: ^5.0.9
         version: 5.0.9
@@ -168,7 +171,7 @@ importers:
     dependencies:
       '@hono/valibot-validator':
         specifier: ^0.5.1
-        version: 0.5.1(hono@4.6.15)(valibot@1.0.0-beta.8(typescript@5.7.2))
+        version: 0.5.1(hono@4.6.15)(valibot@1.0.0-beta.11(typescript@5.7.2))
       '@oslojs/jwt':
         specifier: ^0.3.0
         version: 0.3.0
@@ -1692,6 +1695,36 @@ packages:
 
   '@mjackson/headers@0.8.0':
     resolution: {integrity: sha512-A6nE9ZKTGX1hTHQOeoYn/f7+xRTgzixHWu9jtZ8zYgZYq30MPtZIRXqEyY8bWaIILr+zWdmUPQg/R/8e+e/8Nw==}
+
+  '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
+    resolution: {integrity: sha512-QZHtlVgbAdy2zAqNA9Gu1UpIuI8Xvsd1v8ic6B2pZmeFnFcMWiPLfWXh7TVw4eGEZ/C9TH281KwhVoeQUKbyjw==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.3':
+    resolution: {integrity: sha512-mdzd3AVzYKuUmiWOQ8GNhl64/IoFGol569zNRdkLReh6LRLHOXxU4U8eq0JwaD8iFHdVGqSy4IjFL4reoWCDFw==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.3':
+    resolution: {integrity: sha512-YxQL+ax0XqBJDZiKimS2XQaf+2wDGVa1enVRGzEvLLVFeqa5kx2bWbtcSXgsxjQB7nRqqIGFIcLteF/sHeVtQg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@msgpackr-extract/msgpackr-extract-linux-arm@3.0.3':
+    resolution: {integrity: sha512-fg0uy/dG/nZEXfYilKoRe7yALaNmHoYeIoJuJ7KJ+YyU2bvY8vPv27f7UKhGRpY6euFYqEVhxCFZgAUNQBM3nw==}
+    cpu: [arm]
+    os: [linux]
+
+  '@msgpackr-extract/msgpackr-extract-linux-x64@3.0.3':
+    resolution: {integrity: sha512-cvwNfbP07pKUfq1uH+S6KJ7dT9K8WOE4ZiAcsrSes+UY55E/0jLYc+vq+DO7jlmqRb5zAggExKm0H7O/CBaesg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
+    resolution: {integrity: sha512-x0fWaQtYp4E6sktbsdAqnehxDgEc/VwM7uLsRCYWaiGu0ykYdZPiS8zCWdnjHwyiumousxfBm4SO31eXqwEZhQ==}
+    cpu: [x64]
+    os: [win32]
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -4959,6 +4992,13 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
+  msgpackr-extract@3.0.3:
+    resolution: {integrity: sha512-P0efT1C9jIdVRefqjzOQ9Xml57zpOXnIuS+csaB4MdZbTdmGDLo8XhzBG1N7aO11gKDDkJvBLULeFTo46wwreA==}
+    hasBin: true
+
+  msgpackr@1.11.2:
+    resolution: {integrity: sha512-F9UngXRlPyWCDEASDpTf6c9uNhGPTqnTeLVt7bN+bU1eajoR/8V9ys2BRaV5C/e5ihE6sJ9uPIKaYt6bFuO32g==}
+
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
 
@@ -4985,6 +5025,10 @@ packages:
 
   nlcst-to-string@4.0.0:
     resolution: {integrity: sha512-YKLBCcUYKAg0FNlOBT6aI91qFmSiFKiluk655WzPF+DDMA02qIyy8uiRqI8QXtcFpEvll12LpL5MXqEmAZ+dcA==}
+
+  node-gyp-build-optional-packages@5.2.2:
+    resolution: {integrity: sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw==}
+    hasBin: true
 
   node-gyp@10.3.1:
     resolution: {integrity: sha512-Pp3nFHBThHzVtNY7U6JfPjvT/DTE8+o/4xKsLQtBoU+j2HLsGlhcfzflAoUreaJbNmYnX+LlLi0qjV8kpyO6xQ==}
@@ -6075,8 +6119,8 @@ packages:
     resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
     hasBin: true
 
-  valibot@1.0.0-beta.8:
-    resolution: {integrity: sha512-OPAwJZtowb0j91b+bd77+ny7D1VVzsCzD7Jl9waLUlMprTsfI9Y3HHbW3hAQD7wKDKHsmGEesuiYWaYvcZL2wg==}
+  valibot@1.0.0-beta.11:
+    resolution: {integrity: sha512-Ztl5Iks1Ql7Z6CwkS5oyqguN3G8tmUiNlsHpqbDt6DLMpm+eu+n8Q7f921gI3uHvNZ8xDVkd4cEJP5t+lELOfw==}
     peerDependencies:
       typescript: '>=5'
     peerDependenciesMeta:
@@ -7787,10 +7831,10 @@ snapshots:
       protobufjs: 7.4.0
       yargs: 17.7.2
 
-  '@hono/valibot-validator@0.5.1(hono@4.6.15)(valibot@1.0.0-beta.8(typescript@5.7.2))':
+  '@hono/valibot-validator@0.5.1(hono@4.6.15)(valibot@1.0.0-beta.11(typescript@5.7.2))':
     dependencies:
       hono: 4.6.15
-      valibot: 1.0.0-beta.8(typescript@5.7.2)
+      valibot: 1.0.0-beta.11(typescript@5.7.2)
 
   '@humanwhocodes/config-array@0.13.0':
     dependencies:
@@ -7966,6 +8010,24 @@ snapshots:
       '@mjackson/headers': 0.8.0
 
   '@mjackson/headers@0.8.0': {}
+
+  '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.3':
+    optional: true
+
+  '@msgpackr-extract/msgpackr-extract-darwin-x64@3.0.3':
+    optional: true
+
+  '@msgpackr-extract/msgpackr-extract-linux-arm64@3.0.3':
+    optional: true
+
+  '@msgpackr-extract/msgpackr-extract-linux-arm@3.0.3':
+    optional: true
+
+  '@msgpackr-extract/msgpackr-extract-linux-x64@3.0.3':
+    optional: true
+
+  '@msgpackr-extract/msgpackr-extract-win32-x64@3.0.3':
+    optional: true
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -12286,6 +12348,22 @@ snapshots:
 
   ms@2.1.3: {}
 
+  msgpackr-extract@3.0.3:
+    dependencies:
+      node-gyp-build-optional-packages: 5.2.2
+    optionalDependencies:
+      '@msgpackr-extract/msgpackr-extract-darwin-arm64': 3.0.3
+      '@msgpackr-extract/msgpackr-extract-darwin-x64': 3.0.3
+      '@msgpackr-extract/msgpackr-extract-linux-arm': 3.0.3
+      '@msgpackr-extract/msgpackr-extract-linux-arm64': 3.0.3
+      '@msgpackr-extract/msgpackr-extract-linux-x64': 3.0.3
+      '@msgpackr-extract/msgpackr-extract-win32-x64': 3.0.3
+    optional: true
+
+  msgpackr@1.11.2:
+    optionalDependencies:
+      msgpackr-extract: 3.0.3
+
   mz@2.7.0:
     dependencies:
       any-promise: 1.3.0
@@ -12305,6 +12383,11 @@ snapshots:
   nlcst-to-string@4.0.0:
     dependencies:
       '@types/nlcst': 2.0.3
+
+  node-gyp-build-optional-packages@5.2.2:
+    dependencies:
+      detect-libc: 2.0.3
+    optional: true
 
   node-gyp@10.3.1:
     dependencies:
@@ -13248,7 +13331,7 @@ snapshots:
   sst-linux-x86@3.4.54:
     optional: true
 
-  sst@3.4.54(hono@4.6.15)(valibot@1.0.0-beta.8(typescript@5.7.2)):
+  sst@3.4.54(hono@4.6.15)(valibot@1.0.0-beta.11(typescript@5.7.2)):
     dependencies:
       aws4fetch: 1.0.20
       jose: 5.2.3
@@ -13260,7 +13343,7 @@ snapshots:
       sst-linux-arm64: 3.4.54
       sst-linux-x64: 3.4.54
       sst-linux-x86: 3.4.54
-      valibot: 1.0.0-beta.8(typescript@5.7.2)
+      valibot: 1.0.0-beta.11(typescript@5.7.2)
 
   stdin-discarder@0.2.2: {}
 
@@ -13576,7 +13659,7 @@ snapshots:
 
   uuid@9.0.1: {}
 
-  valibot@1.0.0-beta.8(typescript@5.7.2):
+  valibot@1.0.0-beta.11(typescript@5.7.2):
     optionalDependencies:
       typescript: 5.7.2
 

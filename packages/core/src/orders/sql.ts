@@ -1,12 +1,11 @@
-import { index, jsonb, timestamp, varchar } from "drizzle-orm/pg-core";
+import { index, timestamp, varchar } from "drizzle-orm/pg-core";
 
-import { id } from "../drizzle/columns";
+import { id, jsonb } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
-import { ordersTableName } from "./shared";
+import { orderAttributesSchema, ordersTableName } from "./shared";
 
 import type { InferSelectModel } from "drizzle-orm";
-import type { OrderAttributes } from "./shared";
 
 export const ordersTable = tenantTable(
   ordersTableName,
@@ -16,7 +15,7 @@ export const ordersTable = tenantTable(
     operatorId: id("operator_id"),
     productId: id("product_id").notNull(),
     billingAccountId: id("billing_account_id").notNull(),
-    attributes: jsonb("attributes").$type<OrderAttributes>().notNull(),
+    attributes: jsonb("attributes", orderAttributesSchema).notNull(),
     workflowStatus: varchar("workflow_status", {
       length: Constants.VARCHAR_LENGTH,
     }).notNull(),

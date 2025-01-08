@@ -2,14 +2,13 @@ import {
   bigint,
   index,
   integer,
-  jsonb,
   pgTable,
   primaryKey,
   text,
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { id, timestamps } from "../drizzle/columns";
+import { id, jsonb, timestamps } from "../drizzle/columns";
 import { tenantIdColumns } from "../drizzle/tables";
 import {
   replicacheClientGroupsTableName,
@@ -72,7 +71,7 @@ export const replicacheClientViewsTable = pgTable(
     tenantId: tenantIdColumns.tenantId,
     clientGroupId: uuid("client_group_id").notNull(),
     version: integer("version").notNull(),
-    record: jsonb("record").$type<ClientViewRecord>().notNull(),
+    record: jsonb<undefined, ClientViewRecord>("record").notNull(),
     ...timestamps,
   },
   (table) => [

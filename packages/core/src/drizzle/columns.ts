@@ -1,5 +1,7 @@
 import { getTableColumns, sql } from "drizzle-orm";
-import { char, timestamp } from "drizzle-orm/pg-core";
+import { char, customType, timestamp } from "drizzle-orm/pg-core";
+import { Decoder, Encoder } from "msgpackr";
+import * as v from "valibot";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";
@@ -64,3 +66,32 @@ export type OmitTimestamps<TTable> = Omit<TTable, keyof typeof timestamps>;
 
 export const getRowVersionColumn = (tableName: string) =>
   sql<number>`"${tableName}"."${Constants.ROW_VERSION_COLUMN_NAME}"`;
+
+const encoder = new Encoder();
+const decoder = new Decoder();
+
+export const jsonb = <
+  TMaybeSchema extends v.GenericSchema | undefined = undefined,
+  TData = TMaybeSchema extends v.GenericSchema
+    ? v.InferOutput<TMaybeSchema>
+    : // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      any,
+>(
+  name: string,
+  schema?: TMaybeSchema,
+) =>
+  customType<{ data: TData; driverData: Buffer }>({
+    dataType() {
+      return "bytea";
+    },
+    toDriver(value) {
+      return Buffer.from(encoder.encode(value));
+    },
+    fromDriver(value) {
+      const decoded = decoder.decode(value);
+
+      if (schema) return v.parse(schema, decoded) as TData;
+
+      return decoded as TData;
+    },
+  })(name);

@@ -1,22 +1,16 @@
-import {
-  jsonb,
-  pgTable,
-  uniqueIndex,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
-import { id, idPrimaryKey, timestamps } from "../drizzle/columns";
+import { id, idPrimaryKey, jsonb, timestamps } from "../drizzle/columns";
 import { Constants } from "../utils/constants";
 import { licenseStatus, tenantStatus } from "../utils/sql";
 import {
   licensesTableName,
+  tenantInfraProgramInputSchema,
   tenantMetadataTableName,
   tenantsTableName,
 } from "./shared";
 
 import type { InferSelectModel } from "drizzle-orm";
-import type { TenantInfraProgramInput } from "./shared";
 
 export const licensesTable = pgTable(licensesTableName, {
   key: uuid("key").defaultRandom().primaryKey(),
@@ -42,9 +36,10 @@ export type Tenant = InferSelectModel<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   ...idPrimaryKey,
-  infraProgramInput: jsonb("infra_program_input")
-    .$type<TenantInfraProgramInput>()
-    .notNull(),
+  infraProgramInput: jsonb(
+    "infra_program_input",
+    tenantInfraProgramInputSchema,
+  ).notNull(),
   tenantId: id("tenant_id").unique().notNull(),
   ...timestamps,
 });

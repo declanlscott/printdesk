@@ -18,6 +18,7 @@ export const billingAccountTypes = ["papercut", "internal"] as const;
 export const billingAccountSchema = v.object({
   id: nanoIdSchema,
   tenantId: nanoIdSchema,
+  type: v.picklist(billingAccountTypes),
   name: v.string(),
   reviewThreshold: v.nullable(v.pipe(costSchema, v.transform(String))),
   ...timestampsSchema.entries,

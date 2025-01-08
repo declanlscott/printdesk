@@ -54,6 +54,7 @@ export const userProfilesTableName = "user_profiles";
 
 export const userProfileSchema = v.object({
   ...tenantTableSchema.entries,
+  userId: nanoIdSchema,
   oauth2UserId: v.string(),
   oauth2ProviderId: v.string(),
   role: v.picklist(userRoles),

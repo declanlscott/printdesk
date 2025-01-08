@@ -69,7 +69,7 @@ const registrationStepsSchemas = [
     tenantSlug: tenantSchema.entries.slug,
   }),
   v.object({
-    oauth2ProviderVariant: oauth2ProvidersSchema.entries.variant,
+    oauth2ProviderType: oauth2ProvidersSchema.entries.type,
     oauth2ProviderId: oauth2ProvidersSchema.entries.id,
   }),
   v.object({

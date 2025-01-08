@@ -15,7 +15,7 @@ export type Oauth2ProviderType = (typeof oauth2ProviderTypes)[number];
 export const oauth2ProvidersSchema = v.object({
   id: v.string(),
   tenantId: v.string(),
-  variant: v.picklist(oauth2ProviderTypes),
+  type: v.picklist(oauth2ProviderTypes),
   ...timestampsSchema.entries,
 });
 

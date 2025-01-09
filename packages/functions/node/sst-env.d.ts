@@ -120,7 +120,7 @@ declare module "sst" {
     }
     "DsqlCluster": {
       "database": string
-      "hostname": string
+      "host": string
       "port": number
       "ssl": boolean
       "type": "pulumi-nodejs.dynamic.Resource"

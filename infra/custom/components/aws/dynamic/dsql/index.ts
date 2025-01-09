@@ -52,7 +52,7 @@ export namespace Dsql {
     }
 
     getSSTLink(): Link.Definition<{
-      hostname: $util.Output<string>;
+      host: $util.Output<string>;
       port: $util.Output<number>;
       database: $util.Output<string>;
       user: $util.Output<string>;
@@ -60,7 +60,7 @@ export namespace Dsql {
     }> {
       return {
         properties: {
-          hostname: this.endpoint,
+          host: this.endpoint,
           port: $output(5432),
           database: $output("postgres"),
           user: $output("admin"),

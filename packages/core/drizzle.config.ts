@@ -6,11 +6,7 @@ export default defineConfig({
   out: "../../migrations/",
   dialect: "postgresql",
   dbCredentials: {
-    host: Resource.DsqlCluster.hostname,
-    port: Resource.DsqlCluster.port,
-    database: Resource.DsqlCluster.database,
-    user: Resource.DsqlCluster.user,
+    ...Resource.DsqlCluster,
     password: process.env.DB_PASSWORD,
-    ssl: Resource.DsqlCluster.ssl,
   },
 });

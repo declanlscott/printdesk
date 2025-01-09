@@ -10,6 +10,8 @@
   "dependencies": {
     "@aws-sdk/client-appsync": "^3.723.0",
     "@aws-sdk/client-dsql": "^3.723.0",
+    "@aws-sdk/credential-providers": "^3.723.0",
+    "@aws-sdk/dsql-signer": "^3.723.0",
     "@openauthjs/openauth": "^0.3.2",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.38.3",

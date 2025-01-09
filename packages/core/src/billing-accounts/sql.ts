@@ -1,4 +1,3 @@
-import { and, eq, isNotNull } from "drizzle-orm";
 import { bigint, index, numeric, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { id } from "../drizzle/columns";
@@ -18,14 +17,16 @@ export const billingAccountsTable = tenantTable(
     type: billingAccountType("type").notNull(),
     name: text("name").notNull(),
     reviewThreshold: numeric("review_threshold"),
-    papercutAccountId: bigint({ mode: "number" }),
+    // NOTE: Set to -1 if the billing account is not a papercut shared account
+    papercutAccountId: bigint({ mode: "number" }).notNull(),
   },
   (table) => [
-    uniqueIndex()
-      .on(table.type, table.name, table.papercutAccountId, table.tenantId)
-      .where(
-        and(eq(table.type, "papercut"), isNotNull(table.papercutAccountId))!,
-      ),
+    uniqueIndex().on(
+      table.type,
+      table.name,
+      table.papercutAccountId,
+      table.tenantId,
+    ),
   ],
 );
 export type BillingAccountsTable = typeof billingAccountsTable;

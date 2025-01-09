@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import { index, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { id } from "../drizzle/columns";
@@ -15,11 +14,7 @@ export const usersTable = tenantTable(
     type: userType("type").notNull(),
     username: text("username").notNull(),
   },
-  (table) => [
-    uniqueIndex()
-      .on(table.type, table.username, table.tenantId)
-      .where(eq(table.type, "papercut")),
-  ],
+  (table) => [uniqueIndex().on(table.type, table.username, table.tenantId)],
 );
 
 export type UsersTable = typeof usersTable;

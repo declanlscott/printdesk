@@ -81,12 +81,8 @@ export const customJsonb = <
   schema?: TMaybeSchema,
 ) =>
   customType<{ data: TData; driverData: Buffer }>({
-    dataType() {
-      return "bytea";
-    },
-    toDriver(value) {
-      return Buffer.from(encoder.encode(value));
-    },
+    dataType: () => "bytea",
+    toDriver: (value) => Buffer.from(encoder.encode(value)),
     fromDriver(value) {
       const decoded = decoder.decode(value);
 
@@ -101,13 +97,21 @@ export const customEnum = <const TValues extends ReadonlyArray<string>>(
   values: TValues,
 ) =>
   customType<{ data: TValues[number]; driverData: string }>({
-    dataType() {
-      return "text";
-    },
-    toDriver(value) {
-      return value;
-    },
-    fromDriver(value) {
-      return v.parse(v.picklist(values), value);
-    },
+    dataType: () => "varchar(50)",
+    toDriver: (value) => value,
+    fromDriver: (value) => v.parse(v.picklist(values), value),
+  })(name);
+
+export const customEnumArray = <const TValues extends ReadonlyArray<string>>(
+  name: string,
+  values: TValues,
+) =>
+  customType<{
+    data: Array<TValues[number]>;
+    driverData: string;
+  }>({
+    dataType: () => "text",
+    toDriver: (value) => value.join(","),
+    fromDriver: (value) =>
+      v.parse(v.array(v.picklist(values)), value.split(",")),
   })(name);

@@ -10,7 +10,7 @@ async function seed() {
 }
 
 async function main() {
-  console.log("🌱 Seeding database...");
+  console.log("🌱 Seeding database ...");
 
   try {
     await seed();

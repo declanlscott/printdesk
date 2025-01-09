@@ -1,4 +1,4 @@
-import { and, arrayOverlaps, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 
 import { announcementsTable } from "../announcements/sql";
 import {
@@ -293,11 +293,10 @@ export namespace AccessControl {
         useTransaction((tx) =>
           syncedTableResourceMetadataBaseQuery[commentsTable._.name](tx).where(
             and(
-              arrayOverlaps(commentsTable.visibleTo, [
-                "operator",
-                "manager",
-                "customer",
-              ]),
+              sql`
+                STRING_TO_ARRAY(${commentsTable.visibleTo}, ',') &&
+                  ARRAY['operator', 'manager', 'customer']
+              `,
               isNull(commentsTable.deletedAt),
             ),
           ),
@@ -406,7 +405,10 @@ export namespace AccessControl {
             )
             .where(
               and(
-                arrayOverlaps(commentsTable.visibleTo, ["manager", "customer"]),
+                sql`
+                  STRING_TO_ARRAY(${commentsTable.visibleTo}, ',') &&
+                    ARRAY['manager', 'customer']
+                `,
                 isNull(commentsTable.deletedAt),
               ),
             ),
@@ -568,7 +570,10 @@ export namespace AccessControl {
             .where(
               and(
                 eq(ordersTable.customerId, useUser().id),
-                arrayOverlaps(commentsTable.visibleTo, ["customer"]),
+                sql`
+                  STRING_TO_ARRAY(${commentsTable.visibleTo}, ',') &&
+                    ARRAY['customer']
+                `,
                 isNull(commentsTable.deletedAt),
               ),
             ),

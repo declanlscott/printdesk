@@ -1,8 +1,8 @@
-import { authorizer } from "@openauthjs/openauth";
+import { issuer } from "@openauthjs/openauth";
 import { decodeJWT } from "@oslojs/jwt";
 import { EntraId } from "@printworks/core/auth";
-import { subjects } from "@printworks/core/auth/shared";
 import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
+import { subjects } from "@printworks/core/auth/subjects";
 import {
   afterTransaction,
   createTransaction,
@@ -21,10 +21,10 @@ import * as R from "remeda";
 import { Resource } from "sst";
 
 export const handler = handle(
-  authorizer({
+  issuer({
     subjects,
     providers: {
-      [Constants.ENTRA_ID]: EntraId.adapter({
+      [Constants.ENTRA_ID]: EntraId.provider({
         tenant: "organizations",
         clientID: Resource.Oauth2.entraId.clientId,
         clientSecret: Resource.Oauth2.entraId.clientSecret,

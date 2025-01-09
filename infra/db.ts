@@ -18,5 +18,5 @@ export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
 });
 
 export const outputs = {
-  dsql: dsqlCluster.endpoint,
+  db: dsqlCluster.endpoint,
 };

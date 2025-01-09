@@ -1,5 +1,4 @@
 packages:
   - "packages/*"
   - "packages/functions/node"
-  - "packages/workers/user-rate-limiter"
-  - "packages/workers/ip-rate-limiter"
+  - "packages/workers/api-rate-limiters"

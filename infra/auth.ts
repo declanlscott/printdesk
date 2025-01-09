@@ -80,8 +80,8 @@ export const oauth2 = new sst.Linkable("Oauth2", {
 });
 
 export const auth = new sst.aws.Auth("Auth", {
-  authorizer: {
-    handler: "packages/functions/node/src/authorizer.handler",
+  issuer: {
+    handler: "packages/functions/node/src/issuer.handler",
     link: [dsqlCluster, oauth2],
     architecture: "arm64",
     runtime: "nodejs22.x",

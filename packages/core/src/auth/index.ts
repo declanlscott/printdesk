@@ -1,18 +1,18 @@
 import { ConfidentialClientApplication } from "@azure/msal-node";
-import { Oauth2Adapter } from "@openauthjs/openauth/adapter/oauth2";
+import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
 import { Resource } from "sst";
 
 import { Constants } from "../utils/constants";
 
-import type { Oauth2WrappedConfig } from "@openauthjs/openauth/adapter/oauth2";
+import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
 
 export namespace EntraId {
-  export interface AdapterConfig extends Oauth2WrappedConfig {
+  export interface ProviderConfig extends Oauth2WrappedConfig {
     tenant: string;
   }
 
-  export const adapter = ({ tenant, ...config }: AdapterConfig) =>
-    Oauth2Adapter({
+  export const provider = ({ tenant, ...config }: ProviderConfig) =>
+    Oauth2Provider({
       ...config,
       type: Constants.ENTRA_ID,
       endpoint: {

@@ -1,5 +1,5 @@
 import { createClient } from "@openauthjs/openauth/client";
-import { subjects } from "@printworks/core/auth/shared";
+import { subjects } from "@printworks/core/auth/subjects";
 import { Replicache } from "@printworks/core/replicache/client";
 import { usersTableName } from "@printworks/core/users/shared";
 import { ApplicationError } from "@printworks/core/utils/errors";
@@ -11,7 +11,7 @@ import { checkRoutePermission } from "~/lib/access-control";
 import { createStoreContext } from "~/lib/contexts/store";
 
 import type { Challenge, Client, Tokens } from "@openauthjs/openauth/client";
-import type { SubjectPayload } from "@openauthjs/openauth/session";
+import type { SubjectPayload } from "@openauthjs/openauth/subject";
 import type { Oauth2ProviderType } from "@printworks/core/auth/shared";
 import type { UserRole } from "@printworks/core/users/shared";
 import type { UserData } from "@printworks/core/users/sql";

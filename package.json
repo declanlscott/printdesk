@@ -8,15 +8,15 @@
     "format:write": "prettier --write ."
   },
   "dependencies": {
-    "@aws-sdk/client-appsync": "^3.721.0",
-    "@aws-sdk/client-dsql": "^3.721.0",
-    "@openauthjs/openauth": "^0.2.7",
+    "@aws-sdk/client-appsync": "^3.723.0",
+    "@aws-sdk/client-dsql": "^3.723.0",
+    "@openauthjs/openauth": "^0.3.2",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.38.3",
-    "hono": "^4.6.15",
+    "hono": "^4.6.16",
     "remeda": "^2.19.0",
     "replicache": "^15.0.1",
-    "sst": "^3.4.54",
+    "sst": "^3.5.1",
     "superjson": "^2.2.2",
     "valibot": "beta"
   },

@@ -1,5 +1,5 @@
 import { createClient } from "@openauthjs/openauth/client";
-import { subjects } from "@printworks/core/auth/shared";
+import { subjects } from "@printworks/core/auth/subjects";
 import { HttpError } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
 import { getConnInfo } from "hono/cloudflare-workers";

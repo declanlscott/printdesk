@@ -21,7 +21,7 @@ export const billingAccountsTable = tenantTable(
     papercutAccountId: bigint({ mode: "number" }),
   },
   (table) => [
-    uniqueIndex("unique_papercut_account_idx")
+    uniqueIndex()
       .on(table.type, table.name, table.papercutAccountId, table.tenantId)
       .where(
         and(eq(table.type, "papercut"), isNotNull(table.papercutAccountId))!,
@@ -38,12 +38,8 @@ export const billingAccountCustomerAuthorizationsTable = tenantTable(
     billingAccountId: id("billing_account_id").notNull(),
   },
   (table) => [
-    uniqueIndex("unique_billing_account_customer_authorization_idx").on(
-      table.customerId,
-      table.billingAccountId,
-      table.tenantId,
-    ),
-    index("customer_id_idx").on(table.customerId),
+    uniqueIndex().on(table.customerId, table.billingAccountId, table.tenantId),
+    index().on(table.customerId),
   ],
 );
 export type BillingAccountCustomerAuthorizationsTable =
@@ -58,12 +54,8 @@ export const billingAccountManagerAuthorizationsTable = tenantTable(
     billingAccountId: id("billing_account_id").notNull(),
   },
   (table) => [
-    uniqueIndex("unique_billing_account_manager_authorization_idx").on(
-      table.billingAccountId,
-      table.managerId,
-      table.tenantId,
-    ),
-    index("manager_id_idx").on(table.managerId),
+    uniqueIndex().on(table.billingAccountId, table.managerId, table.tenantId),
+    index().on(table.managerId),
   ],
 );
 export type BillingAccountManagerAuthorizationsTable =

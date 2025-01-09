@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { userSubjectSchema } from "../auth/shared";
+import { userSubjectSchema } from "../auth/subjects";
 import { nanoIdSchema } from "../utils/shared";
 
 export const publicActorSchema = v.object({

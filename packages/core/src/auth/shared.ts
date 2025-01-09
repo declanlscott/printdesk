@@ -1,8 +1,7 @@
-import { createSubjects } from "@openauthjs/openauth";
 import * as v from "valibot";
 
 import { Constants } from "../utils/constants";
-import { nanoIdSchema, timestampsSchema } from "../utils/shared";
+import { timestampsSchema } from "../utils/shared";
 
 export const oauth2ProvidersTableName = "oauth2_providers";
 
@@ -17,13 +16,4 @@ export const oauth2ProvidersSchema = v.object({
   tenantId: v.string(),
   type: v.picklist(oauth2ProviderTypes),
   ...timestampsSchema.entries,
-});
-
-export const userSubjectSchema = v.object({
-  id: nanoIdSchema,
-  tenantId: nanoIdSchema,
-});
-
-export const subjects = createSubjects({
-  user: userSubjectSchema,
 });

@@ -1,6 +1,6 @@
 import { index, timestamp, varchar } from "drizzle-orm/pg-core";
 
-import { id, jsonb } from "../drizzle/columns";
+import { customJsonb, id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
 import { orderAttributesSchema, ordersTableName } from "./shared";
@@ -15,7 +15,7 @@ export const ordersTable = tenantTable(
     operatorId: id("operator_id"),
     productId: id("product_id").notNull(),
     billingAccountId: id("billing_account_id").notNull(),
-    attributes: jsonb("attributes", orderAttributesSchema).notNull(),
+    attributes: customJsonb("attributes", orderAttributesSchema).notNull(),
     workflowStatus: varchar("workflow_status", {
       length: Constants.VARCHAR_LENGTH,
     }).notNull(),
@@ -24,10 +24,7 @@ export const ordersTable = tenantTable(
     }).notNull(),
     approvedAt: timestamp("approved_at"),
   },
-  (table) => [
-    index("customer_id_idx").on(table.customerId),
-    index("billing_account_id_idx").on(table.billingAccountId),
-  ],
+  (table) => [index().on(table.customerId), index().on(table.billingAccountId)],
 );
 
 export type OrdersTable = typeof ordersTable;

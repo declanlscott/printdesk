@@ -10,18 +10,19 @@ export const db = drizzle(
     port: Resource.DsqlCluster.port,
     database: Resource.DsqlCluster.database,
     user: Resource.DsqlCluster.user,
-    password: await withAws(
-      {
-        dsql: {
-          signer: Dsql.buildSigner({
-            hostname: Resource.DsqlCluster.hostname,
-            region: Resource.Aws.region,
-          }),
+    password: async () =>
+      withAws(
+        {
+          dsql: {
+            signer: Dsql.buildSigner({
+              hostname: Resource.DsqlCluster.hostname,
+              region: Resource.Aws.region,
+            }),
+          },
         },
-      },
-      async () => Dsql.generateToken(),
-    ),
-    ssl: "require",
+        async () => Dsql.generateToken(),
+      ),
+    ssl: Resource.DsqlCluster.ssl,
   }),
   { logger: true },
 );

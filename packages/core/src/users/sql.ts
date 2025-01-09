@@ -16,7 +16,7 @@ export const usersTable = tenantTable(
     username: text("username").notNull(),
   },
   (table) => [
-    uniqueIndex("unique_papercut_user_idx")
+    uniqueIndex()
       .on(table.type, table.username, table.tenantId)
       .where(eq(table.type, "papercut")),
   ],
@@ -37,12 +37,12 @@ export const userProfilesTable = tenantTable(
     email: text("email").notNull(),
   },
   (table) => [
-    unique("unique_user_id").on(table.userId, table.tenantId),
-    unique("unique_oauth2_user_id").on(table.oauth2UserId, table.tenantId),
-    unique("unique_email").on(table.email, table.tenantId),
-    index("oauth2_user_id_idx").on(table.oauth2UserId),
-    index("oauth2_provider_id_idx").on(table.oauth2ProviderId),
-    index("role_idx").on(table.role),
+    unique().on(table.userId, table.tenantId),
+    unique().on(table.oauth2UserId, table.tenantId),
+    unique().on(table.email, table.tenantId),
+    index().on(table.oauth2UserId),
+    index().on(table.oauth2ProviderId),
+    index().on(table.role),
   ],
 );
 

@@ -1,6 +1,6 @@
 import { index, varchar } from "drizzle-orm/pg-core";
 
-import { id, jsonb } from "../drizzle/columns";
+import { customJsonb, id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
 import { productStatus } from "../utils/sql";
@@ -14,12 +14,9 @@ export const productsTable = tenantTable(
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     status: productStatus("status").notNull(),
     roomId: id("room_id").notNull(),
-    config: jsonb("config", productConfigurationSchema).notNull(),
+    config: customJsonb("config", productConfigurationSchema).notNull(),
   },
-  (table) => [
-    index("status_idx").on(table.status),
-    index("room_id_idx").on(table.roomId),
-  ],
+  (table) => [index().on(table.status), index().on(table.roomId)],
 );
 
 export type ProductsTable = typeof productsTable;

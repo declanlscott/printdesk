@@ -15,10 +15,7 @@ export const commentsTable = tenantTable(
     content: text("content").notNull(),
     visibleTo: userRole("visible_to").array().notNull(),
   },
-  (table) => [
-    index("order_id_idx").on(table.orderId),
-    index("visible_to_idx").on(table.visibleTo),
-  ],
+  (table) => [index().on(table.orderId), index().on(table.visibleTo)],
 );
 
 export type CommentsTable = typeof commentsTable;

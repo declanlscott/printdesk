@@ -120,7 +120,7 @@ declare module "sst" {
       "database": string
       "hostname": string
       "port": number
-      "ssl": string
+      "ssl": boolean
       "type": "pulumi-nodejs.dynamic.Resource"
       "user": string
     }

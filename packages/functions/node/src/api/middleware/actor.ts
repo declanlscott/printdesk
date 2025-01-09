@@ -1,6 +1,6 @@
 import { createClient } from "@openauthjs/openauth/client";
 import { withActor } from "@printworks/core/actors/context";
-import { subjects } from "@printworks/core/auth/shared";
+import { subjects } from "@printworks/core/auth/subjects";
 import { createMiddleware } from "hono/factory";
 
 export const actor = createMiddleware(async (c, next) => {

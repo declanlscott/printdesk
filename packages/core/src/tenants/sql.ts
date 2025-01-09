@@ -1,6 +1,6 @@
 import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
-import { id, idPrimaryKey, jsonb, timestamps } from "../drizzle/columns";
+import { customJsonb, id, idPrimaryKey, timestamps } from "../drizzle/columns";
 import { Constants } from "../utils/constants";
 import { licenseStatus, tenantStatus } from "../utils/sql";
 import {
@@ -29,14 +29,14 @@ export const tenantsTable = pgTable(
     status: tenantStatus("status").notNull().default("initializing"),
     ...timestamps,
   },
-  (table) => [uniqueIndex("slug_idx").on(table.slug)],
+  (table) => [uniqueIndex().on(table.slug)],
 );
 export type TenantsTable = typeof tenantsTable;
 export type Tenant = InferSelectModel<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   ...idPrimaryKey,
-  infraProgramInput: jsonb(
+  infraProgramInput: customJsonb(
     "infra_program_input",
     tenantInfraProgramInputSchema,
   ).notNull(),

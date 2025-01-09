@@ -48,7 +48,7 @@ export namespace Dsql {
     }
 
     get endpoint() {
-      return $interpolate`${this.id}.${aws.getRegionOutput().name}.on.aws`;
+      return $interpolate`${this.id}.dsql.${aws.getRegionOutput().name}.on.aws`;
     }
 
     getSSTLink(): Link.Definition<{
@@ -56,7 +56,7 @@ export namespace Dsql {
       port: $util.Output<number>;
       database: $util.Output<string>;
       user: $util.Output<string>;
-      ssl: $util.Output<string>;
+      ssl: $util.Output<boolean>;
     }> {
       return {
         properties: {
@@ -64,7 +64,7 @@ export namespace Dsql {
           port: $output(5432),
           database: $output("postgres"),
           user: $output("admin"),
-          ssl: $output("require"),
+          ssl: $output(true),
         },
         include: [
           sst.aws.permission({

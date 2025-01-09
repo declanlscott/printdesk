@@ -1,35 +1,31 @@
-import { pgEnum } from "drizzle-orm/pg-core";
-
 import { oauth2ProviderTypes } from "../auth/shared";
 import { billingAccountTypes } from "../billing-accounts/shared";
+import { customEnum } from "../drizzle/columns";
 import { invoiceStatuses } from "../invoices/shared";
 import { productStatuses } from "../products/shared";
 import { roomStatuses, workflowStatusTypes } from "../rooms/shared";
 import { licenseStatuses, tenantStatuses } from "../tenants/shared";
 import { userRoles, userTypes } from "../users/shared";
 
-export const licenseStatus = pgEnum("license_status", licenseStatuses);
+export const licenseStatus = (name: string) =>
+  customEnum(name, licenseStatuses);
 
-export const tenantStatus = pgEnum("tenant_status", tenantStatuses);
+export const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
 
-export const roomStatus = pgEnum("room_status", roomStatuses);
-export const workflowStatusType = pgEnum(
-  "workflow_status_type",
-  workflowStatusTypes,
-);
+export const roomStatus = (name: string) => customEnum(name, roomStatuses);
+export const workflowStatusType = (name: string) =>
+  customEnum(name, workflowStatusTypes);
 
-export const userType = pgEnum("user_type", userTypes);
-export const userRole = pgEnum("user_role", userRoles);
+export const userType = (name: string) => customEnum(name, userTypes);
+export const userRole = (name: string) => customEnum(name, userRoles);
 
-export const oauth2ProviderType = pgEnum(
-  "oauth2_provider_type",
-  oauth2ProviderTypes,
-);
+export const oauth2ProviderType = (name: string) =>
+  customEnum(name, oauth2ProviderTypes);
 
-export const productStatus = pgEnum("product_status", productStatuses);
+export const productStatus = (name: string) =>
+  customEnum(name, productStatuses);
 
-export const billingAccountType = pgEnum(
-  "billing_account_type",
-  billingAccountTypes,
-);
-export const invoiceStatus = pgEnum("invoice_status", invoiceStatuses);
+export const billingAccountType = (name: string) =>
+  customEnum(name, billingAccountTypes);
+export const invoiceStatus = (name: string) =>
+  customEnum(name, invoiceStatuses);

@@ -30,8 +30,8 @@ export const roomsTable = tenantTable(
     details: text("details"),
   },
   (table) => [
-    unique("unique_name").on(table.name, table.tenantId),
-    index("status_idx").on(table.status),
+    unique().on(table.name, table.tenantId),
+    index().on(table.status),
   ],
 );
 export type RoomsTable = typeof roomsTable;
@@ -52,7 +52,7 @@ export const workflowStatusesTable = pgTable(
     primaryKey({
       columns: [table.id, table.roomId, table.tenantId],
     }),
-    unique("unique_index").on(table.index, table.roomId),
+    unique().on(table.index, table.roomId),
   ],
 );
 export type WorkflowStatusesTable = typeof workflowStatusesTable;
@@ -77,7 +77,7 @@ export const deliveryOptionsTable = pgTable(
     primaryKey({
       columns: [table.id, table.roomId, table.tenantId],
     }),
-    unique("unique_index").on(table.index, table.roomId),
+    unique().on(table.index, table.roomId),
   ],
 );
 export type DeliveryOptionsTable = typeof deliveryOptionsTable;

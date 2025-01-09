@@ -70,7 +70,7 @@ export const getRowVersionColumn = (tableName: string) =>
 const encoder = new Encoder();
 const decoder = new Decoder();
 
-export const jsonb = <
+export const customJsonb = <
   TMaybeSchema extends v.GenericSchema | undefined = undefined,
   TData = TMaybeSchema extends v.GenericSchema
     ? v.InferOutput<TMaybeSchema>
@@ -93,5 +93,21 @@ export const jsonb = <
       if (schema) return v.parse(schema, decoded) as TData;
 
       return decoded as TData;
+    },
+  })(name);
+
+export const customEnum = <const TValues extends ReadonlyArray<string>>(
+  name: string,
+  values: TValues,
+) =>
+  customType<{ data: TValues[number]; driverData: string }>({
+    dataType() {
+      return "text";
+    },
+    toDriver(value) {
+      return value;
+    },
+    fromDriver(value) {
+      return v.parse(v.picklist(values), value);
     },
   })(name);

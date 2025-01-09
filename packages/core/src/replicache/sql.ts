@@ -8,7 +8,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { id, jsonb, timestamps } from "../drizzle/columns";
+import { customJsonb, id, timestamps } from "../drizzle/columns";
 import { tenantIdColumns } from "../drizzle/tables";
 import {
   replicacheClientGroupsTableName,
@@ -22,7 +22,7 @@ import type { ClientViewRecord } from "./client-view-record";
 
 export const replicacheMetaTable = pgTable(replicacheMetaTableName, {
   key: text("key").primaryKey(),
-  value: jsonb("value").notNull(),
+  value: customJsonb("value").notNull(),
 });
 export type ReplicacheMetaTable = typeof replicacheMetaTable;
 export type ReplicacheMeta = InferSelectModel<ReplicacheMetaTable>;
@@ -38,7 +38,7 @@ export const replicacheClientGroupsTable = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.tenantId] }),
-    index("updated_at_idx").on(table.updatedAt),
+    index().on(table.updatedAt),
   ],
 );
 export type ReplicacheClientGroupsTable = typeof replicacheClientGroupsTable;
@@ -58,8 +58,8 @@ export const replicacheClientsTable = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.tenantId] }),
-    index("client_group_id_idx").on(table.clientGroupId),
-    index("updated_at_idx").on(table.updatedAt),
+    index().on(table.clientGroupId),
+    index().on(table.updatedAt),
   ],
 );
 export type ReplicacheClientsTable = typeof replicacheClientsTable;
@@ -71,14 +71,14 @@ export const replicacheClientViewsTable = pgTable(
     tenantId: tenantIdColumns.tenantId,
     clientGroupId: uuid("client_group_id").notNull(),
     version: integer("version").notNull(),
-    record: jsonb<undefined, ClientViewRecord>("record").notNull(),
+    record: customJsonb<undefined, ClientViewRecord>("record").notNull(),
     ...timestamps,
   },
   (table) => [
     primaryKey({
       columns: [table.clientGroupId, table.version, table.tenantId],
     }),
-    index("updated_at_idx").on(table.updatedAt),
+    index().on(table.updatedAt),
   ],
 );
 export type ReplicacheClientViewsTable = typeof replicacheClientViewsTable;

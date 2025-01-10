@@ -1,8 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { Api } from "../tenants/api";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
@@ -15,9 +15,9 @@ import type { Invoice } from "./sql";
 
 export namespace Invoices {
   export const create = fn(createInvoiceMutationArgsSchema, async (values) => {
-    await AccessControl.enforce([invoicesTable._.name, "create"], {
+    await AccessControl.enforce([getTableName(invoicesTable), "create"], {
       Error: ApplicationError.AccessDenied,
-      args: [{ name: invoicesTable._.name }],
+      args: [{ name: getTableName(invoicesTable) }],
     });
 
     return useTransaction(async (tx) => {
@@ -36,7 +36,7 @@ export namespace Invoices {
         );
 
       await afterTransaction(() =>
-        Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+        poke(users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });

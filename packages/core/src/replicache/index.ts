@@ -1,13 +1,11 @@
 import { sub } from "date-fns";
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, getTableName, lt, sql } from "drizzle-orm";
 import * as R from "remeda";
 import { deserialize, serialize } from "superjson";
 import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
 import { createTransaction, useTransaction } from "../drizzle/context";
-import { Realtime } from "../realtime";
-import { Api } from "../tenants/api";
 import { useTenant } from "../tenants/context";
 import { useUser } from "../users/context";
 import { Utils } from "../utils";
@@ -23,6 +21,7 @@ import {
   mutationNameSchema,
   pullRequestSchema,
   pushRequestSchema,
+  replicacheClientsTableName,
 } from "./shared";
 import {
   replicacheClientGroupsTable,
@@ -38,7 +37,6 @@ import type {
 } from "replicache";
 import type { OmitTimestamps } from "../drizzle/columns";
 import type { SyncedTable } from "../utils/tables";
-import type { StartsWith } from "../utils/types";
 import type {
   ClientViewRecord,
   ClientViewRecordEntries,
@@ -151,26 +149,6 @@ export namespace Replicache {
         ),
     );
 
-  export async function poke<TChannel extends string>(
-    channels: Array<StartsWith<"/", TChannel>>,
-  ) {
-    const uniqueChannels = R.unique(channels);
-    if (uniqueChannels.length === 0) return;
-
-    const { http: httpDomainName } = await Api.getAppsyncEventsDomainNames();
-
-    const results = await Promise.allSettled(
-      uniqueChannels.map((channel) =>
-        Realtime.publish(httpDomainName, `/replicache${channel}`, [
-          Constants.REPLICACHE_POKE,
-        ]),
-      ),
-    );
-
-    for (const result of results)
-      if (result.status === "rejected") console.error(result.reason);
-  }
-
   type PullTransactionResult = {
     data: Array<TableData>;
     clients: ClientViewRecordEntries<typeof replicacheClientsTable>;
@@ -244,7 +222,7 @@ export namespace Replicache {
 
           const metadata = (await Promise.all([
             ...syncedTables.map(async (table) => {
-              const name = table._.name;
+              const name = getTableName(table);
 
               // 6: Read all id/version pairs from the database that should be in the client view
               const metadata = R.uniqueBy(
@@ -257,7 +235,7 @@ export namespace Replicache {
               return [name, metadata] satisfies SyncedTableMetadata;
             }),
             [
-              replicacheClientsTable._.name,
+              replicacheClientsTableName,
               // 7: Read all clients in the client group
               await clientMetadataFromGroupId(baseClientGroup.id),
             ] satisfies NonSyncedTableMetadata,
@@ -275,7 +253,7 @@ export namespace Replicache {
           // 11: Read only the data that changed
           const data = await Promise.all(
             syncedTables.map(async (table) => {
-              const name = table._.name;
+              const name = getTableName(table);
 
               if (diff[name].puts.length === 0)
                 return [
@@ -302,10 +280,9 @@ export namespace Replicache {
 
           // 12: Changed clients - no need to re-read clients from database,
           // we already have their versions.
-          const clients = diff[replicacheClientsTable._.name].puts.reduce(
+          const clients = diff[replicacheClientsTableName].puts.reduce(
             (clients, clientId) => {
-              clients[clientId] =
-                nextCvr[replicacheClientsTable._.name][clientId];
+              clients[clientId] = nextCvr[replicacheClientsTableName][clientId];
               return clients;
             },
             {} as ClientViewRecordEntries<typeof replicacheClientsTable>,

@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
@@ -10,7 +10,7 @@ import {
 } from "../billing-accounts/sql";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { ordersTable } from "../orders/sql";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
@@ -245,9 +245,9 @@ export namespace Users {
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([usersTable._.name, "update"], {
+      await AccessControl.enforce([getTableName(usersTable), "update"], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: usersTable._.name, id }],
+        args: [{ name: getTableName(usersTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -261,7 +261,7 @@ export namespace Users {
             ),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
@@ -271,9 +271,9 @@ export namespace Users {
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([usersTable._.name, "delete", id], {
+      await AccessControl.enforce([getTableName(usersTable), "delete", id], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: usersTable._.name, id }],
+        args: [{ name: getTableName(usersTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -284,7 +284,7 @@ export namespace Users {
             and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
@@ -294,9 +294,9 @@ export namespace Users {
     async ({ id }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([usersTable._.name, "update"], {
+      await AccessControl.enforce([getTableName(usersTable), "update"], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: usersTable._.name, id }],
+        args: [{ name: getTableName(usersTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -307,7 +307,7 @@ export namespace Users {
             and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );

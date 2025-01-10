@@ -1,8 +1,9 @@
+import { getTableName } from "drizzle-orm";
 import * as R from "remeda";
 
 import { MiscellaneousError } from "../utils/errors";
 import { syncedTables } from "../utils/tables";
-import { replicacheClientsTable } from "./sql";
+import { replicacheClientsTableName } from "./shared";
 
 import type { Table, TableByName, TableName } from "../utils/tables";
 import type { Metadata, TableMetadata } from "./data";
@@ -49,10 +50,10 @@ export function buildCvr(
         args.prev ??
         syncedTables.reduce(
           (baseCvr, table) => {
-            baseCvr[table._.name] = {};
+            baseCvr[getTableName(table)] = {};
             return baseCvr;
           },
-          { [replicacheClientsTable._.name]: {} } as ClientViewRecord,
+          { [replicacheClientsTableName]: {} } as ClientViewRecord,
         )
       );
     case "next":

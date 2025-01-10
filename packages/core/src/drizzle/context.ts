@@ -4,11 +4,11 @@ import { Constants } from "../utils/constants";
 import { ApplicationError, DatabaseError } from "../utils/errors";
 
 import type { ExtractTablesWithRelations } from "drizzle-orm";
+import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
 import type { PgTransaction } from "drizzle-orm/pg-core";
-import type { PostgresJsQueryResultHKT } from "drizzle-orm/postgres-js";
 
 export type Transaction = PgTransaction<
-  PostgresJsQueryResultHKT,
+  NodePgQueryResultHKT,
   Record<string, never>,
   ExtractTablesWithRelations<Record<string, never>>
 >;

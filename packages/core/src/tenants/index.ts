@@ -1,9 +1,9 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, getTableName, isNull } from "drizzle-orm";
 import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { useTenant } from "./context";
@@ -19,9 +19,9 @@ export namespace Tenants {
     );
 
   export const update = fn(updateTenantMutationArgsSchema, async (values) => {
-    await AccessControl.enforce([tenantsTable._.name, "update"], {
+    await AccessControl.enforce([getTableName(tenantsTable), "update"], {
       Error: ApplicationError.AccessDenied,
-      args: [{ name: tenantsTable._.name, id: values.id }],
+      args: [{ name: getTableName(tenantsTable), id: values.id }],
     });
 
     return useTransaction(async (tx) => {
@@ -30,7 +30,7 @@ export namespace Tenants {
         .set(values)
         .where(eq(tenantsTable.id, useTenant().id));
 
-      await afterTransaction(() => Replicache.poke(["/tenant"]));
+      await afterTransaction(() => poke(["/tenant"]));
     });
   });
 

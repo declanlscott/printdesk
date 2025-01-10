@@ -1,8 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
@@ -19,15 +19,18 @@ export namespace Announcements {
   export const create = fn(
     createAnnouncementMutationArgsSchema,
     async (values) => {
-      await AccessControl.enforce([announcementsTable._.name, "create"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: announcementsTable._.name }],
-      });
+      await AccessControl.enforce(
+        [getTableName(announcementsTable), "create"],
+        {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: getTableName(announcementsTable) }],
+        },
+      );
 
       return useTransaction(async (tx) => {
         await tx.insert(announcementsTable).values(values);
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
@@ -48,10 +51,13 @@ export namespace Announcements {
   export const update = fn(
     updateAnnouncementMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([announcementsTable._.name, "update"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: announcementsTable._.name, id }],
-      });
+      await AccessControl.enforce(
+        [getTableName(announcementsTable), "update"],
+        {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: getTableName(announcementsTable), id }],
+        },
+      );
 
       return useTransaction(async (tx) => {
         await tx
@@ -64,7 +70,7 @@ export namespace Announcements {
             ),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
@@ -72,10 +78,13 @@ export namespace Announcements {
   export const delete_ = fn(
     deleteAnnouncementMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([announcementsTable._.name, "delete"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: announcementsTable._.name, id }],
-      });
+      await AccessControl.enforce(
+        [getTableName(announcementsTable), "delete"],
+        {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: getTableName(announcementsTable), id }],
+        },
+      );
 
       return useTransaction(async (tx) => {
         await tx
@@ -88,7 +97,7 @@ export namespace Announcements {
             ),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );

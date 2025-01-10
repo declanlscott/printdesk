@@ -1,8 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { ApplicationError } from "../utils/errors";
@@ -19,10 +19,10 @@ import type { Comment } from "./sql";
 export namespace Comments {
   export const create = fn(createCommentMutationArgsSchema, async (values) => {
     await AccessControl.enforce(
-      [commentsTable._.name, "create", values.orderId],
+      [getTableName(commentsTable), "create", values.orderId],
       {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: commentsTable._.name }],
+        args: [{ name: getTableName(commentsTable) }],
       },
     );
 
@@ -33,7 +33,7 @@ export namespace Comments {
       ]);
 
       await afterTransaction(() =>
-        Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+        poke(users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });
@@ -54,9 +54,9 @@ export namespace Comments {
   export const update = fn(
     updateCommentMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([commentsTable._.name, "update", id], {
+      await AccessControl.enforce([getTableName(commentsTable), "update", id], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: commentsTable._.name, id }],
+        args: [{ name: getTableName(commentsTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -74,7 +74,7 @@ export namespace Comments {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },
@@ -83,9 +83,9 @@ export namespace Comments {
   export const delete_ = fn(
     deleteCommentMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([commentsTable._.name, "delete", id], {
+      await AccessControl.enforce([getTableName(commentsTable), "delete", id], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: commentsTable._.name, id }],
+        args: [{ name: getTableName(commentsTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -103,7 +103,7 @@ export namespace Comments {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },

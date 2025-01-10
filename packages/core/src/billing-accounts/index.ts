@@ -1,8 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { ApplicationError } from "../utils/errors";
@@ -30,10 +30,12 @@ export namespace BillingAccounts {
     createBillingAccountManagerAuthorizationMutationArgsSchema,
     async (values) => {
       await AccessControl.enforce(
-        [billingAccountManagerAuthorizationsTable._.name, "create"],
+        [getTableName(billingAccountManagerAuthorizationsTable), "create"],
         {
           Error: ApplicationError.AccessDenied,
-          args: [{ name: billingAccountManagerAuthorizationsTable._.name }],
+          args: [
+            { name: getTableName(billingAccountManagerAuthorizationsTable) },
+          ],
         },
       );
 
@@ -43,7 +45,7 @@ export namespace BillingAccounts {
           .values(values)
           .onConflictDoNothing();
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
@@ -100,10 +102,13 @@ export namespace BillingAccounts {
   export const updateReviewThreshold = fn(
     updateBillingAccountReviewThresholdMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([billingAccountsTable._.name, "update", id], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: billingAccountsTable._.name, id }],
-      });
+      await AccessControl.enforce(
+        [getTableName(billingAccountsTable), "update", id],
+        {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: getTableName(billingAccountsTable), id }],
+        },
+      );
 
       return useTransaction(async (tx) => {
         await tx
@@ -123,7 +128,7 @@ export namespace BillingAccounts {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke([
+          poke([
             ...adminsOps.map((u) => `/users/${u.id}` as const),
             ...managers.map(({ managerId }) => `/users/${managerId}` as const),
             ...customers.map(
@@ -140,10 +145,13 @@ export namespace BillingAccounts {
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([billingAccountsTable._.name, "delete"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: billingAccountsTable._.name, id }],
-      });
+      await AccessControl.enforce(
+        [getTableName(billingAccountsTable), "delete"],
+        {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: getTableName(billingAccountsTable), id }],
+        },
+      );
 
       return useTransaction(async (tx) => {
         const [adminsOps, managers, customers] = await Promise.all([
@@ -194,7 +202,7 @@ export namespace BillingAccounts {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke([
+          poke([
             ...adminsOps.map((u) => `/users/${u.id}` as const),
             ...managers.map(({ managerId }) => `/users/${managerId}` as const),
             ...customers.map(
@@ -212,10 +220,15 @@ export namespace BillingAccounts {
       const tenant = useTenant();
 
       await AccessControl.enforce(
-        [billingAccountManagerAuthorizationsTable._.name, "delete"],
+        [getTableName(billingAccountManagerAuthorizationsTable), "delete"],
         {
           Error: ApplicationError.AccessDenied,
-          args: [{ name: billingAccountManagerAuthorizationsTable._.name, id }],
+          args: [
+            {
+              name: getTableName(billingAccountManagerAuthorizationsTable),
+              id,
+            },
+          ],
         },
       );
 
@@ -230,7 +243,7 @@ export namespace BillingAccounts {
             ),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );

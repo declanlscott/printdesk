@@ -13,6 +13,7 @@ export const apiFunction = new custom.aws.Function("ApiFunction", {
   link: [
     appData,
     auth,
+    aws_,
     appsyncEventApi,
     cloudfrontPrivateKey,
     dsqlCluster,

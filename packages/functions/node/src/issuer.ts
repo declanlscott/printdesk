@@ -7,7 +7,7 @@ import {
   afterTransaction,
   createTransaction,
 } from "@printworks/core/drizzle/context";
-import { Replicache } from "@printworks/core/replicache";
+import { poke } from "@printworks/core/replicache/poke";
 import { Api } from "@printworks/core/tenants/api";
 import { tenantsTable } from "@printworks/core/tenants/sql";
 import { Users } from "@printworks/core/users";
@@ -149,9 +149,7 @@ export const handler = handle(
                             tenantId,
                           });
 
-                          await afterTransaction(() =>
-                            Replicache.poke(["/tenant"]),
-                          );
+                          await afterTransaction(() => poke(["/tenant"]));
 
                           return ctx.subject("user", {
                             id: user.id,
@@ -196,9 +194,7 @@ export const handler = handle(
                         }
 
                         if (userHasChanged)
-                          await afterTransaction(() =>
-                            Replicache.poke(["/tenant"]),
-                          );
+                          await afterTransaction(() => poke(["/tenant"]));
 
                         return ctx.subject("user", {
                           id: user.id,

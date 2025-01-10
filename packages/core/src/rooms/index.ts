@@ -1,11 +1,11 @@
-import { and, eq, gte, inArray, notInArray } from "drizzle-orm";
+import { and, eq, getTableName, gte, inArray, notInArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { productsTable } from "../products/sql";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Constants } from "../utils/constants";
 import { ApplicationError } from "../utils/errors";
@@ -25,9 +25,9 @@ import type { DeliveryOption, Room, WorkflowStatus } from "./sql";
 
 export namespace Rooms {
   export const create = fn(createRoomMutationArgsSchema, async (values) => {
-    await AccessControl.enforce([roomsTable._.name, "create"], {
+    await AccessControl.enforce([getTableName(roomsTable), "create"], {
       Error: ApplicationError.AccessDenied,
-      args: [{ name: roomsTable._.name }],
+      args: [{ name: getTableName(roomsTable) }],
     });
 
     return useTransaction(async (tx) => {
@@ -52,7 +52,7 @@ export namespace Rooms {
         ]),
       ]);
 
-      await afterTransaction(() => Replicache.poke(["/tenant"]));
+      await afterTransaction(() => poke(["/tenant"]));
     });
   });
 
@@ -72,9 +72,9 @@ export namespace Rooms {
   export const update = fn(
     updateRoomMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([roomsTable._.name, "update"], {
+      await AccessControl.enforce([getTableName(roomsTable), "update"], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: roomsTable._.name, id }],
+        args: [{ name: getTableName(roomsTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -85,7 +85,7 @@ export namespace Rooms {
             and(eq(roomsTable.id, id), eq(roomsTable.tenantId, useTenant().id)),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
@@ -95,9 +95,9 @@ export namespace Rooms {
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([roomsTable._.name, "delete"], {
+      await AccessControl.enforce([getTableName(roomsTable), "delete"], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: roomsTable._.name, id }],
+        args: [{ name: getTableName(roomsTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -120,15 +120,15 @@ export namespace Rooms {
             ),
         ]);
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );
 
   export const restore = fn(restoreRoomMutationArgsSchema, async ({ id }) => {
-    await AccessControl.enforce([roomsTable._.name, "update"], {
+    await AccessControl.enforce([getTableName(roomsTable), "update"], {
       Error: ApplicationError.AccessDenied,
-      args: [{ name: roomsTable._.name, id }],
+      args: [{ name: getTableName(roomsTable), id }],
     });
 
     return useTransaction(async (tx) => {
@@ -139,7 +139,7 @@ export namespace Rooms {
           and(eq(roomsTable.id, id), eq(roomsTable.tenantId, useTenant().id)),
         );
 
-      await afterTransaction(() => Replicache.poke(["/tenant"]));
+      await afterTransaction(() => poke(["/tenant"]));
     });
   });
 
@@ -159,10 +159,13 @@ export namespace Rooms {
   export const setWorkflow = fn(setWorkflowMutationArgsSchema, async (args) => {
     const tenant = useTenant();
 
-    await AccessControl.enforce([workflowStatusesTable._.name, "create"], {
-      Error: ApplicationError.AccessDenied,
-      args: [{ name: workflowStatusesTable._.name }],
-    });
+    await AccessControl.enforce(
+      [getTableName(workflowStatusesTable), "create"],
+      {
+        Error: ApplicationError.AccessDenied,
+        args: [{ name: getTableName(workflowStatusesTable) }],
+      },
+    );
 
     return useTransaction(async (tx) => {
       const workflow = await tx
@@ -208,7 +211,7 @@ export namespace Rooms {
           ),
         );
 
-      await afterTransaction(() => Replicache.poke(["/tenant"]));
+      await afterTransaction(() => poke(["/tenant"]));
     });
   });
 
@@ -230,10 +233,13 @@ export namespace Rooms {
     async (args) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([deliveryOptionsTable._.name, "create"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: deliveryOptionsTable._.name }],
-      });
+      await AccessControl.enforce(
+        [getTableName(deliveryOptionsTable), "create"],
+        {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: getTableName(deliveryOptionsTable) }],
+        },
+      );
 
       return useTransaction(async (tx) => {
         const deliveryOptions = await tx
@@ -281,7 +287,7 @@ export namespace Rooms {
             ),
           );
 
-        await afterTransaction(() => Replicache.poke(["/tenant"]));
+        await afterTransaction(() => poke(["/tenant"]));
       });
     },
   );

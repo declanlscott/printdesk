@@ -1,9 +1,9 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { Replicache } from "../replicache";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { ApplicationError } from "../utils/errors";
@@ -20,10 +20,10 @@ import type { Order } from "./sql";
 export namespace Orders {
   export const create = fn(createOrderMutationArgsSchema, async (values) => {
     await AccessControl.enforce(
-      [ordersTable._.name, "create", values.billingAccountId],
+      [getTableName(ordersTable), "create", values.billingAccountId],
       {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: ordersTable._.name }],
+        args: [{ name: getTableName(ordersTable) }],
       },
     );
 
@@ -38,7 +38,7 @@ export namespace Orders {
       const users = await Users.withOrderAccess(order.id);
 
       await afterTransaction(() =>
-        Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+        poke(users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });
@@ -59,9 +59,9 @@ export namespace Orders {
   export const update = fn(
     updateOrderMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([ordersTable._.name, "update", id], {
+      await AccessControl.enforce([getTableName(ordersTable), "update", id], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: ordersTable._.name, id }],
+        args: [{ name: getTableName(ordersTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -79,7 +79,7 @@ export namespace Orders {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },
@@ -88,9 +88,9 @@ export namespace Orders {
   export const delete_ = fn(
     deleteOrderMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([ordersTable._.name, "delete", id], {
+      await AccessControl.enforce([getTableName(ordersTable), "delete", id], {
         Error: ApplicationError.AccessDenied,
-        args: [{ name: ordersTable._.name, id }],
+        args: [{ name: getTableName(ordersTable), id }],
       });
 
       return useTransaction(async (tx) => {
@@ -108,7 +108,7 @@ export namespace Orders {
         ]);
 
         await afterTransaction(() =>
-          Replicache.poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },

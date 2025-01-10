@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { roomStatuses } from "@printworks/core/rooms/shared";
-import { createFileRoute, getRouteApi } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   flexRender,
   getCoreRowModel,
@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { fuzzyFilter } from "~/lib/fuzzy";
+import { useAuthenticatedRouteApi } from "~/lib/hooks/auth";
 import { query, useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
@@ -70,10 +71,7 @@ import type { DeepReadonlyObject } from "replicache";
 const routeId = "/_authenticated/settings/rooms";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context }) => {
     const initialProducts = await context.replicache.query(query.products());
 
@@ -82,17 +80,15 @@ export const Route = createFileRoute(routeId)({
   component: RouteComponent,
 });
 
-const authenticatedRouteApi = getRouteApi("/_authenticated");
-
 function RouteComponent() {
   return <RoomsCard />;
 }
 
 function RoomsCard() {
-  const { initialRooms } = authenticatedRouteApi.useLoaderData();
-  const { initialProducts } = Route.useLoaderData();
-
+  const { initialRooms } = useAuthenticatedRouteApi().useLoaderData();
   const rooms = useSubscribe(query.rooms(), { defaultData: initialRooms });
+
+  const { initialProducts } = Route.useLoaderData();
   const products = useSubscribe(query.products(), {
     defaultData: initialProducts,
   });

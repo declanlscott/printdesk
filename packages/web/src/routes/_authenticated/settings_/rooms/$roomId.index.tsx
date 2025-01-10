@@ -36,10 +36,7 @@ import type { RoomStatus } from "@printworks/core/rooms/shared";
 const routeId = "/_authenticated/settings_/rooms/$roomId/";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context, params }) => {
     const initialRoom = await context.replicache.query(
       query.room(params.roomId),

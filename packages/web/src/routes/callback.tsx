@@ -9,9 +9,13 @@ export const Route = createFileRoute("/callback")({
   }),
   loaderDeps: ({ search: { code, state, from } }) => ({ code, state, from }),
   loader: async ({ context, deps }) => {
-    await context.authStore.actions.exchange(deps.code, deps.state);
+    await context.authStoreApi
+      .getState()
+      .actions.exchange(deps.code, deps.state);
 
-    throw redirect(deps.from ? { href: deps.from } : { to: "/" });
+    if (deps.from) throw redirect({ href: deps.from });
+
+    throw redirect({ to: "/" });
   },
 });
 

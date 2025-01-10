@@ -75,10 +75,7 @@ import type { DeepReadonlyObject } from "replicache";
 const routeId = "/_authenticated/users/";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context }) => {
     const initialUsers = await context.replicache.query(query.users());
 

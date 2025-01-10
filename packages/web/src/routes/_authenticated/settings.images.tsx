@@ -7,10 +7,7 @@ import { Dropzone } from "~/ui/primitives/dropzone";
 const routeId = "/_authenticated/settings/images";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   component: RouteComponent,
 });
 

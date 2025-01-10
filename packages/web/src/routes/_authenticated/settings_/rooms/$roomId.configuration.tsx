@@ -59,10 +59,7 @@ import type { PostReviewWorkflowStatusType } from "@printworks/core/rooms/shared
 const routeId = "/_authenticated/settings_/rooms/$roomId/configuration";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context, params }) => {
     const [initialDeliveryOptions, initialWorkflow] = await Promise.all([
       context.replicache.query(query.deliveryOptions(params.roomId)),

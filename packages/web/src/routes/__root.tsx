@@ -10,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 
 import type { QueryClient } from "@tanstack/react-query";
+import type { StoreApi } from "zustand";
 import type { ApiContext } from "~/lib/contexts/api";
 import type { ReplicacheContext } from "~/lib/contexts/replicache";
 import type { ResourceContext } from "~/lib/contexts/resource";
@@ -26,7 +27,7 @@ const TanStackRouterDevtools = import.meta.env.DEV
 
 type RouterContext = {
   api: ApiContext;
-  authStore: AuthStore;
+  authStoreApi: StoreApi<AuthStore>;
   replicache: ReplicacheContext;
   resource: ResourceContext;
   queryClient: QueryClient;

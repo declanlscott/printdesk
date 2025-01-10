@@ -13,6 +13,7 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
 import { Route as CallbackImport } from './routes/callback'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
@@ -48,6 +49,12 @@ const AuthenticatedSettingsRoomsRoomIdProductsProductIdLazyImport =
   )()
 
 // Create/Update Routes
+
+const RegisterRoute = RegisterImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const LoginRoute = LoginImport.update({
   id: '/login',
@@ -227,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginImport
+      parentRoute: typeof rootRoute
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
     '/_authenticated/products': {
@@ -477,6 +491,7 @@ export interface FileRoutesByFullPath {
   '': typeof AuthenticatedRouteWithChildren
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/users': typeof AuthenticatedUsersLazyRouteWithChildren
@@ -500,6 +515,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/': typeof AuthenticatedIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
@@ -520,6 +536,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/_authenticated/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersLazyRouteWithChildren
@@ -546,6 +563,7 @@ export interface FileRouteTypes {
     | ''
     | '/callback'
     | '/login'
+    | '/register'
     | '/products'
     | '/settings'
     | '/users'
@@ -568,6 +586,7 @@ export interface FileRouteTypes {
   to:
     | '/callback'
     | '/login'
+    | '/register'
     | '/'
     | '/settings/images'
     | '/settings/rooms'
@@ -586,6 +605,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/callback'
     | '/login'
+    | '/register'
     | '/_authenticated/products'
     | '/_authenticated/settings'
     | '/_authenticated/users'
@@ -611,12 +631,14 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   CallbackRoute: typeof CallbackRoute
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   CallbackRoute: CallbackRoute,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
 }
 
 export const routeTree = rootRoute
@@ -631,7 +653,8 @@ export const routeTree = rootRoute
       "children": [
         "/_authenticated",
         "/callback",
-        "/login"
+        "/login",
+        "/register"
       ]
     },
     "/_authenticated": {
@@ -650,6 +673,9 @@ export const routeTree = rootRoute
     },
     "/login": {
       "filePath": "login.tsx"
+    },
+    "/register": {
+      "filePath": "register.tsx"
     },
     "/_authenticated/products": {
       "filePath": "_authenticated/products.lazy.tsx",

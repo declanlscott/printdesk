@@ -117,7 +117,7 @@ export const query = {
     ),
 } satisfies Query;
 
-export const useMutator = () => useReplicache().client.mutate;
+export const useMutator = () => useReplicache().mutate;
 
 export function useMutationOptions() {
   const api = useApi();
@@ -137,7 +137,7 @@ export function useMutationOptions() {
               });
 
             const res = await call();
-            if (res.status === 401) await refresh().then(call);
+            if ((res.status as number) === 401) await refresh().then(call);
             if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
           },
         }),
@@ -151,7 +151,7 @@ export function useMutationOptions() {
               });
 
             const res = await call();
-            if (res.status === 401) await refresh().then(call);
+            if ((res.status as number) === 401) await refresh().then(call);
             if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
           },
         }),
@@ -171,7 +171,7 @@ export function useMutationOptions() {
               });
 
             const res = await call();
-            if (res.status === 401) await refresh().then(call);
+            if ((res.status as number) === 401) await refresh().then(call);
             if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
           },
         }),

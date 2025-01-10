@@ -1,5 +1,5 @@
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
-import { getRouteApi, useRouter, useRouterState } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useAtom } from "jotai/react";
 import {
   ChevronsUpDown,
@@ -11,6 +11,7 @@ import {
 
 import logo from "~/assets/logo.svg";
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
+import { useAuthenticatedRouteApi } from "~/lib/hooks/auth";
 import { useCommandBarActions } from "~/lib/hooks/command-bar";
 import { query } from "~/lib/hooks/data";
 import { useIsSyncing, useSubscribe } from "~/lib/hooks/replicache";
@@ -35,8 +36,6 @@ import { Tooltip, TooltipTrigger } from "~/ui/primitives/tooltip";
 import { UserMenu } from "~/ui/user-menu";
 
 import type { ComponentProps } from "react";
-
-const authenticatedRouteApi = getRouteApi("/_authenticated");
 
 export function MainNav() {
   const isSyncing = useIsSyncing();
@@ -67,8 +66,9 @@ export function MainNav() {
 function RoomSelector() {
   const [selectedRoomId, setSelectedRoomId] = useAtom(selectedRoomIdAtom);
 
+  const { initialRooms } = useAuthenticatedRouteApi().useLoaderData();
   const rooms = useSubscribe(query.rooms(), {
-    defaultData: authenticatedRouteApi.useLoaderData().initialRooms,
+    defaultData: initialRooms,
     onData: (rooms) => {
       if (selectedRoomId && !rooms.some((room) => room.id === selectedRoomId))
         setSelectedRoomId(null);

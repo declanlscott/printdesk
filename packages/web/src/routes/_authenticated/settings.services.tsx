@@ -34,10 +34,7 @@ import { Input } from "~/ui/primitives/text-field";
 const routeId = "/_authenticated/settings/services";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   component: RouteComponent,
 });
 

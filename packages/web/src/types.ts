@@ -20,7 +20,7 @@ import type { routeTree } from "~/routeTree.gen";
 export type ViteResource = {
   [TKey in keyof Pick<
     Resource,
-    "AppData" | "ApiReverseProxy" | "Auth" | "ReplicacheLicenseKey" | "Www"
+    "AppData" | "Api" | "Auth" | "ReplicacheLicenseKey" | "Www"
   >]: Omit<Resource[TKey], "type">;
 };
 

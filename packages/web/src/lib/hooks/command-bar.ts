@@ -1,12 +1,19 @@
 import { useStore } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 
-import { CommandBarStore } from "~/lib/stores/command-bar";
+import { CommandBarStoreApi } from "~/lib/stores/command-bar";
 
 export const useCommandBar = () =>
-  useStore(CommandBarStore.useContext(), (store) => ({
-    input: store.input,
-    pages: store.pages,
-  }));
+  useStore(
+    CommandBarStoreApi.use(),
+    useShallow(({ input, pages }) => ({
+      input,
+      pages,
+    })),
+  );
 
 export const useCommandBarActions = () =>
-  useStore(CommandBarStore.useContext(), (store) => store.actions);
+  useStore(
+    CommandBarStoreApi.use(),
+    useShallow(({ actions }) => actions),
+  );

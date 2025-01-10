@@ -11,23 +11,24 @@ import { Users } from "@printworks/core/users/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
-import { useAuth } from "~/lib/hooks/auth";
+import { useAuth, useAuthenticatedRouteApi } from "~/lib/hooks/auth";
 
 import type { Replicache } from "@printworks/core/replicache/client";
 import type { MutationName } from "@printworks/core/replicache/shared";
 import type { User } from "@printworks/core/users/sql";
 import type { ReadTransaction, SubscribeOptions } from "replicache";
 
-export function useReplicache() {
+export function useReplicacheContext() {
   const replicache = useContext(ReplicacheContext);
 
   if (!replicache)
     throw new ApplicationError.MissingContextProvider("Replicache");
-  if (replicache.status !== "ready")
-    throw new ApplicationError.Error("Replicache is not in ready state");
 
   return replicache;
 }
+
+export const useReplicache = () =>
+  useAuthenticatedRouteApi().useRouteContext().replicache;
 
 export interface UseSubscribeOptions<TData, TDefaultData>
   extends Partial<SubscribeOptions<TData>> {
@@ -49,7 +50,7 @@ export function useSubscribe<TData, TDefaultData = undefined>(
   const [data, setData] = useState<TData>();
 
   useEffect(() => {
-    const unsubscribe = replicache.client.subscribe(query, {
+    const unsubscribe = replicache.subscribe(query, {
       onData: (data) => {
         setData(() => data);
 
@@ -65,7 +66,7 @@ export function useSubscribe<TData, TDefaultData = undefined>(
       setData(undefined);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replicache.client]);
+  }, [replicache]);
 
   if (!data) return defaultData as TDefaultData;
 
@@ -78,7 +79,7 @@ export function useIsSyncing() {
   const replicache = useReplicache();
 
   useEffect(() => {
-    replicache.client.onSync = setIsSyncing;
+    replicache.onSync = setIsSyncing;
   }, [replicache]);
 
   return isSyncing;

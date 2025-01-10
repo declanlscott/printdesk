@@ -11,7 +11,7 @@ export const Route = createFileRoute("/login")({
   loaderDeps: ({ search }) => ({ search }),
   beforeLoad: async ({ context }) => {
     try {
-      await context.authStore.actions.verify();
+      await context.authStoreApi.getState().actions.verify();
     } catch {
       // Continue loading the login route if the user is unauthenticated
       return;
@@ -21,19 +21,13 @@ export const Route = createFileRoute("/login")({
     throw redirect({ to: "/" });
   },
   loader: async ({ context, deps }) => {
-    let slug: string;
-    if (
-      context.resource.AppData.isDev ||
-      window.location.hostname === "localhost"
-    ) {
-      if (!deps.search.slug) throw new ApplicationError.Error("Missing slug");
-
-      slug = deps.search.slug;
-    } else {
-      slug = window.location.hostname.split(
-        `.${context.resource.AppData.domainName.fullyQualified}`,
-      )[0];
-    }
+    const slug =
+      context.resource.AppData.isDev || window.location.hostname === "localhost"
+        ? deps.search.slug
+        : window.location.hostname
+            .split(`.${context.resource.AppData.domainName.fullyQualified}`)
+            .at(0);
+    if (!slug) throw new ApplicationError.Error("Missing slug");
 
     const res = await context.api.client.public.tenants[
       "oauth-provider-types"
@@ -57,10 +51,9 @@ export const Route = createFileRoute("/login")({
     const { oauthProviderTypes } = await res.json();
 
     // Start the OAuth flow
-    const url = await context.authStore.actions.authorize(
-      oauthProviderTypes[0],
-      deps.search.from,
-    );
+    const url = await context.authStoreApi
+      .getState()
+      .actions.authorize(oauthProviderTypes[0], deps.search.from);
 
     throw redirect({ href: url, reloadDocument: true });
   },

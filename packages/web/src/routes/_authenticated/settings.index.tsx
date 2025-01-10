@@ -42,10 +42,7 @@ import type { TenantStatus } from "@printworks/core/tenants/shared";
 const routeId = "/_authenticated/settings/";
 
 export const Route = createFileRoute(routeId)({
-  beforeLoad: ({ context }) =>
-    context.replicache.query((tx) =>
-      context.authStore.actions.authorizeRoute(tx, routeId),
-    ),
+  beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   component: RouteComponent,
 });
 

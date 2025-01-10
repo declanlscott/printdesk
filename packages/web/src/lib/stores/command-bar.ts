@@ -1,6 +1,6 @@
 import { createStore } from "zustand/vanilla";
 
-import { createStoreContext } from "~/lib/contexts/store";
+import { createStoreApiContext } from "~/lib/contexts/store";
 
 import type { CommandBarPage } from "~/types";
 
@@ -16,7 +16,7 @@ export type CommandBarStore = {
   };
 };
 
-export const CommandBarStore = createStoreContext<
+export const CommandBarStoreApi = createStoreApiContext<
   CommandBarStore,
   Omit<CommandBarStore, "actions">
 >(({ input, pages }) =>

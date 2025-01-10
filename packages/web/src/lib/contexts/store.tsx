@@ -4,24 +4,26 @@ import { ApplicationError } from "@printworks/core/utils/errors";
 import type { PropsWithChildren } from "react";
 import type { StoreApi } from "zustand";
 
-export function createStoreContext<TStore, TInput>(
-  getStore: (input: TInput) => StoreApi<TStore>,
+export function createStoreApiContext<TStore, TInput>(
+  getStoreApi: (input: TInput) => StoreApi<TStore>,
 ) {
   const Context = createContext<StoreApi<TStore> | null>(null);
 
   function Provider(props: PropsWithChildren<{ input: TInput }>) {
-    const [store] = useState(() => getStore(props.input));
+    const [storeApi] = useState(() => getStoreApi(props.input));
 
-    return <Context.Provider value={store}>{props.children}</Context.Provider>;
+    return (
+      <Context.Provider value={storeApi}>{props.children}</Context.Provider>
+    );
   }
 
   return {
-    useContext: () => {
-      const context = useContext(Context);
+    use: () => {
+      const storeApi = useContext(Context);
 
-      if (!context) throw new ApplicationError.MissingContextProvider();
+      if (!storeApi) throw new ApplicationError.MissingContextProvider();
 
-      return context;
+      return storeApi;
     },
     Context,
     Provider,

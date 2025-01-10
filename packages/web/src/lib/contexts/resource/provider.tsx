@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 
 import { ResourceContext } from "~/lib/contexts/resource";
 
@@ -10,7 +10,7 @@ type ResourceProviderProps = PropsWithChildren<{
 }>;
 
 export function ResourceProvider(props: ResourceProviderProps) {
-  const [resource] = useState(() => props.resource);
+  const resource = useRef(props.resource).current;
 
   return (
     <ResourceContext.Provider value={resource}>

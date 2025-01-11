@@ -40,7 +40,7 @@ export class Account extends pulumi.ComponentResource {
         name,
         email,
         parentId: Aws.organization.tenantsOrganizationalUnit.id,
-        roleName: Aws.tenant.accountAccessRole.name,
+        roleName: Aws.tenant.roles.accountAccess.name,
         iamUserAccessToBilling: "ALLOW",
       },
       { parent: this },

@@ -2,6 +2,7 @@ import { vValidator } from "@hono/valibot-validator";
 import { Documents } from "@printworks/core/files/documents";
 import { S3 } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
+import { Resource } from "sst";
 import * as v from "valibot";
 
 import { authz } from "~/api/middleware/auth";
@@ -23,7 +24,10 @@ export default new Hono()
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
     executeApiSigner,
     stsClient,
-    ssmClient("SetDocumentsMimeTypes"),
+    ssmClient({
+      name: Resource.Aws.tenant.roles.putParameters.name,
+      sessionName: "SetDocumentsMimeTypes",
+    }),
     async (c) => {
       await Documents.setMimeTypes(c.req.valid("json").mimeTypes);
 
@@ -41,7 +45,10 @@ export default new Hono()
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
     stsClient,
-    s3Client("GetDocumentsSignedGetUrl"),
+    s3Client({
+      name: Resource.Aws.tenant.roles.bucketsAccess.name,
+      sessionName: "GetDocumentsSignedGetUrl",
+    }),
     async (c) => {
       const signedUrl = await S3.getSignedGetUrl({
         Bucket: await Documents.getBucketName(),
@@ -57,7 +64,10 @@ export default new Hono()
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
     stsClient,
-    s3Client("GetDocumentsSignedPutUrl"),
+    s3Client({
+      name: Resource.Aws.tenant.roles.bucketsAccess.name,
+      sessionName: "GetDocumentsSignedPutUrl",
+    }),
     async (c) => {
       const signedUrl = await S3.getSignedPutUrl({
         Bucket: await Documents.getBucketName(),
@@ -75,7 +85,10 @@ export default new Hono()
     vValidator("json", v.object({ byteSize: v.number() })),
     executeApiSigner,
     stsClient,
-    ssmClient("SetDocumentsSizeLimit"),
+    ssmClient({
+      name: Resource.Aws.tenant.roles.putParameters.name,
+      sessionName: "SetDocumentsSizeLimit",
+    }),
     async (c) => {
       await Documents.setSizeLimit(c.req.valid("json").byteSize);
 

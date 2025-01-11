@@ -2,8 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 /* deno-fmt-ignore-file */
-import "sst"
-export {}
+
 import "sst"
 declare module "sst" {
   export interface Resource {
@@ -55,21 +54,31 @@ declare module "sst" {
         }
       }
       "region": string
+      "roles": {
+        "realtimePublisher": {
+          "arn": string
+        }
+        "realtimeSubscriber": {
+          "arn": string
+        }
+      }
       "tenant": {
-        "accountAccessRole": {
-          "name": string
-        }
-        "bucketsAccessRole": {
-          "name": string
-        }
-        "putParametersRole": {
-          "name": string
-        }
-        "realtimePublisherRole": {
-          "name": string
-        }
-        "realtimeSubscriberRole": {
-          "name": string
+        "roles": {
+          "accountAccess": {
+            "name": string
+          }
+          "bucketsAccess": {
+            "name": string
+          }
+          "putParameters": {
+            "name": string
+          }
+          "realtimePublisher": {
+            "name": string
+          }
+          "realtimeSubscriber": {
+            "name": string
+          }
         }
       }
       "type": "sst.sst.Linkable"
@@ -195,3 +204,6 @@ declare module "sst" {
     "ApiRateLimiterWorker": cloudflare.Service
   }
 }
+
+import "sst"
+export {}

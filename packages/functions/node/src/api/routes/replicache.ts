@@ -29,11 +29,8 @@ export default new Hono()
     executeApiSigner,
     stsClient,
     appsyncSigner({
-      forTenant: true,
-      role: {
-        name: Resource.Aws.tenant.realtimePublisherRole.name,
-        sessionName: "RealtimePublisherSigner",
-      },
+      name: Resource.Aws.tenant.roles.realtimePublisher.name,
+      sessionName: "TenantRealtimePublisherSigner",
     }),
     async (c) => {
       const pushRequest = await c.req.json();

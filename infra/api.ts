@@ -3,7 +3,7 @@ import { appsyncEventApi } from "infra/realtime";
 import { auth } from "./auth";
 import * as custom from "./custom";
 import { dsqlCluster } from "./db";
-import { apiFqdn, domainName, fqdn } from "./dns";
+import { apiFqdn, domainName } from "./dns";
 import { appData, aws_, cloudfrontPrivateKey } from "./misc";
 import { tenantInfraQueue } from "./queues";
 
@@ -29,11 +29,15 @@ export const apiFunction = new custom.aws.Function("ApiFunction", {
     {
       actions: ["sts:AssumeRole"],
       resources: [
-        aws_.properties.tenant.realtimeSubscriberRole.name,
-        aws_.properties.tenant.realtimePublisherRole.name,
-        aws_.properties.tenant.bucketsAccessRole.name,
-        aws_.properties.tenant.putParametersRole.name,
-      ].map((roleName) => $interpolate`arn:aws:iam::*:role/${roleName}`),
+        ...[
+          aws_.properties.tenant.roles.realtimeSubscriber.name,
+          aws_.properties.tenant.roles.realtimePublisher.name,
+          aws_.properties.tenant.roles.bucketsAccess.name,
+          aws_.properties.tenant.roles.putParameters.name,
+        ].map((roleName) => $interpolate`arn:aws:iam::*:role/${roleName}`),
+        aws_.properties.roles.realtimeSubscriber.arn,
+        aws_.properties.roles.realtimePublisher.arn,
+      ],
     },
   ],
 });

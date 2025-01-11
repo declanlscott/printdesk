@@ -3,7 +3,6 @@
  * For example it should not depend on sst for linked resources. Other modules in the
  * core package may depend on sst, but this module should not.
  */
-
 import { Sha256 } from "@aws-crypto/sha256-js";
 import {
   AppSyncClient,
@@ -73,10 +72,12 @@ import type {
 import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
 import type { DsqlSignerConfig } from "@aws-sdk/dsql-signer";
 import type { SignatureV4Init } from "@smithy/signature-v4";
+import type { AwsCredentialIdentity } from "@smithy/types";
 import type { NonNullableProperties, StartsWith } from "./types";
 
 export type AwsContext = {
   appsync?: { client: AppSyncClient };
+  credentials: AwsCredentialIdentity;
   dsql?: { signer: DsqlSigner };
   sqs?: { client: SQSClient };
   s3?: { client: S3Client };
@@ -99,7 +100,7 @@ export function useAws<TServiceName extends keyof AwsContext>(
 }
 
 export async function withAws<
-  TContext extends AwsContext,
+  TContext extends Omit<AwsContext, "credentials">,
   TCallback extends () => ReturnType<TCallback>,
 >(context: TContext, callback: TCallback) {
   let old: AwsContext | undefined;
@@ -118,7 +119,10 @@ export async function withAws<
   if (old)
     return AwsContext.with(R.mergeDeep(old, context) as AwsContext, callback);
 
-  return AwsContext.with(context, callback);
+  return AwsContext.with(
+    { ...context, credentials: await fromNodeProviderChain()() },
+    callback,
+  );
 }
 
 export namespace Appsync {
@@ -279,11 +283,13 @@ export namespace Sts {
     input: NonNullableProperties<AssumeRoleCommandInput>,
   ) => useAws("sts").client.send(new AssumeRoleCommand(input));
 
+  export type AssumeRoleCredentialsInput = (
+    | { type: "arn"; role: { arn: string } }
+    | { type: "name"; accountId: string; role: { name: string } }
+  ) & { role: { sessionName: string } };
+
   export async function getAssumeRoleCredentials(
-    input: (
-      | { type: "arn"; role: { arn: string } }
-      | { type: "name"; accountId: string; role: { name: string } }
-    ) & { role: { sessionName: string } },
+    input: AssumeRoleCredentialsInput,
   ) {
     const { Credentials } = await assumeRole({
       RoleArn:

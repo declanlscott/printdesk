@@ -4,6 +4,7 @@ import type { Replicache } from "replicache";
 import type { Mutators } from "~/lib/hooks/replicache";
 
 export type ReplicacheContext =
+  | { status: "uninitialized" }
   | { status: "initializing" }
   | { status: "ready"; client: Replicache<Mutators> };
 

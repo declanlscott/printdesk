@@ -19,11 +19,8 @@ export default new Hono()
     "/auth",
     stsClient,
     appsyncSigner({
-      forTenant: true,
-      role: {
-        name: Resource.Aws.tenant.realtimeSubscriberRole.name,
-        sessionName: "RealtimeSubscriberSigner",
-      },
+      name: Resource.Aws.tenant.roles.realtimeSubscriber.name,
+      sessionName: "TenantRealtimeSubscriberSigner",
     }),
     async (c) => {
       const auth = await Realtime.getAuth();

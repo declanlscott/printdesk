@@ -64,7 +64,7 @@ export const handler = handle(
                       accountId: await Api.getAccountId(),
                       role: {
                         name: Resource.Aws.tenant.roles.realtimePublisher.name,
-                        sessionName: "Authorizer",
+                        sessionName: "Issuer",
                       },
                     }),
                   }),

@@ -18,7 +18,7 @@
     "hono": "^4.6.16",
     "remeda": "^2.19.0",
     "replicache": "^15.0.1",
-    "sst": "^3.5.5",
+    "sst": "^3.5.6",
     "superjson": "^2.2.2",
     "valibot": "beta"
   },
@@ -26,7 +26,7 @@
     "@ianvs/prettier-plugin-sort-imports": "^4.4.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/node22": "^22.0.0",
-    "@types/aws-lambda": "8.10.141",
+    "@types/aws-lambda": "8.10.147",
     "prettier": "^3.4.2",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.6.9",

@@ -9,12 +9,12 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
-    "@aws-sdk/client-s3": "^3.723.0",
-    "@aws-sdk/client-sqs": "^3.723.0",
-    "@aws-sdk/client-ssm": "^3.723.0",
-    "@aws-sdk/client-sts": "^3.723.0",
+    "@aws-sdk/client-s3": "^3.726.1",
+    "@aws-sdk/client-sqs": "^3.726.1",
+    "@aws-sdk/client-ssm": "^3.726.1",
+    "@aws-sdk/client-sts": "^3.726.1",
     "@aws-sdk/cloudfront-signer": "^3.723.0",
-    "@aws-sdk/s3-request-presigner": "^3.723.0",
+    "@aws-sdk/s3-request-presigner": "^3.726.1",
     "@aws-sdk/util-format-url": "^3.723.0",
     "@azure/msal-node": "^2.16.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@printworks/eslint-config": "workspace:*",
+    "@smithy/types": "^4.1.0",
     "@types/pg": "^8.11.10",
     "drizzle-kit": "^0.30.1"
   }

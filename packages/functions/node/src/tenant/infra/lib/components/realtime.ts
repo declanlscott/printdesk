@@ -79,7 +79,7 @@ export class Realtime extends pulumi.ComponentResource {
 
     this._subscriberRole = new aws.iam.Role(
       "SubscriberRole",
-      { name: Aws.tenant.realtimeSubscriberRole.name, assumeRolePolicy },
+      { name: Aws.tenant.roles.realtimeSubscriber.name, assumeRolePolicy },
       { parent: this },
     );
     new aws.iam.RolePolicy(
@@ -90,7 +90,11 @@ export class Realtime extends pulumi.ComponentResource {
           {
             statements: [
               {
-                actions: ["appsync:EventConnect", "appsync:EventSubscribe"],
+                actions: ["appsync:EventConnect"],
+                resources: [this._api.apiArn],
+              },
+              {
+                actions: ["appsync:EventSubscribe"],
                 resources: [pulumi.interpolate`${this._api.apiArn}/*`],
               },
             ],
@@ -103,7 +107,7 @@ export class Realtime extends pulumi.ComponentResource {
 
     this._publisherRole = new aws.iam.Role(
       "PublisherRole",
-      { name: Aws.tenant.realtimeSubscriberRole.name, assumeRolePolicy },
+      { name: Aws.tenant.roles.realtimeSubscriber.name, assumeRolePolicy },
       { parent: this },
     );
     new aws.iam.RolePolicy(

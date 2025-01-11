@@ -5,6 +5,7 @@ import {
   tenantAccountAccessRoleName,
   tenantsOrganizationalUnit,
 } from "./organization";
+import { realtimePublisherRole, realtimeSubscriberRole } from "./realtime";
 
 export const isDev = $dev;
 
@@ -41,21 +42,17 @@ export const aws_ = new sst.Linkable("Aws", {
     },
     region: aws.getRegionOutput().name,
     tenant: {
-      accountAccessRole: {
-        name: tenantAccountAccessRoleName,
+      roles: {
+        accountAccess: { name: tenantAccountAccessRoleName },
+        realtimeSubscriber: { name: "TenantRealtimeSubscriberRole" },
+        realtimePublisher: { name: "TenantRealtimePublisherRole" },
+        bucketsAccess: { name: "TenantBucketsAccessRole" },
+        putParameters: { name: "TenantPutParametersRole" },
       },
-      realtimeSubscriberRole: {
-        name: "TenantRealtimeSubscriberRole",
-      },
-      realtimePublisherRole: {
-        name: "TenantRealtimePublisherRole",
-      },
-      bucketsAccessRole: {
-        name: "TenantBucketsAccessRole",
-      },
-      putParametersRole: {
-        name: "TenantPutParametersRole",
-      },
+    },
+    roles: {
+      realtimeSubscriber: { arn: realtimeSubscriberRole.arn },
+      realtimePublisher: { arn: realtimePublisherRole.arn },
     },
   },
 });

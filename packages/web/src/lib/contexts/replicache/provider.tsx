@@ -14,8 +14,8 @@ import type { PropsWithChildren } from "react";
 export function ReplicacheProvider(props: PropsWithChildren) {
   const { user } = useAuth();
 
-  const [replicache, setReplicache] = useState<ReplicacheContext | null>(() =>
-    user ? { status: "initializing" } : null,
+  const [replicache, setReplicache] = useState<ReplicacheContext>(() =>
+    user ? { status: "initializing" } : { status: "uninitialized" },
   );
 
   const { AppData, ReplicacheLicenseKey } = useResource();
@@ -27,10 +27,10 @@ export function ReplicacheProvider(props: PropsWithChildren) {
   const { getAuth, refresh } = useAuthActions();
 
   useEffect(() => {
-    if (!user) return setReplicache(() => null);
+    if (!user) return setReplicache(() => ({ status: "uninitialized" }));
 
     const client = new Replicache({
-      name: `${user.id}:${user.tenantId}`,
+      name: `${user.tenantId}:${user.id}`,
       licenseKey: ReplicacheLicenseKey.value,
       logLevel: AppData.isDev ? "info" : "error",
       mutators,
@@ -88,7 +88,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user,
   ]);
 
-  if (replicache?.status === "initializing")
+  if (replicache.status === "initializing")
     return <img src={loadingIndicator} alt="Loading indicator" />;
 
   return (

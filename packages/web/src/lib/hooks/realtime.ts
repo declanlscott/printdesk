@@ -1,76 +1,73 @@
-import { useCallback, useEffect, useState } from "react";
+import { useContext, useEffect, useRef } from "react";
+import { handleMessage } from "@printworks/core/realtime/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { generateId } from "@printworks/core/utils/shared";
-import { useWebSocket } from "partysocket/react";
+import { useQuery } from "@tanstack/react-query";
+import { useStore } from "zustand";
+import { useShallow } from "zustand/react/shallow";
 
-import { useApi } from "~/lib/hooks/api";
-import { useReplicache } from "~/lib/hooks/replicache";
+import { RealtimeContext } from "~/lib/contexts/realtime";
 
-export function useRealtime(channels: Array<string>) {
-  const api = useApi();
+import type { StartsWith } from "@printworks/core/utils/types";
 
-  const [auth, setAuth] = useState<Record<string, string>>();
+export function useRealtime() {
+  const context = useContext(RealtimeContext);
 
-  const replicache = useReplicache();
+  if (!context) throw new ApplicationError.MissingContextProvider("WebSocket");
 
-  const protocolsProvider = useCallback(async () => {
-    const res = await api.client.realtime.auth.$get();
-    if (!res.ok)
-      throw new ApplicationError.Error("Failed to get websocket auth protocol");
+  return context;
+}
 
-    const { auth } = await res.json();
-    setAuth(auth);
+export const useRealtimeWebSocket = () => useRealtime().webSocket;
 
-    const header = Buffer.from(JSON.stringify(auth)).toString("base64");
+export const useRealtimeActions = () =>
+  useStore(
+    useRealtime().storeApi,
+    useShallow(({ actions }) => actions),
+  );
 
-    return ["aws-appsync-event-ws", `header-${header}`];
-  }, [api]);
-
-  const urlProvider = useCallback(async () => {
-    const res = await api.client.realtime.url.$get();
-    if (!res.ok)
-      throw new ApplicationError.Error("Failed to get websocket url");
-
-    const { url } = await res.json();
-
-    return url;
-  }, [api]);
-
-  const socket = useWebSocket(urlProvider, protocolsProvider);
+export function useRealtimeChannel<TChannel extends string>(
+  channel: StartsWith<"/", TChannel>,
+  onData: (event: unknown) => void,
+) {
+  const onDataRef = useRef(onData);
 
   useEffect(() => {
-    if (!auth) return;
+    onDataRef.current = onData;
+  }, [onData]);
 
-    const onOpen = (_event: WebSocketEventMap["open"]) =>
-      socket.send(JSON.stringify({ type: "connection_init" }));
-    const onMessage = (event: WebSocketEventMap["message"]) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const data = JSON.parse(event.data as string) as any;
-      if (data.type === "connection_ack") {
-        for (const channel of channels)
-          socket.send(
-            JSON.stringify({
-              type: "subscribe",
-              id: generateId(),
-              channel,
-              authorization: auth,
-            }),
-          );
+  const isConnected = useStore(
+    useRealtime().storeApi,
+    useShallow(({ isConnected }) => isConnected),
+  );
+  const { authenticate } = useRealtimeActions();
 
-        return;
-      }
+  const { data: authorization } = useQuery({
+    queryKey: ["realtime", "auth", channel],
+    queryFn: async () => authenticate(channel),
+    staleTime: Infinity,
+    enabled: isConnected,
+  });
 
-      if (data === "poke") return void replicache.client.pull();
-    };
+  const webSocket = useRealtimeWebSocket();
 
-    socket.addEventListener("open", onOpen);
-    socket.addEventListener("message", onMessage);
+  useEffect(() => {
+    if (!isConnected || !authorization) return;
+
+    const id = generateId();
+
+    webSocket.send(
+      JSON.stringify({ type: "subscribe", channel, id, authorization }),
+    );
+    const onMessage = handleMessage((message) => {
+      if (message.type === "data" && message.id === id)
+        onDataRef.current(message.event);
+    });
+    webSocket.addEventListener("message", onMessage);
 
     return () => {
-      socket.removeEventListener("open", onOpen);
-      socket.removeEventListener("message", onMessage);
+      webSocket.send(JSON.stringify({ type: "unsubscribe", id }));
+      webSocket.removeEventListener("message", onMessage);
     };
-  }, [auth, socket, channels, replicache.client]);
-
-  return socket;
+  }, [isConnected, channel, webSocket, authorization]);
 }

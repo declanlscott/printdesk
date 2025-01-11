@@ -3,14 +3,31 @@ import { S3, SignatureV4, Ssm, Sts, withAws } from "@printworks/core/utils/aws";
 import { createMiddleware } from "hono/factory";
 import { Resource } from "sst";
 
+async function getCredentials(role?: Sts.AssumeRoleCredentialsInput["role"]) {
+  if (!role) return undefined;
+
+  if ("name" in role)
+    return Sts.getAssumeRoleCredentials({
+      type: "name",
+      accountId: await Api.getAccountId(),
+      role,
+    });
+
+  return Sts.getAssumeRoleCredentials({
+    type: "arn",
+    role,
+  });
+}
+
+export const credentials = createMiddleware(async (_, next) =>
+  withAws({}, next),
+);
+
 /**
- * NOTE: Tenant signer depends on sts client and execute-api signer
+ * NOTE: Role specified by name depends on sts client and execute-api signer,
+ * but role specified by arn only depends on sts client. No role means no dependencies.
  */
-export const appsyncSigner = (
-  props:
-    | { forTenant: true; role: { name: string; sessionName: string } }
-    | { forTenant: false },
-) =>
+export const appsyncSigner = (role?: Sts.AssumeRoleCredentialsInput["role"]) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
@@ -19,13 +36,7 @@ export const appsyncSigner = (
             appsync: SignatureV4.buildSigner({
               region: Resource.Aws.region,
               service: "appsync",
-              credentials: props.forTenant
-                ? await Sts.getAssumeRoleCredentials({
-                    type: "name",
-                    accountId: await Api.getAccountId(),
-                    role: props.role,
-                  })
-                : undefined,
+              credentials: await getCredentials(role),
             }),
           },
         },
@@ -51,28 +62,16 @@ export const executeApiSigner = createMiddleware(async (_, next) =>
 );
 
 /**
- * NOTE: Tenant client depends on sts client and execute-api signer
+ * NOTE: Role specified by name depends on sts client and execute-api signer,
+ * but role specified by arn only depends on sts client. No role means no dependencies.
  */
-export const s3Client = (
-  props:
-    | { forTenant: true; role: { sessionName: string } }
-    | { forTenant: false },
-) =>
+export const s3Client = (role?: Sts.AssumeRoleCredentialsInput["role"]) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
         s3: {
           client: new S3.Client({
-            credentials: props.forTenant
-              ? await Sts.getAssumeRoleCredentials({
-                  type: "name",
-                  accountId: await Api.getAccountId(),
-                  role: {
-                    name: Resource.Aws.tenant.bucketsAccessRole.name,
-                    sessionName: props.role.sessionName,
-                  },
-                })
-              : undefined,
+            credentials: await getCredentials(role),
           }),
         },
       },
@@ -81,28 +80,16 @@ export const s3Client = (
   );
 
 /**
- * NOTE: Tenant client depends on sts client and execute-api signer
+ * NOTE: Role specified by name depends on sts client and execute-api signer,
+ * but role specified by arn only depends on sts client. No role means no dependencies.
  */
-export const ssmClient = (
-  props:
-    | { forTenant: true; role: { sessionName: string } }
-    | { forTenant: false },
-) =>
+export const ssmClient = (role?: Sts.AssumeRoleCredentialsInput["role"]) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
         ssm: {
           client: new Ssm.Client({
-            credentials: props.forTenant
-              ? await Sts.getAssumeRoleCredentials({
-                  type: "name",
-                  accountId: await Api.getAccountId(),
-                  role: {
-                    name: Resource.Aws.tenant.putParametersRole.name,
-                    sessionName: props.role.sessionName,
-                  },
-                })
-              : undefined,
+            credentials: await getCredentials(role),
           }),
         },
       },

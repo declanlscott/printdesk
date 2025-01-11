@@ -1,7 +1,10 @@
+import { vValidator } from "@hono/valibot-validator";
 import { Realtime } from "@printworks/core/realtime";
 import { Hono } from "hono";
+import { Resource } from "sst";
+import * as v from "valibot";
 
-import { appsyncSigner } from "~/api/middleware/aws";
+import { appsyncSigner, stsClient } from "~/api/middleware/aws";
 
 export default new Hono()
   .get("/url", async (c) => {
@@ -9,8 +12,25 @@ export default new Hono()
 
     return c.json({ url }, 200);
   })
-  .get("/auth", appsyncSigner({ forTenant: false }), async (c) => {
-    const auth = await Realtime.getAuth(false);
+  .get(
+    "/auth",
+    vValidator(
+      "query",
+      v.object({
+        channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
+      }),
+    ),
+    stsClient,
+    appsyncSigner({
+      arn: Resource.Aws.roles.realtimeSubscriber.arn,
+      sessionName: "PublicRealtimeSubscriberSigner",
+    }),
+    async (c) => {
+      const auth = await Realtime.getAuth(
+        false,
+        JSON.stringify(c.req.valid("query")),
+      );
 
-    return c.json({ auth }, 200);
-  });
+      return c.json({ auth }, 200);
+    },
+  );

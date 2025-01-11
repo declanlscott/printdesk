@@ -60,11 +60,11 @@ export namespace Appsync {
         },
         include: [
           sst.aws.permission({
-            actions: [
-              "appsync:EventConnect",
-              "appsync:EventSubscribe",
-              "appsync:EventPublish",
-            ],
+            actions: ["appsync:EventConnect"],
+            resources: [this.apiArn],
+          }),
+          sst.aws.permission({
+            actions: ["appsync:EventSubscribe", "appsync:EventPublish"],
             resources: [$interpolate`${this.apiArn}/*`],
           }),
         ],

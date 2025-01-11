@@ -3,8 +3,9 @@ import { ApplicationError } from "@printworks/core/utils/errors";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as v from "valibot";
 
-import { WebSocketProvider } from "~/lib/contexts/web-socket/provider";
+import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
 import { useApi } from "~/lib/hooks/api";
+import { useRealtimeChannel } from "~/lib/hooks/realtime";
 
 export const Route = createFileRoute("/register")({
   validateSearch: v.object({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/register")({
   loaderDeps: ({ search }) => ({ search }),
   beforeLoad: async ({ context }) => {
     try {
-      await context.authStore.actions.verify();
+      await context.authStoreApi.getState().actions.verify();
     } catch {
       // Continue loading the register route if the user is unauthenticated
       return;
@@ -67,28 +68,37 @@ function RouteComponent() {
     return url;
   }, [api]);
 
-  const getWebSocketAuth = useCallback(async () => {
-    const res = await api.client.public.realtime.auth.$get();
-    if (!res.ok)
-      throw new ApplicationError.Error("Failed to get web socket auth");
+  const getWebSocketAuth = useCallback(
+    async (channel?: string) => {
+      const res = await api.client.public.realtime.auth.$get({
+        query: { channel },
+      });
+      if (!res.ok)
+        throw new ApplicationError.Error("Failed to get web socket auth");
 
-    const { auth } = await res.json();
+      const { auth } = await res.json();
 
-    return auth;
-  }, [api]);
+      return auth;
+    },
+    [api],
+  );
 
   return (
-    <WebSocketProvider
+    <RealtimeProvider
       urlProvider={webSocketUrlProvider}
       getAuth={getWebSocketAuth}
     >
       <RegisterForm />
-    </WebSocketProvider>
+    </RealtimeProvider>
   );
 }
 
 function RegisterForm() {
   const slug = Route.useLoaderData();
+
+  useRealtimeChannel("/events/*", (event) => {
+    console.log(JSON.stringify(event, null, 2));
+  });
 
   return <div>Hello "/register"!</div>;
 }

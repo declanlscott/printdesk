@@ -20,7 +20,7 @@ export namespace Realtime {
     );
   }
 
-  export async function getAuth(forTenant = true, body?: unknown) {
+  export async function getAuth(forTenant = true, body = "{}") {
     const httpDomainName = forTenant
       ? (await Api.getAppsyncEventsDomainNames()).http
       : Resource.AppsyncEventApi.dns.http;

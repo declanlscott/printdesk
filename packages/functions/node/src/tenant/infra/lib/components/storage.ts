@@ -59,7 +59,7 @@ export class Storage extends pulumi.ComponentResource {
     this._bucketsAccessRole = new aws.iam.Role(
       "BucketsAccessRole",
       {
-        name: Aws.tenant.bucketsAccessRole.name,
+        name: Aws.tenant.roles.bucketsAccess.name,
         assumeRolePolicy: assumeRolePolicy,
       },
       { parent: this },
@@ -89,7 +89,7 @@ export class Storage extends pulumi.ComponentResource {
     this._putParametersRole = new aws.iam.Role(
       "PutParametersRole",
       {
-        name: Aws.tenant.putParametersRole.name,
+        name: Aws.tenant.roles.putParameters.name,
         assumeRolePolicy: assumeRolePolicy,
       },
       { parent: this },

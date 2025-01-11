@@ -15,7 +15,7 @@ import * as v from "valibot";
 export default new Hono()
   .get(
     "/slug-availability/:value",
-    vValidator("param", v.object({ slug: tenantSlugSchema })),
+    vValidator("param", v.object({ value: tenantSlugSchema })),
     async (c) => {
       const isAvailable = await Tenants.isSlugAvailable(
         c.req.param("value").trim().toLowerCase(),

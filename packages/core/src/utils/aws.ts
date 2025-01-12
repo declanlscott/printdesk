@@ -137,15 +137,11 @@ export namespace Credentials {
 }
 
 export namespace Dsql {
-  interface BuildSignerProps extends Omit<DsqlSignerConfig, "region"> {
-    region: NonNullable<DsqlSignerConfig["region"]>;
-  }
-
   export const buildSigner = ({
     credentials = fromNodeProviderChain(),
     sha256 = Sha256,
     ...props
-  }: BuildSignerProps) => new DsqlSigner({ credentials, sha256, ...props });
+  }: DsqlSignerConfig) => new DsqlSigner({ credentials, sha256, ...props });
 
   export const generateToken = () =>
     useAws("dsql").signer.getDbConnectAdminAuthToken();
@@ -173,18 +169,12 @@ export namespace S3 {
 }
 
 export namespace SignatureV4 {
-  interface BuildSignerProps
-    extends Omit<Partial<SignatureV4Init>, "region" | "service"> {
-    region: SignatureV4Init["region"];
-    service: SignatureV4Init["service"];
-  }
-
   export const buildSigner = ({
     credentials = fromNodeProviderChain(),
     sha256 = Sha256,
     region,
     service,
-  }: BuildSignerProps) =>
+  }: SignatureV4Init) =>
     new _SignatureV4({ credentials, sha256, region, service });
 
   export const sign = (

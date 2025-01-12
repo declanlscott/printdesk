@@ -45,11 +45,11 @@ if (
       : undefined,
   environment: injectLinkables(
     {
-      AppData: appData.getSSTLink().properties,
-      Api: api.getSSTLink().properties,
-      Auth: auth.getSSTLink().properties,
-      ReplicacheLicenseKey: replicacheLicenseKey.getSSTLink().properties,
-      Www: www.getSSTLink().properties,
+      AppData: appData,
+      Api: api,
+      Auth: auth,
+      ReplicacheLicenseKey: replicacheLicenseKey,
+      Www: www,
     },
     "VITE_RESOURCE_",
   ),

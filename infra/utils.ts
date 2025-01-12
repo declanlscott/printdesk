@@ -7,15 +7,20 @@ export const normalizePath = (path: string, root = $cli.paths.root) =>
 
 export function injectLinkables(
   linkables: {
-    [TKey in keyof Resource]?: $util.Input<Record<string, unknown>>;
+    [TLogicalName in keyof Resource]?: {
+      getSSTLink: () => sst.Definition<
+        Record<keyof Omit<Resource[TLogicalName], "type">, any>
+      >;
+    };
   },
   prefix: string,
 ) {
   const vars: Record<string, $util.Output<string>> = {};
   for (const logicalName in linkables) {
-    const value = linkables[logicalName as keyof Resource];
+    const value =
+      linkables[logicalName as keyof Resource]?.getSSTLink().properties;
 
-    vars[`${prefix}${logicalName}`] = $jsonStringify($output(value));
+    if (value) vars[`${prefix}${logicalName}`] = $jsonStringify($output(value));
   }
 
   return vars;

@@ -211,14 +211,14 @@ export const tenantInfraFunction = new aws.lambda.Function(
     environment: {
       variables: injectLinkables(
         {
-          AppData: appData.getSSTLink().properties,
-          ApiFunction: apiFunction.getSSTLink().properties,
-          Aws: aws_.getSSTLink().properties,
-          CloudfrontPublicKey: cloudfrontPublicKey.getSSTLink().properties,
-          Code: code.getSSTLink().properties,
-          InvoicesProcessor: invoicesProcessor.getSSTLink().properties,
-          PapercutSync: papercutSync.getSSTLink().properties,
-          PulumiBucket: pulumiBucket.getSSTLink().properties,
+          AppData: appData,
+          ApiFunction: apiFunction,
+          Aws: aws_,
+          CloudfrontPublicKey: cloudfrontPublicKey,
+          Code: code,
+          InvoicesProcessor: invoicesProcessor,
+          PapercutSync: papercutSync,
+          PulumiBucket: pulumiBucket,
         },
         "FUNCTION_RESOURCE_",
       ),

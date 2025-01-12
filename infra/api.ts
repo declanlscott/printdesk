@@ -1,11 +1,10 @@
-import { appsyncEventApi } from "infra/realtime";
-
 import { auth } from "./auth";
 import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import { apiFqdn, domainName } from "./dns";
 import { appData, aws_, cloudfrontPrivateKey } from "./misc";
 import { tenantInfraQueue } from "./queues";
+import { appsyncEventApi } from "./realtime";
 
 export const apiFunction = new custom.aws.Function("ApiFunction", {
   handler: "packages/functions/node/src/api/index.handler",

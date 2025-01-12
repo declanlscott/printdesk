@@ -5,7 +5,7 @@ import * as pulumi from "@pulumi/pulumi";
 
 import { useResource } from "../resource";
 
-import type { Buckets } from "src/tenant/infra/lib/components/storage";
+import type { Buckets } from "./storage";
 
 export interface ApiArgs {
   gateway: aws.apigateway.RestApi;

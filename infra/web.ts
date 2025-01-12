@@ -1,7 +1,6 @@
-import { api } from "infra/api";
-import { fqdn } from "infra/dns";
-
+import { api } from "./api";
 import { auth } from "./auth";
+import { fqdn } from "./dns";
 import { appData, replicacheLicenseKey } from "./misc";
 import { injectLinkables } from "./utils";
 import { www } from "./www";

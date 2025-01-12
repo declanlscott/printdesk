@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { handleMessage } from "@printworks/core/realtime/client";
 import { useWebSocket } from "partysocket/react";
 import { useStore } from "zustand";
@@ -58,34 +58,21 @@ export function RealtimeProvider({
     return ["aws-appsync-event-ws", `header-${header}`];
   }, [authenticate]);
 
-  const webSocket = useWebSocket(urlProvider, protocolsProvider);
-
-  useEffect(() => {
-    const onOpen = (_event: WebSocketEventMap["open"]) =>
-      webSocket.send(JSON.stringify({ type: "connection_init" }));
-    const onMessage = handleMessage((data) => {
-      switch (data.type) {
+  const webSocket = useWebSocket(urlProvider, protocolsProvider, {
+    onOpen: () => webSocket.send(JSON.stringify({ type: "connection_init" })),
+    onMessage: handleMessage((message) => {
+      switch (message.type) {
         case "connection_ack":
           isConnected(true);
-          startTimer(() => webSocket.reconnect(), data.connectionTimeoutMs);
+          startTimer(() => webSocket.reconnect(), message.connectionTimeoutMs);
           break;
         case "ka":
           cancelTimer();
           break;
       }
-    });
-    const onClose = (_event: WebSocketEventMap["close"]) => isConnected(false);
-
-    webSocket.addEventListener("open", onOpen);
-    webSocket.addEventListener("message", onMessage);
-    webSocket.addEventListener("close", onClose);
-
-    return () => {
-      webSocket.removeEventListener("open", onOpen);
-      webSocket.removeEventListener("message", onMessage);
-      webSocket.removeEventListener("close", onClose);
-    };
-  }, [webSocket, isConnected, startTimer, cancelTimer]);
+    }),
+    onClose: () => isConnected(false),
+  });
 
   return (
     <RealtimeContext.Provider value={{ storeApi, webSocket: webSocket }}>

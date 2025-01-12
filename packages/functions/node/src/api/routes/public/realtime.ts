@@ -4,7 +4,7 @@ import { Hono } from "hono";
 import { Resource } from "sst";
 import * as v from "valibot";
 
-import { appsyncSigner, stsClient } from "~/api/middleware/aws";
+import { appsyncSigner } from "~/api/middleware/aws";
 
 export default new Hono()
   .get("/url", async (c) => {
@@ -20,10 +20,9 @@ export default new Hono()
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
       }),
     ),
-    stsClient,
     appsyncSigner({
-      arn: Resource.Aws.roles.realtimeSubscriber.arn,
-      sessionName: "PublicRealtimeSubscriberSigner",
+      RoleArn: Resource.Aws.roles.realtimePublisher.arn,
+      RoleSessionName: "PublicRealtimePublisher",
     }),
     async (c) => {
       const auth = await Realtime.getAuth(

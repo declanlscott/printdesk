@@ -4,6 +4,12 @@ import * as pulumi from "@pulumi/pulumi";
 import { useResource } from "../resource";
 import * as appsync from "./dynamic/aws/appsync";
 
+import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
+
+export interface RealtimeArgs {
+  roleChain: pulumi.Input<Array<AssumeRoleCommandInput>>;
+}
+
 export class Realtime extends pulumi.ComponentResource {
   private static _instance: Realtime;
 
@@ -14,7 +20,7 @@ export class Realtime extends pulumi.ComponentResource {
   private _publisherRole: aws.iam.Role;
 
   static getInstance(
-    args = {},
+    args: RealtimeArgs,
     opts: pulumi.ComponentResourceOptions = {},
   ): Realtime {
     if (!this._instance) this._instance = new Realtime(args, opts);
@@ -32,6 +38,7 @@ export class Realtime extends pulumi.ComponentResource {
     this._api = new appsync.Api(
       "Api",
       {
+        roleChain: args.roleChain,
         eventConfig: {
           authProviders: [{ authType: "AWS_IAM" }],
           connectionAuthModes: [{ authType: "AWS_IAM" }],
@@ -45,6 +52,7 @@ export class Realtime extends pulumi.ComponentResource {
     this._eventsChannelNamespace = new appsync.ChannelNamespace(
       "EventsChannelNamespace",
       {
+        roleChain: args.roleChain,
         apiId: this._api.id,
         name: "events",
       },
@@ -54,6 +62,7 @@ export class Realtime extends pulumi.ComponentResource {
     this._replicacheChannelNamespace = new appsync.ChannelNamespace(
       "ReplicacheChannelNamespace",
       {
+        roleChain: args.roleChain,
         apiId: this._api.id,
         name: "replicache",
       },

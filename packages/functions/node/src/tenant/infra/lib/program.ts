@@ -1,4 +1,3 @@
-import { Appsync, Sts, withAws } from "@printworks/core/utils/aws";
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
@@ -47,41 +46,22 @@ export const getProgram =
 
     const storage = Storage.getInstance({ providers: [account.provider] });
 
-    // NOTE: Since the realtime component uses dynamic providers, we need to manually
-    // provide credentials for the appsync client via iam role chaining
-    const realtime = account.assumeRoleArn.apply(async (roleArn) =>
-      withAws(
-        {
-          sts: {
-            client: new Sts.Client({
-              credentials: await Sts.getAssumeRoleCredentials({
-                type: "arn",
-                role: {
-                  arn: Aws.organization.managementRole.arn,
-                  sessionName: "StsClient",
-                },
-              }),
-            }),
+    const realtime = Realtime.getInstance(
+      {
+        // NOTE: Since the realtime component uses dynamic providers, we need to manually
+        // provide credentials for the appsync client via iam role chaining
+        roleChain: account.assumeRoleArn.apply((assumeRoleArn) => [
+          {
+            RoleArn: Aws.organization.managementRole.arn,
+            RoleSessionName: "PulumiRealtimeComponent",
           },
-        },
-        async () =>
-          withAws(
-            {
-              appsync: {
-                client: new Appsync.Client({
-                  credentials: await Sts.getAssumeRoleCredentials({
-                    type: "arn",
-                    role: {
-                      arn: roleArn,
-                      sessionName: "AppsyncClient",
-                    },
-                  }),
-                }),
-              },
-            },
-            () => Realtime.getInstance(),
-          ),
-      ),
+          {
+            RoleArn: assumeRoleArn,
+            RoleSessionName: "PulumiRealtimeComponent",
+          },
+        ]),
+      },
+      { providers: [account.provider] },
     );
 
     const router = Router.getInstance(

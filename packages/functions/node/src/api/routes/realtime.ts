@@ -1,12 +1,10 @@
 import { Realtime } from "@printworks/core/realtime";
+import { Api } from "@printworks/core/tenants/api";
+import { Credentials } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
 
-import {
-  appsyncSigner,
-  executeApiSigner,
-  stsClient,
-} from "~/api/middleware/aws";
+import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
 
 export default new Hono()
   .use(executeApiSigner)
@@ -17,10 +15,12 @@ export default new Hono()
   })
   .get(
     "/auth",
-    stsClient,
     appsyncSigner({
-      name: Resource.Aws.tenant.roles.realtimeSubscriber.name,
-      sessionName: "TenantRealtimeSubscriberSigner",
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.realtimeSubscriber.name,
+      ),
+      RoleSessionName: "TenantRealtimeSubscriber",
     }),
     async (c) => {
       const auth = await Realtime.getAuth();

@@ -16,7 +16,7 @@ export default new Hono().put(
   executeApiSigner,
   ssmClient({
     name: Resource.Aws.tenant.roles.putParameters.name,
-    sessionName: "SetTailscaleOauthClient",
+    sessionName: "ApiSetTailscaleOauthClient",
   }),
   async (c) => {
     await Tailscale.setOauthClient(

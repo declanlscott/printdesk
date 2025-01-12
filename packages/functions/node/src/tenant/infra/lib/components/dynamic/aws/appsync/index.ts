@@ -20,7 +20,7 @@ export type ApiOutputs = {
   [TKey in keyof ApiProviderOutputs]: pulumi.Output<ApiProviderOutputs[TKey]>;
 };
 
-export interface Api extends Omit<ApiOutputs, "clientRoleArn"> {}
+export interface Api extends ApiOutputs {}
 export class Api extends pulumi.dynamic.Resource {
   constructor(
     name: string,
@@ -56,8 +56,7 @@ export type ChannelNamespaceOutputs = {
   >;
 };
 
-export interface ChannelNamespace
-  extends Omit<ChannelNamespaceOutputs, "clientRoleArn"> {}
+export interface ChannelNamespace extends ChannelNamespaceOutputs {}
 export class ChannelNamespace extends pulumi.dynamic.Resource {
   constructor(
     name: string,

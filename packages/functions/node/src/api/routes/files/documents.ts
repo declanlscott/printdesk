@@ -1,17 +1,13 @@
 import { vValidator } from "@hono/valibot-validator";
 import { Documents } from "@printworks/core/files/documents";
-import { S3 } from "@printworks/core/utils/aws";
+import { Api } from "@printworks/core/tenants/api";
+import { Credentials, S3 } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
 import * as v from "valibot";
 
 import { authz } from "~/api/middleware/auth";
-import {
-  executeApiSigner,
-  s3Client,
-  ssmClient,
-  stsClient,
-} from "~/api/middleware/aws";
+import { executeApiSigner, s3Client, ssmClient } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
 import { authzValidator } from "~/api/middleware/validators";
 
@@ -23,10 +19,12 @@ export default new Hono()
     authzValidator,
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
     executeApiSigner,
-    stsClient,
     ssmClient({
-      name: Resource.Aws.tenant.roles.putParameters.name,
-      sessionName: "SetDocumentsMimeTypes",
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.putParameters.name,
+      ),
+      RoleSessionName: "ApiSetDocumentsMimeTypes",
     }),
     async (c) => {
       await Documents.setMimeTypes(c.req.valid("json").mimeTypes);
@@ -44,10 +42,12 @@ export default new Hono()
     authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
-    stsClient,
     s3Client({
-      name: Resource.Aws.tenant.roles.bucketsAccess.name,
-      sessionName: "GetDocumentsSignedGetUrl",
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.bucketsAccess.name,
+      ),
+      RoleSessionName: "ApiGetDocumentsSignedGetUrl",
     }),
     async (c) => {
       const signedUrl = await S3.getSignedGetUrl({
@@ -63,10 +63,12 @@ export default new Hono()
     authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
-    stsClient,
     s3Client({
-      name: Resource.Aws.tenant.roles.bucketsAccess.name,
-      sessionName: "GetDocumentsSignedPutUrl",
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.bucketsAccess.name,
+      ),
+      RoleSessionName: "ApiGetDocumentsSignedPutUrl",
     }),
     async (c) => {
       const signedUrl = await S3.getSignedPutUrl({
@@ -84,10 +86,12 @@ export default new Hono()
     authzValidator,
     vValidator("json", v.object({ byteSize: v.number() })),
     executeApiSigner,
-    stsClient,
     ssmClient({
-      name: Resource.Aws.tenant.roles.putParameters.name,
-      sessionName: "SetDocumentsSizeLimit",
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.putParameters.name,
+      ),
+      RoleSessionName: "ApiSetDocumentsSizeLimit",
     }),
     async (c) => {
       await Documents.setSizeLimit(c.req.valid("json").byteSize);

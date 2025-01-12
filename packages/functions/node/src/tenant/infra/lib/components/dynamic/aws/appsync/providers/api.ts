@@ -1,18 +1,31 @@
-import { Appsync } from "@printworks/core/utils/aws";
+import {
+  AppSyncClient,
+  CreateApiCommand,
+  DeleteApiCommand,
+  GetApiCommand,
+  UpdateApiCommand,
+} from "@aws-sdk/client-appsync";
+import { Credentials } from "@printworks/core/utils/aws";
 
 import { logicalName, physicalName } from "../../../naming";
 
+import type { Api, CreateApiCommandInput } from "@aws-sdk/client-appsync";
+import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
+import type { NonNullableProperties } from "@printworks/core/utils/types";
 import type * as pulumi from "@pulumi/pulumi";
 
-type ApiInputs = Parameters<typeof Appsync.createApi>[0];
-export interface ApiProviderInputs extends Omit<ApiInputs, "name"> {
+interface ApiInputs
+  extends Omit<NonNullableProperties<CreateApiCommandInput>, "name"> {
   name?: string;
 }
+export interface ApiProviderInputs extends ApiInputs {
+  roleChain: Array<AssumeRoleCommandInput>;
+}
 
-type ApiOutputs = Required<
-  NonNullable<Awaited<ReturnType<typeof Appsync.createApi>>["api"]>
->;
-export type ApiProviderOutputs = ApiOutputs;
+type ApiOutputs = Required<Api>;
+export interface ApiProviderOutputs extends ApiOutputs {
+  roleChain: Array<AssumeRoleCommandInput>;
+}
 
 export class ApiProvider implements pulumi.dynamic.ResourceProvider {
   private _logicalName: string;
@@ -21,13 +34,25 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
     this._logicalName = logicalName(name);
   }
 
-  async create(
-    inputs: ApiProviderInputs,
-  ): Promise<pulumi.dynamic.CreateResult<ApiProviderOutputs>> {
-    const output = await Appsync.createApi({
-      name: physicalName(50, this._logicalName),
-      ...inputs,
+  private static _getClient = (roleChain: Array<AssumeRoleCommandInput>) =>
+    new AppSyncClient({
+      credentials: Credentials.fromRoleChain(roleChain),
     });
+
+  async create({
+    roleChain,
+    ...inputs
+  }: ApiProviderInputs): Promise<
+    pulumi.dynamic.CreateResult<ApiProviderOutputs>
+  > {
+    const client = ApiProvider._getClient(roleChain);
+
+    const output = await client.send(
+      new CreateApiCommand({
+        name: physicalName(50, this._logicalName),
+        ...inputs,
+      }),
+    );
     if (!output.api)
       throw new Error(`Failed creating api "${this._logicalName}"`);
 
@@ -35,7 +60,7 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
 
     return {
       id: api.apiId,
-      outs: api,
+      outs: { ...api, roleChain },
     };
   }
 
@@ -43,7 +68,9 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
     id: string,
     props: ApiProviderOutputs,
   ): Promise<pulumi.dynamic.ReadResult<ApiProviderOutputs>> {
-    const output = await Appsync.getApi({ apiId: id });
+    const client = ApiProvider._getClient(props.roleChain);
+
+    const output = await client.send(new GetApiCommand({ apiId: id }));
     if (!output.api) throw new Error(`Failed reading api "${id}"`);
 
     const api = output.api as ApiOutputs;
@@ -57,23 +84,25 @@ export class ApiProvider implements pulumi.dynamic.ResourceProvider {
   async update(
     id: string,
     olds: ApiProviderOutputs,
-    news: ApiProviderInputs,
+    { roleChain, ...news }: ApiProviderInputs,
   ): Promise<pulumi.dynamic.UpdateResult<ApiProviderOutputs>> {
-    const output = await Appsync.updateApi({
-      apiId: id,
-      name: olds.name,
-      ...news,
-    });
+    const client = ApiProvider._getClient(roleChain);
+
+    const output = await client.send(
+      new UpdateApiCommand({ apiId: id, name: olds.name, ...news }),
+    );
     if (!output.api) throw new Error(`Failed updating api "${id}"`);
 
     const api = output.api as ApiOutputs;
 
     return {
-      outs: { ...olds, ...api },
+      outs: { ...olds, ...api, roleChain },
     };
   }
 
-  async delete(id: string, _props: ApiProviderOutputs) {
-    await Appsync.deleteApi({ apiId: id });
+  async delete(id: string, props: ApiProviderOutputs) {
+    const client = ApiProvider._getClient(props.roleChain);
+
+    await client.send(new DeleteApiCommand({ apiId: id }));
   }
 }

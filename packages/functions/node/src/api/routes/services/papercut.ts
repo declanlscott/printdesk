@@ -23,7 +23,7 @@ export default new Hono()
     executeApiSigner,
     ssmClient({
       name: Resource.Aws.tenant.roles.putParameters.name,
-      sessionName: "SetTailnetPapercutServerUri",
+      sessionName: "ApiSetTailnetPapercutServerUri",
     }),
     async (c) => {
       await Papercut.setTailnetServerUri(c.req.valid("json").tailnetUri);
@@ -39,7 +39,7 @@ export default new Hono()
     executeApiSigner,
     ssmClient({
       name: Resource.Aws.tenant.roles.putParameters.name,
-      sessionName: "SetPapercutServerAuthToken",
+      sessionName: "ApiSetPapercutServerAuthToken",
     }),
     async (c) => {
       await Papercut.setServerAuthToken(c.req.valid("json").authToken);

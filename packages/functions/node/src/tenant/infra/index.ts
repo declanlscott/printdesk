@@ -1,5 +1,5 @@
 import { tenantInfraProgramInputSchema } from "@printworks/core/tenants/shared";
-import { Ssm, Sts, withAws } from "@printworks/core/utils/aws";
+import { Ssm, withAws } from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { version as awsPluginVersion } from "@pulumi/aws/package.json";
 import { version as cloudflarePluginVersion } from "@pulumi/cloudflare/package.json";
@@ -13,31 +13,28 @@ import type { SQSBatchItemFailure, SQSHandler, SQSRecord } from "aws-lambda";
 
 export const handler: SQSHandler = async (event) =>
   withResource(() =>
-    withAws(
-      { ssm: { client: new Ssm.Client() }, sts: { client: new Sts.Client() } },
-      async () => {
-        const batchItemFailures: Array<SQSBatchItemFailure> = [];
+    withAws({ ssm: { client: new Ssm.Client() } }, async () => {
+      const batchItemFailures: Array<SQSBatchItemFailure> = [];
 
-        const { AppData } = useResource();
+      const { AppData } = useResource();
 
-        const cloudflareApiToken = await Ssm.getParameter({
-          Name: `/${AppData.name}/${AppData.stage}/cloudflare/api-token`,
-          WithDecryption: true,
-        });
+      const cloudflareApiToken = await Ssm.getParameter({
+        Name: `/${AppData.name}/${AppData.stage}/cloudflare/api-token`,
+        WithDecryption: true,
+      });
 
-        for (const record of event.Records) {
-          try {
-            await processRecord(record, cloudflareApiToken);
-          } catch (e) {
-            console.error("Failed to process record: ", record, e);
+      for (const record of event.Records) {
+        try {
+          await processRecord(record, cloudflareApiToken);
+        } catch (e) {
+          console.error("Failed to process record: ", record, e);
 
-            batchItemFailures.push({ itemIdentifier: record.messageId });
-          }
+          batchItemFailures.push({ itemIdentifier: record.messageId });
         }
+      }
 
-        return { batchItemFailures };
-      },
-    ),
+      return { batchItemFailures };
+    }),
   );
 
 async function processRecord(record: SQSRecord, cloudflareApiToken: string) {

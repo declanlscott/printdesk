@@ -5,17 +5,6 @@
  */
 import { Sha256 } from "@aws-crypto/sha256-js";
 import {
-  AppSyncClient,
-  CreateApiCommand,
-  CreateChannelNamespaceCommand,
-  DeleteApiCommand,
-  DeleteChannelNamespaceCommand,
-  GetApiCommand,
-  GetChannelNamespaceCommand,
-  UpdateApiCommand,
-  UpdateChannelNamespaceCommand,
-} from "@aws-sdk/client-appsync";
-import {
   DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
@@ -33,9 +22,11 @@ import {
   PutParameterCommand,
   SSMClient,
 } from "@aws-sdk/client-ssm";
-import { AssumeRoleCommand, STSClient } from "@aws-sdk/client-sts";
 import { getSignedUrl as _getSignedUrl } from "@aws-sdk/cloudfront-signer";
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+import {
+  fromNodeProviderChain,
+  fromTemporaryCredentials,
+} from "@aws-sdk/credential-providers";
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
@@ -45,16 +36,6 @@ import * as R from "remeda";
 import { Utils } from ".";
 import { ApplicationError } from "./errors";
 
-import type {
-  CreateApiCommandInput,
-  CreateChannelNamespaceCommandInput,
-  DeleteApiCommandInput,
-  DeleteChannelNamespaceCommandInput,
-  GetApiCommandInput,
-  GetChannelNamespaceCommandInput,
-  UpdateApiCommandInput,
-  UpdateChannelNamespaceCommandInput,
-} from "@aws-sdk/client-appsync";
 import type {
   DeleteObjectCommandInput,
   GetObjectCommandInput,
@@ -72,18 +53,15 @@ import type {
 import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
 import type { DsqlSignerConfig } from "@aws-sdk/dsql-signer";
 import type { SignatureV4Init } from "@smithy/signature-v4";
-import type { AwsCredentialIdentity } from "@smithy/types";
+import type { AwsCredentialIdentityProvider } from "@smithy/types";
 import type { NonNullableProperties, StartsWith } from "./types";
 
 export type AwsContext = {
-  appsync?: { client: AppSyncClient };
-  credentials: AwsCredentialIdentity;
   dsql?: { signer: DsqlSigner };
   sqs?: { client: SQSClient };
   s3?: { client: S3Client };
   sigv4?: { signers: Record<string, _SignatureV4> };
   ssm?: { client: SSMClient };
-  sts?: { client: STSClient };
 };
 
 const contextName = "Aws";
@@ -100,7 +78,7 @@ export function useAws<TServiceName extends keyof AwsContext>(
 }
 
 export async function withAws<
-  TContext extends Omit<AwsContext, "credentials">,
+  TContext extends AwsContext,
   TCallback extends () => ReturnType<TCallback>,
 >(context: TContext, callback: TCallback) {
   let old: AwsContext | undefined;
@@ -119,47 +97,7 @@ export async function withAws<
   if (old)
     return AwsContext.with(R.mergeDeep(old, context) as AwsContext, callback);
 
-  return AwsContext.with(
-    { ...context, credentials: await fromNodeProviderChain()() },
-    callback,
-  );
-}
-
-export namespace Appsync {
-  export const Client = AppSyncClient;
-  export type Client = AppSyncClient;
-
-  export const createApi = async (
-    input: NonNullableProperties<CreateApiCommandInput>,
-  ) => useAws("appsync").client.send(new CreateApiCommand(input));
-
-  export const getApi = async (
-    input: NonNullableProperties<GetApiCommandInput>,
-  ) => useAws("appsync").client.send(new GetApiCommand(input));
-
-  export const updateApi = async (
-    input: NonNullableProperties<UpdateApiCommandInput>,
-  ) => useAws("appsync").client.send(new UpdateApiCommand(input));
-
-  export const deleteApi = async (
-    input: NonNullableProperties<DeleteApiCommandInput>,
-  ) => useAws("appsync").client.send(new DeleteApiCommand(input));
-
-  export const createChannelNamespace = async (
-    input: NonNullableProperties<CreateChannelNamespaceCommandInput>,
-  ) => useAws("appsync").client.send(new CreateChannelNamespaceCommand(input));
-
-  export const getChannelNamespace = async (
-    input: NonNullableProperties<GetChannelNamespaceCommandInput>,
-  ) => useAws("appsync").client.send(new GetChannelNamespaceCommand(input));
-
-  export const updateChannelNamespace = async (
-    input: NonNullableProperties<UpdateChannelNamespaceCommandInput>,
-  ) => useAws("appsync").client.send(new UpdateChannelNamespaceCommand(input));
-
-  export const deleteChannelNamespace = async (
-    input: NonNullableProperties<DeleteChannelNamespaceCommandInput>,
-  ) => useAws("appsync").client.send(new DeleteChannelNamespaceCommand(input));
+  return AwsContext.with(context, callback);
 }
 
 export namespace Cloudfront {
@@ -175,6 +113,27 @@ export namespace Cloudfront {
 
   export const getSignedUrl = (...args: Parameters<typeof _getSignedUrl>) =>
     new URL(_getSignedUrl(...args));
+}
+
+export namespace Credentials {
+  export const buildRoleArn = (accountId: string, roleName: string) =>
+    `arn:aws:iam::${accountId}:role/${roleName}`;
+
+  export function fromRoleChain(
+    roleChain: Array<AssumeRoleCommandInput>,
+  ): AwsCredentialIdentityProvider {
+    switch (roleChain.length) {
+      case 0:
+        throw new Error("Empty role chain");
+      case 1: // base case
+        return fromTemporaryCredentials({ params: roleChain[0] });
+      default: // recursive case
+        return fromTemporaryCredentials({
+          masterCredentials: fromRoleChain(roleChain.slice(1)),
+          params: roleChain[0],
+        });
+    }
+  }
 }
 
 export namespace Dsql {
@@ -273,42 +232,6 @@ export namespace Ssm {
   export const deleteParameter = async (
     input: NonNullableProperties<DeleteParameterCommandInput>,
   ) => useAws("ssm").client.send(new DeleteParameterCommand(input));
-}
-
-export namespace Sts {
-  export const Client = STSClient;
-  export type Client = STSClient;
-
-  export const assumeRole = async (
-    input: NonNullableProperties<AssumeRoleCommandInput>,
-  ) => useAws("sts").client.send(new AssumeRoleCommand(input));
-
-  export type AssumeRoleCredentialsInput = (
-    | { type: "arn"; role: { arn: string } }
-    | { type: "name"; accountId: string; role: { name: string } }
-  ) & { role: { sessionName: string } };
-
-  export async function getAssumeRoleCredentials(
-    input: AssumeRoleCredentialsInput,
-  ) {
-    const { Credentials } = await assumeRole({
-      RoleArn:
-        input.type === "arn"
-          ? input.role.arn
-          : `arn:aws:iam::${input.accountId}:role/${input.role.name}`,
-      RoleSessionName: input.role.sessionName,
-    });
-
-    if (!Credentials?.AccessKeyId || !Credentials.SecretAccessKey)
-      throw new Error("Missing assume role credentials");
-
-    return {
-      accessKeyId: Credentials.AccessKeyId,
-      secretAccessKey: Credentials.SecretAccessKey,
-      sessionToken: Credentials.SessionToken,
-      expiration: Credentials.Expiration,
-    };
-  }
 }
 
 export namespace Util {

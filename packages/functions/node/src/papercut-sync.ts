@@ -2,7 +2,7 @@ import { withActor } from "@printworks/core/actors/context";
 import { PapercutSync } from "@printworks/core/papercut/sync";
 import { Realtime } from "@printworks/core/realtime";
 import { Api } from "@printworks/core/tenants/api";
-import { SignatureV4, Sts, withAws } from "@printworks/core/utils/aws";
+import { Credentials, SignatureV4, withAws } from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { withXml } from "@printworks/core/utils/xml";
 import { Resource } from "sst";
@@ -31,7 +31,6 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
             }),
           },
         },
-        sts: { client: new Sts.Client() },
       },
       async () =>
         withAws(
@@ -41,14 +40,15 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
                 appsync: SignatureV4.buildSigner({
                   region: Resource.Aws.region,
                   service: "appsync",
-                  credentials: await Sts.getAssumeRoleCredentials({
-                    type: "name",
-                    accountId: await Api.getAccountId(),
-                    role: {
-                      name: Resource.Aws.tenant.roles.realtimePublisher.name,
-                      sessionName: "PapercutSync",
+                  credentials: Credentials.fromRoleChain([
+                    {
+                      RoleArn: Credentials.buildRoleArn(
+                        await Api.getAccountId(),
+                        Resource.Aws.tenant.roles.realtimePublisher.name,
+                      ),
+                      RoleSessionName: "PapercutSyncRealtimePublisher",
                     },
-                  }),
+                  ]),
                 }),
               },
             },

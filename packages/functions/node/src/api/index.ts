@@ -16,7 +16,7 @@ import usersRoute from "~/api/routes/users";
 
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-const api = new Hono()
+const app = new Hono()
   .use(logger())
   .use(actor)
   .use(except("/public/*", authn))
@@ -36,6 +36,6 @@ const api = new Hono()
     return c.text("Internal server error", 500);
   });
 
-export const handler = handle(api);
+export const handler = handle(app);
 
-export type Api = typeof api;
+export type Api = typeof app;

@@ -1,4 +1,6 @@
 import { Replicache } from "@printworks/core/replicache";
+import { Api } from "@printworks/core/tenants/api";
+import { Credentials } from "@printworks/core/utils/aws";
 import {
   ApplicationError,
   HttpError,
@@ -7,11 +9,7 @@ import {
 import { Hono } from "hono";
 import { Resource } from "sst";
 
-import {
-  appsyncSigner,
-  executeApiSigner,
-  stsClient,
-} from "~/api/middleware/aws";
+import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
 
 export default new Hono()
@@ -27,10 +25,12 @@ export default new Hono()
   .post(
     "/push",
     executeApiSigner,
-    stsClient,
     appsyncSigner({
-      name: Resource.Aws.tenant.roles.realtimePublisher.name,
-      sessionName: "TenantRealtimePublisherSigner",
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.realtimePublisher.name,
+      ),
+      RoleSessionName: "TenantRealtimePublisher",
     }),
     async (c) => {
       const pushRequest = await c.req.json();

@@ -1,10 +1,13 @@
+import { vValidator } from "@hono/valibot-validator";
 import { Realtime } from "@printworks/core/realtime";
 import { Api } from "@printworks/core/tenants/api";
 import { Credentials } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
+import * as v from "valibot";
 
 import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
+import { authzValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .use(executeApiSigner)
@@ -15,6 +18,13 @@ export default new Hono()
   })
   .get(
     "/auth",
+    authzValidator,
+    vValidator(
+      "query",
+      v.object({
+        channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
+      }),
+    ),
     appsyncSigner(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
@@ -23,7 +33,10 @@ export default new Hono()
       RoleSessionName: "TenantRealtimeSubscriber",
     })),
     async (c) => {
-      const auth = await Realtime.getAuth();
+      const auth = await Realtime.getAuth(
+        true,
+        JSON.stringify(c.req.valid("query")),
+      );
 
       return c.json({ auth }, 200);
     },

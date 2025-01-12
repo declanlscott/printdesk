@@ -10,7 +10,9 @@ import { Resource } from "sst";
 
 import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
 
-export const appsyncSigner = (role?: AssumeRoleCommandInput) =>
+type GetRole = () => Promise<AssumeRoleCommandInput> | AssumeRoleCommandInput;
+
+export const appsyncSigner = (getRole?: GetRole) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
@@ -19,7 +21,9 @@ export const appsyncSigner = (role?: AssumeRoleCommandInput) =>
             appsync: SignatureV4.buildSigner({
               region: Resource.Aws.region,
               service: "appsync",
-              credentials: role ? Credentials.fromRoleChain([role]) : undefined,
+              credentials: getRole
+                ? Credentials.fromRoleChain([await getRole()])
+                : undefined,
             }),
           },
         },
@@ -44,13 +48,15 @@ export const executeApiSigner = createMiddleware(async (_, next) =>
   ),
 );
 
-export const s3Client = (role?: AssumeRoleCommandInput) =>
+export const s3Client = (getRole?: GetRole) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
         s3: {
           client: new S3.Client({
-            credentials: role ? Credentials.fromRoleChain([role]) : undefined,
+            credentials: getRole
+              ? Credentials.fromRoleChain([await getRole()])
+              : undefined,
           }),
         },
       },
@@ -58,13 +64,15 @@ export const s3Client = (role?: AssumeRoleCommandInput) =>
     ),
   );
 
-export const ssmClient = (role?: AssumeRoleCommandInput) =>
+export const ssmClient = (getRole?: GetRole) =>
   createMiddleware(async (_, next) =>
     withAws(
       {
         ssm: {
           client: new Ssm.Client({
-            credentials: role ? Credentials.fromRoleChain([role]) : undefined,
+            credentials: getRole
+              ? Credentials.fromRoleChain([await getRole()])
+              : undefined,
           }),
         },
       },

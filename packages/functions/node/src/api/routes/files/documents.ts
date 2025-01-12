@@ -19,13 +19,13 @@ export default new Hono()
     authzValidator,
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
     executeApiSigner,
-    ssmClient({
+    ssmClient(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
         Resource.Aws.tenant.roles.putParameters.name,
       ),
       RoleSessionName: "ApiSetDocumentsMimeTypes",
-    }),
+    })),
     async (c) => {
       await Documents.setMimeTypes(c.req.valid("json").mimeTypes);
 
@@ -42,13 +42,13 @@ export default new Hono()
     authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
-    s3Client({
+    s3Client(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
         Resource.Aws.tenant.roles.bucketsAccess.name,
       ),
       RoleSessionName: "ApiGetDocumentsSignedGetUrl",
-    }),
+    })),
     async (c) => {
       const signedUrl = await S3.getSignedGetUrl({
         Bucket: await Documents.getBucketName(),
@@ -63,13 +63,13 @@ export default new Hono()
     authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
-    s3Client({
+    s3Client(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
         Resource.Aws.tenant.roles.bucketsAccess.name,
       ),
       RoleSessionName: "ApiGetDocumentsSignedPutUrl",
-    }),
+    })),
     async (c) => {
       const signedUrl = await S3.getSignedPutUrl({
         Bucket: await Documents.getBucketName(),
@@ -86,13 +86,13 @@ export default new Hono()
     authzValidator,
     vValidator("json", v.object({ byteSize: v.number() })),
     executeApiSigner,
-    ssmClient({
+    ssmClient(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
         Resource.Aws.tenant.roles.putParameters.name,
       ),
       RoleSessionName: "ApiSetDocumentsSizeLimit",
-    }),
+    })),
     async (c) => {
       await Documents.setSizeLimit(c.req.valid("json").byteSize);
 

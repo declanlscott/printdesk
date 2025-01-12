@@ -1,6 +1,8 @@
 import { vValidator } from "@hono/valibot-validator";
 import { Tailscale } from "@printworks/core/tailscale";
 import { updateTailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
+import { Api } from "@printworks/core/tenants/api";
+import { Credentials } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
 
@@ -14,10 +16,13 @@ export default new Hono().put(
   authzValidator,
   vValidator("json", updateTailscaleOauthClientSchema),
   executeApiSigner,
-  ssmClient({
-    name: Resource.Aws.tenant.roles.putParameters.name,
-    sessionName: "ApiSetTailscaleOauthClient",
-  }),
+  ssmClient(async () => ({
+    RoleArn: Credentials.buildRoleArn(
+      await Api.getAccountId(),
+      Resource.Aws.tenant.roles.putParameters.name,
+    ),
+    RoleSessionName: "ApiSetTailscaleOauthClient",
+  })),
   async (c) => {
     await Tailscale.setOauthClient(
       c.req.valid("json").id,

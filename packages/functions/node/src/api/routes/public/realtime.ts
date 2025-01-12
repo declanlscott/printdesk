@@ -20,10 +20,10 @@ export default new Hono()
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
       }),
     ),
-    appsyncSigner({
-      RoleArn: Resource.Aws.roles.realtimePublisher.arn,
-      RoleSessionName: "PublicRealtimePublisher",
-    }),
+    appsyncSigner(() => ({
+      RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
+      RoleSessionName: "PublicRealtimeSubscriber",
+    })),
     async (c) => {
       const auth = await Realtime.getAuth(
         false,

@@ -5,6 +5,7 @@ import {
   updateServerTailnetUriSchema,
 } from "@printworks/core/papercut/shared";
 import { Api } from "@printworks/core/tenants/api";
+import { Credentials } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
 
@@ -21,10 +22,13 @@ export default new Hono()
     authzValidator,
     vValidator("json", updateServerTailnetUriSchema),
     executeApiSigner,
-    ssmClient({
-      name: Resource.Aws.tenant.roles.putParameters.name,
-      sessionName: "ApiSetTailnetPapercutServerUri",
-    }),
+    ssmClient(async () => ({
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.putParameters.name,
+      ),
+      RoleSessionName: "ApiSetTailnetPapercutServerUri",
+    })),
     async (c) => {
       await Papercut.setTailnetServerUri(c.req.valid("json").tailnetUri);
 
@@ -37,10 +41,13 @@ export default new Hono()
     authzValidator,
     vValidator("json", updateServerAuthTokenSchema),
     executeApiSigner,
-    ssmClient({
-      name: Resource.Aws.tenant.roles.putParameters.name,
-      sessionName: "ApiSetPapercutServerAuthToken",
-    }),
+    ssmClient(async () => ({
+      RoleArn: Credentials.buildRoleArn(
+        await Api.getAccountId(),
+        Resource.Aws.tenant.roles.putParameters.name,
+      ),
+      RoleSessionName: "ApiSetPapercutServerAuthToken",
+    })),
     async (c) => {
       await Papercut.setServerAuthToken(c.req.valid("json").authToken);
 

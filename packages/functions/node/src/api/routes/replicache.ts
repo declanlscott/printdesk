@@ -25,13 +25,13 @@ export default new Hono()
   .post(
     "/push",
     executeApiSigner,
-    appsyncSigner({
+    appsyncSigner(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
         Resource.Aws.tenant.roles.realtimePublisher.name,
       ),
       RoleSessionName: "TenantRealtimePublisher",
-    }),
+    })),
     async (c) => {
       const pushRequest = await c.req.json();
 

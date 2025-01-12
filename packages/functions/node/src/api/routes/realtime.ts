@@ -15,13 +15,13 @@ export default new Hono()
   })
   .get(
     "/auth",
-    appsyncSigner({
+    appsyncSigner(async () => ({
       RoleArn: Credentials.buildRoleArn(
         await Api.getAccountId(),
         Resource.Aws.tenant.roles.realtimeSubscriber.name,
       ),
       RoleSessionName: "TenantRealtimeSubscriber",
-    }),
+    })),
     async (c) => {
       const auth = await Realtime.getAuth();
 

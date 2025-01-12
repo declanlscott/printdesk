@@ -33,3 +33,5 @@ pnpm-debug.log*
 .wrangler
 
 **/bin/*
+
+stats.html

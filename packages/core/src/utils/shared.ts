@@ -53,7 +53,7 @@ export const fn =
       ? InferCustomError<CustomError<TMaybeError>>
       : never,
   ) =>
-  (input: unknown) => {
+  <TInput>(input: TInput) => {
     let output: v.InferOutput<TSchema>;
     try {
       output = v.parse(schema, input);

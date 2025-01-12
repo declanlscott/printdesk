@@ -11,6 +11,7 @@ import { useApi } from "~/lib/hooks/api";
 import { useReplicacheContext } from "~/lib/hooks/replicache";
 import { AuthStoreApi } from "~/lib/stores/auth";
 import { routeTree } from "~/routeTree.gen";
+import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { AppRouter, ViteResource } from "~/types";
 
@@ -29,6 +30,7 @@ export function App() {
         resource,
         queryClient,
       },
+      defaultPendingComponent: AppLoadingIndicator,
     }),
   );
 

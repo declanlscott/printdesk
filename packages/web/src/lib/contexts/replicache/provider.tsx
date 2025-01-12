@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import loadingIndicator from "/loading-indicator.svg";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
@@ -8,6 +7,7 @@ import { useApi } from "~/lib/hooks/api";
 import { useAuth, useAuthActions } from "~/lib/hooks/auth";
 import { useMutators } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
+import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { PropsWithChildren } from "react";
 
@@ -88,8 +88,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user,
   ]);
 
-  if (replicache.status === "initializing")
-    return <img src={loadingIndicator} alt="Loading indicator" />;
+  if (replicache.status === "initializing") return <AppLoadingIndicator />;
 
   return (
     <ReplicacheContext.Provider value={replicache}>

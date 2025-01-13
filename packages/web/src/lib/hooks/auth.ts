@@ -1,6 +1,4 @@
-import { useState } from "react";
 import { ApplicationError } from "@printworks/core/utils/errors";
-import { getRouteApi } from "@tanstack/react-router";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -16,12 +14,6 @@ export const useAuth = () =>
     })),
   );
 
-export const useAuthActions = () =>
-  useStore(
-    AuthStoreApi.use(),
-    useShallow(({ actions }) => actions),
-  );
-
 export function useUserSubject() {
   const { user } = useAuth();
 
@@ -29,6 +21,3 @@ export function useUserSubject() {
 
   return user;
 }
-
-export const useAuthenticatedRouteApi = () =>
-  useState(() => getRouteApi("/_authenticated"))[0];

@@ -5,9 +5,9 @@ import {
 import { Utils } from "@printworks/core/utils/client";
 import { Building2, LogOut } from "lucide-react";
 
-import { useAuthActions } from "~/lib/hooks/auth";
 import { useTenant } from "~/lib/hooks/tenant";
 import { useUser } from "~/lib/hooks/user";
+import { AuthStoreApi } from "~/lib/stores/auth";
 import { userMenuTriggerButtonStyles } from "~/styles/components/user-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "~/ui/primitives/avatar";
 import {
@@ -23,7 +23,7 @@ import {
 export function UserMenu() {
   const tenant = useTenant();
   const user = useUser();
-  const { logout } = useAuthActions();
+  const { logout } = AuthStoreApi.useActions();
 
   return (
     <MenuTrigger>

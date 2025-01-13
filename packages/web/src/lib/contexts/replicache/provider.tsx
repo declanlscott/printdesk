@@ -4,9 +4,10 @@ import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useApi } from "~/lib/hooks/api";
-import { useAuth, useAuthActions } from "~/lib/hooks/auth";
+import { useAuth } from "~/lib/hooks/auth";
 import { useMutators } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
+import { AuthStoreApi } from "~/lib/stores/auth";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { PropsWithChildren } from "react";
@@ -24,7 +25,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
 
   const api = useApi();
 
-  const { getAuth, refresh } = useAuthActions();
+  const { getAuth, refresh } = AuthStoreApi.useActions();
 
   useEffect(() => {
     if (!user) return setReplicache(() => ({ status: "uninitialized" }));

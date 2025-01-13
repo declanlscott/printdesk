@@ -5,17 +5,17 @@ import { Outlet } from "@tanstack/react-router";
 
 import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
 import { useApi } from "~/lib/hooks/api";
-import { useAuthActions } from "~/lib/hooks/auth";
 import { useRealtimeChannel } from "~/lib/hooks/realtime";
 import { useReplicache } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
+import { AuthStoreApi } from "~/lib/stores/auth";
 import { CommandBarStoreApi } from "~/lib/stores/command-bar";
 import { MainNav } from "~/ui/main-nav";
 
 export function AuthenticatedLayout() {
   const api = useApi();
 
-  const { getAuth } = useAuthActions();
+  const { getAuth } = AuthStoreApi.useActions();
 
   const webSocketUrlProvider = useCallback(async () => {
     const res = await api.client.realtime.url.$get({

@@ -8,7 +8,7 @@
     "@hono/valibot-validator": "^0.5.2",
     "@oslojs/jwt": "^0.3.0",
     "@printworks/core": "workspace:*",
-    "@pulumi/aws": "^6.66.2",
+    "@pulumi/aws": "^6.66.3",
     "@pulumi/cloudflare": "^5.47.0",
     "@pulumi/pulumi": "^3.145.0"
   },

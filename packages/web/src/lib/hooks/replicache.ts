@@ -11,7 +11,8 @@ import { Users } from "@printworks/core/users/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
-import { useAuth, useAuthenticatedRouteApi } from "~/lib/hooks/auth";
+import { useAuth } from "~/lib/hooks/auth";
+import { useRouteApi } from "~/lib/hooks/route-api";
 
 import type { Replicache } from "@printworks/core/replicache/client";
 import type { MutationName } from "@printworks/core/replicache/shared";
@@ -28,7 +29,7 @@ export function useReplicacheContext() {
 }
 
 export const useReplicache = () =>
-  useAuthenticatedRouteApi().useRouteContext().replicache;
+  useRouteApi("/_authenticated").useRouteContext().replicache;
 
 export interface UseSubscribeOptions<TData, TDefaultData>
   extends Partial<SubscribeOptions<TData>> {

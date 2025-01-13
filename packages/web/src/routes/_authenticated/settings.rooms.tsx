@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 
 import { fuzzyFilter } from "~/lib/fuzzy";
-import { useAuthenticatedRouteApi } from "~/lib/hooks/auth";
 import { query, useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
+import { useRouteApi } from "~/lib/hooks/route-api";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { EnforceAbac } from "~/ui/access-control";
 import { DeleteRoomDialog } from "~/ui/delete-room-dialog";
@@ -85,7 +85,7 @@ function RouteComponent() {
 }
 
 function RoomsCard() {
-  const { initialRooms } = useAuthenticatedRouteApi().useLoaderData();
+  const { initialRooms } = useRouteApi("/_authenticated").useLoaderData();
   const rooms = useSubscribe(query.rooms(), { defaultData: initialRooms });
 
   const { initialProducts } = Route.useLoaderData();

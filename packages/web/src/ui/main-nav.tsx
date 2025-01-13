@@ -11,10 +11,10 @@ import {
 
 import logo from "~/assets/logo.svg";
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
-import { useAuthenticatedRouteApi } from "~/lib/hooks/auth";
 import { useCommandBarActions } from "~/lib/hooks/command-bar";
 import { query } from "~/lib/hooks/data";
 import { useIsSyncing, useSubscribe } from "~/lib/hooks/replicache";
+import { useRouteApi } from "~/lib/hooks/route-api";
 import { useUser } from "~/lib/hooks/user";
 import { links } from "~/lib/links";
 import { linkStyles, logoStyles } from "~/styles/components/main-nav";
@@ -66,7 +66,7 @@ export function MainNav() {
 function RoomSelector() {
   const [selectedRoomId, setSelectedRoomId] = useAtom(selectedRoomIdAtom);
 
-  const { initialRooms } = useAuthenticatedRouteApi().useLoaderData();
+  const { initialRooms } = useRouteApi("/_authenticated").useLoaderData();
   const rooms = useSubscribe(query.rooms(), {
     defaultData: initialRooms,
     onData: (rooms) => {

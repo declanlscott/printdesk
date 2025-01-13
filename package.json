@@ -32,5 +32,10 @@
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@react-aria/utils": "3.25.2"
+    }
   }
 }

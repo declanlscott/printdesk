@@ -30,6 +30,14 @@ export const updateServerTailnetUriSchema = v.object({
   tailnetUri: v.pipe(v.string(), v.url()),
 });
 
+export type UpdateServerTailnetUri = v.InferOutput<
+  typeof updateServerTailnetUriSchema
+>;
+
 export const updateServerAuthTokenSchema = v.object({
   authToken: v.string(),
 });
+
+export type UpdateServerAuthToken = v.InferOutput<
+  typeof updateServerAuthTokenSchema
+>;

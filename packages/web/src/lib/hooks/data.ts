@@ -17,13 +17,18 @@ import { HttpError } from "@printworks/core/utils/errors";
 import * as R from "remeda";
 
 import { useApi } from "~/lib/hooks/api";
-import { useAuthActions } from "~/lib/hooks/auth";
 import { useReplicache } from "~/lib/hooks/replicache";
+import { AuthStoreApi } from "~/lib/stores/auth";
 
 import type { BillingAccount } from "@printworks/core/billing-accounts/sql";
+import type {
+  UpdateServerAuthToken,
+  UpdateServerTailnetUri,
+} from "@printworks/core/papercut/shared";
 import type { Product } from "@printworks/core/products/sql";
 import type { DeliveryOptions, Workflow } from "@printworks/core/rooms/shared";
 import type { Room } from "@printworks/core/rooms/sql";
+import type { UpdateTailscaleOauthClient } from "@printworks/core/tailscale/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
 import type { User } from "@printworks/core/users/sql";
 import type { MutationOptions, Query } from "~/types";
@@ -122,14 +127,14 @@ export const useMutator = () => useReplicache().mutate;
 export function useMutationOptions() {
   const api = useApi();
 
-  const { getAuth, refresh } = useAuthActions();
+  const { getAuth, refresh } = AuthStoreApi.useActions();
 
   return useMemo(
     () =>
       ({
         papercutServerTailnetUri: () => ({
           mutationKey: ["services", "papercut", "server", "tailnet-uri"],
-          mutationFn: async ({ tailnetUri }: { tailnetUri: string }) => {
+          mutationFn: async ({ tailnetUri }: UpdateServerTailnetUri) => {
             const call = async () =>
               api.client.services.papercut.server["tailnet-uri"].$put({
                 header: { authorization: getAuth() },
@@ -143,7 +148,7 @@ export function useMutationOptions() {
         }),
         papercutServerAuthToken: () => ({
           mutationKey: ["services", "papercut", "server", "auth-token"],
-          mutationFn: async ({ authToken }: { authToken: string }) => {
+          mutationFn: async ({ authToken }: UpdateServerAuthToken) => {
             const call = async () =>
               api.client.services.papercut.server["auth-token"].$put({
                 header: { authorization: getAuth() },
@@ -157,13 +162,7 @@ export function useMutationOptions() {
         }),
         tailscaleOauthClient: () => ({
           mutationKey: ["services", "tailscale", "oauth-client"],
-          mutationFn: async ({
-            id,
-            secret,
-          }: {
-            id: string;
-            secret: string;
-          }) => {
+          mutationFn: async ({ id, secret }: UpdateTailscaleOauthClient) => {
             const call = async () =>
               api.client.services.tailscale["oauth-client"].$put({
                 header: { authorization: getAuth() },

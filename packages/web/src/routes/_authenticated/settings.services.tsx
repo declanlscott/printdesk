@@ -101,6 +101,9 @@ function UpdateTailscaleOauthClient() {
   });
 
   const form = useForm({
+    validators: {
+      onBlur: updateTailscaleOauthClientSchema,
+    },
     defaultValues: {
       id: "",
       secret: "",
@@ -129,12 +132,7 @@ function UpdateTailscaleOauthClient() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <form.Field
-              name="id"
-              validators={{
-                onBlur: updateTailscaleOauthClientSchema.entries.id,
-              }}
-            >
+            <form.Field name="id">
               {({ name, state, handleChange, handleBlur }) => (
                 <div>
                   <Label htmlFor={name}>ID</Label>
@@ -153,12 +151,7 @@ function UpdateTailscaleOauthClient() {
               )}
             </form.Field>
 
-            <form.Field
-              name="secret"
-              validators={{
-                onBlur: updateTailscaleOauthClientSchema.entries.secret,
-              }}
-            >
+            <form.Field name="secret">
               {({ name, state, handleChange, handleBlur }) => (
                 <div>
                   <Label htmlFor={name}>Secret</Label>
@@ -272,6 +265,9 @@ function UpdatePapercutServerTailnetUri() {
   });
 
   const form = useForm({
+    validators: {
+      onBlur: updateServerTailnetUriSchema,
+    },
     defaultValues: {
       tailnetUri: "",
     },
@@ -299,12 +295,7 @@ function UpdatePapercutServerTailnetUri() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <form.Field
-              name="tailnetUri"
-              validators={{
-                onBlur: updateServerTailnetUriSchema.entries.tailnetUri,
-              }}
-            >
+            <form.Field name="tailnetUri">
               {({ name, state, handleChange, handleBlur }) => (
                 <div>
                   <Label htmlFor={name}>Server Tailnet URI</Label>
@@ -355,6 +346,9 @@ function UpdatePapercutServerAuthToken() {
   });
 
   const form = useForm({
+    validators: {
+      onBlur: updateServerAuthTokenSchema,
+    },
     defaultValues: {
       authToken: "",
     },
@@ -381,12 +375,7 @@ function UpdatePapercutServerAuthToken() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <form.Field
-              name="authToken"
-              validators={{
-                onBlur: updateServerAuthTokenSchema.entries.authToken,
-              }}
-            >
+            <form.Field name="authToken">
               {({ name, state, handleChange, handleBlur }) => (
                 <div>
                   <Label htmlFor={name}>Server Auth Token</Label>

@@ -13,14 +13,17 @@ import { createFileRoute } from '@tanstack/react-router'
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as RegisterImport } from './routes/register'
 import { Route as LoginImport } from './routes/login'
 import { Route as CallbackImport } from './routes/callback'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
+import { Route as RegisterIndexImport } from './routes/register/index'
 import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
+import { Route as RegisterWizardImport } from './routes/register/_wizard'
 import { Route as AuthenticatedUsersIndexImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedProductsIndexImport } from './routes/_authenticated/products.index'
+import { Route as RegisterWizard2Import } from './routes/register/_wizard.2'
+import { Route as RegisterWizard1Import } from './routes/register/_wizard.1'
 import { Route as AuthenticatedUsersUserIdImport } from './routes/_authenticated/users.$userId'
 import { Route as AuthenticatedSettingsServicesImport } from './routes/_authenticated/settings.services'
 import { Route as AuthenticatedSettingsRoomsImport } from './routes/_authenticated/settings.rooms'
@@ -33,6 +36,7 @@ import { Route as AuthenticatedSettingsRoomsRoomIdProductsProductIdIndexImport }
 
 // Create Virtual Routes
 
+const RegisterImport = createFileRoute('/register')()
 const AuthenticatedUsersLazyImport = createFileRoute('/_authenticated/users')()
 const AuthenticatedSettingsLazyImport = createFileRoute(
   '/_authenticated/settings',
@@ -73,6 +77,12 @@ const AuthenticatedRoute = AuthenticatedImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const RegisterIndexRoute = RegisterIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RegisterRoute,
+} as any)
+
 const AuthenticatedIndexRoute = AuthenticatedIndexImport.update({
   id: '/',
   path: '/',
@@ -103,6 +113,11 @@ const AuthenticatedProductsLazyRoute = AuthenticatedProductsLazyImport.update({
   import('./routes/_authenticated/products.lazy').then((d) => d.Route),
 )
 
+const RegisterWizardRoute = RegisterWizardImport.update({
+  id: '/_wizard',
+  getParentRoute: () => RegisterRoute,
+} as any)
+
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexImport.update({
   id: '/',
   path: '/',
@@ -124,6 +139,18 @@ const AuthenticatedProductsIndexRoute = AuthenticatedProductsIndexImport.update(
     getParentRoute: () => AuthenticatedProductsLazyRoute,
   } as any,
 )
+
+const RegisterWizard2Route = RegisterWizard2Import.update({
+  id: '/2',
+  path: '/2',
+  getParentRoute: () => RegisterWizardRoute,
+} as any)
+
+const RegisterWizard1Route = RegisterWizard1Import.update({
+  id: '/1',
+  path: '/1',
+  getParentRoute: () => RegisterWizardRoute,
+} as any)
 
 const AuthenticatedUsersUserIdRoute = AuthenticatedUsersUserIdImport.update({
   id: '/$userId',
@@ -243,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
+    '/register/_wizard': {
+      id: '/register/_wizard'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterWizardImport
+      parentRoute: typeof RegisterRoute
+    }
     '/_authenticated/products': {
       id: '/_authenticated/products'
       path: '/products'
@@ -271,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexImport
       parentRoute: typeof AuthenticatedImport
     }
+    '/register/': {
+      id: '/register/'
+      path: '/'
+      fullPath: '/register/'
+      preLoaderRoute: typeof RegisterIndexImport
+      parentRoute: typeof RegisterImport
+    }
     '/_authenticated/settings/images': {
       id: '/_authenticated/settings/images'
       path: '/images'
@@ -298,6 +339,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/users/$userId'
       preLoaderRoute: typeof AuthenticatedUsersUserIdImport
       parentRoute: typeof AuthenticatedUsersLazyImport
+    }
+    '/register/_wizard/1': {
+      id: '/register/_wizard/1'
+      path: '/1'
+      fullPath: '/register/1'
+      preLoaderRoute: typeof RegisterWizard1Import
+      parentRoute: typeof RegisterWizardImport
+    }
+    '/register/_wizard/2': {
+      id: '/register/_wizard/2'
+      path: '/2'
+      fullPath: '/register/2'
+      preLoaderRoute: typeof RegisterWizard2Import
+      parentRoute: typeof RegisterWizardImport
     }
     '/_authenticated/products/': {
       id: '/_authenticated/products/'
@@ -487,19 +542,50 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface RegisterWizardRouteChildren {
+  RegisterWizard1Route: typeof RegisterWizard1Route
+  RegisterWizard2Route: typeof RegisterWizard2Route
+}
+
+const RegisterWizardRouteChildren: RegisterWizardRouteChildren = {
+  RegisterWizard1Route: RegisterWizard1Route,
+  RegisterWizard2Route: RegisterWizard2Route,
+}
+
+const RegisterWizardRouteWithChildren = RegisterWizardRoute._addFileChildren(
+  RegisterWizardRouteChildren,
+)
+
+interface RegisterRouteChildren {
+  RegisterWizardRoute: typeof RegisterWizardRouteWithChildren
+  RegisterIndexRoute: typeof RegisterIndexRoute
+}
+
+const RegisterRouteChildren: RegisterRouteChildren = {
+  RegisterWizardRoute: RegisterWizardRouteWithChildren,
+  RegisterIndexRoute: RegisterIndexRoute,
+}
+
+const RegisterRouteWithChildren = RegisterRoute._addFileChildren(
+  RegisterRouteChildren,
+)
+
 export interface FileRoutesByFullPath {
   '': typeof AuthenticatedRouteWithChildren
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/register': typeof RegisterWizardRouteWithChildren
   '/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/users': typeof AuthenticatedUsersLazyRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
+  '/register/': typeof RegisterIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
+  '/register/1': typeof RegisterWizard1Route
+  '/register/2': typeof RegisterWizard2Route
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
@@ -515,12 +601,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/register': typeof RegisterIndexRoute
   '/': typeof AuthenticatedIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
+  '/register/1': typeof RegisterWizard1Route
+  '/register/2': typeof RegisterWizard2Route
   '/products': typeof AuthenticatedProductsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -536,15 +624,19 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterRoute
+  '/register': typeof RegisterRouteWithChildren
+  '/register/_wizard': typeof RegisterWizardRouteWithChildren
   '/_authenticated/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersLazyRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/register/': typeof RegisterIndexRoute
   '/_authenticated/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/_authenticated/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/_authenticated/settings/services': typeof AuthenticatedSettingsServicesRoute
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
+  '/register/_wizard/1': typeof RegisterWizard1Route
+  '/register/_wizard/2': typeof RegisterWizard2Route
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -568,10 +660,13 @@ export interface FileRouteTypes {
     | '/settings'
     | '/users'
     | '/'
+    | '/register/'
     | '/settings/images'
     | '/settings/rooms'
     | '/settings/services'
     | '/users/$userId'
+    | '/register/1'
+    | '/register/2'
     | '/products/'
     | '/settings/'
     | '/users/'
@@ -592,6 +687,8 @@ export interface FileRouteTypes {
     | '/settings/rooms'
     | '/settings/services'
     | '/users/$userId'
+    | '/register/1'
+    | '/register/2'
     | '/products'
     | '/settings'
     | '/users'
@@ -606,14 +703,18 @@ export interface FileRouteTypes {
     | '/callback'
     | '/login'
     | '/register'
+    | '/register/_wizard'
     | '/_authenticated/products'
     | '/_authenticated/settings'
     | '/_authenticated/users'
     | '/_authenticated/'
+    | '/register/'
     | '/_authenticated/settings/images'
     | '/_authenticated/settings/rooms'
     | '/_authenticated/settings/services'
     | '/_authenticated/users/$userId'
+    | '/register/_wizard/1'
+    | '/register/_wizard/2'
     | '/_authenticated/products/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
@@ -631,14 +732,14 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   CallbackRoute: typeof CallbackRoute
   LoginRoute: typeof LoginRoute
-  RegisterRoute: typeof RegisterRoute
+  RegisterRoute: typeof RegisterRouteWithChildren
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   CallbackRoute: CallbackRoute,
   LoginRoute: LoginRoute,
-  RegisterRoute: RegisterRoute,
+  RegisterRoute: RegisterRouteWithChildren,
 }
 
 export const routeTree = rootRoute
@@ -675,7 +776,19 @@ export const routeTree = rootRoute
       "filePath": "login.tsx"
     },
     "/register": {
-      "filePath": "register.tsx"
+      "filePath": "register",
+      "children": [
+        "/register/_wizard",
+        "/register/"
+      ]
+    },
+    "/register/_wizard": {
+      "filePath": "register/_wizard.tsx",
+      "parent": "/register",
+      "children": [
+        "/register/_wizard/1",
+        "/register/_wizard/2"
+      ]
     },
     "/_authenticated/products": {
       "filePath": "_authenticated/products.lazy.tsx",
@@ -706,6 +819,10 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/index.tsx",
       "parent": "/_authenticated"
     },
+    "/register/": {
+      "filePath": "register/index.tsx",
+      "parent": "/register"
+    },
     "/_authenticated/settings/images": {
       "filePath": "_authenticated/settings.images.tsx",
       "parent": "/_authenticated/settings"
@@ -721,6 +838,14 @@ export const routeTree = rootRoute
     "/_authenticated/users/$userId": {
       "filePath": "_authenticated/users.$userId.tsx",
       "parent": "/_authenticated/users"
+    },
+    "/register/_wizard/1": {
+      "filePath": "register/_wizard.1.tsx",
+      "parent": "/register/_wizard"
+    },
+    "/register/_wizard/2": {
+      "filePath": "register/_wizard.2.tsx",
+      "parent": "/register/_wizard"
     },
     "/_authenticated/products/": {
       "filePath": "_authenticated/products.index.tsx",

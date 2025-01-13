@@ -1,13 +1,10 @@
-import { useCallback } from "react";
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as v from "valibot";
 
-import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
-import { useApi } from "~/lib/hooks/api";
-import { useRealtimeChannel } from "~/lib/hooks/realtime";
+import { RegistrationWizardLayout } from "~/layouts/registration-wizard";
 
-export const Route = createFileRoute("/register")({
+export const Route = createFileRoute("/register/_wizard")({
   validateSearch: v.object({
     slug: v.optional(v.string()),
   }),
@@ -52,53 +49,5 @@ export const Route = createFileRoute("/register")({
 
     return slug;
   },
-  component: RouteComponent,
+  component: RegistrationWizardLayout,
 });
-
-function RouteComponent() {
-  const api = useApi();
-
-  const webSocketUrlProvider = useCallback(async () => {
-    const res = await api.client.public.realtime.url.$get();
-    if (!res.ok)
-      throw new ApplicationError.Error("Failed to get web socket url");
-
-    const { url } = await res.json();
-
-    return url;
-  }, [api]);
-
-  const getWebSocketAuth = useCallback(
-    async (channel?: string) => {
-      const res = await api.client.public.realtime.auth.$get({
-        query: { channel },
-      });
-      if (!res.ok)
-        throw new ApplicationError.Error("Failed to get web socket auth");
-
-      const { auth } = await res.json();
-
-      return auth;
-    },
-    [api],
-  );
-
-  return (
-    <RealtimeProvider
-      urlProvider={webSocketUrlProvider}
-      getAuth={getWebSocketAuth}
-    >
-      <RegisterForm />
-    </RealtimeProvider>
-  );
-}
-
-function RegisterForm() {
-  const slug = Route.useLoaderData();
-
-  useRealtimeChannel("/events/*", (event) => {
-    console.log(JSON.stringify(event, null, 2));
-  });
-
-  return <div>Hello "/register"!</div>;
-}

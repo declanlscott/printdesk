@@ -91,8 +91,8 @@ function WorkflowCard() {
   const { setWorkflow } = useMutator();
 
   const form = useForm({
-    defaultValues: { workflow },
     validators: { onBlur: v.object({ workflow: workflowSchema }) },
+    defaultValues: { workflow },
     onSubmit: async ({ value }) => {
       if (!R.isDeepEqual(value.workflow, workflow))
         await setWorkflow({ workflow: value.workflow, roomId });
@@ -419,10 +419,10 @@ function DeliveryOptionsCard() {
   const { setDeliveryOptions } = useMutator();
 
   const form = useForm({
-    defaultValues: { deliveryOptions },
     validators: {
       onBlur: v.object({ deliveryOptions: deliveryOptionsSchema }),
     },
+    defaultValues: { deliveryOptions },
     onSubmit: async ({ value }) => {
       if (!R.isDeepEqual(value.deliveryOptions, deliveryOptions))
         await setDeliveryOptions({ options: value.deliveryOptions, roomId });

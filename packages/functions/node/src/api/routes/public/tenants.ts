@@ -18,7 +18,21 @@ export default new Hono()
     vValidator("param", v.object({ value: tenantSlugSchema })),
     async (c) => {
       const isAvailable = await Tenants.isSlugAvailable(
-        c.req.param("value").trim().toLowerCase(),
+        c.req.valid("param").value,
+      );
+
+      return c.json({ isAvailable }, 200);
+    },
+  )
+  .get(
+    "/license-key-availability/:value",
+    vValidator(
+      "param",
+      v.object({ value: v.pipe(v.string(), v.trim(), v.uuid()) }),
+    ),
+    async (c) => {
+      const isAvailable = await Tenants.isLicenseKeyAvailable(
+        c.req.valid("param").value,
       );
 
       return c.json({ isAvailable }, 200);

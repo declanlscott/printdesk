@@ -28,9 +28,6 @@ export const selectTriggerStyles = tv({
     isDisabled: {
       true: "cursor-not-allowed opacity-50",
     },
-    isHtml: {
-      true: "focus:ring-ring focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1",
-    },
   },
 });
 export type SelectTriggerStyles = VariantProps<typeof selectTriggerStyles>;

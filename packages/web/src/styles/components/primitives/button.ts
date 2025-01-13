@@ -25,9 +25,6 @@ export const buttonStyles = tv({
     isDisabled: {
       true: "pointer-events-none opacity-50",
     },
-    isHtml: {
-      true: "disabled:pointer-events-none disabled:opacity-50",
-    },
   },
   compoundVariants: [
     {
@@ -89,36 +86,6 @@ export const buttonStyles = tv({
       variant: "link",
       isPressed: true,
       className: "underline",
-    },
-    {
-      variant: "default",
-      isHtml: true,
-      className: "hover:bg-primary/90",
-    },
-    {
-      variant: "destructive",
-      isHtml: true,
-      className: "hover:bg-destructive/90",
-    },
-    {
-      variant: "outline",
-      isHtml: true,
-      className: "hover:bg-accent hover:text-accent-foreground",
-    },
-    {
-      variant: "secondary",
-      isHtml: true,
-      className: "hover:bg-secondary/80",
-    },
-    {
-      variant: "ghost",
-      isHtml: true,
-      className: "hover:bg-accent hover:text-accent-foreground",
-    },
-    {
-      variant: "link",
-      isHtml: true,
-      className: "hover:underline",
     },
   ],
   defaultVariants: {

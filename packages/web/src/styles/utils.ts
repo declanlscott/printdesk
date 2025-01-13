@@ -11,9 +11,6 @@ export const focusRingStyles = tv({
     isFocusVisible: {
       true: "ring-2 ring-ring ring-offset-2",
     },
-    isHtml: {
-      true: "focus-visible:ring-2 focus-visible:ring-offset-2 ring-offset-background ring-ring",
-    },
   },
   compoundVariants: [
     {
@@ -24,11 +21,6 @@ export const focusRingStyles = tv({
     {
       variant: "destructive",
       isFocused: true,
-      className: "ring-destructive",
-    },
-    {
-      isHtml: true,
-      variant: "destructive",
       className: "ring-destructive",
     },
   ],

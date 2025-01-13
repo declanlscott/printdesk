@@ -16,9 +16,6 @@ export const inputStyles = tv({
     isDisabled: {
       true: "cursor-not-allowed opacity-50",
     },
-    isHtml: {
-      true: "disabled:cursor-not-allowed disabled:opacity-50",
-    },
   },
   defaultVariants: {
     variant: "default",
@@ -37,9 +34,6 @@ export const textAreaStyles = tv({
     },
     isDisabled: {
       true: "cursor-not-allowed opacity-50",
-    },
-    isHtml: {
-      true: "disabled:cursor-not-allowed disabled:opacity-50",
     },
   },
 });

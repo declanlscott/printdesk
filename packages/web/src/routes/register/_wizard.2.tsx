@@ -1,9 +1,13 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/register/_wizard/2')({
+import { useRouteApi } from "~/lib/hooks/route-api";
+
+export const Route = createFileRoute("/register/_wizard/2")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  return <div>Hello "/register/_wizard/2"!</div>
+  const slug = useRouteApi("/register/_wizard").useLoaderData();
+
+  return <div>Hello "/register/_wizard/2"!</div>;
 }

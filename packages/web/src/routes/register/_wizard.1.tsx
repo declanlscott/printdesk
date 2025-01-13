@@ -62,7 +62,7 @@ function RouteComponent() {
 
       submit({ step: 1, ...value });
 
-      await navigate({ to: "/register/2", search: { slug } });
+      await navigate({ to: "/register/2" });
     },
   });
 

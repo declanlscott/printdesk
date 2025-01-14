@@ -54,7 +54,7 @@ import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
 import type { DsqlSignerConfig } from "@aws-sdk/dsql-signer";
 import type { SignatureV4Init } from "@smithy/signature-v4";
 import type { AwsCredentialIdentityProvider } from "@smithy/types";
-import type { NonNullableProperties, StartsWith } from "./types";
+import type { NonNullableProperties, PartialExcept, StartsWith } from "./types";
 
 export type AwsContext = {
   dsql?: { signer: DsqlSigner };
@@ -174,7 +174,7 @@ export namespace SignatureV4 {
     sha256 = Sha256,
     region,
     service,
-  }: SignatureV4Init) =>
+  }: PartialExcept<SignatureV4Init, "region" | "service">) =>
     new _SignatureV4({ credentials, sha256, region, service });
 
   export const sign = (

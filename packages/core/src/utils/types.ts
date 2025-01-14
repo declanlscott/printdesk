@@ -22,3 +22,8 @@ export type InferCustomError<TCustomError> =
 export type NonNullableProperties<TInput> = {
   [TKey in keyof TInput]: NonNullable<TInput[TKey]>;
 };
+
+export type PartialExcept<
+  TInput extends object,
+  TKey extends keyof TInput,
+> = Partial<Omit<TInput, TKey>> & Pick<TInput, TKey>;

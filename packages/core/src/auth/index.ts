@@ -12,7 +12,7 @@ import {
 } from "../drizzle/context";
 import { poke as _poke } from "../replicache/poke";
 import { Api } from "../tenants/api";
-import { tenantsTable } from "../tenants/sql";
+import { licensesTable, tenantsTable } from "../tenants/sql";
 import { Users } from "../users";
 import { userProfilesTable, usersTable } from "../users/sql";
 import { Credentials, SignatureV4, withAws } from "../utils/aws";
@@ -173,12 +173,14 @@ const readUser = (
           eq(oauth2ProvidersTable.tenantId, tenantsTable.id),
         ),
       )
+      .innerJoin(licensesTable, eq(licensesTable.tenantId, tenantsTable.id))
       .leftJoin(usersTable, eq(usersTable.tenantId, tenantsTable.id))
       .leftJoin(userProfilesTable, eq(userProfilesTable.userId, usersTable.id))
       .where(
         and(
           eq(oauth2ProvidersTable.id, tenantId),
           eq(tenantsTable.status, "active"),
+          eq(licensesTable.status, "active"),
           isNull(tenantsTable.deletedAt),
           eq(usersTable.username, username),
         ),

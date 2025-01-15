@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { registrationWizardStep3Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -43,6 +44,8 @@ function RouteComponent() {
       await navigate({ to: "/register/4", search: { slug } });
     },
   });
+
+  const [isSecretVisible, setIsSecretVisible] = useState(() => false);
 
   return (
     <form
@@ -124,7 +127,7 @@ function RouteComponent() {
           </form.Field>
 
           <form.Field
-            name="tailscaleOauthClientId"
+            name="tailscaleOauthClientSecret"
             validators={{
               onBlur:
                 registrationWizardStep3Schema.entries
@@ -135,12 +138,29 @@ function RouteComponent() {
               <div className="grid gap-2">
                 <Label htmlFor={field.name}>Client Secret</Label>
 
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id={field.name}
+                    type={isSecretVisible ? "text" : "password"}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                  />
+
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onPress={() =>
+                      setIsSecretVisible((isSecretVisible) => !isSecretVisible)
+                    }
+                  >
+                    {isSecretVisible ? (
+                      <EyeOff className="size-5" />
+                    ) : (
+                      <Eye className="size-5" />
+                    )}
+                  </Button>
+                </div>
 
                 {field.state.meta.errors.length > 0 ? (
                   <span className="text-sm text-red-500">

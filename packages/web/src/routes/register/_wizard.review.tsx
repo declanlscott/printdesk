@@ -1,17 +1,15 @@
+import { useState } from "react";
 import { registrationWizardSchema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Send } from "lucide-react";
 import { toast } from "sonner";
-import { twMerge } from "tailwind-merge";
 import * as v from "valibot";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
-import { labelStyles } from "~/styles/components/primitives/field";
-import { inputStyles } from "~/styles/components/primitives/text-field";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent } from "~/ui/primitives/card";
 import {
@@ -20,6 +18,16 @@ import {
   DisclosureHeader,
   DisclosurePanel,
 } from "~/ui/primitives/disclosure";
+import { Label } from "~/ui/primitives/field";
+import { Input } from "~/ui/primitives/text-field";
+
+import type {
+  RegistrationWizardStep1,
+  RegistrationWizardStep2,
+  RegistrationWizardStep3,
+  RegistrationWizardStep4,
+  RegistrationWizardStep5,
+} from "@printworks/core/tenants/shared";
 
 export const Route = createFileRoute("/register/_wizard/review")({
   component: RouteComponent,
@@ -35,11 +43,6 @@ function RouteComponent() {
 
   const navigate = useNavigate();
 
-  const userOauthProviderMap = {
-    [Constants.ENTRA_ID]: "Microsoft Entra ID",
-    [Constants.GOOGLE]: "Google",
-  };
-
   function register() {
     const result = v.safeParse(registrationWizardSchema, registration);
     if (!result.success) return toast.error("Invalid registration data.");
@@ -52,100 +55,33 @@ function RouteComponent() {
       <Card>
         <CardContent className="grid gap-4 py-2">
           <DisclosureGroup>
-            <Disclosure id={1}>
-              <DisclosureHeader>1. Basic Information</DisclosureHeader>
+            <Step1
+              licenseKey={registration.licenseKey}
+              tenantName={registration.tenantName}
+              tenantSlug={registration.tenantSlug}
+            />
 
-              <DisclosurePanel className="grid gap-4">
-                <Field
-                  label={{ value: "License Key" }}
-                  value={{ value: registration.licenseKey }}
-                />
+            <Step2
+              userOauthProviderType={registration.userOauthProviderType}
+              userOauthProviderId={registration.userOauthProviderId}
+            />
 
-                <Field
-                  label={{ value: "Name" }}
-                  value={{ value: registration.tenantName }}
-                />
+            <Step3
+              tailscaleOauthClientId={registration.tailscaleOauthClientId}
+              tailscaleOauthClientSecret={
+                registration.tailscaleOauthClientSecret
+              }
+            />
 
-                <Field
-                  label={{ value: "Slug" }}
-                  value={{ value: registration.tenantSlug }}
-                />
-              </DisclosurePanel>
-            </Disclosure>
+            <Step4
+              tailnetPapercutServerUri={registration.tailnetPapercutServerUri}
+              papercutServerAuthToken={registration.papercutServerAuthToken}
+            />
 
-            <Disclosure id={2}>
-              <DisclosureHeader>2. User Login</DisclosureHeader>
-
-              <DisclosurePanel>
-                <DisclosurePanel className="grid gap-4">
-                  <Field
-                    label={{ value: "Type" }}
-                    value={{
-                      value:
-                        userOauthProviderMap[
-                          registration.userOauthProviderType
-                        ],
-                    }}
-                  />
-
-                  <Field
-                    label={{ value: "Tenant ID" }}
-                    value={{ value: registration.userOauthProviderId }}
-                  />
-                </DisclosurePanel>
-              </DisclosurePanel>
-            </Disclosure>
-
-            <Disclosure id={3}>
-              <DisclosureHeader>3. Tailscale OAuth Client</DisclosureHeader>
-
-              <DisclosurePanel className="grid gap-4">
-                <Field
-                  label={{ value: "Client ID" }}
-                  value={{ value: registration.tailscaleOauthClientId }}
-                />
-
-                <Field
-                  label={{ value: "Client Secret" }}
-                  value={{ value: registration.tailscaleOauthClientSecret }}
-                />
-              </DisclosurePanel>
-            </Disclosure>
-
-            <Disclosure id={4}>
-              <DisclosureHeader>4. PaperCut Security</DisclosureHeader>
-
-              <DisclosurePanel className="grid gap-4">
-                <Field
-                  label={{ value: "Tailnet PaperCut Server URL" }}
-                  value={{ value: registration.tailnetPapercutServerUri }}
-                />
-
-                <Field
-                  label={{ value: "PaperCut Server Auth Token" }}
-                  value={{ value: registration.papercutServerAuthToken }}
-                />
-              </DisclosurePanel>
-            </Disclosure>
-
-            <Disclosure id={5}>
-              <DisclosureHeader>5. PaperCut User Sync</DisclosureHeader>
-
-              <DisclosurePanel className="grid gap-4">
-                <Field
-                  label={{ value: "Cron Expression" }}
-                  value={{
-                    value: registration.papercutSyncSchedule,
-                    className: "font-mono",
-                  }}
-                />
-
-                <Field
-                  label={{ value: "Timezone" }}
-                  value={{ value: registration.timezone }}
-                />
-              </DisclosurePanel>
-            </Disclosure>
+            <Step5
+              papercutSyncSchedule={registration.papercutSyncSchedule}
+              timezone={registration.timezone}
+            />
           </DisclosureGroup>
         </CardContent>
       </Card>
@@ -169,28 +105,168 @@ function RouteComponent() {
   );
 }
 
-interface FieldProps {
-  label: {
-    value: string;
-    className?: string;
-  };
-  value: {
-    value: string;
-    className?: string;
-  };
-}
-const Field = (props: FieldProps) => (
-  <div className="grid gap-2">
-    <span className={labelStyles({ className: props.label.className })}>
-      {props.label.value}
-    </span>
+function Step1(props: RegistrationWizardStep1) {
+  return (
+    <Disclosure id={1}>
+      <DisclosureHeader>1. Basic Information</DisclosureHeader>
 
-    <span
-      className={inputStyles({
-        className: twMerge("bg-muted/50", props.value.className),
-      })}
-    >
-      {props.value.value}
-    </span>
-  </div>
-);
+      <DisclosurePanel className="grid gap-4">
+        <div className="grid gap-2">
+          <Label>License Key</Label>
+
+          <Input disabled value={props.licenseKey} />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Name</Label>
+
+          <Input disabled value={props.tenantName} />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Slug</Label>
+
+          <Input disabled value={props.tenantSlug} />
+        </div>
+      </DisclosurePanel>
+    </Disclosure>
+  );
+}
+
+function Step2(props: RegistrationWizardStep2) {
+  const userOauthProviderMap = {
+    [Constants.ENTRA_ID]: "Microsoft Entra ID",
+    [Constants.GOOGLE]: "Google",
+  };
+
+  return (
+    <Disclosure id={2}>
+      <DisclosureHeader>2. User Login</DisclosureHeader>
+
+      <DisclosurePanel>
+        <DisclosurePanel className="grid gap-4">
+          <div className="grid gap-2">
+            <Label>Type</Label>
+
+            <Input
+              disabled
+              value={userOauthProviderMap[props.userOauthProviderType]}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Tenant ID</Label>
+
+            <Input disabled value={props.userOauthProviderId} />
+          </div>
+        </DisclosurePanel>
+      </DisclosurePanel>
+    </Disclosure>
+  );
+}
+
+function Step3(props: RegistrationWizardStep3) {
+  const [isSecretVisible, setIsSecretVisible] = useState(() => false);
+
+  return (
+    <Disclosure id={3}>
+      <DisclosureHeader>3. Tailscale OAuth Client</DisclosureHeader>
+
+      <DisclosurePanel className="grid gap-4">
+        <div className="grid gap-2">
+          <Label>Client ID</Label>
+
+          <Input disabled value={props.tailscaleOauthClientId} />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Client Secret</Label>
+
+          <div className="flex gap-2">
+            <Input disabled value={props.tailscaleOauthClientSecret} />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onPress={() =>
+                setIsSecretVisible((isSecretVisible) => !isSecretVisible)
+              }
+            >
+              {isSecretVisible ? (
+                <EyeOff className="size-5" />
+              ) : (
+                <Eye className="size-5" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </DisclosurePanel>
+    </Disclosure>
+  );
+}
+
+function Step4(props: RegistrationWizardStep4) {
+  const [isTokenVisible, setIsTokenVisible] = useState(() => false);
+
+  return (
+    <Disclosure id={4}>
+      <DisclosureHeader>4. PaperCut Security</DisclosureHeader>
+
+      <DisclosurePanel className="grid gap-4">
+        <div className="grid gap-2">
+          <Label>Tailnet PaperCut Server URL</Label>
+
+          <Input disabled value={props.tailnetPapercutServerUri} />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>PaperCut Server Auth Token</Label>
+
+          <div className="flex gap-2">
+            <Input disabled value={props.papercutServerAuthToken} />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onPress={() =>
+                setIsTokenVisible((isTokenVisible) => !isTokenVisible)
+              }
+            >
+              {isTokenVisible ? (
+                <EyeOff className="size-5" />
+              ) : (
+                <Eye className="size-5" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </DisclosurePanel>
+    </Disclosure>
+  );
+}
+
+function Step5(props: RegistrationWizardStep5) {
+  return (
+    <Disclosure id={5}>
+      <DisclosureHeader>5. PaperCut User Sync</DisclosureHeader>
+
+      <DisclosurePanel className="grid gap-4">
+        <div className="grid gap-2">
+          <Label>Cron Expression</Label>
+
+          <Input
+            disabled
+            value={props.papercutSyncSchedule}
+            className="font-mono"
+          />
+        </div>
+
+        <div className="grid gap-2">
+          <Label>Timezone</Label>
+
+          <Input disabled value={props.timezone} />
+        </div>
+      </DisclosurePanel>
+    </Disclosure>
+  );
+}

@@ -7,6 +7,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { linkStyles } from "~/styles/components/primitives/link";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
@@ -60,7 +61,7 @@ function RouteComponent() {
           <CardDescription>
             <a
               href="https://tailscale.com/"
-              className="text-primary font-medium underline-offset-4 transition-colors hover:underline"
+              className={linkStyles()}
               target="_blank"
             >
               Tailscale
@@ -70,7 +71,7 @@ function RouteComponent() {
             in the Tailscale{" "}
             <a
               href="https://login.tailscale.com"
-              className="text-primary font-medium underline-offset-4 transition-colors hover:underline"
+              className={linkStyles()}
               target="_blank"
             >
               admin console
@@ -82,7 +83,8 @@ function RouteComponent() {
             Tailscale must also be{" "}
             <a
               href="https://tailscale.com/kb/1347/installation"
-              className="text-primary font-medium underline-offset-4 transition-colors hover:underline"
+              className={linkStyles()}
+              target="_blank"
             >
               installed
             </a>{" "}

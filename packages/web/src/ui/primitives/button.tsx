@@ -19,6 +19,8 @@ export const Button = ({
   children,
   isDisabled,
   isLoading,
+  variant,
+  size,
   ...props
 }: ButtonProps) => (
   <AriaButton
@@ -27,8 +29,8 @@ export const Button = ({
     className={composeRenderProps(props.className, (className, renderProps) =>
       buttonStyles({
         ...renderProps,
-        variant: props.variant,
-        size: props.size,
+        variant,
+        size,
         className,
       }),
     )}

@@ -11,6 +11,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useCopyToClipboard } from "~/lib/hooks/copy-to-clipboard";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { linkStyles } from "~/styles/components/primitives/link";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
@@ -80,7 +81,7 @@ function RouteComponent() {
             to the{" "}
             <a
               href="https://www.papercut.com/help/manuals/ng-mf/common/tools-web-services/#security"
-              className="text-primary font-medium underline-offset-4 transition-colors hover:underline"
+              className={linkStyles()}
               target="_blank"
             >
               official PaperCut documentation
@@ -104,7 +105,7 @@ function RouteComponent() {
                   the{" "}
                   <a
                     href="https://login.tailscale.com"
-                    className="text-primary font-medium underline-offset-4 transition-colors hover:underline"
+                    className={linkStyles()}
                     target="_blank"
                   >
                     admin console

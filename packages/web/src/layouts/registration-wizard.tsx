@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { composeRenderProps, Link } from "react-aria-components";
+import { Link as AriaLink } from "react-aria-components";
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { Outlet, useLocation } from "@tanstack/react-router";
 
@@ -9,8 +9,8 @@ import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
 import { useApi } from "~/lib/hooks/api";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
-import { buttonStyles } from "~/styles/components/primitives/button";
 import { Label } from "~/ui/primitives/field";
+import { Link } from "~/ui/primitives/link";
 import { ProgressBar } from "~/ui/primitives/progress-bar";
 
 export function RegistrationWizardLayout() {
@@ -58,9 +58,9 @@ export function RegistrationWizardLayout() {
       <div className="py-12">
         <div className="mx-auto grid max-w-sm gap-6">
           <div className="flex justify-center">
-            <Link href={{ to: "/" }}>
+            <AriaLink href={{ to: "/" }}>
               <img src={logo} alt="Printworks" className="size-24" />
-            </Link>
+            </AriaLink>
           </div>
 
           <div className="grid gap-2 text-center">
@@ -93,21 +93,7 @@ export function RegistrationWizardLayout() {
           </RealtimeProvider>
 
           <p className="text-sm">
-            Already have an organization?{" "}
-            <Link
-              href={{ to: "/" }}
-              className={composeRenderProps(
-                "h-fit p-0",
-                (className, renderProps) =>
-                  buttonStyles({
-                    ...renderProps,
-                    variant: "link",
-                    className,
-                  }),
-              )}
-            >
-              Login
-            </Link>
+            Already have an organization? <Link href={{ to: "/" }}>Login</Link>
           </p>
         </div>
       </div>

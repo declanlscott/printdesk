@@ -1,4 +1,3 @@
-import { composeRenderProps, Link } from "react-aria-components";
 import { registrationWizardStep1Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
@@ -12,10 +11,10 @@ import { useApi } from "~/lib/hooks/api";
 import { useResource } from "~/lib/hooks/resource";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
-import { buttonStyles } from "~/styles/components/primitives/button";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
+import { Link } from "~/ui/primitives/link";
 import { Input } from "~/ui/primitives/text-field";
 
 export const Route = createFileRoute("/register/_wizard/1")({
@@ -151,18 +150,7 @@ function RouteComponent() {
             <CardDescription>
               A unique identifier for your organization, used for accessing the
               application:
-              <Link
-                href={{ to: "/" }}
-                className={composeRenderProps(
-                  "text-muted-foreground h-fit p-0",
-                  (className, renderProps) =>
-                    buttonStyles({
-                      ...renderProps,
-                      variant: "link",
-                      className,
-                    }),
-                )}
-              >
+              <Link href={{ to: "/" }} target="_blank">
                 {slug.toLowerCase()}.{AppData.domainName.fullyQualified}
               </Link>
             </CardDescription>

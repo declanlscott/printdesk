@@ -43,9 +43,12 @@ export function MainNav() {
   return (
     <header className="bg-background sticky top-0 z-50 flex h-16 items-center justify-between border-b px-4">
       <nav className="flex items-center space-x-4 lg:space-x-6">
-        <a href="/" className={logoStyles({ isAnimating: isSyncing })}>
+        <AriaLink
+          href={{ to: "/" }}
+          className={logoStyles({ isAnimating: isSyncing })}
+        >
           <img src={logo} alt="Printworks" />
-        </a>
+        </AriaLink>
 
         <Separator orientation="vertical" className="h-8" />
 
@@ -130,11 +133,11 @@ function NavList() {
       {links.mainNav()[user.profile.role].map((link) => (
         <li key={link.name}>
           <TooltipTrigger>
-            <Link href={link.props.href} className="flex items-center gap-2">
+            <NavLink href={link.props.href} className="flex items-center gap-2">
               <div className="[&>svg]:size-5">{link.icon}</div>
 
               <span className="hidden lg:block">{link.name}</span>
-            </Link>
+            </NavLink>
 
             <Tooltip placement="bottom" className="lg:hidden">
               <p>{link.name}</p>
@@ -147,7 +150,7 @@ function NavList() {
 }
 
 type LinkProps = ComponentProps<typeof AriaLink>;
-function Link(props: LinkProps) {
+function NavLink(props: LinkProps) {
   const { href } = useRouterState({
     select: (state) => state.location,
   });

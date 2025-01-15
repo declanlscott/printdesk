@@ -5,9 +5,7 @@ import * as v from "valibot";
 import { RegistrationWizardLayout } from "~/layouts/registration-wizard";
 
 export const Route = createFileRoute("/register/_wizard")({
-  validateSearch: v.object({
-    slug: v.optional(v.string()),
-  }),
+  validateSearch: v.object({ slug: v.optional(v.string()) }),
   loaderDeps: ({ search }) => ({ search }),
   beforeLoad: async ({ context }) => {
     try {

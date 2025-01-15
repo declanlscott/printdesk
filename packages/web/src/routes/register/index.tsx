@@ -2,9 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import * as v from "valibot";
 
 export const Route = createFileRoute("/register/")({
-  validateSearch: v.object({
-    slug: v.optional(v.string()),
-  }),
+  validateSearch: v.object({ slug: v.optional(v.string()) }),
   component: RouteComponent,
 });
 

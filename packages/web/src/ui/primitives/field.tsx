@@ -20,8 +20,11 @@ export function Label({ className, ...props }: LabelProps) {
   return <AriaLabel className={labelStyles({ className })} {...props} />;
 }
 
-export type DescriptionProps = ComponentProps<typeof AriaText>;
-export const Description = ({ className, ...props }: DescriptionProps) => (
+export type FormDescriptionProps = ComponentProps<typeof AriaText>;
+export const FormDescription = ({
+  className,
+  ...props
+}: FormDescriptionProps) => (
   <AriaText
     slot="description"
     className={twMerge("text-muted-foreground text-sm", className)}
@@ -32,7 +35,10 @@ export const Description = ({ className, ...props }: DescriptionProps) => (
 export type FieldErrorProps = ComponentProps<typeof AriaFieldError>;
 export const FieldError = ({ className, ...props }: FieldErrorProps) => (
   <AriaFieldError
-    className={composeTwRenderProps(className, "text-sm text-red-500")}
+    className={composeTwRenderProps(
+      className,
+      "text-destructive text-sm font-medium",
+    )}
     {...props}
   />
 );

@@ -1,5 +1,5 @@
 import { composeRenderProps, Link } from "react-aria-components";
-import { registrationStep1Schema } from "@printworks/core/tenants/shared";
+import { registrationWizardStep1Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
@@ -14,6 +14,7 @@ import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
 import { buttonStyles } from "~/styles/components/primitives/button";
 import { Button } from "~/ui/primitives/button";
+import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
@@ -24,10 +25,6 @@ export const Route = createFileRoute("/register/_wizard/1")({
 function RouteComponent() {
   const slug = useRouteApi("/register/_wizard").useLoaderData();
 
-  const api = useApi();
-
-  const { submit } = RegistrationWizardStoreApi.useActions();
-
   const defaultValues = useStore(
     RegistrationWizardStoreApi.use(),
     useShallow(({ licenseKey, tenantName }) => ({
@@ -36,11 +33,15 @@ function RouteComponent() {
     })),
   );
 
+  const api = useApi();
+
+  const { submit } = RegistrationWizardStoreApi.useActions();
+
   const navigate = useNavigate();
 
   const form = useForm({
     validators: {
-      onBlur: v.omit(registrationStep1Schema, ["tenantSlug"]),
+      onSubmit: v.omit(registrationWizardStep1Schema, ["tenantSlug"]),
     },
     defaultValues,
     onSubmit: async ({ value }) => {
@@ -62,7 +63,7 @@ function RouteComponent() {
 
       submit({ step: 1, ...value });
 
-      await navigate({ to: "/register/2" });
+      await navigate({ to: "/register/2", search: { slug } });
     },
   });
 
@@ -73,93 +74,113 @@ function RouteComponent() {
       onSubmit={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        await form.handleSubmit();
+        await navigate({ to: "/register/2", search: { slug } });
+        // await form.handleSubmit();
       }}
+      className="grid gap-4"
     >
-      <div className="grid gap-4">
-        <form.Field name="licenseKey">
-          {(field) => (
-            <div className="grid gap-2">
-              <Label htmlFor={field.name}>License Key</Label>
+      <h2 className="text-xl font-semibold">1. Basic Information</h2>
 
-              <p className="text-muted-foreground text-sm">
-                The license key provided by your administrator.
-              </p>
+      <Card>
+        <CardContent className="grid gap-4 pt-6">
+          <form.Field
+            name="licenseKey"
+            validators={{
+              onBlur: registrationWizardStep1Schema.entries.licenseKey,
+            }}
+          >
+            {(field) => (
+              <div className="grid gap-2">
+                <Label htmlFor={field.name}>License Key</Label>
 
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                onBlur={field.handleBlur}
-                placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-              />
+                <CardDescription>
+                  Your valid application license key.
+                </CardDescription>
 
-              <span className="text-sm text-red-500">
-                {field.state.meta.errors.join(", ")}
-              </span>
-            </div>
-          )}
-        </form.Field>
+                <Input
+                  id={field.name}
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                />
 
-        <form.Field name="tenantName">
-          {(field) => (
-            <div className="grid gap-2">
-              <Label htmlFor={field.name}>Name</Label>
-
-              <p className="text-muted-foreground text-sm">
-                The full name of your organization.
-              </p>
-
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                onBlur={field.handleBlur}
-                placeholder="Acme Inc."
-              />
-
-              <span className="text-sm text-red-500">
-                {field.state.meta.errors.join(", ")}
-              </span>
-            </div>
-          )}
-        </form.Field>
-
-        <div className="grid gap-2">
-          <Label>Slug</Label>
-
-          <p className="text-muted-foreground text-sm">
-            A unique identifier for your organization, used for accessing the
-            application:
-            <Link
-              href={{ to: "/" }}
-              className={composeRenderProps(
-                "text-muted-foreground h-fit p-0",
-                (className, renderProps) =>
-                  buttonStyles({
-                    ...renderProps,
-                    variant: "link",
-                    className,
-                  }),
-              )}
-            >
-              {slug.toLowerCase()}.{AppData.domainName.fullyQualified}
-            </Link>
-          </p>
-
-          <Input value={slug} disabled />
-        </div>
-
-        <div className="flex justify-end">
-          <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-            {(canSubmit) => (
-              <Button type="submit" className="gap-2" isDisabled={!canSubmit}>
-                Next
-                <ArrowRight className="size-5" />
-              </Button>
+                {field.state.meta.errors.length > 0 ? (
+                  <span className="text-sm text-red-500">
+                    {field.state.meta.errors.join(", ")}
+                  </span>
+                ) : null}
+              </div>
             )}
-          </form.Subscribe>
-        </div>
+          </form.Field>
+
+          <form.Field
+            name="tenantName"
+            validators={{
+              onBlur: registrationWizardStep1Schema.entries.tenantName,
+            }}
+          >
+            {(field) => (
+              <div className="grid gap-2">
+                <Label htmlFor={field.name}>Name</Label>
+
+                <CardDescription>
+                  The full name of your organization.
+                </CardDescription>
+
+                <Input
+                  id={field.name}
+                  value={field.state.value}
+                  onChange={(e) => field.handleChange(e.target.value)}
+                  onBlur={field.handleBlur}
+                  placeholder="Acme Inc."
+                />
+
+                {field.state.meta.errors.length > 0 ? (
+                  <span className="text-sm text-red-500">
+                    {field.state.meta.errors.join(", ")}
+                  </span>
+                ) : null}
+              </div>
+            )}
+          </form.Field>
+
+          <div className="grid gap-2">
+            <Label>Slug</Label>
+
+            <CardDescription>
+              A unique identifier for your organization, used for accessing the
+              application:
+              <Link
+                href={{ to: "/" }}
+                className={composeRenderProps(
+                  "text-muted-foreground h-fit p-0",
+                  (className, renderProps) =>
+                    buttonStyles({
+                      ...renderProps,
+                      variant: "link",
+                      className,
+                    }),
+                )}
+              >
+                {slug.toLowerCase()}.{AppData.domainName.fullyQualified}
+              </Link>
+            </CardDescription>
+
+            <Input value={slug} disabled />
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end">
+        <form.Subscribe selector={({ canSubmit }) => canSubmit}>
+          {(canSubmit) => (
+            <Button type="submit" className="gap-2" isDisabled={!canSubmit}>
+              Next
+              <ArrowRight className="size-5" />
+            </Button>
+          )}
+        </form.Subscribe>
       </div>
     </form>
   );

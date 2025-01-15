@@ -3,7 +3,7 @@ import {
   updateServerAuthTokenSchema,
   updateServerTailnetUriSchema,
 } from "@printworks/core/papercut/shared";
-import { updateTailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
+import { tailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
 import { useForm } from "@tanstack/react-form";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -102,7 +102,7 @@ function UpdateTailscaleOauthClient() {
 
   const form = useForm({
     validators: {
-      onBlur: updateTailscaleOauthClientSchema,
+      onBlur: tailscaleOauthClientSchema,
     },
     defaultValues: {
       id: "",

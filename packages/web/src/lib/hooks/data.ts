@@ -28,7 +28,7 @@ import type {
 import type { Product } from "@printworks/core/products/sql";
 import type { DeliveryOptions, Workflow } from "@printworks/core/rooms/shared";
 import type { Room } from "@printworks/core/rooms/sql";
-import type { UpdateTailscaleOauthClient } from "@printworks/core/tailscale/shared";
+import type { TailscaleOauthClient } from "@printworks/core/tailscale/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
 import type { User } from "@printworks/core/users/sql";
 import type { MutationOptions, Query } from "~/types";
@@ -162,7 +162,7 @@ export function useMutationOptions() {
         }),
         tailscaleOauthClient: () => ({
           mutationKey: ["services", "tailscale", "oauth-client"],
-          mutationFn: async ({ id, secret }: UpdateTailscaleOauthClient) => {
+          mutationFn: async ({ id, secret }: TailscaleOauthClient) => {
             const call = async () =>
               api.client.services.tailscale["oauth-client"].$put({
                 header: { authorization: getAuth() },

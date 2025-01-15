@@ -22,6 +22,10 @@ import { Route as RegisterWizardImport } from './routes/register/_wizard'
 import { Route as AuthenticatedUsersIndexImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedProductsIndexImport } from './routes/_authenticated/products.index'
+import { Route as RegisterWizardReviewImport } from './routes/register/_wizard.review'
+import { Route as RegisterWizard5Import } from './routes/register/_wizard.5'
+import { Route as RegisterWizard4Import } from './routes/register/_wizard.4'
+import { Route as RegisterWizard3Import } from './routes/register/_wizard.3'
 import { Route as RegisterWizard2Import } from './routes/register/_wizard.2'
 import { Route as RegisterWizard1Import } from './routes/register/_wizard.1'
 import { Route as AuthenticatedUsersUserIdImport } from './routes/_authenticated/users.$userId'
@@ -139,6 +143,30 @@ const AuthenticatedProductsIndexRoute = AuthenticatedProductsIndexImport.update(
     getParentRoute: () => AuthenticatedProductsLazyRoute,
   } as any,
 )
+
+const RegisterWizardReviewRoute = RegisterWizardReviewImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => RegisterWizardRoute,
+} as any)
+
+const RegisterWizard5Route = RegisterWizard5Import.update({
+  id: '/5',
+  path: '/5',
+  getParentRoute: () => RegisterWizardRoute,
+} as any)
+
+const RegisterWizard4Route = RegisterWizard4Import.update({
+  id: '/4',
+  path: '/4',
+  getParentRoute: () => RegisterWizardRoute,
+} as any)
+
+const RegisterWizard3Route = RegisterWizard3Import.update({
+  id: '/3',
+  path: '/3',
+  getParentRoute: () => RegisterWizardRoute,
+} as any)
 
 const RegisterWizard2Route = RegisterWizard2Import.update({
   id: '/2',
@@ -354,6 +382,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterWizard2Import
       parentRoute: typeof RegisterWizardImport
     }
+    '/register/_wizard/3': {
+      id: '/register/_wizard/3'
+      path: '/3'
+      fullPath: '/register/3'
+      preLoaderRoute: typeof RegisterWizard3Import
+      parentRoute: typeof RegisterWizardImport
+    }
+    '/register/_wizard/4': {
+      id: '/register/_wizard/4'
+      path: '/4'
+      fullPath: '/register/4'
+      preLoaderRoute: typeof RegisterWizard4Import
+      parentRoute: typeof RegisterWizardImport
+    }
+    '/register/_wizard/5': {
+      id: '/register/_wizard/5'
+      path: '/5'
+      fullPath: '/register/5'
+      preLoaderRoute: typeof RegisterWizard5Import
+      parentRoute: typeof RegisterWizardImport
+    }
+    '/register/_wizard/review': {
+      id: '/register/_wizard/review'
+      path: '/review'
+      fullPath: '/register/review'
+      preLoaderRoute: typeof RegisterWizardReviewImport
+      parentRoute: typeof RegisterWizardImport
+    }
     '/_authenticated/products/': {
       id: '/_authenticated/products/'
       path: '/'
@@ -545,11 +601,19 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 interface RegisterWizardRouteChildren {
   RegisterWizard1Route: typeof RegisterWizard1Route
   RegisterWizard2Route: typeof RegisterWizard2Route
+  RegisterWizard3Route: typeof RegisterWizard3Route
+  RegisterWizard4Route: typeof RegisterWizard4Route
+  RegisterWizard5Route: typeof RegisterWizard5Route
+  RegisterWizardReviewRoute: typeof RegisterWizardReviewRoute
 }
 
 const RegisterWizardRouteChildren: RegisterWizardRouteChildren = {
   RegisterWizard1Route: RegisterWizard1Route,
   RegisterWizard2Route: RegisterWizard2Route,
+  RegisterWizard3Route: RegisterWizard3Route,
+  RegisterWizard4Route: RegisterWizard4Route,
+  RegisterWizard5Route: RegisterWizard5Route,
+  RegisterWizardReviewRoute: RegisterWizardReviewRoute,
 }
 
 const RegisterWizardRouteWithChildren = RegisterWizardRoute._addFileChildren(
@@ -586,6 +650,10 @@ export interface FileRoutesByFullPath {
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/register/1': typeof RegisterWizard1Route
   '/register/2': typeof RegisterWizard2Route
+  '/register/3': typeof RegisterWizard3Route
+  '/register/4': typeof RegisterWizard4Route
+  '/register/5': typeof RegisterWizard5Route
+  '/register/review': typeof RegisterWizardReviewRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
@@ -609,6 +677,10 @@ export interface FileRoutesByTo {
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/register/1': typeof RegisterWizard1Route
   '/register/2': typeof RegisterWizard2Route
+  '/register/3': typeof RegisterWizard3Route
+  '/register/4': typeof RegisterWizard4Route
+  '/register/5': typeof RegisterWizard5Route
+  '/register/review': typeof RegisterWizardReviewRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
@@ -637,6 +709,10 @@ export interface FileRoutesById {
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
   '/register/_wizard/1': typeof RegisterWizard1Route
   '/register/_wizard/2': typeof RegisterWizard2Route
+  '/register/_wizard/3': typeof RegisterWizard3Route
+  '/register/_wizard/4': typeof RegisterWizard4Route
+  '/register/_wizard/5': typeof RegisterWizard5Route
+  '/register/_wizard/review': typeof RegisterWizardReviewRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
@@ -667,6 +743,10 @@ export interface FileRouteTypes {
     | '/users/$userId'
     | '/register/1'
     | '/register/2'
+    | '/register/3'
+    | '/register/4'
+    | '/register/5'
+    | '/register/review'
     | '/products/'
     | '/settings/'
     | '/users/'
@@ -689,6 +769,10 @@ export interface FileRouteTypes {
     | '/users/$userId'
     | '/register/1'
     | '/register/2'
+    | '/register/3'
+    | '/register/4'
+    | '/register/5'
+    | '/register/review'
     | '/products'
     | '/settings'
     | '/users'
@@ -715,6 +799,10 @@ export interface FileRouteTypes {
     | '/_authenticated/users/$userId'
     | '/register/_wizard/1'
     | '/register/_wizard/2'
+    | '/register/_wizard/3'
+    | '/register/_wizard/4'
+    | '/register/_wizard/5'
+    | '/register/_wizard/review'
     | '/_authenticated/products/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
@@ -787,7 +875,11 @@ export const routeTree = rootRoute
       "parent": "/register",
       "children": [
         "/register/_wizard/1",
-        "/register/_wizard/2"
+        "/register/_wizard/2",
+        "/register/_wizard/3",
+        "/register/_wizard/4",
+        "/register/_wizard/5",
+        "/register/_wizard/review"
       ]
     },
     "/_authenticated/products": {
@@ -845,6 +937,22 @@ export const routeTree = rootRoute
     },
     "/register/_wizard/2": {
       "filePath": "register/_wizard.2.tsx",
+      "parent": "/register/_wizard"
+    },
+    "/register/_wizard/3": {
+      "filePath": "register/_wizard.3.tsx",
+      "parent": "/register/_wizard"
+    },
+    "/register/_wizard/4": {
+      "filePath": "register/_wizard.4.tsx",
+      "parent": "/register/_wizard"
+    },
+    "/register/_wizard/5": {
+      "filePath": "register/_wizard.5.tsx",
+      "parent": "/register/_wizard"
+    },
+    "/register/_wizard/review": {
+      "filePath": "register/_wizard.review.tsx",
       "parent": "/register/_wizard"
     },
     "/_authenticated/products/": {

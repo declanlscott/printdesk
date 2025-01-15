@@ -1,6 +1,7 @@
 import * as v from "valibot";
 
 import { oauth2ProvidersSchema } from "../auth/shared";
+import { tailscaleOauthClientSchema } from "../tailscale/shared";
 import { Constants } from "../utils/constants";
 import { nanoIdSchema, timestampsSchema } from "../utils/shared";
 
@@ -17,9 +18,11 @@ export const licenseSchema = v.object({
 
 export const tenantMetadataTableName = "tenant_metadata";
 
+export const defaultPapercutSyncSchedule = "55 1 * * ? *";
+
 export const tenantInfraProgramInputSchema = v.object({
   papercutSyncSchedule: v.pipe(
-    v.optional(v.string(), "55 1 * * ? *"),
+    v.optional(v.string(), defaultPapercutSyncSchedule),
     v.trim(),
   ),
   timezone: v.picklist(Intl.supportedValuesOf("timeZone")),
@@ -62,13 +65,52 @@ export type UpdateTenantMutationArgs = v.InferOutput<
   typeof updateTenantMutationArgsSchema
 >;
 
-export const registrationStep1Schema = v.object({
+export const registrationWizardStep1Schema = v.object({
   licenseKey: licenseSchema.entries.key,
   tenantName: tenantSchema.entries.name,
   tenantSlug: tenantSchema.entries.slug,
 });
+export type RegistrationWizardStep1 = v.InferOutput<
+  typeof registrationWizardStep1Schema
+>;
 
-export type RegistrationStep1 = v.InferOutput<typeof registrationStep1Schema>;
+export const registrationWizardStep2Schema = v.object({
+  userOauthProviderType: oauth2ProvidersSchema.entries.type,
+  userOauthProviderId: oauth2ProvidersSchema.entries.id,
+});
+export type RegistrationWizardStep2 = v.InferOutput<
+  typeof registrationWizardStep2Schema
+>;
+
+export const registrationWizardStep3Schema = v.object({
+  tailscaleOauthClientId: tailscaleOauthClientSchema.entries.id,
+  tailscaleOauthClientSecret: tailscaleOauthClientSchema.entries.secret,
+});
+export type RegistrationWizardStep3 = v.InferOutput<
+  typeof registrationWizardStep3Schema
+>;
+
+export const registrationWizardStep4Schema = v.object({
+  tailnetPapercutServerUri: v.pipe(v.string(), v.url()),
+  papercutServerAuthToken: v.string(),
+});
+export type RegistrationWizardStep4 = v.InferOutput<
+  typeof registrationWizardStep4Schema
+>;
+
+export const registrationWizardStep5Schema = tenantInfraProgramInputSchema;
+export type RegistrationWizardStep5 = v.InferOutput<
+  typeof registrationWizardStep5Schema
+>;
+
+export const registrationWizardSchema = v.object({
+  ...registrationWizardStep1Schema.entries,
+  ...registrationWizardStep2Schema.entries,
+  ...registrationWizardStep3Schema.entries,
+  ...registrationWizardStep4Schema.entries,
+  ...registrationWizardStep5Schema.entries,
+});
+export type RegistrationWizard = v.InferOutput<typeof registrationWizardSchema>;
 
 // const registrationStepsSchemas = [
 //   v.object({

@@ -1,10 +1,10 @@
 import * as v from "valibot";
 
-export const updateTailscaleOauthClientSchema = v.object({
+export const tailscaleOauthClientSchema = v.object({
   id: v.string(),
   secret: v.string(),
 });
 
-export type UpdateTailscaleOauthClient = v.InferOutput<
-  typeof updateTailscaleOauthClientSchema
+export type TailscaleOauthClient = v.InferOutput<
+  typeof tailscaleOauthClientSchema
 >;

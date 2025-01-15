@@ -11,7 +11,7 @@ import {
   checkStyles,
 } from "~/styles/components/primitives/checkbox";
 import { composeTwRenderProps } from "~/styles/utils";
-import { Description, FieldError, Label } from "~/ui/primitives/field";
+import { FieldError, FormDescription, Label } from "~/ui/primitives/field";
 
 import type { ComponentProps, ReactNode } from "react";
 import type { ValidationResult } from "react-aria-components";
@@ -66,7 +66,9 @@ export const CheckboxGroup = ({ className, ...props }: CheckboxGroupProps) => (
 
     {props.children}
 
-    {props.description && <Description>{props.description}</Description>}
+    {props.description && (
+      <FormDescription>{props.description}</FormDescription>
+    )}
 
     <FieldError>{props.errorMessage}</FieldError>
   </AriaCheckboxGroup>

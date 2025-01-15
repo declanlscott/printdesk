@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { composeRenderProps, Link } from "react-aria-components";
 import { ApplicationError } from "@printworks/core/utils/errors";
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useLocation } from "@tanstack/react-router";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
@@ -10,8 +10,20 @@ import { useApi } from "~/lib/hooks/api";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
 import { buttonStyles } from "~/styles/components/primitives/button";
+import { Label } from "~/ui/primitives/field";
+import { ProgressBar } from "~/ui/primitives/progress-bar";
 
 export function RegistrationWizardLayout() {
+  const progress = useLocation({
+    select: (location) => {
+      const step = location.pathname.split("/register/").slice(-1).at(0);
+      if (!step) return NaN;
+      if (step.toLowerCase() === "review") return 100;
+
+      return (parseInt(step) / 6) * 100;
+    },
+  });
+
   const tenantSlug = useRouteApi("/register/_wizard").useLoaderData();
 
   const api = useApi();
@@ -58,6 +70,18 @@ export function RegistrationWizardLayout() {
               Register your organization details below.
             </p>
           </div>
+
+          {!isNaN(progress) ? (
+            <ProgressBar value={progress} barClassName="h-3">
+              <div className="flex w-full justify-evenly pb-2">
+                <Label>1</Label>
+                <Label>2</Label>
+                <Label>3</Label>
+                <Label>4</Label>
+                <Label>5</Label>
+              </div>
+            </ProgressBar>
+          ) : null}
 
           <RealtimeProvider
             urlProvider={webSocketUrlProvider}

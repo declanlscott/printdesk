@@ -8,7 +8,7 @@ import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { RegistrationStoreApi } from "~/lib/stores/registration";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
@@ -24,22 +24,22 @@ import { Input } from "~/ui/primitives/text-field";
 
 import type { RegistrationWizardStep2 } from "@printworks/core/tenants/shared";
 
-export const Route = createFileRoute("/register/_wizard/2")({
+export const Route = createFileRoute("/register/_slug/_wizard/2")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const slug = useRouteApi("/register/_wizard").useLoaderData();
+  const slug = useRouteApi("/register/_slug").useLoaderData();
 
   const defaultValues = useStore(
-    RegistrationWizardStoreApi.use(),
+    RegistrationStoreApi.use(),
     useShallow((store) => ({
       userOauthProviderType: store.userOauthProviderType,
       userOauthProviderId: store.userOauthProviderId,
     })),
   );
 
-  const { submit } = RegistrationWizardStoreApi.useActions();
+  const { complete } = RegistrationStoreApi.useActions();
 
   const navigate = useNavigate();
 
@@ -49,7 +49,7 @@ function RouteComponent() {
     },
     defaultValues,
     onSubmit: async ({ value }) => {
-      submit({ step: 2, ...value });
+      complete({ step: 2, ...value });
 
       await navigate({ to: "/register/3", search: { slug } });
     },

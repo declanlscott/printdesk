@@ -1,5 +1,11 @@
+import { Realtime } from "@printworks/core/realtime";
 import { tenantInfraProgramInputSchema } from "@printworks/core/tenants/shared";
-import { Ssm, withAws } from "@printworks/core/utils/aws";
+import {
+  Credentials,
+  SignatureV4,
+  Ssm,
+  withAws,
+} from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { version as awsPluginVersion } from "@pulumi/aws/package.json";
 import { version as cloudflarePluginVersion } from "@pulumi/cloudflare/package.json";
@@ -12,30 +18,66 @@ import { useResource, withResource } from "./lib/resource";
 import type { SQSBatchItemFailure, SQSHandler, SQSRecord } from "aws-lambda";
 
 export const handler: SQSHandler = async (event) =>
-  withResource(() =>
-    withAws({ ssm: { client: new Ssm.Client() } }, async () => {
-      const batchItemFailures: Array<SQSBatchItemFailure> = [];
+  withResource(() => {
+    const { AppData, AppsyncEventApi, Aws } = useResource();
 
-      const { AppData } = useResource();
+    return withAws(
+      {
+        sigv4: {
+          signers: {
+            appsync: SignatureV4.buildSigner({
+              region: Aws.region,
+              service: "appsync",
+              credentials: Credentials.fromRoleChain([
+                {
+                  RoleArn: Aws.roles.realtimePublisher.arn,
+                  RoleSessionName: "TenantInfraRealtimePublisher",
+                },
+              ]),
+            }),
+          },
+        },
+        ssm: { client: new Ssm.Client() },
+      },
+      async () => {
+        const batchItemFailures: Array<SQSBatchItemFailure> = [];
 
-      const cloudflareApiToken = await Ssm.getParameter({
-        Name: `/${AppData.name}/${AppData.stage}/cloudflare/api-token`,
-        WithDecryption: true,
-      });
+        const cloudflareApiToken = await Ssm.getParameter({
+          Name: `/${AppData.name}/${AppData.stage}/cloudflare/api-token`,
+          WithDecryption: true,
+        });
 
-      for (const record of event.Records) {
-        try {
-          await processRecord(record, cloudflareApiToken);
-        } catch (e) {
-          console.error("Failed to process record: ", record, e);
+        for (const record of event.Records) {
+          const channel = `/events/${record.messageId}` as const;
 
-          batchItemFailures.push({ itemIdentifier: record.messageId });
+          try {
+            await processRecord(record, cloudflareApiToken);
+
+            await Realtime.publish(AppsyncEventApi.dns.http, channel, [
+              JSON.stringify({ type: "infra", success: true }),
+            ]);
+          } catch (e) {
+            console.error("Failed to process record: ", record, e);
+
+            batchItemFailures.push({ itemIdentifier: record.messageId });
+
+            await Realtime.publish(AppsyncEventApi.dns.http, channel, [
+              JSON.stringify({
+                type: "infra",
+                success: false,
+                error:
+                  e instanceof Error
+                    ? e.message
+                    : "An unexpected error occurred",
+              }),
+            ]);
+          }
         }
-      }
 
-      return { batchItemFailures };
-    }),
-  );
+        return { batchItemFailures };
+      },
+    );
+  });
 
 async function processRecord(record: SQSRecord, cloudflareApiToken: string) {
   const { AppData, Aws, PulumiBucket } = useResource();

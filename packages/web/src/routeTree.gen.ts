@@ -18,20 +18,22 @@ import { Route as CallbackImport } from './routes/callback'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
 import { Route as RegisterIndexImport } from './routes/register/index'
 import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
-import { Route as RegisterWizardImport } from './routes/register/_wizard'
+import { Route as RegisterSlugImport } from './routes/register/_slug'
 import { Route as AuthenticatedUsersIndexImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedProductsIndexImport } from './routes/_authenticated/products.index'
-import { Route as RegisterWizardReviewImport } from './routes/register/_wizard.review'
-import { Route as RegisterWizard5Import } from './routes/register/_wizard.5'
-import { Route as RegisterWizard4Import } from './routes/register/_wizard.4'
-import { Route as RegisterWizard3Import } from './routes/register/_wizard.3'
-import { Route as RegisterWizard2Import } from './routes/register/_wizard.2'
-import { Route as RegisterWizard1Import } from './routes/register/_wizard.1'
+import { Route as RegisterSlugStatusImport } from './routes/register/_slug/status'
+import { Route as RegisterSlugWizardImport } from './routes/register/_slug/_wizard'
 import { Route as AuthenticatedUsersUserIdImport } from './routes/_authenticated/users.$userId'
 import { Route as AuthenticatedSettingsServicesImport } from './routes/_authenticated/settings.services'
 import { Route as AuthenticatedSettingsRoomsImport } from './routes/_authenticated/settings.rooms'
 import { Route as AuthenticatedSettingsImagesImport } from './routes/_authenticated/settings.images'
+import { Route as RegisterSlugWizardReviewImport } from './routes/register/_slug/_wizard.review'
+import { Route as RegisterSlugWizard5Import } from './routes/register/_slug/_wizard.5'
+import { Route as RegisterSlugWizard4Import } from './routes/register/_slug/_wizard.4'
+import { Route as RegisterSlugWizard3Import } from './routes/register/_slug/_wizard.3'
+import { Route as RegisterSlugWizard2Import } from './routes/register/_slug/_wizard.2'
+import { Route as RegisterSlugWizard1Import } from './routes/register/_slug/_wizard.1'
 import { Route as AuthenticatedSettingsRoomsRoomIdIndexImport } from './routes/_authenticated/settings_/rooms/$roomId.index'
 import { Route as AuthenticatedSettingsRoomsRoomIdProductsImport } from './routes/_authenticated/settings_/rooms/$roomId.products'
 import { Route as AuthenticatedSettingsRoomsRoomIdCostScriptsImport } from './routes/_authenticated/settings_/rooms/$roomId.cost-scripts'
@@ -117,8 +119,8 @@ const AuthenticatedProductsLazyRoute = AuthenticatedProductsLazyImport.update({
   import('./routes/_authenticated/products.lazy').then((d) => d.Route),
 )
 
-const RegisterWizardRoute = RegisterWizardImport.update({
-  id: '/_wizard',
+const RegisterSlugRoute = RegisterSlugImport.update({
+  id: '/_slug',
   getParentRoute: () => RegisterRoute,
 } as any)
 
@@ -144,40 +146,15 @@ const AuthenticatedProductsIndexRoute = AuthenticatedProductsIndexImport.update(
   } as any,
 )
 
-const RegisterWizardReviewRoute = RegisterWizardReviewImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => RegisterWizardRoute,
+const RegisterSlugStatusRoute = RegisterSlugStatusImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => RegisterSlugRoute,
 } as any)
 
-const RegisterWizard5Route = RegisterWizard5Import.update({
-  id: '/5',
-  path: '/5',
-  getParentRoute: () => RegisterWizardRoute,
-} as any)
-
-const RegisterWizard4Route = RegisterWizard4Import.update({
-  id: '/4',
-  path: '/4',
-  getParentRoute: () => RegisterWizardRoute,
-} as any)
-
-const RegisterWizard3Route = RegisterWizard3Import.update({
-  id: '/3',
-  path: '/3',
-  getParentRoute: () => RegisterWizardRoute,
-} as any)
-
-const RegisterWizard2Route = RegisterWizard2Import.update({
-  id: '/2',
-  path: '/2',
-  getParentRoute: () => RegisterWizardRoute,
-} as any)
-
-const RegisterWizard1Route = RegisterWizard1Import.update({
-  id: '/1',
-  path: '/1',
-  getParentRoute: () => RegisterWizardRoute,
+const RegisterSlugWizardRoute = RegisterSlugWizardImport.update({
+  id: '/_wizard',
+  getParentRoute: () => RegisterSlugRoute,
 } as any)
 
 const AuthenticatedUsersUserIdRoute = AuthenticatedUsersUserIdImport.update({
@@ -218,6 +195,42 @@ const AuthenticatedSettingsRoomsRoomIdLazyRoute =
       (d) => d.Route,
     ),
   )
+
+const RegisterSlugWizardReviewRoute = RegisterSlugWizardReviewImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => RegisterSlugWizardRoute,
+} as any)
+
+const RegisterSlugWizard5Route = RegisterSlugWizard5Import.update({
+  id: '/5',
+  path: '/5',
+  getParentRoute: () => RegisterSlugWizardRoute,
+} as any)
+
+const RegisterSlugWizard4Route = RegisterSlugWizard4Import.update({
+  id: '/4',
+  path: '/4',
+  getParentRoute: () => RegisterSlugWizardRoute,
+} as any)
+
+const RegisterSlugWizard3Route = RegisterSlugWizard3Import.update({
+  id: '/3',
+  path: '/3',
+  getParentRoute: () => RegisterSlugWizardRoute,
+} as any)
+
+const RegisterSlugWizard2Route = RegisterSlugWizard2Import.update({
+  id: '/2',
+  path: '/2',
+  getParentRoute: () => RegisterSlugWizardRoute,
+} as any)
+
+const RegisterSlugWizard1Route = RegisterSlugWizard1Import.update({
+  id: '/1',
+  path: '/1',
+  getParentRoute: () => RegisterSlugWizardRoute,
+} as any)
 
 const AuthenticatedSettingsRoomsRoomIdIndexRoute =
   AuthenticatedSettingsRoomsRoomIdIndexImport.update({
@@ -298,11 +311,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterImport
       parentRoute: typeof rootRoute
     }
-    '/register/_wizard': {
-      id: '/register/_wizard'
+    '/register/_slug': {
+      id: '/register/_slug'
       path: '/register'
       fullPath: '/register'
-      preLoaderRoute: typeof RegisterWizardImport
+      preLoaderRoute: typeof RegisterSlugImport
       parentRoute: typeof RegisterRoute
     }
     '/_authenticated/products': {
@@ -368,47 +381,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsersUserIdImport
       parentRoute: typeof AuthenticatedUsersLazyImport
     }
-    '/register/_wizard/1': {
-      id: '/register/_wizard/1'
-      path: '/1'
-      fullPath: '/register/1'
-      preLoaderRoute: typeof RegisterWizard1Import
-      parentRoute: typeof RegisterWizardImport
+    '/register/_slug/_wizard': {
+      id: '/register/_slug/_wizard'
+      path: ''
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterSlugWizardImport
+      parentRoute: typeof RegisterSlugImport
     }
-    '/register/_wizard/2': {
-      id: '/register/_wizard/2'
-      path: '/2'
-      fullPath: '/register/2'
-      preLoaderRoute: typeof RegisterWizard2Import
-      parentRoute: typeof RegisterWizardImport
-    }
-    '/register/_wizard/3': {
-      id: '/register/_wizard/3'
-      path: '/3'
-      fullPath: '/register/3'
-      preLoaderRoute: typeof RegisterWizard3Import
-      parentRoute: typeof RegisterWizardImport
-    }
-    '/register/_wizard/4': {
-      id: '/register/_wizard/4'
-      path: '/4'
-      fullPath: '/register/4'
-      preLoaderRoute: typeof RegisterWizard4Import
-      parentRoute: typeof RegisterWizardImport
-    }
-    '/register/_wizard/5': {
-      id: '/register/_wizard/5'
-      path: '/5'
-      fullPath: '/register/5'
-      preLoaderRoute: typeof RegisterWizard5Import
-      parentRoute: typeof RegisterWizardImport
-    }
-    '/register/_wizard/review': {
-      id: '/register/_wizard/review'
-      path: '/review'
-      fullPath: '/register/review'
-      preLoaderRoute: typeof RegisterWizardReviewImport
-      parentRoute: typeof RegisterWizardImport
+    '/register/_slug/status': {
+      id: '/register/_slug/status'
+      path: '/status'
+      fullPath: '/register/status'
+      preLoaderRoute: typeof RegisterSlugStatusImport
+      parentRoute: typeof RegisterSlugImport
     }
     '/_authenticated/products/': {
       id: '/_authenticated/products/'
@@ -430,6 +415,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/users/'
       preLoaderRoute: typeof AuthenticatedUsersIndexImport
       parentRoute: typeof AuthenticatedUsersLazyImport
+    }
+    '/register/_slug/_wizard/1': {
+      id: '/register/_slug/_wizard/1'
+      path: '/1'
+      fullPath: '/register/1'
+      preLoaderRoute: typeof RegisterSlugWizard1Import
+      parentRoute: typeof RegisterSlugWizardImport
+    }
+    '/register/_slug/_wizard/2': {
+      id: '/register/_slug/_wizard/2'
+      path: '/2'
+      fullPath: '/register/2'
+      preLoaderRoute: typeof RegisterSlugWizard2Import
+      parentRoute: typeof RegisterSlugWizardImport
+    }
+    '/register/_slug/_wizard/3': {
+      id: '/register/_slug/_wizard/3'
+      path: '/3'
+      fullPath: '/register/3'
+      preLoaderRoute: typeof RegisterSlugWizard3Import
+      parentRoute: typeof RegisterSlugWizardImport
+    }
+    '/register/_slug/_wizard/4': {
+      id: '/register/_slug/_wizard/4'
+      path: '/4'
+      fullPath: '/register/4'
+      preLoaderRoute: typeof RegisterSlugWizard4Import
+      parentRoute: typeof RegisterSlugWizardImport
+    }
+    '/register/_slug/_wizard/5': {
+      id: '/register/_slug/_wizard/5'
+      path: '/5'
+      fullPath: '/register/5'
+      preLoaderRoute: typeof RegisterSlugWizard5Import
+      parentRoute: typeof RegisterSlugWizardImport
+    }
+    '/register/_slug/_wizard/review': {
+      id: '/register/_slug/_wizard/review'
+      path: '/review'
+      fullPath: '/register/review'
+      preLoaderRoute: typeof RegisterSlugWizardReviewImport
+      parentRoute: typeof RegisterSlugWizardImport
     }
     '/_authenticated/settings_/rooms/$roomId': {
       id: '/_authenticated/settings_/rooms/$roomId'
@@ -598,35 +625,48 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface RegisterWizardRouteChildren {
-  RegisterWizard1Route: typeof RegisterWizard1Route
-  RegisterWizard2Route: typeof RegisterWizard2Route
-  RegisterWizard3Route: typeof RegisterWizard3Route
-  RegisterWizard4Route: typeof RegisterWizard4Route
-  RegisterWizard5Route: typeof RegisterWizard5Route
-  RegisterWizardReviewRoute: typeof RegisterWizardReviewRoute
+interface RegisterSlugWizardRouteChildren {
+  RegisterSlugWizard1Route: typeof RegisterSlugWizard1Route
+  RegisterSlugWizard2Route: typeof RegisterSlugWizard2Route
+  RegisterSlugWizard3Route: typeof RegisterSlugWizard3Route
+  RegisterSlugWizard4Route: typeof RegisterSlugWizard4Route
+  RegisterSlugWizard5Route: typeof RegisterSlugWizard5Route
+  RegisterSlugWizardReviewRoute: typeof RegisterSlugWizardReviewRoute
 }
 
-const RegisterWizardRouteChildren: RegisterWizardRouteChildren = {
-  RegisterWizard1Route: RegisterWizard1Route,
-  RegisterWizard2Route: RegisterWizard2Route,
-  RegisterWizard3Route: RegisterWizard3Route,
-  RegisterWizard4Route: RegisterWizard4Route,
-  RegisterWizard5Route: RegisterWizard5Route,
-  RegisterWizardReviewRoute: RegisterWizardReviewRoute,
+const RegisterSlugWizardRouteChildren: RegisterSlugWizardRouteChildren = {
+  RegisterSlugWizard1Route: RegisterSlugWizard1Route,
+  RegisterSlugWizard2Route: RegisterSlugWizard2Route,
+  RegisterSlugWizard3Route: RegisterSlugWizard3Route,
+  RegisterSlugWizard4Route: RegisterSlugWizard4Route,
+  RegisterSlugWizard5Route: RegisterSlugWizard5Route,
+  RegisterSlugWizardReviewRoute: RegisterSlugWizardReviewRoute,
 }
 
-const RegisterWizardRouteWithChildren = RegisterWizardRoute._addFileChildren(
-  RegisterWizardRouteChildren,
+const RegisterSlugWizardRouteWithChildren =
+  RegisterSlugWizardRoute._addFileChildren(RegisterSlugWizardRouteChildren)
+
+interface RegisterSlugRouteChildren {
+  RegisterSlugWizardRoute: typeof RegisterSlugWizardRouteWithChildren
+  RegisterSlugStatusRoute: typeof RegisterSlugStatusRoute
+}
+
+const RegisterSlugRouteChildren: RegisterSlugRouteChildren = {
+  RegisterSlugWizardRoute: RegisterSlugWizardRouteWithChildren,
+  RegisterSlugStatusRoute: RegisterSlugStatusRoute,
+}
+
+const RegisterSlugRouteWithChildren = RegisterSlugRoute._addFileChildren(
+  RegisterSlugRouteChildren,
 )
 
 interface RegisterRouteChildren {
-  RegisterWizardRoute: typeof RegisterWizardRouteWithChildren
+  RegisterSlugRoute: typeof RegisterSlugRouteWithChildren
   RegisterIndexRoute: typeof RegisterIndexRoute
 }
 
 const RegisterRouteChildren: RegisterRouteChildren = {
-  RegisterWizardRoute: RegisterWizardRouteWithChildren,
+  RegisterSlugRoute: RegisterSlugRouteWithChildren,
   RegisterIndexRoute: RegisterIndexRoute,
 }
 
@@ -638,7 +678,7 @@ export interface FileRoutesByFullPath {
   '': typeof AuthenticatedRouteWithChildren
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterWizardRouteWithChildren
+  '/register': typeof RegisterSlugWizardRouteWithChildren
   '/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/users': typeof AuthenticatedUsersLazyRouteWithChildren
@@ -648,15 +688,16 @@ export interface FileRoutesByFullPath {
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
-  '/register/1': typeof RegisterWizard1Route
-  '/register/2': typeof RegisterWizard2Route
-  '/register/3': typeof RegisterWizard3Route
-  '/register/4': typeof RegisterWizard4Route
-  '/register/5': typeof RegisterWizard5Route
-  '/register/review': typeof RegisterWizardReviewRoute
+  '/register/status': typeof RegisterSlugStatusRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/register/1': typeof RegisterSlugWizard1Route
+  '/register/2': typeof RegisterSlugWizard2Route
+  '/register/3': typeof RegisterSlugWizard3Route
+  '/register/4': typeof RegisterSlugWizard4Route
+  '/register/5': typeof RegisterSlugWizard5Route
+  '/register/review': typeof RegisterSlugWizardReviewRoute
   '/settings/rooms/$roomId': typeof AuthenticatedSettingsRoomsRoomIdLazyRouteWithChildren
   '/settings/rooms/$roomId/configuration': typeof AuthenticatedSettingsRoomsRoomIdConfigurationRoute
   '/settings/rooms/$roomId/cost-scripts': typeof AuthenticatedSettingsRoomsRoomIdCostScriptsRoute
@@ -669,21 +710,22 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
-  '/register': typeof RegisterIndexRoute
+  '/register': typeof RegisterSlugWizardRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
   '/users/$userId': typeof AuthenticatedUsersUserIdRoute
-  '/register/1': typeof RegisterWizard1Route
-  '/register/2': typeof RegisterWizard2Route
-  '/register/3': typeof RegisterWizard3Route
-  '/register/4': typeof RegisterWizard4Route
-  '/register/5': typeof RegisterWizard5Route
-  '/register/review': typeof RegisterWizardReviewRoute
+  '/register/status': typeof RegisterSlugStatusRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/register/1': typeof RegisterSlugWizard1Route
+  '/register/2': typeof RegisterSlugWizard2Route
+  '/register/3': typeof RegisterSlugWizard3Route
+  '/register/4': typeof RegisterSlugWizard4Route
+  '/register/5': typeof RegisterSlugWizard5Route
+  '/register/review': typeof RegisterSlugWizardReviewRoute
   '/settings/rooms/$roomId/configuration': typeof AuthenticatedSettingsRoomsRoomIdConfigurationRoute
   '/settings/rooms/$roomId/cost-scripts': typeof AuthenticatedSettingsRoomsRoomIdCostScriptsRoute
   '/settings/rooms/$roomId/products': typeof AuthenticatedSettingsRoomsRoomIdProductsRoute
@@ -697,7 +739,7 @@ export interface FileRoutesById {
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRouteWithChildren
-  '/register/_wizard': typeof RegisterWizardRouteWithChildren
+  '/register/_slug': typeof RegisterSlugRouteWithChildren
   '/_authenticated/products': typeof AuthenticatedProductsLazyRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersLazyRouteWithChildren
@@ -707,15 +749,17 @@ export interface FileRoutesById {
   '/_authenticated/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/_authenticated/settings/services': typeof AuthenticatedSettingsServicesRoute
   '/_authenticated/users/$userId': typeof AuthenticatedUsersUserIdRoute
-  '/register/_wizard/1': typeof RegisterWizard1Route
-  '/register/_wizard/2': typeof RegisterWizard2Route
-  '/register/_wizard/3': typeof RegisterWizard3Route
-  '/register/_wizard/4': typeof RegisterWizard4Route
-  '/register/_wizard/5': typeof RegisterWizard5Route
-  '/register/_wizard/review': typeof RegisterWizardReviewRoute
+  '/register/_slug/_wizard': typeof RegisterSlugWizardRouteWithChildren
+  '/register/_slug/status': typeof RegisterSlugStatusRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/register/_slug/_wizard/1': typeof RegisterSlugWizard1Route
+  '/register/_slug/_wizard/2': typeof RegisterSlugWizard2Route
+  '/register/_slug/_wizard/3': typeof RegisterSlugWizard3Route
+  '/register/_slug/_wizard/4': typeof RegisterSlugWizard4Route
+  '/register/_slug/_wizard/5': typeof RegisterSlugWizard5Route
+  '/register/_slug/_wizard/review': typeof RegisterSlugWizardReviewRoute
   '/_authenticated/settings_/rooms/$roomId': typeof AuthenticatedSettingsRoomsRoomIdLazyRouteWithChildren
   '/_authenticated/settings_/rooms/$roomId/configuration': typeof AuthenticatedSettingsRoomsRoomIdConfigurationRoute
   '/_authenticated/settings_/rooms/$roomId/cost-scripts': typeof AuthenticatedSettingsRoomsRoomIdCostScriptsRoute
@@ -741,15 +785,16 @@ export interface FileRouteTypes {
     | '/settings/rooms'
     | '/settings/services'
     | '/users/$userId'
+    | '/register/status'
+    | '/products/'
+    | '/settings/'
+    | '/users/'
     | '/register/1'
     | '/register/2'
     | '/register/3'
     | '/register/4'
     | '/register/5'
     | '/register/review'
-    | '/products/'
-    | '/settings/'
-    | '/users/'
     | '/settings/rooms/$roomId'
     | '/settings/rooms/$roomId/configuration'
     | '/settings/rooms/$roomId/cost-scripts'
@@ -767,15 +812,16 @@ export interface FileRouteTypes {
     | '/settings/rooms'
     | '/settings/services'
     | '/users/$userId'
+    | '/register/status'
+    | '/products'
+    | '/settings'
+    | '/users'
     | '/register/1'
     | '/register/2'
     | '/register/3'
     | '/register/4'
     | '/register/5'
     | '/register/review'
-    | '/products'
-    | '/settings'
-    | '/users'
     | '/settings/rooms/$roomId/configuration'
     | '/settings/rooms/$roomId/cost-scripts'
     | '/settings/rooms/$roomId/products'
@@ -787,7 +833,7 @@ export interface FileRouteTypes {
     | '/callback'
     | '/login'
     | '/register'
-    | '/register/_wizard'
+    | '/register/_slug'
     | '/_authenticated/products'
     | '/_authenticated/settings'
     | '/_authenticated/users'
@@ -797,15 +843,17 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/rooms'
     | '/_authenticated/settings/services'
     | '/_authenticated/users/$userId'
-    | '/register/_wizard/1'
-    | '/register/_wizard/2'
-    | '/register/_wizard/3'
-    | '/register/_wizard/4'
-    | '/register/_wizard/5'
-    | '/register/_wizard/review'
+    | '/register/_slug/_wizard'
+    | '/register/_slug/status'
     | '/_authenticated/products/'
     | '/_authenticated/settings/'
     | '/_authenticated/users/'
+    | '/register/_slug/_wizard/1'
+    | '/register/_slug/_wizard/2'
+    | '/register/_slug/_wizard/3'
+    | '/register/_slug/_wizard/4'
+    | '/register/_slug/_wizard/5'
+    | '/register/_slug/_wizard/review'
     | '/_authenticated/settings_/rooms/$roomId'
     | '/_authenticated/settings_/rooms/$roomId/configuration'
     | '/_authenticated/settings_/rooms/$roomId/cost-scripts'
@@ -866,20 +914,16 @@ export const routeTree = rootRoute
     "/register": {
       "filePath": "register",
       "children": [
-        "/register/_wizard",
+        "/register/_slug",
         "/register/"
       ]
     },
-    "/register/_wizard": {
-      "filePath": "register/_wizard.tsx",
+    "/register/_slug": {
+      "filePath": "register/_slug.tsx",
       "parent": "/register",
       "children": [
-        "/register/_wizard/1",
-        "/register/_wizard/2",
-        "/register/_wizard/3",
-        "/register/_wizard/4",
-        "/register/_wizard/5",
-        "/register/_wizard/review"
+        "/register/_slug/_wizard",
+        "/register/_slug/status"
       ]
     },
     "/_authenticated/products": {
@@ -931,29 +975,21 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/users.$userId.tsx",
       "parent": "/_authenticated/users"
     },
-    "/register/_wizard/1": {
-      "filePath": "register/_wizard.1.tsx",
-      "parent": "/register/_wizard"
+    "/register/_slug/_wizard": {
+      "filePath": "register/_slug/_wizard.tsx",
+      "parent": "/register/_slug",
+      "children": [
+        "/register/_slug/_wizard/1",
+        "/register/_slug/_wizard/2",
+        "/register/_slug/_wizard/3",
+        "/register/_slug/_wizard/4",
+        "/register/_slug/_wizard/5",
+        "/register/_slug/_wizard/review"
+      ]
     },
-    "/register/_wizard/2": {
-      "filePath": "register/_wizard.2.tsx",
-      "parent": "/register/_wizard"
-    },
-    "/register/_wizard/3": {
-      "filePath": "register/_wizard.3.tsx",
-      "parent": "/register/_wizard"
-    },
-    "/register/_wizard/4": {
-      "filePath": "register/_wizard.4.tsx",
-      "parent": "/register/_wizard"
-    },
-    "/register/_wizard/5": {
-      "filePath": "register/_wizard.5.tsx",
-      "parent": "/register/_wizard"
-    },
-    "/register/_wizard/review": {
-      "filePath": "register/_wizard.review.tsx",
-      "parent": "/register/_wizard"
+    "/register/_slug/status": {
+      "filePath": "register/_slug/status.tsx",
+      "parent": "/register/_slug"
     },
     "/_authenticated/products/": {
       "filePath": "_authenticated/products.index.tsx",
@@ -966,6 +1002,30 @@ export const routeTree = rootRoute
     "/_authenticated/users/": {
       "filePath": "_authenticated/users.index.tsx",
       "parent": "/_authenticated/users"
+    },
+    "/register/_slug/_wizard/1": {
+      "filePath": "register/_slug/_wizard.1.tsx",
+      "parent": "/register/_slug/_wizard"
+    },
+    "/register/_slug/_wizard/2": {
+      "filePath": "register/_slug/_wizard.2.tsx",
+      "parent": "/register/_slug/_wizard"
+    },
+    "/register/_slug/_wizard/3": {
+      "filePath": "register/_slug/_wizard.3.tsx",
+      "parent": "/register/_slug/_wizard"
+    },
+    "/register/_slug/_wizard/4": {
+      "filePath": "register/_slug/_wizard.4.tsx",
+      "parent": "/register/_slug/_wizard"
+    },
+    "/register/_slug/_wizard/5": {
+      "filePath": "register/_slug/_wizard.5.tsx",
+      "parent": "/register/_slug/_wizard"
+    },
+    "/register/_slug/_wizard/review": {
+      "filePath": "register/_slug/_wizard.review.tsx",
+      "parent": "/register/_slug/_wizard"
     },
     "/_authenticated/settings_/rooms/$roomId": {
       "filePath": "_authenticated/settings_/rooms/$roomId.lazy.tsx",

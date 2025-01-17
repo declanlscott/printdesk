@@ -1,7 +1,11 @@
 import { createClient } from "@openauthjs/openauth/client";
 import { withActor } from "@printworks/core/actors/context";
 import { subjects } from "@printworks/core/auth/subjects";
+import { useTransaction } from "@printworks/core/drizzle/context";
+import { licensesTable, tenantsTable } from "@printworks/core/tenants/sql";
+import { and, eq } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
+import * as R from "remeda";
 
 export const actor = createMiddleware(async (c, next) => {
   const accessToken = c.req.header("Authorization")?.replace("Bearer ", "");
@@ -15,6 +19,33 @@ export const actor = createMiddleware(async (c, next) => {
     if (!verified.err)
       return withActor(
         { type: "user", properties: verified.subject.properties },
+        next,
+      );
+  }
+
+  // NOTE: System actor is only for initializing tenants
+  const licenseKey = c.req.header("X-License-Key");
+  if (licenseKey) {
+    const result = await useTransaction((tx) =>
+      tx
+        .select({ tenantId: tenantsTable.id })
+        .from(licensesTable)
+        .innerJoin(tenantsTable, eq(licensesTable.tenantId, tenantsTable.id))
+        .where(
+          and(
+            eq(licensesTable.key, licenseKey),
+            eq(tenantsTable.status, "initializing"),
+          ),
+        )
+        .then(R.first()),
+    );
+
+    if (result)
+      return withActor(
+        {
+          type: "system",
+          properties: { tenantId: result.tenantId },
+        },
         next,
       );
   }

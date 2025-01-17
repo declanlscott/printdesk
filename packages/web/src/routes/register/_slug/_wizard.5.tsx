@@ -14,7 +14,7 @@ import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { RegistrationStoreApi } from "~/lib/stores/registration";
 import { collectionItem } from "~/lib/ui";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
@@ -29,22 +29,22 @@ import {
 import { FieldGroup, Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
-export const Route = createFileRoute("/register/_wizard/5")({
+export const Route = createFileRoute("/register/_slug/_wizard/5")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const slug = useRouteApi("/register/_wizard").useLoaderData();
+  const slug = useRouteApi("/register/_slug").useLoaderData();
 
   const defaultValues = useStore(
-    RegistrationWizardStoreApi.use(),
+    RegistrationStoreApi.use(),
     useShallow((store) => ({
       papercutSyncSchedule: store.papercutSyncSchedule,
       timezone: store.timezone,
     })),
   );
 
-  const { submit } = RegistrationWizardStoreApi.useActions();
+  const { complete } = RegistrationStoreApi.useActions();
 
   const navigate = useNavigate();
 
@@ -56,7 +56,7 @@ function RouteComponent() {
     onSubmit: async ({
       value: { papercutSyncSchedule = defaultPapercutSyncSchedule, ...value },
     }) => {
-      submit({ step: 5, papercutSyncSchedule, ...value });
+      complete({ step: 5, papercutSyncSchedule, ...value });
 
       await navigate({ to: "/register/review", search: { slug } });
     },

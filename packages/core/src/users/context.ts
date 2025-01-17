@@ -3,7 +3,7 @@ import * as R from "remeda";
 
 import { assertActor } from "../actors/context";
 import { oauth2ProvidersTable } from "../auth/sql";
-import { createTransaction } from "../drizzle/context";
+import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
 import { Utils } from "../utils";
 import { userProfilesTable, usersTable } from "./sql";
@@ -18,7 +18,7 @@ export const useUser = UserContext.use;
 export async function withUser<TCallback extends () => ReturnType<TCallback>>(
   callback: TCallback,
 ) {
-  const user = await createTransaction(async (tx) =>
+  const user = await useTransaction(async (tx) =>
     tx
       .select({
         user: usersTable,

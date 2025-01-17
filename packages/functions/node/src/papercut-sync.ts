@@ -1,10 +1,12 @@
 import { withActor } from "@printworks/core/actors/context";
 import { PapercutSync } from "@printworks/core/papercut/sync";
 import { Realtime } from "@printworks/core/realtime";
+import { Tenants } from "@printworks/core/tenants";
 import { Api } from "@printworks/core/tenants/api";
 import { Credentials, SignatureV4, withAws } from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { withXml } from "@printworks/core/utils/xml";
+import * as R from "remeda";
 import { Resource } from "sst";
 import * as v from "valibot";
 
@@ -18,10 +20,14 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
     event.detail,
   );
 
-  const channel = `/events/${event.id}`;
+  const channel = `/events/${event.id}` as const;
 
-  return withActor({ type: "system", properties: { tenantId } }, async () =>
-    withAws(
+  return withActor({ type: "system", properties: { tenantId } }, async () => {
+    const tenant = await Tenants.read().then(R.first());
+    if (!tenant || tenant.status === "suspended")
+      throw new Error("Tenant not found or suspended");
+
+    return withAws(
       {
         sigv4: {
           signers: {
@@ -75,6 +81,6 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
             ]);
           },
         ),
-    ),
-  );
+    );
+  });
 };

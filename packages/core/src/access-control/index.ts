@@ -26,7 +26,7 @@ import type { SQL } from "drizzle-orm";
 import type { PgSelectBase } from "drizzle-orm/pg-core";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
-import type { TxOrDb } from "../drizzle/context";
+import type { Transaction } from "../drizzle/context";
 import type { Order } from "../orders/sql";
 import type { Metadata } from "../replicache/data";
 import type { UserRole } from "../users/shared";
@@ -37,7 +37,7 @@ import type { Action, Resource } from "./shared";
 
 export namespace AccessControl {
   type SyncedTableResourceMetadataBaseQuery = {
-    [TName in SyncedTableName]: (tx: TxOrDb) => PgSelectBase<
+    [TName in SyncedTableName]: (tx: Transaction) => PgSelectBase<
       TName,
       {
         id: TableByName<TName>["_"]["columns"]["id"];

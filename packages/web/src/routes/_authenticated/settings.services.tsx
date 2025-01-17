@@ -256,10 +256,8 @@ function PapercutCard() {
 }
 
 function UpdatePapercutServerTailnetUri() {
-  const { papercutServerTailnetUri } = useMutationOptions();
-
   const { mutate } = useMutation({
-    ...papercutServerTailnetUri(),
+    ...useMutationOptions().papercutServerTailnetUri(),
     onSuccess: () =>
       toast.success("Successfully saved the PaperCut server Tailnet URI."),
   });

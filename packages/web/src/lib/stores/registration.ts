@@ -6,7 +6,7 @@ import { createStore } from "zustand/vanilla";
 import { createStoreApiContext } from "~/lib/contexts/store";
 
 import type {
-  RegistrationWizard,
+  Registration,
   RegistrationWizardStep1,
   RegistrationWizardStep2,
   RegistrationWizardStep3,
@@ -14,7 +14,7 @@ import type {
   RegistrationWizardStep5,
 } from "@printworks/core/tenants/shared";
 
-export type SubmitStepProps =
+export type CompleteStepProps =
   | ({
       step: 1;
     } & Omit<RegistrationWizardStep1, "tenantSlug">)
@@ -31,14 +31,14 @@ export type SubmitStepProps =
       step: 5;
     } & RegistrationWizardStep5);
 
-export type RegistrationWizardStore = RegistrationWizard & {
+export type RegistrationStore = Registration & {
   actions: {
-    submit: (props: SubmitStepProps) => void;
+    complete: (props: CompleteStepProps) => void;
   };
 };
 
-export const RegistrationWizardStoreApi = createStoreApiContext<
-  RegistrationWizardStore,
+export const RegistrationStoreApi = createStoreApiContext<
+  RegistrationStore,
   { tenantSlug: string }
 >(({ tenantSlug }) =>
   createStore(
@@ -67,7 +67,7 @@ export const RegistrationWizardStoreApi = createStoreApiContext<
 
         // Actions
         actions: {
-          submit: (props) => {
+          complete: (props) => {
             switch (props.step) {
               case 1:
                 set(() => ({

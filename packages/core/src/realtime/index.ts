@@ -5,6 +5,8 @@ import { Resource } from "sst";
 import { Api } from "../tenants/api";
 import { SignatureV4, Util } from "../utils/aws";
 
+import type { StartsWith } from "../utils/types";
+
 export namespace Realtime {
   export async function getUrl(forTenant = true) {
     const realtimeDomainName = forTenant
@@ -45,9 +47,9 @@ export namespace Realtime {
     return auth;
   }
 
-  export async function publish(
+  export async function publish<TChannel extends string>(
     httpDomainName: string,
-    channel: string,
+    channel: StartsWith<"/", TChannel>,
     events: Array<string>,
   ) {
     for (const batch of R.chunk(events, 5)) {

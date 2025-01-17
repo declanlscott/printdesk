@@ -8,6 +8,7 @@ import {
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
+import { tenantsTable } from "../tenants/sql";
 import { usersTable } from "../users/sql";
 import { Constants } from "../utils/constants";
 import { HttpError } from "../utils/errors";
@@ -246,6 +247,11 @@ export namespace PapercutSync {
             ["customerId", "billingAccountId", "tenantId", "deletedAt"],
           ),
         });
+
+      await tx
+        .update(tenantsTable)
+        .set({ status: "active" })
+        .where(eq(tenantsTable.id, tenant.id));
     });
   }
 }

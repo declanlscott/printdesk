@@ -2,6 +2,7 @@ import {
   Credentials,
   S3,
   SignatureV4,
+  Sqs,
   Ssm,
   withAws,
 } from "@printworks/core/utils/aws";
@@ -70,6 +71,22 @@ export const ssmClient = (getRole?: GetRole) =>
       {
         ssm: {
           client: new Ssm.Client({
+            credentials: getRole
+              ? Credentials.fromRoleChain([await getRole()])
+              : undefined,
+          }),
+        },
+      },
+      next,
+    ),
+  );
+
+export const sqsClient = (getRole?: GetRole) =>
+  createMiddleware(async (_, next) =>
+    withAws(
+      {
+        sqs: {
+          client: new Sqs.Client({
             credentials: getRole
               ? Credentials.fromRoleChain([await getRole()])
               : undefined,

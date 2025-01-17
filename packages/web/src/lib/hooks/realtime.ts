@@ -28,7 +28,7 @@ export const useRealtimeActions = () =>
 
 export function useRealtimeChannel<TChannel extends string>(
   channel: StartsWith<"/", TChannel>,
-  onData: (event: unknown) => void,
+  onData?: (event: unknown) => void,
 ) {
   const onDataRef = useRef(onData);
 
@@ -61,7 +61,7 @@ export function useRealtimeChannel<TChannel extends string>(
     );
     const onMessage = handleMessage((message) => {
       if (message.type === "data" && message.id === id)
-        onDataRef.current(message.event);
+        onDataRef.current?.(message.event);
     });
     webSocket.addEventListener("message", onMessage);
 

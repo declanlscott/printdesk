@@ -8,8 +8,9 @@ export const resourcePrefix = "FUNCTION_RESOURCE_";
 export type FunctionResource = {
   [TKey in keyof Pick<
     Resource,
-    | "ApiFunction"
     | "AppData"
+    | "ApiFunction"
+    | "AppsyncEventApi"
     | "Aws"
     | "CloudfrontPublicKey"
     | "Code"

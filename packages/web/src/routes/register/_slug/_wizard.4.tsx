@@ -10,29 +10,29 @@ import { useShallow } from "zustand/react/shallow";
 
 import { useCopyToClipboard } from "~/lib/hooks/copy-to-clipboard";
 import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { RegistrationStoreApi } from "~/lib/stores/registration";
 import { linkStyles } from "~/styles/components/primitives/link";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
-export const Route = createFileRoute("/register/_wizard/4")({
+export const Route = createFileRoute("/register/_slug/_wizard/4")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const slug = useRouteApi("/register/_wizard").useLoaderData();
+  const slug = useRouteApi("/register/_slug").useLoaderData();
 
   const defaultValues = useStore(
-    RegistrationWizardStoreApi.use(),
+    RegistrationStoreApi.use(),
     useShallow((store) => ({
       tailnetPapercutServerUri: store.tailnetPapercutServerUri,
       papercutServerAuthToken: store.papercutServerAuthToken,
     })),
   );
 
-  const { submit } = RegistrationWizardStoreApi.useActions();
+  const { complete } = RegistrationStoreApi.useActions();
 
   const navigate = useNavigate();
 
@@ -42,7 +42,7 @@ function RouteComponent() {
     },
     defaultValues,
     onSubmit: async ({ value }) => {
-      submit({ step: 4, ...value });
+      complete({ step: 4, ...value });
 
       await navigate({ to: "/register/5", search: { slug } });
     },

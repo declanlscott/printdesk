@@ -5,11 +5,7 @@ import * as R from "remeda";
 import { Resource } from "sst";
 import * as v from "valibot";
 
-import {
-  afterTransaction,
-  createTransaction,
-  useTransaction,
-} from "../drizzle/context";
+import { afterTransaction, useTransaction } from "../drizzle/context";
 import { poke as _poke } from "../replicache/poke";
 import { Api } from "../tenants/api";
 import { licensesTable, tenantsTable } from "../tenants/sql";
@@ -57,7 +53,7 @@ export namespace EntraId {
         if (!id || !userPrincipalName || !preferredName || !mail)
           throw new Error("missing graph user data");
 
-        return createTransaction(async (tx) => {
+        return useTransaction(async (tx) => {
           const user = await readUser(
             userPrincipalName,
             tid,

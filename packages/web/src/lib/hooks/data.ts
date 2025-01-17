@@ -29,6 +29,7 @@ import type { Product } from "@printworks/core/products/sql";
 import type { DeliveryOptions, Workflow } from "@printworks/core/rooms/shared";
 import type { Room } from "@printworks/core/rooms/sql";
 import type { TailscaleOauthClient } from "@printworks/core/tailscale/shared";
+import type { Registration } from "@printworks/core/tenants/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
 import type { User } from "@printworks/core/users/sql";
 import type { MutationOptions, Query } from "~/types";
@@ -132,6 +133,27 @@ export function useMutationOptions() {
   return useMemo(
     () =>
       ({
+        register: () => ({
+          mutationKey: ["tenants", "register"],
+          mutationFn: async (
+            registration: Omit<
+              Registration,
+              | "tailscaleOauthClientId"
+              | "tailscaleOauthClientSecret"
+              | "tailnetPapercutServerUri"
+              | "papercutServerAuthToken"
+            >,
+          ) => {
+            const res = await api.client.public.tenants.$post({
+              json: registration,
+            });
+            if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+
+            const data = await res.json();
+
+            return data;
+          },
+        }),
         papercutServerTailnetUri: () => ({
           mutationKey: ["services", "papercut", "server", "tailnet-uri"],
           mutationFn: async ({ tailnetUri }: UpdateServerTailnetUri) => {

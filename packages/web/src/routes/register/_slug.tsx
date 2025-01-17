@@ -2,9 +2,9 @@ import { ApplicationError } from "@printworks/core/utils/errors";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import * as v from "valibot";
 
-import { RegistrationWizardLayout } from "~/layouts/registration-wizard";
+import { RegistrationSlugLayout } from "~/layouts/registration/slug";
 
-export const Route = createFileRoute("/register/_wizard")({
+export const Route = createFileRoute("/register/_slug")({
   validateSearch: v.object({ slug: v.optional(v.string()) }),
   loaderDeps: ({ search }) => ({ search }),
   beforeLoad: async ({ context }) => {
@@ -56,5 +56,5 @@ export const Route = createFileRoute("/register/_wizard")({
       },
       staleTime: Infinity,
     }),
-  component: RegistrationWizardLayout,
+  component: RegistrationSlugLayout,
 });

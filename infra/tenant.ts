@@ -5,13 +5,13 @@ import { dsqlCluster } from "./db";
 import {
   appData,
   aws_,
-  cloudflare_,
   cloudflareApiTokenParameter,
   cloudfrontPrivateKey,
   cloudfrontPublicKey,
 } from "./misc";
 import { tenantsPrincipalOrgPath } from "./organization";
 import { invoicesProcessorDeadLetterQueue, tenantInfraQueue } from "./queues";
+import { appsyncEventApi } from "./realtime";
 import { injectLinkables, normalizePath } from "./utils";
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
@@ -213,6 +213,7 @@ export const tenantInfraFunction = new aws.lambda.Function(
         {
           AppData: appData,
           ApiFunction: apiFunction,
+          AppsyncEventApi: appsyncEventApi,
           Aws: aws_,
           CloudfrontPublicKey: cloudfrontPublicKey,
           Code: code,

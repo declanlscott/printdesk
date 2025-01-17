@@ -38,6 +38,13 @@ export class Api extends pulumi.ComponentResource {
   private _apiPolicy: aws.apigateway.RestApiPolicy;
   private _domainName: aws.apigateway.DomainName;
 
+  private _healthResource: aws.apigateway.Resource;
+  private _healthMethod: aws.apigateway.Method;
+  private _healthIntegration: aws.apigateway.Integration;
+  private _healthMethodResponse: aws.apigateway.MethodResponse;
+  private _healthIntegrationResponse: aws.apigateway.IntegrationResponse;
+  private _healthCorsRoute: CorsRoute;
+
   // NOTE: The well-known app-specific resources are following the registered IANA specification:
   // https://www.github.com/Vroo/well-known-uri-appspecific/blob/main/well-known-uri-for-application-specific-purposes.txt
   // https://www.iana.org/assignments/well-known-uris/well-known-uris.xhtml
@@ -206,6 +213,70 @@ export class Api extends pulumi.ComponentResource {
         domainName: args.domainName,
         endpointConfiguration: args.gateway.endpointConfiguration,
         regionalCertificateArn: args.certificateArn,
+      },
+      { parent: this },
+    );
+
+    this._healthResource = new aws.apigateway.Resource(
+      "HealthResource",
+      {
+        restApi: this._gateway.id,
+        parentId: this._gateway.rootResourceId,
+        pathPart: "health",
+      },
+      { parent: this },
+    );
+
+    this._healthMethod = new aws.apigateway.Method(
+      "HealthMethod",
+      {
+        restApi: this._gateway.id,
+        resourceId: this._healthResource.id,
+        httpMethod: "GET",
+        authorization: "NONE",
+      },
+      { parent: this },
+    );
+
+    this._healthIntegration = new aws.apigateway.Integration(
+      "HealthIntegration",
+      {
+        restApi: this._gateway.id,
+        resourceId: this._healthResource.id,
+        httpMethod: this._healthMethod.httpMethod,
+        type: "MOCK",
+      },
+      { parent: this },
+    );
+
+    this._healthMethodResponse = new aws.apigateway.MethodResponse(
+      "HealthMethodResponse",
+      {
+        restApi: this._gateway.id,
+        resourceId: this._healthResource.id,
+        httpMethod: this._healthMethod.httpMethod,
+        statusCode: "200",
+      },
+      { parent: this },
+    );
+
+    this._healthIntegrationResponse = new aws.apigateway.IntegrationResponse(
+      "HealthIntegrationResponse",
+      {
+        restApi: this._gateway.id,
+        resourceId: this._healthResource.id,
+        httpMethod: this._healthMethod.httpMethod,
+        statusCode: this._healthMethodResponse.statusCode,
+        responseTemplates: { "text/plain": "OK" },
+      },
+      { parent: this },
+    );
+
+    this._healthCorsRoute = new CorsRoute(
+      "HealthCoresRoute",
+      {
+        restApiId: this._gateway.id,
+        resourceId: this._healthResource.id,
       },
       { parent: this },
     );
@@ -744,6 +815,13 @@ export class Api extends pulumi.ComponentResource {
       .all([
         this._gateway,
 
+        this._healthResource,
+        this._healthMethod,
+        this._healthIntegration,
+        this._healthMethodResponse,
+        this._healthIntegrationResponse,
+        ...this._healthCorsRoute.triggers,
+
         this._wellKnownResource,
         this._appSpecificResource,
         ...this._wellKnownAppSpecificRoutes.flatMap(({ triggers }) => triggers),
@@ -846,6 +924,12 @@ export class Api extends pulumi.ComponentResource {
       role: this._role.id,
       apiPolicy: this._apiPolicy.id,
       domainName: this._domainName.id,
+
+      healthResource: this._healthResource.id,
+      healthMethod: this._healthMethod.id,
+      healthIntegration: this._healthIntegration.id,
+      healthMethodResponse: this._healthMethodResponse.id,
+      healthIntegrationResponse: this._healthIntegrationResponse.id,
 
       wellKnownResource: this._wellKnownResource.id,
       appSpecificResource: this._appSpecificResource.id,

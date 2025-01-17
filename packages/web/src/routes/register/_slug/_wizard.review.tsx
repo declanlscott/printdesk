@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { registrationWizardSchema } from "@printworks/core/tenants/shared";
+import { registrationSchema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
+import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Eye, EyeOff, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -8,8 +9,9 @@ import * as v from "valibot";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
+import { useMutationOptions } from "~/lib/hooks/data";
 import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { RegistrationStoreApi } from "~/lib/stores/registration";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent } from "~/ui/primitives/card";
 import {
@@ -29,23 +31,32 @@ import type {
   RegistrationWizardStep5,
 } from "@printworks/core/tenants/shared";
 
-export const Route = createFileRoute("/register/_wizard/review")({
+export const Route = createFileRoute("/register/_slug/_wizard/review")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const slug = useRouteApi("/register/_wizard").useLoaderData();
+  const slug = useRouteApi("/register/_slug").useLoaderData();
 
   const registration = useStore(
-    RegistrationWizardStoreApi.use(),
+    RegistrationStoreApi.use(),
     useShallow(({ actions: _actions, ...store }) => store),
   );
 
   const navigate = useNavigate();
 
+  const mutation = useMutation({
+    ...useMutationOptions().register(),
+    onSuccess: (data) => {
+      //
+    },
+  });
+
   function register() {
-    const result = v.safeParse(registrationWizardSchema, registration);
+    const result = v.safeParse(registrationSchema, registration);
     if (!result.success) return toast.error("Invalid registration data.");
+
+    mutation.mutate(result.output);
   }
 
   return (

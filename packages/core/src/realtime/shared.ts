@@ -53,5 +53,14 @@ export const messageSchema = v.variant("type", [
   v.object({ type: v.literal("ka") }),
   ...messageObjects("unsubscribe"),
 ]);
-
 export type Message = v.InferOutput<typeof messageSchema>;
+
+export const eventSchema = v.variant("type", [
+  v.object({ type: v.literal("infra"), success: v.literal(true) }),
+  v.object({
+    type: v.literal("infra"),
+    success: v.literal(false),
+    error: v.string(),
+  }),
+]);
+export type Event = v.InferOutput<typeof eventSchema>;

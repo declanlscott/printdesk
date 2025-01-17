@@ -103,56 +103,11 @@ export type RegistrationWizardStep5 = v.InferOutput<
   typeof registrationWizardStep5Schema
 >;
 
-export const registrationWizardSchema = v.object({
+export const registrationSchema = v.object({
   ...registrationWizardStep1Schema.entries,
   ...registrationWizardStep2Schema.entries,
   ...registrationWizardStep3Schema.entries,
   ...registrationWizardStep4Schema.entries,
   ...registrationWizardStep5Schema.entries,
 });
-export type RegistrationWizard = v.InferOutput<typeof registrationWizardSchema>;
-
-// const registrationStepsSchemas = [
-//   v.object({
-//     licenseKey: licenseSchema.entries.key,
-//     tenantName: tenantSchema.entries.name,
-//     tenantSlug: tenantSchema.entries.slug,
-//   }),
-//   v.object({
-//     oauth2ProviderType: oauth2ProvidersSchema.entries.type,
-//     oauth2ProviderId: oauth2ProvidersSchema.entries.id,
-//   }),
-//   v.object({
-//     papercutAuthToken: v.string(),
-//     tailscaleOauth2ClientId: v.string(),
-//     tailscaleOauth2ClientSecret: v.string(),
-//   }),
-// ] as const;
-
-// export const registrationStep1Schema = v.object({
-//   ...v.partial(registrationStepsSchemas[0]).entries,
-//   ...v.partial(registrationStepsSchemas[1]).entries,
-//   ...v.partial(registrationStepsSchemas[2]).entries,
-// });
-// export type RegistrationStep1 = v.InferOutput<typeof registrationStep1Schema>;
-
-// export const registrationStep2Schema = v.object({
-//   ...registrationStepsSchemas[0].entries,
-//   ...v.partial(registrationStepsSchemas[1]).entries,
-//   ...v.partial(registrationStepsSchemas[2]).entries,
-// });
-// export type RegistrationStep2 = v.InferOutput<typeof registrationStep2Schema>;
-
-// export const registrationStep3Schema = v.object({
-//   ...registrationStepsSchemas[0].entries,
-//   ...registrationStepsSchemas[1].entries,
-//   ...v.partial(registrationStepsSchemas[2]).entries,
-// });
-// export type RegistrationStep3 = v.InferOutput<typeof registrationStep3Schema>;
-
-// export const registrationSchema = v.object({
-//   ...registrationStepsSchemas[0].entries,
-//   ...registrationStepsSchemas[1].entries,
-//   ...registrationStepsSchemas[2].entries,
-// });
-// export type Registration = v.InferOutput<typeof registrationSchema>;
+export type Registration = v.InferOutput<typeof registrationSchema>;

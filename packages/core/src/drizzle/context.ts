@@ -13,8 +13,6 @@ export type Transaction = PgTransaction<
   ExtractTablesWithRelations<Record<string, never>>
 >;
 
-export type TxOrDb = Transaction | typeof db;
-
 export type TransactionContext<
   TEffect extends () => ReturnType<TEffect> = () => unknown,
 > = {
@@ -22,18 +20,26 @@ export type TransactionContext<
   effects: Array<TEffect>;
 };
 
+const contextName = "Transaction";
+
 export const TransactionContext =
-  Utils.createContext<TransactionContext>("Transaction");
+  Utils.createContext<TransactionContext>(contextName);
 
 export async function useTransaction<
-  TCallback extends (tx: TxOrDb) => ReturnType<TCallback>,
+  TCallback extends (tx: Transaction) => ReturnType<TCallback>,
 >(callback: TCallback) {
   try {
     const { tx } = TransactionContext.use();
 
     return callback(tx);
-  } catch {
-    return callback(db);
+  } catch (e) {
+    if (
+      e instanceof ApplicationError.MissingContext &&
+      e.contextName === contextName
+    )
+      return createTransaction(async (tx) => callback(tx));
+
+    throw e;
   }
 }
 

@@ -22,7 +22,7 @@ export default $config({
               : `${AWS_ORG_NAME}-dev`,
           region: AWS_REGION as aws.Region,
         },
-        awsx: true,
+        awsx: { version: "2.19.0" },
         cloudflare: true,
         azuread: true,
         "@pulumiverse/time": true,

@@ -10,22 +10,22 @@ import { useShallow } from "zustand/react/shallow";
 import { useApi } from "~/lib/hooks/api";
 import { useResource } from "~/lib/hooks/resource";
 import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationWizardStoreApi } from "~/lib/stores/registration-wizard";
+import { RegistrationStoreApi } from "~/lib/stores/registration";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
 import { Link } from "~/ui/primitives/link";
 import { Input } from "~/ui/primitives/text-field";
 
-export const Route = createFileRoute("/register/_wizard/1")({
+export const Route = createFileRoute("/register/_slug/_wizard/1")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const slug = useRouteApi("/register/_wizard").useLoaderData();
+  const slug = useRouteApi("/register/_slug").useLoaderData();
 
   const defaultValues = useStore(
-    RegistrationWizardStoreApi.use(),
+    RegistrationStoreApi.use(),
     useShallow(({ licenseKey, tenantName }) => ({
       licenseKey,
       tenantName,
@@ -34,7 +34,7 @@ function RouteComponent() {
 
   const api = useApi();
 
-  const { submit } = RegistrationWizardStoreApi.useActions();
+  const { complete } = RegistrationStoreApi.useActions();
 
   const navigate = useNavigate();
 
@@ -60,7 +60,7 @@ function RouteComponent() {
       const { isAvailable } = await res.json();
       if (!isAvailable) return toast.error("License key is not available");
 
-      submit({ step: 1, ...value });
+      complete({ step: 1, ...value });
 
       await navigate({ to: "/register/2", search: { slug } });
     },

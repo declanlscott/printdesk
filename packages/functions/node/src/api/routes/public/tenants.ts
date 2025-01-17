@@ -2,7 +2,10 @@ import { vValidator } from "@hono/valibot-validator";
 import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
 import { useTransaction } from "@printworks/core/drizzle/context";
 import { Tenants } from "@printworks/core/tenants";
-import { tenantSlugSchema } from "@printworks/core/tenants/shared";
+import {
+  registrationSchema,
+  tenantSlugSchema,
+} from "@printworks/core/tenants/shared";
 import { tenantsTable } from "@printworks/core/tenants/sql";
 import { HttpError } from "@printworks/core/utils/errors";
 import { eq } from "drizzle-orm";
@@ -10,9 +13,29 @@ import { Hono } from "hono";
 import * as R from "remeda";
 import * as v from "valibot";
 
-// TODO: Implement tenant registration
+import { sqsClient } from "~/api/middleware/aws";
 
 export default new Hono()
+  .post(
+    "/",
+    vValidator(
+      "json",
+      v.omit(registrationSchema, [
+        "tailscaleOauthClientId",
+        "tailscaleOauthClientSecret",
+        "tailnetPapercutServerUri",
+        "papercutServerAuthToken",
+      ]),
+    ),
+    sqsClient(),
+    async (c) => {
+      const { tenantId, dispatchId } = await Tenants.register(
+        c.req.valid("json"),
+      );
+
+      return c.json({ tenantId, dispatchId }, 201);
+    },
+  )
   .get(
     "/slug-availability/:value",
     vValidator("param", v.object({ value: tenantSlugSchema })),

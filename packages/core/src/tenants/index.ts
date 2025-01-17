@@ -82,7 +82,6 @@ export namespace Tenants {
           slug: registration.tenantSlug,
           name: registration.tenantName,
         })
-        .onConflictDoNothing()
         .returning({ id: tenantsTable.id })
         .then(R.first());
       if (!tenant) throw new Error("Failed to create tenant");

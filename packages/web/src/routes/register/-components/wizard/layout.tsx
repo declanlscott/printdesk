@@ -3,7 +3,10 @@ import { Link as AriaLink } from "react-aria-components";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
-import { useRegistrationWizardState } from "~/lib/hooks/registration";
+import {
+  useRegistrationMachine,
+  useRegistrationWizardState,
+} from "~/lib/hooks/registration";
 import { Label } from "~/ui/primitives/field";
 import { Link } from "~/ui/primitives/link";
 import { ProgressBar } from "~/ui/primitives/progress-bar";
@@ -12,6 +15,9 @@ import type { PropsWithChildren } from "react";
 
 export function RegistrationWizardLayout(props: PropsWithChildren) {
   const state = useRegistrationWizardState();
+  const slug = useRegistrationMachine().useSelector(
+    ({ context }) => context.tenantSlug,
+  );
 
   const progress = useMemo(() => {
     const step = state.split("step").slice(-1).at(0);
@@ -26,7 +32,7 @@ export function RegistrationWizardLayout(props: PropsWithChildren) {
       <div className="py-12">
         <div className="mx-auto grid max-w-sm gap-6">
           <div className="flex justify-center">
-            <AriaLink href={{ to: "/" }}>
+            <AriaLink href={{ to: "/", search: { slug } }}>
               <img src={logo} alt="Printworks" className="size-24" />
             </AriaLink>
           </div>

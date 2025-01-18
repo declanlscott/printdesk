@@ -14,7 +14,7 @@ import type { routePermissions } from "~/lib/access-control";
 import type { AuthenticatedEagerRouteId } from "~/types";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async ({ context, location }) => {
+  beforeLoad: async ({ context, location, search }) => {
     const authStore = context.authStoreApi.getState();
 
     const user = await (async () => {
@@ -28,12 +28,18 @@ export const Route = createFileRoute("/_authenticated")({
       } catch (e) {
         console.error(e);
 
-        throw redirect({ to: "/login", search: { from: location.href } });
+        throw redirect({
+          to: "/login",
+          search: { ...search, from: location.href },
+        });
       }
     })();
 
     if (context.replicache.status !== "ready")
-      throw redirect({ to: "/login", search: { from: location.href } });
+      throw redirect({
+        to: "/login",
+        search: { ...search, from: location.href },
+      });
 
     const replicache = context.replicache.client;
 

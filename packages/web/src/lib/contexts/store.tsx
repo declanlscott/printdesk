@@ -11,34 +11,38 @@ export function createStoreApiContext<
   TStore extends { actions: Record<string, any> },
   TInput,
 >(getStoreApi: (input: TInput) => StoreApi<TStore>) {
-  const context = createContext<StoreApi<TStore> | null>(null);
+  const Context = createContext<StoreApi<TStore> | null>(null);
 
   function Provider(props: PropsWithChildren<{ input: TInput }>) {
     const [storeApi] = useState(() => getStoreApi(props.input));
 
     return (
-      <context.Provider value={storeApi}>{props.children}</context.Provider>
+      <Context.Provider value={storeApi}>{props.children}</Context.Provider>
     );
   }
 
   function use() {
-    const storeApi = useContext(context);
+    const storeApi = useContext(Context);
 
     if (!storeApi) throw new ApplicationError.MissingContextProvider();
 
     return storeApi;
   }
 
+  const useSelector = <
+    TSelector extends (store: TStore) => ReturnType<TSelector>,
+  >(
+    selector: TSelector,
+  ) => useStore(use(), useShallow(selector));
+
   const useActions = () =>
-    useStore(
-      use(),
-      useShallow(({ actions }) => actions as TStore["actions"]),
-    );
+    useSelector(({ actions }) => actions as TStore["actions"]);
 
   return {
-    context,
+    Context,
     Provider,
     use,
+    useSelector,
     useActions,
   };
 }

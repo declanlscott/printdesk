@@ -1,17 +1,8 @@
 import { useState } from "react";
-import { registrationSchema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
-import { useMutation } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, Eye, EyeOff, Send } from "lucide-react";
-import { toast } from "sonner";
-import * as v from "valibot";
-import { useStore } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 
-import { useMutationOptions } from "~/lib/hooks/data";
-import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationStoreApi } from "~/lib/stores/registration";
+import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent } from "~/ui/primitives/card";
 import {
@@ -23,41 +14,10 @@ import {
 import { Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
-import type {
-  RegistrationWizardStep1,
-  RegistrationWizardStep2,
-  RegistrationWizardStep3,
-  RegistrationWizardStep4,
-  RegistrationWizardStep5,
-} from "@printworks/core/tenants/shared";
+export function RegistrationWizardReview() {
+  const registrationMachine = useRegistrationMachine();
 
-export const Route = createFileRoute("/register/_slug/_wizard/review")({
-  component: RouteComponent,
-});
-
-function RouteComponent() {
-  const slug = useRouteApi("/register/_slug").useLoaderData();
-
-  const registration = useStore(
-    RegistrationStoreApi.use(),
-    useShallow(({ actions: _actions, ...store }) => store),
-  );
-
-  const navigate = useNavigate();
-
-  const mutation = useMutation({
-    ...useMutationOptions().register(),
-    onSuccess: (data) => {
-      //
-    },
-  });
-
-  function register() {
-    const result = v.safeParse(registrationSchema, registration);
-    if (!result.success) return toast.error("Invalid registration data.");
-
-    mutation.mutate(result.output);
-  }
+  const actorRef = registrationMachine.useActorRef();
 
   return (
     <div className="grid gap-4">
@@ -66,40 +26,22 @@ function RouteComponent() {
       <Card>
         <CardContent className="grid gap-4 py-2">
           <DisclosureGroup>
-            <Step1
-              licenseKey={registration.licenseKey}
-              tenantName={registration.tenantName}
-              tenantSlug={registration.tenantSlug}
-            />
+            <Step1 />
 
-            <Step2
-              userOauthProviderType={registration.userOauthProviderType}
-              userOauthProviderId={registration.userOauthProviderId}
-            />
+            <Step2 />
 
-            <Step3
-              tailscaleOauthClientId={registration.tailscaleOauthClientId}
-              tailscaleOauthClientSecret={
-                registration.tailscaleOauthClientSecret
-              }
-            />
+            <Step3 />
 
-            <Step4
-              tailnetPapercutServerUri={registration.tailnetPapercutServerUri}
-              papercutServerAuthToken={registration.papercutServerAuthToken}
-            />
+            <Step4 />
 
-            <Step5
-              papercutSyncSchedule={registration.papercutSyncSchedule}
-              timezone={registration.timezone}
-            />
+            <Step5 />
           </DisclosureGroup>
         </CardContent>
       </Card>
 
       <div className="flex justify-between">
         <Button
-          onPress={() => navigate({ to: "/register/5", search: { slug } })}
+          onPress={() => actorRef.send({ type: "wizard.back" })}
           className="gap-2"
           variant="secondary"
         >
@@ -107,7 +49,10 @@ function RouteComponent() {
           Back
         </Button>
 
-        <Button className="gap-2" onPress={register}>
+        <Button
+          className="gap-2"
+          onPress={() => actorRef.send({ type: "wizard.register" })}
+        >
           <Send className="size-5" />
           Register
         </Button>
@@ -116,7 +61,14 @@ function RouteComponent() {
   );
 }
 
-function Step1(props: RegistrationWizardStep1) {
+function Step1() {
+  const { licenseKey, tenantName, tenantSlug } =
+    useRegistrationMachine().useSelector(({ context }) => ({
+      licenseKey: context.licenseKey,
+      tenantName: context.tenantName,
+      tenantSlug: context.tenantSlug,
+    }));
+
   return (
     <Disclosure id={1}>
       <DisclosureHeader>1. Basic Information</DisclosureHeader>
@@ -125,26 +77,32 @@ function Step1(props: RegistrationWizardStep1) {
         <div className="grid gap-2">
           <Label>License Key</Label>
 
-          <Input disabled value={props.licenseKey} />
+          <Input disabled value={licenseKey} />
         </div>
 
         <div className="grid gap-2">
           <Label>Name</Label>
 
-          <Input disabled value={props.tenantName} />
+          <Input disabled value={tenantName} />
         </div>
 
         <div className="grid gap-2">
           <Label>Slug</Label>
 
-          <Input disabled value={props.tenantSlug} />
+          <Input disabled value={tenantSlug} />
         </div>
       </DisclosurePanel>
     </Disclosure>
   );
 }
 
-function Step2(props: RegistrationWizardStep2) {
+function Step2() {
+  const { userOauthProviderType, userOauthProviderId } =
+    useRegistrationMachine().useSelector(({ context }) => ({
+      userOauthProviderType: context.userOauthProviderType,
+      userOauthProviderId: context.userOauthProviderId,
+    }));
+
   const userOauthProviderMap = {
     [Constants.ENTRA_ID]: "Microsoft Entra ID",
     [Constants.GOOGLE]: "Google",
@@ -161,14 +119,14 @@ function Step2(props: RegistrationWizardStep2) {
 
             <Input
               disabled
-              value={userOauthProviderMap[props.userOauthProviderType]}
+              value={userOauthProviderMap[userOauthProviderType]}
             />
           </div>
 
           <div className="grid gap-2">
             <Label>Tenant ID</Label>
 
-            <Input disabled value={props.userOauthProviderId} />
+            <Input disabled value={userOauthProviderId} />
           </div>
         </DisclosurePanel>
       </DisclosurePanel>
@@ -176,7 +134,13 @@ function Step2(props: RegistrationWizardStep2) {
   );
 }
 
-function Step3(props: RegistrationWizardStep3) {
+function Step3() {
+  const { tailscaleOauthClientId, tailscaleOauthClientSecret } =
+    useRegistrationMachine().useSelector(({ context }) => ({
+      tailscaleOauthClientId: context.tailscaleOauthClientId,
+      tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
+    }));
+
   const [isSecretVisible, setIsSecretVisible] = useState(() => false);
 
   return (
@@ -187,14 +151,18 @@ function Step3(props: RegistrationWizardStep3) {
         <div className="grid gap-2">
           <Label>Client ID</Label>
 
-          <Input disabled value={props.tailscaleOauthClientId} />
+          <Input disabled value={tailscaleOauthClientId} />
         </div>
 
         <div className="grid gap-2">
           <Label>Client Secret</Label>
 
           <div className="flex gap-2">
-            <Input disabled value={props.tailscaleOauthClientSecret} />
+            <Input
+              type={isSecretVisible ? "text" : "password"}
+              disabled
+              value={tailscaleOauthClientSecret}
+            />
 
             <Button
               variant="ghost"
@@ -216,7 +184,13 @@ function Step3(props: RegistrationWizardStep3) {
   );
 }
 
-function Step4(props: RegistrationWizardStep4) {
+function Step4() {
+  const { tailnetPapercutServerUri, papercutServerAuthToken } =
+    useRegistrationMachine().useSelector(({ context }) => ({
+      tailnetPapercutServerUri: context.tailnetPapercutServerUri,
+      papercutServerAuthToken: context.papercutServerAuthToken,
+    }));
+
   const [isTokenVisible, setIsTokenVisible] = useState(() => false);
 
   return (
@@ -227,14 +201,18 @@ function Step4(props: RegistrationWizardStep4) {
         <div className="grid gap-2">
           <Label>Tailnet PaperCut Server URL</Label>
 
-          <Input disabled value={props.tailnetPapercutServerUri} />
+          <Input disabled value={tailnetPapercutServerUri} />
         </div>
 
         <div className="grid gap-2">
           <Label>PaperCut Server Auth Token</Label>
 
           <div className="flex gap-2">
-            <Input disabled value={props.papercutServerAuthToken} />
+            <Input
+              type={isTokenVisible ? "text" : "password"}
+              disabled
+              value={papercutServerAuthToken}
+            />
 
             <Button
               variant="ghost"
@@ -256,7 +234,13 @@ function Step4(props: RegistrationWizardStep4) {
   );
 }
 
-function Step5(props: RegistrationWizardStep5) {
+function Step5() {
+  const { papercutSyncSchedule, timezone } =
+    useRegistrationMachine().useSelector(({ context }) => ({
+      papercutSyncSchedule: context.papercutSyncSchedule,
+      timezone: context.timezone,
+    }));
+
   return (
     <Disclosure id={5}>
       <DisclosureHeader>5. PaperCut User Sync</DisclosureHeader>
@@ -265,17 +249,13 @@ function Step5(props: RegistrationWizardStep5) {
         <div className="grid gap-2">
           <Label>Cron Expression</Label>
 
-          <Input
-            disabled
-            value={props.papercutSyncSchedule}
-            className="font-mono"
-          />
+          <Input disabled value={papercutSyncSchedule} className="font-mono" />
         </div>
 
         <div className="grid gap-2">
           <Label>Timezone</Label>
 
-          <Input disabled value={props.timezone} />
+          <Input disabled value={timezone} />
         </div>
       </DisclosurePanel>
     </Disclosure>

@@ -1,22 +1,25 @@
+import { useMemo } from "react";
 import { Link as AriaLink } from "react-aria-components";
-import { Outlet, useLocation } from "@tanstack/react-router";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
+import { useRegistrationWizardState } from "~/lib/hooks/registration";
 import { Label } from "~/ui/primitives/field";
 import { Link } from "~/ui/primitives/link";
 import { ProgressBar } from "~/ui/primitives/progress-bar";
 
-export function RegistrationWizardLayout() {
-  const progress = useLocation({
-    select: (location) => {
-      const step = location.pathname.split("/register/").slice(-1).at(0);
-      if (!step) return NaN;
-      if (step.toLowerCase() === "review") return 100;
+import type { PropsWithChildren } from "react";
 
-      return (parseInt(step) / 6) * 100;
-    },
-  });
+export function RegistrationWizardLayout(props: PropsWithChildren) {
+  const state = useRegistrationWizardState();
+
+  const progress = useMemo(() => {
+    const step = state.split("step").slice(-1).at(0);
+    if (!step) return NaN;
+    if (step.toLowerCase() === "review") return 100;
+
+    return (parseInt(step) / 6) * 100;
+  }, [state]);
 
   return (
     <div className="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
@@ -48,7 +51,7 @@ export function RegistrationWizardLayout() {
             </ProgressBar>
           ) : null}
 
-          <Outlet />
+          {props.children}
 
           <p className="text-sm">
             Already have an organization? <Link href={{ to: "/" }}>Login</Link>

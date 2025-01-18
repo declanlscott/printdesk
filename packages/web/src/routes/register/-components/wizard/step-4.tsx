@@ -2,50 +2,34 @@ import { useState } from "react";
 import { Button as AriaButton } from "react-aria-components";
 import { registrationWizardStep4Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { useStore } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 
 import { useCopyToClipboard } from "~/lib/hooks/copy-to-clipboard";
-import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationStoreApi } from "~/lib/stores/registration";
+import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { linkStyles } from "~/styles/components/primitives/link";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
-export const Route = createFileRoute("/register/_slug/_wizard/4")({
-  component: RouteComponent,
-});
+export function RegistrationWizardStep4() {
+  const registrationMachine = useRegistrationMachine();
 
-function RouteComponent() {
-  const slug = useRouteApi("/register/_slug").useLoaderData();
+  const actorRef = registrationMachine.useActorRef();
 
-  const defaultValues = useStore(
-    RegistrationStoreApi.use(),
-    useShallow((store) => ({
-      tailnetPapercutServerUri: store.tailnetPapercutServerUri,
-      papercutServerAuthToken: store.papercutServerAuthToken,
-    })),
-  );
-
-  const { complete } = RegistrationStoreApi.useActions();
-
-  const navigate = useNavigate();
+  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+    tailnetPapercutServerUri: context.tailnetPapercutServerUri,
+    papercutServerAuthToken: context.papercutServerAuthToken,
+  }));
 
   const form = useForm({
     validators: {
       onSubmit: registrationWizardStep4Schema,
     },
     defaultValues,
-    onSubmit: async ({ value }) => {
-      complete({ step: 4, ...value });
-
-      await navigate({ to: "/register/5", search: { slug } });
-    },
+    onSubmit: async ({ value }) =>
+      actorRef.send({ type: "wizard.step4.next", ...value }),
   });
 
   const [isTokenVisible, setIsTokenVisible] = useState(() => false);
@@ -55,8 +39,7 @@ function RouteComponent() {
       onSubmit={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // await form.handleSubmit();
-        await navigate({ to: "/register/5", search: { slug } });
+        await form.handleSubmit();
       }}
       className="grid gap-4"
     >
@@ -185,7 +168,7 @@ function RouteComponent() {
 
       <div className="flex justify-between">
         <Button
-          onPress={() => navigate({ to: "/register/3", search: { slug } })}
+          onPress={() => actorRef.send({ type: "wizard.back" })}
           className="gap-2"
           variant="secondary"
         >

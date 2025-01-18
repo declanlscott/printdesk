@@ -2,13 +2,9 @@ import { Text } from "react-aria-components";
 import { registrationWizardStep2Schema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { useStore } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 
-import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationStoreApi } from "~/lib/stores/registration";
+import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
@@ -24,35 +20,23 @@ import { Input } from "~/ui/primitives/text-field";
 
 import type { RegistrationWizardStep2 } from "@printworks/core/tenants/shared";
 
-export const Route = createFileRoute("/register/_slug/_wizard/2")({
-  component: RouteComponent,
-});
+export function RegistrationWizardStep2() {
+  const registrationMachine = useRegistrationMachine();
 
-function RouteComponent() {
-  const slug = useRouteApi("/register/_slug").useLoaderData();
+  const actorRef = registrationMachine.useActorRef();
 
-  const defaultValues = useStore(
-    RegistrationStoreApi.use(),
-    useShallow((store) => ({
-      userOauthProviderType: store.userOauthProviderType,
-      userOauthProviderId: store.userOauthProviderId,
-    })),
-  );
-
-  const { complete } = RegistrationStoreApi.useActions();
-
-  const navigate = useNavigate();
+  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+    userOauthProviderType: context.userOauthProviderType,
+    userOauthProviderId: context.userOauthProviderId,
+  }));
 
   const form = useForm({
     validators: {
       onSubmit: registrationWizardStep2Schema,
     },
     defaultValues,
-    onSubmit: async ({ value }) => {
-      complete({ step: 2, ...value });
-
-      await navigate({ to: "/register/3", search: { slug } });
-    },
+    onSubmit: async ({ value }) =>
+      actorRef.send({ type: "wizard.step2.next", ...value }),
   });
 
   return (
@@ -60,8 +44,7 @@ function RouteComponent() {
       onSubmit={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // await form.handleSubmit();
-        await navigate({ to: "/register/3", search: { slug } });
+        await form.handleSubmit();
       }}
       className="grid gap-4"
     >
@@ -166,7 +149,7 @@ function RouteComponent() {
 
       <div className="flex justify-between">
         <Button
-          onPress={() => navigate({ to: "/register/1", search: { slug } })}
+          onPress={() => actorRef.send({ type: "wizard.back" })}
           className="gap-2"
           variant="secondary"
         >

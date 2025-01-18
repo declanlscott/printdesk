@@ -8,13 +8,9 @@ import {
   registrationWizardStep5Schema,
 } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, ChevronsUpDown } from "lucide-react";
-import { useStore } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 
-import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationStoreApi } from "~/lib/stores/registration";
+import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { collectionItem } from "~/lib/ui";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
@@ -29,24 +25,15 @@ import {
 import { FieldGroup, Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
-export const Route = createFileRoute("/register/_slug/_wizard/5")({
-  component: RouteComponent,
-});
+export function RegistrationWizardStep5() {
+  const registrationMachine = useRegistrationMachine();
 
-function RouteComponent() {
-  const slug = useRouteApi("/register/_slug").useLoaderData();
+  const actorRef = registrationMachine.useActorRef();
 
-  const defaultValues = useStore(
-    RegistrationStoreApi.use(),
-    useShallow((store) => ({
-      papercutSyncSchedule: store.papercutSyncSchedule,
-      timezone: store.timezone,
-    })),
-  );
-
-  const { complete } = RegistrationStoreApi.useActions();
-
-  const navigate = useNavigate();
+  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+    papercutSyncSchedule: context.papercutSyncSchedule,
+    timezone: context.timezone,
+  }));
 
   const form = useForm({
     validators: {
@@ -55,11 +42,12 @@ function RouteComponent() {
     defaultValues,
     onSubmit: async ({
       value: { papercutSyncSchedule = defaultPapercutSyncSchedule, ...value },
-    }) => {
-      complete({ step: 5, papercutSyncSchedule, ...value });
-
-      await navigate({ to: "/register/review", search: { slug } });
-    },
+    }) =>
+      actorRef.send({
+        type: "wizard.step5.next",
+        papercutSyncSchedule,
+        ...value,
+      }),
   });
 
   const timezones = useMemo(
@@ -80,8 +68,7 @@ function RouteComponent() {
       onSubmit={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        // await form.handleSubmit();
-        await navigate({ to: "/register/review", search: { slug } });
+        await form.handleSubmit();
       }}
       className="grid gap-4"
     >
@@ -184,7 +171,7 @@ function RouteComponent() {
 
       <div className="flex justify-between">
         <Button
-          onPress={() => navigate({ to: "/register/4", search: { slug } })}
+          onPress={() => actorRef.send({ type: "wizard.back" })}
           className="gap-2"
           variant="secondary"
         >

@@ -1,42 +1,30 @@
 import { registrationWizardStep1Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import * as v from "valibot";
-import { useStore } from "zustand";
-import { useShallow } from "zustand/react/shallow";
 
 import { useApi } from "~/lib/hooks/api";
+import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { useResource } from "~/lib/hooks/resource";
-import { useRouteApi } from "~/lib/hooks/route-api";
-import { RegistrationStoreApi } from "~/lib/stores/registration";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
 import { Link } from "~/ui/primitives/link";
 import { Input } from "~/ui/primitives/text-field";
 
-export const Route = createFileRoute("/register/_slug/_wizard/1")({
-  component: RouteComponent,
-});
+export function RegistrationWizardStep1() {
+  const registrationMachine = useRegistrationMachine();
 
-function RouteComponent() {
-  const slug = useRouteApi("/register/_slug").useLoaderData();
+  const actorRef = registrationMachine.useActorRef();
 
-  const defaultValues = useStore(
-    RegistrationStoreApi.use(),
-    useShallow(({ licenseKey, tenantName }) => ({
-      licenseKey,
-      tenantName,
-    })),
-  );
+  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+    licenseKey: context.licenseKey,
+    tenantName: context.tenantName,
+    tenantSlug: context.tenantSlug,
+  }));
 
   const api = useApi();
-
-  const { complete } = RegistrationStoreApi.useActions();
-
-  const navigate = useNavigate();
 
   const form = useForm({
     validators: {
@@ -60,9 +48,7 @@ function RouteComponent() {
       const { isAvailable } = await res.json();
       if (!isAvailable) return toast.error("License key is not available");
 
-      complete({ step: 1, ...value });
-
-      await navigate({ to: "/register/2", search: { slug } });
+      actorRef.send({ type: "wizard.step1.next", ...value });
     },
   });
 
@@ -73,8 +59,7 @@ function RouteComponent() {
       onSubmit={async (e) => {
         e.preventDefault();
         e.stopPropagation();
-        await navigate({ to: "/register/2", search: { slug } });
-        // await form.handleSubmit();
+        await form.handleSubmit();
       }}
       className="grid gap-4"
     >
@@ -151,19 +136,30 @@ function RouteComponent() {
               A unique identifier for your organization, used for accessing the
               application:
               <Link href={{ to: "/" }} target="_blank">
-                {slug.toLowerCase()}.{AppData.domainName.fullyQualified}
+                {defaultValues.tenantSlug.toLowerCase()}.
+                {AppData.domainName.fullyQualified}
               </Link>
             </CardDescription>
 
-            <Input value={slug} disabled />
+            <Input value={defaultValues.tenantSlug} disabled />
           </div>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-          {(canSubmit) => (
-            <Button type="submit" className="gap-2" isDisabled={!canSubmit}>
+        <form.Subscribe
+          selector={({ canSubmit, isSubmitting }) => ({
+            canSubmit,
+            isSubmitting,
+          })}
+        >
+          {({ canSubmit, isSubmitting }) => (
+            <Button
+              type="submit"
+              className="gap-2"
+              isDisabled={!canSubmit}
+              isLoading={isSubmitting}
+            >
               Next
               <ArrowRight className="size-5" />
             </Button>

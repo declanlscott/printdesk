@@ -1,7 +1,7 @@
 import { getTableName } from "drizzle-orm";
 import * as R from "remeda";
 
-import { MiscellaneousError } from "../utils/errors";
+import { ApplicationError } from "../utils/errors";
 import { syncedTables } from "../utils/tables";
 import { replicacheClientsTableName } from "./shared";
 
@@ -62,7 +62,7 @@ export function buildCvr(
         return nextCvr;
       }, {} as ClientViewRecord);
     default:
-      throw new MiscellaneousError.NonExhaustiveValue(variant);
+      throw new ApplicationError.NonExhaustiveValue(variant);
   }
 }
 

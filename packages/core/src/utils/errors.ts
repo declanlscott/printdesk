@@ -75,6 +75,13 @@ export namespace ApplicationError {
       );
     }
   }
+
+  export class NonExhaustiveValue extends ApplicationError.Error {
+    constructor(value: never) {
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      super(`Non-exhaustive value: ${value}`);
+    }
+  }
 }
 
 export namespace HttpError {
@@ -222,15 +229,6 @@ export namespace HttpError {
 
     constructor(message = "Service unavailable") {
       super(message, 503);
-    }
-  }
-}
-
-export namespace MiscellaneousError {
-  export class NonExhaustiveValue extends globalThis.Error {
-    constructor(value: never) {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      super(`Non-exhaustive value: ${value}`);
     }
   }
 }

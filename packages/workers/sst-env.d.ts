@@ -166,6 +166,14 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "SitePassword": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "SiteUsername": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "TenantInfraDeadLetterQueue": {
       "type": "sst.aws.Queue"
       "url": string
@@ -182,14 +190,6 @@ declare module "sst" {
     "Web": {
       "type": "sst.aws.StaticSite"
       "url": string
-    }
-    "WebPassword": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "WebUsername": {
-      "type": "sst.sst.Secret"
-      "value": string
     }
     "Www": {
       "type": "sst.aws.Astro"

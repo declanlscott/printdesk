@@ -1,17 +1,9 @@
 import { api } from "./api";
-import { auth } from "./auth";
+import { auth, siteEdgeProtection } from "./auth";
 import { fqdn } from "./dns";
 import { appData, replicacheLicenseKey } from "./misc";
 import { injectLinkables } from "./utils";
 import { www } from "./www";
-
-export const webUsername = new sst.Secret("WebUsername");
-export const webPassword = new sst.Secret("WebPassword");
-
-const basicAuth = $output([webUsername.value, webPassword.value]).apply(
-  ([username, password]) =>
-    Buffer.from(`${username}:${password}`).toString("base64"),
-);
 
 export const web = new sst.aws.StaticSite("Web", {
   path: "packages/web",
@@ -23,25 +15,7 @@ export const web = new sst.aws.StaticSite("Web", {
     name: $interpolate`*.${fqdn}`,
     dns: sst.cloudflare.dns(),
   },
-  edge:
-    $app.stage !== "production"
-      ? {
-          viewerRequest: {
-            injection: $interpolate`
-if (
-  !event.request.headers.authorization ||
-  event.request.headers.authorization.value !== "Basic ${basicAuth}"
-) {
-  return {
-    statusCode: 401,
-    headers: {
-      "www-authenticate": { value: "Basic" }
-    }
-  };
-}`,
-          },
-        }
-      : undefined,
+  edge: siteEdgeProtection,
   environment: injectLinkables(
     {
       AppData: appData,

@@ -98,3 +98,33 @@ export const entraIdApplicationRedirectUris =
     type: "Web",
     redirectUris: [$interpolate`${auth.url}/callback`],
   });
+
+export const siteUsername = new sst.Secret("SiteUsername");
+export const sitePassword = new sst.Secret("SitePassword");
+
+export const siteBasicAuth = $output([
+  siteUsername.value,
+  sitePassword.value,
+]).apply(([username, password]) =>
+  Buffer.from(`${username}:${password}`).toString("base64"),
+);
+
+export const siteEdgeProtection =
+  $app.stage !== "production"
+    ? {
+        viewerRequest: {
+          injection: $interpolate`
+if (
+  !event.request.headers.authorization ||
+  event.request.headers.authorization.value !== "Basic ${siteBasicAuth}"
+) {
+  return {
+    statusCode: 401,
+    headers: {
+      "www-authenticate": { value: "Basic" }
+    }
+  };
+}`,
+        },
+      }
+    : undefined;

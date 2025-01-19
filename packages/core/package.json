@@ -18,10 +18,10 @@
     "@azure/msal-node": "^2.16.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@microsoft/microsoft-graph-types": "^2.40.0",
+    "@msgpack/msgpack": "3.0.0-beta2",
     "@smithy/protocol-http": "^5.0.1",
     "@smithy/signature-v4": "^5.0.1",
     "fast-xml-parser": "^4.5.1",
-    "msgpackr": "^1.11.2",
     "nanoid": "^5.0.9",
     "pg": "^8.13.1"
   },

@@ -1,6 +1,6 @@
+import { decode, encode } from "@msgpack/msgpack";
 import { getTableColumns, sql } from "drizzle-orm";
 import { char, customType, timestamp } from "drizzle-orm/pg-core";
-import { Decoder, Encoder } from "msgpackr";
 import * as v from "valibot";
 
 import { Constants } from "../utils/constants";
@@ -67,9 +67,6 @@ export type OmitTimestamps<TTable> = Omit<TTable, keyof typeof timestamps>;
 export const getRowVersionColumn = (tableName: string) =>
   sql<number>`"${tableName}"."${Constants.ROW_VERSION_COLUMN_NAME}"`;
 
-const encoder = new Encoder();
-const decoder = new Decoder();
-
 export const customJsonb = <
   TMaybeSchema extends v.GenericSchema | undefined = undefined,
   TData = TMaybeSchema extends v.GenericSchema
@@ -82,9 +79,9 @@ export const customJsonb = <
 ) =>
   customType<{ data: TData; driverData: Buffer }>({
     dataType: () => "bytea",
-    toDriver: (value) => Buffer.from(encoder.encode(value)),
+    toDriver: (value) => Buffer.from(encode(value)),
     fromDriver(value) {
-      const decoded = decoder.decode(value);
+      const decoded = decode(value);
 
       if (schema) return v.parse(schema, decoded) as TData;
 

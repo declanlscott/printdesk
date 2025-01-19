@@ -92,9 +92,11 @@ export class Events extends pulumi.ComponentResource {
             statements: [
               {
                 actions: [
-                  "sqs:ReceiveMessage",
+                  "sqs:ChangeMessageVisibility",
                   "sqs:DeleteMessage",
                   "sqs:GetQueueAttributes",
+                  "sqs:GetQueueUrl",
+                  "sqs:ReceiveMessage",
                 ],
                 resources: [args.events.invoicesProcessor.queueArn],
               },

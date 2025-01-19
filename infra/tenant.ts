@@ -126,30 +126,15 @@ export const code = new sst.Linkable("Code", {
   },
 });
 
-const tenantInfraSrc = await command.local.run({
-  dir: normalizePath("packages/functions/node"),
-  command: 'echo "Archiving tenant infra source code..."',
-  archivePaths: [
-    "src/tenant/infra/**",
-    "!src/tenant/infra/dist/**",
-    "package.json",
-  ],
-});
-const tenantInfraBuilder = new command.local.Command("TenantInfraBuilder", {
-  dir: normalizePath("packages/functions/node"),
-  create: "pnpm run infra:build",
-  triggers: [tenantInfraSrc.archive],
-});
-
 export const tenantInfraFunctionImage = new awsx.ecr.Image(
   "TenantInfraFunctionImage",
   {
     repositoryUrl: repository.url,
-    context: normalizePath("packages/functions/node/src/tenant/infra"),
+    context: $cli.paths.root,
     platform: "linux/arm64",
     imageTag: "latest",
+    dockerfile: normalizePath("infra.Dockerfile"),
   },
-  { dependsOn: [tenantInfraBuilder] },
 );
 
 export const tenantInfraFunctionRole = new aws.iam.Role(
@@ -165,6 +150,16 @@ new aws.iam.RolePolicy("TenantInfraFunctionRoleInlinePolicy", {
   role: tenantInfraFunctionRole.name,
   policy: aws.iam.getPolicyDocumentOutput({
     statements: [
+      {
+        actions: [
+          "sqs:ChangeMessageVisibility",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes",
+          "sqs:GetQueueUrl",
+          "sqs:ReceiveMessage",
+        ],
+        resources: [tenantInfraQueue.arn],
+      },
       {
         actions: ["s3:*"],
         resources: [pulumiBucket.arn, $interpolate`${pulumiBucket.arn}/*`],
@@ -226,11 +221,18 @@ export const tenantInfraFunction = new aws.lambda.Function(
     },
   },
 );
+new aws.lambda.EventSourceMapping("TenantInfraFunctionEventSourceMapping", {
+  eventSourceArn: tenantInfraQueue.arn,
+  functionName: tenantInfraFunction.name,
+  functionResponseTypes: ["ReportBatchItemFailures"],
+  batchSize: 10,
+  maximumBatchingWindowInSeconds: 0,
+});
 
 export const tenantInfraDispatcher = new sst.aws.Function(
   "TenantInfraDispatcher",
   {
-    handler: "packages/functions/node/src/tenant/infra-dispatcher.handler",
+    handler: "packages/functions/node/src/tenant-infra-dispatcher.handler",
     url: { authorization: "iam" },
     link: [dsqlCluster, tenantInfraQueue],
   },

@@ -190,6 +190,11 @@ export const tenantInfraLogGroup = new aws.cloudwatch.LogGroup(
   },
 );
 
+const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", {
+  length: 32,
+  special: true,
+});
+
 export const tenantInfraFunction = new aws.lambda.Function(
   "TenantInfraFunction",
   {
@@ -199,25 +204,30 @@ export const tenantInfraFunction = new aws.lambda.Function(
     role: tenantInfraFunctionRole.arn,
     timeout: 900,
     architectures: ["arm64"],
+    memorySize: 1024,
+    ephemeralStorage: { size: 1024 },
     loggingConfig: {
       logFormat: "Text",
       logGroup: tenantInfraLogGroup.name,
     },
     environment: {
-      variables: injectLinkables(
-        {
-          AppData: appData,
-          ApiFunction: apiFunction,
-          AppsyncEventApi: appsyncEventApi,
-          Aws: aws_,
-          CloudfrontPublicKey: cloudfrontPublicKey,
-          Code: code,
-          InvoicesProcessor: invoicesProcessor,
-          PapercutSync: papercutSync,
-          PulumiBucket: pulumiBucket,
-        },
-        "FUNCTION_RESOURCE_",
-      ),
+      variables: {
+        ...injectLinkables(
+          {
+            AppData: appData,
+            ApiFunction: apiFunction,
+            AppsyncEventApi: appsyncEventApi,
+            Aws: aws_,
+            CloudfrontPublicKey: cloudfrontPublicKey,
+            Code: code,
+            InvoicesProcessor: invoicesProcessor,
+            PapercutSync: papercutSync,
+            PulumiBucket: pulumiBucket,
+          },
+          "FUNCTION_RESOURCE_",
+        ),
+        PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
+      },
     },
   },
 );

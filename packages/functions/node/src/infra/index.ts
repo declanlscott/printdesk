@@ -65,6 +65,8 @@ export const handler: SQSHandler = async (event) =>
               JSON.stringify({
                 type: "infra",
                 success: false,
+                retrying:
+                  parseInt(record.attributes.ApproximateReceiveCount) < 3,
                 error:
                   e instanceof Error
                     ? e.message
@@ -88,16 +90,17 @@ async function processRecord(record: SQSRecord, cloudflareApiToken: string) {
       tenantId: nanoIdSchema,
       ...tenantInfraProgramInputSchema.entries,
     }),
-    record.body,
+    JSON.parse(record.body),
   );
   console.log("Successfully parsed record body");
 
   console.log("Initializing stack ...");
   const projectName = `${AppData.name}-${AppData.stage}-tenants`;
-  const stack = await pulumi.automation.LocalWorkspace.createOrSelectStack(
+  const stackName = `${AppData.name}-${AppData.stage}-tenant-${tenantId}`;
+  const stack = await LocalWorkspace.createOrSelectStack(
     {
       projectName,
-      stackName: `tenant-${tenantId}`,
+      stackName,
       program: getProgram(tenantId, programInput),
     },
     {

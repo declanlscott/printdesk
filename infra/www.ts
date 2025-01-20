@@ -1,5 +1,4 @@
-import { siteEdgeProtection } from "infra/auth";
-
+import { siteEdgeProtection } from "./auth";
 import { fqdn } from "./dns";
 
 export const www = new sst.aws.Astro("Www", {

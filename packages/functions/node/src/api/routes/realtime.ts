@@ -1,5 +1,8 @@
 import { vValidator } from "@hono/valibot-validator";
-import { Realtime } from "@printworks/core/realtime";
+import {
+  getRealtimeAuth,
+  getRealtimeUrl,
+} from "@printworks/core/realtime/properties";
 import { Api } from "@printworks/core/tenants/api";
 import { Credentials } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
@@ -12,7 +15,7 @@ import { authzValidator } from "~/api/middleware/validators";
 export default new Hono()
   .use(executeApiSigner)
   .get("/url", async (c) => {
-    const url = await Realtime.getUrl();
+    const url = await getRealtimeUrl();
 
     return c.json({ url }, 200);
   })
@@ -33,7 +36,7 @@ export default new Hono()
       RoleSessionName: "TenantRealtimeSubscriber",
     })),
     async (c) => {
-      const auth = await Realtime.getAuth(
+      const auth = await getRealtimeAuth(
         true,
         JSON.stringify(c.req.valid("query")),
       );

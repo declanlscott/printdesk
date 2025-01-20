@@ -1,6 +1,6 @@
 import { withActor } from "@printworks/core/actors/context";
 import { PapercutSync } from "@printworks/core/papercut/sync";
-import { Realtime } from "@printworks/core/realtime";
+import { publish } from "@printworks/core/realtime/publisher";
 import { Tenants } from "@printworks/core/tenants";
 import { Api } from "@printworks/core/tenants/api";
 import { Credentials, SignatureV4, withAws } from "@printworks/core/utils/aws";
@@ -69,14 +69,14 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
               console.error(e);
 
               if (event["detail-type"] !== "Scheduled Event")
-                await Realtime.publish(publishDomain, channel, [
+                await publish(publishDomain, channel, [
                   JSON.stringify({ success: false }),
                 ]);
 
               throw e;
             }
 
-            await Realtime.publish(publishDomain, channel, [
+            await publish(publishDomain, channel, [
               JSON.stringify({ success: true }),
             ]);
           },

@@ -1,4 +1,4 @@
-import { Realtime } from "@printworks/core/realtime";
+import { publish } from "@printworks/core/realtime/publisher";
 import { tenantInfraProgramInputSchema } from "@printworks/core/tenants/shared";
 import {
   Credentials,
@@ -53,7 +53,7 @@ export const handler: SQSHandler = async (event) =>
           try {
             await processRecord(record, cloudflareApiToken);
 
-            await Realtime.publish(AppsyncEventApi.dns.http, channel, [
+            await publish(AppsyncEventApi.dns.http, channel, [
               JSON.stringify({ type: "infra", success: true }),
             ]);
           } catch (e) {
@@ -61,7 +61,7 @@ export const handler: SQSHandler = async (event) =>
 
             batchItemFailures.push({ itemIdentifier: record.messageId });
 
-            await Realtime.publish(AppsyncEventApi.dns.http, channel, [
+            await publish(AppsyncEventApi.dns.http, channel, [
               JSON.stringify({
                 type: "infra",
                 success: false,

@@ -1,5 +1,8 @@
 import { vValidator } from "@hono/valibot-validator";
-import { Realtime } from "@printworks/core/realtime";
+import {
+  getRealtimeAuth,
+  getRealtimeUrl,
+} from "@printworks/core/realtime/properties";
 import { Hono } from "hono";
 import { Resource } from "sst";
 import * as v from "valibot";
@@ -8,7 +11,7 @@ import { appsyncSigner } from "~/api/middleware/aws";
 
 export default new Hono()
   .get("/url", async (c) => {
-    const url = await Realtime.getUrl(false);
+    const url = await getRealtimeUrl(false);
 
     return c.json({ url }, 200);
   })
@@ -25,7 +28,7 @@ export default new Hono()
       RoleSessionName: "PublicRealtimeSubscriber",
     })),
     async (c) => {
-      const auth = await Realtime.getAuth(
+      const auth = await getRealtimeAuth(
         false,
         JSON.stringify(c.req.valid("query")),
       );

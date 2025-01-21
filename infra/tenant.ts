@@ -130,10 +130,9 @@ export const tenantInfraFunctionImage = new awsx.ecr.Image(
   "TenantInfraFunctionImage",
   {
     repositoryUrl: repository.url,
-    context: $cli.paths.root,
+    context: normalizePath("packages/functions/python/infra"),
     platform: "linux/arm64",
     imageTag: "latest",
-    dockerfile: normalizePath("infra.Dockerfile"),
   },
 );
 

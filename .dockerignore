@@ -37,3 +37,6 @@ pnpm-debug.log*
 stats.html
 
 diagrams
+
+# python
+.venv

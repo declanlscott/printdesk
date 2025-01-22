@@ -1,3 +1,6 @@
 aws-lambda-powertools[parser,tracer]~=3.4.1
 boto3~=1.36.2
 pulumi~=3.146.0
+pulumi-aws~=6.66.3
+pulumi-cloudflare~=5.48.0
+pulumi-random~=4.17.0

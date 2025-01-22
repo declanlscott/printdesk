@@ -203,8 +203,8 @@ export const tenantInfraFunction = new aws.lambda.Function(
     role: tenantInfraFunctionRole.arn,
     timeout: 900,
     architectures: ["arm64"],
-    memorySize: 1024,
-    ephemeralStorage: { size: 1024 },
+    memorySize: 2048,
+    ephemeralStorage: { size: 1536 },
     loggingConfig: {
       logFormat: "Text",
       logGroup: tenantInfraLogGroup.name,

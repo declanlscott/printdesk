@@ -8,7 +8,7 @@
     "@printworks/core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250109.0",
+    "@cloudflare/workers-types": "^4.20250121.0",
     "@printworks/eslint-config": "workspace:*"
   }
 }

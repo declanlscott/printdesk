@@ -7,7 +7,7 @@ import * as v from "valibot";
 
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { poke as _poke } from "../replicache/poke";
-import { Api } from "../tenants/api";
+import { useTenant } from "../tenants/context";
 import { licensesTable, tenantsTable } from "../tenants/sql";
 import { Users } from "../users";
 import { userProfilesTable, usersTable } from "../users/sql";
@@ -71,7 +71,7 @@ export namespace EntraId {
               tenantId,
             });
 
-            await afterTransaction(() => poke(["/tenant"]));
+            await afterTransaction(() => poke(tenantId, ["/tenant"]));
 
             return subject("user", {
               id: user.id,
@@ -115,7 +115,8 @@ export namespace EntraId {
             userHasChanged = true;
           }
 
-          if (userHasChanged) await afterTransaction(() => poke(["/tenant"]));
+          if (userHasChanged)
+            await afterTransaction(() => poke(tenantId, ["/tenant"]));
 
           return subject("user", {
             id: user.id,
@@ -193,6 +194,7 @@ const readUser = (
   });
 
 const poke = <TChannel extends string>(
+  tenantId: Tenant["id"],
   ...args: Parameters<typeof _poke<TChannel>>
 ) =>
   withAws(
@@ -217,8 +219,9 @@ const poke = <TChannel extends string>(
                 credentials: Credentials.fromRoleChain([
                   {
                     RoleArn: Credentials.buildRoleArn(
-                      await Api.getAccountId(),
-                      Resource.Aws.tenant.roles.realtimePublisher.name,
+                      Resource.Aws.account.id,
+                      Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+                      tenantId,
                     ),
                     RoleSessionName: "IssuerRealtimePublisher",
                   },

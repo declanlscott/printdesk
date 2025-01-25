@@ -118,10 +118,10 @@ export namespace Tenants {
     programInput: TenantInfraProgramInput,
   ) {
     const output = await Sqs.sendMessage({
-      QueueUrl: Resource.TenantInfraQueue.url,
+      QueueUrl: Resource.InfraQueue.url,
       MessageBody: JSON.stringify({ tenantId, ...programInput }),
     });
-    if (!output.MessageId) throw new Error("Failed to dispatch tenant infra");
+    if (!output.MessageId) throw new Error("Failed to dispatch infra");
 
     return output.MessageId;
   }

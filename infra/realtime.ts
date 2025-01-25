@@ -1,4 +1,5 @@
 import * as custom from "./custom";
+import { realtimePublisherRole, realtimeSubscriberRole } from "./roles";
 
 export const appsyncEventApi = new custom.aws.Appsync.Api("AppsyncEventApi", {
   eventConfig: {
@@ -17,24 +18,6 @@ export const eventsChannelNamespace = new custom.aws.Appsync.ChannelNamespace(
   },
 );
 
-const realtimeAssumeRolePolicy = aws.iam.getPolicyDocumentOutput({
-  statements: [
-    {
-      principals: [
-        {
-          type: "AWS",
-          identifiers: ["*"],
-        },
-      ],
-      actions: ["sts:AssumeRole"],
-    },
-  ],
-}).json;
-
-export const realtimeSubscriberRole = new aws.iam.Role(
-  "RealtimeSubscriberRole",
-  { assumeRolePolicy: realtimeAssumeRolePolicy },
-);
 new aws.iam.RolePolicy("RealtimeSubscriberRoleInlinePolicy", {
   role: realtimeSubscriberRole.name,
   policy: aws.iam.getPolicyDocumentOutput({
@@ -51,9 +34,6 @@ new aws.iam.RolePolicy("RealtimeSubscriberRoleInlinePolicy", {
   }).json,
 });
 
-export const realtimePublisherRole = new aws.iam.Role("RealtimePublisherRole", {
-  assumeRolePolicy: realtimeAssumeRolePolicy,
-});
 new aws.iam.RolePolicy("RealtimePublisherRoleInlinePolicy", {
   role: realtimePublisherRole.name,
   policy: aws.iam.getPolicyDocumentOutput({

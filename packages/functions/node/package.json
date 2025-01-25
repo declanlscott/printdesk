@@ -2,20 +2,15 @@
   "name": "@printworks/functions",
   "type": "module",
   "scripts": {
-    "infra:build": "esbuild ./src/infra/index.ts --platform=node --target=es2020 --format=esm --bundle --outfile=./dist/infra/index.js",
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@hono/valibot-validator": "^0.5.2",
     "@oslojs/jwt": "^0.3.0",
-    "@printworks/core": "workspace:*",
-    "@pulumi/aws": "^6.66.3",
-    "@pulumi/cloudflare": "^5.47.0",
-    "@pulumi/pulumi": "^3.145.0"
+    "@printworks/core": "workspace:*"
   },
   "devDependencies": {
     "@printworks/eslint-config": "workspace:*",
-    "@types/aws-lambda": "^8.10.147",
-    "esbuild": "^0.24.2"
+    "@types/aws-lambda": "^8.10.147"
   }
 }

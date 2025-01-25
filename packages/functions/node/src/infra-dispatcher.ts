@@ -16,7 +16,7 @@ export const handler: APIGatewayProxyHandlerV2 = async () =>
 
     for (const ids of R.chunk(R.map(tenants, R.prop("id")), 10)) {
       const { Failed } = await Sqs.sendMessageBatch({
-        QueueUrl: Resource.TenantInfraQueue.url,
+        QueueUrl: Resource.InfraQueue.url,
         Entries: ids.map((id, index) => ({
           Id: index.toString(),
           MessageBody: JSON.stringify({ tenantId: id }),

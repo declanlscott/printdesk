@@ -16,8 +16,6 @@ export const licenseSchema = v.object({
   status: v.picklist(licenseStatuses),
 });
 
-export const tenantMetadataTableName = "tenant_metadata";
-
 export const defaultPapercutSyncSchedule = "55 1 * * ? *";
 
 export const tenantInfraProgramInputSchema = v.object({
@@ -111,3 +109,12 @@ export const registrationSchema = v.object({
   ...registrationWizardStep5Schema.entries,
 });
 export type Registration = v.InferOutput<typeof registrationSchema>;
+
+export const tenantMetadataTableName = "tenant_metadata";
+
+export const tenantMetadataSchema = v.object({
+  id: nanoIdSchema,
+  infraProgramInput: tenantInfraProgramInputSchema,
+  tenantId: nanoIdSchema,
+  ...timestampsSchema.entries,
+});

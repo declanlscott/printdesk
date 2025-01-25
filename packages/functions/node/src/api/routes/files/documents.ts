@@ -1,6 +1,6 @@
 import { vValidator } from "@hono/valibot-validator";
 import { Documents } from "@printworks/core/files/documents";
-import { Api } from "@printworks/core/tenants/api";
+import { useTenant } from "@printworks/core/tenants/context";
 import { Credentials, S3 } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
@@ -19,10 +19,11 @@ export default new Hono()
     authzValidator,
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
     executeApiSigner,
-    ssmClient(async () => ({
+    ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
-        await Api.getAccountId(),
-        Resource.Aws.tenant.roles.putParameters.name,
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.putParameters.nameTemplate,
+        useTenant().id,
       ),
       RoleSessionName: "ApiSetDocumentsMimeTypes",
     })),
@@ -42,10 +43,11 @@ export default new Hono()
     authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
-    s3Client(async () => ({
+    s3Client(() => ({
       RoleArn: Credentials.buildRoleArn(
-        await Api.getAccountId(),
-        Resource.Aws.tenant.roles.bucketsAccess.name,
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.bucketsAccess.nameTemplate,
+        useTenant().id,
       ),
       RoleSessionName: "ApiGetDocumentsSignedGetUrl",
     })),
@@ -63,10 +65,11 @@ export default new Hono()
     authzValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner,
-    s3Client(async () => ({
+    s3Client(() => ({
       RoleArn: Credentials.buildRoleArn(
-        await Api.getAccountId(),
-        Resource.Aws.tenant.roles.bucketsAccess.name,
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.bucketsAccess.nameTemplate,
+        useTenant().id,
       ),
       RoleSessionName: "ApiGetDocumentsSignedPutUrl",
     })),
@@ -86,10 +89,11 @@ export default new Hono()
     authzValidator,
     vValidator("json", v.object({ byteSize: v.number() })),
     executeApiSigner,
-    ssmClient(async () => ({
+    ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
-        await Api.getAccountId(),
-        Resource.Aws.tenant.roles.putParameters.name,
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.putParameters.nameTemplate,
+        useTenant().id,
       ),
       RoleSessionName: "ApiSetDocumentsSizeLimit",
     })),

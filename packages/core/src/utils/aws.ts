@@ -116,21 +116,28 @@ export namespace Cloudfront {
 }
 
 export namespace Credentials {
-  export const buildRoleArn = (accountId: string, roleName: string) =>
-    `arn:aws:iam::${accountId}:role/${roleName}`;
+  export const buildRoleArn = (
+    accountId: string,
+    roleNameTemplate: string,
+    tenantId: string,
+  ) =>
+    `arn:aws:iam::${accountId}:role/${roleNameTemplate.replace(
+      /{{tenant_id}}/g,
+      tenantId,
+    )}`;
 
   export function fromRoleChain(
-    roleChain: Array<AssumeRoleCommandInput>,
+    roleChainInputs: Array<AssumeRoleCommandInput>,
   ): AwsCredentialIdentityProvider {
-    switch (roleChain.length) {
+    switch (roleChainInputs.length) {
       case 0:
         throw new Error("Empty role chain");
       case 1: // base case
-        return fromTemporaryCredentials({ params: roleChain[0] });
+        return fromTemporaryCredentials({ params: roleChainInputs[0] });
       default: // recursive case
         return fromTemporaryCredentials({
-          masterCredentials: fromRoleChain(roleChain.slice(1)),
-          params: roleChain[0],
+          masterCredentials: fromRoleChain(roleChainInputs.slice(1)),
+          params: roleChainInputs[0],
         });
     }
   }

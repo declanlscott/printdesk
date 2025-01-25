@@ -45,18 +45,19 @@ declare module "sst" {
       "account": {
         "id": string
       }
-      "organization": {
-        "email": string
-        "id": string
-        "managementRole": {
-          "arn": string
+      "cloudfront": {
+        "keyGroup": {
+          "id": string
         }
-        "tenantsOrganizationalUnit": {
+        "keyPair": {
           "id": string
         }
       }
       "region": string
       "roles": {
+        "pulumi": {
+          "arn": string
+        }
         "realtimePublisher": {
           "arn": string
         }
@@ -66,26 +67,26 @@ declare module "sst" {
       }
       "tenant": {
         "roles": {
-          "accountAccess": {
-            "name": string
+          "apiAccess": {
+            "nameTemplate": string
           }
           "bucketsAccess": {
-            "name": string
+            "nameTemplate": string
           }
           "putParameters": {
-            "name": string
+            "nameTemplate": string
           }
           "realtimePublisher": {
-            "name": string
+            "nameTemplate": string
           }
           "realtimeSubscriber": {
-            "name": string
+            "nameTemplate": string
           }
         }
       }
       "type": "sst.sst.Linkable"
     }
-    "BootstrapRoleArn": {
+    "BudgetEmail": {
       "type": "sst.sst.Secret"
       "value": string
     }
@@ -102,10 +103,6 @@ declare module "sst" {
     "CloudfrontPrivateKey": {
       "pem": string
       "type": "tls.index/privateKey.PrivateKey"
-    }
-    "CloudfrontPublicKey": {
-      "pem": string
-      "type": "sst.sst.Linkable"
     }
     "Code": {
       "bucket": {
@@ -134,6 +131,19 @@ declare module "sst" {
       "ssl": boolean
       "type": "pulumi-nodejs.dynamic.Resource"
       "user": string
+    }
+    "InfraDeadLetterQueue": {
+      "type": "sst.aws.Queue"
+      "url": string
+    }
+    "InfraDispatcher": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
+    }
+    "InfraQueue": {
+      "type": "sst.aws.Queue"
+      "url": string
     }
     "InvoicesProcessor": {
       "arn": string
@@ -175,19 +185,6 @@ declare module "sst" {
     "SiteUsername": {
       "type": "sst.sst.Secret"
       "value": string
-    }
-    "TenantInfraDeadLetterQueue": {
-      "type": "sst.aws.Queue"
-      "url": string
-    }
-    "TenantInfraDispatcher": {
-      "name": string
-      "type": "sst.aws.Function"
-      "url": string
-    }
-    "TenantInfraQueue": {
-      "type": "sst.aws.Queue"
-      "url": string
     }
     "Web": {
       "type": "sst.aws.StaticSite"

@@ -1,5 +1,5 @@
-export const tenantInfraDeadLetterQueue = new sst.aws.Queue(
-  "TenantInfraDeadLetterQueue",
+export const infraDeadLetterQueue = new sst.aws.Queue(
+  "InfraDeadLetterQueue",
   {
     transform: {
       queue: {
@@ -10,10 +10,10 @@ export const tenantInfraDeadLetterQueue = new sst.aws.Queue(
   { retainOnDelete: $app.stage === "production" },
 );
 
-export const tenantInfraQueue = new sst.aws.Queue(
-  "TenantInfraQueue",
+export const infraQueue = new sst.aws.Queue(
+  "InfraQueue",
   {
-    dlq: tenantInfraDeadLetterQueue.arn,
+    dlq: infraDeadLetterQueue.arn,
     visibilityTimeout: "15 minutes",
   },
   { retainOnDelete: $app.stage === "production" },

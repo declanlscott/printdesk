@@ -7,11 +7,10 @@ import {
   aws_,
   cloudflareApiTokenParameter,
   cloudfrontPrivateKey,
-  cloudfrontPublicKey,
 } from "./misc";
-import { tenantsPrincipalOrgPath } from "./organization";
-import { invoicesProcessorDeadLetterQueue, tenantInfraQueue } from "./queues";
+import { infraQueue, invoicesProcessorDeadLetterQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
+import { infraFunctionRole, pulumiRole } from "./roles";
 import { injectLinkables, normalizePath } from "./utils";
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
@@ -23,12 +22,7 @@ export const codeBucket = new sst.aws.Bucket("CodeBucket", {
           Effect: "Allow",
           Action: ["s3:GetObject"],
           Resource: $interpolate`arn:aws:s3:::${args.bucket}/*`,
-          Principal: "*",
-          Condition: {
-            "ForAnyValue:StringEquals": {
-              "aws:PrincipalOrgPaths": [tenantsPrincipalOrgPath],
-            },
-          },
+          Principal: { AWS: pulumiRole.arn },
         });
       });
     },
@@ -52,30 +46,22 @@ new aws.lambda.Permission("PapercutSyncSchedulePermission", {
   function: papercutSync.name,
   action: "lambda:InvokeFunction",
   principal: "scheduler.amazonaws.com",
-  principalOrgId: aws_.properties.organization.id,
 });
 new aws.lambda.Permission("PapercutSyncRulePermission", {
   function: papercutSync.name,
   action: "lambda:InvokeFunction",
   principal: "events.amazonaws.com",
-  principalOrgId: aws_.properties.organization.id,
 });
 
 export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
   handler: "packages/functions/node/src/invoices-processor.handler",
   timeout: "20 seconds",
-  link: [
-    appData,
-    cloudfrontPrivateKey,
-    dsqlCluster,
-    invoicesProcessorDeadLetterQueue,
-  ],
+  link: [appData, cloudfrontPrivateKey, dsqlCluster],
 });
 new aws.lambda.Permission("InvoicesProcessorRulePermission", {
   function: invoicesProcessor.name,
   action: "lambda:InvokeFunction",
   principal: "events.amazonaws.com",
-  principalOrgId: aws_.properties.organization.id,
 });
 
 const papercutSecureReverseProxySrcPath = normalizePath(
@@ -126,27 +112,15 @@ export const code = new sst.Linkable("Code", {
   },
 });
 
-export const tenantInfraFunctionImage = new awsx.ecr.Image(
-  "TenantInfraFunctionImage",
-  {
-    repositoryUrl: repository.url,
-    context: normalizePath("packages/functions/python/infra"),
-    platform: "linux/arm64",
-    imageTag: "latest",
-  },
-);
+export const infraFunctionImage = new awsx.ecr.Image("InfraFunctionImage", {
+  repositoryUrl: repository.url,
+  context: normalizePath("packages/functions/python/infra"),
+  platform: "linux/arm64",
+  imageTag: "latest",
+});
 
-export const tenantInfraFunctionRole = new aws.iam.Role(
-  "TenantInfraFunctionRole",
-  {
-    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-      Service: "lambda.amazonaws.com",
-    }),
-    managedPolicyArns: [aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole],
-  },
-);
-new aws.iam.RolePolicy("TenantInfraFunctionRoleInlinePolicy", {
-  role: tenantInfraFunctionRole.name,
+new aws.iam.RolePolicy("InfraFunctionRoleInlinePolicy", {
+  role: infraFunctionRole.name,
   policy: aws.iam.getPolicyDocumentOutput({
     statements: [
       {
@@ -157,7 +131,7 @@ new aws.iam.RolePolicy("TenantInfraFunctionRoleInlinePolicy", {
           "sqs:GetQueueUrl",
           "sqs:ReceiveMessage",
         ],
-        resources: [tenantInfraQueue.arn],
+        resources: [infraQueue.arn],
       },
       {
         actions: ["s3:*"],
@@ -171,78 +145,65 @@ new aws.iam.RolePolicy("TenantInfraFunctionRoleInlinePolicy", {
         actions: ["kms:Decrypt"],
         resources: [aws.kms.getKeyOutput({ keyId: "alias/aws/ssm" }).arn],
       },
-      {
-        actions: ["sts:AssumeRole"],
-        resources: [aws_.properties.organization.managementRole.arn],
-      },
     ],
   }).json,
 });
 
-const functionName = physicalName(64, "TenantInfraFunction");
+const infraFunctionName = physicalName(64, "InfraFunction");
 
-export const tenantInfraLogGroup = new aws.cloudwatch.LogGroup(
-  "TenantInfraLogGroup",
-  {
-    name: `/aws/lambda/${functionName}`,
-    retentionInDays: 14,
-  },
-);
+export const infraLogGroup = new aws.cloudwatch.LogGroup("InfraLogGroup", {
+  name: `/aws/lambda/${infraFunctionName}`,
+  retentionInDays: 14,
+});
 
 const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", {
   length: 32,
   special: true,
 });
 
-export const tenantInfraFunction = new aws.lambda.Function(
-  "TenantInfraFunction",
-  {
-    name: functionName,
-    packageType: "Image",
-    imageUri: tenantInfraFunctionImage.imageUri,
-    role: tenantInfraFunctionRole.arn,
-    timeout: 900,
-    architectures: ["arm64"],
-    memorySize: 2048,
-    ephemeralStorage: { size: 1536 },
-    loggingConfig: {
-      logFormat: "Text",
-      logGroup: tenantInfraLogGroup.name,
-    },
-    environment: {
-      variables: {
-        ...injectLinkables(
-          {
-            AppData: appData,
-            ApiFunction: apiFunction,
-            AppsyncEventApi: appsyncEventApi,
-            Aws: aws_,
-            CloudfrontPublicKey: cloudfrontPublicKey,
-            Code: code,
-            InvoicesProcessor: invoicesProcessor,
-            PapercutSync: papercutSync,
-            PulumiBucket: pulumiBucket,
-          },
-          "FUNCTION_RESOURCE_",
-        ),
-        PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
-      },
+export const infraFunction = new aws.lambda.Function("InfraFunction", {
+  name: infraFunctionName,
+  packageType: "Image",
+  imageUri: infraFunctionImage.imageUri,
+  role: infraFunctionRole.arn,
+  timeout: 900,
+  architectures: ["arm64"],
+  memorySize: 2048,
+  ephemeralStorage: { size: 1536 },
+  loggingConfig: {
+    logFormat: "Text",
+    logGroup: infraLogGroup.name,
+  },
+  environment: {
+    variables: {
+      ...injectLinkables(
+        {
+          AppData: appData,
+          ApiFunction: apiFunction,
+          AppsyncEventApi: appsyncEventApi,
+          Aws: aws_,
+          Code: code,
+          InvoicesProcessor: invoicesProcessor,
+          InvoicesProcessorDeadLetterQueue: invoicesProcessorDeadLetterQueue,
+          PapercutSync: papercutSync,
+          PulumiBucket: pulumiBucket,
+        },
+        "FUNCTION_RESOURCE_",
+      ),
+      PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
     },
   },
-);
-new aws.lambda.EventSourceMapping("TenantInfraFunctionEventSourceMapping", {
-  eventSourceArn: tenantInfraQueue.arn,
-  functionName: tenantInfraFunction.name,
+});
+new aws.lambda.EventSourceMapping("InfraFunctionEventSourceMapping", {
+  eventSourceArn: infraQueue.arn,
+  functionName: infraFunction.name,
   functionResponseTypes: ["ReportBatchItemFailures"],
   batchSize: 10,
   maximumBatchingWindowInSeconds: 0,
 });
 
-export const tenantInfraDispatcher = new sst.aws.Function(
-  "TenantInfraDispatcher",
-  {
-    handler: "packages/functions/node/src/tenant-infra-dispatcher.handler",
-    url: { authorization: "iam" },
-    link: [dsqlCluster, tenantInfraQueue],
-  },
-);
+export const infraDispatcher = new sst.aws.Function("InfraDispatcher", {
+  handler: "packages/functions/node/src/infra-dispatcher.handler",
+  url: { authorization: "iam" },
+  link: [dsqlCluster, infraQueue],
+});

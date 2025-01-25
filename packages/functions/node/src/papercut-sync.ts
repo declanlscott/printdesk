@@ -49,8 +49,10 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
                   credentials: Credentials.fromRoleChain([
                     {
                       RoleArn: Credentials.buildRoleArn(
-                        await Api.getAccountId(),
-                        Resource.Aws.tenant.roles.realtimePublisher.name,
+                        Resource.Aws.account.id,
+                        Resource.Aws.tenant.roles.realtimePublisher
+                          .nameTemplate,
+                        tenantId,
                       ),
                       RoleSessionName: "PapercutSyncRealtimePublisher",
                     },
@@ -76,9 +78,10 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
               throw e;
             }
 
-            await publish(publishDomain, channel, [
-              JSON.stringify({ success: true }),
-            ]);
+            if (event["detail-type"] !== "Scheduled Event")
+              await publish(publishDomain, channel, [
+                JSON.stringify({ success: true }),
+              ]);
           },
         ),
     );

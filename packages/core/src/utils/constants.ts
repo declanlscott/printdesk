@@ -44,7 +44,7 @@ export namespace Constants {
 
   export const NANOID_CUSTOM_ALPHABET = "2346789abcdefghijkmnpqrtwxyz";
   export const NANOID_LENGTH = 20;
-  export const NANOID_PATTERN = new RegExp(
+  export const NANOID_REGEX = new RegExp(
     `^[${NANOID_CUSTOM_ALPHABET}]{${NANOID_LENGTH}}$`,
   );
 

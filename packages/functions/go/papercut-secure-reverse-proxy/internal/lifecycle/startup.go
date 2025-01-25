@@ -69,6 +69,19 @@ type StartupParams struct {
 }
 
 func getStartupParams(ctx context.Context) (*StartupParams, error) {
+	appName, ok := os.LookupEnv("APP_NAME")
+	if !ok {
+		log.Fatalf("APP_NAME environment variable not set")
+	}
+	appStage, ok := os.LookupEnv("APP_STAGE")
+	if !ok {
+		log.Fatalf("APP_STAGE environment variable not set")
+	}
+	tenantId, ok := os.LookupEnv("TENANT_ID")
+	if !ok {
+		log.Fatalf("TENANT_ID environment variable not set")
+	}
+
 	cfg, err := config.LoadDefaultConfig(ctx)
 	if err != nil {
 		log.Fatalf("Failed to load AWS SDK configuration: %v", err)
@@ -90,7 +103,7 @@ func getStartupParams(ctx context.Context) (*StartupParams, error) {
 		defer wg.Done()
 
 		output, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-			Name: aws.String(targetParamName),
+			Name: aws.String(fmt.Sprintf("/%s/%s/tenant/%s/%s", appName, appStage, tenantId, targetParamName)),
 		})
 		if err != nil {
 			errs <- fmt.Errorf("failed to get target parameter: %w", err)
@@ -104,7 +117,7 @@ func getStartupParams(ctx context.Context) (*StartupParams, error) {
 		defer wg.Done()
 
 		output, err := client.GetParameter(ctx, &ssm.GetParameterInput{
-			Name:           aws.String(tsOAuthClientParamName),
+			Name:           aws.String(fmt.Sprintf("/%s/%s/tenant/%s/%s", appName, appStage, tenantId, tsOAuthClientParamName)),
 			WithDecryption: aws.Bool(true),
 		})
 		if err != nil {

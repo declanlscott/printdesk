@@ -11,21 +11,6 @@ import { HttpError } from "../utils/errors";
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
-  export async function getAccountId() {
-    const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.account-id.txt`,
-    );
-    if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
-
-    return res.text();
-  }
-
   export async function getCloudfrontKeyPairId() {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.cloudfront-key-pair-id.txt`,
@@ -167,7 +152,7 @@ export namespace Api {
 
     return fetch(
       Cloudfront.getSignedUrl({
-        keyPairId: await getCloudfrontKeyPairId(),
+        keyPairId: Resource.Aws.cloudfront.keyPair.id,
         privateKey: Resource.CloudfrontPrivateKey.pem,
         url: url.toString(),
         dateLessThan: addMinutes(Date.now(), 1).toISOString(),

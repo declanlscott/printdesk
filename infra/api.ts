@@ -3,7 +3,7 @@ import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import { apiFqdn, domainName } from "./dns";
 import { appData, aws_, cloudfrontPrivateKey } from "./misc";
-import { tenantInfraQueue } from "./queues";
+import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
 
 export const apiFunction = new custom.aws.Function("ApiFunction", {
@@ -16,26 +16,13 @@ export const apiFunction = new custom.aws.Function("ApiFunction", {
     appsyncEventApi,
     cloudfrontPrivateKey,
     dsqlCluster,
-    tenantInfraQueue,
+    infraQueue,
   ],
   permissions: [
     {
-      actions: ["execute-api:Invoke"],
-      resources: [
-        $interpolate`arn:aws:execute-api:${aws_.properties.region}:*:${appData.properties.stage}/*`,
-      ],
-    },
-    {
       actions: ["sts:AssumeRole"],
       resources: [
-        ...[
-          aws_.properties.tenant.roles.realtimeSubscriber.name,
-          aws_.properties.tenant.roles.realtimePublisher.name,
-          aws_.properties.tenant.roles.bucketsAccess.name,
-          aws_.properties.tenant.roles.putParameters.name,
-        ].map((roleName) => $interpolate`arn:aws:iam::*:role/${roleName}`),
-        aws_.properties.roles.realtimeSubscriber.arn,
-        aws_.properties.roles.realtimePublisher.arn,
+        $interpolate`arn:aws:iam::${aws_.properties.account.id}:role/*`,
       ],
     },
   ],

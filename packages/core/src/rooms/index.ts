@@ -271,7 +271,8 @@ export namespace Rooms {
               "roomId",
               "tenantId",
             ]),
-          });
+          })
+          .returning();
 
         await tx
           .delete(deliveryOptionsTable)

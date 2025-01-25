@@ -1,5 +1,5 @@
 import { Replicache } from "@printworks/core/replicache";
-import { Api } from "@printworks/core/tenants/api";
+import { useTenant } from "@printworks/core/tenants/context";
 import { Credentials } from "@printworks/core/utils/aws";
 import {
   ApplicationError,
@@ -25,10 +25,11 @@ export default new Hono()
   .post(
     "/push",
     executeApiSigner,
-    appsyncSigner(async () => ({
+    appsyncSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
-        await Api.getAccountId(),
-        Resource.Aws.tenant.roles.realtimePublisher.name,
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+        useTenant().id,
       ),
       RoleSessionName: "TenantRealtimePublisher",
     })),

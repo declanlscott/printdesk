@@ -1,11 +1,9 @@
 import { domainName, fqdn } from "./dns";
 import {
-  organization,
-  organizationManagementRole,
-  tenantAccountAccessRoleName,
-  tenantsOrganizationalUnit,
-} from "./organization";
-import { realtimePublisherRole, realtimeSubscriberRole } from "./realtime";
+  pulumiRole,
+  realtimePublisherRole,
+  realtimeSubscriberRole,
+} from "./roles";
 
 export const isDev = $dev;
 
@@ -25,46 +23,6 @@ export const appData = new sst.Linkable("AppData", {
   },
 });
 
-export const aws_ = new sst.Linkable("Aws", {
-  properties: {
-    organization: {
-      id: organization.id,
-      email: organization.masterAccountEmail,
-      managementRole: {
-        arn: organizationManagementRole.arn,
-      },
-      tenantsOrganizationalUnit: {
-        id: tenantsOrganizationalUnit.id,
-      },
-    },
-    account: {
-      id: aws.getCallerIdentityOutput().accountId,
-    },
-    region: aws.getRegionOutput().name,
-    tenant: {
-      roles: {
-        accountAccess: { name: tenantAccountAccessRoleName },
-        realtimeSubscriber: { name: "TenantRealtimeSubscriberRole" },
-        realtimePublisher: { name: "TenantRealtimePublisherRole" },
-        bucketsAccess: { name: "TenantBucketsAccessRole" },
-        putParameters: { name: "TenantPutParametersRole" },
-      },
-    },
-    roles: {
-      realtimeSubscriber: { arn: realtimeSubscriberRole.arn },
-      realtimePublisher: { arn: realtimePublisherRole.arn },
-    },
-  },
-});
-
-export const cloudflare_ = new sst.Linkable("Cloudflare", {
-  properties: {
-    account: {
-      id: cloudflareAccountId.value,
-    },
-  },
-});
-
 sst.Linkable.wrap(tls.PrivateKey, (privateKey) => ({
   properties: {
     pem: privateKey.privateKeyPem,
@@ -76,9 +34,55 @@ export const cloudfrontPrivateKey = new tls.PrivateKey("CloudfrontPrivateKey", {
   rsaBits: 2048,
 });
 
-export const cloudfrontPublicKey = new sst.Linkable("CloudfrontPublicKey", {
+export const cloudfrontPublicKey = new aws.cloudfront.PublicKey(
+  "CloudfrontPublicKey",
+  { encodedKey: cloudfrontPrivateKey.publicKeyPem },
+);
+
+export const cloudfrontKeyGroup = new aws.cloudfront.KeyGroup(
+  "CloudfrontKeyGroup",
+  { items: [cloudfrontPublicKey.id] },
+);
+
+// Group of non-sensitive AWS metadata
+export const aws_ = new sst.Linkable("Aws", {
   properties: {
-    pem: cloudfrontPrivateKey.publicKeyPem,
+    account: { id: aws.getCallerIdentityOutput().accountId },
+    region: aws.getRegionOutput().name,
+    tenant: {
+      roles: {
+        apiAccess: {
+          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-ApiAccessRole`,
+        },
+        realtimeSubscriber: {
+          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-RealtimeSubscriberRole`,
+        },
+        realtimePublisher: {
+          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-RealtimePublisherRole`,
+        },
+        bucketsAccess: {
+          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-BucketsAccessRole`,
+        },
+        putParameters: {
+          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-PutParametersRole`,
+        },
+      },
+    },
+    roles: {
+      realtimeSubscriber: { arn: realtimeSubscriberRole.arn },
+      realtimePublisher: { arn: realtimePublisherRole.arn },
+      pulumi: { arn: pulumiRole.arn },
+    },
+    cloudfront: {
+      keyPair: { id: cloudfrontPublicKey.id },
+      keyGroup: { id: cloudfrontKeyGroup.id },
+    },
+  },
+});
+
+export const cloudflare_ = new sst.Linkable("Cloudflare", {
+  properties: {
+    account: { id: cloudflareAccountId.value },
   },
 });
 
@@ -91,6 +95,7 @@ export const cloudflareApiTokenParameter = new aws.ssm.Parameter(
   },
 );
 
+export const budgetEmail = new sst.Secret("BudgetEmail");
 export const budget = new aws.budgets.Budget("Budget", {
   budgetType: "COST",
   limitAmount: "1",
@@ -102,7 +107,7 @@ export const budget = new aws.budgets.Budget("Budget", {
       threshold: 100,
       thresholdType: "PERCENTAGE",
       notificationType: "FORECASTED",
-      subscriberEmailAddresses: [organization.masterAccountEmail],
+      subscriberEmailAddresses: [budgetEmail.value],
     },
   ],
 });

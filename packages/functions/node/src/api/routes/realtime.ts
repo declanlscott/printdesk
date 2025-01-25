@@ -3,7 +3,7 @@ import {
   getRealtimeAuth,
   getRealtimeUrl,
 } from "@printworks/core/realtime/properties";
-import { Api } from "@printworks/core/tenants/api";
+import { useTenant } from "@printworks/core/tenants/context";
 import { Credentials } from "@printworks/core/utils/aws";
 import { Hono } from "hono";
 import { Resource } from "sst";
@@ -28,10 +28,11 @@ export default new Hono()
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
       }),
     ),
-    appsyncSigner(async () => ({
+    appsyncSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
-        await Api.getAccountId(),
-        Resource.Aws.tenant.roles.realtimeSubscriber.name,
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.realtimeSubscriber.nameTemplate,
+        useTenant().id,
       ),
       RoleSessionName: "TenantRealtimeSubscriber",
     })),

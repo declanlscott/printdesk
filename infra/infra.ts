@@ -145,6 +145,10 @@ new aws.iam.RolePolicy("InfraFunctionRoleInlinePolicy", {
         actions: ["kms:Decrypt"],
         resources: [aws.kms.getKeyOutput({ keyId: "alias/aws/ssm" }).arn],
       },
+      {
+        actions: ["sts:AssumeRole"],
+        resources: [pulumiRole.arn],
+      },
     ],
   }).json,
 });

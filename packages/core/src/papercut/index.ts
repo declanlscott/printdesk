@@ -1,26 +1,34 @@
+import { Resource } from "sst";
+
 import { Api } from "../tenants/api";
+import { useTenant } from "../tenants/context";
 import { Ssm } from "../utils/aws";
-import { Constants } from "../utils/constants";
 import { HttpError } from "../utils/errors";
 
 export namespace Papercut {
   export const setTailnetServerUri = async (uri: string) =>
     Ssm.putParameter({
-      Name: Constants.TAILNET_PAPERCUT_SERVER_URI_PARAMETER_NAME,
+      Name: Ssm.buildName(
+        Resource.Aws.tenant.parameters.tailnetPapercutServerUri.nameTemplate,
+        useTenant().id,
+      ),
       Value: uri,
       Type: "String",
     });
 
   export const setServerAuthToken = async (token: string) =>
     Ssm.putParameter({
-      Name: Constants.PAPERCUT_SERVER_AUTH_TOKEN_PARAMETER_NAME,
+      Name: Ssm.buildName(
+        Resource.Aws.tenant.parameters.papercutServerAuthToken.nameTemplate,
+        useTenant().id,
+      ),
       Value: token,
       Type: "SecureString",
     });
 
   export async function getServerAuthToken() {
     const res = await Api.send(
-      `/parameters${Constants.PAPERCUT_SERVER_AUTH_TOKEN_PARAMETER_NAME}?withDecryption=true`,
+      `/parameters${Ssm.buildName(Resource.Aws.tenant.parameters.papercutServerAuthToken.nameTemplate, useTenant().id)}?withDecryption=true`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({

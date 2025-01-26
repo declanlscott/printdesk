@@ -1,8 +1,9 @@
+import { Resource } from "sst";
 import * as v from "valibot";
 
 import { Api } from "../tenants/api";
+import { useTenant } from "../tenants/context";
 import { Ssm } from "../utils/aws";
-import { Constants } from "../utils/constants";
 import { HttpError } from "../utils/errors";
 
 export namespace Documents {
@@ -13,7 +14,10 @@ export namespace Documents {
   }
 
   export async function setMimeTypes(mimeTypes: Array<string>) {
-    const name = Constants.DOCUMENTS_MIME_TYPES_PARAMETER_NAME;
+    const name = Ssm.buildName(
+      Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate,
+      useTenant().id,
+    );
 
     await Ssm.putParameter({
       Name: name,
@@ -26,7 +30,7 @@ export namespace Documents {
 
   export async function getMimeTypes() {
     const res = await Api.send(
-      `/parameters${Constants.DOCUMENTS_MIME_TYPES_PARAMETER_NAME}`,
+      `/parameters${Ssm.buildName(Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate, useTenant().id)}`,
       { method: "GET" },
     );
     if (!res.ok)
@@ -41,7 +45,10 @@ export namespace Documents {
   }
 
   export async function setSizeLimit(byteSize: number) {
-    const name = Constants.DOCUMENTS_SIZE_LIMIT_PARAMETER_NAME;
+    const name = Ssm.buildName(
+      Resource.Aws.tenant.parameters.documentsSizeLimit.nameTemplate,
+      useTenant().id,
+    );
 
     await Ssm.putParameter({
       Name: name,
@@ -54,7 +61,7 @@ export namespace Documents {
 
   export async function getSizeLimit() {
     const res = await Api.send(
-      `/parameters${Constants.DOCUMENTS_SIZE_LIMIT_PARAMETER_NAME}`,
+      `/parameters${Ssm.buildName(Resource.Aws.tenant.parameters.documentsSizeLimit.nameTemplate, useTenant().id)}`,
       { method: "GET" },
     );
     if (!res.ok)

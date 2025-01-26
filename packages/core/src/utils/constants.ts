@@ -22,17 +22,6 @@ export namespace Constants {
   export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
 
-  export const DOCUMENTS_MIME_TYPES_PARAMETER_NAME =
-    "/app/settings/documents/mime-types";
-  export const DOCUMENTS_SIZE_LIMIT_PARAMETER_NAME =
-    "/app/settings/documents/size-limit";
-  export const TAILNET_PAPERCUT_SERVER_URI_PARAMETER_NAME =
-    "/papercut/server/tailnet-uri";
-  export const PAPERCUT_SERVER_AUTH_TOKEN_PARAMETER_NAME =
-    "/papercut/server/auth-token";
-  export const TAILSCALE_OAUTH_CLIENT_PARAMETER_NAME =
-    "/tailscale/oauth-client";
-
   export const ASSETS_MIME_TYPES = [
     "image/jpeg",
     "image/png",

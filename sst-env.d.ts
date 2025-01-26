@@ -66,6 +66,23 @@ declare module "sst" {
         }
       }
       "tenant": {
+        "parameters": {
+          "documentsMimeTypes": {
+            "nameTemplate": string
+          }
+          "documentsSizeLimit": {
+            "nameTemplate": string
+          }
+          "papercutServerAuthToken": {
+            "nameTemplate": string
+          }
+          "tailnetPapercutServerUri": {
+            "nameTemplate": string
+          }
+          "tailscaleOauthClient": {
+            "nameTemplate": string
+          }
+        }
         "roles": {
           "apiAccess": {
             "nameTemplate": string

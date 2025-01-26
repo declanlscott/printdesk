@@ -28,4 +28,7 @@ export namespace Utils {
 
   export const reverseDns = (domainName: string) =>
     domainName.split(".").reverse().join(".");
+
+  export const buildName = (nameTemplate: string, tenantId: string) =>
+    nameTemplate.replace(/{{tenant_id}}/g, tenantId);
 }

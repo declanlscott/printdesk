@@ -67,6 +67,23 @@ export const aws_ = new sst.Linkable("Aws", {
           nameTemplate: `pw-${$app.stage}-{{tenant_id}}-PutParametersRole`,
         },
       },
+      parameters: {
+        documentsMimeTypes: {
+          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/app/settings/documents/mime-types`,
+        },
+        documentsSizeLimit: {
+          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/app/settings/documents/size-limit`,
+        },
+        tailnetPapercutServerUri: {
+          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/papercut/server/tailnet-uri`,
+        },
+        papercutServerAuthToken: {
+          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/papercut/server/auth-token`,
+        },
+        tailscaleOauthClient: {
+          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/tailscale/oauth-client`,
+        },
+      },
     },
     roles: {
       realtimeSubscriber: { arn: realtimeSubscriberRole.arn },

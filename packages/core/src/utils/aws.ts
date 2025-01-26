@@ -121,10 +121,7 @@ export namespace Credentials {
     roleNameTemplate: string,
     tenantId: string,
   ) =>
-    `arn:aws:iam::${accountId}:role/${roleNameTemplate.replace(
-      /{{tenant_id}}/g,
-      tenantId,
-    )}`;
+    `arn:aws:iam::${accountId}:role/${Utils.buildName(roleNameTemplate, tenantId)}`;
 
   export function fromRoleChain(
     roleChainInputs: Array<AssumeRoleCommandInput>,
@@ -206,6 +203,8 @@ export namespace Sqs {
 export namespace Ssm {
   export const Client = SSMClient;
   export type Client = SSMClient;
+
+  export const buildName = Utils.buildName;
 
   export const putParameter = async (
     input: NonNullableProperties<PutParameterCommandInput>,

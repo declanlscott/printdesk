@@ -57,11 +57,15 @@ def record_handler(record: SQSRecord):
     logger.info("Installing plugins ...")
     stack.workspace.install_plugin("aws", f"v{version("pulumi-aws")}")
     stack.workspace.install_plugin("cloudflare", f"v{version("pulumi-cloudflare")}")
-    stack.workspace.install_plugin("random", f"v{version("pulumi-random")}")
     logger.info("Successfully installed plugins.")
 
     logger.info("Setting stack configuration ...")
     stack.set_config("aws:region", automation.ConfigValue(aws_region))
+    stack.set_config(
+        "aws:assumeRole.roleArn",
+        automation.ConfigValue(resource["Aws"]["roles"]["pulumi"]["arn"]),
+        path=True,
+    )
     stack.set_config(
         "cloudflare:apiToken",
         automation.ConfigValue(cloudflare_api_token, True),

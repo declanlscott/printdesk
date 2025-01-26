@@ -11,11 +11,9 @@ import (
 )
 
 const (
-	hostname               = "printworks"
-	targetParamName        = "papercut/server/tailnet-uri"
-	tsOAuthClientParamName = "tailscale/oauth-client"
-	tsDir                  = "/tmp/tailscale"
-	cleanupTimeout         = 1800 * time.Millisecond // Lambda shutdown phase is capped at 2 seconds
+	hostname       = "printworks"
+	tsDir          = "/tmp/tailscale"
+	cleanupTimeout = 1800 * time.Millisecond // Lambda shutdown phase is capped at 2 seconds
 )
 
 var (

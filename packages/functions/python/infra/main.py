@@ -14,7 +14,7 @@ from pulumi import automation
 
 from models import sqs_record
 from pulumi_program import program
-from utilities import resource, stage, aws_region
+from utilities import resource, app, stage, aws_region
 from utilities.parameters import cloudflare_api_token
 
 processor = BatchProcessor(EventType.SQS)
@@ -35,8 +35,8 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully parsed record body.")
 
     logger.info("Initializing stack ...")
-    project_name = f"pw-{stage}-tenants"
-    stack_name = f"pw-{stage}-{payload.tenantId}"
+    project_name = f"{app}-{stage}-infra"
+    stack_name = f"{app}-{stage}-infra-{payload.tenantId}"
     stack = automation.create_or_select_stack(
         project_name=project_name,
         stack_name=stack_name,

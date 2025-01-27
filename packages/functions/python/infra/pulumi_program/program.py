@@ -1,6 +1,6 @@
 import pulumi_aws as aws
 
-from .components import Ssl, SslArgs, Storage, StorageArgs
+from .components import Ssl, SslArgs, Storage, StorageArgs, Realtime, RealtimeArgs
 from models import sqs_record
 from utilities import tags
 
@@ -19,3 +19,5 @@ def inline(payload: sqs_record.Payload):
     )
 
     storage = Storage(args=StorageArgs(tenant_id=payload.tenantId))
+
+    realtime = Realtime(args=RealtimeArgs(tenant_id=payload.tenantId))

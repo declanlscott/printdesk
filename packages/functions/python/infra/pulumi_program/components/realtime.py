@@ -1,0 +1,152 @@
+import pulumi
+import pulumi_aws as aws
+
+import dynamic
+from utilities import resource, tags
+from utilities.aws import build_name
+
+from typing import TypedDict, Optional
+
+
+class RealtimeDns(TypedDict):
+    http: pulumi.Output[str]
+    realtime: pulumi.Output[str]
+
+
+class RealtimeArgs:
+    def __init__(self, tenant_id: str):
+        self.tenant_id = tenant_id
+
+
+class Realtime(pulumi.ComponentResource):
+    def __init__(
+        self, args: RealtimeArgs, opts: Optional[pulumi.ResourceOptions] = None
+    ):
+        super().__init__(
+            t="pw:resource:Realtime",
+            name="Realtime",
+            props=vars(args),
+            opts=opts,
+        )
+
+        self.__api = dynamic.aws.appsync.Api(
+            name="Api",
+            props={
+                "eventConfig": {
+                    "authProviders": {"authType": "AWS_IAM"},
+                    "connectionAuthModes": {"authType": "AWS_IAM"},
+                    "defaultPublishAuthModes": {"authType": "AWS_IAM"},
+                    "defaultSubscribeAuthModes": {"authType": "AWS_IAM"},
+                },
+                "tags": tags(args.tenant_id),
+            },
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        assume_role_policy = aws.iam.get_policy_document_output(
+            statements=[
+                aws.iam.GetPolicyDocumentStatementArgs(
+                    principals=[
+                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                            type="AWS", identifiers=[resource["ApiFunction"]["roleArn"]]
+                        )
+                    ],
+                    actions=["sts:AssumeRole"],
+                )
+            ]
+        ).minified_json
+
+        self.__subscriber_role = aws.iam.Role(
+            resource_name="SubscriberRole",
+            args=aws.iam.RoleArgs(
+                name=build_name(
+                    name_template=resource["Aws"]["tenant"]["roles"][
+                        "realtimeSubscriber"
+                    ]["nameTemplate"],
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=assume_role_policy,
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__subscriber_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
+            self.__api.apiArn.apply(
+                lambda api_arn: aws.iam.RolePolicy(
+                    resource_name="SubscriberRolePolicy",
+                    args=aws.iam.RolePolicyArgs(
+                        role=self.__subscriber_role.name,
+                        policy=aws.iam.get_policy_document_output(
+                            statements=[
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["appsync:EventConnect"],
+                                    resources=[api_arn],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["appsync:EventSubscribe"],
+                                    resources=[f"{api_arn}/*"],
+                                ),
+                            ]
+                        ).minified_json,
+                    ),
+                    opts=pulumi.ResourceOptions(parent=self),
+                )
+            )
+        )
+
+        self.__publisher_role = aws.iam.Role(
+            resource_name="PublisherRole",
+            args=aws.iam.RoleArgs(
+                name=build_name(
+                    name_template=resource["Aws"]["tenant"]["roles"][
+                        "realtimePublisher"
+                    ]["nameTemplate"],
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=assume_role_policy,
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__publisher_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
+            self.__api.apiArn.apply(
+                lambda api_arn: aws.iam.RolePolicy(
+                    resource_name="PublisherRolePolicy",
+                    args=aws.iam.RolePolicyArgs(
+                        role=self.__publisher_role.name,
+                        policy=aws.iam.get_policy_document_output(
+                            statements=[
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["appsync:EventPublish"],
+                                    resources=[f"{api_arn}/*"],
+                                )
+                            ]
+                        ).minified_json,
+                    ),
+                    opts=pulumi.ResourceOptions(parent=self),
+                )
+            )
+        )
+
+        self.register_outputs(
+            {
+                "api": self.__api.id,
+                "subscriberRole": self.__subscriber_role.id,
+                "subscriberRolePolicy": self.__subscriber_role_policy.apply(
+                    lambda policy: policy.id
+                ),
+                "publisherRole": self.__publisher_role.id,
+                "publisherRolePolicy": self.__publisher_role_policy.apply(
+                    lambda policy: policy.id
+                ),
+            },
+        )
+
+    @property
+    def dns(self) -> RealtimeDns:
+        return {
+            "http": self.__api.dns["HTTP"],
+            "realtime": self.__api.dns["REALTIME"],
+        }

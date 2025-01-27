@@ -1,19 +1,19 @@
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
-from typing import Sequence
+from typing import Sequence, Optional
 
-from utilities import resource, tags
-from utilities.aws import sts
+from utilities import resource, tags, aws
+from utilities.aws import get_pulumi_credentials
 
 
 class SslArgs:
-    def __init__(self, tenant_id: pulumi.Input[str]):
+    def __init__(self, tenant_id: str):
         self.tenant_id = tenant_id
 
 
 class Ssl(pulumi.ComponentResource):
-    def __init__(self, args: SslArgs, opts: pulumi.ResourceOptions = None):
+    def __init__(self, args: SslArgs, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(t="pw:resource:Ssl", name="Ssl", props=vars(args), opts=opts)
 
         def create_records(
@@ -65,10 +65,7 @@ class Ssl(pulumi.ComponentResource):
 
             return records
 
-        us_east_1_credentials = sts.assume_role(
-            RoleArn=resource["Aws"]["roles"]["pulumi"]["arn"],
-            RoleSessionName="InfraFunctionSslComponent",
-        )["Credentials"]
+        us_east_1_credentials = get_pulumi_credentials("InfraFunctionSslComponent")
 
         us_east_1_provider = aws.Provider(
             resource_name="UsEast1Provider",

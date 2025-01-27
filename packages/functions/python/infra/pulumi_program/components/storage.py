@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import TypedDict, Optional
 
 import pulumi
 import pulumi_aws as aws
@@ -14,7 +14,7 @@ class _StorageBucketArgs:
 
 class _StorageBucket(pulumi.ComponentResource):
     def __init__(
-        self, name: str, args: _StorageBucketArgs, opts: pulumi.ResourceOptions = None
+        self, name: str, args: _StorageBucketArgs, opts: pulumi.ResourceOptions
     ):
         super().__init__(
             t="pw:resource:StorageBucket", name=name, props=vars(args), opts=opts
@@ -73,7 +73,7 @@ class _StorageBucket(pulumi.ComponentResource):
                                 ],
                             ),
                         ]
-                    ).json,
+                    ).minified_json,
                 ),
                 opts=pulumi.ResourceOptions(
                     parent=self, depends_on=self.__public_access_block
@@ -143,7 +143,7 @@ class _StorageQueueArgs:
 
 class _StorageQueue(pulumi.ComponentResource):
     def __init__(
-        self, name: str, args: _StorageQueueArgs, opts: pulumi.ResourceOptions = None
+        self, name: str, args: _StorageQueueArgs, opts: pulumi.ResourceOptions
     ):
         super().__init__(
             t="pw:resource:StorageQueue",
@@ -217,7 +217,9 @@ class StorageArgs:
 
 
 class Storage(pulumi.ComponentResource):
-    def __init__(self, args: StorageArgs, opts: pulumi.ResourceOptions = None):
+    def __init__(
+        self, args: StorageArgs, opts: Optional[pulumi.ResourceOptions] = None
+    ):
         super().__init__(
             t="pw:resource:Storage", name="Storage", props=vars(args), opts=opts
         )
@@ -262,7 +264,7 @@ class Storage(pulumi.ComponentResource):
                     actions=["sts:AssumeRole"],
                 )
             ]
-        ).json
+        ).minified_json
 
         self.__buckets_access_role = aws.iam.Role(
             resource_name="BucketsAccessRole",
@@ -295,7 +297,7 @@ class Storage(pulumi.ComponentResource):
                                 resources=[f"{arns[0]}/*", f"{arns[1]}/*"],
                             )
                         ]
-                    ).json,
+                    ).minified_json,
                 ),
                 opts=pulumi.ResourceOptions(parent=self),
             )
@@ -361,7 +363,7 @@ class Storage(pulumi.ComponentResource):
                             ],
                         )
                     ]
-                ).json,
+                ).minified_json,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )

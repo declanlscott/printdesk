@@ -1,10 +1,9 @@
-from dataclasses import dataclass
-from typing import TypedDict, Union
+from typing import TypedDict
 
 import pulumi
 import pulumi_aws as aws
 
-from utilities import tags, retain_on_delete, resource
+from utilities import account_id, region, resource, tags, retain_on_delete
 from utilities.aws import build_name
 
 
@@ -27,7 +26,7 @@ class _StorageBucket(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self, retain_on_delete=retain_on_delete),
         )
 
-        self.__public_access_block = aws.s3.BucketAccessBlock(
+        self.__public_access_block = aws.s3.BucketPublicAccessBlock(
             resource_name=f"{name}PublicAccessBlock",
             args=aws.s3.BucketPublicAccessBlockArgs(
                 bucket=self.__bucket.bucket,
@@ -39,44 +38,42 @@ class _StorageBucket(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__policy: aws.s3.BucketPolicy = self.__bucket.arn.apply(
+        self.__policy: pulumi.Output[aws.s3.BucketPolicy] = self.__bucket.arn.apply(
             lambda arn: aws.s3.BucketPolicy(
                 resource_name=f"{name}Policy",
                 args=aws.s3.BucketPolicyArgs(
                     bucket=self.__bucket.bucket,
-                    policy=pulumi.Output.json_dumps(
-                        aws.iam.get_policy_document_output(
-                            statements=[
-                                aws.iam.GetPolicyDocumentStatementArgs(
-                                    principals=[
-                                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                            type="Service",
-                                            identifiers=["cloudfront.amazonaws.com"],
-                                        )
-                                    ],
-                                    actions=["s3:GetObject"],
-                                    resources=[f"{arn}/*"],
-                                ),
-                                aws.iam.GetPolicyDocumentStatementArgs(
-                                    effect="Deny",
-                                    principals=[
-                                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                            type="*", identifiers=["*"]
-                                        )
-                                    ],
-                                    actions=["s3:*"],
-                                    resources=[arn, f"{arn}/*"],
-                                    conditions=[
-                                        aws.iam.GetPolicyDocumentStatementConditionArgs(
-                                            test="Bool",
-                                            variable="aws:SecureTransport",
-                                            values=["false"],
-                                        )
-                                    ],
-                                ),
-                            ]
-                        )
-                    ),
+                    policy=aws.iam.get_policy_document_output(
+                        statements=[
+                            aws.iam.GetPolicyDocumentStatementArgs(
+                                principals=[
+                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                        type="Service",
+                                        identifiers=["cloudfront.amazonaws.com"],
+                                    )
+                                ],
+                                actions=["s3:GetObject"],
+                                resources=[f"{arn}/*"],
+                            ),
+                            aws.iam.GetPolicyDocumentStatementArgs(
+                                effect="Deny",
+                                principals=[
+                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                        type="*", identifiers=["*"]
+                                    )
+                                ],
+                                actions=["s3:*"],
+                                resources=[arn, f"{arn}/*"],
+                                conditions=[
+                                    aws.iam.GetPolicyDocumentStatementConditionArgs(
+                                        test="Bool",
+                                        variable="aws:SecureTransport",
+                                        values=["false"],
+                                    )
+                                ],
+                            ),
+                        ]
+                    ).json,
                 ),
                 opts=pulumi.ResourceOptions(
                     parent=self, depends_on=self.__public_access_block
@@ -93,7 +90,7 @@ class _StorageBucket(pulumi.ComponentResource):
                         allowed_headers=["*"],
                         allowed_origins=["*"],
                         allowed_methods=["DELETE", "GET", "HEAD", "POST", "PUT"],
-                        max_age=0,
+                        max_age_seconds=0,
                     ),
                 ],
             ),
@@ -104,7 +101,7 @@ class _StorageBucket(pulumi.ComponentResource):
             {
                 "bucket": self.__bucket.id,
                 "public_access_block": self.__public_access_block.id,
-                "policy": self.__policy.id,
+                "policy": self.__policy.apply(lambda policy: policy.id),
                 "cors": self.__cors.id,
             }
         )
@@ -127,14 +124,8 @@ class Buckets(TypedDict):
     documents: _StorageBucket
 
 
-@dataclass
-class DisabledFifo:
-    enabled: False
-
-
-@dataclass
-class EnabledFifo:
-    enabled: True
+class _StorageQueueFifoArg(TypedDict):
+    enabled: bool
     deduplication: bool
 
 
@@ -143,7 +134,7 @@ class _StorageQueueArgs:
         self,
         tenant_id: str,
         with_dlq: bool,
-        fifo: Union[DisabledFifo, EnabledFifo],
+        fifo: _StorageQueueFifoArg,
     ):
         self.tenant_id = tenant_id
         self.with_dlq = with_dlq
@@ -163,8 +154,14 @@ class _StorageQueue(pulumi.ComponentResource):
 
         if args.with_dlq:
             self.__dlq = aws.sqs.Queue(
-                resource_name=f"{name}Dlq",
-                args=aws.sqs.QueueArgs(tags=tags(args.tenant_id)),
+                resource_name=f"{name}DeadLetterQueue",
+                args=aws.sqs.QueueArgs(
+                    fifo_queue=args.fifo["enabled"],
+                    content_based_deduplication=(
+                        args.fifo["deduplication"] if args.fifo["enabled"] else None
+                    ),
+                    tags=tags(args.tenant_id),
+                ),
                 opts=pulumi.ResourceOptions(
                     parent=self, retain_on_delete=retain_on_delete
                 ),
@@ -173,16 +170,16 @@ class _StorageQueue(pulumi.ComponentResource):
         self.__queue = aws.sqs.Queue(
             resource_name=f"{name}Queue",
             args=aws.sqs.QueueArgs(
-                fifo_queue=args.fifo.enabled,
+                fifo_queue=args.fifo["enabled"],
                 content_based_deduplication=(
-                    args.fifo.deduplication if args.fifo.enabled else None
+                    args.fifo["deduplication"] if args.fifo["enabled"] else None
                 ),
                 visibility_timeout_seconds=30,
                 redrive_policy=(
                     pulumi.Output.json_dumps(
                         {"deadLetterTargetArn": self.__dlq.arn, "maxReceiveCount": 3}
                     )
-                    if args.with_dlq and hasattr(self, "_Queue__dlq")
+                    if args.with_dlq and hasattr(self, "_StorageQueue__dlq")
                     else None
                 ),
                 tags=tags(args.tenant_id),
@@ -192,7 +189,7 @@ class _StorageQueue(pulumi.ComponentResource):
 
         self.register_outputs(
             {
-                "dlq": self.__dlq.id if hasattr(self, "_Queue__dlq") else None,
+                "dlq": self.__dlq.id if hasattr(self, "_StorageQueue__dlq") else None,
                 "queue": self.__queue.id,
             }
         )
@@ -244,27 +241,28 @@ class Storage(pulumi.ComponentResource):
                 args=_StorageQueueArgs(
                     tenant_id=args.tenant_id,
                     with_dlq=True,
-                    fifo=EnabledFifo(enabled=True, deduplication=True),
+                    fifo={
+                        "enabled": True,
+                        "deduplication": True,
+                    },
                 ),
                 opts=pulumi.ResourceOptions(parent=self),
             )
         }
 
-        assume_role_policy = pulumi.Output.json_dumps(
-            aws.iam.get_policy_document_output(
-                statements=[
-                    aws.iam.GetPolicyDocumentStatementArgs(
-                        principals=[
-                            aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                type="AWS",
-                                identifiers=[resource["ApiFunction"]["roleArn"]],
-                            )
-                        ],
-                        actions=["sts:AssumeRole"],
-                    )
-                ]
-            )
-        )
+        assume_role_policy = aws.iam.get_policy_document_output(
+            statements=[
+                aws.iam.GetPolicyDocumentStatementArgs(
+                    principals=[
+                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                            type="AWS",
+                            identifiers=[resource["ApiFunction"]["roleArn"]],
+                        )
+                    ],
+                    actions=["sts:AssumeRole"],
+                )
+            ]
+        ).json
 
         self.__buckets_access_role = aws.iam.Role(
             resource_name="BucketsAccessRole",
@@ -281,23 +279,23 @@ class Storage(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__buckets_access_role_policy: aws.iam.RolePolicy = pulumi.Output.all(
+        self.__buckets_access_role_policy: pulumi.Output[
+            aws.iam.RolePolicy
+        ] = pulumi.Output.all(
             self.__buckets["assets"].arn, self.__buckets["documents"].arn
         ).apply(
             lambda arns: aws.iam.RolePolicy(
                 resource_name="BucketsAccessRolePolicy",
                 args=aws.iam.RolePolicyArgs(
                     role=self.__buckets_access_role.name,
-                    policy=pulumi.Output.json_dumps(
-                        aws.iam.get_policy_document_output(
-                            statements=[
-                                aws.iam.GetPolicyDocumentStatementArgs(
-                                    actions=["s3:GetObject", "s3:PutObject"],
-                                    resources=[f"{arns[0]}/*", f"{arns[1]}/*"],
-                                )
-                            ]
-                        )
-                    ),
+                    policy=aws.iam.get_policy_document_output(
+                        statements=[
+                            aws.iam.GetPolicyDocumentStatementArgs(
+                                actions=["s3:GetObject", "s3:PutObject"],
+                                resources=[f"{arns[0]}/*", f"{arns[1]}/*"],
+                            )
+                        ]
+                    ).json,
                 ),
                 opts=pulumi.ResourceOptions(parent=self),
             )
@@ -312,6 +310,7 @@ class Storage(pulumi.ComponentResource):
                     ],
                     tenant_id=args.tenant_id,
                 ),
+                assume_role_policy=assume_role_policy,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -321,50 +320,48 @@ class Storage(pulumi.ComponentResource):
             resource_name="PutParametersRolePolicy",
             args=aws.iam.RolePolicyArgs(
                 role=self.__put_parameters_role.name,
-                policy=pulumi.Output.json_dumps(
-                    aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["ssm:PutParameter"],
-                                resources=[
-                                    f"arn:aws:ssm:{resource["Aws"]["accountId"]}:parameter{name}"
-                                    for name in [
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "documentsMimeTypes"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "documentsSizeLimit"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "tailnetPapercutServerUri"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "papercutServerAuthToken"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "tailscaleOauthClient"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                    ]
-                                ],
-                            )
-                        ]
-                    )
-                ),
+                policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            actions=["ssm:PutParameter"],
+                            resources=[
+                                f"arn:aws:ssm:{region}:{account_id}:parameter{name}"
+                                for name in [
+                                    build_name(
+                                        resource["Aws"]["tenant"]["parameters"][
+                                            "documentsMimeTypes"
+                                        ]["nameTemplate"],
+                                        args.tenant_id,
+                                    ),
+                                    build_name(
+                                        resource["Aws"]["tenant"]["parameters"][
+                                            "documentsSizeLimit"
+                                        ]["nameTemplate"],
+                                        args.tenant_id,
+                                    ),
+                                    build_name(
+                                        resource["Aws"]["tenant"]["parameters"][
+                                            "tailnetPapercutServerUri"
+                                        ]["nameTemplate"],
+                                        args.tenant_id,
+                                    ),
+                                    build_name(
+                                        resource["Aws"]["tenant"]["parameters"][
+                                            "papercutServerAuthToken"
+                                        ]["nameTemplate"],
+                                        args.tenant_id,
+                                    ),
+                                    build_name(
+                                        resource["Aws"]["tenant"]["parameters"][
+                                            "tailscaleOauthClient"
+                                        ]["nameTemplate"],
+                                        args.tenant_id,
+                                    ),
+                                ]
+                            ],
+                        )
+                    ]
+                ).json,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -372,7 +369,9 @@ class Storage(pulumi.ComponentResource):
         self.register_outputs(
             {
                 "buckets_access_role": self.__buckets_access_role.id,
-                "buckets_access_role_policy": self.__buckets_access_role_policy.id,
+                "buckets_access_role_policy": self.__buckets_access_role_policy.apply(
+                    lambda policy: policy.id
+                ),
                 "put_parameters_role": self.__put_parameters_role.id,
                 "put_parameters_role_policy": self.__put_parameters_role_policy.id,
             }

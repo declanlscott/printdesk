@@ -10,7 +10,8 @@ for key, value in os.environ.items():
 
 app: str = resource["AppData"]["name"]
 stage: str = resource["AppData"]["stage"]
-aws_region: str = resource["Aws"]["region"]
+account_id: str = resource["Aws"]["account"]["id"]
+region: str = resource["Aws"]["region"]
 retain_on_delete = stage == "production"
 
 

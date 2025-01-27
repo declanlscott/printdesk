@@ -18,4 +18,4 @@ def inline(payload: sqs_record.Payload):
         ),
     )
 
-    storage = Storage(args=StorageArgs(tenant_id=payload.tenant_id))
+    storage = Storage(args=StorageArgs(tenant_id=payload.tenantId))

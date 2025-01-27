@@ -14,7 +14,7 @@ from pulumi import automation
 
 from models import sqs_record
 from pulumi_program import program
-from utilities import resource, app, stage, aws_region
+from utilities import resource, app, stage, region
 from utilities.parameters import cloudflare_api_token
 
 processor = BatchProcessor(EventType.SQS)
@@ -60,7 +60,7 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully installed plugins.")
 
     logger.info("Setting stack configuration ...")
-    stack.set_config("aws:region", automation.ConfigValue(aws_region))
+    stack.set_config("aws:region", automation.ConfigValue(region))
     stack.set_config(
         "aws:assumeRole.roleArn",
         automation.ConfigValue(resource["Aws"]["roles"]["pulumi"]["arn"]),

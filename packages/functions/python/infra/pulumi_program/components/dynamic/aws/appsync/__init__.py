@@ -1,10 +1,10 @@
 import pulumi
 from datetime import datetime
 
-from typing import TypedDict, NotRequired, Mapping, Dict, Optional
-from types_boto3_appsync.type_defs import EventConfigTypeDef, EventConfigOutputTypeDef
+from .api_provider import ApiProvider
 
-from .providers.api import ApiProvider
+from typing import TypedDict, NotRequired, Mapping, Dict
+from types_boto3_appsync.type_defs import EventConfigTypeDef, EventConfigOutputTypeDef
 
 
 class ApiInputs(TypedDict):

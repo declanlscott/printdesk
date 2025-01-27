@@ -1,9 +1,8 @@
 import pulumi
 import pulumi_aws as aws
 
-import dynamic
-from utilities import resource, tags
-from utilities.aws import build_name
+from . import dynamic
+from utilities import resource, tags, build_name
 
 from typing import TypedDict, Optional
 

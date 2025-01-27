@@ -3,8 +3,7 @@ from typing import TypedDict, Optional
 import pulumi
 import pulumi_aws as aws
 
-from utilities import account_id, region, resource, tags, retain_on_delete
-from utilities.aws import build_name
+from utilities import account_id, region, resource, tags, retain_on_delete, build_name
 
 
 class _StorageBucketArgs:

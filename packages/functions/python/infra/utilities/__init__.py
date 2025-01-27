@@ -17,3 +17,7 @@ retain_on_delete = stage == "production"
 
 def tags(tenant_id: str):
     return {"sst:app": app, "sst:stage": stage, "tenant-id": tenant_id}
+
+
+def build_name(name_template: str, tenant_id: str) -> str:
+    return name_template.replace("{{tenant_id}}", tenant_id)

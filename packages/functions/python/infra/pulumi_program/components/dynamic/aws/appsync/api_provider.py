@@ -9,7 +9,7 @@ from types_boto3_appsync.type_defs import EventConfigTypeDef, EventConfigOutputT
 
 from utilities import region
 from utilities.aws import get_pulumi_credentials
-from .... import logical_name, physical_name
+from ...naming import logical_name, physical_name
 
 
 class ApiProviderInputs(TypedDict):

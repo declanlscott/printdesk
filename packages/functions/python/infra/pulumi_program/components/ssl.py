@@ -70,11 +70,6 @@ class Ssl(pulumi.ComponentResource):
             RoleSessionName="InfraFunctionSslComponent",
         )["Credentials"]
 
-        us_east_1_credentials = sts.assume_role(
-            RoleArn=resource["Aws"]["roles"]["pulumi"]["arn"],
-            RoleSessionName="InfraFunctionSslComponent",
-        )["Credentials"]
-
         us_east_1_provider = aws.Provider(
             resource_name="UsEast1Provider",
             args=aws.ProviderArgs(

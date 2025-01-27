@@ -36,7 +36,7 @@ def record_handler(record: SQSRecord):
 
     logger.info("Initializing stack ...")
     project_name = f"{app}-{stage}-infra"
-    stack_name = f"{app}-{stage}-infra-{payload.tenantId}"
+    stack_name = payload.tenantId
     stack = automation.create_or_select_stack(
         project_name=project_name,
         stack_name=stack_name,

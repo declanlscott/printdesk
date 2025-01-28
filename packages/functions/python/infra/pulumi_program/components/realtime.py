@@ -28,17 +28,18 @@ class Realtime(pulumi.ComponentResource):
             opts=opts,
         )
 
-        self.__api = dynamic.aws.appsync.Api(
-            name="Api",
-            props={
-                "eventConfig": {
-                    "authProviders": {"authType": "AWS_IAM"},
-                    "connectionAuthModes": {"authType": "AWS_IAM"},
-                    "defaultPublishAuthModes": {"authType": "AWS_IAM"},
-                    "defaultSubscribeAuthModes": {"authType": "AWS_IAM"},
+        self.__api = dynamic.aws.appsync.EventApi(
+            name="EventApi",
+            props=dynamic.aws.appsync.EventApiInputs(
+                tenant_id=args.tenant_id,
+                event_config={
+                    "authProviders": [{"authType": "AWS_IAM"}],
+                    "connectionAuthModes": [{"authType": "AWS_IAM"}],
+                    "defaultPublishAuthModes": [{"authType": "AWS_IAM"}],
+                    "defaultSubscribeAuthModes": [{"authType": "AWS_IAM"}],
                 },
-                "tags": tags(args.tenant_id),
-            },
+                tags=tags(args.tenant_id),
+            ),
             opts=pulumi.ResourceOptions(parent=self),
         )
 
@@ -71,7 +72,7 @@ class Realtime(pulumi.ComponentResource):
         )
 
         self.__subscriber_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
-            self.__api.apiArn.apply(
+            self.__api.api_arn.apply(
                 lambda api_arn: aws.iam.RolePolicy(
                     resource_name="SubscriberRolePolicy",
                     args=aws.iam.RolePolicyArgs(
@@ -110,7 +111,7 @@ class Realtime(pulumi.ComponentResource):
         )
 
         self.__publisher_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
-            self.__api.apiArn.apply(
+            self.__api.api_arn.apply(
                 lambda api_arn: aws.iam.RolePolicy(
                     resource_name="PublisherRolePolicy",
                     args=aws.iam.RolePolicyArgs(

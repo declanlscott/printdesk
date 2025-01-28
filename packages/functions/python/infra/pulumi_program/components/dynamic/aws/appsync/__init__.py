@@ -1,46 +1,55 @@
 import pulumi
-from datetime import datetime
 
-from .api_provider import ApiProvider
+from .event_api_provider import EventApiProvider
 
-from typing import TypedDict, NotRequired, Mapping, Dict
+from typing import Mapping, Dict, Optional, Any
 from types_boto3_appsync.type_defs import EventConfigTypeDef, EventConfigOutputTypeDef
 
 
-class ApiInputs(TypedDict):
-    name: NotRequired[pulumi.Input[str]]
-    ownerContact: NotRequired[pulumi.Input[str]]
-    tags: NotRequired[pulumi.Input[Mapping[str, str]]]
-    eventConfig: NotRequired[pulumi.Input[EventConfigTypeDef]]
+class EventApiInputs:
+    def __init__(
+        self,
+        tenant_id: str,
+        owner_contact: Optional[pulumi.Input[str]] = None,
+        tags: Optional[pulumi.Input[Mapping[str, str]]] = None,
+        event_config: Optional[pulumi.Input[EventConfigTypeDef]] = None,
+    ):
+        self.tenant_id = tenant_id
+        self.owner_contact = owner_contact
+        self.tags = tags
+        self.event_config = event_config
 
 
-class Api(pulumi.dynamic.Resource):
-    apiId: pulumi.Output[str]
+class EventApi(pulumi.dynamic.Resource):
+    tenant_id: pulumi.Output[str]
+    api_id: pulumi.Output[str]
     name: pulumi.Output[str]
-    ownerContact: pulumi.Output[str]
+    owner_contact: pulumi.Output[str]
     tags: pulumi.Output[Dict[str, str]]
     dns: pulumi.Output[Dict[str, str]]
-    apiArn: pulumi.Output[str]
-    created: pulumi.Output[datetime]
-    xrayEnabled: pulumi.Output[bool]
-    wafWebAclArn: pulumi.Output[str]
-    eventConfig: pulumi.Output[EventConfigOutputTypeDef]
+    api_arn: pulumi.Output[str]
+    created: pulumi.Output[str]
+    xray_enabled: pulumi.Output[bool]
+    waf_web_acl_arn: pulumi.Output[str]
+    event_config: pulumi.Output[Dict[str, Any]]
 
-    def __init__(self, name: str, props: ApiInputs, opts: pulumi.ResourceOptions):
+    def __init__(self, name: str, props: EventApiInputs, opts: pulumi.ResourceOptions):
         super().__init__(
-            provider=ApiProvider(name=name),
+            provider=EventApiProvider(name=name),
             name=name,
             props={
-                "apiId": None,
-                "name": props["name"],
-                "ownerContact": props["ownerContact"],
-                "tags": props["tags"],
+                "tenant_id": None,
+                "api_id": None,
+                "name": None,
+                "owner_contact": None,
+                "tags": None,
                 "dns": None,
-                "apiArn": None,
+                "api_arn": None,
                 "created": None,
-                "xrayEnabled": None,
-                "wafWebAclArn": None,
-                "eventConfig": props["eventConfig"],
+                "xray_enabled": None,
+                "waf_web_acl_arn": None,
+                "event_config": None,
+                **vars(props),
             },
             opts=opts,
         )

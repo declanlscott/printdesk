@@ -3,7 +3,7 @@
 import hashlib
 import re
 
-import pulumi
+from utilities import stage
 
 PRETTY_CHARS = "abcdefhkmnorstuvwxz"
 
@@ -13,7 +13,7 @@ def logical_name(name: str) -> str:
     return name[0].upper() + name[1:]
 
 
-def physical_name(max_length: int, name: str, suffix: str = "") -> str:
+def physical_name(max_length: int, name: str, tenant_id: str, suffix: str = "") -> str:
     # This function does the following:
     # - Removes all non-alphanumeric characters
     # - Prefixes the name with the project and stack names
@@ -23,8 +23,8 @@ def physical_name(max_length: int, name: str, suffix: str = "") -> str:
 
     def get_prefixed_name() -> str:
         l = max_length - len(suffix)
-        project = pulumi.get_project()
-        stack = pulumi.get_stack()
+        project = f"pw-{stage}"
+        stack = tenant_id
         project_len = len(project)
         stack_len = len(stack)
         name_len = len(name)

@@ -46,10 +46,16 @@ declare module "sst" {
         "id": string
       }
       "cloudfront": {
+        "apiCachePolicy": {
+          "id": string
+        }
         "keyGroup": {
           "id": string
         }
         "keyPair": {
+          "id": string
+        }
+        "s3OriginAccessControl": {
           "id": string
         }
       }

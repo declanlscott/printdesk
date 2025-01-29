@@ -44,6 +44,35 @@ export const cloudfrontKeyGroup = new aws.cloudfront.KeyGroup(
   { items: [cloudfrontPublicKey.id] },
 );
 
+export const cloudfrontApiCachePolicy = new aws.cloudfront.CachePolicy(
+  "CloudfrontApiCachePolicy",
+  {
+    defaultTtl: 0,
+    minTtl: 0,
+    maxTtl: 31536000, // 1 year
+    parametersInCacheKeyAndForwardedToOrigin: {
+      cookiesConfig: {
+        cookieBehavior: "none",
+      },
+      headersConfig: {
+        headerBehavior: "none",
+      },
+      queryStringsConfig: {
+        queryStringBehavior: "none",
+      },
+      enableAcceptEncodingBrotli: true,
+      enableAcceptEncodingGzip: true,
+    },
+  },
+);
+
+export const cloudfrontS3OriginAccessControl =
+  new aws.cloudfront.OriginAccessControl("CloudfrontS3OriginAccessControl", {
+    originAccessControlOriginType: "s3",
+    signingBehavior: "always",
+    signingProtocol: "sigv4",
+  });
+
 // Group of non-sensitive AWS metadata
 export const aws_ = new sst.Linkable("Aws", {
   properties: {
@@ -93,6 +122,8 @@ export const aws_ = new sst.Linkable("Aws", {
     cloudfront: {
       keyPair: { id: cloudfrontPublicKey.id },
       keyGroup: { id: cloudfrontKeyGroup.id },
+      apiCachePolicy: { id: cloudfrontApiCachePolicy.id },
+      s3OriginAccessControl: { id: cloudfrontS3OriginAccessControl.id },
     },
   },
 });

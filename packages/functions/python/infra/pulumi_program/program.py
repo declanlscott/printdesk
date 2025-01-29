@@ -10,6 +10,8 @@ from .components import (
     RealtimeArgs,
     Router,
     RouterArgs,
+    PapercutSecureReverseProxy,
+    PapercutSecureReverseProxyArgs,
 )
 from models import sqs_record
 from utilities import tags, region, stage
@@ -46,4 +48,10 @@ def inline(payload: sqs_record.Payload):
             ].regional_domain_name,
             certificate_arn=ssl.certificate_arn,
         ),
+    )
+
+    papercut_secure_reverse_proxy = PapercutSecureReverseProxy(
+        args=PapercutSecureReverseProxyArgs(
+            tenant_id=payload.tenantId,
+        )
     )

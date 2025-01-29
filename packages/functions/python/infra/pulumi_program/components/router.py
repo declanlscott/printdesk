@@ -16,6 +16,7 @@ class RouterArgs:
         api_origin_path: pulumi.Input[str],
         assets_origin_domain_name: pulumi.Input[str],
         documents_origin_domain_name: pulumi.Input[str],
+        certificate_arn: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
         self.domain_name = domain_name
@@ -23,6 +24,7 @@ class RouterArgs:
         self.api_origin_path = api_origin_path
         self.assets_origin_domain_name = assets_origin_domain_name
         self.documents_origin_domain_name = documents_origin_domain_name
+        self.certificate_arn = certificate_arn
 
 
 class Router(pulumi.ComponentResource):
@@ -182,8 +184,11 @@ class Router(pulumi.ComponentResource):
                         restriction_type="none"
                     )
                 ),
+                aliases=[args.domain_name],
                 viewer_certificate=aws.cloudfront.DistributionViewerCertificateArgs(
-                    cloudfront_default_certificate=True
+                    acm_certificate_arn=args.certificate_arn,
+                    ssl_support_method="sni-only",
+                    minimum_protocol_version="TLSv1.2_2021",
                 ),
                 wait_for_deployment=False,
                 tags=tags(args.tenant_id),
@@ -200,6 +205,7 @@ class Router(pulumi.ComponentResource):
                 name=args.domain_name,
                 type="CNAME",
                 content=self.__distribution.domain_name,
+                ttl=60,
             ),
             opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
         )

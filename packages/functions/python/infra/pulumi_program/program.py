@@ -44,5 +44,6 @@ def inline(payload: sqs_record.Payload):
             documents_origin_domain_name=storage.buckets[
                 "documents"
             ].regional_domain_name,
+            certificate_arn=ssl.certificate_arn,
         ),
     )

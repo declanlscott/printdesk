@@ -1,12 +1,11 @@
-import json
 import os
+import json
 
-prefix = "FUNCTION_RESOURCE_"
-resource = {}
-
-for key, value in os.environ.items():
-    if key.startswith(prefix):
-        resource[key[len(prefix) :]] = json.loads(value)
+task_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+resource_file_path = os.path.join(task_root, "resource.json")
+with open(resource_file_path, "r") as resource_file:
+    data = json.load(resource_file)
+resource = {key: json.loads(value) for key, value in data.items()}
 
 app: str = resource["AppData"]["name"]
 stage: str = resource["AppData"]["stage"]

@@ -13,7 +13,7 @@ export function injectLinkables(
       >;
     };
   },
-  prefix: string,
+  prefix: string = "",
 ) {
   const vars: Record<string, $util.Output<string>> = {};
   for (const logicalName in linkables) {

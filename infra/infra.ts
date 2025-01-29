@@ -77,8 +77,7 @@ const papercutSecureReverseProxyBuilder = new command.local.Command(
   "PapercutSecureReverseProxyBuilder",
   {
     dir: papercutSecureReverseProxySrcPath,
-    create:
-      "GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o bin/bootstrap cmd/function/main.go && zip -j bin/package.zip bin/bootstrap",
+    create: `GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o bin/bootstrap cmd/function/main.go && zip -j ${papercutSecureReverseProxyBuilderAssetPath} bin/bootstrap`,
     assetPaths: [papercutSecureReverseProxyBuilderAssetPath],
     triggers: [papercutSecureReverseProxySrc.archive],
   },
@@ -112,12 +111,41 @@ export const code = new sst.Linkable("Code", {
   },
 });
 
-export const infraFunctionImage = new awsx.ecr.Image("InfraFunctionImage", {
-  repositoryUrl: repository.url,
-  context: normalizePath("packages/functions/python/infra"),
-  platform: "linux/arm64",
-  imageTag: "latest",
-});
+const infraFunctionDir = normalizePath("packages/functions/python/infra");
+
+const infraFunctionResourceData = $util.jsonStringify(
+  injectLinkables({
+    AppData: appData,
+    ApiFunction: apiFunction,
+    AppsyncEventApi: appsyncEventApi,
+    Aws: aws_,
+    Code: code,
+    InvoicesProcessor: invoicesProcessor,
+    InvoicesProcessorDeadLetterQueue: invoicesProcessorDeadLetterQueue,
+    PapercutSync: papercutSync,
+    PulumiBucket: pulumiBucket,
+  }),
+);
+
+const infraFunctionResourceBuilder = new command.local.Command(
+  "InfraFunctionResourceBuilder",
+  {
+    dir: infraFunctionDir,
+    create: $interpolate`echo '${infraFunctionResourceData}' > resource.json`,
+    triggers: [infraFunctionResourceData],
+  },
+);
+
+export const infraFunctionImage = new awsx.ecr.Image(
+  "InfraFunctionImage",
+  {
+    repositoryUrl: repository.url,
+    context: infraFunctionDir,
+    platform: "linux/arm64",
+    imageTag: "latest",
+  },
+  { dependsOn: [infraFunctionResourceBuilder] },
+);
 
 new aws.iam.RolePolicy("InfraFunctionRoleInlinePolicy", {
   role: infraFunctionRole.name,
@@ -180,20 +208,6 @@ export const infraFunction = new aws.lambda.Function("InfraFunction", {
   },
   environment: {
     variables: {
-      ...injectLinkables(
-        {
-          AppData: appData,
-          ApiFunction: apiFunction,
-          AppsyncEventApi: appsyncEventApi,
-          Aws: aws_,
-          Code: code,
-          InvoicesProcessor: invoicesProcessor,
-          InvoicesProcessorDeadLetterQueue: invoicesProcessorDeadLetterQueue,
-          PapercutSync: papercutSync,
-          PulumiBucket: pulumiBucket,
-        },
-        "FUNCTION_RESOURCE_",
-      ),
       PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
     },
   },

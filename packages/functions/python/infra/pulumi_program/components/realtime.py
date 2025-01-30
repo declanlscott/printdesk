@@ -43,6 +43,26 @@ class Realtime(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self.__events_channel_namespace = dynamic.aws.appsync.ChannelNamespace(
+            name="EventsChannelNamespace",
+            props=dynamic.aws.appsync.ChannelNamespaceInputs(
+                api_id=self.__api.api_id,
+                name="events",
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__replicache_channel_namespace = dynamic.aws.appsync.ChannelNamespace(
+            name="ReplicacheChannelNamespace",
+            props=dynamic.aws.appsync.ChannelNamespaceInputs(
+                api_id=self.__api.api_id,
+                name="replicache",
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         assume_role_policy = aws.iam.get_policy_document_output(
             statements=[
                 aws.iam.GetPolicyDocumentStatementArgs(
@@ -133,12 +153,14 @@ class Realtime(pulumi.ComponentResource):
         self.register_outputs(
             {
                 "api": self.__api.id,
-                "subscriberRole": self.__subscriber_role.id,
-                "subscriberRolePolicy": self.__subscriber_role_policy.apply(
+                "events_channel_namespace": self.__events_channel_namespace.id,
+                "replicache_channel_namespace": self.__replicache_channel_namespace.id,
+                "subscriber_role": self.__subscriber_role.id,
+                "subscriber_role_policy": self.__subscriber_role_policy.apply(
                     lambda policy: policy.id
                 ),
-                "publisherRole": self.__publisher_role.id,
-                "publisherRolePolicy": self.__publisher_role_policy.apply(
+                "publisher_role": self.__publisher_role.id,
+                "publisher_role_policy": self.__publisher_role_policy.apply(
                     lambda policy: policy.id
                 ),
             },

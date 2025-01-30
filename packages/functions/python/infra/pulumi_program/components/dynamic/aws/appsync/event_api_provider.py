@@ -5,9 +5,14 @@ from utilities import region
 from utilities.aws import get_pulumi_credentials
 from ...naming import logical_name, physical_name
 
-from typing import TypedDict, NotRequired, Mapping, Dict, Any
+from typing import TypedDict, NotRequired, Mapping, Dict, Any, Unpack
 from types_boto3_appsync import AppSyncClient
-from types_boto3_appsync.type_defs import EventConfigTypeDef, ApiTypeDef
+from types_boto3_appsync.type_defs import (
+    EventConfigTypeDef,
+    ApiTypeDef,
+    CreateApiRequestRequestTypeDef,
+    UpdateApiRequestRequestTypeDef,
+)
 
 
 class EventApiProviderInputs(TypedDict):
@@ -19,16 +24,16 @@ class EventApiProviderInputs(TypedDict):
 
 class EventApiProviderOutputs(TypedDict):
     tenant_id: str
-    api_id: str
-    name: str
-    owner_contact: str
-    tags: Dict[str, str]
-    dns: Dict[str, str]
     api_arn: str
+    api_id: str
     created: str
-    xray_enabled: bool
-    waf_web_acl_arn: str
+    dns: Dict[str, str]
     event_config: Dict[str, Any]
+    name: str
+    tags: NotRequired[Dict[str, str]]
+    owner_contact: NotRequired[str]
+    xray_enabled: NotRequired[bool]
+    waf_web_acl_arn: NotRequired[str]
 
 
 class EventApiProvider(pulumi.dynamic.ResourceProvider):
@@ -49,50 +54,61 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider):
         ).client("appsync")
 
     @staticmethod
-    def __build_outs(tenant_id: str, api: ApiTypeDef) -> EventApiProviderOutputs:
-        return {
+    def __build_outs(
+        tenant_id: str, **api: Unpack[ApiTypeDef]
+    ) -> EventApiProviderOutputs:
+        outs: EventApiProviderOutputs = {
             "tenant_id": tenant_id,
-            "api_id": api["apiId"],
-            "name": api["name"],
-            "owner_contact": api["ownerContact"],
-            "tags": api["tags"],
-            "dns": api["dns"],
             "api_arn": api["apiArn"],
+            "api_id": api["apiId"],
             "created": api["created"].isoformat(),
-            "xray_enabled": api.get("xrayEnabled", False),
-            "waf_web_acl_arn": api.get("wafWebAclArn", ""),
+            "dns": api["dns"],
             "event_config": api["eventConfig"],
+            "name": api["name"],
         }
 
-    def create(self, props: EventApiProviderInputs) -> pulumi.dynamic.CreateResult:
-        client = EventApiProvider.__get_client()
+        if api.get("tags") is not None:
+            outs["tags"] = api["tags"]
+        if api.get("ownerContact") is not None:
+            outs["owner_contact"] = api["ownerContact"]
+        if api.get("xrayEnabled") is not None:
+            outs["xray_enabled"] = api["xrayEnabled"]
+        if api.get("wafWebAclArn") is not None:
+            outs["waf_web_acl_arn"] = api["wafWebAclArn"]
 
-        api = client.create_api(
-            name=physical_name(50, self.__logical_name, props["tenant_id"]),
-            ownerContact=props.get("owner_contact", ""),
-            tags=props.get("tags", {}),
-            eventConfig=props.get("event_config"),
-        )["api"]
+        return outs
+
+    def create(self, props: EventApiProviderInputs) -> pulumi.dynamic.CreateResult:
+        create_input: CreateApiRequestRequestTypeDef = {
+            "name": physical_name(50, self.__logical_name, props["tenant_id"])
+        }
+
+        if props.get("owner_contact") is not None:
+            create_input["ownerContact"] = props["owner_contact"]
+        if props.get("tags") is not None:
+            create_input["tags"] = props["tags"]
+        if props.get("event_config") is not None:
+            create_input["eventConfig"] = props["event_config"]
+
+        api = EventApiProvider.__get_client().create_api(**create_input)["api"]
         if "apiId" not in api:
             raise Exception(f"Failed creating event api '{self.__logical_name}'")
 
         return pulumi.dynamic.CreateResult(
             id_=api["apiId"],
-            outs=EventApiProvider.__build_outs(props["tenant_id"], api),
+            outs=EventApiProvider.__build_outs(props["tenant_id"], **api),
         )
 
     def read(
         self, id_: str, props: EventApiProviderOutputs
     ) -> pulumi.dynamic.ReadResult:
-        client = EventApiProvider.__get_client()
-
-        api = client.get_api(apiId=id_)["api"]
+        api = EventApiProvider.__get_client().get_api(apiId=id_)["api"]
         if "apiId" not in api:
             raise Exception(f"Failed reading event api '{id_}'")
 
         return pulumi.dynamic.ReadResult(
             id_=id_,
-            outs=EventApiProvider.__build_outs(props["tenant_id"], api),
+            outs=EventApiProvider.__build_outs(props["tenant_id"], **api),
         )
 
     def update(
@@ -101,22 +117,23 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider):
         _olds: EventApiProviderOutputs,
         _news: EventApiProviderInputs,
     ) -> pulumi.dynamic.UpdateResult:
-        client = EventApiProvider.__get_client()
+        update_input: UpdateApiRequestRequestTypeDef = {
+            "apiId": _id,
+            "name": _olds["name"],
+        }
 
-        api = client.update_api(
-            apiId=_id,
-            name=_olds["name"],
-            ownerContact=_news.get("owner_contact", _olds["owner_contact"]),
-            eventConfig=_news.get("event_config", _olds["event_config"]),
-        )["api"]
+        if _news.get("owner_contact") is not None:
+            update_input["ownerContact"] = _news["owner_contact"]
+        if _news.get("event_config") is not None:
+            update_input["eventConfig"] = _news["event_config"]
+
+        api = EventApiProvider.__get_client().update_api(**update_input)["api"]
         if "apiId" not in api:
             raise Exception(f"Failed updating event api '{_id}'")
 
         return pulumi.dynamic.UpdateResult(
-            outs=EventApiProvider.__build_outs(_olds["tenant_id"], api),
+            outs=EventApiProvider.__build_outs(_olds["tenant_id"], **api),
         )
 
     def delete(self, _id: str, _props: EventApiProviderOutputs) -> None:
-        client = EventApiProvider.__get_client()
-
-        client.delete_api(apiId=_id)
+        EventApiProvider.__get_client().delete_api(apiId=_id)

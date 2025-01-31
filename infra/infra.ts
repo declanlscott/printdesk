@@ -57,11 +57,18 @@ export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
   handler: "packages/functions/node/src/invoices-processor.handler",
   timeout: "20 seconds",
   link: [appData, cloudfrontPrivateKey, dsqlCluster],
-});
-new aws.lambda.Permission("InvoicesProcessorRulePermission", {
-  function: invoicesProcessor.name,
-  action: "lambda:InvokeFunction",
-  principal: "events.amazonaws.com",
+  permissions: [
+    {
+      actions: [
+        "sqs:ChangeMessageVisibility",
+        "sqs:DeleteMessage",
+        "sqs:GetQueueAttributes",
+        "sqs:GetQueueUrl",
+        "sqs:ReceiveMessage",
+      ],
+      resources: ["*"],
+    },
+  ],
 });
 
 const papercutSecureReverseProxySrcPath = normalizePath(

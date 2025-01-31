@@ -251,6 +251,19 @@ class Storage(pulumi.ComponentResource):
             )
         }
 
+        self.__invoices_processor_event_source_mapping = aws.lambda_.EventSourceMapping(
+            resource_name="InvoicesProcessorEventSourceMapping",
+            args=aws.lambda_.EventSourceMappingArgs(
+                event_source_arn=self.__queues["invoices_processor"].arn,
+                function_name=resource["InvoicesProcessor"]["name"],
+                function_response_types=["ReportBatchItemFailures"],
+                batch_size=10,
+                maximum_batching_window_in_seconds=0,
+                tags=tags(tenant_id=args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         assume_role_policy = aws.iam.get_policy_document_output(
             statements=[
                 aws.iam.GetPolicyDocumentStatementArgs(
@@ -369,6 +382,7 @@ class Storage(pulumi.ComponentResource):
 
         self.register_outputs(
             {
+                "invoices_processor_event_source_mapping": self.__invoices_processor_event_source_mapping.id,
                 "buckets_access_role": self.__buckets_access_role.id,
                 "buckets_access_role_policy": self.__buckets_access_role_policy.apply(
                     lambda policy: policy.id

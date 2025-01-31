@@ -12,6 +12,8 @@ from .components import (
     RouterArgs,
     PapercutSecureReverseProxy,
     PapercutSecureReverseProxyArgs,
+    Api,
+    ApiArgs,
 )
 from models import sqs_record
 from utilities import tags, region, stage
@@ -53,5 +55,18 @@ def inline(payload: sqs_record.Payload):
     papercut_secure_reverse_proxy = PapercutSecureReverseProxy(
         args=PapercutSecureReverseProxyArgs(
             tenant_id=payload.tenantId,
+        )
+    )
+
+    api = Api(
+        args=ApiArgs(
+            tenant_id=payload.tenantId,
+            gateway=gateway,
+            invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
+            distribution_id=router.distribution_id,
+            domain_name=ssl.domain_name,
+            appsync_http_domain_name=realtime.dns["http"],
+            appsync_realtime_domain_name=realtime.dns["realtime"],
+            papercut_secure_reverse_proxy_function_invoke_arn=papercut_secure_reverse_proxy.invoke_arn,
         )
     )

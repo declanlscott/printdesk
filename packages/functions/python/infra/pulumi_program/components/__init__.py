@@ -6,6 +6,7 @@ from .papercut_secure_reverse_proxy import (
     PapercutSecureReverseProxy,
     PapercutSecureReverseProxyArgs,
 )
+from .api import Api, ApiArgs
 
 __all__ = [
     "Ssl",
@@ -18,4 +19,6 @@ __all__ = [
     "RouterArgs",
     "PapercutSecureReverseProxy",
     "PapercutSecureReverseProxyArgs",
+    "Api",
+    "ApiArgs",
 ]

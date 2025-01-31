@@ -20,3 +20,7 @@ def tags(tenant_id: str):
 
 def build_name(name_template: str, tenant_id: str) -> str:
     return name_template.replace("{{tenant_id}}", tenant_id)
+
+
+def reverse_dns(domain_name: str) -> str:
+    return ".".join(domain_name.split(".")[::-1])

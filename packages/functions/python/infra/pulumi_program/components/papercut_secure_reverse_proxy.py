@@ -103,6 +103,22 @@ class PapercutSecureReverseProxy(pulumi.ComponentResource):
                 architectures=["arm64"],
                 timeout=20,
                 role=self.__role.arn,
+                environment=aws.lambda_.FunctionEnvironmentArgs(
+                    variables={
+                        "TARGET_PARAM_NAME": build_name(
+                            resource["Aws"]["tenant"]["parameters"][
+                                "tailnetPapercutServerUri"
+                            ]["nameTemplate"],
+                            args.tenant_id,
+                        ),
+                        "TS_OAUTH_CLIENT_PARAM_NAME": build_name(
+                            resource["Aws"]["tenant"]["parameters"][
+                                "tailscaleOauthClient"
+                            ]["nameTemplate"],
+                            args.tenant_id,
+                        ),
+                    }
+                ),
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),

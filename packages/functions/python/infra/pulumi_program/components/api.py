@@ -1,7 +1,10 @@
+from datetime import datetime
+import json
+
 import pulumi
 import pulumi_aws as aws
 
-from utilities import tags, region, resource, account_id, build_name, reverse_dns
+from utilities import tags, region, resource, account_id, build_name, reverse_dns, stage
 
 from typing import Optional, Mapping, List
 
@@ -12,6 +15,8 @@ class ApiArgs:
         tenant_id: str,
         gateway: pulumi.Input[aws.apigateway.RestApi],
         invoices_processor_queue_arn: pulumi.Input[str],
+        invoices_processor_queue_name: pulumi.Input[str],
+        invoices_processor_queue_url: pulumi.Input[str],
         distribution_id: pulumi.Input[str],
         domain_name: pulumi.Input[str],
         appsync_http_domain_name: pulumi.Input[str],
@@ -21,6 +26,8 @@ class ApiArgs:
         self.tenant_id = tenant_id
         self.gateway = gateway
         self.invoices_processor_queue_arn = invoices_processor_queue_arn
+        self.invoices_processor_queue_name = invoices_processor_queue_name
+        self.invoices_processor_queue_url = invoices_processor_queue_url
         self.distribution_id = distribution_id
         self.domain_name = domain_name
         self.appsync_http_domain_name = appsync_http_domain_name
@@ -405,6 +412,283 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self.__papercut_sync_route = EventRoute(
+            name="ApiPapercutSync",
+            args=EventRouteArgs(
+                rest_api=self.__gateway.id,
+                parent_id=self.__papercut_resource.id,
+                path_part="sync",
+                execution_role_arn=self.__role.arn,
+                request_template=pulumi.Output.json_dumps(
+                    {
+                        "Entries": [
+                            {
+                                "Detail": json.dumps({"tenantId": args.tenant_id}),
+                                "DetailType": "PapercutSync",
+                                "EventBusName": "default",
+                                "Source": app_specific_base_path,
+                            }
+                        ]
+                    }
+                ),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invoices_resource = aws.apigateway.Resource(
+            resource_name="ApiInvoicesResource",
+            args=aws.apigateway.ResourceArgs(
+                rest_api=self.__gateway.id,
+                parent_id=self.__gateway.root_resource_id,
+                path_part="invoices",
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__enqueue_invoice_request_validator = aws.apigateway.RequestValidator(
+            resource_name="ApiEnqueueInvoiceRequestValidator",
+            args=aws.apigateway.RequestValidatorArgs(
+                rest_api=self.__gateway.id,
+                validate_request_body=True,
+                validate_request_parameters=False,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__enqueue_invoice_request_model = aws.apigateway.Model(
+            resource_name="ApiEnqueueInvoiceRequestModel",
+            args=aws.apigateway.ModelArgs(
+                rest_api=self.__gateway.id,
+                name="EnqueueInvoiceRequestModel",
+                content_type="application/json",
+                schema=json.dumps(
+                    {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "title": "EnqueueInvoiceRequestModel",
+                        "type": "object",
+                        "properties": {"invoiceId": {"type": "string"}},
+                        "required": ["invoiceId"],
+                        "additionalProperties": False,
+                    }
+                ),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__enqueue_invoice_method = aws.apigateway.Method(
+            resource_name="ApiEnqueueInvoiceMethod",
+            args=aws.apigateway.MethodArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__invoices_resource.id,
+                http_method="POST",
+                authorization="AWS_IAM",
+                request_validator_id=self.__enqueue_invoice_request_validator.id,
+                request_models={
+                    "application/json": self.__enqueue_invoice_request_model.name
+                },
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__enqueue_invoice_integration = aws.apigateway.Integration(
+            resource_name="ApiEnqueueInvoiceIntegration",
+            args=aws.apigateway.IntegrationArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__invoices_resource.id,
+                http_method=self.__enqueue_invoice_method.http_method,
+                type="AWS",
+                integration_http_method="POST",
+                request_parameters={
+                    "integration.request.header.Content-Type": "'application/x-amz-json-1.0'",
+                    "integration.request.header.X-Amz-Target": "'SQS.SendMessage'",
+                },
+                request_templates={
+                    "application/json": pulumi.Output.json_dumps(
+                        {
+                            "QueueUrl": args.invoices_processor_queue_url,
+                            "MessageBody": json.dumps(
+                                {
+                                    "invoiceId": "$input.path('$.invoice_id')",
+                                    "tenantId": args.tenant_id,
+                                }
+                            ),
+                        }
+                    )
+                },
+                passthrough_behavior="NEVER",
+                uri=pulumi.Output.format(
+                    "arn:aws:apigateway:{0}:sqs:path/{1}/{2}",
+                    region,
+                    account_id,
+                    args.invoices_processor_queue_name,
+                ),
+                credentials=self.__role.arn,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__enqueue_invoice_responses = Responses(
+            name="ApiEnqueueInvoice",
+            args=ResponsesArgs(
+                status_codes=[200, 400, 403, 500, 503],
+                rest_api=self.__gateway.id,
+                resource_id=self.__invoices_resource.id,
+                http_method=self.__enqueue_invoice_method.http_method,
+            ),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                depends_on=[self.__enqueue_invoice_integration],
+            ),
+        )
+
+        self.__enqueue_invoice_cors_route = CorsRoute(
+            name="ApiEnqueueInvoice",
+            args=CorsRouteArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__invoices_resource.id,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__cdn_resource = aws.apigateway.Resource(
+            resource_name="ApiCdnResource",
+            args=aws.apigateway.ResourceArgs(
+                rest_api=self.__gateway.id,
+                parent_id=self.__gateway.root_resource_id,
+                path_part="cdn",
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invalidation_resource = aws.apigateway.Resource(
+            resource_name="ApiInvalidationResource",
+            args=aws.apigateway.ResourceArgs(
+                rest_api=self.__gateway.id,
+                parent_id=self.__cdn_resource.id,
+                path_part="invalidation",
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invalidation_request_validator = aws.apigateway.RequestValidator(
+            resource_name="ApiInvalidationRequestValidator",
+            args=aws.apigateway.RequestValidatorArgs(
+                rest_api=self.__gateway.id,
+                validate_request_body=True,
+                validate_request_parameters=False,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invalidation_request_model = aws.apigateway.Model(
+            resource_name="ApiInvalidationRequestModel",
+            args=aws.apigateway.ModelArgs(
+                rest_api=self.__gateway.id,
+                name="InvalidationRequestModel",
+                content_type="application/json",
+                schema=json.dumps(
+                    {
+                        "$schema": "http://json-schema.org/draft-04/schema#",
+                        "title": "InvalidationRequestModel",
+                        "type": "object",
+                        "properties": {
+                            "paths": {
+                                "type": "array",
+                                "minItems": 1,
+                                "maxItems": 100,
+                                "items": {
+                                    "type": "string",
+                                    "pattern": "^/.*$",
+                                    "minLength": 1,
+                                    "maxLength": 4096,
+                                },
+                            }
+                        },
+                        "required": ["paths"],
+                        "additionalProperties": False,
+                    }
+                ),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invalidation_method = aws.apigateway.Method(
+            resource_name="ApiInvalidationMethod",
+            args=aws.apigateway.MethodArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__invalidation_resource.id,
+                http_method="POST",
+                authorization="AWS_IAM",
+                request_validator_id=self.__invalidation_request_validator.id,
+                request_models={
+                    "application/json": self.__invalidation_request_model.name,
+                },
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invalidation_integration = aws.apigateway.Integration(
+            resource_name="ApiInvalidationIntegration",
+            args=aws.apigateway.IntegrationArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__invalidation_resource.id,
+                http_method=self.__invalidation_method.http_method,
+                type="AWS",
+                integration_http_method="POST",
+                request_parameters={
+                    "integration.request.header.Content-Type": "'application/xml'"
+                },
+                request_templates={
+                    "application/json": """
+                        #set($paths = $input.path('$.paths'))
+                        #set($quantity = $paths.size())
+                        <?xml version="1.0" encoding="UTF-8"?>
+                        <InvalidationBatch xmlns="http://cloudfront.amazonaws.com/doc/2020-05-31/">
+                            <CallerReference>$context.requestId</CallerReference>
+                            <Paths>
+                                <Quantity>$quantity</Quantity>
+                                <Items>
+                                #foreach($path in $paths)
+                                    <Path>$path</Path>
+                                #end
+                                </Items>
+                            </Paths>
+                        </InvalidationBatch>
+                        """
+                },
+                passthrough_behavior="NEVER",
+                uri=pulumi.Output.format(
+                    "arn:aws:apigateway:{0}:cloudfront:path/{1}/invalidation",
+                    region,
+                    args.distribution_id,
+                ),
+                credentials=self.__role.arn,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invalidation_responses = Responses(
+            name="ApiInvalidation",
+            args=ResponsesArgs(
+                status_codes=[200, 400, 403, 404, 413, 500, 503],
+                rest_api=self.__gateway.id,
+                resource_id=self.__invalidation_resource.id,
+                http_method=self.__invalidation_method.http_method,
+            ),
+            opts=pulumi.ResourceOptions(
+                parent=self, depends_on=[self.__invalidation_integration]
+            ),
+        )
+
+        self.__invalidation_cors_route = CorsRoute(
+            name="ApiInvalidation",
+            args=CorsRouteArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__invalidation_resource.id,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         self.__cors_response_4xx = aws.apigateway.Response(
             resource_name="ApiCorsResponse4xx",
             args=aws.apigateway.ResponseArgs(
@@ -437,31 +721,61 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        triggers = pulumi.Output.all(
-            self.__gateway,
-            self.__health_resource,
-            self.__health_method,
-            self.__health_method_response,
-            self.__health_integration,
-            self.__health_method_response,
-            *self.__health_cors_route.triggers,
-            self.__well_known_resource,
-            self.__app_specific_resource,
-            *self.__appsync_events_domain_names_route.triggers,
-            self.__parameters_resource,
-            self.__parameters_proxy_resource,
-            self.__parameters_proxy_method,
-            self.__parameters_proxy_integration,
-            *self.__parameters_proxy_responses.triggers,
-            *self.__parameters_proxy_cors_route.triggers,
-            self.__papercut_resource,
-            self.__papercut_server_resource,
-            self.__papercut_server_proxy_resource,
-            self.__papercut_server_proxy_method,
-            self.__papercut_server_proxy_integration,
-            self.__papercut_server_proxy_cors_route.triggers,
-            self.__cors_response_4xx,
-            self.__cors_response_5xx,
+        self.__log_group = aws.cloudwatch.LogGroup(
+            resource_name="ApiLogGrou",
+            args=aws.cloudwatch.LogGroupArgs(
+                name=pulumi.Output.format(
+                    "/aws/vendedlogs/apis/{0}", self.__gateway.name
+                ),
+                retention_in_days=14,
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__deployment = aws.apigateway.Deployment(
+            resource_name="ApiDeployment",
+            args=aws.apigateway.DeploymentArgs(
+                rest_api=self.__gateway.id,
+                triggers={"datetime": datetime.now().isoformat()},
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__stage = aws.apigateway.Stage(
+            resource_name="ApiStage",
+            args=aws.apigateway.StageArgs(
+                rest_api=self.__gateway.id,
+                stage_name=stage,
+                deployment=self.__deployment.id,
+                access_log_settings=aws.apigateway.StageAccessLogSettingsArgs(
+                    destination_arn=self.__log_group.arn,
+                    format=json.dumps(
+                        {
+                            # request info
+                            "requestTime": '"$context.requestTime"',
+                            "requestId": '"$context.requestId"',
+                            "httpMethod": '"$context.httpMethod"',
+                            "path": '"$context.path"',
+                            "resourcePath": '"$context.resourcePath"',
+                            "status": "$context.status",  # integer value, do not wrap in quotes
+                            "responseLatency": "$context.responseLatency",  # integer value, do not wrap in quotes
+                            "xrayTraceId": '"$context.xrayTraceId"',
+                            # integration info
+                            "functionResponseStatus": '"$context.integration.status"',
+                            "integrationRequestId": '"$context.integration.requestId"',
+                            "integrationLatency": '"$context.integration.latency"',
+                            "integrationServiceStatus": '"$context.integration.integrationStatus"',
+                            # caller info
+                            "ip": '"$context.identity.sourceIp"',
+                            "userAgent": '"$context.identity.userAgent"',
+                            "principalId": '"$context.authorizer.principalId"',
+                        }
+                    ),
+                ),
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.register_outputs(
@@ -485,8 +799,22 @@ class Api(pulumi.ComponentResource):
                 "papercut_server_proxy_resource": self.__papercut_server_proxy_resource.id,
                 "papercut_server_proxy_method": self.__papercut_server_proxy_method.id,
                 "papercut_server_proxy_integration": self.__papercut_server_proxy_integration.id,
+                "invoices_resource": self.__invoices_resource.id,
+                "enqueue_invoice_request_validator": self.__enqueue_invoice_request_validator.id,
+                "enqueue_invoice_request_model": self.__enqueue_invoice_request_model.id,
+                "enqueue_invoice_method": self.__enqueue_invoice_method.id,
+                "enqueue_invoice_integration": self.__enqueue_invoice_integration.id,
+                "cdn_resource": self.__cdn_resource.id,
+                "invalidation_resource": self.__invalidation_resource.id,
+                "invalidation_request_validator": self.__invalidation_request_validator.id,
+                "invalidation_request_model": self.__invalidation_request_model.id,
+                "invalidation_method": self.__invalidation_method.id,
+                "invalidation_integration": self.__invalidation_integration.id,
                 "cors_response_4xx": self.__cors_response_4xx.id,
                 "cors_response_5xx": self.__cors_response_5xx.id,
+                "log_group": self.__log_group.id,
+                "deployment": self.__deployment.id,
+                "stage": self.__stage.id,
             }
         )
 
@@ -593,16 +921,106 @@ class WellKnownAppSpecificRoute(pulumi.ComponentResource):
             }
         )
 
-    @property
-    def triggers(self):
-        return [
-            self.__resource,
-            self.__method,
-            self.__method_response,
-            self.__integration,
-            self.__integration_response,
-            *self.__cors_route.triggers,
-        ]
+
+class EventRouteArgs:
+    def __init__(
+        self,
+        rest_api: pulumi.Input[str],
+        parent_id: pulumi.Input[str],
+        path_part: pulumi.Input[str],
+        execution_role_arn: pulumi.Input[str],
+        request_template: Optional[pulumi.Input[str]] = None,
+    ):
+        self.rest_api = rest_api
+        self.parent_id = parent_id
+        self.path_part = path_part
+        self.execution_role_arn = execution_role_arn
+        self.request_template = request_template
+
+
+class EventRoute(pulumi.ComponentResource):
+    def __init__(self, name: str, args: EventRouteArgs, opts: pulumi.ResourceOptions):
+        super().__init__(
+            t="pw:resource:EventRoute",
+            name=f"{name}EventRoute",
+            props=vars(args),
+            opts=opts,
+        )
+
+        self.__resource = aws.apigateway.Resource(
+            resource_name=f"{name}Resource",
+            args=aws.apigateway.ResourceArgs(
+                rest_api=args.rest_api,
+                parent_id=args.parent_id,
+                path_part=args.path_part,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__method = aws.apigateway.Method(
+            resource_name=f"{name}Method",
+            args=aws.apigateway.MethodArgs(
+                rest_api=self.__resource.rest_api,
+                resource_id=self.__resource.id,
+                http_method="POST",
+                authorization="AWS_IAM",
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__integration = aws.apigateway.Integration(
+            resource_name=f"{name}Integration",
+            args=aws.apigateway.IntegrationArgs(
+                rest_api=args.rest_api,
+                resource_id=self.__resource.id,
+                http_method=self.__method.http_method,
+                type="AWS",
+                integration_http_method="POST",
+                request_parameters={
+                    "integration.request.header.Content-Type": "'application/x-amz-json-1.1'",
+                    "integration.request.header.X-Amz-Target": "'AWSEvents.PutEvents'",
+                },
+                request_templates=(
+                    {
+                        "application/json": args.request_template,
+                    }
+                    if args.request_template is not None
+                    else None
+                ),
+                passthrough_behavior="NEVER",
+                uri=f"arn:aws:apigateway:{region}:events:path//",
+                credentials=args.execution_role_arn,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__responses = Responses(
+            name=name,
+            args=ResponsesArgs(
+                status_codes=[200, 400, 403, 500, 503],
+                rest_api=args.rest_api,
+                resource_id=self.__resource.id,
+                http_method=self.__method.http_method,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__cors_route = CorsRoute(
+            name=name,
+            args=CorsRouteArgs(
+                rest_api=args.rest_api,
+                resource_id=self.__resource.id,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.register_outputs(
+            {
+                "resource": self.__resource.id,
+                "method": self.__method.id,
+                "integration": self.__integration.id,
+            }
+        )
 
 
 class ResponsesArgs:
@@ -666,13 +1084,6 @@ class Responses(pulumi.ComponentResource):
             )
 
         self.register_outputs(outputs)
-
-    @property
-    def triggers(self):
-        return [
-            *self.__method_responses,
-            *self.__integration_responses,
-        ]
 
 
 class CorsRouteArgs:
@@ -755,12 +1166,3 @@ class CorsRoute(pulumi.ComponentResource):
                 "integration_response": self.__integration_response.id,
             }
         )
-
-    @property
-    def triggers(self):
-        return [
-            self.__method,
-            self.__integration,
-            self.__integration_response,
-            self.__method_response,
-        ]

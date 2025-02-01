@@ -22,6 +22,8 @@ from utilities import tags, region, stage
 def inline(payload: sqs_record.Payload):
     ssl = Ssl(args=SslArgs(tenant_id=payload.tenantId))
 
+    apigateway_account = setup_api_gateway_account()
+
     gateway = aws.apigateway.RestApi(
         "Gateway",
         aws.apigateway.RestApiArgs(
@@ -30,6 +32,7 @@ def inline(payload: sqs_record.Payload):
             ),
             tags=tags(payload.tenantId),
         ),
+        opts=pulumi.ResourceOptions(depends_on=[apigateway_account]),
     )
 
     storage = Storage(args=StorageArgs(tenant_id=payload.tenantId))
@@ -63,6 +66,8 @@ def inline(payload: sqs_record.Payload):
             tenant_id=payload.tenantId,
             gateway=gateway,
             invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
+            invoices_processor_queue_name=storage.queues["invoices_processor"].name,
+            invoices_processor_queue_url=storage.queues["invoices_processor"].url,
             distribution_id=router.distribution_id,
             domain_name=ssl.domain_name,
             appsync_http_domain_name=realtime.dns["http"],
@@ -70,3 +75,44 @@ def inline(payload: sqs_record.Payload):
             papercut_secure_reverse_proxy_function_invoke_arn=papercut_secure_reverse_proxy.invoke_arn,
         )
     )
+
+
+def setup_api_gateway_account() -> pulumi.Output[aws.apigateway.Account]:
+    account = aws.apigateway.Account.get(
+        resource_name="APIGatewayAccount",
+        id="APIGatewayAccount",
+    )
+
+    def create_role(arn):
+        if arn:
+            return account
+
+        role = aws.iam.Role(
+            resource_name="APIGatewayPushToCloudWatchLogsRole",
+            args=aws.iam.RoleArgs(
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="Service",
+                                    identifiers=["apigateway.amazonaws.com"],
+                                )
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ]
+                ).minified_json,
+                managed_policy_arns=[
+                    aws.iam.ManagedPolicy.AMAZON_API_GATEWAY_PUSH_TO_CLOUD_WATCH_LOGS
+                ],
+            ),
+            opts=pulumi.ResourceOptions(retain_on_delete=True),
+        )
+
+        return aws.apigateway.Account(
+            resource_name="APIGatewayAccountSetup",
+            args=aws.apigateway.AccountArgs(cloudwatch_role_arn=role.arn),
+        )
+
+    return account.cloudwatch_role_arn.apply(create_role)

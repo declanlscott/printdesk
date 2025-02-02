@@ -14,6 +14,7 @@ class ApiArgs:
         self,
         tenant_id: str,
         gateway: pulumi.Input[aws.apigateway.RestApi],
+        event_bus_name: pulumi.Input[str],
         invoices_processor_queue_arn: pulumi.Input[str],
         invoices_processor_queue_name: pulumi.Input[str],
         invoices_processor_queue_url: pulumi.Input[str],
@@ -25,6 +26,7 @@ class ApiArgs:
     ):
         self.tenant_id = tenant_id
         self.gateway = gateway
+        self.event_bus_name = event_bus_name
         self.invoices_processor_queue_arn = invoices_processor_queue_arn
         self.invoices_processor_queue_name = invoices_processor_queue_name
         self.invoices_processor_queue_url = invoices_processor_queue_url
@@ -69,7 +71,7 @@ class Api(pulumi.ComponentResource):
 
         self.__role_policy: pulumi.Output[aws.iam.RolePolicy] = pulumi.Output.all(
             aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
-            aws.cloudwatch.get_event_bus_output(name="default").arn,
+            aws.cloudwatch.get_event_bus_output(name=args.event_bus_name).arn,
             args.invoices_processor_queue_arn,
             aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
         ).apply(
@@ -425,7 +427,7 @@ class Api(pulumi.ComponentResource):
                             {
                                 "Detail": json.dumps({"tenantId": args.tenant_id}),
                                 "DetailType": "PapercutSync",
-                                "EventBusName": "default",
+                                "EventBusName": args.event_bus_name,
                                 "Source": app_specific_base_path,
                             }
                         ]

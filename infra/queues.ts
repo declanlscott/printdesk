@@ -18,15 +18,3 @@ export const infraQueue = new sst.aws.Queue(
   },
   { retainOnDelete: $app.stage === "production" },
 );
-
-export const invoicesProcessorDeadLetterQueue = new sst.aws.Queue(
-  "InvoicesProcessorDeadLetterQueue",
-  {
-    transform: {
-      queue: {
-        messageRetentionSeconds: 1209600, // 14 days
-      },
-    },
-  },
-  { retainOnDelete: $app.stage === "production" },
-);

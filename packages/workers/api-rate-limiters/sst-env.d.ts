@@ -173,10 +173,6 @@ declare module "sst" {
       "roleArn": string
       "type": "sst.aws.Function"
     }
-    "InvoicesProcessorDeadLetterQueue": {
-      "type": "sst.aws.Queue"
-      "url": string
-    }
     "Oauth2": {
       "entraId": {
         "clientId": string

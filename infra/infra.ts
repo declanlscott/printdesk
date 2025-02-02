@@ -8,7 +8,7 @@ import {
   cloudflareApiTokenParameter,
   cloudfrontPrivateKey,
 } from "./misc";
-import { infraQueue, invoicesProcessorDeadLetterQueue } from "./queues";
+import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
 import { infraFunctionRole, pulumiRole } from "./roles";
 import { injectLinkables, normalizePath } from "./utils";
@@ -41,16 +41,6 @@ export const papercutSync = new custom.aws.Function("PapercutSync", {
   handler: "packages/functions/node/src/papercut-sync.handler",
   timeout: "20 seconds",
   link: [appData, cloudfrontPrivateKey, dsqlCluster],
-});
-new aws.lambda.Permission("PapercutSyncSchedulePermission", {
-  function: papercutSync.name,
-  action: "lambda:InvokeFunction",
-  principal: "scheduler.amazonaws.com",
-});
-new aws.lambda.Permission("PapercutSyncRulePermission", {
-  function: papercutSync.name,
-  action: "lambda:InvokeFunction",
-  principal: "events.amazonaws.com",
 });
 
 export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
@@ -128,7 +118,6 @@ const infraFunctionResourceData = $util.jsonStringify(
     Aws: aws_,
     Code: code,
     InvoicesProcessor: invoicesProcessor,
-    InvoicesProcessorDeadLetterQueue: invoicesProcessorDeadLetterQueue,
     PapercutSync: papercutSync,
     PulumiBucket: pulumiBucket,
   }),

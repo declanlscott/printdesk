@@ -14,6 +14,8 @@ from .components import (
     PapercutSecureReverseProxyArgs,
     Api,
     ApiArgs,
+    Events,
+    EventsArgs,
 )
 from models import sqs_record
 from utilities import tags, region, stage
@@ -25,14 +27,22 @@ def inline(payload: sqs_record.Payload):
     apigateway_account = setup_api_gateway_account()
 
     gateway = aws.apigateway.RestApi(
-        "Gateway",
-        aws.apigateway.RestApiArgs(
+        resource_name="Gateway",
+        args=aws.apigateway.RestApiArgs(
             endpoint_configuration=aws.apigateway.RestApiEndpointConfigurationArgs(
                 types="REGIONAL"
             ),
             tags=tags(payload.tenantId),
         ),
         opts=pulumi.ResourceOptions(depends_on=[apigateway_account]),
+    )
+
+    event_bus = aws.cloudwatch.EventBus(
+        resource_name="EventBus",
+        args=aws.cloudwatch.EventBusArgs(
+            tags=tags(payload.tenantId),
+            description=f"{payload.tenantId} event bus",
+        ),
     )
 
     storage = Storage(args=StorageArgs(tenant_id=payload.tenantId))
@@ -65,6 +75,7 @@ def inline(payload: sqs_record.Payload):
         args=ApiArgs(
             tenant_id=payload.tenantId,
             gateway=gateway,
+            event_bus_name=event_bus.name,
             invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
             invoices_processor_queue_name=storage.queues["invoices_processor"].name,
             invoices_processor_queue_url=storage.queues["invoices_processor"].url,
@@ -73,6 +84,17 @@ def inline(payload: sqs_record.Payload):
             appsync_http_domain_name=realtime.dns["http"],
             appsync_realtime_domain_name=realtime.dns["realtime"],
             papercut_secure_reverse_proxy_function_invoke_arn=papercut_secure_reverse_proxy.invoke_arn,
+        )
+    )
+
+    events = Events(
+        args=EventsArgs(
+            tenant_id=payload.tenantId,
+            event_bus_name=event_bus.name,
+            invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
+            papercut_sync_schedule=payload.papercutSyncSchedule,
+            timezone=payload.timezone,
+            domain_name=ssl.domain_name,
         )
     )
 

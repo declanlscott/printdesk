@@ -14,6 +14,8 @@ from .components import (
     PapercutSecureReverseProxyArgs,
     Api,
     ApiArgs,
+    ApiDeployment,
+    ApiDeploymentArgs,
     Events,
     EventsArgs,
 )
@@ -84,6 +86,14 @@ def inline(payload: sqs_record.Payload):
             appsync_http_domain_name=realtime.dns["http"],
             appsync_realtime_domain_name=realtime.dns["realtime"],
             papercut_secure_reverse_proxy_function_invoke_arn=papercut_secure_reverse_proxy.invoke_arn,
+        )
+    )
+
+    api_deployment = ApiDeployment(
+        args=ApiDeploymentArgs(
+            tenant_id=payload.tenantId,
+            gateway=gateway,
+            api=api,
         )
     )
 

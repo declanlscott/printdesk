@@ -6,7 +6,7 @@ from .papercut_secure_reverse_proxy import (
     PapercutSecureReverseProxy,
     PapercutSecureReverseProxyArgs,
 )
-from .api import Api, ApiArgs
+from .api import Api, ApiArgs, ApiDeployment, ApiDeploymentArgs
 from .events import Events, EventsArgs
 
 __all__ = [
@@ -22,6 +22,8 @@ __all__ = [
     "PapercutSecureReverseProxyArgs",
     "Api",
     "ApiArgs",
+    "ApiDeployment",
+    "ApiDeploymentArgs",
     "Events",
     "EventsArgs",
 ]

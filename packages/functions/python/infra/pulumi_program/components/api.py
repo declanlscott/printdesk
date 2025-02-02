@@ -723,63 +723,6 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__log_group = aws.cloudwatch.LogGroup(
-            resource_name="ApiLogGroup",
-            args=aws.cloudwatch.LogGroupArgs(
-                name=pulumi.Output.format(
-                    "/aws/vendedlogs/apis/{0}", self.__gateway.name
-                ),
-                retention_in_days=14,
-                tags=tags(args.tenant_id),
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self.__deployment = aws.apigateway.Deployment(
-            resource_name="ApiDeployment",
-            args=aws.apigateway.DeploymentArgs(
-                rest_api=self.__gateway.id,
-                triggers={"datetime": datetime.now().isoformat()},
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self.__stage = aws.apigateway.Stage(
-            resource_name="ApiStage",
-            args=aws.apigateway.StageArgs(
-                rest_api=self.__gateway.id,
-                stage_name=stage,
-                deployment=self.__deployment.id,
-                access_log_settings=aws.apigateway.StageAccessLogSettingsArgs(
-                    destination_arn=self.__log_group.arn,
-                    format=json.dumps(
-                        {
-                            # request info
-                            "requestTime": '"$context.requestTime"',
-                            "requestId": '"$context.requestId"',
-                            "httpMethod": '"$context.httpMethod"',
-                            "path": '"$context.path"',
-                            "resourcePath": '"$context.resourcePath"',
-                            "status": "$context.status",  # integer value, do not wrap in quotes
-                            "responseLatency": "$context.responseLatency",  # integer value, do not wrap in quotes
-                            "xrayTraceId": '"$context.xrayTraceId"',
-                            # integration info
-                            "functionResponseStatus": '"$context.integration.status"',
-                            "integrationRequestId": '"$context.integration.requestId"',
-                            "integrationLatency": '"$context.integration.latency"',
-                            "integrationServiceStatus": '"$context.integration.integrationStatus"',
-                            # caller info
-                            "ip": '"$context.identity.sourceIp"',
-                            "userAgent": '"$context.identity.userAgent"',
-                            "principalId": '"$context.authorizer.principalId"',
-                        }
-                    ),
-                ),
-                tags=tags(args.tenant_id),
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
         self.register_outputs(
             {
                 "role": self.__role.id,
@@ -814,9 +757,6 @@ class Api(pulumi.ComponentResource):
                 "invalidation_integration": self.__invalidation_integration.id,
                 "cors_response_4xx": self.__cors_response_4xx.id,
                 "cors_response_5xx": self.__cors_response_5xx.id,
-                "log_group": self.__log_group.id,
-                "deployment": self.__deployment.id,
-                "stage": self.__stage.id,
             }
         )
 
@@ -836,6 +776,12 @@ class WellKnownAppSpecificRouteArgs:
 
 
 class WellKnownAppSpecificRoute(pulumi.ComponentResource):
+    """
+    NOTE: The well-known app-specific resources are following the registered IANA specification:
+    https://www.github.com/Vroo/well-known-uri-appspecific/blob/main/well-known-uri-for-application-specific-purposes.txt
+    https://www.iana.org/assignments/well-known-uris/well-known-uris.xhtml
+    """
+
     def __init__(
         self,
         name: str,
@@ -1166,5 +1112,99 @@ class CorsRoute(pulumi.ComponentResource):
                 "method_response": self.__method_response.id,
                 "integration": self.__integration.id,
                 "integration_response": self.__integration_response.id,
+            }
+        )
+
+
+class ApiDeploymentArgs:
+    def __init__(
+        self,
+        tenant_id: str,
+        gateway: pulumi.Input[aws.apigateway.RestApi],
+        api: pulumi.Input[Api],
+    ):
+        self.tenant_id = tenant_id
+        self.gateway = gateway
+        self.api = api
+
+
+class ApiDeployment(pulumi.ComponentResource):
+    def __init__(
+        self,
+        args: ApiDeploymentArgs,
+        opts: Optional[pulumi.ResourceOptions] = None,
+    ):
+        super().__init__(
+            t="pw:resource:ApiDeployment",
+            name="ApiDeployment",
+            props=vars(args),
+            opts=opts,
+        )
+
+        self.__deployment = aws.apigateway.Deployment(
+            resource_name="ApiDeployment",
+            args=aws.apigateway.DeploymentArgs(
+                rest_api=args.gateway.id,
+                triggers={
+                    # triggers redeploy on every execution
+                    "datetime": datetime.now().isoformat()
+                },
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__log_group = aws.cloudwatch.LogGroup(
+            resource_name="ApiLogGroup",
+            args=aws.cloudwatch.LogGroupArgs(
+                name=pulumi.Output.format(
+                    "/aws/vendedlogs/apis/{0}", args.gateway.name
+                ),
+                retention_in_days=14,
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__stage = aws.apigateway.Stage(
+            resource_name="ApiStage",
+            args=aws.apigateway.StageArgs(
+                rest_api=args.gateway.id,
+                stage_name=stage,
+                deployment=self.__deployment.id,
+                access_log_settings=aws.apigateway.StageAccessLogSettingsArgs(
+                    destination_arn=self.__log_group.arn,
+                    format=json.dumps(
+                        {
+                            # request info
+                            "requestTime": '"$context.requestTime"',
+                            "requestId": '"$context.requestId"',
+                            "httpMethod": '"$context.httpMethod"',
+                            "path": '"$context.path"',
+                            "resourcePath": '"$context.resourcePath"',
+                            "status": "$context.status",  # integer value, do not wrap in quotes
+                            "responseLatency": "$context.responseLatency",  # integer value, do not wrap in quotes
+                            "xrayTraceId": '"$context.xrayTraceId"',
+                            # integration info
+                            "functionResponseStatus": '"$context.integration.status"',
+                            "integrationRequestId": '"$context.integration.requestId"',
+                            "integrationLatency": '"$context.integration.latency"',
+                            "integrationServiceStatus": '"$context.integration.integrationStatus"',
+                            # caller info
+                            "ip": '"$context.identity.sourceIp"',
+                            "userAgent": '"$context.identity.userAgent"',
+                            "principalId": '"$context.authorizer.principalId"',
+                        }
+                    ),
+                ),
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.register_outputs(
+            {
+                "deployment": self.__deployment.id,
+                "log_group": self.__log_group.id,
+                "stage": self.__stage.id,
             }
         )

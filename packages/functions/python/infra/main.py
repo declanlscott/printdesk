@@ -72,8 +72,13 @@ def record_handler(record: SQSRecord):
     )
     logger.info("Successfully set stack configuration.")
 
-    logger.info("Updating stack ...")
-    result = stack.up(on_output=print)
+    result: automation.UpResult | automation.DestroyResult
+    if payload.destroy is False:
+        logger.info("Updating stack ...")
+        result = stack.up(on_output=print)
+    else:
+        logger.info("Destroying stack ...")
+        result = stack.destroy(on_output=print)
     logger.info(
-        f"Update summary: \n{json.dumps(result.summary.resource_changes, indent=2)}"
+        f"Result summary: \n{json.dumps(result.summary.resource_changes, indent=2)}"
     )

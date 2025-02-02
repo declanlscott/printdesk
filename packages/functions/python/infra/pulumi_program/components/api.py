@@ -724,7 +724,7 @@ class Api(pulumi.ComponentResource):
         )
 
         self.__log_group = aws.cloudwatch.LogGroup(
-            resource_name="ApiLogGrou",
+            resource_name="ApiLogGroup",
             args=aws.cloudwatch.LogGroupArgs(
                 name=pulumi.Output.format(
                     "/aws/vendedlogs/apis/{0}", self.__gateway.name

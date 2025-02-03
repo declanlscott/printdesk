@@ -1,4 +1,5 @@
 ARG PYTHON_VERSION=3.13
+ARG PULUMI_VERSION=3.148.0
 
 FROM public.ecr.aws/lambda/python:${PYTHON_VERSION}
 
@@ -8,7 +9,7 @@ RUN pip install -r requirements.txt
 
 # Install pulumi
 RUN dnf install -y tar gzip
-RUN curl -fsSL https://get.pulumi.com | sh
+RUN curl -fsSL https://get.pulumi.com | sh -s -- --version ${PULUMI_VERSION}
 RUN mv /root/.pulumi /opt/pulumi
 
 # Add to PATH

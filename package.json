@@ -35,8 +35,8 @@
     "typescript": "^5.7.3"
   },
   "pnpm": {
-    "overrides": {
-      "@react-aria/utils": "3.25.2"
+    "patchedDependencies": {
+      "@react-aria/utils": "patches/@react-aria__utils.patch"
     }
   }
 }

@@ -3,6 +3,7 @@ boto3~=1.36.6
 pulumi~=3.147.0
 pulumi-aws~=6.67.0
 pulumi-cloudflare~=5.49.0
+requests~=2.32.3
 types-boto3-appsync~=1.36.0
 types-boto3-ssm~=1.36.6
 types-boto3-sts~=1.36.0

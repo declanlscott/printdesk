@@ -10,7 +10,7 @@ import {
 } from "./misc";
 import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
-import { infraFunctionRole, pulumiRole } from "./roles";
+import { infraFunctionRole, pulumiRole, realtimePublisherRole } from "./roles";
 import { injectLinkables, normalizePath } from "./utils";
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
@@ -171,7 +171,7 @@ new aws.iam.RolePolicy("InfraFunctionRoleInlinePolicy", {
       },
       {
         actions: ["sts:AssumeRole"],
-        resources: [pulumiRole.arn],
+        resources: [pulumiRole.arn, realtimePublisherRole.arn],
       },
     ],
   }).json,

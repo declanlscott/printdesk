@@ -18,7 +18,7 @@ export async function publish<TChannel extends string>(
         protocol: "https:",
         hostname: httpDomainName,
         path: "/event",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", host: httpDomainName },
         body: JSON.stringify({
           channel,
           events: batch,

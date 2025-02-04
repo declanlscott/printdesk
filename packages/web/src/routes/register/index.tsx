@@ -8,7 +8,7 @@ import {
   useRegistrationStatusState,
   useRegistrationWizardState,
 } from "~/lib/hooks/registration";
-import { registrationMachine } from "~/lib/machines/registration";
+import { getRegistrationMachine } from "~/lib/machines/registration";
 import { RegistrationWizardLayout } from "~/routes/register/-components/wizard/layout";
 import { RegistrationWizardReview } from "~/routes/register/-components/wizard/review";
 import { RegistrationWizardStep1 } from "~/routes/register/-components/wizard/step-1";
@@ -58,9 +58,10 @@ export const Route = createFileRoute("/register/")({
     if (!isAvailable)
       throw new ApplicationError.Error(`"${slug}" is unavailable to register.`);
 
-    const RegistrationMachineContext = createActorContext(registrationMachine, {
-      input: { tenantSlug: slug },
-    });
+    const RegistrationMachineContext = createActorContext(
+      getRegistrationMachine(context.api.client, context.resource),
+      { input: { tenantSlug: slug } },
+    );
 
     return { RegistrationMachineContext };
   },

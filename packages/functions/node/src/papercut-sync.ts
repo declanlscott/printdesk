@@ -65,23 +65,20 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
             const { http: publishDomain } =
               await Api.getAppsyncEventsDomainNames();
 
+            let error = undefined;
             try {
               await withXml(PapercutSync.users);
             } catch (e) {
               console.error(e);
-
-              if (event["detail-type"] !== "Scheduled Event")
-                await publish(publishDomain, channel, [
-                  JSON.stringify({ success: false }),
-                ]);
-
-              throw e;
+              error = e;
             }
 
             if (event["detail-type"] !== "Scheduled Event")
               await publish(publishDomain, channel, [
-                JSON.stringify({ success: true }),
+                JSON.stringify({ success: true, dispatchId: event.id }),
               ]);
+
+            if (error) throw error;
           },
         ),
     );

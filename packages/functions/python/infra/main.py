@@ -105,8 +105,10 @@ def record_handler(record: SQSRecord):
                                     "success": success,
                                     "dispatchId": record.message_id,
                                     "retrying": not success
-                                    & int(record.attributes.approximate_receive_count)
-                                    < 3,
+                                    & (
+                                        int(record.attributes.approximate_receive_count)
+                                        < 3
+                                    ),
                                 }
                             )
                         ],

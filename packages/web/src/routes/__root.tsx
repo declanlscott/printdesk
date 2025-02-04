@@ -5,7 +5,6 @@ import {
   createRootRouteWithContext,
   notFound,
   Outlet,
-  ScrollRestoration,
   useRouter,
 } from "@tanstack/react-router";
 
@@ -51,8 +50,6 @@ function RouteComponent() {
       useHref={(to) => buildLocation(to).href}
     >
       <Outlet />
-
-      <ScrollRestoration />
 
       <Suspense>
         <TanStackRouterDevtools position="bottom-right" />

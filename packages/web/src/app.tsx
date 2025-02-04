@@ -31,6 +31,7 @@ export function App() {
         queryClient,
       },
       defaultPendingComponent: AppLoadingIndicator,
+      scrollRestoration: true,
     }),
   );
 

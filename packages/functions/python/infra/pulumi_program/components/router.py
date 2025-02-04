@@ -120,6 +120,17 @@ class Router(pulumi.ComponentResource):
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
                         target_origin_id="/api/*",
+                        path_pattern="/api/health",
+                        viewer_protocol_policy="redirect-to-https",
+                        allowed_methods=["GET", "HEAD", "OPTIONS"],
+                        cached_methods=["GET", "HEAD"],
+                        default_ttl=0,
+                        compress=True,
+                        cache_policy_id=api_cache_policy_id,
+                        origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                    ),
+                    aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
+                        target_origin_id="/api/*",
                         path_pattern="/api/parameters/*",
                         viewer_protocol_policy="redirect-to-https",
                         allowed_methods=["GET", "HEAD", "OPTIONS"],

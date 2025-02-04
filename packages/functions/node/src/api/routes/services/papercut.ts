@@ -62,8 +62,8 @@ export default new Hono()
     authz("papercut-sync", "create"),
     executeApiSigner,
     async (c) => {
-      const { eventId } = await Api.papercutSync();
+      const { eventId: dispatchId } = await Api.papercutSync();
 
-      return c.json({ eventId }, 200);
+      return c.json({ dispatchId }, 202);
     },
   );

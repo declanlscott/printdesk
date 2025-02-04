@@ -2,13 +2,16 @@ import { vValidator } from "@hono/valibot-validator";
 import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
 import { useTransaction } from "@printworks/core/drizzle/context";
 import { Tenants } from "@printworks/core/tenants";
+import { Api } from "@printworks/core/tenants/api";
 import {
+  licenseKeySchema,
   registrationSchema,
   tenantSlugSchema,
 } from "@printworks/core/tenants/shared";
-import { tenantsTable } from "@printworks/core/tenants/sql";
+import { licensesTable, tenantsTable } from "@printworks/core/tenants/sql";
 import { HttpError } from "@printworks/core/utils/errors";
-import { eq } from "drizzle-orm";
+import { nanoIdSchema } from "@printworks/core/utils/shared";
+import { and, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as R from "remeda";
 import * as v from "valibot";
@@ -34,6 +37,41 @@ export default new Hono()
       );
 
       return c.json({ tenantId, dispatchId }, 201);
+    },
+  )
+  .post(
+    "/initial-sync",
+    vValidator(
+      "json",
+      v.object({ licenseKey: licenseKeySchema, tenantId: nanoIdSchema }),
+    ),
+    async (c, next) => {
+      const { licenseKey, tenantId } = c.req.valid("json");
+
+      const isAuthorized = await useTransaction((tx) =>
+        tx
+          .select({})
+          .from(licensesTable)
+          .innerJoin(tenantsTable, eq(licensesTable.tenantId, tenantsTable.id))
+          .where(
+            and(
+              eq(licensesTable.key, licenseKey),
+              eq(licensesTable.tenantId, tenantId),
+              eq(licensesTable.status, "active"),
+              eq(tenantsTable.status, "initializing"),
+            ),
+          )
+          .then((rows) => rows.length === 1),
+      );
+
+      if (!isAuthorized) throw new HttpError.Forbidden();
+
+      await next();
+    },
+    async (c) => {
+      const { eventId: dispatchId } = await Api.papercutSync();
+
+      return c.json({ dispatchId }, 202);
     },
   )
   .get(

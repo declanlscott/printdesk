@@ -10,7 +10,12 @@ import * as v from "valibot";
 
 import { Constants } from "./constants";
 
-import type { AnyError, CustomError, InferCustomError } from "./types";
+import type {
+  AnyError,
+  CustomError,
+  InferCustomError,
+  StartsWith,
+} from "./types";
 
 export function parseResource<TResource extends Record<string, unknown>>(
   prefix: string,
@@ -114,3 +119,13 @@ export const objectsTuple = <const TObjects extends Array<v.ObjectEntries>>(
   },
   undefined
 > => v.tuple(R.map(objects, (entries) => v.object(entries)));
+
+export const buildUrl = <TPath extends string>({
+  protocol = "https:",
+  fqdn,
+  path,
+}: {
+  protocol?: string;
+  fqdn: string;
+  path: StartsWith<"/", TPath>;
+}) => new URL(`${protocol}//${fqdn}${path}`);

@@ -101,16 +101,6 @@ export async function withAws<
 }
 
 export namespace Cloudfront {
-  export const buildUrl = <TPath extends string>({
-    protocol = "https:",
-    fqdn,
-    path,
-  }: {
-    protocol?: string;
-    fqdn: string;
-    path: StartsWith<"/", TPath>;
-  }) => new URL(`${protocol}//${fqdn}${path}`);
-
   export const getSignedUrl = (...args: Parameters<typeof _getSignedUrl>) =>
     new URL(_getSignedUrl(...args));
 }

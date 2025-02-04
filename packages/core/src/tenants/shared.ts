@@ -5,13 +5,20 @@ import { tailscaleOauthClientSchema } from "../tailscale/shared";
 import { Constants } from "../utils/constants";
 import { nanoIdSchema, timestampsSchema } from "../utils/shared";
 
+import type { Tenant } from "./sql";
+
 export const licensesTableName = "licenses";
 
 export const licenseStatuses = ["active", "expired"] as const;
 export type LicenseStatus = (typeof licenseStatuses)[number];
 
+export const licenseKeySchema = v.pipe(
+  v.string(),
+  v.uuid("Invalid license key format"),
+);
+
 export const licenseSchema = v.object({
-  key: v.pipe(v.string(), v.uuid("Invalid license key format")),
+  key: licenseKeySchema,
   tenantId: nanoIdSchema,
   status: v.picklist(licenseStatuses),
 });
@@ -118,3 +125,6 @@ export const tenantMetadataSchema = v.object({
   tenantId: nanoIdSchema,
   ...timestampsSchema.entries,
 });
+
+export const getBackendFqdn = (tenantId: Tenant["id"], appFqdn: string) =>
+  `${tenantId}.backend.${appFqdn}`;

@@ -10,7 +10,10 @@ import { Sqs } from "../utils/aws";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { useTenant } from "./context";
-import { updateTenantMutationArgsSchema } from "./shared";
+import {
+  getBackendFqdn as getBackendFqdn_,
+  updateTenantMutationArgsSchema,
+} from "./shared";
 import { licensesTable, tenantsTable } from "./sql";
 
 import type { Registration, TenantInfraProgramInput } from "./shared";
@@ -64,7 +67,7 @@ export namespace Tenants {
     );
 
   export const getBackendFqdn = () =>
-    `${useTenant().id}.backend.${Resource.AppData.domainName.fullyQualified}`;
+    getBackendFqdn_(useTenant().id, Resource.AppData.domainName.fullyQualified);
 
   export const register = async (
     registration: Omit<

@@ -7,28 +7,11 @@ import { Tenants } from "../tenants";
 import { Utils } from "../utils";
 import { Cloudfront, SignatureV4 } from "../utils/aws";
 import { HttpError } from "../utils/errors";
+import { buildUrl } from "../utils/shared";
 
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
-  export async function getCloudfrontKeyPairId() {
-    const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.cloudfront-key-pair-id.txt`,
-    );
-
-    const text = await res.text();
-
-    if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text,
-        },
-      });
-
-    return text;
-  }
-
   export async function getAppsyncEventsDomainNames() {
     const res = await send(
       `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.appsync-events-domain-names.json`,
@@ -123,7 +106,7 @@ export namespace Api {
     path: StartsWith<"/", TPath>,
     init?: RequestInit,
   ): Promise<Response> {
-    const url = Cloudfront.buildUrl({
+    const url = buildUrl({
       fqdn: Tenants.getBackendFqdn(),
       path: `/api${path}`,
     });

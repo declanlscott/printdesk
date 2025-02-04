@@ -1,11 +1,12 @@
 import json
 from datetime import datetime
-from typing import Optional, Mapping, List
 
 import pulumi
 import pulumi_aws as aws
 
 from utilities import tags, region, resource, account_id, build_name, reverse_dns, stage
+
+from typing import Optional, Mapping, List
 
 
 class ApiArgs:
@@ -183,17 +184,6 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__health_integration = aws.apigateway.Integration(
-            resource_name="ApiHealthIntegration",
-            args=aws.apigateway.IntegrationArgs(
-                rest_api=self.__gateway.id,
-                resource_id=self.__health_resource.id,
-                http_method=self.__health_method.http_method,
-                type="MOCK",
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
         self.__health_method_response = aws.apigateway.MethodResponse(
             resource_name="ApiHealthMethodResponse",
             args=aws.apigateway.MethodResponseArgs(
@@ -201,6 +191,18 @@ class Api(pulumi.ComponentResource):
                 resource_id=self.__health_resource.id,
                 http_method=self.__health_method.http_method,
                 status_code="200",
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__health_integration = aws.apigateway.Integration(
+            resource_name="ApiHealthIntegration",
+            args=aws.apigateway.IntegrationArgs(
+                rest_api=self.__gateway.id,
+                resource_id=self.__health_resource.id,
+                http_method=self.__health_method.http_method,
+                type="MOCK",
+                request_templates={"application/json": json.dumps({"statusCode": 200})},
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -214,7 +216,9 @@ class Api(pulumi.ComponentResource):
                 status_code=self.__health_method_response.status_code,
                 response_templates={"text/plain": "OK"},
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(
+                parent=self, depends_on=[self.__health_integration]
+            ),
         )
 
         self.__health_cors_route = CorsRoute(
@@ -753,8 +757,8 @@ class Api(pulumi.ComponentResource):
                 "api_policy": self.__api_policy.apply(lambda policy: policy.id),
                 "health_resource": self.__health_resource.id,
                 "health_method": self.__health_method.id,
-                "health_integration": self.__health_integration.id,
                 "health_method_response": self.__health_method_response.id,
+                "health_integration": self.__health_integration.id,
                 "health_integration_response": self.__health_integration_response.id,
                 "well_known_resource": self.__well_known_resource.id,
                 "app_specific_resource": self.__app_specific_resource.id,
@@ -857,6 +861,7 @@ class WellKnownAppSpecificRoute(pulumi.ComponentResource):
                 resource_id=self.__resource.id,
                 http_method=self.__method.http_method,
                 type="MOCK",
+                request_templates={"application/json": json.dumps({"statusCode": 200})},
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -1106,9 +1111,7 @@ class CorsRoute(pulumi.ComponentResource):
                 resource_id=args.resource_id,
                 http_method=self.__method.http_method,
                 type="MOCK",
-                request_templates={
-                    "application/json": pulumi.Output.json_dumps({"statusCode": 200})
-                },
+                request_templates={"application/json": json.dumps({"statusCode": 200})},
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )

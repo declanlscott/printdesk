@@ -1,12 +1,11 @@
-from datetime import datetime
 import json
+from datetime import datetime
+from typing import Optional, Mapping, List
 
 import pulumi
 import pulumi_aws as aws
 
 from utilities import tags, region, resource, account_id, build_name, reverse_dns, stage
-
-from typing import Optional, Mapping, List
 
 
 class ApiArgs:
@@ -22,6 +21,8 @@ class ApiArgs:
         domain_name: pulumi.Input[str],
         appsync_http_domain_name: pulumi.Input[str],
         appsync_realtime_domain_name: pulumi.Input[str],
+        assets_bucket_name: pulumi.Input[str],
+        documents_bucket_name: pulumi.Input[str],
         papercut_secure_reverse_proxy_function_invoke_arn: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
@@ -34,6 +35,8 @@ class ApiArgs:
         self.domain_name = domain_name
         self.appsync_http_domain_name = appsync_http_domain_name
         self.appsync_realtime_domain_name = appsync_realtime_domain_name
+        self.assets_bucket_name = assets_bucket_name
+        self.documents_bucket_name = documents_bucket_name
         self.papercut_secure_reverse_proxy_function_invoke_arn = (
             papercut_secure_reverse_proxy_function_invoke_arn
         )
@@ -260,6 +263,26 @@ class Api(pulumi.ComponentResource):
                         {
                             "http": args.appsync_http_domain_name,
                             "realtime": args.appsync_realtime_domain_name,
+                        }
+                    )
+                },
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__buckets_route = WellKnownAppSpecificRoute(
+            name="ApiBuckets",
+            args=WellKnownAppSpecificRouteArgs(
+                rest_api=self.__gateway.id,
+                parent_id=self.__app_specific_resource.id,
+                path_part=pulumi.Output.format(
+                    "{0}.buckets.json", app_specific_base_path
+                ),
+                response_templates={
+                    "application/json": pulumi.Output.json_dumps(
+                        {
+                            "assets": args.assets_bucket_name,
+                            "documents": args.documents_bucket_name,
                         }
                     )
                 },
@@ -808,7 +831,7 @@ class WellKnownAppSpecificRoute(pulumi.ComponentResource):
         self.__method = aws.apigateway.Method(
             resource_name=f"{name}WellKnownAppSpecificMethod",
             args=aws.apigateway.MethodArgs(
-                rest_api=self.__resource.rest_api,
+                rest_api=args.rest_api,
                 resource_id=self.__resource.id,
                 http_method="GET",
                 authorization="AWS_IAM",
@@ -841,7 +864,7 @@ class WellKnownAppSpecificRoute(pulumi.ComponentResource):
         self.__integration_response = aws.apigateway.IntegrationResponse(
             resource_name=f"{name}WellKnownAppSpecificIntegrationResponse",
             args=aws.apigateway.IntegrationResponseArgs(
-                rest_api=self.__resource.rest_api,
+                rest_api=args.rest_api,
                 resource_id=self.__resource.id,
                 http_method=self.__method.http_method,
                 status_code=self.__method_response.status_code,

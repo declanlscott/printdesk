@@ -85,6 +85,8 @@ def inline(payload: sqs_record.Payload):
             domain_name=ssl.domain_name,
             appsync_http_domain_name=realtime.dns["http"],
             appsync_realtime_domain_name=realtime.dns["realtime"],
+            assets_bucket_name=storage.buckets["assets"].name,
+            documents_bucket_name=storage.buckets["documents"].name,
             papercut_secure_reverse_proxy_function_invoke_arn=papercut_secure_reverse_proxy.invoke_arn,
         )
     )

@@ -73,17 +73,13 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        distribution_arn: pulumi.Output[str] = aws.cloudfront.get_distribution_output(
-            id=args.distribution_id
-        ).arn
-
         self.__execution_role_policy: pulumi.Output[
             aws.iam.RolePolicy
         ] = pulumi.Output.all(
             aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
             aws.cloudwatch.get_event_bus_output(name=args.event_bus_name).arn,
             args.invoices_processor_queue_arn,
-            distribution_arn,
+            aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
         ).apply(
             lambda arns: aws.iam.RolePolicy(
                 resource_name="ApiExecutionRolePolicy",
@@ -133,39 +129,6 @@ class Api(pulumi.ComponentResource):
                                 actions=["cloudfront:CreateInvalidation"],
                                 resources=[arns[3]],
                             ),
-                        ]
-                    ).minified_json,
-                ),
-                opts=pulumi.ResourceOptions(parent=self),
-            )
-        )
-
-        self.__api_resource_policy: pulumi.Output[
-            aws.apigateway.RestApiPolicy
-        ] = pulumi.Output.all(self.__gateway.execution_arn, distribution_arn).apply(
-            lambda arns: aws.apigateway.RestApiPolicy(
-                resource_name="ApiResourcePolicy",
-                args=aws.apigateway.RestApiPolicyArgs(
-                    rest_api_id=self.__gateway.id,
-                    policy=aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                principals=[
-                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                        type="Service",
-                                        identifiers=["cloudfront.amazonaws.com"],
-                                    )
-                                ],
-                                actions=["execute-api:Invoke"],
-                                resources=[f"{arns[0]}/{stage}/*"],
-                                conditions=[
-                                    aws.iam.GetPolicyDocumentStatementConditionArgs(
-                                        test="ArnLike",
-                                        variable="aws:SourceArn",
-                                        values=[arns[1]],
-                                    )
-                                ],
-                            )
                         ]
                     ).minified_json,
                 ),
@@ -814,9 +777,6 @@ class Api(pulumi.ComponentResource):
             {
                 "execution_role": self.__execution_role.id,
                 "execution_role_policy": self.__execution_role_policy.apply(
-                    lambda policy: policy.id
-                ),
-                "api_resource_policy": self.__api_resource_policy.apply(
                     lambda policy: policy.id
                 ),
                 "health_resource": self.__health_resource.id,

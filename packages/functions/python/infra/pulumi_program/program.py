@@ -34,6 +34,7 @@ def inline(payload: sqs_record.Payload):
             endpoint_configuration=aws.apigateway.RestApiEndpointConfigurationArgs(
                 types="REGIONAL"
             ),
+            description=f"{payload.tenantId} gateway",
             tags=tags(payload.tenantId),
         ),
         opts=pulumi.ResourceOptions(depends_on=[apigateway_account]),

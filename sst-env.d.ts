@@ -55,6 +55,9 @@ declare module "sst" {
         "keyPair": {
           "id": string
         }
+        "rewriteUriFunction": {
+          "arn": string
+        }
         "s3OriginAccessControl": {
           "id": string
         }

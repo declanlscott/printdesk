@@ -73,6 +73,20 @@ export const cloudfrontS3OriginAccessControl =
     signingProtocol: "sigv4",
   });
 
+export const cloudfrontRewriteUriFunction = new aws.cloudfront.Function(
+  "CloudfrontRewriteUriFunction",
+  {
+    runtime: "cloudfront-js-2.0",
+    code: [
+      `function handler(event) {`,
+      `  let request = event.request;`,
+      `  request.uri = request.uri.replace(/^\\/[^\\/]*\\//, "/");`,
+      `  return request;`,
+      `}`,
+    ].join("\n"),
+  },
+);
+
 // Group of non-sensitive AWS metadata
 export const aws_ = new sst.Linkable("Aws", {
   properties: {
@@ -124,6 +138,7 @@ export const aws_ = new sst.Linkable("Aws", {
       keyGroup: { id: cloudfrontKeyGroup.id },
       apiCachePolicy: { id: cloudfrontApiCachePolicy.id },
       s3OriginAccessControl: { id: cloudfrontS3OriginAccessControl.id },
+      rewriteUriFunction: { arn: cloudfrontRewriteUriFunction.arn },
     },
   },
 });

@@ -57,6 +57,13 @@ class Router(pulumi.ComponentResource):
             name="Managed-CachingOptimized"
         )
 
+        rewrite_uri_function_association = (
+            aws.cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs(
+                event_type="viewer-request",
+                function_arn=resource["Aws"]["cloudfront"]["rewriteUriFunction"]["arn"],
+            )
+        )
+
         self.__distribution = aws.cloudfront.Distribution(
             resource_name="Distribution",
             args=aws.cloudfront.DistributionArgs(
@@ -117,6 +124,7 @@ class Router(pulumi.ComponentResource):
                         compress=True,
                         cache_policy_id=api_cache_policy_id,
                         origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                        function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
                         target_origin_id="/api/*",
@@ -128,6 +136,7 @@ class Router(pulumi.ComponentResource):
                         compress=True,
                         cache_policy_id=api_cache_policy_id,
                         origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                        function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
                         target_origin_id="/api/*",
@@ -142,6 +151,7 @@ class Router(pulumi.ComponentResource):
                         trusted_key_groups=[
                             resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                         ],
+                        function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
                         target_origin_id="/api/*",
@@ -164,6 +174,7 @@ class Router(pulumi.ComponentResource):
                         trusted_key_groups=[
                             resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                         ],
+                        function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
                         target_origin_id="/assets/*",
@@ -176,6 +187,7 @@ class Router(pulumi.ComponentResource):
                         trusted_key_groups=[
                             resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                         ],
+                        function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
                         target_origin_id="/documents/*",
@@ -188,6 +200,7 @@ class Router(pulumi.ComponentResource):
                         trusted_key_groups=[
                             resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                         ],
+                        function_associations=[rewrite_uri_function_association],
                     ),
                 ],
                 restrictions=aws.cloudfront.DistributionRestrictionsArgs(

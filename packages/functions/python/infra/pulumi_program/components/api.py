@@ -49,8 +49,8 @@ class Api(pulumi.ComponentResource):
 
         self.__gateway = args.gateway
 
-        self.__role = aws.iam.Role(
-            resource_name="ApiRole",
+        self.__execution_role = aws.iam.Role(
+            resource_name="ApiExecutionRole",
             args=aws.iam.RoleArgs(
                 assume_role_policy=aws.iam.get_policy_document_output(
                     statements=[
@@ -73,16 +73,22 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__role_policy: pulumi.Output[aws.iam.RolePolicy] = pulumi.Output.all(
+        distribution_arn: pulumi.Output[str] = aws.cloudfront.get_distribution_output(
+            id=args.distribution_id
+        ).arn
+
+        self.__execution_role_policy: pulumi.Output[
+            aws.iam.RolePolicy
+        ] = pulumi.Output.all(
             aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
             aws.cloudwatch.get_event_bus_output(name=args.event_bus_name).arn,
             args.invoices_processor_queue_arn,
-            aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
+            distribution_arn,
         ).apply(
             lambda arns: aws.iam.RolePolicy(
-                resource_name="ApiRolePolicy",
+                resource_name="ApiExecutionRolePolicy",
                 args=aws.iam.RolePolicyArgs(
-                    role=self.__role.name,
+                    role=self.__execution_role.name,
                     policy=aws.iam.get_policy_document_output(
                         statements=[
                             aws.iam.GetPolicyDocumentStatementArgs(
@@ -134,32 +140,36 @@ class Api(pulumi.ComponentResource):
             )
         )
 
-        self.__api_policy: pulumi.Output[aws.apigateway.RestApiPolicy] = (
-            self.__gateway.execution_arn.apply(
-                lambda execution_arn: aws.apigateway.RestApiPolicy(
-                    resource_name="ApiPolicy",
-                    args=aws.apigateway.RestApiPolicyArgs(
-                        rest_api_id=self.__gateway.id,
-                        policy=aws.iam.get_policy_document_output(
-                            statements=[
-                                aws.iam.GetPolicyDocumentStatementArgs(
-                                    principals=[
-                                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                            type="AWS",
-                                            identifiers=[
-                                                resource["ApiFunction"]["roleArn"],
-                                                resource["PapercutSync"]["roleArn"],
-                                            ],
-                                        )
-                                    ],
-                                    actions=["execute-api:Invoke"],
-                                    resources=[f"{execution_arn}/*"],
-                                )
-                            ]
-                        ).minified_json,
-                    ),
-                    opts=pulumi.ResourceOptions(parent=self),
-                )
+        self.__api_resource_policy: pulumi.Output[
+            aws.apigateway.RestApiPolicy
+        ] = pulumi.Output.all(self.__gateway.execution_arn, distribution_arn).apply(
+            lambda arns: aws.apigateway.RestApiPolicy(
+                resource_name="ApiResourcePolicy",
+                args=aws.apigateway.RestApiPolicyArgs(
+                    rest_api_id=self.__gateway.id,
+                    policy=aws.iam.get_policy_document_output(
+                        statements=[
+                            aws.iam.GetPolicyDocumentStatementArgs(
+                                principals=[
+                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                        type="Service",
+                                        identifiers=["cloudfront.amazonaws.com"],
+                                    )
+                                ],
+                                actions=["execute-api:Invoke"],
+                                resources=[f"{arns[0]}/{stage}/*"],
+                                conditions=[
+                                    aws.iam.GetPolicyDocumentStatementConditionArgs(
+                                        test="ArnLike",
+                                        variable="aws:SourceArn",
+                                        values=[arns[1]],
+                                    )
+                                ],
+                            )
+                        ]
+                    ).minified_json,
+                ),
+                opts=pulumi.ResourceOptions(parent=self),
             )
         )
 
@@ -349,7 +359,7 @@ class Api(pulumi.ComponentResource):
                 },
                 passthrough_behavior="NEVER",
                 uri=f"arn:aws:apigateway:{region}:ssm:path//",
-                credentials=self.__role.arn,
+                credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -427,7 +437,7 @@ class Api(pulumi.ComponentResource):
                 integration_http_method="POST",
                 passthrough_behavior="WHEN_NO_TEMPLATES",
                 uri=args.papercut_secure_reverse_proxy_function_invoke_arn,
-                credentials=self.__role.arn,
+                credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -447,7 +457,7 @@ class Api(pulumi.ComponentResource):
                 rest_api=self.__gateway.id,
                 parent_id=self.__papercut_resource.id,
                 path_part="sync",
-                execution_role_arn=self.__role.arn,
+                execution_role_arn=self.__execution_role.arn,
                 request_template=pulumi.Output.json_dumps(
                     {
                         "Entries": [
@@ -551,7 +561,7 @@ class Api(pulumi.ComponentResource):
                     account_id,
                     args.invoices_processor_queue_name,
                 ),
-                credentials=self.__role.arn,
+                credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -691,7 +701,7 @@ class Api(pulumi.ComponentResource):
                     region,
                     args.distribution_id,
                 ),
-                credentials=self.__role.arn,
+                credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -750,11 +760,65 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self.__api_access_role = aws.iam.Role(
+            resource_name="ApiAccessRole",
+            args=aws.iam.RoleArgs(
+                name=build_name(
+                    name_template=resource["Aws"]["tenant"]["roles"]["apiAccess"][
+                        "nameTemplate"
+                    ],
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS",
+                                    identifiers=[
+                                        resource["ApiFunction"]["roleArn"],
+                                        resource["PapercutSync"]["roleArn"],
+                                    ],
+                                )
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ],
+                ).minified_json,
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__api_access_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
+            self.__gateway.execution_arn.apply(
+                lambda execution_arn: aws.iam.RolePolicy(
+                    resource_name="ApiAccessRolePolicy",
+                    args=aws.iam.RolePolicyArgs(
+                        role=self.__api_access_role.name,
+                        policy=aws.iam.get_policy_document_output(
+                            statements=[
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["execute-api:Invoke"],
+                                    resources=[f"{execution_arn}/{stage}/*"],
+                                )
+                            ]
+                        ).minified_json,
+                    ),
+                    opts=pulumi.ResourceOptions(parent=self),
+                )
+            )
+        )
+
         self.register_outputs(
             {
-                "role": self.__role.id,
-                "role_policy": self.__role_policy.apply(lambda policy: policy.id),
-                "api_policy": self.__api_policy.apply(lambda policy: policy.id),
+                "execution_role": self.__execution_role.id,
+                "execution_role_policy": self.__execution_role_policy.apply(
+                    lambda policy: policy.id
+                ),
+                "api_resource_policy": self.__api_resource_policy.apply(
+                    lambda policy: policy.id
+                ),
                 "health_resource": self.__health_resource.id,
                 "health_method": self.__health_method.id,
                 "health_method_response": self.__health_method_response.id,
@@ -784,6 +848,10 @@ class Api(pulumi.ComponentResource):
                 "invalidation_integration": self.__invalidation_integration.id,
                 "cors_response_4xx": self.__cors_response_4xx.id,
                 "cors_response_5xx": self.__cors_response_5xx.id,
+                "api_access_role": self.__api_access_role.id,
+                "api_access_role_policy": self.__api_access_role_policy.apply(
+                    lambda policy: policy.id
+                ),
             }
         )
 

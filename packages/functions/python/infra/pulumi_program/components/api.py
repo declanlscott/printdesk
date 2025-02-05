@@ -1270,23 +1270,23 @@ class ApiDeployment(pulumi.ComponentResource):
                     format=json.dumps(
                         {
                             # request info
-                            "requestTime": '"$context.requestTime"',
-                            "requestId": '"$context.requestId"',
-                            "httpMethod": '"$context.httpMethod"',
-                            "path": '"$context.path"',
-                            "resourcePath": '"$context.resourcePath"',
-                            "status": "$context.status",  # integer value, do not wrap in quotes
-                            "responseLatency": "$context.responseLatency",  # integer value, do not wrap in quotes
-                            "xrayTraceId": '"$context.xrayTraceId"',
+                            "requestTime": "$context.requestTime",
+                            "requestId": "$context.requestId",
+                            "httpMethod": "$context.httpMethod",
+                            "path": "$context.path",
+                            "resourcePath": "$context.resourcePath",
+                            "status": "$context.status",
+                            "responseLatency": "$context.responseLatency",
+                            "xrayTraceId": "$context.xrayTraceId",
                             # integration info
-                            "functionResponseStatus": '"$context.integration.status"',
-                            "integrationRequestId": '"$context.integration.requestId"',
-                            "integrationLatency": '"$context.integration.latency"',
-                            "integrationServiceStatus": '"$context.integration.integrationStatus"',
+                            "functionResponseStatus": "$context.integration.status",
+                            "integrationRequestId": "$context.integration.requestId",
+                            "integrationLatency": "$context.integration.latency",
+                            "integrationServiceStatus": "$context.integration.integrationStatus",
                             # caller info
-                            "ip": '"$context.identity.sourceIp"',
-                            "userAgent": '"$context.identity.userAgent"',
-                            "principalId": '"$context.authorizer.principalId"',
+                            "ip": "$context.identity.sourceIp",
+                            "userAgent": "$context.identity.userAgent",
+                            "principalId": "$context.authorizer.principalId",
                         }
                     ),
                 ),

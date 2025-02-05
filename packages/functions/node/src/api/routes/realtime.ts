@@ -13,12 +13,22 @@ import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
 import { authzValidator } from "~/api/middleware/validators";
 
 export default new Hono()
-  .use(executeApiSigner)
-  .get("/url", async (c) => {
-    const url = await getRealtimeUrl();
+  .get(
+    "/url",
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiGetRealtimeUrl",
+    })),
+    async (c) => {
+      const url = await getRealtimeUrl();
 
-    return c.json({ url }, 200);
-  })
+      return c.json({ url }, 200);
+    },
+  )
   .get(
     "/auth",
     authzValidator,
@@ -28,6 +38,14 @@ export default new Hono()
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
       }),
     ),
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiGetRealtimeAuth",
+    })),
     appsyncSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,

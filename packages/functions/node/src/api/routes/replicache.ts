@@ -24,14 +24,21 @@ export default new Hono()
   })
   .post(
     "/push",
-    executeApiSigner,
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiReplicachePush",
+    })),
     appsyncSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,
         Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
         useTenant().id,
       ),
-      RoleSessionName: "TenantRealtimePublisher",
+      RoleSessionName: "ApiReplicachePush",
     })),
     async (c) => {
       const pushRequest = await c.req.json();

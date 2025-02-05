@@ -126,5 +126,5 @@ export const tenantMetadataSchema = v.object({
   ...timestampsSchema.entries,
 });
 
-export const getBackendFqdn = (tenantId: Tenant["id"], appFqdn: string) =>
-  `${tenantId}.backend.${appFqdn}`;
+export const getBackendFqdn = (tenantId: Tenant["id"], baseFqdn: string) =>
+  `${tenantId}.backend.${baseFqdn}`;

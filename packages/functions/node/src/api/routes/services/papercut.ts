@@ -22,7 +22,6 @@ export default new Hono()
     authz("services", "update"),
     authzValidator,
     vValidator("json", updateServerTailnetUriSchema),
-    executeApiSigner,
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,
@@ -42,7 +41,6 @@ export default new Hono()
     authz("services", "update"),
     authzValidator,
     vValidator("json", updateServerAuthTokenSchema),
-    executeApiSigner,
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,
@@ -60,7 +58,14 @@ export default new Hono()
   .post(
     "/sync",
     authz("papercut-sync", "create"),
-    executeApiSigner,
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiPapercutSync",
+    })),
     async (c) => {
       const { eventId: dispatchId } = await Api.papercutSync();
 

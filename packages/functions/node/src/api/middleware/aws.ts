@@ -33,21 +33,25 @@ export const appsyncSigner = (getRoleInput?: GetRoleInput) =>
     ),
   );
 
-export const executeApiSigner = createMiddleware(async (_, next) =>
-  withAws(
-    {
-      sigv4: {
-        signers: {
-          "execute-api": SignatureV4.buildSigner({
-            region: Resource.Aws.region,
-            service: "execute-api",
-          }),
+export const executeApiSigner = (getRoleInput?: GetRoleInput) =>
+  createMiddleware(async (_, next) =>
+    withAws(
+      {
+        sigv4: {
+          signers: {
+            "execute-api": SignatureV4.buildSigner({
+              region: Resource.Aws.region,
+              service: "execute-api",
+              credentials: getRoleInput
+                ? Credentials.fromRoleChain([getRoleInput()])
+                : undefined,
+            }),
+          },
         },
       },
-    },
-    next,
-  ),
-);
+      next,
+    ),
+  );
 
 export const s3Client = (getRoleInput?: GetRoleInput) =>
   createMiddleware(async (_, next) =>

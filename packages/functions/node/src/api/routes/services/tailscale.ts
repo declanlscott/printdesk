@@ -7,7 +7,7 @@ import { Hono } from "hono";
 import { Resource } from "sst";
 
 import { authz } from "~/api/middleware/auth";
-import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
+import { ssmClient } from "~/api/middleware/aws";
 import { authzValidator } from "~/api/middleware/validators";
 
 export default new Hono().put(
@@ -15,7 +15,6 @@ export default new Hono().put(
   authz("services", "update"),
   authzValidator,
   vValidator("json", tailscaleOauthClientSchema),
-  executeApiSigner,
   ssmClient(() => ({
     RoleArn: Credentials.buildRoleArn(
       Resource.Aws.account.id,

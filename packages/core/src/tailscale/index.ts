@@ -12,5 +12,6 @@ export namespace Tailscale {
       ),
       Value: JSON.stringify({ id, secret }),
       Type: "SecureString",
+      Overwrite: true,
     });
 }

@@ -23,6 +23,7 @@ export namespace Documents {
       Name: name,
       Value: JSON.stringify(mimeTypes),
       Type: "StringList",
+      Overwrite: true,
     });
 
     await Api.invalidateCache([`/parameters${name}`]);
@@ -54,6 +55,7 @@ export namespace Documents {
       Name: name,
       Value: byteSize.toString(),
       Type: "String",
+      Overwrite: true,
     });
 
     await Api.invalidateCache([`/parameters${name}`]);

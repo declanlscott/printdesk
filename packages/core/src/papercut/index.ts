@@ -14,6 +14,7 @@ export namespace Papercut {
       ),
       Value: uri,
       Type: "String",
+      Overwrite: true,
     });
 
   export const setServerAuthToken = async (token: string) =>
@@ -24,6 +25,7 @@ export namespace Papercut {
       ),
       Value: token,
       Type: "SecureString",
+      Overwrite: true,
     });
 
   export async function getServerAuthToken() {

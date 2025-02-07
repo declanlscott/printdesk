@@ -311,14 +311,16 @@ class Api(pulumi.ComponentResource):
                     "integration.request.header.X-Amz-Target": "'AmazonSSM.GetParameter'",
                 },
                 request_templates={
-                    "application/json": """
-                        {
-                          "Name": "$util.escapeJavaScript($input.params().path.get('proxy'))"
-                          #if($util.escapeJavaScript($input.params().query.get('withDecryption')) == 'true')
-                          ,"WithDecryption": true
-                          #end
-                        }
-                        """
+                    "application/json": "\n".join(
+                        [
+                            """{""",
+                            """  "Name": "/$util.escapeJavaScript($input.params().path.get('proxy'))" """,
+                            """  #if($util.escapeJavaScript($input.params().querystring.get('withDecryption')) == 'true')""",
+                            """  ,"WithDecryption": true""",
+                            """  #end""",
+                            """}""",
+                        ]
+                    )
                 },
                 passthrough_behavior="NEVER",
                 uri=f"arn:aws:apigateway:{region}:ssm:path//",
@@ -641,22 +643,24 @@ class Api(pulumi.ComponentResource):
                     "integration.request.header.Content-Type": "'application/xml'"
                 },
                 request_templates={
-                    "application/json": """
-                        #set($paths = $input.path('$.paths'))
-                        #set($quantity = $paths.size())
-                        <?xml version="1.0" encoding="UTF-8"?>
-                        <InvalidationBatch xmlns="http://cloudfront.amazonaws.com/doc/2020-05-31/">
-                            <CallerReference>$context.requestId</CallerReference>
-                            <Paths>
-                                <Quantity>$quantity</Quantity>
-                                <Items>
-                                #foreach($path in $paths)
-                                    <Path>$path</Path>
-                                #end
-                                </Items>
-                            </Paths>
-                        </InvalidationBatch>
-                        """
+                    "application/json": "\n".join(
+                        [
+                            """#set($paths = $input.path('$.paths'))""",
+                            """#set($quantity = $paths.size())""",
+                            """<?xml version="1.0" encoding="UTF-8"?>""",
+                            """<InvalidationBatch xmlns="http://cloudfront.amazonaws.com/doc/2020-05-31/">""",
+                            """  <CallerReference>$context.requestId</CallerReference>""",
+                            """  <Paths>""",
+                            """    <Quantity>$quantity</Quantity>""",
+                            """    <Items>""",
+                            """    #foreach($path in $paths)""",
+                            """      <Path>$path</Path>""",
+                            """    #end""",
+                            """    </Items>""",
+                            """  </Paths>""",
+                            """</InvalidationBatch>""",
+                        ]
+                    )
                 },
                 passthrough_behavior="NEVER",
                 uri=pulumi.Output.format(

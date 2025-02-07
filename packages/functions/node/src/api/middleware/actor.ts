@@ -23,9 +23,10 @@ export const actor = createMiddleware(async (c, next) => {
       );
   }
 
-  // NOTE: System actor is only for initializing tenants
+  // NOTE: System actor on the api is only used for initializing tenants
   const licenseKey = c.req.header("X-License-Key");
-  if (licenseKey) {
+  const tenantId = c.req.header("X-Tenant-Id");
+  if (licenseKey && tenantId) {
     const result = await useTransaction((tx) =>
       tx
         .select({ tenantId: tenantsTable.id })
@@ -34,6 +35,8 @@ export const actor = createMiddleware(async (c, next) => {
         .where(
           and(
             eq(licensesTable.key, licenseKey),
+            eq(licensesTable.tenantId, tenantId),
+            eq(licensesTable.status, "active"),
             eq(tenantsTable.status, "initializing"),
           ),
         )

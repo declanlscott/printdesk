@@ -36,7 +36,7 @@ export const timestamps = {
     return timestamp("updated_at")
       .notNull()
       .defaultNow()
-      .$onUpdate(() => sql`now()`);
+      .$onUpdate(() => new Date());
   },
   get deletedAt() {
     return timestamp("deleted_at");

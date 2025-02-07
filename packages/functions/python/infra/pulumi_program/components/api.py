@@ -664,7 +664,7 @@ class Api(pulumi.ComponentResource):
                 },
                 passthrough_behavior="NEVER",
                 uri=pulumi.Output.format(
-                    "arn:aws:apigateway:{0}:cloudfront:path/{1}/invalidation",
+                    "arn:aws:apigateway:{0}:cloudfront:path/2020-05-31/distribution/{1}/invalidation",
                     region,
                     args.distribution_id,
                 ),
@@ -676,7 +676,7 @@ class Api(pulumi.ComponentResource):
         self.__invalidation_responses = Responses(
             name="ApiInvalidation",
             args=ResponsesArgs(
-                status_codes=[200, 400, 403, 404, 413, 500, 503],
+                status_codes=[201, 400, 403, 404, 413, 500, 503],
                 rest_api=self.__gateway.id,
                 resource_id=self.__invalidation_resource.id,
                 http_method=self.__invalidation_method.http_method,

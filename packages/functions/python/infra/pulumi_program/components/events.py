@@ -3,7 +3,7 @@ import json
 import pulumi
 import pulumi_aws as aws
 
-from utilities import resource, tags, reverse_dns
+from utilities import resource, tags
 
 from typing import Optional
 
@@ -12,18 +12,18 @@ class EventsArgs:
     def __init__(
         self,
         tenant_id: str,
-        event_bus_name: pulumi.Input[str],
+        event_bus: pulumi.Input[aws.cloudwatch.EventBus],
         invoices_processor_queue_arn: pulumi.Input[str],
         papercut_sync_schedule: pulumi.Input[str],
         timezone: pulumi.Input[str],
-        domain_name: pulumi.Input[str],
+        reverse_dns: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
-        self.event_bus_name = event_bus_name
+        self.event_bus = event_bus
         self.invoices_processor_queue_arn = invoices_processor_queue_arn
         self.papercut_sync_schedule = papercut_sync_schedule
         self.timezone = timezone
-        self.domain_name = domain_name
+        self.reverse_dns = reverse_dns
 
 
 class Events(pulumi.ComponentResource):
@@ -68,15 +68,11 @@ class Events(pulumi.ComponentResource):
             name="PapercutSync",
             args=PatternedEventArgs(
                 tenant_id=args.tenant_id,
-                event_bus_name=args.event_bus_name,
+                event_bus_name=args.event_bus.name,
                 pattern=pulumi.Output.json_dumps(
                     {
                         "detail-type": ["PapercutSync"],
-                        "source": [
-                            pulumi.Output.from_input(args.domain_name).apply(
-                                reverse_dns
-                            )
-                        ],
+                        "source": [args.reverse_dns],
                     }
                 ),
                 function_target_arn=resource["PapercutSync"]["arn"],
@@ -208,7 +204,7 @@ class PatternedEventArgs:
     def __init__(
         self,
         tenant_id: str,
-        event_bus_name: str,
+        event_bus_name: pulumi.Input[str],
         pattern: pulumi.Input[str],
         function_target_arn: pulumi.Input[str],
         function_target_name: pulumi.Input[str],

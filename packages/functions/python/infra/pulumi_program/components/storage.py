@@ -1,9 +1,9 @@
-from typing import TypedDict, Optional
-
 import pulumi
 import pulumi_aws as aws
 
 from utilities import account_id, region, resource, tags, retain_on_delete, build_name
+
+from typing import TypedDict, Optional
 
 
 class _StorageBucketArgs:

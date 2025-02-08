@@ -4,7 +4,8 @@ from datetime import datetime
 import pulumi
 import pulumi_aws as aws
 
-from utilities import tags, region, resource, account_id, build_name, reverse_dns, stage
+from . import Storage, Realtime, PapercutSecureReverseProxy
+from utilities import tags, region, resource, account_id, build_name, stage
 
 from typing import Optional, Mapping, List
 
@@ -14,33 +15,21 @@ class ApiArgs:
         self,
         tenant_id: str,
         gateway: pulumi.Input[aws.apigateway.RestApi],
-        event_bus_name: pulumi.Input[str],
-        invoices_processor_queue_arn: pulumi.Input[str],
-        invoices_processor_queue_name: pulumi.Input[str],
-        invoices_processor_queue_url: pulumi.Input[str],
+        event_bus: pulumi.Input[aws.cloudwatch.EventBus],
+        storage: pulumi.Input[Storage],
         distribution_id: pulumi.Input[str],
-        domain_name: pulumi.Input[str],
-        appsync_http_domain_name: pulumi.Input[str],
-        appsync_realtime_domain_name: pulumi.Input[str],
-        assets_bucket_name: pulumi.Input[str],
-        documents_bucket_name: pulumi.Input[str],
-        papercut_secure_reverse_proxy_function_invoke_arn: pulumi.Input[str],
+        reverse_dns: pulumi.Input[str],
+        realtime: pulumi.Input[Realtime],
+        papercut_secure_reverse_proxy: pulumi.Input[PapercutSecureReverseProxy],
     ):
         self.tenant_id = tenant_id
         self.gateway = gateway
-        self.event_bus_name = event_bus_name
-        self.invoices_processor_queue_arn = invoices_processor_queue_arn
-        self.invoices_processor_queue_name = invoices_processor_queue_name
-        self.invoices_processor_queue_url = invoices_processor_queue_url
+        self.event_bus = event_bus
+        self.storage = storage
         self.distribution_id = distribution_id
-        self.domain_name = domain_name
-        self.appsync_http_domain_name = appsync_http_domain_name
-        self.appsync_realtime_domain_name = appsync_realtime_domain_name
-        self.assets_bucket_name = assets_bucket_name
-        self.documents_bucket_name = documents_bucket_name
-        self.papercut_secure_reverse_proxy_function_invoke_arn = (
-            papercut_secure_reverse_proxy_function_invoke_arn
-        )
+        self.reverse_dns = reverse_dns
+        self.realtime = realtime
+        self.papercut_secure_reverse_proxy = papercut_secure_reverse_proxy
 
 
 class Api(pulumi.ComponentResource):
@@ -77,8 +66,8 @@ class Api(pulumi.ComponentResource):
             aws.iam.RolePolicy
         ] = pulumi.Output.all(
             aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
-            aws.cloudwatch.get_event_bus_output(name=args.event_bus_name).arn,
-            args.invoices_processor_queue_arn,
+            aws.cloudwatch.get_event_bus_output(name=args.event_bus.name).arn,
+            args.storage.queues["invoices_processor"].arn,
             aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
         ).apply(
             lambda arns: aws.iam.RolePolicy(
@@ -223,23 +212,17 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        app_specific_base_path: pulumi.Output[str] = pulumi.Output.from_input(
-            args.domain_name
-        ).apply(reverse_dns)
-
-        self.__appsync_events_domain_names_route = WellKnownAppSpecificRoute(
-            name="ApiAppsyncEventsDomainNames",
+        self.__realtime_route = WellKnownAppSpecificRoute(
+            name="ApiRealtime",
             args=WellKnownAppSpecificRouteArgs(
                 rest_api=self.__gateway.id,
                 parent_id=self.__app_specific_resource.id,
-                path_part=pulumi.Output.format(
-                    "{0}.appsync-events-domain-names.json", app_specific_base_path
-                ),
+                path_part=pulumi.Output.format("{0}.realtime.json", args.reverse_dns),
                 response_templates={
                     "application/json": pulumi.Output.json_dumps(
                         {
-                            "http": args.appsync_http_domain_name,
-                            "realtime": args.appsync_realtime_domain_name,
+                            "http": args.realtime.dns["http"],
+                            "realtime": args.realtime.dns["realtime"],
                         }
                     )
                 },
@@ -252,14 +235,12 @@ class Api(pulumi.ComponentResource):
             args=WellKnownAppSpecificRouteArgs(
                 rest_api=self.__gateway.id,
                 parent_id=self.__app_specific_resource.id,
-                path_part=pulumi.Output.format(
-                    "{0}.buckets.json", app_specific_base_path
-                ),
+                path_part=pulumi.Output.format("{0}.buckets.json", args.reverse_dns),
                 response_templates={
                     "application/json": pulumi.Output.json_dumps(
                         {
-                            "assets": args.assets_bucket_name,
-                            "documents": args.documents_bucket_name,
+                            "assets": args.storage.buckets["assets"].name,
+                            "documents": args.storage.buckets["documents"].name,
                         }
                     )
                 },
@@ -401,8 +382,21 @@ class Api(pulumi.ComponentResource):
                 type="AWS_PROXY",
                 integration_http_method="POST",
                 passthrough_behavior="WHEN_NO_TEMPLATES",
-                uri=args.papercut_secure_reverse_proxy_function_invoke_arn,
-                credentials=self.__execution_role.arn,
+                uri=args.papercut_secure_reverse_proxy.invoke_arn,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invoke_papercut_secure_reverse_proxy_permission = aws.lambda_.Permission(
+            resource_name="ApiInvokePapercutSecureReverseProxyPermission",
+            args=aws.lambda_.PermissionArgs(
+                function=args.papercut_secure_reverse_proxy.function_name,
+                principal="apigateway.amazonaws.com",
+                action="lambda:InvokeFunction",
+                source_arn=pulumi.Output.format(
+                    "{0}/*/*/papercut/server/*",
+                    pulumi.Output.from_input(self.__gateway.execution_arn),
+                ),
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -429,8 +423,8 @@ class Api(pulumi.ComponentResource):
                             {
                                 "Detail": json.dumps({"tenantId": args.tenant_id}),
                                 "DetailType": "PapercutSync",
-                                "EventBusName": args.event_bus_name,
-                                "Source": app_specific_base_path,
+                                "EventBusName": args.event_bus.name,
+                                "Source": args.reverse_dns,
                             }
                         ]
                     }
@@ -509,7 +503,7 @@ class Api(pulumi.ComponentResource):
                 request_templates={
                     "application/json": pulumi.Output.json_dumps(
                         {
-                            "QueueUrl": args.invoices_processor_queue_url,
+                            "QueueUrl": args.storage.queues["invoices_processor"].url,
                             "MessageBody": json.dumps(
                                 {
                                     "invoiceId": "$input.path('$.invoice_id')",
@@ -524,7 +518,7 @@ class Api(pulumi.ComponentResource):
                     "arn:aws:apigateway:{0}:sqs:path/{1}/{2}",
                     region,
                     account_id,
-                    args.invoices_processor_queue_name,
+                    args.storage.queues["invoices_processor"].name,
                 ),
                 credentials=self.__execution_role.arn,
             ),
@@ -799,6 +793,7 @@ class Api(pulumi.ComponentResource):
                 "papercut_server_proxy_resource": self.__papercut_server_proxy_resource.id,
                 "papercut_server_proxy_method": self.__papercut_server_proxy_method.id,
                 "papercut_server_proxy_integration": self.__papercut_server_proxy_integration.id,
+                "invoke_papercut_secure_reverse_proxy_permission": self.__invoke_papercut_secure_reverse_proxy_permission.id,
                 "invoices_resource": self.__invoices_resource.id,
                 "enqueue_invoice_request_validator": self.__enqueue_invoice_request_validator.id,
                 "enqueue_invoice_request_model": self.__enqueue_invoice_request_model.id,

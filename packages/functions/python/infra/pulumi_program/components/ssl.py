@@ -1,10 +1,11 @@
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
-from typing import Sequence, Optional
 
 from utilities import resource, tags
 from utilities.aws import get_pulumi_credentials
+
+from typing import Sequence, Optional
 
 
 class SslArgs:

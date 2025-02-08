@@ -133,6 +133,10 @@ class PapercutSecureReverseProxy(pulumi.ComponentResource):
         )
 
     @property
+    def function_name(self):
+        return self.__function.name
+
+    @property
     def function_arn(self):
         return self.__function.arn
 

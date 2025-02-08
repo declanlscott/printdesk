@@ -20,11 +20,13 @@ from .components import (
     EventsArgs,
 )
 from models import sqs_record
-from utilities import tags, region, stage
+from utilities import tags, region, stage, reverse_dns
 
 
 def inline(payload: sqs_record.Payload):
     ssl = Ssl(args=SslArgs(tenant_id=payload.tenantId))
+
+    reverse_dns_ = ssl.domain_name.apply(reverse_dns)
 
     apigateway_account = setup_api_gateway_account()
 
@@ -55,7 +57,7 @@ def inline(payload: sqs_record.Payload):
     router = Router(
         args=RouterArgs(
             tenant_id=payload.tenantId,
-            domain_name=ssl.domain_name,
+            ssl=ssl,
             api_origin_domain_name=pulumi.Output.format(
                 "{0}.execute-api.{1}.amazonaws.com", gateway.id, region
             ),
@@ -64,31 +66,23 @@ def inline(payload: sqs_record.Payload):
             documents_origin_domain_name=storage.buckets[
                 "documents"
             ].regional_domain_name,
-            certificate_arn=ssl.certificate_arn,
         ),
     )
 
     papercut_secure_reverse_proxy = PapercutSecureReverseProxy(
-        args=PapercutSecureReverseProxyArgs(
-            tenant_id=payload.tenantId,
-        )
+        args=PapercutSecureReverseProxyArgs(tenant_id=payload.tenantId)
     )
 
     api = Api(
         args=ApiArgs(
             tenant_id=payload.tenantId,
             gateway=gateway,
-            event_bus_name=event_bus.name,
-            invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
-            invoices_processor_queue_name=storage.queues["invoices_processor"].name,
-            invoices_processor_queue_url=storage.queues["invoices_processor"].url,
+            event_bus=event_bus,
+            storage=storage,
             distribution_id=router.distribution_id,
-            domain_name=ssl.domain_name,
-            appsync_http_domain_name=realtime.dns["http"],
-            appsync_realtime_domain_name=realtime.dns["realtime"],
-            assets_bucket_name=storage.buckets["assets"].name,
-            documents_bucket_name=storage.buckets["documents"].name,
-            papercut_secure_reverse_proxy_function_invoke_arn=papercut_secure_reverse_proxy.invoke_arn,
+            reverse_dns=reverse_dns_,
+            realtime=realtime,
+            papercut_secure_reverse_proxy=papercut_secure_reverse_proxy,
         )
     )
 
@@ -103,11 +97,11 @@ def inline(payload: sqs_record.Payload):
     events = Events(
         args=EventsArgs(
             tenant_id=payload.tenantId,
-            event_bus_name=event_bus.name,
+            event_bus=event_bus,
             invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
             papercut_sync_schedule=payload.papercutSyncSchedule,
             timezone=payload.timezone,
-            domain_name=ssl.domain_name,
+            reverse_dns=reverse_dns_,
         )
     )
 

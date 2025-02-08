@@ -2,6 +2,7 @@ import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
 
+from . import Ssl
 from utilities import resource, tags
 
 from typing import Optional
@@ -11,20 +12,18 @@ class RouterArgs:
     def __init__(
         self,
         tenant_id: str,
-        domain_name: pulumi.Input[str],
+        ssl: pulumi.Input[Ssl],
         api_origin_domain_name: pulumi.Input[str],
         api_origin_path: pulumi.Input[str],
         assets_origin_domain_name: pulumi.Input[str],
         documents_origin_domain_name: pulumi.Input[str],
-        certificate_arn: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
-        self.domain_name = domain_name
+        self.ssl = ssl
         self.api_origin_domain_name = api_origin_domain_name
         self.api_origin_path = api_origin_path
         self.assets_origin_domain_name = assets_origin_domain_name
         self.documents_origin_domain_name = documents_origin_domain_name
-        self.certificate_arn = certificate_arn
 
 
 class Router(pulumi.ComponentResource):
@@ -208,9 +207,9 @@ class Router(pulumi.ComponentResource):
                         restriction_type="none"
                     )
                 ),
-                aliases=[args.domain_name],
+                aliases=[args.ssl.domain_name],
                 viewer_certificate=aws.cloudfront.DistributionViewerCertificateArgs(
-                    acm_certificate_arn=args.certificate_arn,
+                    acm_certificate_arn=args.ssl.certificate_arn,
                     ssl_support_method="sni-only",
                     minimum_protocol_version="TLSv1.2_2021",
                 ),
@@ -226,7 +225,7 @@ class Router(pulumi.ComponentResource):
                 zone_id=cloudflare.get_zone_output(
                     name=resource["AppData"]["domainName"]["value"]
                 ).id,
-                name=args.domain_name,
+                name=args.ssl.domain_name,
                 type="CNAME",
                 content=self.__distribution.domain_name,
                 ttl=60,

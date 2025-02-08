@@ -6,7 +6,7 @@ import { SignatureV4, Util } from "../utils/aws";
 
 export async function getRealtimeUrl(forTenant = true) {
   const realtimeDomainName = forTenant
-    ? (await Api.getAppsyncEventsDomainNames()).realtime
+    ? (await Api.getRealtimeDns()).realtime
     : Resource.AppsyncEventApi.dns.realtime;
 
   return Util.formatUrl(
@@ -20,7 +20,7 @@ export async function getRealtimeUrl(forTenant = true) {
 
 export async function getRealtimeAuth(forTenant = true, body = "{}") {
   const httpDomainName = forTenant
-    ? (await Api.getAppsyncEventsDomainNames()).http
+    ? (await Api.getRealtimeDns()).http
     : Resource.AppsyncEventApi.dns.http;
 
   const { headers: auth } = await SignatureV4.sign(

@@ -62,8 +62,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
             },
           },
           async () => {
-            const { http: publishDomain } =
-              await Api.getAppsyncEventsDomainNames();
+            const { http: publishDomain } = await Api.getRealtimeDns();
 
             let error = undefined;
             try {

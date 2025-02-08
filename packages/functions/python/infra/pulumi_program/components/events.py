@@ -45,6 +45,15 @@ class Events(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self.__papercut_sync_dead_letter_queue = aws.sqs.Queue(
+            resource_name="PapercutSyncDeadLetterQueue",
+            args=aws.sqs.QueueArgs(
+                message_retention_seconds=1209600,  # 14 days
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         self.__scheduled_papercut_sync = ScheduledEvent(
             name="PapercutSync",
             args=ScheduledEventArgs(
@@ -59,6 +68,7 @@ class Events(pulumi.ComponentResource):
                 function_target_arn=resource["PapercutSync"]["arn"],
                 function_target_name=resource["PapercutSync"]["name"],
                 function_target_input=json.dumps({"tenantId": args.tenant_id}),
+                dead_letter_queue_arn=self.__papercut_sync_dead_letter_queue.arn,
                 timezone=args.timezone,
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -77,6 +87,7 @@ class Events(pulumi.ComponentResource):
                 ),
                 function_target_arn=resource["PapercutSync"]["arn"],
                 function_target_name=resource["PapercutSync"]["name"],
+                dead_letter_queue_arn=self.__papercut_sync_dead_letter_queue.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -84,6 +95,7 @@ class Events(pulumi.ComponentResource):
         self.register_outputs(
             {
                 "invoices_processor_event_source_mapping": self.__invoices_processor_event_source_mapping.id,
+                "papercut_sync_dead_letter_queue": self.__papercut_sync_dead_letter_queue.id,
             }
         )
 
@@ -99,6 +111,7 @@ class ScheduledEventArgs:
         function_target_arn: pulumi.Input[str],
         function_target_input: pulumi.Input[str],
         function_target_name: pulumi.Input[str],
+        dead_letter_queue_arn: pulumi.Input[str],
         timezone: Optional[pulumi.Input[str]] = None,
     ):
         self.tenant_id = tenant_id
@@ -107,6 +120,7 @@ class ScheduledEventArgs:
         self.function_target_arn = function_target_arn
         self.function_target_input = function_target_input
         self.function_target_name = function_target_name
+        self.dead_letter_queue_arn = dead_letter_queue_arn
         self.timezone = timezone
 
 
@@ -173,6 +187,9 @@ class ScheduledEvent(pulumi.ComponentResource):
                     arn=args.function_target_arn,
                     role_arn=self.__role.arn,
                     input=args.function_target_input,
+                    dead_letter_config=aws.scheduler.ScheduleTargetDeadLetterConfigArgs(
+                        arn=args.dead_letter_queue_arn,
+                    ),
                 ),
                 description=f"{name} Scheduled Event ({args.tenant_id})",
             ),
@@ -208,12 +225,14 @@ class PatternedEventArgs:
         pattern: pulumi.Input[str],
         function_target_arn: pulumi.Input[str],
         function_target_name: pulumi.Input[str],
+        dead_letter_queue_arn: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
         self.event_bus_name = event_bus_name
         self.pattern = pattern
         self.function_target_arn = function_target_arn
         self.function_target_name = function_target_name
+        self.dead_letter_queue_arn = dead_letter_queue_arn
 
 
 class PatternedEvent(pulumi.ComponentResource):
@@ -237,15 +256,6 @@ class PatternedEvent(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__dead_letter_queue = aws.sqs.Queue(
-            resource_name=f"{name}DeadLetterQueue",
-            args=aws.sqs.QueueArgs(
-                message_retention_seconds=1209600,  # 14 days
-                tags=tags(args.tenant_id),
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
         self.__target = aws.cloudwatch.EventTarget(
             resource_name=f"{name}Target",
             args=aws.cloudwatch.EventTargetArgs(
@@ -253,7 +263,7 @@ class PatternedEvent(pulumi.ComponentResource):
                 arn=args.function_target_arn,
                 rule=self.__rule.name,
                 dead_letter_config=aws.cloudwatch.EventTargetDeadLetterConfigArgs(
-                    arn=self.__dead_letter_queue.arn,
+                    arn=args.dead_letter_queue_arn,
                 ),
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -272,7 +282,6 @@ class PatternedEvent(pulumi.ComponentResource):
         self.register_outputs(
             {
                 "rule": self.__rule.id,
-                "dead_letter_queue": self.__dead_letter_queue.id,
                 "target": self.__target.id,
                 "permission": self.__permission.id,
             }

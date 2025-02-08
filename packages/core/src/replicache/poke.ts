@@ -12,7 +12,7 @@ export async function poke<TChannel extends string>(
   const uniqueChannels = R.unique(channels);
   if (uniqueChannels.length === 0) return;
 
-  const { http: httpDomainName } = await Api.getAppsyncEventsDomainNames();
+  const { http: httpDomainName } = await Api.getRealtimeDns();
 
   const results = await Promise.allSettled(
     uniqueChannels.map((channel) =>

@@ -12,9 +12,9 @@ import { buildUrl } from "../utils/shared";
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
-  export async function getAppsyncEventsDomainNames() {
+  export async function getRealtimeDns() {
     const res = await send(
-      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.appsync-events-domain-names.json`,
+      `/.well-known/appspecific/${Utils.reverseDns(Tenants.getBackendFqdn())}.realtime.json`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({

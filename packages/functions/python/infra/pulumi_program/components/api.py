@@ -66,7 +66,7 @@ class Api(pulumi.ComponentResource):
             aws.iam.RolePolicy
         ] = pulumi.Output.all(
             aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
-            aws.cloudwatch.get_event_bus_output(name=args.event_bus.name).arn,
+            args.event_bus.arn,
             args.storage.queues["invoices_processor"].arn,
             aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
         ).apply(
@@ -980,9 +980,7 @@ class EventRoute(pulumi.ComponentResource):
                     "integration.request.header.X-Amz-Target": "'AWSEvents.PutEvents'",
                 },
                 request_templates=(
-                    {
-                        "application/json": args.request_template,
-                    }
+                    {"application/json": args.request_template}
                     if args.request_template is not None
                     else None
                 ),

@@ -79,7 +79,6 @@ def record_handler(record: SQSRecord):
 
     result: automation.UpResult | automation.DestroyResult
     if payload.destroy is False:
-        success: bool = False
         exception: Exception | None = None
         try:
             logger.info("Updating stack ...")
@@ -87,11 +86,12 @@ def record_handler(record: SQSRecord):
             logger.info(
                 f"Update summary: \n{json.dumps(result.summary.resource_changes, indent=2)}"
             )
-            success = True
         except Exception as e:
             exception = e
 
         try:
+            success = True if exception is None else False
+
             aws_request = AWSRequest(
                 method="POST",
                 url=f"https://{resource["AppsyncEventApi"]["dns"]["http"]}/event",

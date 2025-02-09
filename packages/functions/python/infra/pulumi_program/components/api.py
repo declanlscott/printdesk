@@ -498,7 +498,7 @@ class Api(pulumi.ComponentResource):
                 integration_http_method="POST",
                 request_parameters={
                     "integration.request.header.Content-Type": "'application/x-amz-json-1.0'",
-                    "integration.request.header.X-Amz-Target": "'SQS.SendMessage'",
+                    "integration.request.header.X-Amz-Target": "'AmazonSQS.SendMessage'",
                 },
                 request_templates={
                     "application/json": pulumi.Output.json_dumps(
@@ -506,20 +506,16 @@ class Api(pulumi.ComponentResource):
                             "QueueUrl": args.storage.queues["invoices_processor"].url,
                             "MessageBody": json.dumps(
                                 {
-                                    "invoiceId": "$input.path('$.invoice_id')",
+                                    "invoiceId": "$util.escapeJavaScript($input.path('$.invoiceId'))",
                                     "tenantId": args.tenant_id,
                                 }
                             ),
+                            "MessageGroupId": args.tenant_id,
                         }
                     )
                 },
                 passthrough_behavior="NEVER",
-                uri=pulumi.Output.format(
-                    "arn:aws:apigateway:{0}:sqs:path/{1}/{2}",
-                    region,
-                    account_id,
-                    args.storage.queues["invoices_processor"].name,
-                ),
+                uri=f"arn:aws:apigateway:{region}:sqs:path//",
                 credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),

@@ -17,11 +17,15 @@ export const handler: SQSHandler = async (event) => {
       batchItemFailures.push({ itemIdentifier: record.messageId });
     }
   }
+
+  return { batchItemFailures };
 };
 
 async function processRecord(record: SQSRecord) {
   const { invoiceId, tenantId } = v.parse(
     v.object({ invoiceId: v.string(), tenantId: nanoIdSchema }),
-    record.body,
+    JSON.parse(record.body),
   );
+
+  console.log({ invoiceId, tenantId });
 }

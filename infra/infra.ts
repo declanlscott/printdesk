@@ -40,7 +40,7 @@ export const repository = new awsx.ecr.Repository(
 export const papercutSync = new custom.aws.Function("PapercutSync", {
   handler: "packages/functions/node/src/papercut-sync.handler",
   timeout: "20 seconds",
-  link: [appData, cloudfrontPrivateKey, dsqlCluster],
+  link: [appData, aws_, cloudfrontPrivateKey, dsqlCluster],
 });
 
 export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
@@ -219,5 +219,5 @@ new aws.lambda.EventSourceMapping("InfraFunctionEventSourceMapping", {
 export const infraDispatcher = new sst.aws.Function("InfraDispatcher", {
   handler: "packages/functions/node/src/infra-dispatcher.handler",
   url: { authorization: "iam" },
-  link: [dsqlCluster, infraQueue],
+  link: [aws_, dsqlCluster, infraQueue],
 });

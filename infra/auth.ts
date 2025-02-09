@@ -1,5 +1,6 @@
 import { dsqlCluster } from "./db";
 import { authFqdn, fqdn } from "./dns";
+import { aws_ } from "./misc";
 
 const oauthAppName =
   $app.stage === "production"
@@ -82,7 +83,7 @@ export const oauth2 = new sst.Linkable("Oauth2", {
 export const auth = new sst.aws.Auth("Auth", {
   issuer: {
     handler: "packages/functions/node/src/issuer.handler",
-    link: [dsqlCluster, oauth2],
+    link: [aws_, dsqlCluster, oauth2],
     architecture: "arm64",
     runtime: "nodejs22.x",
   },

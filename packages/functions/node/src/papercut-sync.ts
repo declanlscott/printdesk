@@ -20,7 +20,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
     event.detail,
   );
 
-  const channel = `/events/${event.id}` as const;
+  console.log({ tenantId });
 
   return withActor({ type: "system", properties: { tenantId } }, async () => {
     const tenant = await Tenants.read().then(R.first());
@@ -31,6 +31,20 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
       {
         sigv4: {
           signers: {
+            appsync: SignatureV4.buildSigner({
+              region: Resource.Aws.region,
+              service: "appsync",
+              credentials: Credentials.fromRoleChain([
+                {
+                  RoleArn: Credentials.buildRoleArn(
+                    Resource.Aws.account.id,
+                    Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+                    tenantId,
+                  ),
+                  RoleSessionName: "PapercutSyncRealtimePublisher",
+                },
+              ]),
+            }),
             "execute-api": SignatureV4.buildSigner({
               region: Resource.Aws.region,
               service: "execute-api",
@@ -38,48 +52,24 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
           },
         },
       },
-      async () =>
-        withAws(
-          {
-            sigv4: {
-              signers: {
-                appsync: SignatureV4.buildSigner({
-                  region: Resource.Aws.region,
-                  service: "appsync",
-                  credentials: Credentials.fromRoleChain([
-                    {
-                      RoleArn: Credentials.buildRoleArn(
-                        Resource.Aws.account.id,
-                        Resource.Aws.tenant.roles.realtimePublisher
-                          .nameTemplate,
-                        tenantId,
-                      ),
-                      RoleSessionName: "PapercutSyncRealtimePublisher",
-                    },
-                  ]),
-                }),
-              },
-            },
-          },
-          async () => {
-            const { http: publishDomain } = await Api.getRealtimeDns();
+      async () => {
+        const { http: publishDomain } = await Api.getRealtimeDns();
 
-            let error = undefined;
-            try {
-              await withXml(PapercutSync.users);
-            } catch (e) {
-              console.error(e);
-              error = e;
-            }
+        let error = undefined;
+        try {
+          await withXml(PapercutSync.users);
+        } catch (e) {
+          console.error(e);
+          error = e;
+        }
 
-            if (event["detail-type"] !== "Scheduled Event")
-              await publish(publishDomain, channel, [
-                JSON.stringify({ success: true, dispatchId: event.id }),
-              ]);
+        if (event.source === Tenants.getBackendReverseDns())
+          await publish(publishDomain, `/events/${event.id}`, [
+            JSON.stringify({ success: !!error, dispatchId: event.id }),
+          ]);
 
-            if (error) throw error;
-          },
-        ),
+        if (error) throw error;
+      },
     );
   });
 };

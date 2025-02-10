@@ -48,4 +48,6 @@ export namespace Constants {
   } as const satisfies Duration;
 
   export const WORKFLOW_REVIEW_STATUS = "Review";
+
+  export const DEMO_TENANT_ID = "y3a24qjy6hn9bf7tmzm2";
 }

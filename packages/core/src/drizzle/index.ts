@@ -14,8 +14,8 @@ function getPoolConfig(): PoolConfig {
       DsqlCluster: Resource.DsqlCluster,
       Aws: Resource.Aws,
     };
-  } catch {
-    console.warn("SST links are not active in this environment.");
+  } catch (e) {
+    console.warn("SST link(s) are not active in this environment: ", e);
 
     return {};
   }

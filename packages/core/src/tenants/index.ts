@@ -1,12 +1,16 @@
+import { isEqual } from "date-fns";
 import { and, eq, getTableName, isNull } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
 import { oauth2ProvidersTable } from "../auth/sql";
+import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { poke } from "../replicache/poke";
+import { Utils } from "../utils";
 import { Sqs } from "../utils/aws";
+import { Constants } from "../utils/constants";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { useTenant } from "./context";
@@ -14,7 +18,7 @@ import {
   getBackendFqdn as getBackendFqdn_,
   updateTenantMutationArgsSchema,
 } from "./shared";
-import { licensesTable, tenantsTable } from "./sql";
+import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { Registration, TenantInfraProgramInput } from "./shared";
 import type { License, Tenant } from "./sql";
@@ -69,6 +73,8 @@ export namespace Tenants {
   export const getBackendFqdn = () =>
     getBackendFqdn_(useTenant().id, Resource.AppData.domainName.fullyQualified);
 
+  export const getBackendReverseDns = () => Utils.reverseDns(getBackendFqdn());
+
   export const register = async (
     registration: Omit<
       Registration,
@@ -82,36 +88,70 @@ export namespace Tenants {
       const tenant = await tx
         .insert(tenantsTable)
         .values({
+          id:
+            registration.tenantSlug === "demo"
+              ? Constants.DEMO_TENANT_ID
+              : undefined,
           slug: registration.tenantSlug,
           name: registration.tenantName,
         })
-        .returning({ id: tenantsTable.id })
+        .onConflictDoUpdate({
+          target: tenantsTable.id,
+          set: buildConflictUpdateColumns(tenantsTable, ["slug", "name"]),
+          setWhere: eq(tenantsTable.status, "initializing"),
+        })
+        .returning({
+          id: tenantsTable.id,
+          createdAt: tenantsTable.createdAt,
+          updatedAt: tenantsTable.updatedAt,
+        })
         .then(R.first());
       if (!tenant) throw new Error("Failed to create tenant");
 
-      const license = await tx
-        .update(licensesTable)
-        .set({ tenantId: tenant.id })
-        .where(
-          and(
-            eq(licensesTable.key, registration.licenseKey),
-            isNull(licensesTable.tenantId),
-          ),
-        )
-        .returning()
-        .then(R.first());
-      if (!license) throw new Error("Failed to assign license to tenant");
+      // Assign tenant to license if the tenant was just created
+      if (isEqual(tenant.createdAt, tenant.updatedAt)) {
+        const license = await tx
+          .update(licensesTable)
+          .set({ tenantId: tenant.id })
+          .where(
+            and(
+              eq(licensesTable.key, registration.licenseKey),
+              isNull(licensesTable.tenantId),
+            ),
+          )
+          .returning()
+          .then(R.first());
+        if (!license) throw new Error("Failed to assign tenant to license");
+      }
 
-      await tx.insert(oauth2ProvidersTable).values({
-        id: registration.userOauthProviderId,
-        type: registration.userOauthProviderType,
-        tenantId: tenant.id,
-      });
+      await tx
+        .insert(oauth2ProvidersTable)
+        .values({
+          id: registration.userOauthProviderId,
+          type: registration.userOauthProviderType,
+          tenantId: tenant.id,
+        })
+        .onConflictDoUpdate({
+          target: [oauth2ProvidersTable.id, oauth2ProvidersTable.tenantId],
+          set: buildConflictUpdateColumns(oauth2ProvidersTable, ["type"]),
+        });
 
-      const dispatchId = await dispatchInfra(tenant.id, {
+      const infraProgramInput = {
         papercutSyncSchedule: registration.papercutSyncSchedule,
         timezone: registration.timezone,
-      });
+      } satisfies TenantInfraProgramInput;
+
+      await tx
+        .insert(tenantMetadataTable)
+        .values({ tenantId: tenant.id, infraProgramInput })
+        .onConflictDoUpdate({
+          target: tenantMetadataTable.id,
+          set: buildConflictUpdateColumns(tenantMetadataTable, [
+            "infraProgramInput",
+          ]),
+        });
+
+      const dispatchId = await dispatchInfra(tenant.id, infraProgramInput);
 
       return { tenantId: tenant.id, dispatchId };
     });

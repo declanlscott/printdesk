@@ -49,6 +49,14 @@ export default new Hono()
       ),
       RoleSessionName: "ApiSetPapercutServerAuthToken",
     })),
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiSetPapercutServerAuthToken",
+    })),
     async (c) => {
       await Papercut.setServerAuthToken(c.req.valid("json").authToken);
 

@@ -4,10 +4,9 @@ import * as v from "valibot";
 import { Api } from "../tenants/api";
 import { useTenant } from "../tenants/context";
 import { Ssm } from "../utils/aws";
-import { HttpError } from "../utils/errors";
 
 export namespace Documents {
-  export async function getBucketName() {
+  export async function getBucket() {
     const buckets = await Api.getBuckets();
 
     return buckets.documents;
@@ -29,21 +28,18 @@ export namespace Documents {
     await Api.invalidateCache([`/parameters${name}`]);
   }
 
-  export async function getMimeTypes() {
-    const res = await Api.send(
-      `/parameters${Ssm.buildName(Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate, useTenant().id)}`,
-      { method: "GET" },
+  export const getMimeTypes = async () =>
+    v.parse(
+      v.array(v.string()),
+      JSON.parse(
+        await Api.getParameter(
+          Ssm.buildName(
+            Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate,
+            useTenant().id,
+          ),
+        ),
+      ),
     );
-    if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
-
-    return v.parse(v.array(v.string()), await res.json());
-  }
 
   export async function setSizeLimit(byteSize: number) {
     const name = Ssm.buildName(
@@ -61,19 +57,14 @@ export namespace Documents {
     await Api.invalidateCache([`/parameters${name}`]);
   }
 
-  export async function getSizeLimit() {
-    const res = await Api.send(
-      `/parameters${Ssm.buildName(Resource.Aws.tenant.parameters.documentsSizeLimit.nameTemplate, useTenant().id)}`,
-      { method: "GET" },
+  export const getSizeLimit = async () =>
+    v.parse(
+      v.pipe(v.string(), v.transform(Number)),
+      await Api.getParameter(
+        Ssm.buildName(
+          Resource.Aws.tenant.parameters.documentsSizeLimit.nameTemplate,
+          useTenant().id,
+        ),
+      ),
     );
-    if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
-
-    return v.parse(v.number(), await res.text());
-  }
 }

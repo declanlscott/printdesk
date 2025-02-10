@@ -1,74 +1,81 @@
 import { vValidator } from "@hono/valibot-validator";
 import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
 import { useTransaction } from "@printworks/core/drizzle/context";
+import { Papercut } from "@printworks/core/papercut";
+import { Tailscale } from "@printworks/core/tailscale";
 import { Tenants } from "@printworks/core/tenants";
 import { Api } from "@printworks/core/tenants/api";
+import { useTenant } from "@printworks/core/tenants/context";
 import {
-  licenseKeySchema,
   registrationSchema,
   tenantSlugSchema,
 } from "@printworks/core/tenants/shared";
-import { licensesTable, tenantsTable } from "@printworks/core/tenants/sql";
+import { tenantsTable } from "@printworks/core/tenants/sql";
+import { Credentials } from "@printworks/core/utils/aws";
 import { HttpError } from "@printworks/core/utils/errors";
-import { nanoIdSchema } from "@printworks/core/utils/shared";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import * as R from "remeda";
+import { Resource } from "sst";
 import * as v from "valibot";
 
-import { sqsClient } from "~/api/middleware/aws";
+import { executeApiSigner, sqsClient, ssmClient } from "~/api/middleware/aws";
+
+const registrationParams = [
+  "tailscaleOauthClientId",
+  "tailscaleOauthClientSecret",
+  "tailnetPapercutServerUri",
+  "papercutServerAuthToken",
+] as const;
 
 export default new Hono()
   .post(
     "/",
-    vValidator(
-      "json",
-      v.omit(registrationSchema, [
-        "tailscaleOauthClientId",
-        "tailscaleOauthClientSecret",
-        "tailnetPapercutServerUri",
-        "papercutServerAuthToken",
-      ]),
-    ),
+    vValidator("json", v.omit(registrationSchema, registrationParams)),
     sqsClient(),
     async (c) => {
       const { tenantId, dispatchId } = await Tenants.register(
         c.req.valid("json"),
       );
 
-      return c.json({ tenantId, dispatchId }, 201);
+      return c.json({ tenantId, dispatchId }, 202);
     },
   )
   .post(
     "/initial-sync",
-    vValidator(
-      "json",
-      v.object({ licenseKey: licenseKeySchema, tenantId: nanoIdSchema }),
-    ),
-    async (c, next) => {
-      const { licenseKey, tenantId } = c.req.valid("json");
-
-      const isAuthorized = await useTransaction((tx) =>
-        tx
-          .select({})
-          .from(licensesTable)
-          .innerJoin(tenantsTable, eq(licensesTable.tenantId, tenantsTable.id))
-          .where(
-            and(
-              eq(licensesTable.key, licenseKey),
-              eq(licensesTable.tenantId, tenantId),
-              eq(licensesTable.status, "active"),
-              eq(tenantsTable.status, "initializing"),
-            ),
-          )
-          .then((rows) => rows.length === 1),
-      );
-
-      if (!isAuthorized) throw new HttpError.Forbidden();
-
-      await next();
-    },
+    vValidator("json", v.pick(registrationSchema, registrationParams)),
+    (c, next) =>
+      ssmClient(() => ({
+        RoleArn: Credentials.buildRoleArn(
+          Resource.Aws.account.id,
+          Resource.Aws.tenant.roles.putParameters.nameTemplate,
+          useTenant().id,
+        ),
+        RoleSessionName: "ApiInitialSync",
+      }))(c, next),
+    (c, next) =>
+      executeApiSigner(() => ({
+        RoleArn: Credentials.buildRoleArn(
+          Resource.Aws.account.id,
+          Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+          useTenant().id,
+        ),
+        RoleSessionName: "ApiInitialSync",
+      }))(c, next),
     async (c) => {
+      await Promise.all([
+        Tailscale.setOauthClient(
+          c.req.valid("json").tailscaleOauthClientId,
+          c.req.valid("json").tailscaleOauthClientSecret,
+        ),
+        Papercut.setTailnetServerUri(
+          c.req.valid("json").tailnetPapercutServerUri,
+        ),
+        Papercut.setServerAuthToken(
+          c.req.valid("json").papercutServerAuthToken,
+        ),
+      ]);
+
       const { eventId: dispatchId } = await Api.papercutSync();
 
       return c.json({ dispatchId }, 202);

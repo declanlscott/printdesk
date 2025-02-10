@@ -54,7 +54,7 @@ import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
 import type { DsqlSignerConfig } from "@aws-sdk/dsql-signer";
 import type { SignatureV4Init } from "@smithy/signature-v4";
 import type { AwsCredentialIdentityProvider } from "@smithy/types";
-import type { NonNullableProperties, PartialExcept, StartsWith } from "./types";
+import type { NonNullableProperties, PartialExcept } from "./types";
 
 export type AwsContext = {
   dsql?: { signer: DsqlSigner };

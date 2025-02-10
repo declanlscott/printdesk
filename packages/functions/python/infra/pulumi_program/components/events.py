@@ -12,24 +12,30 @@ class EventsArgs:
     def __init__(
         self,
         tenant_id: str,
-        event_bus: pulumi.Input[aws.cloudwatch.EventBus],
+        reverse_dns: pulumi.Input[str],
         invoices_processor_queue_arn: pulumi.Input[str],
         papercut_sync_schedule: pulumi.Input[str],
         timezone: pulumi.Input[str],
-        reverse_dns: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
-        self.event_bus = event_bus
+        self.reverse_dns = reverse_dns
         self.invoices_processor_queue_arn = invoices_processor_queue_arn
         self.papercut_sync_schedule = papercut_sync_schedule
         self.timezone = timezone
-        self.reverse_dns = reverse_dns
 
 
 class Events(pulumi.ComponentResource):
     def __init__(self, args: EventsArgs, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(
             t="pw:resource:Events", name="Events", props=vars(args), opts=opts
+        )
+
+        self.__event_bus = aws.cloudwatch.EventBus(
+            resource_name="EventBus",
+            args=aws.cloudwatch.EventBusArgs(
+                tags=tags(args.tenant_id),
+                description=f"{args.tenant_id} event bus",
+            ),
         )
 
         self.__invoices_processor_event_source_mapping = aws.lambda_.EventSourceMapping(
@@ -57,7 +63,7 @@ class Events(pulumi.ComponentResource):
         self.__papercut_sync_event_rule = aws.cloudwatch.EventRule(
             resource_name=f"PapercutSyncEventRule",
             args=aws.cloudwatch.EventRuleArgs(
-                event_bus_name=args.event_bus.name,
+                event_bus_name=self.__event_bus.name,
                 event_pattern=pulumi.Output.json_dumps(
                     {
                         "detail-type": ["PapercutSync"],
@@ -73,7 +79,7 @@ class Events(pulumi.ComponentResource):
         self.__papercut_sync_event_target = aws.cloudwatch.EventTarget(
             resource_name=f"PapercutSyncEventTarget",
             args=aws.cloudwatch.EventTargetArgs(
-                event_bus_name=args.event_bus.name,
+                event_bus_name=self.__event_bus.name,
                 arn=resource["PapercutSync"]["arn"],
                 rule=self.__papercut_sync_event_rule.name,
                 dead_letter_config=aws.cloudwatch.EventTargetDeadLetterConfigArgs(
@@ -116,7 +122,7 @@ class Events(pulumi.ComponentResource):
         )
 
         self.__papercut_sync_schedule_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
-            args.event_bus.arn.apply(
+            self.__event_bus.arn.apply(
                 lambda event_bus_arn: aws.iam.RolePolicy(
                     resource_name="PapercutSyncScheduleRolePolicy",
                     args=aws.iam.RolePolicyArgs(
@@ -147,7 +153,7 @@ class Events(pulumi.ComponentResource):
                 ),
                 schedule_expression_timezone=args.timezone,
                 target=aws.scheduler.ScheduleTargetArgs(
-                    arn=args.event_bus.arn,
+                    arn=self.__event_bus.arn,
                     role_arn=self.__papercut_sync_schedule_role.arn,
                     eventbridge_parameters=aws.scheduler.ScheduleTargetEventbridgeParametersArgs(
                         detail_type="PapercutSync",
@@ -162,6 +168,7 @@ class Events(pulumi.ComponentResource):
 
         self.register_outputs(
             {
+                "event_bus": self.__event_bus.id,
                 "invoices_processor_event_source_mapping": self.__invoices_processor_event_source_mapping.id,
                 "papercut_sync_dead_letter_queue": self.__papercut_sync_dead_letter_queue.id,
                 "papercut_sync_event_rule": self.__papercut_sync_event_rule.id,
@@ -174,3 +181,7 @@ class Events(pulumi.ComponentResource):
                 "papercut_sync_schedule": self.__papercut_sync_schedule.id,
             }
         )
+
+    @property
+    def event_bus(self):
+        return self.__event_bus

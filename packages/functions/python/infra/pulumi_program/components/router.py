@@ -2,7 +2,6 @@ import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
 
-from . import Ssl
 from utilities import resource, tags
 
 from typing import Optional
@@ -12,16 +11,16 @@ class RouterArgs:
     def __init__(
         self,
         tenant_id: str,
-        ssl: pulumi.Input[Ssl],
+        alias: pulumi.Input[str],
+        certificate_arn: pulumi.Input[str],
         api_origin_domain_name: pulumi.Input[str],
-        api_origin_path: pulumi.Input[str],
         assets_origin_domain_name: pulumi.Input[str],
         documents_origin_domain_name: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
-        self.ssl = ssl
+        self.alias = alias
+        self.certificate_arn = certificate_arn
         self.api_origin_domain_name = api_origin_domain_name
-        self.api_origin_path = api_origin_path
         self.assets_origin_domain_name = assets_origin_domain_name
         self.documents_origin_domain_name = documents_origin_domain_name
 
@@ -46,10 +45,8 @@ class Router(pulumi.ComponentResource):
 
         api_cache_policy_id = resource["Aws"]["cloudfront"]["apiCachePolicy"]["id"]
 
-        all_viewer_except_host_header_policy = (
-            aws.cloudfront.get_origin_request_policy_output(
-                name="Managed-AllViewerExceptHostHeader"
-            )
+        all_viewer_policy = aws.cloudfront.get_origin_request_policy_output(
+            name="Managed-AllViewer"
         )
 
         caching_optimized_policy = aws.cloudfront.get_cache_policy_output(
@@ -73,7 +70,6 @@ class Router(pulumi.ComponentResource):
                         origin_id="/api/*",
                         custom_origin_config=custom_origin_config,
                         domain_name=args.api_origin_domain_name,
-                        origin_path=args.api_origin_path,
                     ),
                     aws.cloudfront.DistributionOriginArgs(
                         origin_id="/assets/*",
@@ -107,7 +103,7 @@ class Router(pulumi.ComponentResource):
                     default_ttl=0,
                     compress=True,
                     cache_policy_id=api_cache_policy_id,
-                    origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                    origin_request_policy_id=all_viewer_policy.id,
                     trusted_key_groups=[
                         resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                     ],
@@ -119,10 +115,12 @@ class Router(pulumi.ComponentResource):
                         viewer_protocol_policy="redirect-to-https",
                         allowed_methods=["GET", "HEAD", "OPTIONS"],
                         cached_methods=["GET", "HEAD"],
-                        default_ttl=31536000,  # 1 year
                         compress=True,
                         cache_policy_id=api_cache_policy_id,
-                        origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                        origin_request_policy_id=all_viewer_policy.id,
+                        trusted_key_groups=[
+                            resource["Aws"]["cloudfront"]["keyGroup"]["id"]
+                        ],
                         function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -131,10 +129,9 @@ class Router(pulumi.ComponentResource):
                         viewer_protocol_policy="redirect-to-https",
                         allowed_methods=["GET", "HEAD", "OPTIONS"],
                         cached_methods=["GET", "HEAD"],
-                        default_ttl=0,
                         compress=True,
                         cache_policy_id=api_cache_policy_id,
-                        origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                        origin_request_policy_id=all_viewer_policy.id,
                         function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -143,10 +140,9 @@ class Router(pulumi.ComponentResource):
                         viewer_protocol_policy="redirect-to-https",
                         allowed_methods=["GET", "HEAD", "OPTIONS"],
                         cached_methods=["GET", "HEAD"],
-                        default_ttl=31536000,  # 1 year
                         compress=True,
                         cache_policy_id=api_cache_policy_id,
-                        origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                        origin_request_policy_id=all_viewer_policy.id,
                         trusted_key_groups=[
                             resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                         ],
@@ -166,10 +162,9 @@ class Router(pulumi.ComponentResource):
                             "DELETE",
                         ],
                         cached_methods=["GET", "HEAD"],
-                        default_ttl=0,
                         compress=True,
                         cache_policy_id=api_cache_policy_id,
-                        origin_request_policy_id=all_viewer_except_host_header_policy.id,
+                        origin_request_policy_id=all_viewer_policy.id,
                         trusted_key_groups=[
                             resource["Aws"]["cloudfront"]["keyGroup"]["id"]
                         ],
@@ -207,9 +202,9 @@ class Router(pulumi.ComponentResource):
                         restriction_type="none"
                     )
                 ),
-                aliases=[args.ssl.domain_name],
+                aliases=[args.alias],
                 viewer_certificate=aws.cloudfront.DistributionViewerCertificateArgs(
-                    acm_certificate_arn=args.ssl.certificate_arn,
+                    acm_certificate_arn=args.certificate_arn,
                     ssl_support_method="sni-only",
                     minimum_protocol_version="TLSv1.2_2021",
                 ),
@@ -225,12 +220,15 @@ class Router(pulumi.ComponentResource):
                 zone_id=cloudflare.get_zone_output(
                     name=resource["AppData"]["domainName"]["value"]
                 ).id,
-                name=args.ssl.domain_name,
+                name=args.alias,
                 type="CNAME",
                 content=self.__distribution.domain_name,
                 ttl=60,
             ),
-            opts=pulumi.ResourceOptions(parent=self, delete_before_replace=True),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                delete_before_replace=True,
+            ),
         )
 
         self.register_outputs(
@@ -241,5 +239,5 @@ class Router(pulumi.ComponentResource):
         )
 
     @property
-    def distribution_id(self):
-        return self.__distribution.id
+    def distribution(self):
+        return self.__distribution

@@ -354,10 +354,8 @@ class Api(pulumi.ComponentResource):
                     "application/json": "\n".join(
                         [
                             """{""",
-                            """  "Name": "/$util.escapeJavaScript($input.params().path.get('proxy'))" """,
-                            """  #if($util.escapeJavaScript($input.params().querystring.get('withDecryption')) == 'true')""",
-                            """  ,"WithDecryption": true""",
-                            """  #end""",
+                            """  "Name": "/$util.escapeJavaScript($input.params().path.get('proxy'))",""",
+                            """  "WithDecryption": true""",
                             """}""",
                         ]
                     )

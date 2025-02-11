@@ -18,7 +18,6 @@ import {
 import {
   DeleteParameterCommand,
   GetParameterCommand,
-  ParameterNotFound,
   PutParameterCommand,
   SSMClient,
 } from "@aws-sdk/client-ssm";
@@ -32,6 +31,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
 import * as R from "remeda";
+import * as v from "valibot";
 
 import { Utils } from ".";
 import { ApplicationError } from "./errors";
@@ -194,26 +194,24 @@ export namespace Ssm {
   export const Client = SSMClient;
   export type Client = SSMClient;
 
-  export const buildName = Utils.buildName;
+  export const buildName = (...args: Parameters<typeof Utils.buildName>) =>
+    v.parse(
+      v.pipe(
+        v.string(),
+        v.transform(
+          (name) => (name.startsWith("/") ? name : `/${name}`) as `/${string}`,
+        ),
+      ),
+      Utils.buildName(...args),
+    );
 
   export const putParameter = async (
     input: NonNullableProperties<PutParameterCommandInput>,
   ) => useAws("ssm").client.send(new PutParameterCommand(input));
 
-  export async function getParameter(
+  export const getParameter = async (
     input: NonNullableProperties<GetParameterCommandInput>,
-  ) {
-    const { Parameter, $metadata } = await useAws("ssm").client.send(
-      new GetParameterCommand(input),
-    );
-    if (!Parameter?.Value)
-      throw new ParameterNotFound({
-        message: `Parameter of name "${input.Name}" not found or has no value`,
-        $metadata,
-      });
-
-    return Parameter.Value;
-  }
+  ) => useAws("ssm").client.send(new GetParameterCommand(input));
 
   export const deleteParameter = async (
     input: NonNullableProperties<DeleteParameterCommandInput>,

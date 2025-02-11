@@ -38,6 +38,5 @@ export namespace Papercut {
         Resource.Aws.tenant.parameters.papercutServerAuthToken.nameTemplate,
         useTenant().id,
       ),
-      true,
     );
 }

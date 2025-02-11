@@ -8,7 +8,7 @@ import { Cloudfront, SignatureV4 } from "../utils/aws";
 import { HttpError } from "../utils/errors";
 import { buildUrl } from "../utils/shared";
 
-import type { Parameter } from "@aws-sdk/client-ssm";
+import type { GetParameterCommandOutput } from "@aws-sdk/client-ssm";
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
@@ -88,10 +88,11 @@ export namespace Api {
     return { eventId };
   }
 
-  export async function getParameter(name: string, withDecryption = false) {
-    const res = await send(
-      `/parameters${name}?withDecryption=${withDecryption}`,
-    );
+  export async function getParameter<TName extends string>(
+    name: StartsWith<"/", TName>,
+  ) {
+    const res = await send(`/parameters${name}`);
+
     if (!res.ok)
       throw new HttpError.BadGateway({
         upstream: {
@@ -100,7 +101,7 @@ export namespace Api {
         },
       });
 
-    return ((await res.json()) as Required<Parameter>).Value;
+    return ((await res.json()) as GetParameterCommandOutput).Parameter!.Value!;
   }
 
   export async function invalidateCache(paths: Array<string>) {

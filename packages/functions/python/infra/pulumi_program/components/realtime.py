@@ -63,19 +63,6 @@ class Realtime(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        assume_role_policy = aws.iam.get_policy_document_output(
-            statements=[
-                aws.iam.GetPolicyDocumentStatementArgs(
-                    principals=[
-                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                            type="AWS", identifiers=[resource["ApiFunction"]["roleArn"]]
-                        )
-                    ],
-                    actions=["sts:AssumeRole"],
-                )
-            ]
-        ).minified_json
-
         self.__subscriber_role = aws.iam.Role(
             resource_name="SubscriberRole",
             args=aws.iam.RoleArgs(
@@ -85,7 +72,19 @@ class Realtime(pulumi.ComponentResource):
                     ]["nameTemplate"],
                     tenant_id=args.tenant_id,
                 ),
-                assume_role_policy=assume_role_policy,
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS",
+                                    identifiers=[resource["ApiFunction"]["roleArn"]],
+                                )
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ]
+                ).minified_json,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -124,7 +123,23 @@ class Realtime(pulumi.ComponentResource):
                     ]["nameTemplate"],
                     tenant_id=args.tenant_id,
                 ),
-                assume_role_policy=assume_role_policy,
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS",
+                                    identifiers=[resource["ApiFunction"]["roleArn"]],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS",
+                                    identifiers=[resource["PapercutSync"]["roleArn"]],
+                                ),
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ]
+                ).minified_json,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),

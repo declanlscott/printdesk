@@ -13,6 +13,7 @@ import (
 	"os/signal"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -53,7 +54,12 @@ func Startup() {
 	ts.nodeID = &status.Self.ID
 
 	proxy := httputil.NewSingleHostReverseProxy(params.target)
-	proxy.Transport = ts.server.HTTPClient().Transport
+	proxy.Transport = &http.Transport{
+		DialContext:           ts.server.Dial,
+		DisableKeepAlives:     true,
+		TLSHandshakeTimeout:   time.Second * 10,
+		ResponseHeaderTimeout: time.Second * 30,
+	}
 
 	HandlerAdapter = httpadapter.New(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {

@@ -2,51 +2,74 @@ import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
 import { HttpError } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
+import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
+import { every, some } from "hono/combine";
+import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 import { Resource } from "sst";
 
-import type { RateLimit } from "@cloudflare/workers-types";
+import type { SubjectPayload } from "@openauthjs/openauth/subject";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
-export default new Hono<{
-  Bindings: {
-    API_RATE_LIMITERS: {
-      byIp: RateLimit["limit"];
-      byUser: RateLimit["limit"];
-    };
-  };
-}>()
+const rateLimiter = createMiddleware(
+  every(
+    some(
+      every(
+        bearerAuth({
+          async verifyToken(token, c) {
+            const verified = await createClient({
+              clientID: "api-rate-limiter",
+              issuer: Resource.Auth.url,
+            }).verify(subjects, token);
+            if (verified.err) {
+              console.error("Token verification failed: ", verified.err);
+              return false;
+            }
+
+            c.set("subject", verified.subject);
+            return true;
+          },
+        }),
+        async (c, next) => {
+          const subject: SubjectPayload<typeof subjects> = c.get("subject");
+          const key = `${subject.properties.tenantId}#${subject.properties.id}`;
+
+          console.log("Rate limiting by user: ", key);
+          c.set(
+            "rateLimitOutcome",
+            await c.env.API_RATE_LIMITERS.byUser({ key }),
+          );
+
+          return next();
+        },
+      ),
+      async (c, next) => {
+        const ip = getConnInfo(c).remote.address;
+        if (!ip) throw new Error("Missing remote address");
+
+        console.log("Rate limiting by IP: ", ip);
+        c.set(
+          "rateLimitOutcome",
+          await c.env.API_RATE_LIMITERS.byIp({ key: ip }),
+        );
+
+        return next();
+      },
+    ),
+    (c, next) => {
+      const outcome: RateLimitOutcome = c.get("rateLimitOutcome");
+      if (!outcome.success) throw new HttpError.TooManyRequests();
+
+      return next();
+    },
+  ),
+);
+
+export default new Hono()
   .use(logger())
-  .use(async (c, next) => {
-    const accessToken = c.req.header("Authorization")?.replace("Bearer ", "");
-
-    let outcome: RateLimitOutcome | undefined;
-    if (accessToken) {
-      const verified = await createClient({
-        clientID: "api-rate-limiter",
-        issuer: Resource.Auth.url,
-      }).verify(subjects, accessToken);
-
-      if (!verified.err)
-        outcome = await c.env.API_RATE_LIMITERS.byUser({
-          key: `${verified.subject.properties.tenantId}#${verified.subject.properties.id}`,
-        });
-      else console.log(verified.err.message, "rate limiting by IP");
-    }
-
-    if (!outcome) {
-      const ip = getConnInfo(c).remote.address;
-      if (!ip) throw new Error("Missing remote address");
-
-      outcome = await c.env.API_RATE_LIMITERS.byIp({ key: ip });
-    }
-
-    if (!outcome.success) throw new HttpError.TooManyRequests();
-
-    await next();
-  })
+  .use(rateLimiter)
   .all("*", (c) => fetch(c.req.raw))
   .onError((e, c) => {
     console.error(e);

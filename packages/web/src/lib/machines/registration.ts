@@ -1,6 +1,6 @@
 import { getBackendFqdn } from "@printworks/core/backend/shared";
 import { Constants } from "@printworks/core/utils/constants";
-import { HttpError } from "@printworks/core/utils/errors";
+import { ApplicationError, HttpError } from "@printworks/core/utils/errors";
 import { buildUrl } from "@printworks/core/utils/shared";
 import { Client } from "@printworks/functions/api/client";
 import { assign, fromPromise, setup } from "xstate";
@@ -13,32 +13,78 @@ import type {
   RegistrationWizardStep2,
   RegistrationWizardStep3,
   RegistrationWizardStep4,
-  RegistrationWizardStep5,
 } from "@printworks/core/tenants/shared";
-import type { License, Tenant } from "@printworks/core/tenants/sql";
+import type { Tenant } from "@printworks/core/tenants/sql";
+
+type RegistrationMachineWizardContext = Registration;
+type RegistrationMachineStatusContext = {
+  tenantId: Tenant["id"] | null;
+  dispatchId: string | null;
+  apiKey: string | null;
+  isHealthy: boolean;
+  failedStatus: string | null;
+};
+type RegistrationMachineContext = RegistrationMachineWizardContext &
+  RegistrationMachineStatusContext;
+
+const getInitialWizardContext = (tenantSlug: Registration["tenantSlug"]) =>
+  ({
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+
+    // Step 1
+    licenseKey: "",
+    tenantName: "",
+    tenantSlug,
+
+    // Step 2
+    userOauthProviderType: Constants.ENTRA_ID,
+    userOauthProviderId: "",
+
+    // Step 3
+    tailscaleOauthClientId: "",
+    tailscaleOauthClientSecret: "",
+
+    // Step 4
+    tailnetPapercutServerUri: "",
+    papercutServerAuthToken: "",
+  }) as const satisfies RegistrationMachineWizardContext;
+
+const initialStatusContext = {
+  tenantId: null,
+  dispatchId: null,
+  apiKey: null,
+  isHealthy: false,
+  failedStatus: null,
+} as const satisfies RegistrationMachineStatusContext;
 
 type RegisterInput = Omit<
-  Registration,
+  RegistrationMachineWizardContext,
   keyof (RegistrationWizardStep3 & RegistrationWizardStep4)
 >;
-type RegisterOutput = { tenantId: Tenant["id"]; dispatchId: string };
+type RegisterOutput = {
+  tenantId: Tenant["id"];
+  dispatchId: string;
+  apiKey: string;
+};
 
-type HealthcheckInput = { tenantId: Tenant["id"] };
+type HealthcheckInput = Pick<RegistrationMachineStatusContext, "tenantId">;
 type HealthcheckOutput = { isHealthy: boolean };
 
-type SyncInput = { licenseKey: License["key"]; tenantId: Tenant["id"] };
-type SyncOutput = { dispatchId: string };
+type InitializeInput = Pick<
+  RegistrationMachineStatusContext,
+  "apiKey" | "tenantId"
+> &
+  Pick<
+    RegistrationMachineWizardContext,
+    keyof (RegistrationWizardStep3 & RegistrationWizardStep4)
+  >;
+type InitializeOutput = { dispatchId: string };
 
 export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
   setup({
     types: {
       input: {} as Pick<Registration, "tenantSlug">,
-      context: {} as Registration & {
-        tenantId: Tenant["id"];
-        dispatchId: string;
-        isHealthy: boolean;
-        failedStatus: string | null;
-      },
+      context: {} as RegistrationMachineContext,
       events: {} as
         | { type: "wizard.back" }
         | ({ type: "wizard.step1.next" } & Omit<
@@ -48,17 +94,15 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
         | ({ type: "wizard.step2.next" } & RegistrationWizardStep2)
         | ({ type: "wizard.step3.next" } & RegistrationWizardStep3)
         | ({ type: "wizard.step4.next" } & RegistrationWizardStep4)
-        | ({ type: "wizard.step5.next" } & RegistrationWizardStep5)
         | { type: "wizard.register" }
         | { type: "status.healthcheck" }
-        | { type: "status.sync" }
         | { type: "status.complete" }
         | { type: "status.back" },
     },
     actors: {
       register: fromPromise<RegisterOutput, RegisterInput>(
         async ({ input: json }) => {
-          const res = await api.public.tenants.$post({ json });
+          const res = await api.public.tenants.register.$post({ json });
           if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
 
           return res.json();
@@ -66,6 +110,9 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
       ),
       healthcheck: fromPromise<HealthcheckOutput, HealthcheckInput>(
         async ({ input }) => {
+          if (!input.tenantId)
+            throw new ApplicationError.Error("Missing tenant ID");
+
           const res = await fetch(
             buildUrl({
               fqdn: getBackendFqdn(
@@ -80,41 +127,29 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
           return { isHealthy: res.ok };
         },
       ),
-      sync: fromPromise<SyncOutput, SyncInput>(async ({ input: json }) => {
-        const res = await api.public.tenants["initial-sync"].$post({ json });
-        if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+      initialize: fromPromise<InitializeOutput, InitializeInput>(
+        async ({ input: { apiKey, tenantId, ...json } }) => {
+          if (!apiKey || !tenantId)
+            throw new ApplicationError.Error("Missing API key or tenant ID");
 
-        return res.json();
-      }),
+          const res = await api.public.tenants.initialize.$post({
+            header: {
+              authorization: `Bearer ${apiKey}`,
+              "x-tenant-id": tenantId,
+            },
+            json,
+          });
+          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+
+          return res.json();
+        },
+      ),
     },
   }).createMachine({
     id: "registration",
     context: ({ input }) => ({
-      // Wizard Step 1
-      licenseKey: "",
-      tenantName: "",
-      tenantSlug: input.tenantSlug,
-
-      // Wizard Step 2
-      userOauthProviderType: Constants.ENTRA_ID,
-      userOauthProviderId: "",
-
-      // Wizard Step 3
-      tailscaleOauthClientId: "",
-      tailscaleOauthClientSecret: "",
-
-      // Wizard Step 4
-      tailnetPapercutServerUri: "",
-      papercutServerAuthToken: "",
-
-      // Wizard Step 5
-      papercutSyncSchedule: defaultPapercutSyncSchedule,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-
-      tenantId: "",
-      dispatchId: "",
-      isHealthy: false,
-      failedStatus: null,
+      ...getInitialWizardContext(input.tenantSlug),
+      ...initialStatusContext,
     }),
     initial: "wizard",
     states: {
@@ -163,7 +198,7 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
             on: {
               "wizard.back": "step3",
               "wizard.step4.next": {
-                target: "step5",
+                target: "review",
                 actions: assign({
                   tailnetPapercutServerUri: ({ event }) =>
                     event.tailnetPapercutServerUri,
@@ -173,22 +208,9 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
               },
             },
           },
-          step5: {
-            on: {
-              "wizard.back": "step4",
-              "wizard.step5.next": {
-                target: "review",
-                actions: assign({
-                  papercutSyncSchedule: ({ event }) =>
-                    event.papercutSyncSchedule,
-                  timezone: ({ event }) => event.timezone,
-                }),
-              },
-            },
-          },
           review: {
             on: {
-              "wizard.back": "step5",
+              "wizard.back": "step4",
               "wizard.register": "#registration.status",
             },
           },
@@ -206,7 +228,6 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
                 tenantSlug: context.tenantSlug,
                 userOauthProviderType: context.userOauthProviderType,
                 userOauthProviderId: context.userOauthProviderId,
-                papercutSyncSchedule: context.papercutSyncSchedule,
                 timezone: context.timezone,
               }),
               onDone: {
@@ -241,15 +262,19 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
                 guard: ({ context }) => !context.isHealthy,
                 target: "waitForGoodHealth",
               },
-              { target: "sync" },
+              { target: "initialize" },
             ],
           },
-          sync: {
+          initialize: {
             invoke: {
-              src: "sync",
+              src: "initialize",
               input: ({ context }) => ({
-                licenseKey: context.licenseKey,
+                apiKey: context.apiKey,
                 tenantId: context.tenantId,
+                tailscaleOauthClientId: context.tailscaleOauthClientId,
+                tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
+                tailnetPapercutServerUri: context.tailnetPapercutServerUri,
+                papercutServerAuthToken: context.papercutServerAuthToken,
               }),
               onDone: {
                 target: "waitForSync",
@@ -257,7 +282,7 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
               },
               onError: {
                 target: "failed",
-                actions: assign({ failedStatus: "sync" }),
+                actions: assign({ failedStatus: "initialize" }),
               },
             },
           },
@@ -268,7 +293,7 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
             on: {
               "status.back": {
                 target: "#registration.wizard.review",
-                actions: assign({ failedStatus: null }),
+                actions: assign(initialStatusContext),
               },
             },
           },

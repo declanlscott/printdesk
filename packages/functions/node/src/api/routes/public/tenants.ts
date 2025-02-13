@@ -1,6 +1,8 @@
 import { vValidator } from "@hono/valibot-validator";
+import { withActor } from "@printworks/core/actors/context";
 import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
 import { Api } from "@printworks/core/backend/api";
+import { Documents } from "@printworks/core/backend/documents";
 import { useTransaction } from "@printworks/core/drizzle/context";
 import { Papercut } from "@printworks/core/papercut";
 import { Tailscale } from "@printworks/core/tailscale";
@@ -10,11 +12,18 @@ import {
   registrationSchema,
   tenantSlugSchema,
 } from "@printworks/core/tenants/shared";
-import { tenantsTable } from "@printworks/core/tenants/sql";
+import {
+  tenantMetadataTable,
+  tenantsTable,
+} from "@printworks/core/tenants/sql";
+import { Utils } from "@printworks/core/utils";
 import { Credentials } from "@printworks/core/utils/aws";
+import { Constants } from "@printworks/core/utils/constants";
 import { HttpError } from "@printworks/core/utils/errors";
-import { eq } from "drizzle-orm";
+import { nanoIdSchema } from "@printworks/core/utils/shared";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { Hono } from "hono";
+import { bearerAuth } from "hono/bearer-auth";
 import * as R from "remeda";
 import { Resource } from "sst";
 import * as v from "valibot";
@@ -30,38 +39,78 @@ const registrationParams = [
 
 export default new Hono()
   .post(
-    "/",
+    "/register",
     vValidator("json", v.omit(registrationSchema, registrationParams)),
     sqsClient(),
     async (c) => {
-      const { tenantId, dispatchId } = await Tenants.register(
-        c.req.valid("json"),
-      );
+      const result = await Tenants.register(c.req.valid("json"));
 
-      return c.json({ tenantId, dispatchId }, 202);
+      return c.json(result, 202);
     },
   )
   .post(
-    "/initial-sync",
+    "/initialize",
+    vValidator(
+      "header",
+      v.object({
+        authorization: v.string(),
+        "x-tenant-id": nanoIdSchema,
+      }),
+    ),
+    bearerAuth({
+      async verifyToken(token, c) {
+        const tenantId = c.req.header("X-Tenant-Id")!;
+
+        const result = await useTransaction(async (tx) =>
+          tx
+            .select({ apiKey: tenantMetadataTable.apiKey })
+            .from(tenantsTable)
+            .innerJoin(
+              tenantMetadataTable,
+              eq(tenantMetadataTable.tenantId, tenantsTable.id),
+            )
+            .where(
+              and(
+                eq(tenantsTable.id, tenantId),
+                eq(tenantsTable.status, "initializing"),
+                isNotNull(tenantMetadataTable.apiKey),
+              ),
+            )
+            .then(R.first()),
+        );
+        if (!result || !result.apiKey) {
+          console.error("Initial tenant not found or missing API key");
+          return false;
+        }
+
+        return Utils.verifySecret(token, result.apiKey);
+      },
+    }),
+    (c, next) =>
+      withActor(
+        {
+          type: "system",
+          properties: { tenantId: c.req.valid("header")["x-tenant-id"] },
+        },
+        next,
+      ),
     vValidator("json", v.pick(registrationSchema, registrationParams)),
-    (c, next) =>
-      ssmClient(() => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.putParameters.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiInitialSync",
-      }))(c, next),
-    (c, next) =>
-      executeApiSigner(() => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiInitialSync",
-      }))(c, next),
+    ssmClient(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.putParameters.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiInitializeTenant",
+    })),
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiInitializeTenant",
+    })),
     async (c) => {
       await Promise.all([
         Tailscale.setOauthClient(
@@ -74,6 +123,8 @@ export default new Hono()
         Papercut.setServerAuthToken(
           c.req.valid("json").papercutServerAuthToken,
         ),
+        Documents.setMimeTypes(Constants.DEFAULT_DOCUMENTS_MIME_TYPES),
+        Documents.setSizeLimit(Constants.DEFAULT_DOCUMENTS_SIZE_LIMIT),
       ]);
 
       const { eventId: dispatchId } = await Api.papercutSync();

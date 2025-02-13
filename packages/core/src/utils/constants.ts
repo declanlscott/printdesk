@@ -29,7 +29,9 @@ export namespace Constants {
     "image/gif",
   ] as const;
 
+  export const DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION = "55 1 * * ? *";
   export const DEFAULT_DOCUMENTS_MIME_TYPES = ["application/pdf"] as const;
+  export const DEFAULT_DOCUMENTS_SIZE_LIMIT = 1024 * 1024 * 10; // 10MB
 
   export const NANOID_CUSTOM_ALPHABET = "2346789abcdefghijkmnpqrtwxyz";
   export const NANOID_LENGTH = 20;

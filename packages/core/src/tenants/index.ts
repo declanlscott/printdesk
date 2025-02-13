@@ -14,6 +14,7 @@ import { Constants } from "../utils/constants";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { useTenant } from "./context";
+import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { Registration, TenantInfraProgramInput } from "./shared";
@@ -42,13 +43,13 @@ export namespace Tenants {
   });
 
   export const isSlugAvailable = async (slug: Tenant["slug"]) =>
-    ["api", "auth", "backend"].includes(slug) ||
+    !["api", "auth", "backend"].includes(slug) &&
     (await useTransaction((tx) =>
       tx
         .select({})
         .from(tenantsTable)
         .where(eq(tenantsTable.slug, slug))
-        .then((rows) => rows.length === 0),
+        .then(R.isEmpty),
     ));
 
   export const isLicenseKeyAvailable = async (licenseKey: License["key"]) =>
@@ -63,11 +64,10 @@ export namespace Tenants {
             isNull(licensesTable.tenantId),
           ),
         )
-        .then((rows) => rows.length === 1),
+        .then(R.isNot(R.isEmpty)),
     );
 
-
-  export const register = async (
+  export async function register(
     registration: Omit<
       Registration,
       | "tailscaleOauthClientId"
@@ -75,8 +75,16 @@ export namespace Tenants {
       | "tailnetPapercutServerUri"
       | "papercutServerAuthToken"
     >,
-  ) =>
-    useTransaction(async (tx) => {
+  ) {
+    const infraProgramInput = {
+      papercutSyncCronExpression:
+        Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION,
+      timezone: registration.timezone,
+    } satisfies TenantInfraProgramInput;
+
+    const apiKey = await Utils.createSecret();
+
+    const tenantId = await useTransaction(async (tx) => {
       const tenant = await tx
         .insert(tenantsTable)
         .values({
@@ -128,25 +136,24 @@ export namespace Tenants {
           set: buildConflictUpdateColumns(oauth2ProvidersTable, ["type"]),
         });
 
-      const infraProgramInput = {
-        papercutSyncSchedule: registration.papercutSyncSchedule,
-        timezone: registration.timezone,
-      } satisfies TenantInfraProgramInput;
-
       await tx
         .insert(tenantMetadataTable)
-        .values({ tenantId: tenant.id, infraProgramInput })
+        .values({ tenantId: tenant.id, infraProgramInput, apiKey: apiKey.hash })
         .onConflictDoUpdate({
           target: tenantMetadataTable.id,
           set: buildConflictUpdateColumns(tenantMetadataTable, [
             "infraProgramInput",
+            "apiKey",
           ]),
         });
 
-      const dispatchId = await dispatchInfra(tenant.id, infraProgramInput);
-
-      return { tenantId: tenant.id, dispatchId };
+      return tenant.id;
     });
+
+    const dispatchId = await dispatchInfra(tenantId, infraProgramInput);
+
+    return { tenantId, dispatchId, apiKey: apiKey.value };
+  }
 
   export async function dispatchInfra(
     tenantId: Tenant["id"],

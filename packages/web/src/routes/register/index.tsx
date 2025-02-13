@@ -9,13 +9,13 @@ import {
   useRegistrationWizardState,
 } from "~/lib/hooks/registration";
 import { getRegistrationMachine } from "~/lib/machines/registration";
-import { RegistrationWizardLayout } from "~/routes/register/-components/wizard/layout";
+import { RegistrationStatus } from "~/routes/register/-components/status";
+import { RegistrationWizard } from "~/routes/register/-components/wizard";
 import { RegistrationWizardReview } from "~/routes/register/-components/wizard/review";
 import { RegistrationWizardStep1 } from "~/routes/register/-components/wizard/step-1";
 import { RegistrationWizardStep2 } from "~/routes/register/-components/wizard/step-2";
 import { RegistrationWizardStep3 } from "~/routes/register/-components/wizard/step-3";
 import { RegistrationWizardStep4 } from "~/routes/register/-components/wizard/step-4";
-import { RegistrationWizardStep5 } from "~/routes/register/-components/wizard/step-5";
 
 export const Route = createFileRoute("/register/")({
   validateSearch: v.object({ slug: v.optional(v.string()) }),
@@ -83,17 +83,22 @@ function Registration() {
 
   if ("wizard" in state)
     return (
-      <RegistrationWizardLayout>
-        <RegistrationWizard />
-      </RegistrationWizardLayout>
+      <RegistrationWizard>
+        <RegistrationWizardStep />
+      </RegistrationWizard>
     );
 
-  if ("status" in state) return <RegistrationStatus />;
+  if ("status" in state)
+    return (
+      <RegistrationStatus>
+        <RegistrationStatusStep />
+      </RegistrationStatus>
+    );
 
   throw new ApplicationError.NonExhaustiveValue(state);
 }
 
-function RegistrationWizard() {
+function RegistrationWizardStep() {
   const state = useRegistrationWizardState();
 
   switch (state) {
@@ -105,8 +110,6 @@ function RegistrationWizard() {
       return <RegistrationWizardStep3 />;
     case "step4":
       return <RegistrationWizardStep4 />;
-    case "step5":
-      return <RegistrationWizardStep5 />;
     case "review":
       return <RegistrationWizardReview />;
     default:
@@ -114,18 +117,18 @@ function RegistrationWizard() {
   }
 }
 
-function RegistrationStatus() {
+function RegistrationStatusStep() {
   const state = useRegistrationStatusState();
 
   switch (state) {
-    case "registering":
-      return "TODO";
-    case "provisioningInfra":
-      return "TODO";
-    case "waitingForBackend":
-      return "TODO";
-    case "waitingForPapercutSync":
-      return "TODO";
+    case "register":
+    case "waitForInfra":
+    case "waitForGoodHealth":
+    case "healthcheck":
+    case "determineHealth":
+    case "initialize":
+    case "waitForSync":
+    case "failed":
     case "completed":
       return "TODO";
     default:

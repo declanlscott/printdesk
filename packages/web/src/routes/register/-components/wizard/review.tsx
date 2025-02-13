@@ -33,8 +33,6 @@ export function RegistrationWizardReview() {
             <Step3 />
 
             <Step4 />
-
-            <Step5 />
           </DisclosureGroup>
         </CardContent>
       </Card>
@@ -228,34 +226,6 @@ function Step4() {
               )}
             </Button>
           </div>
-        </div>
-      </DisclosurePanel>
-    </Disclosure>
-  );
-}
-
-function Step5() {
-  const { papercutSyncSchedule, timezone } =
-    useRegistrationMachine().useSelector(({ context }) => ({
-      papercutSyncSchedule: context.papercutSyncSchedule,
-      timezone: context.timezone,
-    }));
-
-  return (
-    <Disclosure id={5}>
-      <DisclosureHeader>5. PaperCut User Sync</DisclosureHeader>
-
-      <DisclosurePanel className="grid gap-4">
-        <div className="grid gap-2">
-          <Label>Cron Expression</Label>
-
-          <Input disabled value={papercutSyncSchedule} className="font-mono" />
-        </div>
-
-        <div className="grid gap-2">
-          <Label>Timezone</Label>
-
-          <Input disabled value={timezone} />
         </div>
       </DisclosurePanel>
     </Disclosure>

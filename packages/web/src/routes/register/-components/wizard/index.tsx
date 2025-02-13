@@ -13,7 +13,7 @@ import { ProgressBar } from "~/ui/primitives/progress-bar";
 
 import type { PropsWithChildren } from "react";
 
-export function RegistrationWizardLayout(props: PropsWithChildren) {
+export function RegistrationWizard(props: PropsWithChildren) {
   const state = useRegistrationWizardState();
   const slug = useRegistrationMachine().useSelector(
     ({ context }) => context.tenantSlug,
@@ -24,7 +24,7 @@ export function RegistrationWizardLayout(props: PropsWithChildren) {
     if (!step) return NaN;
     if (step.toLowerCase() === "review") return 100;
 
-    return (parseInt(step) / 6) * 100;
+    return (parseInt(step) / 5) * 100;
   }, [state]);
 
   return (
@@ -52,7 +52,6 @@ export function RegistrationWizardLayout(props: PropsWithChildren) {
                 <Label>2</Label>
                 <Label>3</Label>
                 <Label>4</Label>
-                <Label>5</Label>
               </div>
             </ProgressBar>
           ) : null}

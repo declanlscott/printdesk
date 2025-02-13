@@ -40,7 +40,7 @@ export function RegistrationWizardStep3() {
       }}
       className="grid gap-4"
     >
-      <h2 className="text-xl font-semibold">3. Tailscale OAuth Client</h2>
+      <h2 className="text-xl font-semibold">3. Tailscale Setup</h2>
 
       <Card>
         <CardContent className="grid gap-4 pt-6">
@@ -79,7 +79,8 @@ export function RegistrationWizardStep3() {
 
           <CardDescription>
             Printworks encrypts the OAuth client data and it will{" "}
-            <strong>not</strong> be visible after completing registration.
+            <strong>not</strong> be accessible to you after completing
+            registration.
           </CardDescription>
 
           <form.Field

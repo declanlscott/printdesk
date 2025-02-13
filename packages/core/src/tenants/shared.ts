@@ -21,14 +21,11 @@ export const licenseSchema = v.object({
   status: v.picklist(licenseStatuses),
 });
 
-export const defaultPapercutSyncSchedule = "55 1 * * ? *";
+export const timezoneSchema = v.picklist(Intl.supportedValuesOf("timeZone"));
 
 export const tenantInfraProgramInputSchema = v.object({
-  papercutSyncSchedule: v.pipe(
-    v.optional(v.string(), defaultPapercutSyncSchedule),
-    v.trim(),
-  ),
-  timezone: v.picklist(Intl.supportedValuesOf("timeZone")),
+  papercutSyncCronExpression: v.string(),
+  timezone: timezoneSchema,
 });
 export type TenantInfraProgramInput = v.InferOutput<
   typeof tenantInfraProgramInputSchema
@@ -101,17 +98,12 @@ export type RegistrationWizardStep4 = v.InferOutput<
   typeof registrationWizardStep4Schema
 >;
 
-export const registrationWizardStep5Schema = tenantInfraProgramInputSchema;
-export type RegistrationWizardStep5 = v.InferOutput<
-  typeof registrationWizardStep5Schema
->;
-
 export const registrationSchema = v.object({
   ...registrationWizardStep1Schema.entries,
   ...registrationWizardStep2Schema.entries,
   ...registrationWizardStep3Schema.entries,
   ...registrationWizardStep4Schema.entries,
-  ...registrationWizardStep5Schema.entries,
+  timezone: timezoneSchema,
 });
 export type Registration = v.InferOutput<typeof registrationSchema>;
 

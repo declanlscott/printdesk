@@ -127,8 +127,8 @@ export function RegistrationWizardStep4() {
 
                 <CardDescription>
                   The auth token you configured on your server. Printworks
-                  encrypts this and will <strong>not</strong> be visible after
-                  completing registration.
+                  encrypts this and it will <strong>not</strong> be accessible
+                  to you after completing registration.
                 </CardDescription>
 
                 <div className="flex gap-2">

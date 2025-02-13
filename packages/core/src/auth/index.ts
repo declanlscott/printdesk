@@ -7,7 +7,6 @@ import * as v from "valibot";
 
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { poke as _poke } from "../replicache/poke";
-import { useTenant } from "../tenants/context";
 import { licensesTable, tenantsTable } from "../tenants/sql";
 import { Users } from "../users";
 import { userProfilesTable, usersTable } from "../users/sql";

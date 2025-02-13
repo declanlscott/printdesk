@@ -6,5 +6,5 @@ from typing import Optional
 class Payload(BaseModel):
     destroy: Optional[bool] = False
     tenantId: str
-    papercutSyncSchedule: str
+    papercutSyncCronExpression: str
     timezone: str

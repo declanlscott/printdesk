@@ -35,7 +35,7 @@ def inline(payload: sqs_record.Payload):
             tenant_id=payload.tenantId,
             reverse_dns=ssl.reverse_dns,
             invoices_processor_queue_arn=storage.queues["invoices_processor"].arn,
-            papercut_sync_schedule=payload.papercutSyncSchedule,
+            papercut_sync_cron_expression=payload.papercutSyncCronExpression,
             timezone=payload.timezone,
         )
     )

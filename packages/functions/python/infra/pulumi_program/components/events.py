@@ -14,13 +14,13 @@ class EventsArgs:
         tenant_id: str,
         reverse_dns: pulumi.Input[str],
         invoices_processor_queue_arn: pulumi.Input[str],
-        papercut_sync_schedule: pulumi.Input[str],
+        papercut_sync_cron_expression: pulumi.Input[str],
         timezone: pulumi.Input[str],
     ):
         self.tenant_id = tenant_id
         self.reverse_dns = reverse_dns
         self.invoices_processor_queue_arn = invoices_processor_queue_arn
-        self.papercut_sync_schedule = papercut_sync_schedule
+        self.papercut_sync_cron_expression = papercut_sync_cron_expression
         self.timezone = timezone
 
 
@@ -145,7 +145,7 @@ class Events(pulumi.ComponentResource):
             resource_name="PapercutSyncSchedule",
             args=aws.scheduler.ScheduleArgs(
                 schedule_expression=pulumi.Output.format(
-                    "cron({0})", args.papercut_sync_schedule
+                    "cron({0})", args.papercut_sync_cron_expression
                 ),
                 flexible_time_window=aws.scheduler.ScheduleFlexibleTimeWindowArgs(
                     mode="FLEXIBLE",

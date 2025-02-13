@@ -2,6 +2,7 @@
   "name": "@printworks/scripts",
   "scripts": {
     "seed": "tsx ./src/seed.ts",
+    "migrate": "tsx ./src/migrate.ts",
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0",
     "tsx": "tsx"
   },

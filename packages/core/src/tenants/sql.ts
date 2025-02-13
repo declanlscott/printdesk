@@ -41,6 +41,7 @@ export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
     tenantInfraProgramInputSchema,
   ).notNull(),
   tenantId: id("tenant_id").unique().notNull(),
+  apiKey: varchar("api_key"),
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;

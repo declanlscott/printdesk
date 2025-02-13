@@ -5,6 +5,9 @@
  */
 
 import { AsyncLocalStorage } from "node:async_hooks";
+import { randomBytes } from "node:crypto";
+
+import { compare, hash } from "bcryptjs";
 
 import { ApplicationError } from "./errors";
 
@@ -31,4 +34,15 @@ export namespace Utils {
 
   export const buildName = (nameTemplate: string, tenantId: string) =>
     nameTemplate.replace(/{{tenant_id}}/g, tenantId);
+
+  export async function createSecret() {
+    const value = randomBytes(32).toString("hex");
+
+    return {
+      value,
+      hash: await hash(value, 10),
+    };
+  }
+
+  export const verifySecret = compare;
 }

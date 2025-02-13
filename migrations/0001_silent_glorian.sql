@@ -1,0 +1,1 @@
+ALTER TABLE "tenant_metadata" ADD COLUMN "api_key" varchar;

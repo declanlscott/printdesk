@@ -1,5 +1,5 @@
 import { physicalName } from "../.sst/platform/src/components/naming";
-import { apiFunction } from "./api";
+import { api } from "./api";
 import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import {
@@ -113,7 +113,7 @@ const infraFunctionDir = normalizePath("packages/functions/python/infra");
 const infraFunctionResourceData = $util.jsonStringify(
   injectLinkables({
     AppData: appData,
-    ApiFunction: apiFunction,
+    Api: api,
     AppsyncEventApi: appsyncEventApi,
     Aws: aws_,
     Code: code,

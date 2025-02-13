@@ -1,3 +1,4 @@
+import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
 import { HttpError } from "@printworks/core/utils/errors";
@@ -10,6 +11,7 @@ import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 import { Resource } from "sst";
 
+import type { FetchProxy } from "@mjackson/fetch-proxy";
 import type { SubjectPayload } from "@openauthjs/openauth/subject";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
@@ -24,7 +26,7 @@ const rateLimiter = createMiddleware(
               issuer: Resource.Auth.url,
             }).verify(subjects, token);
             if (verified.err) {
-              console.error("Token verification failed: ", verified.err);
+              console.error("Token verification failed:", verified.err);
               return false;
             }
 
@@ -36,7 +38,7 @@ const rateLimiter = createMiddleware(
           const subject: SubjectPayload<typeof subjects> = c.get("subject");
           const key = `${subject.properties.tenantId}#${subject.properties.id}`;
 
-          console.log("Rate limiting by user: ", key);
+          console.log("Rate limiting by user:", key);
           c.set(
             "rateLimitOutcome",
             await c.env.API_RATE_LIMITERS.byUser({ key }),
@@ -49,7 +51,7 @@ const rateLimiter = createMiddleware(
         const ip = getConnInfo(c).remote.address;
         if (!ip) throw new Error("Missing remote address");
 
-        console.log("Rate limiting by IP: ", ip);
+        console.log("Rate limiting by IP:", ip);
         c.set(
           "rateLimitOutcome",
           await c.env.API_RATE_LIMITERS.byIp({ key: ip }),
@@ -67,10 +69,17 @@ const rateLimiter = createMiddleware(
   ),
 );
 
+const proxy = createMiddleware((c, next) => {
+  c.set("proxy", createFetchProxy(Resource.Api.url));
+
+  return next();
+});
+
 export default new Hono()
   .use(logger())
   .use(rateLimiter)
-  .all("*", (c) => fetch(c.req.raw))
+  .use(proxy)
+  .all("*", (c) => c.get("proxy")(c.req.raw))
   .onError((e, c) => {
     console.error(e);
 
@@ -80,3 +89,9 @@ export default new Hono()
 
     return c.json("Internal server error", 500);
   });
+
+declare module "hono" {
+  interface ContextVariableMap {
+    proxy: FetchProxy;
+  }
+}

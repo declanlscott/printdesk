@@ -7,10 +7,6 @@ import "sst"
 declare module "sst" {
   export interface Resource {
     "Api": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
-    "ApiFunction": {
       "arn": string
       "invokeArn": string
       "name": string
@@ -220,7 +216,7 @@ declare module "sst" {
 import * as cloudflare from "@cloudflare/workers-types";
 declare module "sst" {
   export interface Resource {
-    "ApiRateLimiterWorker": cloudflare.Service
+    "ApiReverseProxy": cloudflare.Service
   }
 }
 

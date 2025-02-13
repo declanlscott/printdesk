@@ -6,10 +6,6 @@
 declare module "sst" {
   export interface Resource {
     "Api": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
-    "ApiFunction": {
       "arn": string
       "invokeArn": string
       "name": string
@@ -17,8 +13,9 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "ApiRateLimiterWorker": {
+    "ApiReverseProxy": {
       "type": "sst.cloudflare.Worker"
+      "url": string
     }
     "AppData": {
       "domainName": {

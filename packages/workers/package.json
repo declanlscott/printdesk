@@ -5,6 +5,7 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@mjackson/fetch-proxy": "^0.2.0",
     "@printworks/core": "workspace:*"
   },
   "devDependencies": {

@@ -348,6 +348,9 @@ importers:
 
   packages/workers:
     dependencies:
+      '@mjackson/fetch-proxy':
+        specifier: ^0.2.0
+        version: 0.2.0
       '@printworks/core':
         specifier: workspace:*
         version: link:../core
@@ -1867,6 +1870,12 @@ packages:
 
   '@microsoft/microsoft-graph-types@2.40.0':
     resolution: {integrity: sha512-1fcPVrB/NkbNcGNfCy+Cgnvwxt6/sbIEEFgZHFBJ670zYLegENYJF8qMo7x3LqBjWX2/Eneq5BVVRCLTmlJN+g==}
+
+  '@mjackson/fetch-proxy@0.2.0':
+    resolution: {integrity: sha512-lQDf1hA+O0EONnTzKAMqxP+Sx86wu9m4c6bgfoL8f1793Du0Jm5vRCc4PueAdsaVoAjVzEYDlauw1BQoOvlGFA==}
+
+  '@mjackson/headers@0.8.0':
+    resolution: {integrity: sha512-A6nE9ZKTGX1hTHQOeoYn/f7+xRTgzixHWu9jtZ8zYgZYq30MPtZIRXqEyY8bWaIILr+zWdmUPQg/R/8e+e/8Nw==}
 
   '@msgpack/msgpack@3.0.0':
     resolution: {integrity: sha512-s/OZQ1QUtSYr9tgFZh4HSFLvTR2o81r0zfQj7pClC7oFUqZaAgkQ+vADV9JBioJLK9lJoAjBEhuPhVuOIJnbhg==}
@@ -7778,6 +7787,12 @@ snapshots:
       tslib: 2.8.1
 
   '@microsoft/microsoft-graph-types@2.40.0': {}
+
+  '@mjackson/fetch-proxy@0.2.0':
+    dependencies:
+      '@mjackson/headers': 0.8.0
+
+  '@mjackson/headers@0.8.0': {}
 
   '@msgpack/msgpack@3.0.0': {}
 

@@ -1,6 +1,10 @@
-import { db } from "@printworks/core/drizzle";
-import { tenantsTable } from "@printworks/core/tenants/sql";
+import { useTransaction } from "@printworks/core/drizzle/context";
+import {
+  tenantMetadataTable,
+  tenantsTable,
+} from "@printworks/core/tenants/sql";
 import { Sqs, withAws } from "@printworks/core/utils/aws";
+import { eq } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
@@ -8,18 +12,29 @@ import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
 
 export const handler: APIGatewayProxyHandlerV2 = async () =>
   withAws({ sqs: { client: new Sqs.Client() } }, async () => {
-    const tenants = await db.select({ id: tenantsTable.id }).from(tenantsTable);
+    const tenants = await useTransaction((tx) =>
+      tx
+        .select({
+          id: tenantsTable.id,
+          infraProgramInput: tenantMetadataTable.infraProgramInput,
+        })
+        .from(tenantsTable)
+        .innerJoin(
+          tenantMetadataTable,
+          eq(tenantMetadataTable.tenantId, tenantsTable.id),
+        ),
+    );
 
     const failedEntries: NonNullable<
       Awaited<ReturnType<typeof Sqs.sendMessageBatch>>["Failed"]
     > = [];
 
-    for (const ids of R.chunk(R.map(tenants, R.prop("id")), 10)) {
+    for (const chunk of R.chunk(tenants, 10)) {
       const { Failed } = await Sqs.sendMessageBatch({
         QueueUrl: Resource.InfraQueue.url,
-        Entries: ids.map((id, index) => ({
+        Entries: chunk.map(({ id: tenantId, infraProgramInput }, index) => ({
           Id: index.toString(),
-          MessageBody: JSON.stringify({ tenantId: id }),
+          MessageBody: JSON.stringify({ tenantId, ...infraProgramInput }),
         })),
       });
 

@@ -29,15 +29,13 @@ export async function useTransaction<
   TCallback extends (tx: Transaction) => ReturnType<TCallback>,
 >(callback: TCallback) {
   try {
-    const { tx } = TransactionContext.use();
-
-    return callback(tx);
+    return callback(TransactionContext.use().tx);
   } catch (e) {
     if (
       e instanceof ApplicationError.MissingContext &&
       e.contextName === contextName
     )
-      return createTransaction(async (tx) => callback(tx));
+      return createTransaction(callback);
 
     throw e;
   }
@@ -47,32 +45,27 @@ export async function afterTransaction<
   TEffect extends () => ReturnType<TEffect>,
 >(effect: TEffect) {
   try {
-    const { effects } = TransactionContext.use();
-
-    effects.push(effect);
+    TransactionContext.use().effects.push(effect);
   } catch {
     await Promise.resolve(effect);
   }
 }
 
-export async function createTransaction<TOutput>(
-  callback: (tx: Transaction) => Promise<TOutput>,
-) {
+export async function createTransaction<
+  TCallback extends (tx: Transaction) => ReturnType<TCallback>,
+>(callback: TCallback) {
   for (let i = 0; i < Constants.DB_TRANSACTION_MAX_RETRIES; i++) {
-    const result = await transact({
-      transact: callback,
-      rollback: (e) => {
-        if (shouldRetryTransaction(e)) {
-          console.log(
-            // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            `Retrying transaction due to error ${e} - attempt number ${i}`,
-          );
+    const result = await transact(callback, (e) => {
+      if (shouldRetryTransaction(e)) {
+        console.log(
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+          `Retrying transaction due to error ${e} - attempt number ${i}`,
+        );
 
-          return false;
-        }
+        return false;
+      }
 
-        return true;
-      },
+      return true;
     });
 
     if (result.status === "error") {
@@ -92,14 +85,14 @@ type Result<TOutput> =
   | { status: "error"; error: unknown; shouldRethrow: boolean };
 
 async function transact<
-  TOutput,
+  TCallback extends (tx: Transaction) => ReturnType<TCallback>,
   TRollback extends (e: unknown) => boolean | Promise<boolean>,
->(callbacks: {
-  transact: (tx: Transaction) => Promise<TOutput>;
-  rollback?: TRollback;
-}): Promise<Result<TOutput>> {
+>(
+  callback: TCallback,
+  rollback?: TRollback,
+): Promise<Result<Awaited<ReturnType<TCallback>>>> {
   try {
-    const output = await callbacks.transact(TransactionContext.use().tx);
+    const output = await Promise.resolve(callback(TransactionContext.use().tx));
 
     return { status: "success", output };
   } catch (error) {
@@ -107,9 +100,9 @@ async function transact<
       const effects: TransactionContext["effects"] = [];
 
       try {
-        const output = await db.transaction(async (tx) =>
-          TransactionContext.with({ tx, effects }, () =>
-            callbacks.transact(tx),
+        const output = await Promise.resolve(
+          db.transaction(async (tx) =>
+            TransactionContext.with({ tx, effects }, () => callback(tx)),
           ),
         );
 
@@ -119,10 +112,9 @@ async function transact<
       } catch (error) {
         console.error(error);
 
-        if (!callbacks.rollback)
-          return { status: "error", error, shouldRethrow: true };
+        if (!rollback) return { status: "error", error, shouldRethrow: true };
 
-        const shouldRethrow = await Promise.resolve(callbacks.rollback(error));
+        const shouldRethrow = await Promise.resolve(rollback(error));
 
         return { status: "error", error, shouldRethrow };
       }

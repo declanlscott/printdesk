@@ -5,7 +5,6 @@ import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
 
 from utilities import resource, tags, region, reverse_dns
-from utilities.aws import get_pulumi_credentials
 
 from typing import Sequence, Optional
 
@@ -101,14 +100,13 @@ class Ssl(pulumi.ComponentResource):
                 f"Exhausted attempts waiting for issued certificate: {certificate_arn}"
             )
 
-        us_east_1_credentials = get_pulumi_credentials("InfraFunctionSslComponent")
-
         us_east_1_provider = aws.Provider(
             resource_name="UsEast1Provider",
             args=aws.ProviderArgs(
-                access_key=us_east_1_credentials["AccessKeyId"],
-                secret_key=us_east_1_credentials["SecretAccessKey"],
-                token=us_east_1_credentials["SessionToken"],
+                assume_role=aws.ProviderAssumeRoleArgs(
+                    role_arn=resource["Aws"]["roles"]["pulumi"]["arn"],
+                    session_name="InfraFunctionSslComponent",
+                ),
                 region="us-east-1",
             ),
             opts=pulumi.ResourceOptions(parent=self),

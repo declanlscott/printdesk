@@ -1,9 +1,9 @@
 import { Resource } from "sst";
 import * as v from "valibot";
 
-import { Api } from "../tenants/api";
 import { useTenant } from "../tenants/context";
 import { Ssm } from "../utils/aws";
+import { Api } from "./api";
 
 export namespace Documents {
   export async function getBucket() {
@@ -12,7 +12,7 @@ export namespace Documents {
     return buckets.documents;
   }
 
-  export async function setMimeTypes(mimeTypes: Array<string>) {
+  export async function setMimeTypes(mimeTypes: Readonly<Array<string>>) {
     const name = Ssm.buildName(
       Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate,
       useTenant().id,

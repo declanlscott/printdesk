@@ -3,18 +3,19 @@ import { addMinutes } from "date-fns";
 import { Resource } from "sst";
 import * as v from "valibot";
 
-import { Tenants } from "../tenants";
+import { Backend } from ".";
 import { Cloudfront, SignatureV4 } from "../utils/aws";
 import { HttpError } from "../utils/errors";
 import { buildUrl } from "../utils/shared";
 
-import type { GetParameterCommandOutput } from "@aws-sdk/client-ssm";
+import type { PutEventsResponse } from "@aws-sdk/client-eventbridge";
+import type { GetParameterResult } from "@aws-sdk/client-ssm";
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
   export async function getRealtimeDns() {
     const res = await send(
-      `/.well-known/appspecific/${Tenants.getBackendReverseDns()}.realtime.json`,
+      `/.well-known/appspecific/${Backend.getReverseDns()}.realtime.json`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -35,7 +36,7 @@ export namespace Api {
 
   export async function getBuckets() {
     const res = await send(
-      `/.well-known/appspecific/${Tenants.getBackendReverseDns()}.buckets.json`,
+      `/.well-known/appspecific/${Backend.getReverseDns()}.buckets.json`,
     );
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -64,19 +65,7 @@ export namespace Api {
         },
       });
 
-    const output = v.parse(
-      v.object({
-        Entries: v.array(
-          v.object({
-            ErrorCode: v.optional(v.string()),
-            ErrorMessage: v.optional(v.string()),
-            EventId: v.optional(v.string()),
-          }),
-        ),
-        FailedEntryCount: v.number(),
-      }),
-      await res.json(),
-    );
+    const output = (await res.json()) as Required<PutEventsResponse>;
 
     if (output.FailedEntryCount > 0)
       throw new HttpError.InternalServerError("Papercut sync event failure");
@@ -101,7 +90,9 @@ export namespace Api {
         },
       });
 
-    return ((await res.json()) as GetParameterCommandOutput).Parameter!.Value!;
+    const result = (await res.json()) as Required<GetParameterResult>;
+
+    return result.Parameter.Value!;
   }
 
   export async function invalidateCache(paths: Array<string>) {
@@ -123,7 +114,7 @@ export namespace Api {
     init?: RequestInit,
   ): Promise<Response> {
     const url = buildUrl({
-      fqdn: Tenants.getBackendFqdn(),
+      fqdn: Backend.getFqdn(),
       path: `/api${path}`,
     });
 

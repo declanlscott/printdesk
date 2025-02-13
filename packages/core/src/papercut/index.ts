@@ -1,6 +1,6 @@
 import { Resource } from "sst";
 
-import { Api } from "../tenants/api";
+import { Api } from "../backend/api";
 import { useTenant } from "../tenants/context";
 import { Ssm } from "../utils/aws";
 

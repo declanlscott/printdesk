@@ -1,7 +1,7 @@
 import * as v from "valibot";
 
 import { Papercut } from ".";
-import { Api } from "../tenants/api";
+import { Api } from "../backend/api";
 import { Constants } from "../utils/constants";
 import { HttpError, XmlRpcError } from "../utils/errors";
 import { objectsTuple } from "../utils/shared";

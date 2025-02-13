@@ -1,7 +1,7 @@
 import * as R from "remeda";
 
+import { Api } from "../backend/api";
 import { publish } from "../realtime/publisher";
-import { Api } from "../tenants/api";
 import { Constants } from "../utils/constants";
 
 import type { StartsWith } from "../utils/types";

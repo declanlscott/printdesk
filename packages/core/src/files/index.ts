@@ -1,3 +1,0 @@
-export namespace Files {
-  // TODO
-}

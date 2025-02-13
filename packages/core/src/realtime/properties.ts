@@ -1,7 +1,7 @@
 import { HttpRequest } from "@smithy/protocol-http";
 import { Resource } from "sst";
 
-import { Api } from "../tenants/api";
+import { Api } from "../backend/api";
 import { SignatureV4, Util } from "../utils/aws";
 
 export async function getRealtimeUrl(forTenant = true) {

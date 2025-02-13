@@ -5,8 +5,6 @@ import { tailscaleOauthClientSchema } from "../tailscale/shared";
 import { Constants } from "../utils/constants";
 import { nanoIdSchema, timestampsSchema } from "../utils/shared";
 
-import type { Tenant } from "./sql";
-
 export const licensesTableName = "licenses";
 
 export const licenseStatuses = ["active", "expired"] as const;
@@ -125,6 +123,3 @@ export const tenantMetadataSchema = v.object({
   tenantId: nanoIdSchema,
   ...timestampsSchema.entries,
 });
-
-export const getBackendFqdn = (tenantId: Tenant["id"], baseFqdn: string) =>
-  `${tenantId}.backend.${baseFqdn}`;

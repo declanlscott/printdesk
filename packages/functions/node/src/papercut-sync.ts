@@ -1,8 +1,9 @@
 import { withActor } from "@printworks/core/actors/context";
+import { Backend } from "@printworks/core/backend";
+import { Api } from "@printworks/core/backend/api";
 import { PapercutSync } from "@printworks/core/papercut/sync";
 import { publish } from "@printworks/core/realtime/publisher";
 import { Tenants } from "@printworks/core/tenants";
-import { Api } from "@printworks/core/tenants/api";
 import { Credentials, SignatureV4, withAws } from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { withXml } from "@printworks/core/utils/xml";
@@ -63,7 +64,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
           error = e;
         }
 
-        if (event.source === Tenants.getBackendReverseDns())
+        if (event.source === Backend.getReverseDns())
           await publish(publishDomain, `/events/${event.id}`, [
             JSON.stringify({ success: !!error, dispatchId: event.id }),
           ]);

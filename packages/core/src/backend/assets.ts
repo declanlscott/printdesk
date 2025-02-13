@@ -1,5 +1,5 @@
-import { Api } from "../tenants/api";
 import { Constants } from "../utils/constants";
+import { Api } from "./api";
 
 export namespace Assets {
   export async function getBucket() {

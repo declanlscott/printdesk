@@ -1,7 +1,4 @@
-import {
-  defaultPapercutSyncSchedule,
-  getBackendFqdn,
-} from "@printworks/core/tenants/shared";
+import { getBackendFqdn } from "@printworks/core/backend/shared";
 import { Constants } from "@printworks/core/utils/constants";
 import { HttpError } from "@printworks/core/utils/errors";
 import { buildUrl } from "@printworks/core/utils/shared";

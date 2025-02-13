@@ -1,10 +1,10 @@
 import { vValidator } from "@hono/valibot-validator";
 import { oauth2ProvidersTable } from "@printworks/core/auth/sql";
+import { Api } from "@printworks/core/backend/api";
 import { useTransaction } from "@printworks/core/drizzle/context";
 import { Papercut } from "@printworks/core/papercut";
 import { Tailscale } from "@printworks/core/tailscale";
 import { Tenants } from "@printworks/core/tenants";
-import { Api } from "@printworks/core/tenants/api";
 import { useTenant } from "@printworks/core/tenants/context";
 import {
   registrationSchema,

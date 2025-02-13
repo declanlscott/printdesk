@@ -14,10 +14,6 @@ import { Constants } from "../utils/constants";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { useTenant } from "./context";
-import {
-  getBackendFqdn as getBackendFqdn_,
-  updateTenantMutationArgsSchema,
-} from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { Registration, TenantInfraProgramInput } from "./shared";
@@ -70,10 +66,6 @@ export namespace Tenants {
         .then((rows) => rows.length === 1),
     );
 
-  export const getBackendFqdn = () =>
-    getBackendFqdn_(useTenant().id, Resource.AppData.domainName.fullyQualified);
-
-  export const getBackendReverseDns = () => Utils.reverseDns(getBackendFqdn());
 
   export const register = async (
     registration: Omit<

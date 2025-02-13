@@ -1,5 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
-import { Documents } from "@printworks/core/files/documents";
+import { Documents } from "@printworks/core/backend/documents";
 import { useTenant } from "@printworks/core/tenants/context";
 import { Credentials, S3 } from "@printworks/core/utils/aws";
 import { Hono } from "hono";

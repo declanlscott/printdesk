@@ -42,13 +42,23 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
                     Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
                     tenantId,
                   ),
-                  RoleSessionName: "PapercutSyncRealtimePublisher",
+                  RoleSessionName: "PapercutSync",
                 },
               ]),
             }),
             "execute-api": SignatureV4.buildSigner({
               region: Resource.Aws.region,
               service: "execute-api",
+              credentials: Credentials.fromRoleChain([
+                {
+                  RoleArn: Credentials.buildRoleArn(
+                    Resource.Aws.account.id,
+                    Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+                    tenantId,
+                  ),
+                  RoleSessionName: "PapercutSync",
+                },
+              ]),
             }),
           },
         },

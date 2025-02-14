@@ -208,6 +208,7 @@ class Router(pulumi.ComponentResource):
                     ssl_support_method="sni-only",
                     minimum_protocol_version="TLSv1.2_2021",
                 ),
+                price_class="PriceClass_100",
                 wait_for_deployment=False,
                 tags=tags(args.tenant_id),
             ),

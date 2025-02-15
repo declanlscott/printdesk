@@ -18,10 +18,13 @@ import type { Resource } from "sst";
 import type { routeTree } from "~/routeTree.gen";
 
 export type ViteResource = {
-  [TKey in keyof Pick<
-    Resource,
-    "AppData" | "Api" | "Auth" | "ReplicacheLicenseKey" | "Www"
-  >]: Omit<Resource[TKey], "type">;
+  [TKey in keyof ImportMetaEnv as TKey extends `VITE_RESOURCE_${infer TResourceKey}`
+    ? TResourceKey
+    : never]: TKey extends `VITE_RESOURCE_${infer TResourceKey}`
+    ? TResourceKey extends keyof Resource
+      ? Omit<Resource[TResourceKey], "type">
+      : never
+    : never;
 };
 
 declare module "@tanstack/react-router" {

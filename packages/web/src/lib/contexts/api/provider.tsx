@@ -7,7 +7,7 @@ import { useResource } from "~/lib/hooks/resource";
 import type { PropsWithChildren } from "react";
 
 export function ApiProvider(props: PropsWithChildren) {
-  const baseUrl = useResource().Api.url;
+  const baseUrl = useResource().ApiReverseProxy.url;
 
   const [api] = useState(() => ({
     baseUrl,

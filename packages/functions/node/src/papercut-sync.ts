@@ -21,8 +21,6 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
     event.detail,
   );
 
-  console.log({ tenantId });
-
   return withActor({ type: "system", properties: { tenantId } }, async () => {
     const tenant = await Tenants.read().then(R.first());
     if (!tenant || tenant.status === "suspended")

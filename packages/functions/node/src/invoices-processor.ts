@@ -12,7 +12,7 @@ export const handler: SQSHandler = async (event) => {
     try {
       await processRecord(record);
     } catch (e) {
-      console.error("Failed to process record: ", record, e);
+      console.error("Failed to process record:", record, e);
 
       batchItemFailures.push({ itemIdentifier: record.messageId });
     }

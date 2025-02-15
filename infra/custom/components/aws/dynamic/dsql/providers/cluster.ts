@@ -1,9 +1,14 @@
+import {
+  logicalName,
+  physicalName,
+} from "~/.sst/platform/src/components/naming";
+
 import type {
   CreateClusterCommandInput,
   CreateClusterOutput,
 } from "@aws-sdk/client-dsql";
 
-type ClusterInputs = CreateClusterCommandInput;
+type ClusterInputs = Omit<CreateClusterCommandInput, "tags">;
 export type ClusterProviderInputs = ClusterInputs;
 
 type ClusterOutputs = {
@@ -14,10 +19,16 @@ type ClusterOutputs = {
   creationTime: string;
 };
 export interface ClusterProviderOutputs extends ClusterOutputs {
-  tags: ClusterInputs["tags"];
+  tags: Record<string, string>;
 }
 
 export class ClusterProvider implements $util.dynamic.ResourceProvider {
+  private _logicalName: string;
+
+  constructor(name: string) {
+    this._logicalName = logicalName(name);
+  }
+
   private static _getSdk = async () => import("@aws-sdk/client-dsql");
 
   private static _getClient = async () =>
@@ -71,13 +82,19 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
   }
 
   async create(
-    inputs: ClusterInputs,
+    inputs: ClusterProviderInputs,
   ): Promise<$util.dynamic.CreateResult<ClusterProviderOutputs>> {
     const client = await ClusterProvider._getClient();
 
+    const tags = {
+      Name: physicalName(256, this._logicalName),
+      "sst:app": $app.name,
+      "sst:stage": $app.stage,
+    };
+
     const output = await client.send(
       await ClusterProvider._getSdk().then(
-        (sdk) => new sdk.CreateClusterCommand(inputs),
+        (sdk) => new sdk.CreateClusterCommand({ tags, ...inputs }),
       ),
     );
 
@@ -96,7 +113,7 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
 
     return {
       id: cluster.identifier,
-      outs: { ...cluster, status: "ACTIVE", tags: inputs.tags },
+      outs: { ...cluster, status: "ACTIVE", tags },
     };
   }
 
@@ -163,7 +180,6 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
         ...olds,
         ...cluster,
         status: "ACTIVE",
-        tags: news.tags ?? olds.tags,
       },
     };
   }

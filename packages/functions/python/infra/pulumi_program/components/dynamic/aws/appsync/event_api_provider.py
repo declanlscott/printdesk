@@ -1,24 +1,23 @@
 import pulumi
 import boto3
 
-from utilities import region
+from utilities import region, tags
 from utilities.aws import get_pulumi_credentials
 from ...naming import logical_name, physical_name
 
-from typing import TypedDict, NotRequired, Mapping, Dict, Any, Unpack
+from typing import TypedDict, NotRequired, Dict, Any, Unpack
 from types_boto3_appsync import AppSyncClient
 from types_boto3_appsync.type_defs import (
     EventConfigTypeDef,
     ApiTypeDef,
-    CreateApiRequestRequestTypeDef,
-    UpdateApiRequestRequestTypeDef,
+    CreateApiRequestTypeDef,
+    UpdateApiRequestTypeDef,
 )
 
 
 class EventApiProviderInputs(TypedDict):
     tenant_id: str
     owner_contact: NotRequired[str]
-    tags: NotRequired[Mapping[str, str]]
     event_config: NotRequired[EventConfigTypeDef]
 
 
@@ -55,7 +54,8 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider):
 
     @staticmethod
     def __build_outs(
-        tenant_id: str, **api: Unpack[ApiTypeDef]
+        tenant_id: str,
+        **api: Unpack[ApiTypeDef],
     ) -> EventApiProviderOutputs:
         outs: EventApiProviderOutputs = {
             "tenant_id": tenant_id,
@@ -79,14 +79,13 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider):
         return outs
 
     def create(self, props: EventApiProviderInputs) -> pulumi.dynamic.CreateResult:
-        create_input: CreateApiRequestRequestTypeDef = {
-            "name": physical_name(50, self.__logical_name, props["tenant_id"])
+        create_input: CreateApiRequestTypeDef = {
+            "name": physical_name(50, self.__logical_name, props["tenant_id"]),
+            "tags": tags(props["tenant_id"]),
         }
 
         if props.get("owner_contact") is not None:
             create_input["ownerContact"] = props["owner_contact"]
-        if props.get("tags") is not None:
-            create_input["tags"] = props["tags"]
         if props.get("event_config") is not None:
             create_input["eventConfig"] = props["event_config"]
 
@@ -117,7 +116,7 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider):
         _olds: EventApiProviderOutputs,
         _news: EventApiProviderInputs,
     ) -> pulumi.dynamic.UpdateResult:
-        update_input: UpdateApiRequestRequestTypeDef = {
+        update_input: UpdateApiRequestTypeDef = {
             "apiId": _id,
             "name": _olds["name"],
         }

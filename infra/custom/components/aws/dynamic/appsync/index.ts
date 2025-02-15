@@ -1,39 +1,44 @@
 import { Link } from "~/.sst/platform/src/components/link";
-import { ApiProvider } from "./providers/api";
 import { ChannelNamespaceProvider } from "./providers/channel-namespace";
+import { EventApiProvider } from "./providers/event-api";
 
-import type { ApiProviderInputs, ApiProviderOutputs } from "./providers/api";
 import type {
   ChannelNamespaceProviderInputs,
   ChannelNamespaceProviderOutputs,
 } from "./providers/channel-namespace";
+import type {
+  EventApiProviderInputs,
+  EventApiProviderOutputs,
+} from "./providers/event-api";
 
 export namespace Appsync {
-  export type ApiInputs = {
-    [TKey in keyof ApiProviderInputs]: $util.Input<ApiProviderInputs[TKey]>;
+  export type EventApiInputs = {
+    [TKey in keyof EventApiProviderInputs]: $util.Input<
+      EventApiProviderInputs[TKey]
+    >;
   };
 
-  export type ApiOutputs = {
-    [TKey in keyof ApiProviderOutputs]: $util.Output<ApiProviderOutputs[TKey]>;
+  export type EventApiOutputs = {
+    [TKey in keyof EventApiProviderOutputs]: $util.Output<
+      EventApiProviderOutputs[TKey]
+    >;
   };
 
-  export interface Api extends ApiOutputs {}
-  export class Api extends $util.dynamic.Resource implements Link.Linkable {
+  export interface EventApi extends EventApiOutputs {}
+  export class EventApi
+    extends $util.dynamic.Resource
+    implements Link.Linkable
+  {
     constructor(
       name: string,
-      props: ApiInputs,
+      props: EventApiInputs,
       opts?: $util.ComponentResourceOptions,
     ) {
       super(
-        new ApiProvider(name),
+        new EventApiProvider(name),
         name,
         {
           ...props,
-          tags: {
-            "sst:app": $app.name,
-            "sst:stage": $app.stage,
-            ...props.tags,
-          },
           apiId: undefined,
           dns: undefined,
           apiArn: undefined,

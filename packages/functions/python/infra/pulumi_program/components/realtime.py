@@ -38,7 +38,6 @@ class Realtime(pulumi.ComponentResource):
                     "defaultPublishAuthModes": [{"authType": "AWS_IAM"}],
                     "defaultSubscribeAuthModes": [{"authType": "AWS_IAM"}],
                 },
-                tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -48,7 +47,6 @@ class Realtime(pulumi.ComponentResource):
             props=dynamic.aws.appsync.ChannelNamespaceInputs(
                 api_id=self.__api.api_id,
                 name="events",
-                tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
@@ -58,7 +56,6 @@ class Realtime(pulumi.ComponentResource):
             props=dynamic.aws.appsync.ChannelNamespaceInputs(
                 api_id=self.__api.api_id,
                 name="replicache",
-                tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )

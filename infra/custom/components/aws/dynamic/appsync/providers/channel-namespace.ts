@@ -4,7 +4,7 @@ import type {
 } from "@aws-sdk/client-appsync";
 
 type ChannelNamespaceInputs = {
-  [TKey in keyof CreateChannelNamespaceCommandInput]: NonNullable<
+  [TKey in keyof Omit<CreateChannelNamespaceCommandInput, "tags">]: NonNullable<
     CreateChannelNamespaceCommandInput[TKey]
   >;
 };
@@ -28,7 +28,14 @@ export class ChannelNamespaceProvider
 
     const output = await client.send(
       await ChannelNamespaceProvider._getSdk().then(
-        (sdk) => new sdk.CreateChannelNamespaceCommand(inputs),
+        (sdk) =>
+          new sdk.CreateChannelNamespaceCommand({
+            tags: {
+              "sst:app": $app.name,
+              "sst:stage": $app.stage,
+            },
+            ...inputs,
+          }),
       ),
     );
 

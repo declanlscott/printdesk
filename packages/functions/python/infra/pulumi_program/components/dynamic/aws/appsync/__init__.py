@@ -3,7 +3,7 @@ import pulumi
 from .event_api_provider import EventApiProvider
 from .channel_namespace_provider import ChannelNamespaceProvider
 
-from typing import Mapping, Dict, Optional, Any, Sequence, List
+from typing import Dict, Optional, Any, Sequence, List
 from types_boto3_appsync.type_defs import EventConfigTypeDef, AuthModeTypeDef
 
 
@@ -12,12 +12,10 @@ class EventApiInputs:
         self,
         tenant_id: str,
         owner_contact: Optional[pulumi.Input[str]] = None,
-        tags: Optional[pulumi.Input[Mapping[str, str]]] = None,
         event_config: Optional[pulumi.Input[EventConfigTypeDef]] = None,
     ):
         self.tenant_id = tenant_id
         self.owner_contact = owner_contact
-        self.tags = tags
         self.event_config = event_config
 
 
@@ -34,7 +32,12 @@ class EventApi(pulumi.dynamic.Resource):
     waf_web_acl_arn: pulumi.Output[str]
     event_config: pulumi.Output[Dict[str, Any]]
 
-    def __init__(self, name: str, props: EventApiInputs, opts: pulumi.ResourceOptions):
+    def __init__(
+        self,
+        name: str,
+        props: EventApiInputs,
+        opts: pulumi.ResourceOptions,
+    ):
         super().__init__(
             provider=EventApiProvider(name=name),
             name=name,
@@ -64,14 +67,12 @@ class ChannelNamespaceInputs:
         subscribe_auth_modes: Optional[pulumi.Input[Sequence[AuthModeTypeDef]]] = None,
         publish_auth_modes: Optional[pulumi.Input[Sequence[AuthModeTypeDef]]] = None,
         code_handlers: Optional[pulumi.Input[str]] = None,
-        tags: Optional[pulumi.Input[Mapping[str, str]]] = None,
     ):
         self.api_id = api_id
         self.name = name
         self.subscribe_auth_modes = subscribe_auth_modes
         self.publish_auth_modes = publish_auth_modes
         self.code_handlers = code_handlers
-        self.tags = tags
 
 
 class ChannelNamespace(pulumi.dynamic.Resource):
@@ -86,7 +87,10 @@ class ChannelNamespace(pulumi.dynamic.Resource):
     tags: pulumi.Output[Dict[str, str]]
 
     def __init__(
-        self, name: str, props: ChannelNamespaceInputs, opts: pulumi.ResourceOptions
+        self,
+        name: str,
+        props: ChannelNamespaceInputs,
+        opts: pulumi.ResourceOptions,
     ):
         super().__init__(
             provider=ChannelNamespaceProvider(),

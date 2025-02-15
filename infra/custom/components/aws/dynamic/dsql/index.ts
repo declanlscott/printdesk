@@ -1,5 +1,4 @@
 import { Link } from "~/.sst/platform/src/components/link";
-import { physicalName } from "~/.sst/platform/src/components/naming";
 import { ClusterProvider } from "./providers/cluster";
 
 import type {
@@ -28,16 +27,10 @@ export namespace Dsql {
       opts?: $util.CustomResourceOptions,
     ) {
       super(
-        new ClusterProvider(),
+        new ClusterProvider(name),
         name,
         {
           ...props,
-          tags: {
-            Name: physicalName(256, name),
-            "sst:app": $app.name,
-            "sst:stage": $app.stage,
-            ...props.tags,
-          },
           identifier: undefined,
           arn: undefined,
           status: undefined,

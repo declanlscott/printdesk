@@ -1,17 +1,19 @@
-import { and, eq, getTableName, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray, isNull } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
-import { oauth2ProvidersTable } from "../auth/sql";
+import { Oauth2Provider, oauth2ProvidersTable } from "../auth/sql";
 import {
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
   billingAccountsTable,
 } from "../billing-accounts/sql";
+import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
 import { ordersTable } from "../orders/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
+import { licensesTable, tenantsTable } from "../tenants/sql";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
@@ -25,18 +27,24 @@ import type { InferInsertModel } from "drizzle-orm";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "./shared";
-import type { User, UserData, UserProfilesTable } from "./sql";
+import type { User, UserData, UserProfilesTable, UsersTable } from "./sql";
 
 export namespace Users {
-  export const createProfile = async (
-    profile: InferInsertModel<UserProfilesTable>,
-  ) =>
-    useTransaction(async (tx) =>
+  export const put = async (values: Array<InferInsertModel<UsersTable>>) =>
+    useTransaction((tx) =>
       tx
-        .insert(userProfilesTable)
-        .values(profile)
-        .returning({ id: userProfilesTable.id })
-        .then(R.first()),
+        .insert(usersTable)
+        .values(values)
+        .onConflictDoUpdate({
+          target: [usersTable.type, usersTable.username, usersTable.tenantId],
+          set: buildConflictUpdateColumns(usersTable, [
+            "type",
+            "username",
+            "tenantId",
+            "deletedAt",
+          ]),
+        })
+        .returning(),
     );
 
   export const read = async (
@@ -79,6 +87,51 @@ export namespace Users {
         ),
     );
 
+  export const fromOauth = async (
+    username: User["username"],
+    providerId: Oauth2Provider["id"],
+    providerType: Oauth2Provider["type"],
+  ) =>
+    useTransaction(async (tx) => {
+      const result = await tx
+        .select({
+          user: usersTable,
+          userProfile: userProfilesTable,
+        })
+        .from(tenantsTable)
+        .innerJoin(
+          oauth2ProvidersTable,
+          and(
+            eq(oauth2ProvidersTable.type, providerType),
+            eq(oauth2ProvidersTable.tenantId, tenantsTable.id),
+          ),
+        )
+        .innerJoin(licensesTable, eq(licensesTable.tenantId, tenantsTable.id))
+        .leftJoin(usersTable, eq(usersTable.tenantId, tenantsTable.id))
+        .leftJoin(
+          userProfilesTable,
+          eq(userProfilesTable.userId, usersTable.id),
+        )
+        .where(
+          and(
+            eq(oauth2ProvidersTable.id, providerId),
+            eq(tenantsTable.status, "active"),
+            eq(licensesTable.status, "active"),
+            isNull(tenantsTable.deletedAt),
+            eq(usersTable.username, username),
+          ),
+        )
+        .then(R.first());
+      if (!result) throw new Error("tenant not found or inactive");
+      if (!result.user) throw new Error("user not found");
+      if (result.user.deletedAt) throw new Error("user is deleted");
+
+      return {
+        ...result.user,
+        profile: result.userProfile,
+      };
+    });
+
   export const fromRoles = async (
     roles: Array<UserRole> = [
       "administrator",
@@ -101,6 +154,19 @@ export namespace Users {
         .where(
           and(
             inArray(userProfilesTable.role, roles),
+            eq(usersTable.tenantId, useTenant().id),
+          ),
+        ),
+    );
+
+  export const fromPapercut = async () =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(usersTable)
+        .where(
+          and(
+            eq(usersTable.type, "papercut"),
             eq(usersTable.tenantId, useTenant().id),
           ),
         ),
@@ -180,29 +246,6 @@ export namespace Users {
     });
   }
 
-  export const withManagerAuthorization = async (
-    accountId: BillingAccount["id"],
-  ) =>
-    useTransaction(async (tx) =>
-      tx
-        .select({
-          managerId: billingAccountManagerAuthorizationsTable.managerId,
-        })
-        .from(billingAccountManagerAuthorizationsTable)
-        .where(
-          and(
-            eq(
-              billingAccountManagerAuthorizationsTable.billingAccountId,
-              accountId,
-            ),
-            eq(
-              billingAccountManagerAuthorizationsTable.tenantId,
-              useTenant().id,
-            ),
-          ),
-        ),
-    );
-
   export const withCustomerAuthorization = async (
     accountId: BillingAccount["id"],
   ) =>
@@ -226,18 +269,34 @@ export namespace Users {
         ),
     );
 
-  export const exists = async (userId: User["id"]) =>
-    useTransaction((tx) =>
+  export const withManagerAuthorization = async (
+    accountId: BillingAccount["id"],
+  ) =>
+    useTransaction(async (tx) =>
       tx
-        .select()
-        .from(usersTable)
+        .select({
+          managerId: billingAccountManagerAuthorizationsTable.managerId,
+        })
+        .from(billingAccountManagerAuthorizationsTable)
         .where(
           and(
-            eq(usersTable.id, userId),
-            eq(usersTable.tenantId, useTenant().id),
+            eq(
+              billingAccountManagerAuthorizationsTable.billingAccountId,
+              accountId,
+            ),
+            eq(
+              billingAccountManagerAuthorizationsTable.tenantId,
+              useTenant().id,
+            ),
           ),
-        )
-        .then((rows) => rows.length > 0),
+        ),
+    );
+
+  export const createProfile = async (
+    profile: InferInsertModel<UserProfilesTable>,
+  ) =>
+    useTransaction(async (tx) =>
+      tx.insert(userProfilesTable).values(profile).returning().then(R.first()),
     );
 
   export const updateProfileRole = fn(
@@ -311,4 +370,18 @@ export namespace Users {
       });
     },
   );
+
+  export const exists = async (userId: User["id"]) =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(usersTable)
+        .where(
+          and(
+            eq(usersTable.id, userId),
+            eq(usersTable.tenantId, useTenant().id),
+          ),
+        )
+        .then(R.isNot(R.isEmpty)),
+    );
 }

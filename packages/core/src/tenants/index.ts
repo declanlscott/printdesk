@@ -1,14 +1,24 @@
 import { isEqual } from "date-fns";
-import { and, eq, getTableName, isNull } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableName,
+  InferInsertModel,
+  isNull,
+  or,
+} from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
-import { oauth2ProvidersTable } from "../auth/sql";
+import { Auth } from "../auth";
+import { Api } from "../backend/api";
+import { Documents } from "../backend/documents";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { Papercut } from "../papercut";
 import { poke } from "../replicache/poke";
-import { Utils } from "../utils";
+import { Tailscale } from "../tailscale";
 import { Sqs } from "../utils/aws";
 import { Constants } from "../utils/constants";
 import { ApplicationError } from "../utils/errors";
@@ -17,10 +27,35 @@ import { useTenant } from "./context";
 import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
-import type { Registration, TenantInfraProgramInput } from "./shared";
-import type { License, Tenant } from "./sql";
+import type {
+  InitializeData,
+  RegisterData,
+  TenantInfraProgramInput,
+} from "./shared";
+import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
 export namespace Tenants {
+  export const put = async (values: InferInsertModel<TenantsTable>) =>
+    useTransaction((tx) =>
+      tx
+        .insert(tenantsTable)
+        .values({ ...values, status: "registered" })
+        .onConflictDoUpdate({
+          target: tenantsTable.id,
+          set: buildConflictUpdateColumns(tenantsTable, [
+            "slug",
+            "name",
+            "status",
+          ]),
+          setWhere: or(
+            eq(tenantsTable.status, "registered"),
+            eq(tenantsTable.status, "initializing"),
+          ),
+        })
+        .returning()
+        .then(R.first()),
+    );
+
   export const read = async () =>
     useTransaction((tx) =>
       tx.select().from(tenantsTable).where(eq(tenantsTable.id, useTenant().id)),
@@ -42,118 +77,75 @@ export namespace Tenants {
     });
   });
 
-  export const isSlugAvailable = async (slug: Tenant["slug"]) =>
-    !["api", "auth", "backend"].includes(slug) &&
-    (await useTransaction((tx) =>
+  export async function isSlugAvailable(slug: Tenant["slug"]) {
+    if (["api", "auth", "backend"].includes(slug)) return false;
+
+    const tenant = await useTransaction((tx) =>
       tx
-        .select({})
+        .select({ status: tenantsTable.status })
         .from(tenantsTable)
         .where(eq(tenantsTable.slug, slug))
-        .then(R.isEmpty),
-    ));
+        .then(R.first()),
+    );
+    if (!tenant || tenant.status === "registered") return true;
+
+    return false;
+  }
 
   export const isLicenseKeyAvailable = async (licenseKey: License["key"]) =>
     useTransaction((tx) =>
       tx
         .select({})
         .from(licensesTable)
+        .leftJoin(tenantsTable, eq(tenantsTable.id, licensesTable.tenantId))
         .where(
           and(
             eq(licensesTable.key, licenseKey),
             eq(licensesTable.status, "active"),
-            isNull(licensesTable.tenantId),
+            or(
+              isNull(licensesTable.tenantId),
+              eq(tenantsTable.status, "registered"),
+            ),
           ),
         )
         .then(R.isNot(R.isEmpty)),
     );
 
-  export async function register(
-    registration: Omit<
-      Registration,
-      | "tailscaleOauthClientId"
-      | "tailscaleOauthClientSecret"
-      | "tailnetPapercutServerUri"
-      | "papercutServerAuthToken"
-    >,
-  ) {
-    const infraProgramInput = {
-      papercutSyncCronExpression:
-        Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION,
-      timezone: registration.timezone,
-    } satisfies TenantInfraProgramInput;
+  export const assignLicense = async (
+    tenantId: Tenant["id"],
+    licenseKey: License["key"],
+  ) =>
+    useTransaction((tx) =>
+      tx
+        .update(licensesTable)
+        .set({ tenantId })
+        .where(
+          and(
+            eq(licensesTable.key, licenseKey),
+            isNull(licensesTable.tenantId),
+          ),
+        )
+        .returning()
+        .then(R.first()),
+    );
 
-    const apiKey = await Utils.createSecret();
-
-    const tenantId = await useTransaction(async (tx) => {
-      const tenant = await tx
-        .insert(tenantsTable)
-        .values({
-          id:
-            registration.tenantSlug === "demo"
-              ? Constants.DEMO_TENANT_ID
-              : undefined,
-          slug: registration.tenantSlug,
-          name: registration.tenantName,
-        })
-        .onConflictDoUpdate({
-          target: tenantsTable.id,
-          set: buildConflictUpdateColumns(tenantsTable, ["slug", "name"]),
-          setWhere: eq(tenantsTable.status, "initializing"),
-        })
-        .returning({
-          id: tenantsTable.id,
-          createdAt: tenantsTable.createdAt,
-          updatedAt: tenantsTable.updatedAt,
-        })
-        .then(R.first());
-      if (!tenant) throw new Error("Failed to create tenant");
-
-      // Assign tenant to license if the tenant was just created
-      if (isEqual(tenant.createdAt, tenant.updatedAt)) {
-        const license = await tx
-          .update(licensesTable)
-          .set({ tenantId: tenant.id })
-          .where(
-            and(
-              eq(licensesTable.key, registration.licenseKey),
-              isNull(licensesTable.tenantId),
-            ),
-          )
-          .returning()
-          .then(R.first());
-        if (!license) throw new Error("Failed to assign tenant to license");
-      }
-
-      await tx
-        .insert(oauth2ProvidersTable)
-        .values({
-          id: registration.userOauthProviderId,
-          type: registration.userOauthProviderType,
-          tenantId: tenant.id,
-        })
-        .onConflictDoUpdate({
-          target: [oauth2ProvidersTable.id, oauth2ProvidersTable.tenantId],
-          set: buildConflictUpdateColumns(oauth2ProvidersTable, ["type"]),
-        });
-
-      await tx
+  export const putMetadata = async (
+    values: InferInsertModel<TenantMetadataTable>,
+  ) =>
+    useTransaction((tx) =>
+      tx
         .insert(tenantMetadataTable)
-        .values({ tenantId: tenant.id, infraProgramInput, apiKey: apiKey.hash })
+        .values(values)
         .onConflictDoUpdate({
           target: tenantMetadataTable.id,
           set: buildConflictUpdateColumns(tenantMetadataTable, [
             "infraProgramInput",
             "apiKey",
           ]),
-        });
-
-      return tenant.id;
-    });
-
-    const dispatchId = await dispatchInfra(tenantId, infraProgramInput);
-
-    return { tenantId, dispatchId, apiKey: apiKey.value };
-  }
+        })
+        .returning()
+        .then(R.first()),
+    );
 
   export async function dispatchInfra(
     tenantId: Tenant["id"],
@@ -167,4 +159,84 @@ export namespace Tenants {
 
     return output.MessageId;
   }
+
+  export async function register(data: RegisterData) {
+    const infraProgramInput = {
+      papercutSyncCronExpression:
+        Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION,
+      timezone: data.timezone,
+    } satisfies TenantInfraProgramInput;
+
+    const apiKey = await Auth.createToken();
+
+    const tenantId = await useTransaction(async (tx) => {
+      const tenant = await put({
+        slug: data.tenantSlug,
+        name: data.tenantName,
+      });
+      if (!tenant) throw new Error("Failed to create tenant");
+
+      // Assign tenant to license if the tenant was just created
+      if (isEqual(tenant.createdAt, tenant.updatedAt)) {
+        const license = await assignLicense(tenant.id, data.licenseKey);
+        if (!license) throw new Error("Failed to assign tenant to license");
+      }
+
+      const oauthProvider = await Auth.putOauth2Provider({
+        id: data.userOauthProviderId,
+        type: data.userOauthProviderType,
+        tenantId: tenant.id,
+      });
+      if (!oauthProvider) throw new Error("Failed to create oauth provider");
+
+      const metadata = await putMetadata({
+        tenantId: tenant.id,
+        infraProgramInput,
+        apiKey: apiKey.hash,
+      });
+      if (!metadata) throw new Error("Failed to create tenant metadata");
+
+      return tenant.id;
+    });
+
+    const dispatchId = await dispatchInfra(tenantId, infraProgramInput);
+
+    return { tenantId, dispatchId, apiKey: apiKey.value };
+  }
+
+  export async function initialize(data: InitializeData) {
+    await Promise.all([
+      useTransaction((tx) =>
+        tx
+          .update(tenantsTable)
+          .set({ status: "initializing" })
+          .where(eq(tenantsTable.id, useTenant().id)),
+      ),
+      Tailscale.setOauthClient(
+        data.tailscaleOauthClientId,
+        data.tailscaleOauthClientSecret,
+      ),
+      Papercut.setTailnetServerUri(data.tailnetPapercutServerUri),
+      Papercut.setServerAuthToken(data.papercutServerAuthToken),
+      Documents.setMimeTypes(Constants.DEFAULT_DOCUMENTS_MIME_TYPES),
+      Documents.setSizeLimit(Constants.DEFAULT_DOCUMENTS_SIZE_LIMIT),
+    ]);
+
+    const { eventId: dispatchId } = await Api.papercutSync();
+
+    return { dispatchId };
+  }
+
+  export const activate = async () =>
+    useTransaction(async (tx) => {
+      await tx
+        .update(tenantsTable)
+        .set({ status: "active" })
+        .where(eq(tenantsTable.id, useTenant().id));
+
+      await tx
+        .update(tenantMetadataTable)
+        .set({ apiKey: null })
+        .where(eq(tenantMetadataTable.id, useTenant().id));
+    });
 }

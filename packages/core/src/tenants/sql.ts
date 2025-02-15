@@ -26,7 +26,7 @@ export const tenantsTable = pgTable(
     ...idPrimaryKey,
     slug: varchar("slug", { length: Constants.VARCHAR_LENGTH }).notNull(),
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    status: tenantStatus("status").notNull().default("initializing"),
+    status: tenantStatus("status").notNull().default("registered"),
     ...timestamps,
   },
   (table) => [uniqueIndex().on(table.slug)],

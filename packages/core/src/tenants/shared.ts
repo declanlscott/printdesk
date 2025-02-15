@@ -41,7 +41,12 @@ export const tenantSlugSchema = v.pipe(
   ),
 );
 
-export const tenantStatuses = ["initializing", "active", "suspended"] as const;
+export const tenantStatuses = [
+  "registered",
+  "initializing",
+  "active",
+  "suspended",
+] as const;
 export type TenantStatus = (typeof tenantStatuses)[number];
 
 export const tenantSchema = v.object({
@@ -98,14 +103,33 @@ export type RegistrationWizardStep4 = v.InferOutput<
   typeof registrationWizardStep4Schema
 >;
 
-export const registrationSchema = v.object({
+export const registrationWizardSchema = v.object({
   ...registrationWizardStep1Schema.entries,
   ...registrationWizardStep2Schema.entries,
   ...registrationWizardStep3Schema.entries,
   ...registrationWizardStep4Schema.entries,
   timezone: timezoneSchema,
 });
-export type Registration = v.InferOutput<typeof registrationSchema>;
+export type RegistrationWizard = v.InferOutput<typeof registrationWizardSchema>;
+
+export const registrationParameters = [
+  "tailscaleOauthClientId",
+  "tailscaleOauthClientSecret",
+  "tailnetPapercutServerUri",
+  "papercutServerAuthToken",
+] as const;
+
+export const registerDataSchema = v.omit(
+  registrationWizardSchema,
+  registrationParameters,
+);
+export type RegisterData = v.InferOutput<typeof registerDataSchema>;
+
+export const initializeDataSchema = v.pick(
+  registrationWizardSchema,
+  registrationParameters,
+);
+export type InitializeData = v.InferOutput<typeof initializeDataSchema>;
 
 export const tenantMetadataTableName = "tenant_metadata";
 

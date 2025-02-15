@@ -1,15 +1,9 @@
-import { and, eq, isNotNull } from "drizzle-orm";
 import * as R from "remeda";
 
-import {
-  billingAccountCustomerAuthorizationsTable,
-  billingAccountsTable,
-} from "../billing-accounts/sql";
-import { buildConflictUpdateColumns } from "../drizzle/columns";
+import { BillingAccounts } from "../billing-accounts";
 import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
-import { tenantsTable } from "../tenants/sql";
-import { usersTable } from "../users/sql";
+import { Users } from "../users";
 import { Constants } from "../utils/constants";
 import { HttpError } from "../utils/errors";
 import { PapercutRpc } from "./rpc";
@@ -52,25 +46,7 @@ export namespace PapercutSync {
       );
 
     return useTransaction(async (tx) => {
-      const prev = await tx
-        .select({
-          papercutAccountId: billingAccountsTable.papercutAccountId,
-          name: billingAccountsTable.name,
-        })
-        .from(billingAccountsTable)
-        .where(
-          and(
-            eq(billingAccountsTable.type, "papercut"),
-            isNotNull(billingAccountsTable.papercutAccountId),
-            eq(billingAccountsTable.tenantId, tenant.id),
-          ),
-        )
-        .then(
-          R.map((account) => ({
-            papercutAccountId: account.papercutAccountId!,
-            name: account.name,
-          })),
-        );
+      const prev = await BillingAccounts.fromPapercut();
 
       type Values = Array<InferInsertModel<BillingAccountsTable>>;
       const puts: Values = [];
@@ -96,24 +72,10 @@ export namespace PapercutSync {
             deletedAt,
           });
 
-      return tx
-        .insert(billingAccountsTable)
-        .values([...puts, ...dels])
-        .onConflictDoUpdate({
-          target: [
-            billingAccountsTable.name,
-            billingAccountsTable.papercutAccountId,
-            billingAccountsTable.tenantId,
-          ],
-          set: buildConflictUpdateColumns(billingAccountsTable, [
-            "papercutAccountId",
-            "name",
-            "type",
-            "tenantId",
-            "deletedAt",
-          ]),
-        })
-        .returning();
+      const values = [...puts, ...dels];
+      if (R.isEmpty(values)) return [];
+
+      return BillingAccounts.put(values);
     });
   }
 
@@ -155,16 +117,9 @@ export namespace PapercutSync {
     await useTransaction(async (tx) => {
       const deletedAt = new Date();
 
-      const prevUsernames = await tx
-        .select({ username: usersTable.username })
-        .from(usersTable)
-        .where(
-          and(
-            eq(usersTable.type, "papercut"),
-            eq(usersTable.tenantId, tenant.id),
-          ),
-        )
-        .then(R.map(R.prop("username")));
+      const prevUsernames = await Users.fromPapercut().then(
+        R.map(R.prop("username")),
+      );
 
       type UserValues = Array<InferInsertModel<UsersTable>>;
       const userPuts: UserValues = [];
@@ -187,23 +142,8 @@ export namespace PapercutSync {
             deletedAt,
           });
 
-      const users = await tx
-        .insert(usersTable)
-        .values([...userPuts, ...userDels])
-        .onConflictDoUpdate({
-          target: [usersTable.type, usersTable.username, usersTable.tenantId],
-          set: buildConflictUpdateColumns(usersTable, [
-            "type",
-            "username",
-            "tenantId",
-            "deletedAt",
-          ]),
-        })
-        .returning({
-          id: usersTable.id,
-          username: usersTable.username,
-          deletedAt: usersTable.deletedAt,
-        });
+      const userValues = [...userPuts, ...userDels];
+      const users = R.isEmpty(userValues) ? [] : await Users.put(userValues);
 
       type BillingAccountCustomerAuthorizationValues = Array<
         InferInsertModel<BillingAccountCustomerAuthorizationsTable>
@@ -233,25 +173,14 @@ export namespace PapercutSync {
           });
       }
 
-      await tx
-        .insert(billingAccountCustomerAuthorizationsTable)
-        .values([...customerAuthPuts, ...customerAuthDels])
-        .onConflictDoUpdate({
-          target: [
-            billingAccountCustomerAuthorizationsTable.customerId,
-            billingAccountCustomerAuthorizationsTable.billingAccountId,
-            billingAccountCustomerAuthorizationsTable.tenantId,
-          ],
-          set: buildConflictUpdateColumns(
-            billingAccountCustomerAuthorizationsTable,
-            ["customerId", "billingAccountId", "tenantId", "deletedAt"],
-          ),
-        });
-
-      await tx
-        .update(tenantsTable)
-        .set({ status: "active" })
-        .where(eq(tenantsTable.id, tenant.id));
+      const billingAccountCustomerAuthorizationValues = [
+        ...customerAuthPuts,
+        ...customerAuthDels,
+      ];
+      if (!R.isEmpty(billingAccountCustomerAuthorizationValues))
+        await BillingAccounts.putCustomerAuthorizations(
+          billingAccountCustomerAuthorizationValues,
+        );
     });
   }
 }

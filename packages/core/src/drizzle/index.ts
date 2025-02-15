@@ -15,7 +15,7 @@ function getPoolConfig(): PoolConfig {
       Aws: Resource.Aws,
     };
   } catch (e) {
-    console.warn("SST link(s) are not active in this environment: ", e);
+    console.warn("SST link(s) are not active in this environment:", e);
 
     return {};
   }

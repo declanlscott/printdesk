@@ -1,4 +1,3 @@
-import { physicalName } from "../.sst/platform/src/components/naming";
 import { api } from "./api";
 import * as custom from "./custom";
 import { dsqlCluster } from "./db";
@@ -177,10 +176,10 @@ new aws.iam.RolePolicy("InfraFunctionRoleInlinePolicy", {
   }).json,
 });
 
-const infraFunctionName = physicalName(64, "InfraFunction");
+const infraFunctionName = new custom.PhysicalName("InfraFunction", { max: 64 });
 
 export const infraLogGroup = new aws.cloudwatch.LogGroup("InfraLogGroup", {
-  name: `/aws/lambda/${infraFunctionName}`,
+  name: $interpolate`/aws/lambda/${infraFunctionName.result}`,
   retentionInDays: 14,
 });
 
@@ -190,7 +189,7 @@ const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", {
 });
 
 export const infraFunction = new aws.lambda.Function("InfraFunction", {
-  name: infraFunctionName,
+  name: infraFunctionName.result,
   packageType: "Image",
   imageUri: infraFunctionImage.imageUri,
   role: infraFunctionRole.arn,

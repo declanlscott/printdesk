@@ -2,7 +2,7 @@
   "name": "@printworks/eslint-config",
   "devDependencies": {
     "@tanstack/eslint-plugin-query": "^5.66.1",
-    "@tanstack/eslint-plugin-router": "^1.102.2",
+    "@tanstack/eslint-plugin-router": "^1.105.0",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
     "eslint": "^8.57.1",

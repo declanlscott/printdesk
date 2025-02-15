@@ -49,5 +49,5 @@ export const apiReverseProxy = new sst.cloudflare.Worker("ApiReverseProxy", {
 });
 
 export const outputs = {
-  api: apiFqdn,
+  apiReverseProxy: apiReverseProxy.url,
 };

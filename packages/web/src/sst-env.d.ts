@@ -4,7 +4,7 @@
 /// <reference types="vite/client" />
 interface ImportMetaEnv {
   readonly VITE_RESOURCE_AppData: string
-  readonly VITE_RESOURCE_Api: string
+  readonly VITE_RESOURCE_ApiReverseProxy: string
   readonly VITE_RESOURCE_Auth: string
   readonly VITE_RESOURCE_ReplicacheLicenseKey: string
   readonly VITE_RESOURCE_Www: string

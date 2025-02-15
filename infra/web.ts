@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { apiReverseProxy } from "./api";
 import { auth, siteEdgeProtection } from "./auth";
 import { fqdn } from "./dns";
 import { appData, replicacheLicenseKey } from "./misc";
@@ -19,7 +19,7 @@ export const web = new sst.aws.StaticSite("Web", {
   environment: injectLinkables(
     {
       AppData: appData,
-      Api: api,
+      ApiReverseProxy: apiReverseProxy,
       Auth: auth,
       ReplicacheLicenseKey: replicacheLicenseKey,
       Www: www,

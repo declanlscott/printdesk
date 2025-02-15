@@ -2,9 +2,6 @@
 
 import { readdirSync } from "fs";
 
-const AWS_ORG_NAME = process.env.AWS_ORG_NAME;
-if (!AWS_ORG_NAME) throw new Error("AWS_ORG_NAME is not set");
-
 const AWS_REGION = process.env.AWS_REGION;
 if (!AWS_REGION) throw new Error("AWS_REGION is not set");
 
@@ -16,10 +13,7 @@ export default $config({
       home: "aws",
       providers: {
         aws: {
-          profile:
-            input?.stage === "production"
-              ? `${AWS_ORG_NAME}-production`
-              : `${AWS_ORG_NAME}-dev`,
+          profile: input?.stage === "production" ? "prod" : "dev",
           region: AWS_REGION as aws.Region,
         },
         awsx: { version: "2.19.0" },

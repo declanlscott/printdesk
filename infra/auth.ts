@@ -18,11 +18,6 @@ export const entraIdApplication = new azuread.ApplicationRegistration(
   },
 );
 
-export const entraIdApplicationIServicePrincipal = new azuread.ServicePrincipal(
-  "EntraIdApplicationServicePrincipal",
-  { clientId: entraIdApplication.clientId },
-);
-
 const wellKnown = azuread.getApplicationPublishedAppIds();
 const graphAppId = await wellKnown.then(({ result }) => result?.MicrosoftGraph);
 

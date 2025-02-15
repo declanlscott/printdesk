@@ -158,23 +158,15 @@ export default new Hono()
     },
   )
   .get(
-    "/oauth-provider-types",
+    "/oauth-providers",
     vValidator("query", v.object({ slug: tenantSlugSchema })),
     async (c) => {
-      const oauthProviderTypes = await useTransaction((tx) =>
-        tx
-          .select({ oauthProviderType: oauth2ProvidersTable.type })
-          .from(tenantsTable)
-          .innerJoin(
-            oauth2ProvidersTable,
-            eq(tenantsTable.id, oauth2ProvidersTable.tenantId),
-          )
-          .where(eq(tenantsTable.slug, c.req.valid("query").slug))
-          .then(R.map(R.prop("oauthProviderType"))),
-      );
-      if (oauthProviderTypes.length === 0)
+      const providers = await Auth.readOauth2ProvidersBySlug(
+        c.req.valid("query").slug,
+      ).then(R.map(R.prop("type")));
+      if (R.isEmpty(providers))
         throw new HttpError.NotFound("Tenant not found");
 
-      return c.json({ oauthProviderTypes }, 200);
+      return c.json({ providers }, 200);
     },
   );

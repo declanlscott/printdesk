@@ -31,9 +31,9 @@ export const Route = createFileRoute("/login")({
           .at(0);
     if (!slug) throw new ApplicationError.Error("Missing slug");
 
-    const res = await context.api.client.public.tenants[
-      "oauth-provider-types"
-    ].$get({ query: { slug } });
+    const res = await context.api.client.public.tenants["oauth-providers"].$get(
+      { query: { slug } },
+    );
     if (!res.ok) {
       switch (res.status as number) {
         case 404:
@@ -47,12 +47,12 @@ export const Route = createFileRoute("/login")({
       }
     }
 
-    const { oauthProviderTypes } = await res.json();
+    const { providers } = await res.json();
 
     // Start the OAuth flow
     const url = await context.authStoreApi
       .getState()
-      .actions.authorize(oauthProviderTypes[0], deps.search.from);
+      .actions.authorize(providers[0], deps.search.from);
 
     throw redirect({ href: url, reloadDocument: true });
   },

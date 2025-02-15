@@ -1,5 +1,5 @@
 import { sub } from "date-fns";
-import { and, eq, getTableName, lt, sql } from "drizzle-orm";
+import { and, eq, getTableName, lt } from "drizzle-orm";
 import * as R from "remeda";
 import { deserialize, serialize } from "superjson";
 import * as v from "valibot";
@@ -254,7 +254,7 @@ export namespace Replicache {
           syncedTables.map(async (table) => {
             const name = getTableName(table);
 
-            if (diff[name].puts.length === 0)
+            if (R.isEmpty(diff[name].puts))
               return [
                 name,
                 { puts: [], dels: diff[name].dels },

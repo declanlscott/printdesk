@@ -1,4 +1,5 @@
 import { and, eq, getTableName, isNull, or, sql } from "drizzle-orm";
+import * as R from "remeda";
 
 import { announcementsTable } from "../announcements/sql";
 import {
@@ -820,7 +821,7 @@ export namespace AccessControl {
                   eq(commentsTable.authorId, useUser().id),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         delete: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
@@ -834,7 +835,7 @@ export namespace AccessControl {
                   eq(commentsTable.authorId, useUser().id),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
       },
       ["documents-mime-types"]: {
@@ -936,7 +937,7 @@ export namespace AccessControl {
                   isNull(billingAccountManagerAuthorizationsTable.deletedAt),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         delete: false,
       },
@@ -995,7 +996,7 @@ export namespace AccessControl {
                   ),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         update: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
@@ -1009,7 +1010,7 @@ export namespace AccessControl {
                   eq(commentsTable.authorId, useUser().id),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         delete: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
@@ -1023,7 +1024,7 @@ export namespace AccessControl {
                   eq(commentsTable.authorId, useUser().id),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
       },
       ["documents-mime-types"]: {
@@ -1071,7 +1072,7 @@ export namespace AccessControl {
                   eq(billingAccountsTable.tenantId, useTenant().id),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         update: async (orderId: Order["id"]) =>
           useTransaction((tx) =>
@@ -1125,7 +1126,7 @@ export namespace AccessControl {
                   ),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         delete: async (orderId: Order["id"]) =>
           useTransaction((tx) =>
@@ -1179,7 +1180,7 @@ export namespace AccessControl {
                   ),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
       },
       "papercut-sync": {
@@ -1253,7 +1254,7 @@ export namespace AccessControl {
                   isNull(ordersTable.deletedAt),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         update: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
@@ -1268,7 +1269,7 @@ export namespace AccessControl {
                   isNull(commentsTable.deletedAt),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         delete: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
@@ -1283,7 +1284,7 @@ export namespace AccessControl {
                   isNull(commentsTable.deletedAt),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
       },
       ["documents-mime-types"]: {
@@ -1331,7 +1332,7 @@ export namespace AccessControl {
                   eq(billingAccountsTable.tenantId, useTenant().id),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         update: async (orderId: Order["id"]) =>
           useTransaction((tx) =>
@@ -1354,7 +1355,7 @@ export namespace AccessControl {
                   isNull(ordersTable.deletedAt),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
         delete: async (orderId: Order["id"]) =>
           useTransaction((tx) =>
@@ -1377,7 +1378,7 @@ export namespace AccessControl {
                   isNull(ordersTable.deletedAt),
                 ),
               )
-              .then((rows) => rows.length > 0),
+              .then(R.isNot(R.isEmpty)),
           ),
       },
       "papercut-sync": {

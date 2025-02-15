@@ -3,6 +3,7 @@ import { registrationWizardStep2Schema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import * as R from "remeda";
 
 import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { Button } from "~/ui/primitives/button";
@@ -136,11 +137,11 @@ export function RegistrationWizardStep2() {
                   onBlur={field.handleBlur}
                 />
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>

@@ -3,6 +3,7 @@ import { OverlayTriggerStateContext } from "react-aria-components";
 import { useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
+import * as R from "remeda";
 
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
 import { useCommandBar, useCommandBarActions } from "~/lib/hooks/command-bar";
@@ -54,7 +55,7 @@ export function CommandBar() {
       <CommandDialog
         commandProps={{
           onKeyDown(e) {
-            if (activePage.type === "home" || input.length) return;
+            if (activePage.type === "home" || !R.isEmpty(input)) return;
 
             if (e.key === "Backspace") {
               e.preventDefault();
@@ -95,8 +96,8 @@ function HomeCommand(_props: HomeCommandProps) {
 
   const navigate = useNavigate();
 
-  const rooms = useSubscribe(query.rooms());
-  const users = useSubscribe(query.users());
+  const rooms = useSubscribe(query.rooms(), { defaultData: [] });
+  const users = useSubscribe(query.users(), { defaultData: [] });
 
   const { logout } = AuthStoreApi.useActions();
 
@@ -142,7 +143,7 @@ function HomeCommand(_props: HomeCommandProps) {
           </CommandItem>
         </CommandGroup>
 
-        {rooms?.length ? (
+        {R.isEmpty(rooms) ? null : (
           <>
             <CommandSeparator />
 
@@ -160,9 +161,9 @@ function HomeCommand(_props: HomeCommandProps) {
               ))}
             </CommandGroup>
           </>
-        ) : null}
+        )}
 
-        {users?.length ? (
+        {R.isEmpty(users) ? null : (
           <>
             <CommandSeparator />
 
@@ -201,7 +202,7 @@ function HomeCommand(_props: HomeCommandProps) {
               ))}
             </CommandGroup>
           </>
-        ) : null}
+        )}
 
         <CommandSeparator />
 
@@ -302,7 +303,7 @@ function RoomCommand(props: RoomCommandProps) {
         autoFocus
         value={input}
         onValueChange={setInput}
-        back={{ buttonProps: { onPress: () => popPage() } }}
+        back={{ buttonProps: { onPress: popPage } }}
       />
 
       <CommandList>
@@ -372,7 +373,7 @@ function RoomSettingsSelectRoomCommand(
         autoFocus
         value={input}
         onValueChange={setInput}
-        back={{ buttonProps: { onPress: () => popPage() } }}
+        back={{ buttonProps: { onPress: popPage } }}
       />
 
       <CommandList>
@@ -414,7 +415,7 @@ function ProductSettingsSelectRoomCommand(
         autoFocus
         value={input}
         onValueChange={setInput}
-        back={{ buttonProps: { onPress: () => popPage() } }}
+        back={{ buttonProps: { onPress: popPage } }}
       />
 
       <CommandList>
@@ -454,6 +455,7 @@ function ProductSettingsSelectProductCommand(
   const { setInput, popPage } = useCommandBarActions();
 
   const products = useSubscribe(query.products(), {
+    defaultData: [],
     onData: (products) =>
       products.filter((product) => product.roomId === props.roomId),
   });
@@ -470,15 +472,15 @@ function ProductSettingsSelectProductCommand(
         autoFocus
         value={input}
         onValueChange={setInput}
-        back={{ buttonProps: { onPress: () => popPage() } }}
+        back={{ buttonProps: { onPress: popPage } }}
       />
 
       <CommandList>
         <CommandEmpty>No products found.</CommandEmpty>
 
-        {products?.length ? (
+        {R.isEmpty(products) ? null : (
           <CommandGroup heading="Products">
-            {products?.map((product) => (
+            {products.map((product) => (
               <CommandItem
                 key={product.id}
                 onSelect={() =>
@@ -492,7 +494,7 @@ function ProductSettingsSelectProductCommand(
               </CommandItem>
             ))}
           </CommandGroup>
-        ) : null}
+        )}
       </CommandList>
     </>
   );

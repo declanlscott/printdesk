@@ -3,6 +3,7 @@ import { Button as AriaButton } from "react-aria-components";
 import { registrationWizardStep4Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, EyeOff } from "lucide-react";
+import * as R from "remeda";
 import { toast } from "sonner";
 
 import { useCopyToClipboard } from "~/lib/hooks/copy-to-clipboard";
@@ -105,11 +106,11 @@ export function RegistrationWizardStep4() {
                   placeholder="http://100.x.x.x:9191"
                 />
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>
@@ -155,11 +156,11 @@ export function RegistrationWizardStep4() {
                   </Button>
                 </div>
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>

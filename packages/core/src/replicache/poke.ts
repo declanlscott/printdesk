@@ -10,7 +10,7 @@ export async function poke<TChannel extends string>(
   channels: Array<StartsWith<"/", TChannel>>,
 ) {
   const uniqueChannels = R.unique(channels);
-  if (uniqueChannels.length === 0) return;
+  if (R.isEmpty(uniqueChannels)) return;
 
   const { http: httpDomainName } = await Api.getRealtimeDns();
 

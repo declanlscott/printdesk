@@ -1,6 +1,7 @@
 import { registrationWizardStep1Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { ArrowRight } from "lucide-react";
+import * as R from "remeda";
 import { toast } from "sonner";
 import * as v from "valibot";
 
@@ -46,7 +47,7 @@ export function RegistrationWizardStep1() {
         }
 
       const { isAvailable } = await res.json();
-      if (!isAvailable) return toast.error("License key is not available");
+      if (!isAvailable) return toast.error("License key is not available.");
 
       actorRef.send({ type: "wizard.step1.next", ...value });
     },
@@ -89,11 +90,11 @@ export function RegistrationWizardStep1() {
                   placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
                 />
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>
@@ -120,11 +121,11 @@ export function RegistrationWizardStep1() {
                   placeholder="Acme Inc."
                 />
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { registrationWizardStep3Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
+import * as R from "remeda";
 
 import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { linkStyles } from "~/styles/components/primitives/link";
@@ -101,11 +102,11 @@ export function RegistrationWizardStep3() {
                   onBlur={field.handleBlur}
                 />
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>
@@ -146,11 +147,11 @@ export function RegistrationWizardStep3() {
                   </Button>
                 </div>
 
-                {field.state.meta.errors.length > 0 ? (
+                {R.isEmpty(field.state.meta.errors) ? null : (
                   <span className="text-sm text-red-500">
                     {field.state.meta.errors.join(", ")}
                   </span>
-                ) : null}
+                )}
               </div>
             )}
           </form.Field>

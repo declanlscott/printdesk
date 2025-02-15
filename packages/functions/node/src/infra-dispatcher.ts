@@ -38,13 +38,13 @@ export const handler: APIGatewayProxyHandlerV2 = async () =>
         })),
       });
 
-      if (Failed && Failed.length > 0) {
+      if (Failed && !R.isEmpty(Failed)) {
         console.error("Failed to send messages to SQS", Failed);
         failedEntries.push(...Failed);
       }
     }
 
-    if (failedEntries.length > 0)
+    if (!R.isEmpty(failedEntries))
       return {
         statusCode: 500,
         body: JSON.stringify({

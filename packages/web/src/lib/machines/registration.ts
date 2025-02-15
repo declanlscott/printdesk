@@ -8,7 +8,9 @@ import { assign, fromPromise, setup } from "xstate";
 import { ViteResource } from "~/types";
 
 import type {
-  Registration,
+  InitializeData,
+  RegisterData,
+  RegistrationWizard,
   RegistrationWizardStep1,
   RegistrationWizardStep2,
   RegistrationWizardStep3,
@@ -16,7 +18,7 @@ import type {
 } from "@printworks/core/tenants/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
 
-type RegistrationMachineWizardContext = Registration;
+type RegistrationMachineWizardContext = RegistrationWizard;
 type RegistrationMachineStatusContext = {
   tenantId: Tenant["id"] | null;
   dispatchId: string | null;
@@ -27,7 +29,7 @@ type RegistrationMachineStatusContext = {
 type RegistrationMachineContext = RegistrationMachineWizardContext &
   RegistrationMachineStatusContext;
 
-const getInitialWizardContext = (tenantSlug: Registration["tenantSlug"]) =>
+const getInitialWizardContext = (tenantSlug: Tenant["slug"]) =>
   ({
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 
@@ -57,10 +59,7 @@ const initialStatusContext = {
   failedStatus: null,
 } as const satisfies RegistrationMachineStatusContext;
 
-type RegisterInput = Omit<
-  RegistrationMachineWizardContext,
-  keyof (RegistrationWizardStep3 & RegistrationWizardStep4)
->;
+type RegisterInput = RegisterData;
 type RegisterOutput = {
   tenantId: Tenant["id"];
   dispatchId: string;
@@ -74,16 +73,19 @@ type InitializeInput = Pick<
   RegistrationMachineStatusContext,
   "apiKey" | "tenantId"
 > &
-  Pick<
-    RegistrationMachineWizardContext,
-    keyof (RegistrationWizardStep3 & RegistrationWizardStep4)
-  >;
+  InitializeData;
 type InitializeOutput = { dispatchId: string };
+
+type ActivateInput = Pick<
+  RegistrationMachineStatusContext,
+  "apiKey" | "tenantId"
+>;
+type ActivateOutput = void;
 
 export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
   setup({
     types: {
-      input: {} as Pick<Registration, "tenantSlug">,
+      input: {} as Pick<RegistrationWizard, "tenantSlug">,
       context: {} as RegistrationMachineContext,
       events: {} as
         | { type: "wizard.back" }
@@ -96,7 +98,7 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
         | ({ type: "wizard.step4.next" } & RegistrationWizardStep4)
         | { type: "wizard.register" }
         | { type: "status.healthcheck" }
-        | { type: "status.complete" }
+        | { type: "status.activate" }
         | { type: "status.back" },
     },
     actors: {
@@ -142,6 +144,20 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
           if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
 
           return res.json();
+        },
+      ),
+      activate: fromPromise<ActivateOutput, ActivateInput>(
+        async ({ input: { apiKey, tenantId } }) => {
+          if (!apiKey || !tenantId)
+            throw new ApplicationError.Error("Missing API key or tenant ID");
+
+          const res = await api.public.tenants.activate.$put({
+            header: {
+              authorization: `Bearer ${apiKey}`,
+              "x-tenant-id": tenantId,
+            },
+          });
+          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
         },
       ),
     },
@@ -287,7 +303,21 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
             },
           },
           waitForSync: {
-            on: { "status.complete": "completed" },
+            on: { "status.activate": "activate" },
+          },
+          activate: {
+            invoke: {
+              src: "activate",
+              input: ({ context }) => ({
+                apiKey: context.apiKey,
+                tenantId: context.tenantId,
+              }),
+              onDone: "completed",
+              onError: {
+                target: "failed",
+                actions: assign({ failedStatus: "activate" }),
+              },
+            },
           },
           failed: {
             on: {

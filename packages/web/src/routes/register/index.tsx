@@ -121,14 +121,26 @@ function RegistrationStatusStep() {
   const state = useRegistrationStatusState();
 
   switch (state) {
+    // Registering
     case "register":
+
+    // Provisioning
     case "waitForInfra":
+
+    // Deploying
     case "waitForGoodHealth":
     case "healthcheck":
     case "determineHealth":
+
+    // Initializing
     case "initialize":
     case "waitForSync":
+
+    // Activating
+    case "activate":
+
     case "failed":
+
     case "completed":
       return "TODO";
     default:

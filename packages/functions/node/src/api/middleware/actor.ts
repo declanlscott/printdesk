@@ -15,7 +15,7 @@ export const actor = createMiddleware(
             token,
           );
           if (verified.err) {
-            console.error("Token verification failed: ", verified.err);
+            console.error("Token verification failed:", verified.err);
             return false;
           }
 

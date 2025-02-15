@@ -10,7 +10,7 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
-import { authzValidator } from "~/api/middleware/validators";
+import { authzHeaderValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .get(
@@ -31,7 +31,7 @@ export default new Hono()
   )
   .get(
     "/auth",
-    authzValidator,
+    authzHeaderValidator,
     vValidator(
       "query",
       v.object({

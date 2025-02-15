@@ -8,12 +8,12 @@ import { Resource } from "sst";
 
 import { authz } from "~/api/middleware/auth";
 import { ssmClient } from "~/api/middleware/aws";
-import { authzValidator } from "~/api/middleware/validators";
+import { authzHeaderValidator } from "~/api/middleware/validators";
 
 export default new Hono().put(
   "/oauth-client",
   authz("services", "update"),
-  authzValidator,
+  authzHeaderValidator,
   vValidator("json", tailscaleOauthClientSchema),
   ssmClient(() => ({
     RoleArn: Credentials.buildRoleArn(

@@ -9,6 +9,23 @@ import type { MigrationConfig } from "drizzle-orm/migrator";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { PgSession } from "drizzle-orm/pg-core";
 
+const drizzleSchema = sql.identifier("drizzle");
+
+const drizzleMigrationsTable = {
+  name: sql.identifier("__drizzle_migrations"),
+  columns: {
+    id: sql.identifier("id"),
+    hash: sql.identifier("hash"),
+    createdAt: sql.identifier("created_at"),
+  },
+} as const;
+
+type DrizzleMigration = {
+  id: number;
+  hash: string;
+  created_at: string;
+};
+
 async function migrate<TSchema extends Record<string, unknown>>(
   db: NodePgDatabase<TSchema>,
   config: MigrationConfig,
@@ -18,55 +35,73 @@ async function migrate<TSchema extends Record<string, unknown>>(
   // @ts-expect-error - session is not typed
   const session: PgSession = db.session;
 
-  const schema = sql.identifier("drizzle");
-  const table = sql.identifier("__drizzle_migrations");
-  const idColumn = sql.identifier("id");
-  const hashColumn = sql.identifier("hash");
-  const createdAtColumn = sql.identifier("created_at");
+  await session.execute(sql`
+    CREATE SCHEMA IF NOT EXISTS ${drizzleSchema}
+  `);
 
-  const createSchema = sql`
-    CREATE SCHEMA IF NOT EXISTS ${schema}
-  `;
-
-  const createTable = sql`
-    CREATE TABLE IF NOT EXISTS ${schema}.${table} (
-      ${idColumn} SMALLINT PRIMARY KEY,
-      ${hashColumn} TEXT NOT NULL,
-      ${createdAtColumn} BIGINT NOT NULL
+  await session.execute(sql`
+    CREATE TABLE IF NOT EXISTS ${drizzleSchema}.${drizzleMigrationsTable.name} (
+      ${drizzleMigrationsTable.columns.id} SMALLINT PRIMARY KEY,
+      ${drizzleMigrationsTable.columns.hash} TEXT NOT NULL,
+      ${drizzleMigrationsTable.columns.createdAt} BIGINT NOT NULL
     )
-  `;
+  `);
 
-  await session.execute(createSchema);
-  await session.execute(createTable);
-
-  const lastMigration = await session
-    .all<{
-      id: number;
-      hash: string;
-      created_at: string;
-    }>(
+  let lastMigration = await session
+    .all<DrizzleMigration>(
       sql`
-        SELECT ${idColumn}, ${hashColumn}, ${createdAtColumn} FROM ${schema}.${table}
-          ORDER BY ${createdAtColumn} DESC LIMIT 1
+        SELECT
+          ${drizzleMigrationsTable.columns.id},
+          ${drizzleMigrationsTable.columns.hash},
+          ${drizzleMigrationsTable.columns.createdAt}
+        FROM ${drizzleSchema}.${drizzleMigrationsTable.name}
+        ORDER BY ${drizzleMigrationsTable.columns.createdAt} DESC LIMIT 1
       `,
     )
     .then(R.first());
 
+  const isFirstRun = !lastMigration;
+
   for (const migration of migrations) {
     if (
+      isFirstRun ||
       !lastMigration ||
       Number(lastMigration.created_at) < migration.folderMillis
     ) {
       for (const statement of migration.sql)
         await session.execute(sql.raw(statement.replace(" USING btree ", " ")));
 
-      await session.execute(
-        sql`
-          INSERT INTO ${schema}.${table}
-            (${idColumn}, ${hashColumn}, ${createdAtColumn}) 
-            values(${(lastMigration?.id ?? 0) + 1}, ${migration.hash}, ${migration.folderMillis})
+      lastMigration = await session
+        .all<{ row: string }>(
+          sql`
+            INSERT INTO ${drizzleSchema}.${drizzleMigrationsTable.name} (
+              ${drizzleMigrationsTable.columns.id},
+              ${drizzleMigrationsTable.columns.hash},
+              ${drizzleMigrationsTable.columns.createdAt}
+            )
+            VALUES(${(lastMigration?.id ?? 0) + 1}, ${migration.hash}, ${migration.folderMillis})
+            RETURNING (
+              ${drizzleMigrationsTable.columns.id},
+              ${drizzleMigrationsTable.columns.hash},
+              ${drizzleMigrationsTable.columns.createdAt}
+            )
         `,
-      );
+        )
+        .then((result) => {
+          const returned = result.at(0);
+          if (!returned)
+            throw new Error(
+              "Failed to insert drizzle migration, nothing returned.",
+            );
+
+          const [id, hash, createdAt] = returned.row.slice(1, -1).split(",");
+
+          return {
+            id: Number(id),
+            hash,
+            created_at: createdAt,
+          } satisfies DrizzleMigration;
+        });
     }
   }
 }

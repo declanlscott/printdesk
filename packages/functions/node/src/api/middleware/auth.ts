@@ -3,7 +3,6 @@ import { assertActor, withActor } from "@printworks/core/actors/context";
 import { Auth } from "@printworks/core/auth";
 import { useTransaction } from "@printworks/core/drizzle/context";
 import {
-  Tenant,
   tenantMetadataTable,
   tenantsTable,
 } from "@printworks/core/tenants/sql";
@@ -15,6 +14,7 @@ import { createMiddleware } from "hono/factory";
 import * as R from "remeda";
 
 import type { Action, Resource } from "@printworks/core/access-control/shared";
+import type { Tenant } from "@printworks/core/tenants/sql";
 
 /**
  * NOTE: Depends on actor middleware
@@ -66,7 +66,7 @@ export const registrationAuthz = (
               )
               .then(R.first()),
           );
-          if (!result || !result.apiKey) {
+          if (!result?.apiKey) {
             console.error("Tenant not found or missing API key");
             return false;
           }

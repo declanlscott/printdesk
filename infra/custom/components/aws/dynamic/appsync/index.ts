@@ -1,7 +1,9 @@
-import { Link } from "~/.sst/platform/src/components/link";
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { ChannelNamespaceProvider } from "./providers/channel-namespace";
 import { EventApiProvider } from "./providers/event-api";
 
+import type { Link } from "~/.sst/platform/src/components/link";
 import type {
   ChannelNamespaceProviderInputs,
   ChannelNamespaceProviderOutputs,

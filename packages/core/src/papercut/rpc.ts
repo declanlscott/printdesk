@@ -1,3 +1,4 @@
+// /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import * as v from "valibot";
 
 import { Papercut } from ".";
@@ -127,7 +128,7 @@ export namespace PapercutRpc {
             ],
           },
         },
-      }),
+      }) as string,
     });
 
     const text = await res.text();
@@ -182,7 +183,7 @@ export namespace PapercutRpc {
             ],
           },
         },
-      }),
+      }) as string,
     });
 
     const text = await res.text();
@@ -220,7 +221,7 @@ export namespace PapercutRpc {
       method: "POST",
       body: useXml().builder.build({
         methodCall: { methodName: "api.getTaskStatus" },
-      }),
+      }) as string,
     });
 
     const text = await res.text();
@@ -311,7 +312,7 @@ export namespace PapercutRpc {
               ],
             },
           },
-        }),
+        }) as string,
       });
 
       const text = await res.text();
@@ -367,7 +368,7 @@ export namespace PapercutRpc {
               ],
             },
           },
-        }),
+        }) as string,
       });
 
       const text = await res.text();
@@ -425,7 +426,7 @@ export namespace PapercutRpc {
               { value: { boolean: ignoreUserAccountSelectionConfig ? 1 : 0 } },
             ],
           },
-        }),
+        }) as string,
       });
 
       const text = await res.text();

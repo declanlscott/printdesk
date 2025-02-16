@@ -45,7 +45,7 @@ export namespace PapercutSync {
         }),
       );
 
-    return useTransaction(async (tx) => {
+    return useTransaction(async () => {
       const prev = await BillingAccounts.fromPapercut();
 
       type Values = Array<InferInsertModel<BillingAccountsTable>>;
@@ -114,7 +114,7 @@ export namespace PapercutSync {
         ),
       );
 
-    await useTransaction(async (tx) => {
+    await useTransaction(async () => {
       const deletedAt = new Date();
 
       const prevUsernames = await Users.fromPapercut().then(

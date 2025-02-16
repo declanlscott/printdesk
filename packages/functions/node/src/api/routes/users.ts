@@ -1,5 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
-import { EntraId } from "@printworks/core/auth";
+import { EntraId } from "@printworks/core/auth/entra-id";
 import { Users } from "@printworks/core/users";
 import { useUser } from "@printworks/core/users/context";
 import { Constants } from "@printworks/core/utils/constants";
@@ -30,17 +30,17 @@ export default new Hono().get(
     switch (user.oauth2Provider.type) {
       case Constants.ENTRA_ID:
         return withGraph(
-          Graph.Client.init({
-            authProvider: async (done) => {
-              if (currentUser.oauth2Provider.type === Constants.ENTRA_ID)
-                return done(
-                  null,
-                  c.req.header("Authorization")!.replace("Bearer ", ""),
-                );
+          Graph.Client.initWithMiddleware({
+            authProvider: {
+              async getAccessToken() {
+                // If the current user was authenticated with entra id,
+                // then use the access token from the request header
+                if (currentUser.oauth2Provider.type === Constants.ENTRA_ID)
+                  return c.req.header("Authorization")!.replace("Bearer ", "");
 
-              return EntraId.applicationAccessToken(user.oauth2Provider.id)
-                .then((accessToken) => done(null, accessToken))
-                .catch((e) => done(e, null));
+                // Otherwise use the application access token
+                return EntraId.applicationAccessToken(user.oauth2Provider.id);
+              },
             },
           }),
           async () => {

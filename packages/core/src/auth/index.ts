@@ -1,14 +1,16 @@
 import { randomBytes } from "node:crypto";
 
 import { compare, hash } from "bcryptjs";
-import { eq, InferInsertModel } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import * as R from "remeda";
 
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
-import { Tenant, tenantsTable } from "../tenants/sql";
+import { tenantsTable } from "../tenants/sql";
 import { oauth2ProvidersTable } from "./sql";
 
+import type { InferInsertModel } from "drizzle-orm";
+import type { Tenant } from "../tenants/sql";
 import type { Oauth2ProvidersTable } from "./sql";
 
 export namespace Auth {

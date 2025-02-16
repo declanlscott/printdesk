@@ -1,12 +1,5 @@
 import { isEqual } from "date-fns";
-import {
-  and,
-  eq,
-  getTableName,
-  InferInsertModel,
-  isNull,
-  or,
-} from "drizzle-orm";
+import { and, eq, getTableName, isNull, or } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
@@ -27,6 +20,7 @@ import { useTenant } from "./context";
 import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
+import type { InferInsertModel } from "drizzle-orm";
 import type {
   InitializeData,
   RegisterData,
@@ -169,7 +163,7 @@ export namespace Tenants {
 
     const apiKey = await Auth.createToken();
 
-    const tenantId = await useTransaction(async (tx) => {
+    const tenantId = await useTransaction(async () => {
       const tenant = await put({
         slug: data.tenantSlug,
         name: data.tenantName,

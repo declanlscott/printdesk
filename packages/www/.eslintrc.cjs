@@ -1,6 +1,6 @@
 /** @type {import("eslint").Linter.Config} */
 module.exports = {
-    extends: ["@printworks/eslint-config/astro.cjs"],
+    extends: ["../../.eslintrc.cjs", "plugin:astro/recommended"],
     parserOptions: {
       project: true,
     },
@@ -15,4 +15,3 @@ module.exports = {
       },
     ],
   };
-  

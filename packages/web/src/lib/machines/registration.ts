@@ -2,10 +2,7 @@ import { getBackendFqdn } from "@printworks/core/backend/shared";
 import { Constants } from "@printworks/core/utils/constants";
 import { ApplicationError, HttpError } from "@printworks/core/utils/errors";
 import { buildUrl } from "@printworks/core/utils/shared";
-import { Client } from "@printworks/functions/api/client";
 import { assign, fromPromise, setup } from "xstate";
-
-import { ViteResource } from "~/types";
 
 import type {
   InitializeData,
@@ -17,6 +14,8 @@ import type {
   RegistrationWizardStep4,
 } from "@printworks/core/tenants/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
+import type { Client } from "@printworks/functions/api/client";
+import type { ViteResource } from "~/types";
 
 type RegistrationMachineWizardContext = RegistrationWizard;
 type RegistrationMachineStatusContext = {

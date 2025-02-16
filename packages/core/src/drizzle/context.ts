@@ -132,7 +132,7 @@ async function transact<
  * https://stackoverflow.com/a/16409293/749644
  */
 function shouldRetryTransaction(error: unknown) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
   const code = typeof error === "object" ? String((error as any).code) : null;
 
   return (

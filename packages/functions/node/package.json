@@ -10,7 +10,6 @@
     "@printworks/core": "workspace:*"
   },
   "devDependencies": {
-    "@printworks/eslint-config": "workspace:*",
     "@types/aws-lambda": "^8.10.147"
   }
 }

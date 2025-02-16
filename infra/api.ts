@@ -29,7 +29,7 @@ export const api = new custom.aws.Function("Api", {
 });
 
 export const apiReverseProxy = new sst.cloudflare.Worker("ApiReverseProxy", {
-  handler: "packages/workers/src/api-reverse-proxy.ts",
+  handler: "packages/workers/src/api-reverse-proxy/index.ts",
   link: [auth, api],
   url: false,
   domain: apiFqdn,

@@ -3,7 +3,8 @@
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
-    "start": "wrangler dev"
+    "start": "wrangler dev",
+    "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250214.0",

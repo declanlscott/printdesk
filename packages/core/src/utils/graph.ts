@@ -23,11 +23,11 @@ export namespace Graph {
   export const Client = GraphClient;
   export type Client = GraphClient;
 
-  export const me = async (): Promise<User> => useGraph().api("/me").get();
+  export const me = async () => useGraph().api("/me").get() as Promise<User>;
 
-  export const photoResponse = async (userId: string): Promise<Response> =>
+  export const photoResponse = async (userId: string) =>
     useGraph()
       .api(`/users/${userId}/photo/$value`)
       .responseType(ResponseType.RAW)
-      .get();
+      .get() as Promise<Response>;
 }

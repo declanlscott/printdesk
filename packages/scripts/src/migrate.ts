@@ -33,6 +33,7 @@ async function migrate<TSchema extends Record<string, unknown>>(
   const migrations = readMigrationFiles(config);
 
   // @ts-expect-error - session is not typed
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const session: PgSession = db.session;
 
   await session.execute(sql`

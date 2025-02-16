@@ -5,13 +5,11 @@
     "dev": "sst dev astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "astro": "legacy",
     "astro-sst": "^2.45.2"
-  },
-  "devDependencies": {
-    "@printworks/eslint-config": "workspace:*"
   }
 }

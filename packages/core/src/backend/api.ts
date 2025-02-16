@@ -147,6 +147,7 @@ export namespace Api {
       {
         method: req.method,
         headers: req.headers,
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         body: req.body,
       },
     );

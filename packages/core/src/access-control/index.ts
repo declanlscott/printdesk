@@ -1459,6 +1459,7 @@ export namespace AccessControl {
 
       console.log(message);
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       if (customError) throw new customError.Error(...customError.args);
 
       throw new Error(message);

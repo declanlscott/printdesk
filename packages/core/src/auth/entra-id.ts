@@ -1,8 +1,5 @@
 import { ConfidentialClientApplication } from "@azure/msal-node";
-import {
-  Oauth2Provider,
-  Oauth2WrappedConfig,
-} from "@openauthjs/openauth/provider/oauth2";
+import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
 import { and, eq } from "drizzle-orm";
 import { Resource } from "sst";
 import * as v from "valibot";
@@ -13,6 +10,8 @@ import { userProfilesTable, usersTable } from "../users/sql";
 import { Constants } from "../utils/constants";
 import { Graph } from "../utils/graph";
 import { fn } from "../utils/shared";
+
+import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
 
 export namespace EntraId {
   export interface ProviderConfig extends Oauth2WrappedConfig {

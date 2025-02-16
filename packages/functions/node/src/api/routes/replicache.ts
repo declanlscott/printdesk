@@ -15,7 +15,7 @@ import { user } from "~/api/middleware/user";
 export default new Hono()
   .use(user)
   .post("/pull", async (c) => {
-    const pullRequest = await c.req.json();
+    const pullRequest: unknown = await c.req.json();
 
     const pullResponse =
       await Replicache.pull(pullRequest).catch(rethrowHttpError);
@@ -41,7 +41,7 @@ export default new Hono()
       RoleSessionName: "ApiReplicachePush",
     })),
     async (c) => {
-      const pushRequest = await c.req.json();
+      const pushRequest: unknown = await c.req.json();
 
       const pushResponse =
         await Replicache.push(pushRequest).catch(rethrowHttpError);

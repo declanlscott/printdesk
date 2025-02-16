@@ -1,11 +1,4 @@
-import {
-  and,
-  eq,
-  getTableName,
-  inArray,
-  InferInsertModel,
-  isNotNull,
-} from "drizzle-orm";
+import { and, eq, getTableName, inArray, not } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
@@ -28,6 +21,7 @@ import {
   billingAccountsTable,
 } from "./sql";
 
+import type { InferInsertModel } from "drizzle-orm";
 import type {
   BillingAccount,
   BillingAccountCustomerAuthorization,
@@ -82,7 +76,7 @@ export namespace BillingAccounts {
         .where(
           and(
             eq(billingAccountsTable.type, "papercut"),
-            isNotNull(billingAccountsTable.papercutAccountId),
+            not(eq(billingAccountsTable.papercutAccountId, -1)),
             eq(billingAccountsTable.tenantId, useTenant().id),
           ),
         )
@@ -90,7 +84,6 @@ export namespace BillingAccounts {
           R.map((account) => ({
             ...account,
             type: "papercut" as const,
-            papercutAccountId: account.papercutAccountId!,
           })),
         ),
     );

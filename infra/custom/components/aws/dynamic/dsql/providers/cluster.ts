@@ -1,3 +1,5 @@
+import { WaiterState } from "@smithy/util-waiter";
+
 import {
   logicalName,
   physicalName,
@@ -45,7 +47,7 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
       ),
     );
 
-    if (result.state !== "SUCCESS")
+    if (result.state !== WaiterState.SUCCESS)
       throw new Error(
         `Unsuccessfully waited for cluster "${identifier}" to be active, result state is "${result.state}": ${JSON.stringify(result.reason)}`,
       );
@@ -62,7 +64,7 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
       ),
     );
 
-    if (result.state !== "SUCCESS")
+    if (result.state !== WaiterState.SUCCESS)
       throw new Error(
         `Unsuccessfully waited for cluster "${identifier}" to be deleted, result state is "${result.state}": ${JSON.stringify(result.reason)}`,
       );

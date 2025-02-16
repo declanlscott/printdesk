@@ -1,18 +1,20 @@
 /** @type {import("eslint").Linter.Config} */
 module.exports = {
-    extends: ["@printworks/eslint-config/react.cjs"],
-    parserOptions: {
-      project: true,
-    },
-    overrides: [
-      {
-        files: ["*.astro"],
-        parser: "astro-eslint-parser",
-        parserOptions: {
-          parser: "@typescript-eslint/parser",
-          extraFileExtensions: [".astro"],
-        },
-      },
-    ],
-  };
-  
+  extends: [
+    "../../.eslintrc.cjs",
+    "plugin:react-hooks/recommended",
+    "plugin:@tanstack/eslint-plugin-router/recommended",
+    "plugin:@tanstack/eslint-plugin-query/recommended"
+  ],
+  ignorePatterns: [
+    "vite-env.d.ts"
+  ],
+  env: {
+    browser: true,
+    es2020: true,
+  },
+  plugins: ["react-refresh"],
+  rules: {
+    "react-refresh/only-export-components": "warn",
+  },
+};

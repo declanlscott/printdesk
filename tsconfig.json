@@ -9,5 +9,5 @@
       "~/.sst/*": [".sst/*"]
     }
   },
-  "exclude": ["./packages/eslint-config/*.cjs", "./packages/web/dist"]
+  "exclude": [".eslintrc.cjs", "./packages/web/dist"]
 }

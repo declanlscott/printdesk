@@ -42,7 +42,7 @@ const app = issuer({
 
             return withActor({ type: "user", properties }, async () => {
               if (shouldPoke)
-                withAws(
+                await withAws(
                   {
                     sigv4: {
                       signers: {
@@ -77,6 +77,7 @@ const app = issuer({
         );
       }
       default:
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`unexpected provider: ${value.provider}`);
     }
   },

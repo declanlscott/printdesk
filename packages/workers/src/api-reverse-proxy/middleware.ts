@@ -2,20 +2,13 @@ import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
 import { HttpError } from "@printworks/core/utils/errors";
-import { Hono } from "hono";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
 import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
-import { logger } from "hono/logger";
 import { Resource } from "sst";
 
-import type { FetchProxy } from "@mjackson/fetch-proxy";
-import type { SubjectPayload } from "@openauthjs/openauth/subject";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
-
-const rateLimiter = createMiddleware(
+export const rateLimiter = createMiddleware(
   every(
     some(
       every(
@@ -25,18 +18,30 @@ const rateLimiter = createMiddleware(
               clientID: "api-rate-limiter",
               issuer: Resource.Auth.url,
             }).verify(subjects, token);
+
             if (verified.err) {
               console.error("Token verification failed:", verified.err);
               return false;
             }
+            if (verified.subject.type !== "user") {
+              console.error("Invalid subject type:", verified.subject.type);
+              return false;
+            }
 
             c.set("subject", verified.subject);
+
             return true;
           },
         }),
-        async (c, next) => {
-          const subject: SubjectPayload<typeof subjects> = c.get("subject");
-          const key = `${subject.properties.tenantId}#${subject.properties.id}`;
+        createMiddleware<{
+          Bindings: {
+            API_RATE_LIMITERS: {
+              byUser: RateLimit["limit"];
+            };
+          };
+        }>(async (c, next) => {
+          const { tenantId, id: userId } = c.get("subject").properties;
+          const key = `${tenantId}#${userId}`;
 
           console.log("Rate limiting by user:", key);
           c.set(
@@ -45,9 +50,15 @@ const rateLimiter = createMiddleware(
           );
 
           return next();
-        },
+        }),
       ),
-      async (c, next) => {
+      createMiddleware<{
+        Bindings: {
+          API_RATE_LIMITERS: {
+            byIp: RateLimit["limit"];
+          };
+        };
+      }>(async (c, next) => {
         const ip = getConnInfo(c).remote.address;
         if (!ip) throw new Error("Missing remote address");
 
@@ -58,40 +69,19 @@ const rateLimiter = createMiddleware(
         );
 
         return next();
-      },
+      }),
     ),
-    (c, next) => {
-      const outcome: RateLimitOutcome = c.get("rateLimitOutcome");
+    createMiddleware((c, next) => {
+      const outcome = c.get("rateLimitOutcome");
       if (!outcome.success) throw new HttpError.TooManyRequests();
 
       return next();
-    },
+    }),
   ),
 );
 
-const proxy = createMiddleware((c, next) => {
+export const proxy = createMiddleware((c, next) => {
   c.set("proxy", createFetchProxy(Resource.Api.url));
 
   return next();
 });
-
-export default new Hono()
-  .use(logger())
-  .use(rateLimiter)
-  .use(proxy)
-  .all("*", (c) => c.get("proxy")(c.req.raw))
-  .onError((e, c) => {
-    console.error(e);
-
-    if (e instanceof HttpError.Error)
-      return c.json(e.message, e.statusCode as ContentfulStatusCode);
-    if (e instanceof HTTPException) return e.getResponse();
-
-    return c.json("Internal server error", 500);
-  });
-
-declare module "hono" {
-  interface ContextVariableMap {
-    proxy: FetchProxy;
-  }
-}

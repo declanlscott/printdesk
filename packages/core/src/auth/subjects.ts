@@ -3,11 +3,20 @@ import * as v from "valibot";
 
 import { nanoIdSchema } from "../utils/shared";
 
-export const userSubjectSchema = v.object({
+import type { SubjectPayload } from "@openauthjs/openauth/subject";
+
+export const userSubjectPropertiesSchema = v.object({
   id: nanoIdSchema,
   tenantId: nanoIdSchema,
 });
 
 export const subjects = createSubjects({
-  user: userSubjectSchema,
+  user: userSubjectPropertiesSchema,
 });
+
+export type Subject = SubjectPayload<typeof subjects>;
+
+export type UserSubject = Extract<
+  SubjectPayload<typeof subjects>,
+  { type: "user" }
+>;

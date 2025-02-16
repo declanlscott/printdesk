@@ -10,7 +10,6 @@
     "@printworks/core": "workspace:*"
   },
   "devDependencies": {
-    "@printworks/eslint-config": "workspace:*",
     "tsx": "^4.19.2"
   }
 }

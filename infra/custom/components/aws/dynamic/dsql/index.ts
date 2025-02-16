@@ -1,6 +1,8 @@
-import { Link } from "~/.sst/platform/src/components/link";
+/* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { ClusterProvider } from "./providers/cluster";
 
+import type { Link } from "~/.sst/platform/src/components/link";
 import type {
   ClusterProviderInputs,
   ClusterProviderOutputs,

@@ -28,7 +28,6 @@
     "pg": "^8.13.3"
   },
   "devDependencies": {
-    "@printworks/eslint-config": "workspace:*",
     "@smithy/types": "^4.1.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.11.11",

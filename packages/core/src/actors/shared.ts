@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { userSubjectSchema } from "../auth/subjects";
+import { userSubjectPropertiesSchema } from "../auth/subjects";
 import { nanoIdSchema } from "../utils/shared";
 
 export const publicActorSchema = v.object({
@@ -11,7 +11,7 @@ export type PublicActor = v.InferOutput<typeof publicActorSchema>;
 
 export const userActorSchema = v.object({
   type: v.literal("user"),
-  properties: userSubjectSchema,
+  properties: userSubjectPropertiesSchema,
 });
 export type UserActor = v.InferOutput<typeof userActorSchema>;
 

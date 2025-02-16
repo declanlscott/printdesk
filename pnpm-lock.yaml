@@ -59,6 +59,15 @@ importers:
       '@ianvs/prettier-plugin-sort-imports':
         specifier: ^4.4.1
         version: 4.4.1(prettier@3.5.1)
+      '@smithy/util-waiter':
+        specifier: ^4.0.2
+        version: 4.0.2
+      '@tanstack/eslint-plugin-query':
+        specifier: ^5.66.1
+        version: 5.66.1(eslint@8.57.1)(typescript@5.7.3)
+      '@tanstack/eslint-plugin-router':
+        specifier: ^1.105.0
+        version: 1.105.0(eslint@8.57.1)(typescript@5.7.3)
       '@total-typescript/ts-reset':
         specifier: ^0.6.1
         version: 0.6.1
@@ -68,6 +77,30 @@ importers:
       '@types/aws-lambda':
         specifier: 8.10.147
         version: 8.10.147
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.24.0
+        version: 8.24.0(@typescript-eslint/parser@8.24.0(eslint@8.57.1)(typescript@5.7.3))(eslint@8.57.1)(typescript@5.7.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.24.0
+        version: 8.24.0(eslint@8.57.1)(typescript@5.7.3)
+      eslint:
+        specifier: ^8.57.1
+        version: 8.57.1
+      eslint-config-prettier:
+        specifier: ^10.0.1
+        version: 10.0.1(eslint@8.57.1)
+      eslint-plugin-astro:
+        specifier: ^1.3.1
+        version: 1.3.1(eslint@8.57.1)
+      eslint-plugin-drizzle:
+        specifier: ^0.2.3
+        version: 0.2.3(eslint@8.57.1)
+      eslint-plugin-react-hooks:
+        specifier: ^5.1.0
+        version: 5.1.0(eslint@8.57.1)
+      eslint-plugin-react-refresh:
+        specifier: ^0.4.19
+        version: 0.4.19(eslint@8.57.1)
       prettier:
         specifier: ^3.5.1
         version: 3.5.1
@@ -138,9 +171,6 @@ importers:
         specifier: ^8.13.3
         version: 8.13.3
     devDependencies:
-      '@printworks/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
       '@smithy/types':
         specifier: ^4.1.0
         version: 4.1.0
@@ -154,39 +184,6 @@ importers:
         specifier: ^0.30.4
         version: 0.30.4
 
-  packages/eslint-config:
-    devDependencies:
-      '@tanstack/eslint-plugin-query':
-        specifier: ^5.66.1
-        version: 5.66.1(eslint@8.57.1)(typescript@5.7.3)
-      '@tanstack/eslint-plugin-router':
-        specifier: ^1.105.0
-        version: 1.105.0(eslint@8.57.1)(typescript@5.7.3)
-      '@typescript-eslint/eslint-plugin':
-        specifier: ^8.24.0
-        version: 8.24.0(@typescript-eslint/parser@8.24.0(eslint@8.57.1)(typescript@5.7.3))(eslint@8.57.1)(typescript@5.7.3)
-      '@typescript-eslint/parser':
-        specifier: ^8.24.0
-        version: 8.24.0(eslint@8.57.1)(typescript@5.7.3)
-      eslint:
-        specifier: ^8.57.1
-        version: 8.57.1
-      eslint-config-prettier:
-        specifier: ^9.1.0
-        version: 9.1.0(eslint@8.57.1)
-      eslint-plugin-astro:
-        specifier: ^1.3.1
-        version: 1.3.1(eslint@8.57.1)
-      eslint-plugin-drizzle:
-        specifier: ^0.2.3
-        version: 0.2.3(eslint@8.57.1)
-      eslint-plugin-react-hooks:
-        specifier: ^5.1.0
-        version: 5.1.0(eslint@8.57.1)
-      eslint-plugin-react-refresh:
-        specifier: ^0.4.19
-        version: 0.4.19(eslint@8.57.1)
-
   packages/functions/node:
     dependencies:
       '@hono/valibot-validator':
@@ -199,9 +196,6 @@ importers:
         specifier: workspace:*
         version: link:../../core
     devDependencies:
-      '@printworks/eslint-config':
-        specifier: workspace:*
-        version: link:../../eslint-config
       '@types/aws-lambda':
         specifier: ^8.10.147
         version: 8.10.147
@@ -212,9 +206,6 @@ importers:
         specifier: workspace:*
         version: link:../core
     devDependencies:
-      '@printworks/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
@@ -300,9 +291,6 @@ importers:
         specifier: ^5.0.3
         version: 5.0.3(@types/react@19.0.8)(react@19.0.0)(use-sync-external-store@1.4.0(react@19.0.0))
     devDependencies:
-      '@printworks/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
       '@react-types/shared':
         specifier: ^3.27.0
         version: 3.27.0(react@19.0.0)
@@ -358,9 +346,6 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.20250214.0
         version: 4.20250214.0
-      '@printworks/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
 
   packages/workers/api-rate-limiters:
     devDependencies:
@@ -379,10 +364,6 @@ importers:
       astro-sst:
         specifier: ^2.45.2
         version: 2.45.2
-    devDependencies:
-      '@printworks/eslint-config':
-        specifier: workspace:*
-        version: link:../eslint-config
 
 packages:
 
@@ -3919,8 +3900,8 @@ packages:
     peerDependencies:
       eslint: '>=6.0.0'
 
-  eslint-config-prettier@9.1.0:
-    resolution: {integrity: sha512-NSWl5BFQWEPi1j4TjVNItzYV7dZXZ+wP6I6ZhrBGpChQhZRUaElihE9uRRkcbRnNb76UMKDF3r+WTmNcGPKsqw==}
+  eslint-config-prettier@10.0.1:
+    resolution: {integrity: sha512-lZBts941cyJyeaooiKxAtzoPHTN+GbQTJFAIdQbRhA4/8whaAraEh47Whw/ZFfrjNSnlAxqfm9i0XVAEkULjCw==}
     hasBin: true
     peerDependencies:
       eslint: '>=7.0.0'
@@ -10514,7 +10495,7 @@ snapshots:
       eslint: 8.57.1
       semver: 7.7.1
 
-  eslint-config-prettier@9.1.0(eslint@8.57.1):
+  eslint-config-prettier@10.0.1(eslint@8.57.1):
     dependencies:
       eslint: 8.57.1
 

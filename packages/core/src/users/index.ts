@@ -2,7 +2,7 @@ import { and, eq, getTableName, inArray, isNull } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
-import { Oauth2Provider, oauth2ProvidersTable } from "../auth/sql";
+import { oauth2ProvidersTable } from "../auth/sql";
 import {
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
@@ -24,6 +24,7 @@ import {
 import { userProfilesTable, usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { Oauth2Provider } from "../auth/sql";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "./shared";

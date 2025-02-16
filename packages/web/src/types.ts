@@ -17,13 +17,12 @@ import type { ReadTransaction } from "replicache";
 import type { Resource } from "sst";
 import type { routeTree } from "~/routeTree.gen";
 
+type ViteResourceKey<TKey extends keyof ImportMetaEnv> =
+  TKey extends `VITE_RESOURCE_${infer TResourceKey}` ? TResourceKey : never;
+
 export type ViteResource = {
-  [TKey in keyof ImportMetaEnv as TKey extends `VITE_RESOURCE_${infer TResourceKey}`
-    ? TResourceKey
-    : never]: TKey extends `VITE_RESOURCE_${infer TResourceKey}`
-    ? TResourceKey extends keyof Resource
-      ? Omit<Resource[TResourceKey], "type">
-      : never
+  [TKey in keyof ImportMetaEnv as ViteResourceKey<TKey>]: ViteResourceKey<TKey> extends keyof Resource
+    ? Omit<Resource[ViteResourceKey<TKey>], "type">
     : never;
 };
 

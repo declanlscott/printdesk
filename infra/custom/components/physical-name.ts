@@ -25,9 +25,11 @@ export class PhysicalName extends $util.ComponentResource {
 
     this._main = $util.output(prefixName(max - 9 - suffix.length, name));
 
-    this._randomSuffix = new random.RandomBytes(name, {
-      length: 8,
-    }).hex.apply((hex) => hashStringToPrettyString(hex, 8));
+    this._randomSuffix = new random.RandomBytes(
+      `${name}PhysicalNameRandomSuffix`,
+      { length: 8 },
+      { parent: this },
+    ).hex.apply((hex) => hashStringToPrettyString(hex, 8));
 
     this.result = $interpolate`${this._main}-${this._randomSuffix}${suffix}`;
 

@@ -176,20 +176,21 @@ new aws.iam.RolePolicy("InfraFunctionRoleInlinePolicy", {
   }).json,
 });
 
-const infraFunctionName = new custom.PhysicalName("InfraFunction", { max: 64 });
+const infraFunctionName = new custom.PhysicalName("InfraFunction", { max: 64 })
+  .result;
 
 export const infraLogGroup = new aws.cloudwatch.LogGroup("InfraLogGroup", {
-  name: $interpolate`/aws/lambda/${infraFunctionName.result}`,
+  name: $interpolate`/aws/lambda/${infraFunctionName}`,
   retentionInDays: 14,
 });
 
 const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", {
   length: 32,
   special: true,
-});
+}).result;
 
 export const infraFunction = new aws.lambda.Function("InfraFunction", {
-  name: infraFunctionName.result,
+  name: infraFunctionName,
   packageType: "Image",
   imageUri: infraFunctionImage.imageUri,
   role: infraFunctionRole.arn,
@@ -203,7 +204,7 @@ export const infraFunction = new aws.lambda.Function("InfraFunction", {
   },
   environment: {
     variables: {
-      PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
+      PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
     },
   },
 });

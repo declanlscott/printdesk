@@ -21,7 +21,6 @@ export function AuthenticatedLayout() {
     const res = await api.client.realtime.url.$get({
       header: { authorization: getAuth() },
     });
-
     if (!res.ok)
       throw new ApplicationError.Error("Failed to get web socket url");
 
@@ -68,8 +67,8 @@ function Realtime() {
     [replicache],
   );
 
-  useRealtimeChannel(`/users/${user.id}`, pullOnPoke);
-  useRealtimeChannel(`/tenant`, pullOnPoke);
+  useRealtimeChannel(`/replicache/users/${user.id}`, pullOnPoke);
+  useRealtimeChannel(`/replicache/tenant`, pullOnPoke);
 
   return (
     <CommandBarStoreApi.Provider

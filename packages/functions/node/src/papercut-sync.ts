@@ -74,7 +74,11 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
 
         if (event.source === Backend.getReverseDns())
           await publish(publishDomain, `/events/${event.id}`, [
-            JSON.stringify({ success: !!error, dispatchId: event.id }),
+            JSON.stringify({
+              type: "papercut-sync",
+              success: !!error,
+              dispatchId: event.id,
+            }),
           ]);
 
         if (error) throw error;

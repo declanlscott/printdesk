@@ -23,7 +23,16 @@ type RegistrationMachineStatusContext = {
   dispatchId: string | null;
   apiKey: string | null;
   isHealthy: boolean;
-  failedStatus: string | null;
+  failureStatus:
+    | "register"
+    | "waitForInfra"
+    | "waitForGoodHealth"
+    | "healthcheck"
+    | "determineHealth"
+    | "initialize"
+    | "waitForSync"
+    | "activate"
+    | null;
 };
 type RegistrationMachineContext = RegistrationMachineWizardContext &
   RegistrationMachineStatusContext;
@@ -55,7 +64,7 @@ const initialStatusContext = {
   dispatchId: null,
   apiKey: null,
   isHealthy: false,
-  failedStatus: null,
+  failureStatus: null,
 } as const satisfies RegistrationMachineStatusContext;
 
 type RegisterInput = RegisterData;
@@ -98,7 +107,8 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
         | { type: "wizard.register" }
         | { type: "status.healthcheck" }
         | { type: "status.activate" }
-        | { type: "status.back" },
+        | { type: "status.back" }
+        | { type: "status.fail" },
     },
     actors: {
       register: fromPromise<RegisterOutput, RegisterInput>(
@@ -250,12 +260,20 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
                 actions: ({ event }) => assign(event.output),
               },
               onError: {
-                target: "failed",
-                actions: assign({ failedStatus: "register" }),
+                target: "failure",
+                actions: assign({ failureStatus: "register" }),
               },
             },
           },
-          waitForInfra: { on: { "status.healthcheck": "healthcheck" } },
+          waitForInfra: {
+            on: {
+              "status.healthcheck": "healthcheck",
+              "status.fail": {
+                target: "failure",
+                actions: assign({ failureStatus: "waitForInfra" }),
+              },
+            },
+          },
           waitForGoodHealth: { after: { 3000: "healthcheck" } },
           healthcheck: {
             invoke: {
@@ -266,8 +284,8 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
                 actions: ({ event }) => assign(event.output),
               },
               onError: {
-                target: "failed",
-                actions: assign({ failedStatus: "healthcheck" }),
+                target: "failure",
+                actions: assign({ failureStatus: "healthcheck" }),
               },
             },
           },
@@ -296,13 +314,19 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
                 actions: ({ event }) => assign(event.output),
               },
               onError: {
-                target: "failed",
-                actions: assign({ failedStatus: "initialize" }),
+                target: "failure",
+                actions: assign({ failureStatus: "initialize" }),
               },
             },
           },
           waitForSync: {
-            on: { "status.activate": "activate" },
+            on: {
+              "status.activate": "activate",
+              "status.fail": {
+                target: "failure",
+                actions: assign({ failureStatus: "waitForSync" }),
+              },
+            },
           },
           activate: {
             invoke: {
@@ -311,14 +335,14 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
                 apiKey: context.apiKey,
                 tenantId: context.tenantId,
               }),
-              onDone: "completed",
+              onDone: "complete",
               onError: {
-                target: "failed",
-                actions: assign({ failedStatus: "activate" }),
+                target: "failure",
+                actions: assign({ failureStatus: "activate" }),
               },
             },
           },
-          failed: {
+          failure: {
             on: {
               "status.back": {
                 target: "#registration.wizard.review",
@@ -326,7 +350,7 @@ export const getRegistrationMachine = (api: Client, resource: ViteResource) =>
               },
             },
           },
-          completed: {
+          complete: {
             type: "final",
           },
         },

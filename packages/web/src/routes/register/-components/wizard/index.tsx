@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Link as AriaLink } from "react-aria-components";
+import { ApplicationError } from "@printworks/core/utils/errors";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
@@ -7,13 +8,16 @@ import {
   useRegistrationMachine,
   useRegistrationWizardState,
 } from "~/lib/hooks/registration";
+import { RegistrationWizardReview } from "~/routes/register/-components/wizard/review";
+import { RegistrationWizardStep1 } from "~/routes/register/-components/wizard/step-1";
+import { RegistrationWizardStep2 } from "~/routes/register/-components/wizard/step-2";
+import { RegistrationWizardStep3 } from "~/routes/register/-components/wizard/step-3";
+import { RegistrationWizardStep4 } from "~/routes/register/-components/wizard/step-4";
 import { Label } from "~/ui/primitives/field";
 import { Link } from "~/ui/primitives/link";
 import { ProgressBar } from "~/ui/primitives/progress-bar";
 
-import type { PropsWithChildren } from "react";
-
-export function RegistrationWizard(props: PropsWithChildren) {
+export function RegistrationWizard() {
   const state = useRegistrationWizardState();
   const slug = useRegistrationMachine().useSelector(
     ({ context }) => context.tenantSlug,
@@ -56,7 +60,7 @@ export function RegistrationWizard(props: PropsWithChildren) {
             </ProgressBar>
           ) : null}
 
-          {props.children}
+          <RegistrationWizardStep />
 
           <p className="text-sm">
             Already have an organization? <Link href={{ to: "/" }}>Login</Link>
@@ -73,4 +77,23 @@ export function RegistrationWizard(props: PropsWithChildren) {
       />
     </div>
   );
+}
+
+function RegistrationWizardStep() {
+  const state = useRegistrationWizardState();
+
+  switch (state) {
+    case "step1":
+      return <RegistrationWizardStep1 />;
+    case "step2":
+      return <RegistrationWizardStep2 />;
+    case "step3":
+      return <RegistrationWizardStep3 />;
+    case "step4":
+      return <RegistrationWizardStep4 />;
+    case "review":
+      return <RegistrationWizardReview />;
+    default:
+      throw new ApplicationError.NonExhaustiveValue(state);
+  }
 }

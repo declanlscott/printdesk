@@ -3,19 +3,10 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createActorContext } from "@xstate/react";
 import * as v from "valibot";
 
-import {
-  useRegistrationState,
-  useRegistrationStatusState,
-  useRegistrationWizardState,
-} from "~/lib/hooks/registration";
+import { useRegistrationState } from "~/lib/hooks/registration";
 import { getRegistrationMachine } from "~/lib/machines/registration";
 import { RegistrationStatus } from "~/routes/register/-components/status";
 import { RegistrationWizard } from "~/routes/register/-components/wizard";
-import { RegistrationWizardReview } from "~/routes/register/-components/wizard/review";
-import { RegistrationWizardStep1 } from "~/routes/register/-components/wizard/step-1";
-import { RegistrationWizardStep2 } from "~/routes/register/-components/wizard/step-2";
-import { RegistrationWizardStep3 } from "~/routes/register/-components/wizard/step-3";
-import { RegistrationWizardStep4 } from "~/routes/register/-components/wizard/step-4";
 
 export const Route = createFileRoute("/register/")({
   validateSearch: v.object({ slug: v.optional(v.string()) }),
@@ -81,69 +72,9 @@ function RouteComponent() {
 function Registration() {
   const state = useRegistrationState();
 
-  if ("wizard" in state)
-    return (
-      <RegistrationWizard>
-        <RegistrationWizardStep />
-      </RegistrationWizard>
-    );
+  if ("wizard" in state) return <RegistrationWizard />;
 
-  if ("status" in state)
-    return (
-      <RegistrationStatus>
-        <RegistrationStatusStep />
-      </RegistrationStatus>
-    );
+  if ("status" in state) return <RegistrationStatus />;
 
   throw new ApplicationError.NonExhaustiveValue(state);
-}
-
-function RegistrationWizardStep() {
-  const state = useRegistrationWizardState();
-
-  switch (state) {
-    case "step1":
-      return <RegistrationWizardStep1 />;
-    case "step2":
-      return <RegistrationWizardStep2 />;
-    case "step3":
-      return <RegistrationWizardStep3 />;
-    case "step4":
-      return <RegistrationWizardStep4 />;
-    case "review":
-      return <RegistrationWizardReview />;
-    default:
-      throw new ApplicationError.NonExhaustiveValue(state);
-  }
-}
-
-function RegistrationStatusStep() {
-  const state = useRegistrationStatusState();
-
-  switch (state) {
-    // Registering
-    case "register":
-
-    // Provisioning
-    case "waitForInfra":
-
-    // Deploying
-    case "waitForGoodHealth":
-    case "healthcheck":
-    case "determineHealth":
-
-    // Initializing
-    case "initialize":
-    case "waitForSync":
-
-    // Activating
-    case "activate":
-
-    case "failed":
-
-    case "completed":
-      return "TODO";
-    default:
-      throw new ApplicationError.NonExhaustiveValue(state);
-  }
 }

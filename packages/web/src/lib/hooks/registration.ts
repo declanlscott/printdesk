@@ -8,6 +8,9 @@ export const useRegistrationMachine = () =>
 export const useRegistrationState = () =>
   useRegistrationMachine().useSelector(({ value }) => value);
 
+export const useRegistrationContext = () =>
+  useRegistrationMachine().useSelector(({ context }) => context);
+
 export function useRegistrationWizardState() {
   const state = useRegistrationState();
   const stateName = "wizard";

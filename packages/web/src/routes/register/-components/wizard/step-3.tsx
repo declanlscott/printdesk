@@ -5,10 +5,13 @@ import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 
 import { useRegistrationMachine } from "~/lib/hooks/registration";
+import { onSelectionChange } from "~/lib/ui";
 import { linkStyles } from "~/styles/components/primitives/link";
+import { Markdown } from "~/ui/markdown";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
+import { Tab, TabList, TabPanel, Tabs } from "~/ui/primitives/tabs";
 import { Input } from "~/ui/primitives/text-field";
 
 export function RegistrationWizardStep3() {
@@ -30,6 +33,11 @@ export function RegistrationWizardStep3() {
       actorRef.send({ type: "wizard.step3.next", ...value }),
   });
 
+  const tabs = ["setup", "oauth-client"] as const;
+  const [selectedTab, setSelectedTab] = useState<(typeof tabs)[number]>(() =>
+    Object.values(defaultValues).some(Boolean) ? "oauth-client" : "setup",
+  );
+
   const [isSecretVisible, setIsSecretVisible] = useState(() => false);
 
   return (
@@ -41,122 +49,166 @@ export function RegistrationWizardStep3() {
       }}
       className="grid gap-4"
     >
-      <h2 className="text-xl font-semibold">3. Tailscale Setup</h2>
+      <h2 className="text-xl font-semibold">3. Tailscale</h2>
 
-      <Card>
-        <CardContent className="grid gap-4 pt-6">
-          <CardDescription>
-            <a
-              href="https://tailscale.com/"
-              className={linkStyles()}
-              target="_blank"
-            >
-              Tailscale
-            </a>{" "}
-            facilitates the secure network connection between Printworks and
-            your PaperCut server. If you haven't already, create an OAuth client
-            in the Tailscale{" "}
-            <a
-              href="https://login.tailscale.com"
-              className={linkStyles()}
-              target="_blank"
-            >
-              admin console
-            </a>
-            .
-          </CardDescription>
+      <Tabs
+        selectedKey={selectedTab}
+        onSelectionChange={onSelectionChange(tabs, setSelectedTab)}
+      >
+        <TabList>
+          <Tab id="setup" className="w-full">
+            Setup
+          </Tab>
 
-          <CardDescription>
-            Tailscale must also be{" "}
-            <a
-              href="https://tailscale.com/kb/1347/installation"
-              className={linkStyles()}
-              target="_blank"
-            >
-              installed
-            </a>{" "}
-            and enabled on the host of your PaperCut server.
-          </CardDescription>
+          <Tab id="oauth-client" className="w-full">
+            OAuth Client
+          </Tab>
+        </TabList>
 
-          <CardDescription>
-            Printworks encrypts the OAuth client data and it will{" "}
-            <strong>not</strong> be accessible to you after completing
-            registration.
-          </CardDescription>
+        <TabPanel id="setup">
+          <Card>
+            <CardContent className="grid gap-4 pt-6">
+              <CardDescription>
+                <a
+                  href="https://tailscale.com/"
+                  className={linkStyles({ className: "hover:underline" })}
+                  target="_blank"
+                >
+                  Tailscale
+                </a>{" "}
+                facilitates the secure network connection between Printworks and
+                your PaperCut server.
+              </CardDescription>
 
-          <form.Field
-            name="tailscaleOauthClientId"
-            validators={{
-              onBlur:
-                registrationWizardStep3Schema.entries.tailscaleOauthClientId,
-            }}
-          >
-            {(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>Client ID</Label>
+              <CardDescription>
+                First, go to the{" "}
+                <a
+                  href="https://login.tailscale.com/admin/acls/file"
+                  className={linkStyles({ className: "hover:underline" })}
+                  target="_blank"
+                >
+                  Access Controls
+                </a>{" "}
+                in your Tailscale admin console and add a tag called
+                "printworks" to the tagOwners block, for example:
+              </CardDescription>
 
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                />
+              <Markdown>
+                {[
+                  "```json",
+                  '"tagOwners": {',
+                  '  "tag:printworks": ["autogroup:admin"],',
+                  "}",
+                ].join("\n")}
+              </Markdown>
 
-                {R.isEmpty(field.state.meta.errors) ? null : (
-                  <span className="text-sm text-red-500">
-                    {field.state.meta.errors.join(", ")}
-                  </span>
-                )}
-              </div>
-            )}
-          </form.Field>
+              <CardDescription>
+                Next,{" "}
+                <a
+                  href="https://login.tailscale.com/admin/settings/oauth"
+                  className={linkStyles({ className: "hover:underline" })}
+                  target="_blank"
+                >
+                  generate an OAuth client
+                </a>{" "}
+                with write scopes for core devices and auth keys. Don't forget
+                to add the "printworks" tag you just created on both scopes.
+              </CardDescription>
 
-          <form.Field
-            name="tailscaleOauthClientSecret"
-            validators={{
-              onBlur:
-                registrationWizardStep3Schema.entries
-                  .tailscaleOauthClientSecret,
-            }}
-          >
-            {(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>Client Secret</Label>
+              <CardDescription>
+                Copy the generated client ID and client secret values and paste
+                them into the fields in the next tab.
+              </CardDescription>
+            </CardContent>
+          </Card>
+        </TabPanel>
 
-                <div className="flex gap-2">
-                  <Input
-                    id={field.name}
-                    type={isSecretVisible ? "text" : "password"}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                  />
+        <TabPanel id="oauth-client">
+          <Card>
+            <CardContent className="grid gap-4 pt-6">
+              <CardDescription>
+                Printworks encrypts the OAuth client data and it will not be
+                accessible to you after completing registration.
+              </CardDescription>
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onPress={() =>
-                      setIsSecretVisible((isSecretVisible) => !isSecretVisible)
-                    }
-                  >
-                    {isSecretVisible ? (
-                      <EyeOff className="size-5" />
-                    ) : (
-                      <Eye className="size-5" />
+              <form.Field
+                name="tailscaleOauthClientId"
+                validators={{
+                  onBlur:
+                    registrationWizardStep3Schema.entries
+                      .tailscaleOauthClientId,
+                }}
+              >
+                {(field) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor={field.name}>Client ID</Label>
+
+                    <Input
+                      id={field.name}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+
+                    {R.isEmpty(field.state.meta.errors) ? null : (
+                      <span className="text-sm text-red-500">
+                        {field.state.meta.errors.join(", ")}
+                      </span>
                     )}
-                  </Button>
-                </div>
-
-                {R.isEmpty(field.state.meta.errors) ? null : (
-                  <span className="text-sm text-red-500">
-                    {field.state.meta.errors.join(", ")}
-                  </span>
+                  </div>
                 )}
-              </div>
-            )}
-          </form.Field>
-        </CardContent>
-      </Card>
+              </form.Field>
+
+              <form.Field
+                name="tailscaleOauthClientSecret"
+                validators={{
+                  onBlur:
+                    registrationWizardStep3Schema.entries
+                      .tailscaleOauthClientSecret,
+                }}
+              >
+                {(field) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor={field.name}>Client Secret</Label>
+
+                    <div className="flex gap-2">
+                      <Input
+                        id={field.name}
+                        type={isSecretVisible ? "text" : "password"}
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                      />
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onPress={() =>
+                          setIsSecretVisible(
+                            (isSecretVisible) => !isSecretVisible,
+                          )
+                        }
+                      >
+                        {isSecretVisible ? (
+                          <EyeOff className="size-5" />
+                        ) : (
+                          <Eye className="size-5" />
+                        )}
+                      </Button>
+                    </div>
+
+                    {R.isEmpty(field.state.meta.errors) ? null : (
+                      <span className="text-sm text-red-500">
+                        {field.state.meta.errors.join(", ")}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </form.Field>
+            </CardContent>
+          </Card>
+        </TabPanel>
+      </Tabs>
 
       <div className="flex justify-between">
         <Button
@@ -170,7 +222,12 @@ export function RegistrationWizardStep3() {
 
         <form.Subscribe selector={({ canSubmit }) => canSubmit}>
           {(canSubmit) => (
-            <Button type="submit" className="gap-2" isDisabled={!canSubmit}>
+            <Button
+              type="submit"
+              onPress={() => setSelectedTab(() => "oauth-client")}
+              className="gap-2"
+              isDisabled={!canSubmit}
+            >
               Next <ArrowRight className="size-5" />
             </Button>
           )}

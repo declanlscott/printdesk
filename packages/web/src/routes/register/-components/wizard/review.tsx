@@ -143,7 +143,7 @@ function Step3() {
 
   return (
     <Disclosure id={3}>
-      <DisclosureHeader>3. Tailscale OAuth Client</DisclosureHeader>
+      <DisclosureHeader>3. Tailscale</DisclosureHeader>
 
       <DisclosurePanel className="grid gap-4">
         <div className="grid gap-2">
@@ -193,7 +193,7 @@ function Step4() {
 
   return (
     <Disclosure id={4}>
-      <DisclosureHeader>4. PaperCut Security</DisclosureHeader>
+      <DisclosureHeader>4. PaperCut</DisclosureHeader>
 
       <DisclosurePanel className="grid gap-4">
         <div className="grid gap-2">

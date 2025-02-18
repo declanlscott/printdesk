@@ -96,8 +96,12 @@ export type RegistrationWizardStep3 = v.InferOutput<
 >;
 
 export const registrationWizardStep4Schema = v.object({
-  tailnetPapercutServerUri: v.pipe(v.string(), v.url()),
-  papercutServerAuthToken: v.string(),
+  tailnetPapercutServerUri: v.pipe(v.string(), v.trim(), v.url()),
+  papercutServerAuthToken: v.pipe(
+    v.string(),
+    v.trim(),
+    v.nonEmpty("Auth token cannot be empty."),
+  ),
 });
 export type RegistrationWizardStep4 = v.InferOutput<
   typeof registrationWizardStep4Schema

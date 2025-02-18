@@ -94,8 +94,8 @@ export function RegistrationStatus() {
                 <AlertTitle>Error</AlertTitle>
 
                 <AlertDescription>
-                  Something went wrong wile setting up. Contact support if this
-                  persists.
+                  Something went wrong wile setting up your organization.
+                  Contact support if this persists.
                 </AlertDescription>
 
                 <div className="flex justify-end">

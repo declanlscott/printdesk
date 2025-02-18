@@ -14,7 +14,6 @@ import { RegistrationWizardStep2 } from "~/routes/register/-components/wizard/st
 import { RegistrationWizardStep3 } from "~/routes/register/-components/wizard/step-3";
 import { RegistrationWizardStep4 } from "~/routes/register/-components/wizard/step-4";
 import { Label } from "~/ui/primitives/field";
-import { Link } from "~/ui/primitives/link";
 import { ProgressBar } from "~/ui/primitives/progress-bar";
 
 export function RegistrationWizard() {
@@ -34,7 +33,7 @@ export function RegistrationWizard() {
   return (
     <div className="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
       <div className="py-12">
-        <div className="mx-auto grid max-w-sm gap-6">
+        <div className="mx-auto grid max-w-md gap-6">
           <div className="flex justify-center">
             <AriaLink href={{ to: "/", search: { slug } }}>
               <img src={logo} alt="Printworks" className="size-24" />
@@ -61,10 +60,6 @@ export function RegistrationWizard() {
           ) : null}
 
           <RegistrationWizardStep />
-
-          <p className="text-sm">
-            Already have an organization? <Link href={{ to: "/" }}>Login</Link>
-          </p>
         </div>
       </div>
 

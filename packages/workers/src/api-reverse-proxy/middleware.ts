@@ -1,3 +1,4 @@
+/* eslint-disable drizzle/enforce-delete-with-where */
 import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
@@ -7,6 +8,8 @@ import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { Resource } from "sst";
+
+import type { FetchProxy } from "@mjackson/fetch-proxy";
 
 export const rateLimiter = createMiddleware(
   every(
@@ -80,8 +83,31 @@ export const rateLimiter = createMiddleware(
   ),
 );
 
+// https://datatracker.ietf.org/doc/html/rfc2616#section-13.5.1
+const hopByHopHeaders = [
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailers",
+  "transfer-encoding",
+];
+
 export const proxy = createMiddleware((c, next) => {
-  c.set("proxy", createFetchProxy(Resource.Api.url));
+  const fetchProxy = createFetchProxy(Resource.Api.url);
+
+  c.set("proxy", async (...args: Parameters<FetchProxy>) => {
+    const res = await fetchProxy(...args);
+
+    for (const header of hopByHopHeaders) res.headers.delete(header);
+    if (res.headers.has("content-encoding")) {
+      res.headers.delete("content-encoding");
+      res.headers.delete("content-length");
+    }
+
+    return res;
+  });
 
   return next();
 });

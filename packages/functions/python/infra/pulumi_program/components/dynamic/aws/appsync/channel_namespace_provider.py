@@ -109,7 +109,10 @@ class ChannelNamespaceProvider(pulumi.dynamic.ResourceProvider):
 
         return pulumi.dynamic.CreateResult(
             id_=channel_namespace["name"],
-            outs=ChannelNamespaceProvider.__build_outs(**channel_namespace),
+            outs=ChannelNamespaceProvider.__build_outs(
+                props["tenant_id"],
+                **channel_namespace,
+            ),
         )
 
     def read(
@@ -125,7 +128,10 @@ class ChannelNamespaceProvider(pulumi.dynamic.ResourceProvider):
 
         return pulumi.dynamic.ReadResult(
             id_=id_,
-            outs=ChannelNamespaceProvider.__build_outs(**channel_namespace),
+            outs=ChannelNamespaceProvider.__build_outs(
+                props["tenant_id"],
+                **channel_namespace,
+            ),
         )
 
     def update(
@@ -155,7 +161,10 @@ class ChannelNamespaceProvider(pulumi.dynamic.ResourceProvider):
             raise Exception("Failed to update channel namespace")
 
         return pulumi.dynamic.UpdateResult(
-            outs=ChannelNamespaceProvider.__build_outs(**channel_namespace),
+            outs=ChannelNamespaceProvider.__build_outs(
+                _olds["tenant_id"],
+                **channel_namespace,
+            ),
         )
 
     def delete(self, _id: str, _props: ChannelNamespaceProviderOutputs) -> None:

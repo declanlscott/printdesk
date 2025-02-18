@@ -45,6 +45,7 @@ class Realtime(pulumi.ComponentResource):
         self.__events_channel_namespace = dynamic.aws.appsync.ChannelNamespace(
             name="EventsChannelNamespace",
             props=dynamic.aws.appsync.ChannelNamespaceInputs(
+                tenant_id=args.tenant_id,
                 api_id=self.__api.api_id,
                 name="events",
             ),
@@ -54,6 +55,7 @@ class Realtime(pulumi.ComponentResource):
         self.__replicache_channel_namespace = dynamic.aws.appsync.ChannelNamespace(
             name="ReplicacheChannelNamespace",
             props=dynamic.aws.appsync.ChannelNamespaceInputs(
+                tenant_id=args.tenant_id,
                 api_id=self.__api.api_id,
                 name="replicache",
             ),

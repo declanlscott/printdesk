@@ -62,12 +62,14 @@ class EventApi(pulumi.dynamic.Resource):
 class ChannelNamespaceInputs:
     def __init__(
         self,
+        tenant_id: str,
         api_id: pulumi.Input[str],
         name: pulumi.Input[str],
         subscribe_auth_modes: Optional[pulumi.Input[Sequence[AuthModeTypeDef]]] = None,
         publish_auth_modes: Optional[pulumi.Input[Sequence[AuthModeTypeDef]]] = None,
         code_handlers: Optional[pulumi.Input[str]] = None,
     ):
+        self.tenant_id = tenant_id
         self.api_id = api_id
         self.name = name
         self.subscribe_auth_modes = subscribe_auth_modes
@@ -76,6 +78,7 @@ class ChannelNamespaceInputs:
 
 
 class ChannelNamespace(pulumi.dynamic.Resource):
+    tenant_id: pulumi.Output[str]
     api_id: pulumi.Output[str]
     name: pulumi.Output[str]
     channel_namespace_arn: pulumi.Output[str]

@@ -45,9 +45,7 @@ def inline(payload: sqs_record.Payload):
             tenant_id=payload.tenantId,
             alias=ssl.us_east_1_certificate.domain_name,
             certificate_arn=ssl.us_east_1_certificate.arn,
-            api_origin_domain_name=ssl.api_domain_name.apply(
-                lambda api_domain_name: api_domain_name.regional_domain_name
-            ),
+            api_origin_domain_name=ssl.api_domain_name.regional_domain_name,
             assets_origin_domain_name=storage.buckets["assets"].regional_domain_name,
             documents_origin_domain_name=storage.buckets[
                 "documents"
@@ -73,9 +71,7 @@ def inline(payload: sqs_record.Payload):
     api_deployment = ApiDeployment(
         args=ApiDeploymentArgs(
             tenant_id=payload.tenantId,
-            domain_name_id=ssl.api_domain_name.apply(
-                lambda api_domain_name: api_domain_name.id
-            ),
+            domain_name_id=ssl.api_domain_name.id,
             api=api,
         )
     )

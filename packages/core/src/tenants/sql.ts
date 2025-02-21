@@ -4,8 +4,8 @@ import { customJsonb, id, idPrimaryKey, timestamps } from "../drizzle/columns";
 import { Constants } from "../utils/constants";
 import { licenseStatus, tenantStatus } from "../utils/sql";
 import {
+  infraProgramInputSchema,
   licensesTableName,
-  tenantInfraProgramInputSchema,
   tenantMetadataTableName,
   tenantsTableName,
 } from "./shared";
@@ -26,7 +26,7 @@ export const tenantsTable = pgTable(
     ...idPrimaryKey,
     slug: varchar("slug", { length: Constants.VARCHAR_LENGTH }).notNull(),
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    status: tenantStatus("status").notNull().default("registered"),
+    status: tenantStatus("status").notNull().default("setup"),
     ...timestamps,
   },
   (table) => [uniqueIndex().on(table.slug)],
@@ -35,12 +35,11 @@ export type TenantsTable = typeof tenantsTable;
 export type Tenant = InferSelectModel<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
-  ...idPrimaryKey,
+  tenantId: id("tenant_id").primaryKey(),
   infraProgramInput: customJsonb(
     "infra_program_input",
-    tenantInfraProgramInputSchema,
+    infraProgramInputSchema,
   ).notNull(),
-  tenantId: id("tenant_id").unique().notNull(),
   apiKey: varchar("api_key"),
   ...timestamps,
 });

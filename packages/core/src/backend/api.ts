@@ -55,7 +55,7 @@ export namespace Api {
     );
   }
 
-  export async function papercutSync() {
+  export async function dispatchPapercutSync() {
     const res = await send("/papercut/sync", { method: "POST" });
     if (!res.ok)
       throw new HttpError.BadGateway({
@@ -70,11 +70,11 @@ export namespace Api {
     if (output.FailedEntryCount > 0)
       throw new HttpError.InternalServerError("Papercut sync event failure");
 
-    const eventId = output.Entries.at(0)?.EventId;
-    if (!eventId)
+    const dispatchId = output.Entries.at(0)?.EventId;
+    if (!dispatchId)
       throw new HttpError.InternalServerError("Missing papercut sync event id");
 
-    return { eventId };
+    return dispatchId;
   }
 
   export async function getParameter<TName extends string>(

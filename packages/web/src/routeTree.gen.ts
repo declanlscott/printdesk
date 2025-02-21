@@ -16,7 +16,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
 import { Route as CallbackImport } from './routes/callback'
 import { Route as AuthenticatedImport } from './routes/_authenticated'
-import { Route as RegisterIndexImport } from './routes/register/index'
+import { Route as SetupIndexImport } from './routes/setup/index'
 import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsersIndexImport } from './routes/_authenticated/users.index'
 import { Route as AuthenticatedSettingsIndexImport } from './routes/_authenticated/settings.index'
@@ -67,9 +67,9 @@ const AuthenticatedRoute = AuthenticatedImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const RegisterIndexRoute = RegisterIndexImport.update({
-  id: '/register/',
-  path: '/register/',
+const SetupIndexRoute = SetupIndexImport.update({
+  id: '/setup/',
+  path: '/setup/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -264,11 +264,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexImport
       parentRoute: typeof AuthenticatedImport
     }
-    '/register/': {
-      id: '/register/'
-      path: '/register'
-      fullPath: '/register'
-      preLoaderRoute: typeof RegisterIndexImport
+    '/setup/': {
+      id: '/setup/'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupIndexImport
       parentRoute: typeof rootRoute
     }
     '/_authenticated/settings/images': {
@@ -495,7 +495,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/users': typeof AuthenticatedUsersLazyRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
-  '/register': typeof RegisterIndexRoute
+  '/setup': typeof SetupIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
@@ -516,7 +516,7 @@ export interface FileRoutesByTo {
   '/callback': typeof CallbackRoute
   '/login': typeof LoginRoute
   '/': typeof AuthenticatedIndexRoute
-  '/register': typeof RegisterIndexRoute
+  '/setup': typeof SetupIndexRoute
   '/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/settings/services': typeof AuthenticatedSettingsServicesRoute
@@ -540,7 +540,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsLazyRouteWithChildren
   '/_authenticated/users': typeof AuthenticatedUsersLazyRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/register/': typeof RegisterIndexRoute
+  '/setup/': typeof SetupIndexRoute
   '/_authenticated/settings/images': typeof AuthenticatedSettingsImagesRoute
   '/_authenticated/settings/rooms': typeof AuthenticatedSettingsRoomsRoute
   '/_authenticated/settings/services': typeof AuthenticatedSettingsServicesRoute
@@ -567,7 +567,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/users'
     | '/'
-    | '/register'
+    | '/setup'
     | '/settings/images'
     | '/settings/rooms'
     | '/settings/services'
@@ -587,7 +587,7 @@ export interface FileRouteTypes {
     | '/callback'
     | '/login'
     | '/'
-    | '/register'
+    | '/setup'
     | '/settings/images'
     | '/settings/rooms'
     | '/settings/services'
@@ -609,7 +609,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/users'
     | '/_authenticated/'
-    | '/register/'
+    | '/setup/'
     | '/_authenticated/settings/images'
     | '/_authenticated/settings/rooms'
     | '/_authenticated/settings/services'
@@ -631,14 +631,14 @@ export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   CallbackRoute: typeof CallbackRoute
   LoginRoute: typeof LoginRoute
-  RegisterIndexRoute: typeof RegisterIndexRoute
+  SetupIndexRoute: typeof SetupIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   CallbackRoute: CallbackRoute,
   LoginRoute: LoginRoute,
-  RegisterIndexRoute: RegisterIndexRoute,
+  SetupIndexRoute: SetupIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -654,7 +654,7 @@ export const routeTree = rootRoute
         "/_authenticated",
         "/callback",
         "/login",
-        "/register/"
+        "/setup/"
       ]
     },
     "/_authenticated": {
@@ -703,8 +703,8 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/index.tsx",
       "parent": "/_authenticated"
     },
-    "/register/": {
-      "filePath": "register/index.tsx"
+    "/setup/": {
+      "filePath": "setup/index.tsx"
     },
     "/_authenticated/settings/images": {
       "filePath": "_authenticated/settings.images.tsx",

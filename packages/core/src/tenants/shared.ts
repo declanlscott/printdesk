@@ -23,13 +23,11 @@ export const licenseSchema = v.object({
 
 export const timezoneSchema = v.picklist(Intl.supportedValuesOf("timeZone"));
 
-export const tenantInfraProgramInputSchema = v.object({
+export const infraProgramInputSchema = v.object({
   papercutSyncCronExpression: v.string(),
   timezone: timezoneSchema,
 });
-export type TenantInfraProgramInput = v.InferOutput<
-  typeof tenantInfraProgramInputSchema
->;
+export type InfraProgramInput = v.InferOutput<typeof infraProgramInputSchema>;
 
 export const tenantsTableName = "tenants";
 
@@ -41,12 +39,7 @@ export const tenantSlugSchema = v.pipe(
   ),
 );
 
-export const tenantStatuses = [
-  "registered",
-  "initializing",
-  "active",
-  "suspended",
-] as const;
+export const tenantStatuses = ["setup", "active", "suspended"] as const;
 export type TenantStatus = (typeof tenantStatuses)[number];
 
 export const tenantSchema = v.object({
@@ -70,32 +63,26 @@ export type UpdateTenantMutationArgs = v.InferOutput<
   typeof updateTenantMutationArgsSchema
 >;
 
-export const registrationWizardStep1Schema = v.object({
+export const setupWizardStep1Schema = v.object({
   licenseKey: licenseSchema.entries.key,
   tenantName: tenantSchema.entries.name,
   tenantSlug: tenantSchema.entries.slug,
 });
-export type RegistrationWizardStep1 = v.InferOutput<
-  typeof registrationWizardStep1Schema
->;
+export type SetupWizardStep1 = v.InferOutput<typeof setupWizardStep1Schema>;
 
-export const registrationWizardStep2Schema = v.object({
+export const setupWizardStep2Schema = v.object({
   userOauthProviderType: oauth2ProvidersSchema.entries.type,
   userOauthProviderId: oauth2ProvidersSchema.entries.id,
 });
-export type RegistrationWizardStep2 = v.InferOutput<
-  typeof registrationWizardStep2Schema
->;
+export type SetupWizardStep2 = v.InferOutput<typeof setupWizardStep2Schema>;
 
-export const registrationWizardStep3Schema = v.object({
+export const setupWizardStep3Schema = v.object({
   tailscaleOauthClientId: tailscaleOauthClientSchema.entries.id,
   tailscaleOauthClientSecret: tailscaleOauthClientSchema.entries.secret,
 });
-export type RegistrationWizardStep3 = v.InferOutput<
-  typeof registrationWizardStep3Schema
->;
+export type SetupWizardStep3 = v.InferOutput<typeof setupWizardStep3Schema>;
 
-export const registrationWizardStep4Schema = v.object({
+export const setupWizardStep4Schema = v.object({
   tailnetPapercutServerUri: v.pipe(v.string(), v.trim(), v.url()),
   papercutServerAuthToken: v.pipe(
     v.string(),
@@ -103,43 +90,34 @@ export const registrationWizardStep4Schema = v.object({
     v.nonEmpty("Auth token cannot be empty."),
   ),
 });
-export type RegistrationWizardStep4 = v.InferOutput<
-  typeof registrationWizardStep4Schema
->;
+export type SetupWizardStep4 = v.InferOutput<typeof setupWizardStep4Schema>;
 
-export const registrationWizardSchema = v.object({
-  ...registrationWizardStep1Schema.entries,
-  ...registrationWizardStep2Schema.entries,
-  ...registrationWizardStep3Schema.entries,
-  ...registrationWizardStep4Schema.entries,
+export const setupWizardSchema = v.object({
+  ...setupWizardStep1Schema.entries,
+  ...setupWizardStep2Schema.entries,
+  ...setupWizardStep3Schema.entries,
+  ...setupWizardStep4Schema.entries,
   timezone: timezoneSchema,
 });
-export type RegistrationWizard = v.InferOutput<typeof registrationWizardSchema>;
+export type SetupWizard = v.InferOutput<typeof setupWizardSchema>;
 
-export const registrationParameters = [
-  "tailscaleOauthClientId",
-  "tailscaleOauthClientSecret",
-  "tailnetPapercutServerUri",
-  "papercutServerAuthToken",
-] as const;
-
-export const registerDataSchema = v.omit(
-  registrationWizardSchema,
-  registrationParameters,
-);
-export type RegisterData = v.InferOutput<typeof registerDataSchema>;
-
-export const initializeDataSchema = v.pick(
-  registrationWizardSchema,
-  registrationParameters,
-);
+export const initializeDataSchema = v.pick(setupWizardSchema, [
+  "licenseKey",
+  "timezone",
+]);
 export type InitializeData = v.InferOutput<typeof initializeDataSchema>;
+
+export const registerDataSchema = v.omit(setupWizardSchema, [
+  "licenseKey",
+  "timezone",
+]);
+export type RegisterData = v.InferOutput<typeof registerDataSchema>;
 
 export const tenantMetadataTableName = "tenant_metadata";
 
 export const tenantMetadataSchema = v.object({
-  id: nanoIdSchema,
-  infraProgramInput: tenantInfraProgramInputSchema,
   tenantId: nanoIdSchema,
+  infraProgramInput: infraProgramInputSchema,
+  apiKey: v.nullable(v.string()),
   ...timestampsSchema.entries,
 });

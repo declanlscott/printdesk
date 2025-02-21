@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Button as AriaButton } from "react-aria-components";
-import { registrationWizardStep4Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep4Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
 import { useCopyToClipboard } from "~/lib/hooks/copy-to-clipboard";
-import { useRegistrationMachine } from "~/lib/hooks/registration";
+import { useSetupMachine } from "~/lib/hooks/setup";
 import { onSelectionChange } from "~/lib/ui";
 import { linkStyles } from "~/styles/components/primitives/link";
 import { Button } from "~/ui/primitives/button";
@@ -16,19 +16,19 @@ import { Label } from "~/ui/primitives/field";
 import { Tab, TabList, TabPanel, Tabs } from "~/ui/primitives/tabs";
 import { Input } from "~/ui/primitives/text-field";
 
-export function RegistrationWizardStep4() {
-  const registrationMachine = useRegistrationMachine();
+export function SetupWizardStep4() {
+  const setupMachine = useSetupMachine();
 
-  const actorRef = registrationMachine.useActorRef();
+  const actorRef = setupMachine.useActorRef();
 
-  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+  const defaultValues = setupMachine.useSelector(({ context }) => ({
     tailnetPapercutServerUri: context.tailnetPapercutServerUri,
     papercutServerAuthToken: context.papercutServerAuthToken,
   }));
 
   const form = useForm({
     validators: {
-      onSubmit: registrationWizardStep4Schema,
+      onSubmit: setupWizardStep4Schema,
     },
     defaultValues,
     onSubmit: async ({ value }) =>
@@ -130,8 +130,7 @@ export function RegistrationWizardStep4() {
                 name="tailnetPapercutServerUri"
                 validators={{
                   onBlur:
-                    registrationWizardStep4Schema.entries
-                      .tailnetPapercutServerUri,
+                    setupWizardStep4Schema.entries.tailnetPapercutServerUri,
                 }}
               >
                 {(field) => (
@@ -175,8 +174,7 @@ export function RegistrationWizardStep4() {
                 name="papercutServerAuthToken"
                 validators={{
                   onBlur:
-                    registrationWizardStep4Schema.entries
-                      .papercutServerAuthToken,
+                    setupWizardStep4Schema.entries.papercutServerAuthToken,
                 }}
               >
                 {(field) => (
@@ -188,7 +186,7 @@ export function RegistrationWizardStep4() {
                     <CardDescription>
                       The auth token you configured on your server. Printworks
                       encrypts this and it will <strong>not</strong> be
-                      accessible to you after completing registration.
+                      accessible to you after completing setup.
                     </CardDescription>
 
                     <div className="flex gap-2">

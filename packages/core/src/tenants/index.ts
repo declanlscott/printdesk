@@ -1,11 +1,9 @@
-import { isEqual } from "date-fns";
 import { and, eq, getTableName, isNull, or } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
 import { Auth } from "../auth";
-import { Api } from "../backend/api";
 import { Documents } from "../backend/documents";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
@@ -15,17 +13,13 @@ import { Tailscale } from "../tailscale";
 import { Sqs } from "../utils/aws";
 import { Constants } from "../utils/constants";
 import { ApplicationError } from "../utils/errors";
-import { fn } from "../utils/shared";
+import { fn, generateId } from "../utils/shared";
 import { useTenant } from "./context";
 import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type {
-  InitializeData,
-  RegisterData,
-  TenantInfraProgramInput,
-} from "./shared";
+import type { InfraProgramInput, RegisterData } from "./shared";
 import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
 export namespace Tenants {
@@ -33,21 +27,17 @@ export namespace Tenants {
     useTransaction((tx) =>
       tx
         .insert(tenantsTable)
-        .values({ ...values, status: "registered" })
+        .values({ ...values, status: "setup" })
         .onConflictDoUpdate({
-          target: tenantsTable.id,
+          target: [tenantsTable.id],
           set: buildConflictUpdateColumns(tenantsTable, [
-            "slug",
+            "id",
             "name",
+            "slug",
             "status",
           ]),
-          setWhere: or(
-            eq(tenantsTable.status, "registered"),
-            eq(tenantsTable.status, "initializing"),
-          ),
-        })
-        .returning()
-        .then(R.first()),
+          setWhere: eq(tenantsTable.status, "setup"),
+        }),
     );
 
   export const read = async () =>
@@ -81,7 +71,7 @@ export namespace Tenants {
         .where(eq(tenantsTable.slug, slug))
         .then(R.first()),
     );
-    if (!tenant || tenant.status === "registered") return true;
+    if (!tenant || tenant.status === "setup") return true;
 
     return false;
   }
@@ -98,7 +88,7 @@ export namespace Tenants {
             eq(licensesTable.status, "active"),
             or(
               isNull(licensesTable.tenantId),
-              eq(tenantsTable.status, "registered"),
+              eq(tenantsTable.status, "setup"),
             ),
           ),
         )
@@ -116,11 +106,12 @@ export namespace Tenants {
         .where(
           and(
             eq(licensesTable.key, licenseKey),
-            isNull(licensesTable.tenantId),
+            or(
+              isNull(licensesTable.tenantId),
+              eq(licensesTable.tenantId, tenantId),
+            ),
           ),
-        )
-        .returning()
-        .then(R.first()),
+        ),
     );
 
   export const putMetadata = async (
@@ -131,80 +122,46 @@ export namespace Tenants {
         .insert(tenantMetadataTable)
         .values(values)
         .onConflictDoUpdate({
-          target: tenantMetadataTable.id,
+          target: [tenantMetadataTable.tenantId],
           set: buildConflictUpdateColumns(tenantMetadataTable, [
             "infraProgramInput",
             "apiKey",
           ]),
-        })
-        .returning()
-        .then(R.first()),
+        }),
     );
 
-  export async function dispatchInfra(
-    tenantId: Tenant["id"],
-    programInput: TenantInfraProgramInput,
+  export async function initialize(
+    licenseKey: License["key"],
+    infraProgramInput: InfraProgramInput,
   ) {
-    const output = await Sqs.sendMessage({
-      QueueUrl: Resource.InfraQueue.url,
-      MessageBody: JSON.stringify({ tenantId, ...programInput }),
-    });
-    if (!output.MessageId) throw new Error("Failed to dispatch infra");
+    const tenantId = generateId();
+    const apiKey = await Auth.generateToken();
 
-    return output.MessageId;
+    await useTransaction(() =>
+      Promise.all([
+        assignLicense(tenantId, licenseKey),
+        putMetadata({ tenantId, apiKey: apiKey.hash, infraProgramInput }),
+      ]),
+    );
+
+    return { tenantId, apiKey: apiKey.value };
   }
 
-  export async function register(data: RegisterData) {
-    const infraProgramInput = {
-      papercutSyncCronExpression:
-        Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION,
-      timezone: data.timezone,
-    } satisfies TenantInfraProgramInput;
-
-    const apiKey = await Auth.createToken();
-
-    const tenantId = await useTransaction(async () => {
-      const tenant = await put({
-        slug: data.tenantSlug,
-        name: data.tenantName,
-      });
-      if (!tenant) throw new Error("Failed to create tenant");
-
-      // Assign tenant to license if the tenant was just created
-      if (isEqual(tenant.createdAt, tenant.updatedAt)) {
-        const license = await assignLicense(tenant.id, data.licenseKey);
-        if (!license) throw new Error("Failed to assign tenant to license");
-      }
-
-      const oauthProvider = await Auth.putOauth2Provider({
-        id: data.userOauthProviderId,
-        type: data.userOauthProviderType,
-        tenantId: tenant.id,
-      });
-      if (!oauthProvider) throw new Error("Failed to create oauth provider");
-
-      const metadata = await putMetadata({
-        tenantId: tenant.id,
-        infraProgramInput,
-        apiKey: apiKey.hash,
-      });
-      if (!metadata) throw new Error("Failed to create tenant metadata");
-
-      return tenant.id;
-    });
-
-    const dispatchId = await dispatchInfra(tenantId, infraProgramInput);
-
-    return { tenantId, dispatchId, apiKey: apiKey.value };
-  }
-
-  export async function initialize(data: InitializeData) {
-    await Promise.all([
-      useTransaction((tx) =>
-        tx
-          .update(tenantsTable)
-          .set({ status: "initializing" })
-          .where(eq(tenantsTable.id, useTenant().id)),
+  export const register = async (data: RegisterData) =>
+    Promise.all([
+      useTransaction(() =>
+        Promise.all([
+          put({
+            id: useTenant().id,
+            name: data.tenantName,
+            slug: data.tenantSlug,
+          }),
+          Auth.putOauth2Provider({
+            id: data.userOauthProviderId,
+            type: data.userOauthProviderType,
+            tenantId: useTenant().id,
+          }),
+        ]),
       ),
       Tailscale.setOauthClient(
         data.tailscaleOauthClientId,
@@ -216,21 +173,39 @@ export namespace Tenants {
       Documents.setSizeLimit(Constants.DEFAULT_DOCUMENTS_SIZE_LIMIT),
     ]);
 
-    const { eventId: dispatchId } = await Api.papercutSync();
+  export async function dispatchInfra() {
+    const programInput = await useTransaction((tx) =>
+      tx
+        .select({ programInput: tenantMetadataTable.infraProgramInput })
+        .from(tenantMetadataTable)
+        .where(eq(tenantMetadataTable.tenantId, useTenant().id))
+        .then((rows) => R.pipe(rows, R.map(R.prop("programInput")), R.first())),
+    );
+    if (!programInput) throw new Error("Tenant metadata not found");
 
-    return { dispatchId };
+    const output = await Sqs.sendMessage({
+      QueueUrl: Resource.InfraQueue.url,
+      MessageBody: JSON.stringify({
+        tenantId: useTenant().id,
+        ...programInput,
+      }),
+    });
+    if (!output.MessageId) throw new Error("Failed to dispatch infra");
+
+    return output.MessageId;
   }
 
   export const activate = async () =>
-    useTransaction(async (tx) => {
-      await tx
-        .update(tenantsTable)
-        .set({ status: "active" })
-        .where(eq(tenantsTable.id, useTenant().id));
-
-      await tx
-        .update(tenantMetadataTable)
-        .set({ apiKey: null })
-        .where(eq(tenantMetadataTable.id, useTenant().id));
-    });
+    useTransaction((tx) =>
+      Promise.all([
+        tx
+          .update(tenantsTable)
+          .set({ status: "active" })
+          .where(eq(tenantsTable.id, useTenant().id)),
+        tx
+          .update(tenantMetadataTable)
+          .set({ apiKey: null })
+          .where(eq(tenantMetadataTable.tenantId, useTenant().id)),
+      ]),
+    );
 }

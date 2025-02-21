@@ -13,14 +13,14 @@ import { Resource } from "sst";
 import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
-import { authzHeaderValidator } from "~/api/middleware/validators";
+import { authzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .use(user)
   .put(
     "/server/tailnet-uri",
     authz("services", "update"),
-    authzHeaderValidator,
+    authzHeadersValidator,
     vValidator("json", updateServerTailnetUriSchema),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -39,7 +39,7 @@ export default new Hono()
   .put(
     "/server/auth-token",
     authz("services", "update"),
-    authzHeaderValidator,
+    authzHeadersValidator,
     vValidator("json", updateServerAuthTokenSchema),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -75,7 +75,7 @@ export default new Hono()
       RoleSessionName: "ApiPapercutSync",
     })),
     async (c) => {
-      const { eventId: dispatchId } = await Api.papercutSync();
+      const { eventId: dispatchId } = await Api.dispatchPapercutSync();
 
       return c.json({ dispatchId }, 202);
     },

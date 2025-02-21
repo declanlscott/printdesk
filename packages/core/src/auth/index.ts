@@ -14,7 +14,7 @@ import type { Tenant } from "../tenants/sql";
 import type { Oauth2ProvidersTable } from "./sql";
 
 export namespace Auth {
-  export async function createToken() {
+  export async function generateToken() {
     const value = randomBytes(32).toString("hex");
 
     return {
@@ -34,10 +34,12 @@ export namespace Auth {
         .values(values)
         .onConflictDoUpdate({
           target: [oauth2ProvidersTable.id, oauth2ProvidersTable.tenantId],
-          set: buildConflictUpdateColumns(oauth2ProvidersTable, ["type"]),
-        })
-        .returning()
-        .then(R.first()),
+          set: buildConflictUpdateColumns(oauth2ProvidersTable, [
+            "id",
+            "tenantId",
+            "type",
+          ]),
+        }),
     );
 
   export const readOauth2ProvidersBySlug = async (slug: Tenant["slug"]) =>

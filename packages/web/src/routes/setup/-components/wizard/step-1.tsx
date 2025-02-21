@@ -1,4 +1,4 @@
-import { registrationWizardStep1Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep1Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { ArrowRight } from "lucide-react";
 import * as R from "remeda";
@@ -6,20 +6,20 @@ import { toast } from "sonner";
 import * as v from "valibot";
 
 import { useApi } from "~/lib/hooks/api";
-import { useRegistrationMachine } from "~/lib/hooks/registration";
 import { useResource } from "~/lib/hooks/resource";
+import { useSetupMachine } from "~/lib/hooks/setup";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
 import { Link } from "~/ui/primitives/link";
 import { Input } from "~/ui/primitives/text-field";
 
-export function RegistrationWizardStep1() {
-  const registrationMachine = useRegistrationMachine();
+export function SetupWizardStep1() {
+  const setupMachine = useSetupMachine();
 
-  const actorRef = registrationMachine.useActorRef();
+  const actorRef = setupMachine.useActorRef();
 
-  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+  const defaultValues = setupMachine.useSelector(({ context }) => ({
     licenseKey: context.licenseKey,
     tenantName: context.tenantName,
     tenantSlug: context.tenantSlug,
@@ -29,7 +29,7 @@ export function RegistrationWizardStep1() {
 
   const form = useForm({
     validators: {
-      onSubmit: v.omit(registrationWizardStep1Schema, ["tenantSlug"]),
+      onSubmit: v.omit(setupWizardStep1Schema, ["tenantSlug"]),
     },
     defaultValues,
     onSubmit: async ({ value }) => {
@@ -71,7 +71,7 @@ export function RegistrationWizardStep1() {
           <form.Field
             name="licenseKey"
             validators={{
-              onBlur: registrationWizardStep1Schema.entries.licenseKey,
+              onBlur: setupWizardStep1Schema.entries.licenseKey,
             }}
           >
             {(field) => (
@@ -102,7 +102,7 @@ export function RegistrationWizardStep1() {
           <form.Field
             name="tenantName"
             validators={{
-              onBlur: registrationWizardStep1Schema.entries.tenantName,
+              onBlur: setupWizardStep1Schema.entries.tenantName,
             }}
           >
             {(field) => (

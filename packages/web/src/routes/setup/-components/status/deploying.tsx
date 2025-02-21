@@ -1,47 +1,49 @@
 import { ApplicationError } from "@printworks/core/utils/errors";
 
-import {
-  useRegistrationContext,
-  useRegistrationStatusState,
-} from "~/lib/hooks/registration";
+import { useSetupContext, useSetupStatusState } from "~/lib/hooks/setup";
 import {
   FailureItem,
   PendingItem,
   SuccessItem,
-} from "~/routes/register/-components/status/items";
+} from "~/routes/setup/-components/status/items";
 
-const name = "Activating";
+const name = "Deploying";
 
-export function ActivatingStatusItem() {
-  const state = useRegistrationStatusState();
-  const context = useRegistrationContext();
+export function DeployingStatusItem() {
+  const state = useSetupStatusState();
+  const context = useSetupContext();
 
   switch (state) {
+    case "initialize":
     case "register":
+    case "dispatchInfra":
     case "waitForInfra":
-    case "waitForGoodHealth":
+      return <PendingItem name={name} />;
     case "healthcheck":
     case "determineHealth":
-    case "initialize":
-    case "waitForSync":
-      return <PendingItem name={name} />;
-    case "activate":
+    case "waitForGoodHealth":
       return <PendingItem name={name} isActive />;
+    case "dispatchSync":
+    case "waitForSync":
+    case "activate":
     case "complete":
       return <SuccessItem name={name} />;
     case "failure":
       switch (context.failureStatus) {
         case null:
+        case "initialize":
         case "register":
+        case "dispatchInfra":
         case "waitForInfra":
-        case "waitForGoodHealth":
+          return <PendingItem name={name} />;
         case "healthcheck":
         case "determineHealth":
-        case "initialize":
-        case "waitForSync":
-          return <PendingItem name={name} />;
-        case "activate":
+        case "waitForGoodHealth":
           return <FailureItem name={name} isActive />;
+        case "dispatchSync":
+        case "waitForSync":
+        case "activate":
+          return <SuccessItem name={name} />;
         default:
           throw new ApplicationError.NonExhaustiveValue(context.failureStatus);
       }

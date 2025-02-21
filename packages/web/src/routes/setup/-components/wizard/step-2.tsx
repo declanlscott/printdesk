@@ -1,11 +1,11 @@
 import { Text } from "react-aria-components";
-import { registrationWizardStep2Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep2Schema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import * as R from "remeda";
 
-import { useRegistrationMachine } from "~/lib/hooks/registration";
+import { useSetupMachine } from "~/lib/hooks/setup";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
 import { Label } from "~/ui/primitives/field";
@@ -19,21 +19,21 @@ import {
 } from "~/ui/primitives/select";
 import { Input } from "~/ui/primitives/text-field";
 
-import type { RegistrationWizardStep2 } from "@printworks/core/tenants/shared";
+import type { SetupWizardStep2 } from "@printworks/core/tenants/shared";
 
-export function RegistrationWizardStep2() {
-  const registrationMachine = useRegistrationMachine();
+export function SetupWizardStep2() {
+  const setupMachine = useSetupMachine();
 
-  const actorRef = registrationMachine.useActorRef();
+  const actorRef = setupMachine.useActorRef();
 
-  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+  const defaultValues = setupMachine.useSelector(({ context }) => ({
     userOauthProviderType: context.userOauthProviderType,
     userOauthProviderId: context.userOauthProviderId,
   }));
 
   const form = useForm({
     validators: {
-      onSubmit: registrationWizardStep2Schema,
+      onSubmit: setupWizardStep2Schema,
     },
     defaultValues,
     onSubmit: async ({ value }) =>
@@ -56,8 +56,7 @@ export function RegistrationWizardStep2() {
           <form.Field
             name="userOauthProviderType"
             validators={{
-              onBlur:
-                registrationWizardStep2Schema.entries.userOauthProviderType,
+              onBlur: setupWizardStep2Schema.entries.userOauthProviderType,
             }}
           >
             {(field) => (
@@ -67,7 +66,7 @@ export function RegistrationWizardStep2() {
                   selectedKey={field.state.value}
                   onSelectionChange={(value) =>
                     field.handleChange(
-                      value as RegistrationWizardStep2["userOauthProviderType"],
+                      value as SetupWizardStep2["userOauthProviderType"],
                     )
                   }
                   onBlur={field.handleBlur}
@@ -119,7 +118,7 @@ export function RegistrationWizardStep2() {
           <form.Field
             name="userOauthProviderId"
             validators={{
-              onBlur: registrationWizardStep2Schema.entries.userOauthProviderId,
+              onBlur: setupWizardStep2Schema.entries.userOauthProviderId,
             }}
           >
             {(field) => (

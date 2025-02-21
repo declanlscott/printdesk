@@ -3,12 +3,12 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createActorContext } from "@xstate/react";
 import * as v from "valibot";
 
-import { useRegistrationState } from "~/lib/hooks/registration";
-import { getRegistrationMachine } from "~/lib/machines/registration";
-import { RegistrationStatus } from "~/routes/register/-components/status";
-import { RegistrationWizard } from "~/routes/register/-components/wizard";
+import { useSetupState } from "~/lib/hooks/setup";
+import { getSetupMachine } from "~/lib/machines/setup";
+import { SetupStatus } from "~/routes/setup/-components/status";
+import { SetupWizard } from "~/routes/setup/-components/wizard";
 
-export const Route = createFileRoute("/register/")({
+export const Route = createFileRoute("/setup/")({
   validateSearch: v.object({ slug: v.optional(v.string()) }),
   loaderDeps: ({ search }) => ({ search }),
   beforeLoad: async ({ context }) => {
@@ -49,32 +49,32 @@ export const Route = createFileRoute("/register/")({
     if (!isAvailable)
       throw new ApplicationError.Error(`"${slug}" is unavailable to register.`);
 
-    const RegistrationMachineContext = createActorContext(
-      getRegistrationMachine(context.api.client, context.resource),
+    const SetupMachineContext = createActorContext(
+      getSetupMachine(context.api.client, context.resource),
       { input: { tenantSlug: slug } },
     );
 
-    return { RegistrationMachineContext };
+    return { SetupMachineContext };
   },
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { RegistrationMachineContext } = Route.useLoaderData();
+  const { SetupMachineContext } = Route.useLoaderData();
 
   return (
-    <RegistrationMachineContext.Provider>
-      <Registration />
-    </RegistrationMachineContext.Provider>
+    <SetupMachineContext.Provider>
+      <Setup />
+    </SetupMachineContext.Provider>
   );
 }
 
-function Registration() {
-  const state = useRegistrationState();
+function Setup() {
+  const state = useSetupState();
 
-  if ("wizard" in state) return <RegistrationWizard />;
+  if ("wizard" in state) return <SetupWizard />;
 
-  if ("status" in state) return <RegistrationStatus />;
+  if ("status" in state) return <SetupStatus />;
 
   throw new ApplicationError.NonExhaustiveValue(state);
 }

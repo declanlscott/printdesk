@@ -1,29 +1,28 @@
 import { ApplicationError } from "@printworks/core/utils/errors";
 
-import {
-  useRegistrationContext,
-  useRegistrationStatusState,
-} from "~/lib/hooks/registration";
+import { useSetupContext, useSetupStatusState } from "~/lib/hooks/setup";
 import {
   FailureItem,
   PendingItem,
   SuccessItem,
-} from "~/routes/register/-components/status/items";
+} from "~/routes/setup/-components/status/items";
 
-const name = "Registering";
+const name = "Initializing";
 
-export function RegisteringStatusItem() {
-  const state = useRegistrationStatusState();
-  const context = useRegistrationContext();
+export function InitializingStatusItem() {
+  const state = useSetupStatusState();
+  const context = useSetupContext();
 
   switch (state) {
-    case "register":
+    case "initialize":
       return <PendingItem name={name} isActive />;
+    case "register":
+    case "dispatchInfra":
     case "waitForInfra":
-    case "waitForGoodHealth":
     case "healthcheck":
     case "determineHealth":
-    case "initialize":
+    case "waitForGoodHealth":
+    case "dispatchSync":
     case "waitForSync":
     case "activate":
     case "complete":
@@ -32,13 +31,15 @@ export function RegisteringStatusItem() {
       switch (context.failureStatus) {
         case null:
           return <PendingItem name={name} />;
-        case "register":
+        case "initialize":
           return <FailureItem name={name} isActive />;
+        case "register":
+        case "dispatchInfra":
         case "waitForInfra":
-        case "waitForGoodHealth":
         case "healthcheck":
         case "determineHealth":
-        case "initialize":
+        case "waitForGoodHealth":
+        case "dispatchSync":
         case "waitForSync":
         case "activate":
           return <SuccessItem name={name} />;

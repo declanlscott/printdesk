@@ -4,21 +4,18 @@ import { ApplicationError } from "@printworks/core/utils/errors";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
-import {
-  useRegistrationMachine,
-  useRegistrationWizardState,
-} from "~/lib/hooks/registration";
-import { RegistrationWizardReview } from "~/routes/register/-components/wizard/review";
-import { RegistrationWizardStep1 } from "~/routes/register/-components/wizard/step-1";
-import { RegistrationWizardStep2 } from "~/routes/register/-components/wizard/step-2";
-import { RegistrationWizardStep3 } from "~/routes/register/-components/wizard/step-3";
-import { RegistrationWizardStep4 } from "~/routes/register/-components/wizard/step-4";
+import { useSetupMachine, useSetupWizardState } from "~/lib/hooks/setup";
+import { SetupWizardReview } from "~/routes/setup/-components/wizard/review";
+import { SetupWizardStep1 } from "~/routes/setup/-components/wizard/step-1";
+import { SetupWizardStep2 } from "~/routes/setup/-components/wizard/step-2";
+import { SetupWizardStep3 } from "~/routes/setup/-components/wizard/step-3";
+import { SetupWizardStep4 } from "~/routes/setup/-components/wizard/step-4";
 import { Label } from "~/ui/primitives/field";
 import { ProgressBar } from "~/ui/primitives/progress-bar";
 
-export function RegistrationWizard() {
-  const state = useRegistrationWizardState();
-  const slug = useRegistrationMachine().useSelector(
+export function SetupWizard() {
+  const state = useSetupWizardState();
+  const slug = useSetupMachine().useSelector(
     ({ context }) => context.tenantSlug,
   );
 
@@ -41,10 +38,10 @@ export function RegistrationWizard() {
           </div>
 
           <div className="grid gap-2 text-center">
-            <h1 className="text-3xl font-bold">Register</h1>
+            <h1 className="text-3xl font-bold">Setup</h1>
 
             <p className="text-muted-foreground text-balance">
-              Register your organization details below.
+              Enter your organization details to get started.
             </p>
           </div>
 
@@ -59,7 +56,7 @@ export function RegistrationWizard() {
             </ProgressBar>
           ) : null}
 
-          <RegistrationWizardStep />
+          <SetupWizardStep />
         </div>
       </div>
 
@@ -74,20 +71,20 @@ export function RegistrationWizard() {
   );
 }
 
-function RegistrationWizardStep() {
-  const state = useRegistrationWizardState();
+function SetupWizardStep() {
+  const state = useSetupWizardState();
 
   switch (state) {
     case "step1":
-      return <RegistrationWizardStep1 />;
+      return <SetupWizardStep1 />;
     case "step2":
-      return <RegistrationWizardStep2 />;
+      return <SetupWizardStep2 />;
     case "step3":
-      return <RegistrationWizardStep3 />;
+      return <SetupWizardStep3 />;
     case "step4":
-      return <RegistrationWizardStep4 />;
+      return <SetupWizardStep4 />;
     case "review":
-      return <RegistrationWizardReview />;
+      return <SetupWizardReview />;
     default:
       throw new ApplicationError.NonExhaustiveValue(state);
   }

@@ -2,56 +2,61 @@ import { handleEvent } from "@printworks/core/realtime/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { useRealtimeChannel } from "~/lib/hooks/realtime";
-import {
-  useRegistrationContext,
-  useRegistrationMachine,
-  useRegistrationStatusState,
-} from "~/lib/hooks/registration";
+import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
 import {
   FailureItem,
   PendingItem,
   SuccessItem,
-} from "~/routes/register/-components/status/items";
+} from "~/routes/setup/-components/status/items";
 
 const name = "Provisioning";
 
 export function ProvisioningStatusItem() {
-  const state = useRegistrationStatusState();
-  const context = useRegistrationContext();
+  const state = useSetupStatusState();
+  const { dispatchId, failureStatus } = useSetupMachine().useSelector(
+    ({ context }) => ({
+      dispatchId: context.dispatchId,
+      failureStatus: context.failureStatus,
+    }),
+  );
 
   switch (state) {
+    case "initialize":
     case "register":
       return <PendingItem name={name} />;
+    case "dispatchInfra":
     case "waitForInfra":
-      return context.dispatchId ? (
-        <WaitForInfra dispatchId={context.dispatchId} />
+      return dispatchId ? (
+        <WaitForInfra dispatchId={dispatchId} />
       ) : (
         <PendingItem name={name} isActive />
       );
-    case "waitForGoodHealth":
     case "healthcheck":
     case "determineHealth":
-    case "initialize":
+    case "waitForGoodHealth":
+    case "dispatchSync":
     case "waitForSync":
     case "activate":
     case "complete":
       return <SuccessItem name={name} />;
     case "failure":
-      switch (context.failureStatus) {
+      switch (failureStatus) {
         case null:
+        case "initialize":
         case "register":
           return <PendingItem name={name} />;
+        case "dispatchInfra":
         case "waitForInfra":
           return <FailureItem name={name} isActive />;
-        case "waitForGoodHealth":
         case "healthcheck":
         case "determineHealth":
-        case "initialize":
+        case "waitForGoodHealth":
+        case "dispatchSync":
         case "waitForSync":
         case "activate":
           return <SuccessItem name={name} />;
         default:
-          throw new ApplicationError.NonExhaustiveValue(context.failureStatus);
+          throw new ApplicationError.NonExhaustiveValue(failureStatus);
       }
     default:
       throw new ApplicationError.NonExhaustiveValue(state);
@@ -59,17 +64,18 @@ export function ProvisioningStatusItem() {
 }
 
 function WaitForInfra({ dispatchId }: { dispatchId: string }) {
-  const actor = useRegistrationMachine().useActorRef();
+  const actor = useSetupMachine().useActorRef();
 
   useRealtimeChannel(
     `/events/${dispatchId}`,
     handleEvent((event) => {
-      if (event.type === "infra") {
-        if (event.success && event.dispatchId === dispatchId)
-          return actor.send({ type: "status.healthcheck" });
+      if (event.type === "infra" && event.dispatchId === dispatchId) {
+        if (event.success) return actor.send({ type: "status.healthcheck" });
 
-        if (!event.success && !event.retrying)
-          return actor.send({ type: "status.fail" });
+        if (!event.success)
+          return event.retrying
+            ? console.log("Provisioning failed, retrying ...")
+            : actor.send({ type: "status.fail" });
       }
     }),
   );

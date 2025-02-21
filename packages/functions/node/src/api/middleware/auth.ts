@@ -2,10 +2,7 @@ import { AccessControl } from "@printworks/core/access-control";
 import { assertActor, withActor } from "@printworks/core/actors/context";
 import { Auth } from "@printworks/core/auth";
 import { useTransaction } from "@printworks/core/drizzle/context";
-import {
-  tenantMetadataTable,
-  tenantsTable,
-} from "@printworks/core/tenants/sql";
+import { tenantMetadataTable } from "@printworks/core/tenants/sql";
 import { HttpError } from "@printworks/core/utils/errors";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { bearerAuth } from "hono/bearer-auth";
@@ -14,7 +11,6 @@ import { createMiddleware } from "hono/factory";
 import * as R from "remeda";
 
 import type { Action, Resource } from "@printworks/core/access-control/shared";
-import type { Tenant } from "@printworks/core/tenants/sql";
 
 /**
  * NOTE: Depends on actor middleware
@@ -42,45 +38,37 @@ export const authz = (resource: Resource, action: Action) =>
     return next();
   });
 
-export const registrationAuthz = (
-  status: Extract<Tenant["status"], "registered" | "initializing">,
-) =>
-  createMiddleware(
-    every(
-      bearerAuth({
-        async verifyToken(token, c) {
-          const result = await useTransaction(async (tx) =>
-            tx
-              .select({ apiKey: tenantMetadataTable.apiKey })
-              .from(tenantsTable)
-              .innerJoin(
-                tenantMetadataTable,
-                eq(tenantMetadataTable.tenantId, tenantsTable.id),
-              )
-              .where(
-                and(
-                  eq(tenantsTable.id, c.req.header("X-Tenant-Id")!),
-                  eq(tenantsTable.status, status),
-                  isNotNull(tenantMetadataTable.apiKey),
-                ),
-              )
-              .then(R.first()),
-          );
-          if (!result?.apiKey) {
-            console.error("Tenant not found or missing API key");
-            return false;
-          }
+export const setupAuthz = createMiddleware(
+  every(
+    bearerAuth({
+      async verifyToken(token, c) {
+        const result = await useTransaction((tx) =>
+          tx
+            .select({ apiKey: tenantMetadataTable.apiKey })
+            .from(tenantMetadataTable)
+            .where(
+              and(
+                eq(tenantMetadataTable.tenantId, c.req.header("X-Tenant-Id")!),
+                isNotNull(tenantMetadataTable.apiKey),
+              ),
+            )
+            .then(R.first()),
+        );
+        if (!result?.apiKey) {
+          console.error("Tenant metadata not found or missing API key");
+          return false;
+        }
 
-          return Auth.verifyToken(token, result.apiKey);
+        return Auth.verifyToken(token, result.apiKey);
+      },
+    }),
+    (c, next) =>
+      withActor(
+        {
+          type: "system",
+          properties: { tenantId: c.req.header("X-Tenant-Id")! },
         },
-      }),
-      (c, next) =>
-        withActor(
-          {
-            type: "system",
-            properties: { tenantId: c.req.header("X-Tenant-Id")! },
-          },
-          next,
-        ),
-    ),
-  );
+        next,
+      ),
+  ),
+);

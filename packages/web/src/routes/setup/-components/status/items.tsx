@@ -11,7 +11,7 @@ export function PendingItem({ name, isActive = false }: ItemProps) {
   return (
     <li>
       <div className="flex items-center gap-2">
-        {isActive ? <Spinner className="size-4" /> : <div className="size-4" />}
+        {isActive ? <Spinner className="size-5" /> : <div className="size-5" />}
 
         <p className={isActive ? "font-semibold" : "text-muted-foreground"}>
           {name}
@@ -25,7 +25,7 @@ export function SuccessItem({ name }: ItemProps) {
   return (
     <li>
       <div className="flex items-center gap-2">
-        <CircleCheckBig className="size-4 text-green-500" />
+        <CircleCheckBig className="size-5 text-green-500" />
 
         <p className="text-muted-foreground">{name}</p>
       </div>
@@ -37,7 +37,7 @@ export function FailureItem({ name, isActive = false }: ItemProps) {
   return (
     <li>
       <div className="flex items-center gap-2">
-        <X className="text-destructive size-4" />
+        <X className="text-destructive size-5" />
 
         <p className={isActive ? "font-semibold" : "text-muted-foreground"}>
           {name}

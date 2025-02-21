@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { registrationWizardStep3Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep3Schema } from "@printworks/core/tenants/shared";
 import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 
-import { useRegistrationMachine } from "~/lib/hooks/registration";
+import { useSetupMachine } from "~/lib/hooks/setup";
 import { onSelectionChange } from "~/lib/ui";
 import { linkStyles } from "~/styles/components/primitives/link";
 import { Markdown } from "~/ui/markdown";
@@ -14,19 +14,19 @@ import { Label } from "~/ui/primitives/field";
 import { Tab, TabList, TabPanel, Tabs } from "~/ui/primitives/tabs";
 import { Input } from "~/ui/primitives/text-field";
 
-export function RegistrationWizardStep3() {
-  const registrationMachine = useRegistrationMachine();
+export function SetupWizardStep3() {
+  const setupMachine = useSetupMachine();
 
-  const actorRef = registrationMachine.useActorRef();
+  const actorRef = setupMachine.useActorRef();
 
-  const defaultValues = registrationMachine.useSelector(({ context }) => ({
+  const defaultValues = setupMachine.useSelector(({ context }) => ({
     tailscaleOauthClientId: context.tailscaleOauthClientId,
     tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
   }));
 
   const form = useForm({
     validators: {
-      onSubmit: registrationWizardStep3Schema,
+      onSubmit: setupWizardStep3Schema,
     },
     defaultValues,
     onSubmit: async ({ value }) =>
@@ -128,15 +128,13 @@ export function RegistrationWizardStep3() {
             <CardContent className="grid gap-4 pt-6">
               <CardDescription>
                 Printworks encrypts the OAuth client data and it will not be
-                accessible to you after completing registration.
+                accessible to you after completing setup.
               </CardDescription>
 
               <form.Field
                 name="tailscaleOauthClientId"
                 validators={{
-                  onBlur:
-                    registrationWizardStep3Schema.entries
-                      .tailscaleOauthClientId,
+                  onBlur: setupWizardStep3Schema.entries.tailscaleOauthClientId,
                 }}
               >
                 {(field) => (
@@ -163,8 +161,7 @@ export function RegistrationWizardStep3() {
                 name="tailscaleOauthClientSecret"
                 validators={{
                   onBlur:
-                    registrationWizardStep3Schema.entries
-                      .tailscaleOauthClientSecret,
+                    setupWizardStep3Schema.entries.tailscaleOauthClientSecret,
                 }}
               >
                 {(field) => (

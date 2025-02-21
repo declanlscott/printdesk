@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Constants } from "@printworks/core/utils/constants";
 import { ArrowLeft, Eye, EyeOff, Send } from "lucide-react";
 
-import { useRegistrationMachine } from "~/lib/hooks/registration";
+import { useSetupMachine } from "~/lib/hooks/setup";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent } from "~/ui/primitives/card";
 import {
@@ -14,10 +14,10 @@ import {
 import { Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/text-field";
 
-export function RegistrationWizardReview() {
-  const registrationMachine = useRegistrationMachine();
+export function SetupWizardReview() {
+  const setupMachine = useSetupMachine();
 
-  const actorRef = registrationMachine.useActorRef();
+  const actorRef = setupMachine.useActorRef();
 
   return (
     <div className="grid gap-4">
@@ -60,12 +60,13 @@ export function RegistrationWizardReview() {
 }
 
 function Step1() {
-  const { licenseKey, tenantName, tenantSlug } =
-    useRegistrationMachine().useSelector(({ context }) => ({
+  const { licenseKey, tenantName, tenantSlug } = useSetupMachine().useSelector(
+    ({ context }) => ({
       licenseKey: context.licenseKey,
       tenantName: context.tenantName,
       tenantSlug: context.tenantSlug,
-    }));
+    }),
+  );
 
   return (
     <Disclosure id={1}>
@@ -96,7 +97,7 @@ function Step1() {
 
 function Step2() {
   const { userOauthProviderType, userOauthProviderId } =
-    useRegistrationMachine().useSelector(({ context }) => ({
+    useSetupMachine().useSelector(({ context }) => ({
       userOauthProviderType: context.userOauthProviderType,
       userOauthProviderId: context.userOauthProviderId,
     }));
@@ -134,7 +135,7 @@ function Step2() {
 
 function Step3() {
   const { tailscaleOauthClientId, tailscaleOauthClientSecret } =
-    useRegistrationMachine().useSelector(({ context }) => ({
+    useSetupMachine().useSelector(({ context }) => ({
       tailscaleOauthClientId: context.tailscaleOauthClientId,
       tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
     }));
@@ -184,7 +185,7 @@ function Step3() {
 
 function Step4() {
   const { tailnetPapercutServerUri, papercutServerAuthToken } =
-    useRegistrationMachine().useSelector(({ context }) => ({
+    useSetupMachine().useSelector(({ context }) => ({
       tailnetPapercutServerUri: context.tailnetPapercutServerUri,
       papercutServerAuthToken: context.papercutServerAuthToken,
     }));

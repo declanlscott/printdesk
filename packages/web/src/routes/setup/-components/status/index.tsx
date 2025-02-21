@@ -7,25 +7,23 @@ import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
 import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
 import { useApi } from "~/lib/hooks/api";
-import {
-  useRegistrationMachine,
-  useRegistrationStatusState,
-} from "~/lib/hooks/registration";
 import { useResource } from "~/lib/hooks/resource";
-import { ActivatingStatusItem } from "~/routes/register/-components/status/activating";
-import { DeployingStatusItem } from "~/routes/register/-components/status/deploying";
-import { InitializingStatusItem } from "~/routes/register/-components/status/initializing";
-import { ProvisioningStatusItem } from "~/routes/register/-components/status/provisioning";
-import { RegisteringStatusItem } from "~/routes/register/-components/status/registering";
+import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
+import { ActivatingStatusItem } from "~/routes/setup/-components/status/activating";
+import { DeployingStatusItem } from "~/routes/setup/-components/status/deploying";
+import { InitializingStatusItem } from "~/routes/setup/-components/status/initializing";
+import { ProvisioningStatusItem } from "~/routes/setup/-components/status/provisioning";
+import { RegisteringStatusItem } from "~/routes/setup/-components/status/registering";
+import { SynchronizingStatusItem } from "~/routes/setup/-components/status/synchronizing";
 import { buttonStyles } from "~/styles/components/primitives/button";
 import { Alert, AlertDescription, AlertTitle } from "~/ui/primitives/alert";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/ui/primitives/card";
 
-export function RegistrationStatus() {
-  const state = useRegistrationStatusState();
-  const actor = useRegistrationMachine().useActorRef();
-  const slug = useRegistrationMachine().useSelector(
+export function SetupStatus() {
+  const state = useSetupStatusState();
+  const actor = useSetupMachine().useActorRef();
+  const slug = useSetupMachine().useSelector(
     ({ context }) => context.tenantSlug,
   );
 
@@ -83,7 +81,8 @@ export function RegistrationStatus() {
               <h1 className="text-3xl font-bold">Setting up</h1>
 
               <p className="text-muted-foreground text-balance">
-                Do not close this page until the setup is complete.
+                Do not close this page until the setup is complete. This may
+                take several minutes.
               </p>
             </div>
 
@@ -94,13 +93,14 @@ export function RegistrationStatus() {
                 <AlertTitle>Error</AlertTitle>
 
                 <AlertDescription>
-                  Something went wrong wile setting up your organization.
-                  Contact support if this persists.
+                  Something went wrong while setting up your organization.
+                  Contact support if this problem persists.
                 </AlertDescription>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end pt-4">
                   <Button
                     variant="secondary"
+                    className="gap-2"
                     onPress={() => actor.send({ type: "status.back" })}
                   >
                     <ArrowLeft className="size-5" />
@@ -126,8 +126,10 @@ export function RegistrationStatus() {
                       to: "/login",
                       search: isDev ? { slug } : {},
                     }}
-                    className={composeRenderProps("", (_, renderProps) =>
-                      buttonStyles(renderProps),
+                    className={composeRenderProps(
+                      "gap-2",
+                      (className, renderProps) =>
+                        buttonStyles({ className, ...renderProps }),
                     )}
                   >
                     <LogIn className="size-5" />
@@ -144,10 +146,11 @@ export function RegistrationStatus() {
 
               <CardContent className="grid gap-4">
                 <ol>
+                  <InitializingStatusItem />
                   <RegisteringStatusItem />
                   <ProvisioningStatusItem />
                   <DeployingStatusItem />
-                  <InitializingStatusItem />
+                  <SynchronizingStatusItem />
                   <ActivatingStatusItem />
                 </ol>
               </CardContent>

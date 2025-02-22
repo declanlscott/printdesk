@@ -194,20 +194,19 @@ CREATE TABLE "licenses" (
 );
 --> statement-breakpoint
 CREATE TABLE "tenant_metadata" (
-	"id" char(20) PRIMARY KEY NOT NULL,
+	"tenant_id" char(20) PRIMARY KEY NOT NULL,
 	"infra_program_input" "bytea" NOT NULL,
-	"tenant_id" char(20) NOT NULL,
+	"api_key" varchar,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp,
-	CONSTRAINT "tenant_metadata_tenant_id_unique" UNIQUE("tenant_id")
+	"deleted_at" timestamp
 );
 --> statement-breakpoint
 CREATE TABLE "tenants" (
 	"id" char(20) PRIMARY KEY NOT NULL,
 	"slug" varchar(40) NOT NULL,
 	"name" varchar(40) NOT NULL,
-	"status" varchar(50) DEFAULT 'initializing' NOT NULL,
+	"status" varchar(50) DEFAULT 'setup' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp

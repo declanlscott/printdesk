@@ -1,5 +1,5 @@
 {
-  "id": "2f998633-eb45-404b-b90d-fafc0b89dd1b",
+  "id": "f46da77a-897f-48ed-aa57-5d5f52c4dbf3",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -1475,8 +1475,8 @@
       "name": "tenant_metadata",
       "schema": "",
       "columns": {
-        "id": {
-          "name": "id",
+        "tenant_id": {
+          "name": "tenant_id",
           "type": "char(20)",
           "primaryKey": true,
           "notNull": true
@@ -1487,11 +1487,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "char(20)",
+        "api_key": {
+          "name": "api_key",
+          "type": "varchar",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -1517,15 +1517,7 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "tenant_metadata_tenant_id_unique": {
-          "name": "tenant_metadata_tenant_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "tenant_id"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1557,7 +1549,7 @@
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
-          "default": "'initializing'"
+          "default": "'setup'"
         },
         "created_at": {
           "name": "created_at",

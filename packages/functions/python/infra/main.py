@@ -149,3 +149,6 @@ def record_handler(record: SQSRecord):
         logger.info(
             f"Destroy summary: \n{json.dumps(result.summary.resource_changes, indent=2)}"
         )
+
+        if stage != "production":
+            stack.workspace.remove_stack(stack_name=stack_name)

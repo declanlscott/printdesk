@@ -1,8 +1,10 @@
 import { domainName, fqdn } from "./dns";
+import { tenantParameters } from "./parameters";
 import {
   pulumiRole,
   realtimePublisherRole,
   realtimeSubscriberRole,
+  tenantRoles,
 } from "./roles";
 
 export const isDev = $dev;
@@ -93,40 +95,8 @@ export const aws_ = new sst.Linkable("Aws", {
     account: { id: aws.getCallerIdentityOutput().accountId },
     region: aws.getRegionOutput().name,
     tenant: {
-      roles: {
-        apiAccess: {
-          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-ApiAccessRole`,
-        },
-        realtimeSubscriber: {
-          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-RealtimeSubscriberRole`,
-        },
-        realtimePublisher: {
-          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-RealtimePublisherRole`,
-        },
-        bucketsAccess: {
-          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-BucketsAccessRole`,
-        },
-        putParameters: {
-          nameTemplate: `pw-${$app.stage}-{{tenant_id}}-PutParametersRole`,
-        },
-      },
-      parameters: {
-        documentsMimeTypes: {
-          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/app/settings/documents/mime-types`,
-        },
-        documentsSizeLimit: {
-          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/app/settings/documents/size-limit`,
-        },
-        tailnetPapercutServerUri: {
-          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/papercut/server/tailnet-uri`,
-        },
-        papercutServerAuthToken: {
-          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/papercut/server/auth-token`,
-        },
-        tailscaleOauthClient: {
-          nameTemplate: `/${$app.name}/${$app.stage}/tenant/{{tenant_id}}/tailscale/oauth-client`,
-        },
-      },
+      roles: tenantRoles,
+      parameters: tenantParameters,
     },
     roles: {
       realtimeSubscriber: { arn: realtimeSubscriberRole.arn },

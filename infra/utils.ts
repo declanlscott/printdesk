@@ -2,6 +2,8 @@ import { join } from "node:path";
 
 import type { Resource } from "sst";
 
+export const tenantIdPlaceholder = "{{tenant_id}}";
+
 export const normalizePath = (path: string, root = $cli.paths.root) =>
   join(root, path);
 

@@ -1,3 +1,5 @@
+import { tenantIdPlaceholder } from "./utils";
+
 const realtimeAssumeRolePolicy = aws.iam.getPolicyDocumentOutput({
   statements: [
     {
@@ -44,3 +46,21 @@ export const pulumiRole = new aws.iam.Role("PulumiRole", {
   }).json,
   managedPolicyArns: [aws.iam.ManagedPolicy.AdministratorAccess],
 });
+
+export const tenantRoles = {
+  apiAccess: {
+    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-ApiAccessRole`,
+  },
+  realtimeSubscriber: {
+    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-RealtimeSubscriberRole`,
+  },
+  realtimePublisher: {
+    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-RealtimePublisherRole`,
+  },
+  bucketsAccess: {
+    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-BucketsAccessRole`,
+  },
+  putParameters: {
+    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-PutParametersRole`,
+  },
+} as const;

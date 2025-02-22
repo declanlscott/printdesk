@@ -7,9 +7,9 @@ import {
   SuccessItem,
 } from "~/routes/setup/-components/status/items";
 
-const name = "Activating";
+const name = "Configuring";
 
-export function ActivatingStatusItem() {
+export function ConfiguringStatusItem() {
   const state = useSetupStatusState();
   const context = useSetupContext();
 
@@ -21,12 +21,12 @@ export function ActivatingStatusItem() {
     case "healthcheck":
     case "determineHealth":
     case "waitForGoodHealth":
+      return <PendingItem name={name} />;
     case "configure":
+      return <PendingItem name={name} isActive />;
     case "dispatchSync":
     case "waitForSync":
-      return <PendingItem name={name} />;
     case "activate":
-      return <PendingItem name={name} isActive />;
     case "complete":
       return <SuccessItem name={name} />;
     case "failure":
@@ -39,11 +39,11 @@ export function ActivatingStatusItem() {
         case "healthcheck":
         case "determineHealth":
         case "waitForGoodHealth":
-        case "configure":
-        case "dispatchSync":
           return <PendingItem name={name} />;
-        case "waitForSync":
+        case "configure":
           return <FailureItem name={name} isActive />;
+        case "dispatchSync":
+        case "waitForSync":
         case "activate":
           return <SuccessItem name={name} />;
         default:

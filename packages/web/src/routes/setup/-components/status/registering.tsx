@@ -23,6 +23,7 @@ export function RegisteringStatusItem() {
     case "healthcheck":
     case "determineHealth":
     case "waitForGoodHealth":
+    case "configure":
     case "dispatchSync":
     case "waitForSync":
     case "activate":
@@ -40,6 +41,7 @@ export function RegisteringStatusItem() {
         case "healthcheck":
         case "determineHealth":
         case "waitForGoodHealth":
+        case "configure":
         case "dispatchSync":
         case "waitForSync":
         case "activate":

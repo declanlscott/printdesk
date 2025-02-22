@@ -23,6 +23,7 @@ export function DeployingStatusItem() {
     case "determineHealth":
     case "waitForGoodHealth":
       return <PendingItem name={name} isActive />;
+    case "configure":
     case "dispatchSync":
     case "waitForSync":
     case "activate":
@@ -40,6 +41,7 @@ export function DeployingStatusItem() {
         case "determineHealth":
         case "waitForGoodHealth":
           return <FailureItem name={name} isActive />;
+        case "configure":
         case "dispatchSync":
         case "waitForSync":
         case "activate":

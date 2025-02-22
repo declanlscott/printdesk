@@ -10,6 +10,7 @@ import { useApi } from "~/lib/hooks/api";
 import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
 import { ActivatingStatusItem } from "~/routes/setup/-components/status/activating";
+import { ConfiguringStatusItem } from "~/routes/setup/-components/status/configuring";
 import { DeployingStatusItem } from "~/routes/setup/-components/status/deploying";
 import { InitializingStatusItem } from "~/routes/setup/-components/status/initializing";
 import { ProvisioningStatusItem } from "~/routes/setup/-components/status/provisioning";
@@ -150,6 +151,7 @@ export function SetupStatus() {
                   <RegisteringStatusItem />
                   <ProvisioningStatusItem />
                   <DeployingStatusItem />
+                  <ConfiguringStatusItem />
                   <SynchronizingStatusItem />
                   <ActivatingStatusItem />
                 </ol>

@@ -5,6 +5,7 @@ import { buildUrl } from "@printworks/core/utils/shared";
 import { assign, fromPromise, setup } from "xstate";
 
 import type {
+  ConfigureData,
   InitializeData,
   RegisterData,
   SetupWizard,
@@ -31,6 +32,7 @@ type SetupMachineStatusContext = {
     | "healthcheck"
     | "determineHealth"
     | "waitForGoodHealth"
+    | "configure"
     | "dispatchSync"
     | "waitForSync"
     | "activate"
@@ -85,6 +87,11 @@ type DispatchInfraOutput = { dispatchId: string };
 
 type HealthcheckInput = Pick<SetupMachineStatusContext, "tenantId">;
 type HealthcheckOutput = { isHealthy: boolean };
+
+interface ConfigureInput
+  extends ConfigureData,
+    Pick<SetupMachineStatusContext, "apiKey" | "tenantId"> {}
+type ConfigureOutput = void;
 
 type DispatchSyncInput = Pick<SetupMachineStatusContext, "apiKey" | "tenantId">;
 type DispatchSyncOutput = { dispatchId: string };
@@ -166,6 +173,21 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
           );
 
           return { isHealthy: res.ok };
+        },
+      ),
+      configure: fromPromise<ConfigureOutput, ConfigureInput>(
+        async ({ input: { apiKey, tenantId, ...json } }) => {
+          if (!apiKey || !tenantId)
+            throw new ApplicationError.Error("Missing API key or tenant ID");
+
+          const res = await api.public.setup.configure.$put({
+            header: {
+              authorization: `Bearer ${apiKey}`,
+              "x-tenant-id": tenantId,
+            },
+            json,
+          });
+          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
         },
       ),
       dispatchSync: fromPromise<DispatchSyncOutput, DispatchSyncInput>(
@@ -300,10 +322,6 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
                 tenantSlug: context.tenantSlug,
                 userOauthProviderType: context.userOauthProviderType,
                 userOauthProviderId: context.userOauthProviderId,
-                tailscaleOauthClientId: context.tailscaleOauthClientId,
-                tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
-                tailnetPapercutServerUri: context.tailnetPapercutServerUri,
-                papercutServerAuthToken: context.papercutServerAuthToken,
               }),
               onDone: "dispatchInfra",
               onError: {
@@ -355,10 +373,30 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
                 guard: ({ context }) => !context.isHealthy,
                 target: "waitForGoodHealth",
               },
-              { target: "dispatchSync" },
+              { target: "configure" },
             ],
           },
           waitForGoodHealth: { after: { 3000: "healthcheck" } },
+          configure: {
+            invoke: {
+              src: "configure",
+              input: ({ context }) => ({
+                apiKey: context.apiKey,
+                tenantId: context.tenantId,
+                tailscaleOauthClientId: context.tailscaleOauthClientId,
+                tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
+                tailnetPapercutServerUri: context.tailnetPapercutServerUri,
+                papercutServerAuthToken: context.papercutServerAuthToken,
+              }),
+              onDone: {
+                target: "dispatchSync",
+              },
+              onError: {
+                target: "failure",
+                actions: assign({ failureStatus: "configure" }),
+              },
+            },
+          },
           dispatchSync: {
             invoke: {
               src: "dispatchSync",

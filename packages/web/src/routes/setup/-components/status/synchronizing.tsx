@@ -28,6 +28,7 @@ export function SynchronizingStatusItem() {
     case "determineHealth":
     case "waitForGoodHealth":
       return <PendingItem name={name} />;
+    case "configure":
     case "dispatchSync":
     case "waitForSync":
       return dispatchId ? (
@@ -49,6 +50,7 @@ export function SynchronizingStatusItem() {
         case "determineHealth":
         case "waitForGoodHealth":
           return <PendingItem name={name} />;
+        case "configure":
         case "dispatchSync":
         case "waitForSync":
           return <FailureItem name={name} isActive />;

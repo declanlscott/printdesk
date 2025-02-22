@@ -101,17 +101,26 @@ export const setupWizardSchema = v.object({
 });
 export type SetupWizard = v.InferOutput<typeof setupWizardSchema>;
 
-export const initializeDataSchema = v.pick(setupWizardSchema, [
-  "licenseKey",
-  "timezone",
-]);
+const initializeKeys = ["licenseKey", "timezone"] as const;
+
+export const initializeDataSchema = v.pick(setupWizardSchema, initializeKeys);
 export type InitializeData = v.InferOutput<typeof initializeDataSchema>;
 
+const configureKeys = [
+  "tailscaleOauthClientId",
+  "tailscaleOauthClientSecret",
+  "tailnetPapercutServerUri",
+  "papercutServerAuthToken",
+] as const;
+
 export const registerDataSchema = v.omit(setupWizardSchema, [
-  "licenseKey",
-  "timezone",
+  ...initializeKeys,
+  ...configureKeys,
 ]);
 export type RegisterData = v.InferOutput<typeof registerDataSchema>;
+
+export const configureDataSchema = v.pick(setupWizardSchema, configureKeys);
+export type ConfigureData = v.InferOutput<typeof configureDataSchema>;
 
 export const tenantMetadataTableName = "tenant_metadata";
 

@@ -3,6 +3,7 @@ import { Api } from "@printworks/core/backend/api";
 import { Tenants } from "@printworks/core/tenants";
 import { useTenant } from "@printworks/core/tenants/context";
 import {
+  configureDataSchema,
   initializeDataSchema,
   registerDataSchema,
 } from "@printworks/core/tenants/shared";
@@ -30,14 +31,7 @@ export default new Hono()
     setupHeadersValidator,
     setupAuthz,
     vValidator("json", registerDataSchema),
-    ssmClient(() => ({
-      RoleArn: Credentials.buildRoleArn(
-        Resource.Aws.account.id,
-        Resource.Aws.tenant.roles.putParameters.nameTemplate,
-        useTenant().id,
-      ),
-      RoleSessionName: "ApiSetupRegister",
-    })),
+    ssmClient(),
     async (c) => {
       await Tenants.register(c.req.valid("json"));
 
@@ -48,18 +42,30 @@ export default new Hono()
     "/dispatch-infra",
     setupHeadersValidator,
     setupAuthz,
-    executeApiSigner(() => ({
-      RoleArn: Credentials.buildRoleArn(
-        Resource.Aws.account.id,
-        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-        useTenant().id,
-      ),
-      RoleSessionName: "ApiSetupDispatchInfra",
-    })),
+    executeApiSigner(),
     async (c) => {
       const dispatchId = await Tenants.dispatchInfra();
 
       return c.json({ dispatchId }, 202);
+    },
+  )
+  .put(
+    "/configure",
+    setupHeadersValidator,
+    setupAuthz,
+    vValidator("json", configureDataSchema),
+    ssmClient(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.putParameters.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiSetupConfig",
+    })),
+    async (c) => {
+      await Tenants.config(c.req.valid("json"));
+
+      return c.body(null, 201);
     },
   )
   .post(

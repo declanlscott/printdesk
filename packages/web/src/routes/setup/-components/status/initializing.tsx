@@ -22,6 +22,7 @@ export function InitializingStatusItem() {
     case "healthcheck":
     case "determineHealth":
     case "waitForGoodHealth":
+    case "configure":
     case "dispatchSync":
     case "waitForSync":
     case "activate":
@@ -39,6 +40,7 @@ export function InitializingStatusItem() {
         case "healthcheck":
         case "determineHealth":
         case "waitForGoodHealth":
+        case "configure":
         case "dispatchSync":
         case "waitForSync":
         case "activate":

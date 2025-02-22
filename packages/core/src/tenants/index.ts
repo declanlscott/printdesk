@@ -19,7 +19,7 @@ import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { InfraProgramInput, RegisterData } from "./shared";
+import type { ConfigureData, InfraProgramInput, RegisterData } from "./shared";
 import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
 export namespace Tenants {
@@ -148,30 +148,20 @@ export namespace Tenants {
   }
 
   export const register = async (data: RegisterData) =>
-    Promise.all([
-      useTransaction(() =>
-        Promise.all([
-          put({
-            id: useTenant().id,
-            name: data.tenantName,
-            slug: data.tenantSlug,
-          }),
-          Auth.putOauth2Provider({
-            id: data.userOauthProviderId,
-            type: data.userOauthProviderType,
-            tenantId: useTenant().id,
-          }),
-        ]),
-      ),
-      Tailscale.setOauthClient(
-        data.tailscaleOauthClientId,
-        data.tailscaleOauthClientSecret,
-      ),
-      Papercut.setTailnetServerUri(data.tailnetPapercutServerUri),
-      Papercut.setServerAuthToken(data.papercutServerAuthToken),
-      Documents.setMimeTypes(Constants.DEFAULT_DOCUMENTS_MIME_TYPES),
-      Documents.setSizeLimit(Constants.DEFAULT_DOCUMENTS_SIZE_LIMIT),
-    ]);
+    useTransaction(() =>
+      Promise.all([
+        put({
+          id: useTenant().id,
+          name: data.tenantName,
+          slug: data.tenantSlug,
+        }),
+        Auth.putOauth2Provider({
+          id: data.userOauthProviderId,
+          type: data.userOauthProviderType,
+          tenantId: useTenant().id,
+        }),
+      ]),
+    );
 
   export async function dispatchInfra() {
     const programInput = await useTransaction((tx) =>
@@ -194,6 +184,18 @@ export namespace Tenants {
 
     return output.MessageId;
   }
+
+  export const config = async (data: ConfigureData) =>
+    Promise.all([
+      Tailscale.setOauthClient(
+        data.tailscaleOauthClientId,
+        data.tailscaleOauthClientSecret,
+      ),
+      Papercut.setTailnetServerUri(data.tailnetPapercutServerUri),
+      Papercut.setServerAuthToken(data.papercutServerAuthToken),
+      Documents.setMimeTypes(Constants.DEFAULT_DOCUMENTS_MIME_TYPES),
+      Documents.setSizeLimit(Constants.DEFAULT_DOCUMENTS_SIZE_LIMIT),
+    ]);
 
   export const activate = async () =>
     useTransaction((tx) =>

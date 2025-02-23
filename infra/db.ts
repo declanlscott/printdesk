@@ -1,9 +1,9 @@
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
-import { calculateHash, normalizePath } from "infra/utils";
 import * as v from "valibot";
 
 import * as custom from "./custom";
 import { aws_ } from "./misc";
+import { calculateHash, normalizePath } from "./utils";
 
 export const dsqlCluster = new custom.aws.Dsql.Cluster(
   "DsqlCluster",

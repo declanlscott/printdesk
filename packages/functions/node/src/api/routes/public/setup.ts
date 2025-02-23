@@ -12,9 +12,9 @@ import { Constants } from "@printworks/core/utils/constants";
 import { Hono } from "hono";
 import { Resource } from "sst";
 
-import { setupAuthz } from "~/api/middleware/auth";
+import { authn } from "~/api/middleware/auth";
 import { executeApiSigner, sqsClient, ssmClient } from "~/api/middleware/aws";
-import { setupHeadersValidator } from "~/api/middleware/validators";
+import { systemAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .put("/initialize", vValidator("json", initializeDataSchema), async (c) => {
@@ -28,8 +28,8 @@ export default new Hono()
   })
   .put(
     "/register",
-    setupHeadersValidator,
-    setupAuthz,
+    authn("system"),
+    systemAuthzHeadersValidator,
     vValidator("json", registerDataSchema),
     async (c) => {
       await Tenants.register(c.req.valid("json"));
@@ -39,8 +39,8 @@ export default new Hono()
   )
   .post(
     "/dispatch-infra",
-    setupHeadersValidator,
-    setupAuthz,
+    authn("system"),
+    systemAuthzHeadersValidator,
     sqsClient(),
     async (c) => {
       const dispatchId = await Tenants.dispatchInfra();
@@ -50,8 +50,8 @@ export default new Hono()
   )
   .put(
     "/configure",
-    setupHeadersValidator,
-    setupAuthz,
+    authn("system"),
+    systemAuthzHeadersValidator,
     vValidator("json", configureDataSchema),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -77,8 +77,8 @@ export default new Hono()
   )
   .post(
     "/dispatch-sync",
-    setupHeadersValidator,
-    setupAuthz,
+    authn("system"),
+    systemAuthzHeadersValidator,
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,
@@ -93,7 +93,7 @@ export default new Hono()
       return c.json({ dispatchId }, 202);
     },
   )
-  .put("/activate", setupHeadersValidator, setupAuthz, async (c) => {
+  .put("/activate", authn("system"), systemAuthzHeadersValidator, async (c) => {
     await Tenants.activate();
 
     return c.body(null, 204);

@@ -13,14 +13,14 @@ import { Resource } from "sst";
 import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
-import { authzHeadersValidator } from "~/api/middleware/validators";
+import { userAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .use(user)
   .put(
     "/server/tailnet-uri",
     authz("services", "update"),
-    authzHeadersValidator,
+    userAuthzHeadersValidator,
     vValidator("json", updateServerTailnetUriSchema),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -39,7 +39,7 @@ export default new Hono()
   .put(
     "/server/auth-token",
     authz("services", "update"),
-    authzHeadersValidator,
+    userAuthzHeadersValidator,
     vValidator("json", updateServerAuthTokenSchema),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(

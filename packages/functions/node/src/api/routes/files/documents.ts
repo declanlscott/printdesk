@@ -9,14 +9,14 @@ import * as v from "valibot";
 import { authz } from "~/api/middleware/auth";
 import { executeApiSigner, s3Client, ssmClient } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
-import { authzHeadersValidator } from "~/api/middleware/validators";
+import { userAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .put(
     "/mime-types",
     user,
     authz("documents-mime-types", "update"),
-    authzHeadersValidator,
+    userAuthzHeadersValidator,
     vValidator("json", v.object({ mimeTypes: v.array(v.string()) })),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -47,7 +47,7 @@ export default new Hono()
   })
   .get(
     "/signed-get-url",
-    authzHeadersValidator,
+    userAuthzHeadersValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -76,7 +76,7 @@ export default new Hono()
   )
   .get(
     "/signed-put-url",
-    authzHeadersValidator,
+    userAuthzHeadersValidator,
     vValidator("query", v.object({})), // TODO
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
@@ -107,7 +107,7 @@ export default new Hono()
     "/size-limit",
     user,
     authz("documents-size-limit", "update"),
-    authzHeadersValidator,
+    userAuthzHeadersValidator,
     vValidator("json", v.object({ byteSize: v.number() })),
     ssmClient(() => ({
       RoleArn: Credentials.buildRoleArn(

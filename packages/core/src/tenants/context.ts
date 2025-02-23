@@ -1,5 +1,5 @@
-import { assertNonPublicActor } from "../actors/context";
+import { assertPrivateActor } from "../actors/context";
 
 export const useTenant = () => ({
-  id: assertNonPublicActor().properties.tenantId,
+  id: assertPrivateActor().properties.tenantId,
 });

@@ -99,6 +99,7 @@ export namespace Api {
     const res = await send("/cdn/invalidation", {
       method: "POST",
       body: JSON.stringify({ paths }),
+      headers: { "Content-Type": "application/json" },
     });
     if (!res.ok)
       throw new HttpError.BadGateway({

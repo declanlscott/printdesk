@@ -59,7 +59,15 @@ export default new Hono()
         Resource.Aws.tenant.roles.putParameters.nameTemplate,
         useTenant().id,
       ),
-      RoleSessionName: "ApiSetupConfig",
+      RoleSessionName: "ApiSetupConfigure",
+    })),
+    executeApiSigner(() => ({
+      RoleArn: Credentials.buildRoleArn(
+        Resource.Aws.account.id,
+        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+        useTenant().id,
+      ),
+      RoleSessionName: "ApiSetupConfigure",
     })),
     async (c) => {
       await Tenants.config(c.req.valid("json"));

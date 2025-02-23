@@ -13,7 +13,7 @@ import { Hono } from "hono";
 import { Resource } from "sst";
 
 import { setupAuthz } from "~/api/middleware/auth";
-import { executeApiSigner, ssmClient } from "~/api/middleware/aws";
+import { executeApiSigner, sqsClient, ssmClient } from "~/api/middleware/aws";
 import { setupHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
@@ -31,7 +31,6 @@ export default new Hono()
     setupHeadersValidator,
     setupAuthz,
     vValidator("json", registerDataSchema),
-    ssmClient(),
     async (c) => {
       await Tenants.register(c.req.valid("json"));
 
@@ -42,7 +41,7 @@ export default new Hono()
     "/dispatch-infra",
     setupHeadersValidator,
     setupAuthz,
-    executeApiSigner(),
+    sqsClient(),
     async (c) => {
       const dispatchId = await Tenants.dispatchInfra();
 

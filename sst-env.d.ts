@@ -143,6 +143,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "DbMigrator": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
     "DomainName": {
       "type": "sst.sst.Secret"
       "value": string
@@ -162,7 +166,6 @@ declare module "sst" {
     "InfraDispatcher": {
       "name": string
       "type": "sst.aws.Function"
-      "url": string
     }
     "InfraQueue": {
       "type": "sst.aws.Queue"

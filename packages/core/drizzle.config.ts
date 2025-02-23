@@ -3,7 +3,7 @@ import { Resource } from "sst";
 
 export default defineConfig({
   schema: "./src/**/sql.ts",
-  out: "../../migrations/",
+  out: "./migrations/",
   dialect: "postgresql",
   dbCredentials: {
     ...Resource.DsqlCluster,

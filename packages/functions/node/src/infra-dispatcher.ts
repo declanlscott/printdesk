@@ -8,9 +8,7 @@ import { eq } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
-import type { APIGatewayProxyHandlerV2 } from "aws-lambda";
-
-export const handler: APIGatewayProxyHandlerV2 = async () =>
+export const handler = async () =>
   withAws({ sqs: { client: new Sqs.Client() } }, async () => {
     const tenants = await useTransaction((tx) =>
       tx
@@ -22,7 +20,8 @@ export const handler: APIGatewayProxyHandlerV2 = async () =>
         .innerJoin(
           tenantMetadataTable,
           eq(tenantMetadataTable.tenantId, tenantsTable.id),
-        ),
+        )
+        .where(eq(tenantsTable.status, "active")),
     );
 
     const failedEntries: NonNullable<
@@ -44,14 +43,7 @@ export const handler: APIGatewayProxyHandlerV2 = async () =>
       }
     }
 
-    if (!R.isEmpty(failedEntries))
-      return {
-        statusCode: 500,
-        body: JSON.stringify({
-          message: "Failed to send messages to SQS",
-          failedEntries,
-        }),
-      };
+    if (!R.isEmpty(failedEntries)) return { success: false };
 
-    return { statusCode: 204 };
+    return { success: true };
   });

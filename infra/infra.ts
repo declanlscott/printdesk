@@ -1,6 +1,6 @@
 import { api } from "./api";
 import * as custom from "./custom";
-import { dsqlCluster } from "./db";
+import { dbMigratorInvocationSuccessResult, dsqlCluster } from "./db";
 import {
   appData,
   aws_,
@@ -63,9 +63,9 @@ export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
 const papercutSecureReverseProxySrcPath = normalizePath(
   "packages/functions/go/papercut-secure-reverse-proxy",
 );
-const papercutSecureReverseProxySrc = await command.local.run({
+const papercutSecureReverseProxySrcArchiver = await command.local.run({
   dir: papercutSecureReverseProxySrcPath,
-  command: 'echo "Archiving papercut secure reverse proxy source code..."',
+  command: "",
   archivePaths: ["**", "!bin/**"],
 });
 const papercutSecureReverseProxyBuilderAssetPath = "bin/package.zip";
@@ -75,7 +75,7 @@ const papercutSecureReverseProxyBuilder = new command.local.Command(
     dir: papercutSecureReverseProxySrcPath,
     create: `GOOS=linux GOARCH=arm64 go build -tags lambda.norpc -o bin/bootstrap cmd/function/main.go && zip -j ${papercutSecureReverseProxyBuilderAssetPath} bin/bootstrap`,
     assetPaths: [papercutSecureReverseProxyBuilderAssetPath],
-    triggers: [papercutSecureReverseProxySrc.archive],
+    triggers: [papercutSecureReverseProxySrcArchiver.archive],
   },
 );
 export const papercutSecureReverseProxyObject = new aws.s3.BucketObjectv2(
@@ -218,6 +218,15 @@ new aws.lambda.EventSourceMapping("InfraFunctionEventSourceMapping", {
 
 export const infraDispatcher = new sst.aws.Function("InfraDispatcher", {
   handler: "packages/functions/node/src/infra-dispatcher.handler",
-  url: { authorization: "iam" },
   link: [aws_, dsqlCluster, infraQueue],
 });
+
+new aws.lambda.Invocation(
+  "InfraDispatcherInvocation",
+  {
+    functionName: infraDispatcher.name,
+    input: JSON.stringify({}),
+    triggers: { infraFunction: infraFunction.lastModified },
+  },
+  { dependsOn: [dbMigratorInvocationSuccessResult] },
+);

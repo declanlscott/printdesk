@@ -1,6 +1,7 @@
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./.sst/platform/config.d.ts" />
 
-import { readdirSync } from "fs";
+import { readdirSync } from "node:fs";
 
 const AWS_REGION = process.env.AWS_REGION;
 if (!AWS_REGION) throw new Error("AWS_REGION is not set");
@@ -35,10 +36,13 @@ export default $config({
 
     const outputs = {};
 
-    for (const dir of readdirSync("./infra")) {
-      if (dir === "custom") continue;
-      const infra = await import(`./infra/${dir}`);
+    const dir = readdirSync("./infra");
+    for (const file of dir) {
+      if (file === "custom") continue;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const infra = await import(`./infra/${file}`);
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       if (infra.outputs) Object.assign(outputs, infra.outputs);
     }
 

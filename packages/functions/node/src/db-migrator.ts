@@ -1,5 +1,3 @@
-import { join } from "path";
-
 import { db } from "@printworks/core/drizzle";
 import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
@@ -26,7 +24,7 @@ type DrizzleMigration = {
   created_at: string;
 };
 
-async function migrate<TSchema extends Record<string, unknown>>(
+export async function migrate<TSchema extends Record<string, unknown>>(
   db: NodePgDatabase<TSchema>,
   config: MigrationConfig,
 ) {
@@ -107,20 +105,18 @@ async function migrate<TSchema extends Record<string, unknown>>(
   }
 }
 
-async function main() {
-  console.log("Performing database migrations ...");
+export const handler = async () => {
+  console.log("Running database migrations ...");
 
   try {
-    await migrate(db, {
-      migrationsFolder: join(process.cwd(), "../../migrations"),
-    });
+    await migrate(db, { migrationsFolder: "migrations" });
 
     console.log("✅ Migration completed!");
-    process.exit(0);
+
+    return { success: true };
   } catch (e) {
     console.error("❌ Error during migration:", e);
-    process.exit(1);
-  }
-}
 
-void main();
+    return { success: false };
+  }
+};

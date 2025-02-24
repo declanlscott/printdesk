@@ -92,7 +92,7 @@ export const entraIdApplicationRedirectUris =
   new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
     applicationId: entraIdApplication.id,
     type: "Web",
-    redirectUris: [$interpolate`${auth.url}/callback`],
+    redirectUris: [$interpolate`${auth.url}/entra-id/callback`],
   });
 
 export const siteUsername = new sst.Secret("SiteUsername");

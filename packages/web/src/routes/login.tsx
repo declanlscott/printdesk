@@ -37,7 +37,7 @@ export const Route = createFileRoute("/login")({
     if (!res.ok) {
       switch (res.status as number) {
         case 404:
-          throw redirect({ to: "/register", search: isDev ? { slug } : {} });
+          throw redirect({ to: "/setup", search: isDev ? { slug } : {} });
         case 429:
           throw new ApplicationError.Error(
             "Too many requests, try again later.",

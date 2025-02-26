@@ -22,14 +22,12 @@
     "@msgpack/msgpack": "^3.0.1",
     "@smithy/protocol-http": "^5.0.1",
     "@smithy/signature-v4": "^5.0.1",
-    "bcryptjs": "^2.4.3",
     "fast-xml-parser": "^4.5.3",
     "nanoid": "^5.1.0",
     "pg": "^8.13.3"
   },
   "devDependencies": {
     "@smithy/types": "^4.1.0",
-    "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.11.11",
     "drizzle-kit": "^0.30.4"
   }

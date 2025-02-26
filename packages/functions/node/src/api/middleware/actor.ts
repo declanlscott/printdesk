@@ -42,7 +42,7 @@ export const actor = createMiddleware(
               return false;
             }
 
-            const verified = await Auth.verifyToken(token, result.apiKey);
+            const verified = await Auth.verifySecret(token, result.apiKey);
             if (!verified) {
               console.error("API key token verification failed.");
               return false;

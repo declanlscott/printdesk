@@ -1,6 +1,5 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-import { compare, hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import * as R from "remeda";
 
@@ -14,16 +13,41 @@ import type { Tenant } from "../tenants/sql";
 import type { Oauth2ProvidersTable } from "./sql";
 
 export namespace Auth {
-  export async function generateToken() {
-    const value = randomBytes(32).toString("hex");
+  export const generateToken = (size = 32) => randomBytes(size).toString("hex");
 
-    return {
-      value,
-      hash: await hash(value, 10),
-    };
+  export const deriveKeyFromSecret = (secret: string, salt: string) =>
+    new Promise<string>((resolve, reject) =>
+      scrypt(secret.normalize(), salt, 64, (err, derivedKey) =>
+        err ? reject(err) : resolve(derivedKey.toString("hex")),
+      ),
+    );
+
+  const hashSeparator = ":";
+
+  export async function hashSecret(secret: string) {
+    const salt = generateToken(16);
+
+    const derivedKey = await deriveKeyFromSecret(secret, salt);
+
+    const hashParts = [salt, derivedKey];
+    const hash = hashParts.join(hashSeparator);
+
+    return hash;
   }
 
-  export const verifyToken = compare;
+  export async function verifySecret(secret: string, hash: string) {
+    const hashParts = hash.split(hashSeparator);
+    if (hashParts.length !== 2) return false;
+    const [salt, storedKey] = hashParts;
+
+    const derivedKey = await deriveKeyFromSecret(secret, salt);
+
+    const storedKeyBuffer = Buffer.from(storedKey, "hex");
+    const derivedKeyBuffer = Buffer.from(derivedKey, "hex");
+    if (storedKeyBuffer.length !== derivedKeyBuffer.length) return false;
+
+    return timingSafeEqual(storedKeyBuffer, derivedKeyBuffer);
+  }
 
   export const putOauth2Provider = async (
     values: InferInsertModel<Oauth2ProvidersTable>,

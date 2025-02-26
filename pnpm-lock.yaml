@@ -158,9 +158,6 @@ importers:
       '@smithy/signature-v4':
         specifier: ^5.0.1
         version: 5.0.1
-      bcryptjs:
-        specifier: ^2.4.3
-        version: 2.4.3
       fast-xml-parser:
         specifier: ^4.5.3
         version: 4.5.3
@@ -174,9 +171,6 @@ importers:
       '@smithy/types':
         specifier: ^4.1.0
         version: 4.1.0
-      '@types/bcryptjs':
-        specifier: ^2.4.6
-        version: 2.4.6
       '@types/pg':
         specifier: ^8.11.11
         version: 8.11.11
@@ -3197,9 +3191,6 @@ packages:
   '@types/babel__traverse@7.20.6':
     resolution: {integrity: sha512-r1bzfrm0tomOI8g1SzvCaQHo6Lcv6zu0EA+W2kHrt8dyrHQxGzBBL4kdkzIS+jBMV+EYcMAEAqXqYaLJq5rOZg==}
 
-  '@types/bcryptjs@2.4.6':
-    resolution: {integrity: sha512-9xlo6R2qDs5uixm0bcIqCeMCE6HiQsIyel9KQySStiyqNl2tnj2mP3DX1Nf56MD6KMenNNlBBsy3LJ7gUEQPXQ==}
-
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
 
@@ -3442,9 +3433,6 @@ packages:
 
   base-64@1.0.0:
     resolution: {integrity: sha512-kwDPIFCGx0NZHog36dj+tHiwP4QMzsZ3AgMViUBKI0+V5n4U0ufTCUMhnQ04diaRI8EX/QcPfql7zlhZ7j4zgg==}
-
-  bcryptjs@2.4.3:
-    resolution: {integrity: sha512-V/Hy/X9Vt7f3BbPJEi8BdVFMByHi+jNXrYkW3huaybV/kQ0KJg0Y6PkEMbn+zeT+i+SiKZ/HMqJGIIt4LZDqNQ==}
 
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
@@ -9677,8 +9665,6 @@ snapshots:
     dependencies:
       '@babel/types': 7.26.9
 
-  '@types/bcryptjs@2.4.6': {}
-
   '@types/cookie@0.6.0': {}
 
   '@types/debug@4.1.12':
@@ -10040,8 +10026,6 @@ snapshots:
   balanced-match@1.0.2: {}
 
   base-64@1.0.0: {}
-
-  bcryptjs@2.4.3: {}
 
   binary-extensions@2.3.0: {}
 

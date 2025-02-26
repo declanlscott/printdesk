@@ -135,16 +135,17 @@ export namespace Tenants {
     infraProgramInput: InfraProgramInput,
   ) {
     const tenantId = generateId();
-    const apiKey = await Auth.generateToken();
+    const apiKey = Auth.generateToken();
+    const hash = await Auth.hashSecret(apiKey);
 
     await useTransaction(() =>
       Promise.all([
         assignLicense(tenantId, licenseKey),
-        putMetadata({ tenantId, apiKey: apiKey.hash, infraProgramInput }),
+        putMetadata({ tenantId, apiKey: hash, infraProgramInput }),
       ]),
     );
 
-    return { tenantId, apiKey: apiKey.value };
+    return { tenantId, apiKey };
   }
 
   export const register = async (data: RegisterData) =>

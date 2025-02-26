@@ -8,11 +8,11 @@ import type { MutationOptions as _MutationOptions } from "@tanstack/react-query"
 import type {
   createRouter,
   NavigateOptions,
-  RoutesById,
   ToOptions,
   TrailingSlashOption,
 } from "@tanstack/react-router";
 import type { FilterFn } from "@tanstack/react-table";
+import type { RoutesById } from "@tanstack/router-core";
 import type { ReadTransaction } from "replicache";
 import type { Resource } from "sst";
 import type { routeTree } from "~/routeTree.gen";

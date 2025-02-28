@@ -1,4 +1,4 @@
-import { handleEvent } from "@printworks/core/realtime/client";
+import { Realtime } from "@printworks/core/realtime/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { useRealtimeChannel } from "~/lib/hooks/realtime";
@@ -35,9 +35,7 @@ export function ProvisioningStatusItem() {
     case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
-    case "dispatchSync":
-    case "waitForSync":
-    case "activate":
+    case "testPapercutConnection":
     case "complete":
       return <SuccessItem name={name} />;
     case "failure":
@@ -53,9 +51,7 @@ export function ProvisioningStatusItem() {
         case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
-        case "dispatchSync":
-        case "waitForSync":
-        case "activate":
+        case "testPapercutConnection":
           return <SuccessItem name={name} />;
         default:
           throw new ApplicationError.NonExhaustiveValue(failureStatus);
@@ -70,7 +66,7 @@ function WaitForInfra({ dispatchId }: { dispatchId: string }) {
 
   useRealtimeChannel(
     `/events/${dispatchId}`,
-    handleEvent((event) => {
+    Realtime.handleEvent((event) => {
       if (event.type === "infra" && event.dispatchId === dispatchId) {
         if (event.success) return actor.send({ type: "status.healthcheck" });
 

@@ -18,46 +18,39 @@ export const userSchema = v.object({
   ...tenantTableSchema.entries,
   type: v.picklist(userTypes),
   username: v.string(),
-});
-
-export const userProfileMutationNames = [
-  "updateUserProfileRole",
-  "deleteUserProfile",
-  "restoreUserProfile",
-] as const;
-
-export const updateUserProfileRoleMutationArgsSchema = v.object({
-  id: nanoIdSchema,
-  role: v.picklist(userRoles),
-  updatedAt: v.date(),
-});
-export type UpdateUserRoleMutationArgs = v.InferOutput<
-  typeof updateUserProfileRoleMutationArgsSchema
->;
-
-export const deleteUserProfileMutationArgsSchema = v.object({
-  id: nanoIdSchema,
-  deletedAt: v.date(),
-});
-export type DeleteUserProfileMutationArgs = v.InferOutput<
-  typeof deleteUserProfileMutationArgsSchema
->;
-
-export const restoreUserProfileMutationArgsSchema = v.object({
-  id: nanoIdSchema,
-});
-export type RestoreUserProfileMutationArgs = v.InferOutput<
-  typeof restoreUserProfileMutationArgsSchema
->;
-
-export const userProfilesTableName = "user_profiles";
-
-export const userProfileSchema = v.object({
-  ...tenantTableSchema.entries,
-  userId: nanoIdSchema,
   oauth2UserId: v.string(),
   oauth2ProviderId: v.string(),
   role: v.picklist(userRoles),
   name: v.string(),
   email: v.string(),
 });
+
+export const userMutationNames = [
+  "updateUserRole",
+  "deleteUser",
+  "restoreUser",
+] as const;
+
+export const updateUserRoleMutationArgsSchema = v.object({
+  id: nanoIdSchema,
+  role: v.picklist(userRoles),
+  updatedAt: v.date(),
+});
+export type UpdateUserRoleMutationArgs = v.InferOutput<
+  typeof updateUserRoleMutationArgsSchema
+>;
+
+export const deleteUserMutationArgsSchema = v.object({
+  id: nanoIdSchema,
+  deletedAt: v.date(),
+});
+export type DeleteUserMutationArgs = v.InferOutput<
+  typeof deleteUserMutationArgsSchema
+>;
+
+export const restoreUserMutationArgsSchema = v.object({
+  id: nanoIdSchema,
+});
+export type RestoreUserMutationArgs = v.InferOutput<
+  typeof restoreUserMutationArgsSchema
+>;

@@ -10,7 +10,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { id } from "../drizzle/columns";
+import { id, version } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
 import { roomStatus, workflowStatusType } from "../utils/sql";
@@ -20,7 +20,7 @@ import {
   workflowStatusesTableName,
 } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferTable } from "../utils/types";
 
 export const roomsTable = tenantTable(
   roomsTableName,
@@ -35,7 +35,7 @@ export const roomsTable = tenantTable(
   ],
 );
 export type RoomsTable = typeof roomsTable;
-export type Room = InferSelectModel<RoomsTable>;
+export type Room = InferTable<RoomsTable>;
 
 export const workflowStatusesTable = pgTable(
   workflowStatusesTableName,
@@ -47,6 +47,7 @@ export const workflowStatusesTable = pgTable(
     index: smallint("index").notNull(),
     roomId: id("room_id").notNull(),
     tenantId: id("tenant_id").notNull(),
+    ...version,
   },
   (table) => [
     primaryKey({
@@ -56,7 +57,7 @@ export const workflowStatusesTable = pgTable(
   ],
 );
 export type WorkflowStatusesTable = typeof workflowStatusesTable;
-export type WorkflowStatus = InferSelectModel<WorkflowStatusesTable>;
+export type WorkflowStatus = InferTable<WorkflowStatusesTable>;
 
 export const deliveryOptionsTable = pgTable(
   deliveryOptionsTableName,
@@ -72,6 +73,7 @@ export const deliveryOptionsTable = pgTable(
     index: smallint("index").notNull(),
     roomId: id("room_id").notNull(),
     tenantId: id("tenant_id").notNull(),
+    ...version,
   },
   (table) => [
     primaryKey({
@@ -81,4 +83,4 @@ export const deliveryOptionsTable = pgTable(
   ],
 );
 export type DeliveryOptionsTable = typeof deliveryOptionsTable;
-export type DeliveryOption = InferSelectModel<DeliveryOptionsTable>;
+export type DeliveryOption = InferTable<DeliveryOptionsTable>;

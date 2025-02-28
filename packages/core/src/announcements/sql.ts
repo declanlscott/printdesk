@@ -4,7 +4,7 @@ import { id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { announcementsTableName } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm/table";
+import type { InferTable } from "../utils/types";
 
 export const announcementsTable = tenantTable(announcementsTableName, {
   content: text("content").notNull(),
@@ -13,4 +13,4 @@ export const announcementsTable = tenantTable(announcementsTableName, {
 
 export type AnnouncementsTable = typeof announcementsTable;
 
-export type Announcement = InferSelectModel<AnnouncementsTable>;
+export type Announcement = InferTable<AnnouncementsTable>;

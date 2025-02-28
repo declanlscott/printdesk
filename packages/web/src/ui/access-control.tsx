@@ -7,7 +7,7 @@ import { useUser } from "~/lib/hooks/user";
 import type { PropsWithChildren, ReactNode } from "react";
 import type { Action, Resource } from "@printworks/core/access-control/shared";
 import type { UserRole } from "@printworks/core/users/shared";
-import type { UserData } from "@printworks/core/users/sql";
+import type { User } from "@printworks/core/users/sql";
 import type {
   DeepReadonlyObject,
   ReadTransaction,
@@ -26,7 +26,7 @@ export type EnforceAbacProps<
   action: TAction;
   input: TPermission extends (
     tx: ReadTransaction | WriteTransaction,
-    user: DeepReadonlyObject<UserData>,
+    user: DeepReadonlyObject<User>,
     ...input: infer TInput
   ) => unknown
     ? TInput
@@ -65,7 +65,7 @@ export type EnforceRouteAbacProps<
   routeId: TRouteId;
   input: TPermission extends (
     tx: ReadTransaction,
-    user: DeepReadonlyObject<UserData>,
+    user: DeepReadonlyObject<User>,
     ...input: infer TInput
   ) => unknown
     ? TInput

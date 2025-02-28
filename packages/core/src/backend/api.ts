@@ -13,27 +13,6 @@ import type { GetParameterResult } from "@aws-sdk/client-ssm";
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
-  export async function getRealtimeDns() {
-    const res = await send(
-      `/.well-known/appspecific/${Backend.getReverseDns()}.realtime.json`,
-    );
-    if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
-
-    return v.parse(
-      v.object({
-        http: v.string(),
-        realtime: v.string(),
-      }),
-      await res.json(),
-    );
-  }
-
   export async function getBuckets() {
     const res = await send(
       `/.well-known/appspecific/${Backend.getReverseDns()}.buckets.json`,

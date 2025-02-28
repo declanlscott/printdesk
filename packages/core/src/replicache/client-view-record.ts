@@ -13,7 +13,7 @@ export type ClientViewRecord = {
 };
 export type ClientViewRecordEntries<TTable extends Table> = Record<
   Metadata<TTable>["id"],
-  Metadata<TTable>["rowVersion"]
+  Metadata<TTable>["version"]
 >;
 export type ClientViewRecordDiff = {
   [TName in TableName]: ClientViewRecordDiffEntry<TableByName<TName>>;
@@ -26,8 +26,8 @@ export type ClientViewRecordDiffEntry<TTable extends Table> = {
 export const buildCvrEntries = <TTable extends Table>(
   tableMetadata: Array<Metadata<TTable>>,
 ) =>
-  tableMetadata.reduce((entries, { id, rowVersion }) => {
-    entries[id] = rowVersion;
+  tableMetadata.reduce((entries, { id, version }) => {
+    entries[id] = version;
     return entries;
   }, {} as ClientViewRecordEntries<TTable>);
 

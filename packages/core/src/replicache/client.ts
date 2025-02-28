@@ -10,8 +10,9 @@ import type {
   ReadTransaction,
   WriteTransaction,
 } from "replicache";
-import type { User, UserData } from "../users/sql";
+import type { User } from "../users/sql";
 import type { SyncedTableName, TableByName } from "../utils/tables";
+import type { InferTable } from "../utils/types";
 import type { Serialized } from "./shared";
 
 export namespace Replicache {
@@ -25,7 +26,7 @@ export namespace Replicache {
       TSchema extends v.GenericSchema,
       TAuthorizer extends (
         tx: WriteTransaction,
-        user: DeepReadonlyObject<UserData>,
+        user: DeepReadonlyObject<User>,
         args: v.InferOutput<TSchema>,
       ) => ReturnType<TAuthorizer>,
       TMutator extends OptimisticMutator<TSchema>,
@@ -33,7 +34,7 @@ export namespace Replicache {
       schema: TSchema,
       authorizer: TAuthorizer,
       getMutator: (context: {
-        user: DeepReadonlyObject<UserData>;
+        user: DeepReadonlyObject<User>;
         authorized: Awaited<ReturnType<TAuthorizer>>;
       }) => TMutator,
     ) =>
@@ -58,13 +59,9 @@ export namespace Replicache {
     const value = (await tx.get(`${name}/${id}`)) as Serialized | undefined;
     if (!value) throw new ApplicationError.EntityNotFound({ name, id });
 
-    return deserialize<
-      DeepReadonlyObject<
-        TTableName extends typeof usersTableName
-          ? UserData
-          : TableByName<TTableName>["$inferSelect"]
-      >
-    >(value);
+    return deserialize<DeepReadonlyObject<InferTable<TableByName<TTableName>>>>(
+      value,
+    );
   }
 
   export const scan = async <TTableName extends SyncedTableName>(
@@ -75,13 +72,7 @@ export namespace Replicache {
       tx.scan({ prefix: `${name}/` }).toArray() as Promise<Array<Serialized>>
     ).then(
       R.map(
-        deserialize<
-          DeepReadonlyObject<
-            TTableName extends typeof usersTableName
-              ? UserData
-              : TableByName<TTableName>["$inferSelect"]
-          >
-        >,
+        deserialize<DeepReadonlyObject<InferTable<TableByName<TTableName>>>>,
       ),
     );
 
@@ -89,11 +80,7 @@ export namespace Replicache {
     tx: WriteTransaction,
     name: TTableName,
     id: string,
-    value: DeepReadonlyObject<
-      TTableName extends typeof usersTableName
-        ? UserData
-        : TableByName<TTableName>["$inferSelect"]
-    >,
+    value: DeepReadonlyObject<InferTable<TableByName<TTableName>>>,
   ) => tx.set(`${name}/${id}`, serialize(value) as Serialized);
 
   export async function del(

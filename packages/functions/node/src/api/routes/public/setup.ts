@@ -1,5 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
-import { Api } from "@printworks/core/backend/api";
+import { Papercut } from "@printworks/core/papercut";
 import { Tenants } from "@printworks/core/tenants";
 import { useTenant } from "@printworks/core/tenants/context";
 import {
@@ -76,7 +76,7 @@ export default new Hono()
     },
   )
   .post(
-    "/dispatch-sync",
+    "/test-papercut-connection",
     authn("system"),
     systemAuthzHeadersValidator,
     executeApiSigner(() => ({
@@ -85,16 +85,11 @@ export default new Hono()
         Resource.Aws.tenant.roles.apiAccess.nameTemplate,
         useTenant().id,
       ),
-      RoleSessionName: "ApiSetupSync",
+      RoleSessionName: "ApiSetupTestPapercutConnection",
     })),
     async (c) => {
-      const dispatchId = await Api.dispatchPapercutSync();
+      await Papercut.testConnection();
 
-      return c.json({ dispatchId }, 202);
+      return c.body(null, 200);
     },
-  )
-  .put("/activate", authn("system"), systemAuthzHeadersValidator, async (c) => {
-    await Tenants.activate();
-
-    return c.body(null, 204);
-  });
+  );

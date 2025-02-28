@@ -11,5 +11,5 @@ export const Route = createLazyFileRoute("/_authenticated/settings")({
 function RouteComponent() {
   const user = useUser();
 
-  return <SettingsLayout links={links.settings()[user.profile.role]} />;
+  return <SettingsLayout links={links.settings()[user.role]} />;
 }

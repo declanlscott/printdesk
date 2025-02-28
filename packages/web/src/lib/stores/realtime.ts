@@ -3,8 +3,8 @@ export type RealtimeStore = {
   timer: NodeJS.Timeout | null;
   actions: {
     authenticate: (channel?: string) => Promise<Record<string, string>>;
-    isConnected: (isConnected: boolean) => void;
-    startTimer: (callback: () => void, delayMs: number) => void;
+    onConnection: (reconnect: () => void, timeoutMs: number) => void;
+    onClose: () => void;
     cancelTimer: () => void;
   };
 };

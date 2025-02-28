@@ -9,7 +9,7 @@ import {
   billingAccountsTableName,
 } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferTable } from "../utils/types";
 
 export const billingAccountsTable = tenantTable(
   billingAccountsTableName,
@@ -18,7 +18,7 @@ export const billingAccountsTable = tenantTable(
     name: text("name").notNull(),
     reviewThreshold: numeric("review_threshold"),
     // NOTE: Set to -1 if the billing account is not a papercut shared account
-    papercutAccountId: bigint({ mode: "number" }).notNull(),
+    papercutAccountId: bigint({ mode: "number" }).notNull().default(-1),
   },
   (table) => [
     uniqueIndex().on(
@@ -30,7 +30,7 @@ export const billingAccountsTable = tenantTable(
   ],
 );
 export type BillingAccountsTable = typeof billingAccountsTable;
-export type BillingAccount = InferSelectModel<BillingAccountsTable>;
+export type BillingAccount = InferTable<BillingAccountsTable>;
 
 export const billingAccountCustomerAuthorizationsTable = tenantTable(
   billingAccountCustomerAuthorizationsTableName,
@@ -46,7 +46,7 @@ export const billingAccountCustomerAuthorizationsTable = tenantTable(
 export type BillingAccountCustomerAuthorizationsTable =
   typeof billingAccountCustomerAuthorizationsTable;
 export type BillingAccountCustomerAuthorization =
-  InferSelectModel<BillingAccountCustomerAuthorizationsTable>;
+  InferTable<BillingAccountCustomerAuthorizationsTable>;
 
 export const billingAccountManagerAuthorizationsTable = tenantTable(
   billingAccountManagerAuthorizationsTableName,
@@ -62,4 +62,4 @@ export const billingAccountManagerAuthorizationsTable = tenantTable(
 export type BillingAccountManagerAuthorizationsTable =
   typeof billingAccountManagerAuthorizationsTable;
 export type BillingAccountManagerAuthorization =
-  InferSelectModel<BillingAccountManagerAuthorizationsTable>;
+  InferTable<BillingAccountManagerAuthorizationsTable>;

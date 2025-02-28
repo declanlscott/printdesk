@@ -75,7 +75,7 @@ export default new Hono()
       RoleSessionName: "ApiPapercutSync",
     })),
     async (c) => {
-      const { eventId: dispatchId } = await Api.dispatchPapercutSync();
+      const dispatchId = await Api.dispatchPapercutSync();
 
       return c.json({ dispatchId }, 202);
     },

@@ -19,8 +19,7 @@ export function useUser() {
 export function useManager() {
   const user = useUser();
 
-  if (user.profile.role !== "manager")
-    throw new ApplicationError.AccessDenied();
+  if (user.role !== "manager") throw new ApplicationError.AccessDenied();
 
   const billingAccountIds = useSubscribe(
     query.managedBillingAccountIds(user.id),

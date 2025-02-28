@@ -28,7 +28,7 @@ import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "../users/shared";
-import type { User, UserData } from "../users/sql";
+import type { User } from "../users/sql";
 import type { AnyError, CustomError, InferCustomError } from "../utils/types";
 import type { Action, Resource } from "./shared";
 
@@ -42,7 +42,7 @@ export namespace AccessControl {
         | boolean
         | ((
             tx: ReadTransaction | WriteTransaction,
-            user: DeepReadonlyObject<UserData>,
+            user: DeepReadonlyObject<User>,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             ...input: Array<any>
           ) => boolean | Promise<boolean>)
@@ -681,20 +681,20 @@ export namespace AccessControl {
     TPermission extends (typeof permissions)[UserRole][TResource][TAction],
   >(
     tx: ReadTransaction | WriteTransaction,
-    user: DeepReadonlyObject<UserData>,
+    user: DeepReadonlyObject<User>,
     resource: TResource,
     action: TAction,
     ...input: TPermission extends (
       tx: ReadTransaction | WriteTransaction,
-      user: DeepReadonlyObject<UserData>,
+      user: DeepReadonlyObject<User>,
       ...input: infer TInput
     ) => unknown
       ? TInput
       : Array<never>
   ) {
-    const permission = (permissions as Permissions)[user.profile.role][
-      resource
-    ][action];
+    const permission = (permissions as Permissions)[user.role][resource][
+      action
+    ];
 
     return new Promise<boolean>((resolve) => {
       if (typeof permission === "boolean") return resolve(permission);

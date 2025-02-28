@@ -33,9 +33,7 @@ type SetupMachineStatusContext = {
     | "determineHealth"
     | "waitForGoodHealth"
     | "configure"
-    | "dispatchSync"
-    | "waitForSync"
-    | "activate"
+    | "testPapercutConnection"
     | null;
 };
 type SetupMachineContext = SetupMachineWizardContext &
@@ -71,33 +69,107 @@ const initialStatusContext = {
   failureStatus: null,
 } as const satisfies SetupMachineStatusContext;
 
-type InitializeInput = InitializeData;
-type InitializeOutput = { tenantId: Tenant["id"]; apiKey: string };
+const initialize = (api: Client) =>
+  fromPromise<{ tenantId: Tenant["id"]; apiKey: string }, InitializeData>(
+    async ({ input: json }) => {
+      const res = await api.public.setup.initialize.$put({ json });
+      if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
 
-interface RegisterInput
-  extends RegisterData,
-    Pick<SetupMachineStatusContext, "apiKey" | "tenantId"> {}
-type RegisterOutput = void;
+      return res.json();
+    },
+  );
 
-type DispatchInfraInput = Pick<
-  SetupMachineStatusContext,
-  "apiKey" | "tenantId"
->;
-type DispatchInfraOutput = { dispatchId: string };
+const register = (api: Client) =>
+  fromPromise<
+    void,
+    RegisterData & Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
+  >(async ({ input: { apiKey, tenantId, ...json } }) => {
+    if (!apiKey || !tenantId)
+      throw new ApplicationError.Error("Missing API key or tenant ID");
 
-type HealthcheckInput = Pick<SetupMachineStatusContext, "tenantId">;
-type HealthcheckOutput = { isHealthy: boolean };
+    const res = await api.public.setup.register.$put({
+      header: {
+        authorization: `Bearer ${apiKey}`,
+        "x-tenant-id": tenantId,
+      },
+      json,
+    });
+    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+  });
 
-interface ConfigureInput
-  extends ConfigureData,
-    Pick<SetupMachineStatusContext, "apiKey" | "tenantId"> {}
-type ConfigureOutput = void;
+const dispatchInfra = (api: Client) =>
+  fromPromise<
+    { dispatchId: string },
+    Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
+  >(async ({ input: { apiKey, tenantId } }) => {
+    if (!apiKey || !tenantId)
+      throw new ApplicationError.Error("Missing API key or tenant ID");
 
-type DispatchSyncInput = Pick<SetupMachineStatusContext, "apiKey" | "tenantId">;
-type DispatchSyncOutput = { dispatchId: string };
+    const res = await api.public.setup["dispatch-infra"].$post({
+      header: {
+        authorization: `Bearer ${apiKey}`,
+        "x-tenant-id": tenantId,
+      },
+    });
+    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
 
-type ActivateInput = Pick<SetupMachineStatusContext, "apiKey" | "tenantId">;
-type ActivateOutput = void;
+    return res.json();
+  });
+
+const healthcheck = (resource: ViteResource) =>
+  fromPromise<
+    { isHealthy: boolean },
+    Pick<SetupMachineStatusContext, "tenantId">
+  >(async ({ input }) => {
+    if (!input.tenantId) throw new ApplicationError.Error("Missing tenant ID");
+
+    const res = await fetch(
+      buildUrl({
+        fqdn: getBackendFqdn(
+          input.tenantId,
+          resource.AppData.domainName.fullyQualified,
+        ),
+        path: "/api/health",
+      }),
+      { method: "GET" },
+    );
+
+    return { isHealthy: res.ok };
+  });
+
+const configure = (api: Client) =>
+  fromPromise<
+    void,
+    ConfigureData & Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
+  >(async ({ input: { apiKey, tenantId, ...json } }) => {
+    if (!apiKey || !tenantId)
+      throw new ApplicationError.Error("Missing API key or tenant ID");
+
+    const res = await api.public.setup.configure.$put({
+      header: {
+        authorization: `Bearer ${apiKey}`,
+        "x-tenant-id": tenantId,
+      },
+      json,
+    });
+    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+  });
+
+const testPapercutConnection = (api: Client) =>
+  fromPromise<void, Pick<SetupMachineStatusContext, "apiKey" | "tenantId">>(
+    async ({ input: { apiKey, tenantId } }) => {
+      if (!apiKey || !tenantId)
+        throw new ApplicationError.Error("Missing API key or tenant ID");
+
+      const res = await api.public.setup["test-papercut-connection"].$post({
+        header: {
+          authorization: `Bearer ${apiKey}`,
+          "x-tenant-id": tenantId,
+        },
+      });
+      if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    },
+  );
 
 export const getSetupMachine = (api: Client, resource: ViteResource) =>
   setup({
@@ -112,114 +184,16 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
         | ({ type: "wizard.step4.next" } & SetupWizardStep4)
         | { type: "wizard.register" }
         | { type: "status.healthcheck" }
-        | { type: "status.activate" }
         | { type: "status.back" }
         | { type: "status.fail" },
     },
     actors: {
-      initialize: fromPromise<InitializeOutput, InitializeInput>(
-        async ({ input: json }) => {
-          const res = await api.public.setup.initialize.$put({ json });
-          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-
-          return res.json();
-        },
-      ),
-      register: fromPromise<RegisterOutput, RegisterInput>(
-        async ({ input: { apiKey, tenantId, ...json } }) => {
-          if (!apiKey || !tenantId)
-            throw new ApplicationError.Error("Missing API key or tenant ID");
-
-          const res = await api.public.setup.register.$put({
-            header: {
-              authorization: `Bearer ${apiKey}`,
-              "x-tenant-id": tenantId,
-            },
-            json,
-          });
-          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-        },
-      ),
-      dispatchInfra: fromPromise<DispatchInfraOutput, DispatchInfraInput>(
-        async ({ input: { apiKey, tenantId } }) => {
-          if (!apiKey || !tenantId)
-            throw new ApplicationError.Error("Missing API key or tenant ID");
-
-          const res = await api.public.setup["dispatch-infra"].$post({
-            header: {
-              authorization: `Bearer ${apiKey}`,
-              "x-tenant-id": tenantId,
-            },
-          });
-          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-
-          return res.json();
-        },
-      ),
-      healthcheck: fromPromise<HealthcheckOutput, HealthcheckInput>(
-        async ({ input }) => {
-          if (!input.tenantId)
-            throw new ApplicationError.Error("Missing tenant ID");
-
-          const res = await fetch(
-            buildUrl({
-              fqdn: getBackendFqdn(
-                input.tenantId,
-                resource.AppData.domainName.fullyQualified,
-              ),
-              path: "/api/health",
-            }),
-            { method: "GET" },
-          );
-
-          return { isHealthy: res.ok };
-        },
-      ),
-      configure: fromPromise<ConfigureOutput, ConfigureInput>(
-        async ({ input: { apiKey, tenantId, ...json } }) => {
-          if (!apiKey || !tenantId)
-            throw new ApplicationError.Error("Missing API key or tenant ID");
-
-          const res = await api.public.setup.configure.$put({
-            header: {
-              authorization: `Bearer ${apiKey}`,
-              "x-tenant-id": tenantId,
-            },
-            json,
-          });
-          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-        },
-      ),
-      dispatchSync: fromPromise<DispatchSyncOutput, DispatchSyncInput>(
-        async ({ input: { apiKey, tenantId } }) => {
-          if (!apiKey || !tenantId)
-            throw new ApplicationError.Error("Missing API key or tenant ID");
-
-          const res = await api.public.setup["dispatch-sync"].$post({
-            header: {
-              authorization: `Bearer ${apiKey}`,
-              "x-tenant-id": tenantId,
-            },
-          });
-          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-
-          return res.json();
-        },
-      ),
-      activate: fromPromise<ActivateOutput, ActivateInput>(
-        async ({ input: { apiKey, tenantId } }) => {
-          if (!apiKey || !tenantId)
-            throw new ApplicationError.Error("Missing API key or tenant ID");
-
-          const res = await api.public.setup.activate.$put({
-            header: {
-              authorization: `Bearer ${apiKey}`,
-              "x-tenant-id": tenantId,
-            },
-          });
-          if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-        },
-      ),
+      initialize: initialize(api),
+      register: register(api),
+      dispatchInfra: dispatchInfra(api),
+      healthcheck: healthcheck(resource),
+      configure: configure(api),
+      testPapercutConnection: testPapercutConnection(api),
     },
   }).createMachine({
     id: "setup",
@@ -388,52 +362,24 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
                 tailnetPapercutServerUri: context.tailnetPapercutServerUri,
                 papercutServerAuthToken: context.papercutServerAuthToken,
               }),
-              onDone: {
-                target: "dispatchSync",
-              },
+              onDone: { target: "testPapercutConnection" },
               onError: {
                 target: "failure",
                 actions: assign({ failureStatus: "configure" }),
               },
             },
           },
-          dispatchSync: {
+          testPapercutConnection: {
             invoke: {
-              src: "dispatchSync",
+              src: "testPapercutConnection",
               input: ({ context }) => ({
                 apiKey: context.apiKey,
                 tenantId: context.tenantId,
               }),
-              onDone: {
-                target: "waitForSync",
-                actions: ({ event }) => assign(event.output),
-              },
+              onDone: { target: "complete" },
               onError: {
                 target: "failure",
-                actions: assign({ failureStatus: "dispatchSync" }),
-              },
-            },
-          },
-          waitForSync: {
-            on: {
-              "status.activate": "activate",
-              "status.fail": {
-                target: "failure",
-                actions: assign({ failureStatus: "waitForSync" }),
-              },
-            },
-          },
-          activate: {
-            invoke: {
-              src: "activate",
-              input: ({ context }) => ({
-                apiKey: context.apiKey,
-                tenantId: context.tenantId,
-              }),
-              onDone: "complete",
-              onError: {
-                target: "failure",
-                actions: assign({ failureStatus: "activate" }),
+                actions: assign({ failureStatus: "testPapercutConnection" }),
               },
             },
           },
@@ -445,9 +391,7 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
               },
             },
           },
-          complete: {
-            type: "final",
-          },
+          complete: { type: "final" },
         },
       },
     },

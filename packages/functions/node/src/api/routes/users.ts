@@ -39,12 +39,12 @@ export default new Hono().get(
                   return c.req.header("Authorization")!.replace("Bearer ", "");
 
                 // Otherwise use the application access token
-                return EntraId.applicationAccessToken(user.oauth2Provider.id);
+                return EntraId.applicationAccessToken(user.oauth2ProviderId);
               },
             },
           }),
           async () => {
-            const res = await Graph.photoResponse(user.profile.oauth2UserId);
+            const res = await Graph.userPhotoResponse(user.oauth2UserId);
             res.headers.set("Cache-Control", "max-age=2592000");
 
             return res;

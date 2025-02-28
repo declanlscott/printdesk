@@ -38,7 +38,7 @@ import type { MutationName } from "./shared";
 
 export type Metadata<TTable extends Table = TableByName<TableName>> = {
   id: TTable["$inferSelect"]["id"];
-  rowVersion: number;
+  version: number;
 };
 
 export type SyncedTableMetadata = [
@@ -120,8 +120,8 @@ export const authoritativeMutator = {
   deleteRoom: Rooms.delete_,
   restoreRoom: Rooms.restore,
   updateTenant: Tenants.update,
-  updateUserProfileRole: Users.updateProfileRole,
-  deleteUserProfile: Users.deleteProfile,
-  restoreUserProfile: Users.restoreProfile,
+  updateUserRole: Users.updateRole,
+  deleteUser: Users.delete_,
+  restoreUser: Users.restore,
   setWorkflow: Rooms.setWorkflow,
 } satisfies AuthoritativeMutator;

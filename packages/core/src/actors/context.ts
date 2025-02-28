@@ -1,4 +1,5 @@
 import { Utils } from "../utils";
+import { ApplicationError } from "../utils/errors";
 
 import type { Actor } from "./shared";
 
@@ -14,7 +15,9 @@ export function assertActor<TActorType extends Actor["type"]>(
   const actor = useActor();
 
   if (actor.type !== type)
-    throw new Error(`Expected actor type "${type}", got "${actor.type}"`);
+    throw new ApplicationError.InvalidActor(
+      `Expected actor type "${type}", got "${actor.type}".`,
+    );
 
   return actor as Extract<Actor, { type: TActorType }>;
 }
@@ -24,7 +27,8 @@ export type PrivateActor = Exclude<Actor, { type: "public" }>;
 export function assertPrivateActor(): PrivateActor {
   const actor = useActor();
 
-  if (actor.type === "public") throw new Error("Expected private actor");
+  if (actor.type === "public")
+    throw new ApplicationError.InvalidActor("Expected private actor.");
 
   return actor;
 }

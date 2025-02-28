@@ -47,7 +47,7 @@ export namespace Products {
       }),
     ({ user }) =>
       async (tx, values) => {
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(tx, productsTableName, values.id);
 
           return Replicache.set(tx, productsTableName, values.id, {

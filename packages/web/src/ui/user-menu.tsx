@@ -33,13 +33,10 @@ export function UserMenu() {
         )}
       >
         <Avatar>
-          <AvatarImage
-            src={`/api/users/${user.id}/photo`}
-            alt={user.profile.name}
-          />
+          <AvatarImage src={`/api/users/${user.id}/photo`} alt={user.name} />
 
           <AvatarFallback className="text-foreground bg-muted border-primary border-2">
-            {Utils.getUserInitials(user.profile.name)}
+            {Utils.getUserInitials(user.name)}
           </AvatarFallback>
         </Avatar>
       </AriaButton>
@@ -59,7 +56,7 @@ export function UserMenu() {
                   <span className="text-muted-foreground text-xs leading-none">
                     {tenant.slug}
 
-                    {user.profile.role === "administrator" ? (
+                    {user.role === "administrator" ? (
                       <> ({tenant.status})</>
                     ) : null}
                   </span>
@@ -74,15 +71,15 @@ export function UserMenu() {
             <MenuHeader>
               <div className="flex flex-col space-y-1">
                 <span className="text-sm font-medium leading-none">
-                  {user.profile.name}
+                  {user.name}
                 </span>
 
                 <span className="text-muted-foreground text-xs leading-none">
-                  {user.profile.email}
+                  {user.email}
                 </span>
 
                 <span className="text-muted-foreground/90 text-xs font-thin capitalize leading-none">
-                  {user.profile.role}
+                  {user.role}
                 </span>
               </div>
             </MenuHeader>

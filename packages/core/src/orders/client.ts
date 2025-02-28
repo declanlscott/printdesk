@@ -49,7 +49,7 @@ export namespace Orders {
       }),
     ({ user }) =>
       async (tx, { id, ...values }) => {
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(tx, ordersTableName, id);
 
           return Replicache.set(tx, ordersTableName, id, {

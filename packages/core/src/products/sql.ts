@@ -6,7 +6,7 @@ import { Constants } from "../utils/constants";
 import { productStatus } from "../utils/sql";
 import { productConfigurationSchema, productsTableName } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferTable } from "../utils/types";
 
 export const productsTable = tenantTable(
   productsTableName,
@@ -21,4 +21,4 @@ export const productsTable = tenantTable(
 
 export type ProductsTable = typeof productsTable;
 
-export type Product = InferSelectModel<ProductsTable>;
+export type Product = InferTable<ProductsTable>;

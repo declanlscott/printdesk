@@ -1,6 +1,6 @@
 import { decode, encode } from "@msgpack/msgpack";
 import { getTableColumns, sql } from "drizzle-orm";
-import { char, customType, timestamp } from "drizzle-orm/pg-core";
+import { char, customType, integer, timestamp } from "drizzle-orm/pg-core";
 import * as v from "valibot";
 
 import { Constants } from "../utils/constants";
@@ -36,13 +36,25 @@ export const timestamps = {
     return timestamp("updated_at")
       .notNull()
       .defaultNow()
-      .$onUpdate(() => new Date());
+      .$onUpdateFn(() => new Date());
   },
   get deletedAt() {
     return timestamp("deleted_at");
   },
 };
 export type Timestamp = keyof typeof timestamps;
+
+/**
+ * Version column
+ */
+export const version = {
+  get version() {
+    return integer("version")
+      .notNull()
+      .default(1)
+      .$onUpdateFn(() => sql`version + 1`);
+  },
+};
 
 export function buildConflictUpdateColumns<
   TTable extends PgTable,
@@ -63,9 +75,6 @@ export function buildConflictUpdateColumns<
 }
 
 export type OmitTimestamps<TTable> = Omit<TTable, keyof typeof timestamps>;
-
-export const getRowVersionColumn = (tableName: string) =>
-  sql<number>`"${tableName}"."${Constants.ROW_VERSION_COLUMN_NAME}"`;
 
 export const customJsonb = <
   TMaybeSchema extends v.GenericSchema | undefined = undefined,

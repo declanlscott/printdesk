@@ -1,6 +1,12 @@
 import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
-import { customJsonb, id, idPrimaryKey, timestamps } from "../drizzle/columns";
+import {
+  customJsonb,
+  id,
+  idPrimaryKey,
+  timestamps,
+  version,
+} from "../drizzle/columns";
 import { Constants } from "../utils/constants";
 import { licenseStatus, tenantStatus } from "../utils/sql";
 import {
@@ -10,7 +16,7 @@ import {
   tenantsTableName,
 } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferTable } from "../utils/types";
 
 export const licensesTable = pgTable(licensesTableName, {
   key: uuid("key").defaultRandom().primaryKey(),
@@ -18,7 +24,7 @@ export const licensesTable = pgTable(licensesTableName, {
   status: licenseStatus("status").notNull().default("active"),
 });
 export type LicensesTable = typeof licensesTable;
-export type License = InferSelectModel<LicensesTable>;
+export type License = InferTable<LicensesTable>;
 
 export const tenantsTable = pgTable(
   tenantsTableName,
@@ -28,11 +34,12 @@ export const tenantsTable = pgTable(
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     status: tenantStatus("status").notNull().default("setup"),
     ...timestamps,
+    ...version,
   },
   (table) => [uniqueIndex().on(table.slug)],
 );
 export type TenantsTable = typeof tenantsTable;
-export type Tenant = InferSelectModel<TenantsTable>;
+export type Tenant = InferTable<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   tenantId: id("tenant_id").primaryKey(),
@@ -44,4 +51,4 @@ export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;
-export type TenantMetadata = InferSelectModel<TenantMetadataTable>;
+export type TenantMetadata = InferTable<TenantMetadataTable>;

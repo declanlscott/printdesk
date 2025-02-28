@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { handleMessage } from "@printworks/core/realtime/client";
+import { Realtime } from "@printworks/core/realtime/client";
 import { useWebSocket } from "partysocket/react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -22,16 +22,22 @@ export function RealtimeProvider({
   children,
 }: WebSocketProviderProps) {
   const [storeApi] = useState(() =>
-    createStore<RealtimeStore>((set) => ({
+    createStore<RealtimeStore>((set, get) => ({
       isConnected: false,
       timer: null,
       actions: {
         authenticate: getAuth,
-        isConnected: (isConnected) => set(() => ({ isConnected })),
-        startTimer: (callback, delayMs) =>
+        onConnection: (reconnect, timeoutMs) => {
           set(() => ({
-            timer: setTimeout(callback, delayMs),
-          })),
+            isConnected: true,
+            timer: setTimeout(reconnect, timeoutMs),
+          }));
+        },
+        onClose: () => {
+          get().actions.cancelTimer();
+
+          set(() => ({ isConnected: false }));
+        },
         cancelTimer: () =>
           set(({ timer }) => {
             if (timer) clearTimeout(timer);
@@ -42,7 +48,7 @@ export function RealtimeProvider({
     })),
   );
 
-  const { authenticate, isConnected, startTimer, cancelTimer } = useStore(
+  const { authenticate, onConnection, onClose, cancelTimer } = useStore(
     storeApi,
     useShallow(({ actions }) => actions),
   );
@@ -60,18 +66,18 @@ export function RealtimeProvider({
 
   const webSocket = useWebSocket(urlProvider, protocolsProvider, {
     onOpen: () => webSocket.send(JSON.stringify({ type: "connection_init" })),
-    onMessage: handleMessage((message) => {
+    onMessage: Realtime.handleMessage((message) => {
       switch (message.type) {
         case "connection_ack":
-          isConnected(true);
-          startTimer(() => webSocket.reconnect(), message.connectionTimeoutMs);
-          break;
+          return onConnection(
+            () => webSocket.reconnect(),
+            message.connectionTimeoutMs,
+          );
         case "ka":
-          cancelTimer();
-          break;
+          return cancelTimer();
       }
     }),
-    onClose: () => isConnected(false),
+    onClose,
   });
 
   return (

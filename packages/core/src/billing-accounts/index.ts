@@ -111,7 +111,7 @@ export namespace BillingAccounts {
           );
 
         const [adminsOps, managers, customers] = await Promise.all([
-          Users.fromRoles(["administrator", "operator"]),
+          Users.byRoles(["administrator", "operator"]),
           Users.withManagerAuthorization(id),
           Users.withCustomerAuthorization(id),
         ]);
@@ -144,7 +144,7 @@ export namespace BillingAccounts {
 
       return useTransaction(async (tx) => {
         const [adminsOps, managers, customers] = await Promise.all([
-          Users.fromRoles(["administrator", "operator"]),
+          Users.byRoles(["administrator", "operator"]),
           tx
             .select({
               managerId: billingAccountManagerAuthorizationsTable.managerId,

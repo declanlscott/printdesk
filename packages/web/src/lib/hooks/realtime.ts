@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef } from "react";
-import { handleMessage } from "@printworks/core/realtime/client";
+import { Realtime } from "@printworks/core/realtime/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { generateId } from "@printworks/core/utils/shared";
 import { useQuery } from "@tanstack/react-query";
@@ -59,7 +59,7 @@ export function useRealtimeChannel<TChannel extends string>(
     webSocket.send(
       JSON.stringify({ type: "subscribe", channel, id, authorization }),
     );
-    const onMessage = handleMessage((message) => {
+    const onMessage = Realtime.handleMessage((message) => {
       if (message.type === "data" && message.id === id)
         onDataRef.current?.(message.event);
     });

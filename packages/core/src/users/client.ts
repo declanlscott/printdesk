@@ -9,9 +9,9 @@ import { ordersTableName } from "../orders/shared";
 import { Replicache } from "../replicache/client";
 import { ApplicationError } from "../utils/errors";
 import {
-  deleteUserProfileMutationArgsSchema,
-  restoreUserProfileMutationArgsSchema,
-  updateUserProfileRoleMutationArgsSchema,
+  deleteUserMutationArgsSchema,
+  restoreUserMutationArgsSchema,
+  updateUserRoleMutationArgsSchema,
   usersTableName,
 } from "./shared";
 
@@ -31,7 +31,7 @@ export namespace Users {
     ],
   ) =>
     Replicache.scan(tx, usersTableName).then(
-      R.filter((user) => roles.includes(user.profile.role)),
+      R.filter((user) => roles.includes(user.role)),
     );
 
   export async function withOrderAccess(
@@ -82,8 +82,8 @@ export namespace Users {
         ).then((users) => users.filter(Boolean)),
     );
 
-  export const updateProfileRole = Replicache.optimisticMutator(
-    updateUserProfileRoleMutationArgsSchema,
+  export const updateRole = Replicache.optimisticMutator(
+    updateUserRoleMutationArgsSchema,
     (tx, user, { id }) =>
       AccessControl.enforce([tx, user, usersTableName, "update"], {
         Error: ApplicationError.AccessDenied,
@@ -95,13 +95,13 @@ export namespace Users {
 
         return Replicache.set(tx, usersTableName, id, {
           ...prev,
-          profile: { ...prev.profile, ...values },
+          ...values,
         });
       },
   );
 
-  export const deleteProfile = Replicache.optimisticMutator(
-    deleteUserProfileMutationArgsSchema,
+  export const delete_ = Replicache.optimisticMutator(
+    deleteUserMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, usersTableName, "delete"], {
         Error: ApplicationError.AccessDenied,
@@ -110,12 +110,12 @@ export namespace Users {
     ({ user }) =>
       async (tx, { id, ...values }) => {
         // Soft delete for administrators
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(tx, usersTableName, id);
 
           return Replicache.set(tx, usersTableName, id, {
             ...prev,
-            profile: { ...prev.profile, ...values },
+            ...values,
           });
         }
 
@@ -123,8 +123,8 @@ export namespace Users {
       },
   );
 
-  export const restoreProfile = Replicache.optimisticMutator(
-    restoreUserProfileMutationArgsSchema,
+  export const restore = Replicache.optimisticMutator(
+    restoreUserMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, usersTableName, "update"], {
         Error: ApplicationError.AccessDenied,
@@ -136,10 +136,7 @@ export namespace Users {
 
         return Replicache.set(tx, usersTableName, id, {
           ...prev,
-          profile: {
-            ...prev.profile,
-            deletedAt: null,
-          },
+          deletedAt: null,
         });
       },
   );

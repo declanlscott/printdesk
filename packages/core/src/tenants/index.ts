@@ -4,6 +4,7 @@ import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
 import { Auth } from "../auth";
+import { oauth2ProvidersTable } from "../auth/sql";
 import { Documents } from "../backend/documents";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
@@ -19,6 +20,7 @@ import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { Oauth2Provider } from "../auth/sql";
 import type { ConfigureData, InfraProgramInput, RegisterData } from "./shared";
 import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
@@ -43,6 +45,27 @@ export namespace Tenants {
   export const read = async () =>
     useTransaction((tx) =>
       tx.select().from(tenantsTable).where(eq(tenantsTable.id, useTenant().id)),
+    );
+
+  export const byOauth2Provider = async (
+    type: Oauth2Provider["type"],
+    id: Oauth2Provider["id"],
+  ) =>
+    useTransaction((tx) =>
+      tx
+        .select({ tenant: tenantsTable })
+        .from(tenantsTable)
+        .innerJoin(
+          oauth2ProvidersTable,
+          eq(oauth2ProvidersTable.tenantId, tenantsTable.id),
+        )
+        .where(
+          and(
+            eq(oauth2ProvidersTable.type, type),
+            eq(oauth2ProvidersTable.id, id),
+          ),
+        )
+        .then((rows) => R.pipe(rows, R.map(R.prop("tenant")), R.first())),
     );
 
   export const update = fn(updateTenantMutationArgsSchema, async (values) => {

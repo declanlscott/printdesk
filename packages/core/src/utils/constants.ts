@@ -15,8 +15,6 @@ export namespace Constants {
   export const POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE = "40001";
   export const POSTGRES_DEADLOCK_DETECTED_ERROR_CODE = "40P01";
 
-  export const ROW_VERSION_COLUMN_NAME = "xmin";
-
   export const VARCHAR_LENGTH = 40;
 
   export const PAPERCUT_API_PAGINATION_LIMIT = 1000;

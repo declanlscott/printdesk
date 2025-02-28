@@ -30,7 +30,7 @@ export function DeleteUserDialog(props: DeleteUserDialogProps) {
 
   const isSelf = user?.id === props.userId;
 
-  const { deleteUserProfile } = useMutator();
+  const { deleteUser } = useMutator();
 
   const targetConfirmationText = "delete";
   const [confirmationText, setConfirmationText] = useState(() => "");
@@ -39,7 +39,7 @@ export function DeleteUserDialog(props: DeleteUserDialogProps) {
 
   async function mutate() {
     if (isConfirmed) {
-      await deleteUserProfile({
+      await deleteUser({
         id: props.userId,
         deletedAt: new Date(),
       });
@@ -53,17 +53,13 @@ export function DeleteUserDialog(props: DeleteUserDialogProps) {
           <>
             <DialogHeader>
               <DialogTitle>
-                {isSelf
-                  ? "Delete Account"
-                  : `Delete "${userToDelete?.profile.name}"`}
-                ?
+                {isSelf ? "Delete Account" : `Delete "${userToDelete?.name}"`}?
               </DialogTitle>
 
               <p className="text-muted-foreground text-sm">
                 Are you sure you want to continue?{" "}
-                {isSelf ? "You" : `${userToDelete?.profile.name}`} will not be
-                able to access {isSelf ? "your" : "their"} account after
-                deletion.
+                {isSelf ? "You" : `${userToDelete?.name}`} will not be able to
+                access {isSelf ? "your" : "their"} account after deletion.
               </p>
 
               <p className="text-muted-foreground text-sm">

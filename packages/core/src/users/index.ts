@@ -1,8 +1,7 @@
-import { and, eq, getTableName, inArray, isNull } from "drizzle-orm";
+import { and, eq, getTableName, inArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
-import { oauth2ProvidersTable } from "../auth/sql";
 import {
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
@@ -13,22 +12,20 @@ import { afterTransaction, useTransaction } from "../drizzle/context";
 import { ordersTable } from "../orders/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
-import { licensesTable, tenantsTable } from "../tenants/sql";
 import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
-  deleteUserProfileMutationArgsSchema,
-  restoreUserProfileMutationArgsSchema,
-  updateUserProfileRoleMutationArgsSchema,
+  deleteUserMutationArgsSchema,
+  restoreUserMutationArgsSchema,
+  updateUserRoleMutationArgsSchema,
 } from "./shared";
-import { userProfilesTable, usersTable } from "./sql";
+import { usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { Oauth2Provider } from "../auth/sql";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "./shared";
-import type { User, UserData, UserProfilesTable, UsersTable } from "./sql";
+import type { User, UsersTable } from "./sql";
 
 export namespace Users {
   export const put = async (values: Array<InferInsertModel<UsersTable>>) =>
@@ -48,92 +45,20 @@ export namespace Users {
         .returning(),
     );
 
-  export const read = async (
-    ids: Array<User["id"]>,
-  ): Promise<Array<UserData>> =>
+  export const read = async (ids: Array<User["id"]>) =>
     useTransaction((tx) =>
       tx
-        .select({
-          user: usersTable,
-          profile: userProfilesTable,
-          oauth2Provider: oauth2ProvidersTable,
-        })
+        .select()
         .from(usersTable)
-        .innerJoin(
-          userProfilesTable,
-          and(
-            eq(usersTable.id, userProfilesTable.userId),
-            eq(usersTable.tenantId, userProfilesTable.tenantId),
-          ),
-        )
-        .innerJoin(
-          oauth2ProvidersTable,
-          and(
-            eq(userProfilesTable.oauth2ProviderId, oauth2ProvidersTable.id),
-            eq(userProfilesTable.tenantId, oauth2ProvidersTable.tenantId),
-          ),
-        )
         .where(
           and(
             inArray(usersTable.id, ids),
             eq(usersTable.tenantId, useTenant().id),
           ),
-        )
-        .then((rows) =>
-          rows.map(({ user, profile, oauth2Provider }) => ({
-            ...user,
-            profile,
-            oauth2Provider,
-          })),
         ),
     );
 
-  export const fromOauth = async (
-    username: User["username"],
-    providerId: Oauth2Provider["id"],
-    providerType: Oauth2Provider["type"],
-  ) =>
-    useTransaction(async (tx) => {
-      const result = await tx
-        .select({
-          user: usersTable,
-          userProfile: userProfilesTable,
-        })
-        .from(tenantsTable)
-        .innerJoin(
-          oauth2ProvidersTable,
-          and(
-            eq(oauth2ProvidersTable.type, providerType),
-            eq(oauth2ProvidersTable.tenantId, tenantsTable.id),
-          ),
-        )
-        .innerJoin(licensesTable, eq(licensesTable.tenantId, tenantsTable.id))
-        .leftJoin(usersTable, eq(usersTable.tenantId, tenantsTable.id))
-        .leftJoin(
-          userProfilesTable,
-          eq(userProfilesTable.userId, usersTable.id),
-        )
-        .where(
-          and(
-            eq(oauth2ProvidersTable.id, providerId),
-            eq(tenantsTable.status, "active"),
-            eq(licensesTable.status, "active"),
-            isNull(tenantsTable.deletedAt),
-            eq(usersTable.username, username),
-          ),
-        )
-        .then(R.first());
-      if (!result) throw new Error("tenant not found or inactive");
-      if (!result.user) throw new Error("user not found");
-      if (result.user.deletedAt) throw new Error("user is deleted");
-
-      return {
-        ...result.user,
-        profile: result.userProfile,
-      };
-    });
-
-  export const fromRoles = async (
+  export const byRoles = async (
     roles: Array<UserRole> = [
       "administrator",
       "operator",
@@ -143,31 +68,24 @@ export namespace Users {
   ) =>
     useTransaction((tx) =>
       tx
-        .select({ id: usersTable.id, role: userProfilesTable.role })
+        .select()
         .from(usersTable)
-        .innerJoin(
-          userProfilesTable,
-          and(
-            eq(usersTable.id, userProfilesTable.userId),
-            eq(usersTable.tenantId, userProfilesTable.tenantId),
-          ),
-        )
         .where(
           and(
-            inArray(userProfilesTable.role, roles),
+            inArray(usersTable.role, roles),
             eq(usersTable.tenantId, useTenant().id),
           ),
         ),
     );
 
-  export const fromPapercut = async () =>
+  export const byType = async (type: User["type"]) =>
     useTransaction((tx) =>
       tx
         .select()
         .from(usersTable)
         .where(
           and(
-            eq(usersTable.type, "papercut"),
+            eq(usersTable.type, type),
             eq(usersTable.tenantId, useTenant().id),
           ),
         ),
@@ -178,17 +96,10 @@ export namespace Users {
 
     return useTransaction(async (tx) => {
       const [adminsOps, managers, [customer]] = await Promise.all([
-        fromRoles(["administrator", "operator"]),
+        byRoles(["administrator", "operator"]),
         tx
           .select({ id: usersTable.id })
           .from(usersTable)
-          .innerJoin(
-            userProfilesTable,
-            and(
-              eq(usersTable.id, userProfilesTable.userId),
-              eq(usersTable.tenantId, userProfilesTable.tenantId),
-            ),
-          )
           .innerJoin(
             billingAccountManagerAuthorizationsTable,
             and(
@@ -221,13 +132,6 @@ export namespace Users {
         tx
           .select({ id: usersTable.id })
           .from(usersTable)
-          .innerJoin(
-            userProfilesTable,
-            and(
-              eq(usersTable.id, userProfilesTable.userId),
-              eq(usersTable.tenantId, userProfilesTable.tenantId),
-            ),
-          )
           .innerJoin(
             ordersTable,
             and(
@@ -293,15 +197,8 @@ export namespace Users {
         ),
     );
 
-  export const createProfile = async (
-    profile: InferInsertModel<UserProfilesTable>,
-  ) =>
-    useTransaction(async (tx) =>
-      tx.insert(userProfilesTable).values(profile).returning().then(R.first()),
-    );
-
-  export const updateProfileRole = fn(
-    updateUserProfileRoleMutationArgsSchema,
+  export const updateRole = fn(
+    updateUserRoleMutationArgsSchema,
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
@@ -312,13 +209,10 @@ export namespace Users {
 
       return useTransaction(async (tx) => {
         await tx
-          .update(userProfilesTable)
+          .update(usersTable)
           .set(values)
           .where(
-            and(
-              eq(userProfilesTable.id, id),
-              eq(userProfilesTable.tenantId, tenant.id),
-            ),
+            and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
           );
 
         await afterTransaction(() => poke(["/tenant"]));
@@ -326,8 +220,8 @@ export namespace Users {
     },
   );
 
-  export const deleteProfile = fn(
-    deleteUserProfileMutationArgsSchema,
+  export const delete_ = fn(
+    deleteUserMutationArgsSchema,
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
@@ -349,28 +243,23 @@ export namespace Users {
     },
   );
 
-  export const restoreProfile = fn(
-    restoreUserProfileMutationArgsSchema,
-    async ({ id }) => {
-      const tenant = useTenant();
+  export const restore = fn(restoreUserMutationArgsSchema, async ({ id }) => {
+    const tenant = useTenant();
 
-      await AccessControl.enforce([getTableName(usersTable), "update"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: getTableName(usersTable), id }],
-      });
+    await AccessControl.enforce([getTableName(usersTable), "update"], {
+      Error: ApplicationError.AccessDenied,
+      args: [{ name: getTableName(usersTable), id }],
+    });
 
-      return useTransaction(async (tx) => {
-        await tx
-          .update(usersTable)
-          .set({ deletedAt: null })
-          .where(
-            and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
-          );
+    return useTransaction(async (tx) => {
+      await tx
+        .update(usersTable)
+        .set({ deletedAt: null })
+        .where(and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)));
 
-        await afterTransaction(() => poke(["/tenant"]));
-      });
-    },
-  );
+      await afterTransaction(() => poke(["/tenant"]));
+    });
+  });
 
   export const exists = async (userId: User["id"]) =>
     useTransaction((tx) =>

@@ -64,7 +64,7 @@ import {
 import { Input } from "~/ui/primitives/text-field";
 
 import type { UserRole } from "@printworks/core/users/shared";
-import type { UserData } from "@printworks/core/users/sql";
+import type { User } from "@printworks/core/users/sql";
 import type {
   ColumnDef,
   SortingState,
@@ -157,7 +157,7 @@ const columns = [
     enableHiding: false,
     cell: ({ row }) => <UserActionsMenu user={row.original} />,
   },
-] satisfies Array<ColumnDef<DeepReadonlyObject<UserData>>>;
+] satisfies Array<ColumnDef<DeepReadonlyObject<User>>>;
 
 function UsersCard() {
   const { initialUsers } = Route.useLoaderData();
@@ -321,17 +321,17 @@ function UsersCard() {
 }
 
 interface UserRoleCellProps {
-  user: DeepReadonlyObject<UserData>;
+  user: DeepReadonlyObject<User>;
 }
 function UserRoleCell(props: UserRoleCellProps) {
-  const role = props.user.profile.role;
+  const role = props.user.role;
 
-  const { updateUserProfileRole } = useMutator();
+  const { updateUserRole } = useMutator();
 
   const isSelf = useUser().id === props.user.id;
 
   const mutate = async (role: UserRole) =>
-    await updateUserProfileRole({
+    await updateUserRole({
       id: props.user.id,
       role,
       updatedAt: new Date(),
@@ -374,12 +374,12 @@ function UserRoleCell(props: UserRoleCellProps) {
 }
 
 interface UserActionsMenuProps {
-  user: DeepReadonlyObject<UserData>;
+  user: DeepReadonlyObject<User>;
 }
 function UserActionsMenu(props: UserActionsMenuProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(() => false);
 
-  const { restoreUserProfile } = useMutator();
+  const { restoreUser } = useMutator();
 
   return (
     <MenuTrigger>
@@ -436,7 +436,7 @@ function UserActionsMenu(props: UserActionsMenuProps) {
 
               <MenuSection>
                 <MenuItem
-                  onAction={() => restoreUserProfile({ id: props.user.id })}
+                  onAction={() => restoreUser({ id: props.user.id })}
                   className="text-green-600"
                 >
                   <UserRoundCheck className="mr-2 size-4" />

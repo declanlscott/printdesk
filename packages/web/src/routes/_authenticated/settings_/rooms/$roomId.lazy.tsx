@@ -63,7 +63,7 @@ function RouteComponent() {
           </Breadcrumbs>
         </>
       }
-      links={links.roomSettings(roomId)[user.profile.role]}
+      links={links.roomSettings(roomId)[user.role]}
     />
   );
 }

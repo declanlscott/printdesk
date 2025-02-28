@@ -23,9 +23,7 @@ export function InitializingStatusItem() {
     case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
-    case "dispatchSync":
-    case "waitForSync":
-    case "activate":
+    case "testPapercutConnection":
     case "complete":
       return <SuccessItem name={name} />;
     case "failure":
@@ -41,9 +39,7 @@ export function InitializingStatusItem() {
         case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
-        case "dispatchSync":
-        case "waitForSync":
-        case "activate":
+        case "testPapercutConnection":
           return <SuccessItem name={name} />;
         default:
           throw new ApplicationError.NonExhaustiveValue(context.failureStatus);

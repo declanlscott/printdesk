@@ -1,8 +1,7 @@
 import { withActor } from "@printworks/core/actors/context";
 import { Backend } from "@printworks/core/backend";
-import { Api } from "@printworks/core/backend/api";
-import { PapercutSync } from "@printworks/core/papercut/sync";
-import { publish } from "@printworks/core/realtime/publisher";
+import { Papercut } from "@printworks/core/papercut";
+import { Realtime } from "@printworks/core/realtime";
 import { Tenants } from "@printworks/core/tenants";
 import { Credentials, SignatureV4, withAws } from "@printworks/core/utils/aws";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
@@ -23,8 +22,8 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
 
   return withActor({ type: "system", properties: { tenantId } }, async () => {
     const tenant = await Tenants.read().then(R.first());
-    if (!tenant || tenant.status === "suspended")
-      throw new Error("Tenant not found or suspended");
+    if (!tenant) throw new Error("Tenant not found");
+    if (tenant.status !== "active") throw new Error("Tenant not active");
 
     return withAws(
       {
@@ -62,18 +61,18 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
         },
       },
       async () => {
-        const { http: publishDomain } = await Api.getRealtimeDns();
+        const { http: publishDomain } = await Realtime.getDns();
 
         let error = undefined;
         try {
-          await withXml(PapercutSync.users);
+          await withXml(Papercut.syncUsers);
         } catch (e) {
           console.error(e);
           error = e;
         }
 
         if (event.source === Backend.getReverseDns())
-          await publish(publishDomain, `/events/${event.id}`, [
+          await Realtime.publish(publishDomain, `/events/${event.id}`, [
             JSON.stringify({
               type: "papercut-sync",
               success: !!error,

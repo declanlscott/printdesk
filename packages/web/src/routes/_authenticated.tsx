@@ -8,7 +8,7 @@ import { checkRoutePermission } from "~/lib/access-control";
 import { query } from "~/lib/hooks/data";
 
 import type { UserRole } from "@printworks/core/users/shared";
-import type { UserData } from "@printworks/core/users/sql";
+import type { User } from "@printworks/core/users/sql";
 import type { DeepReadonlyObject, ReadTransaction } from "replicache";
 import type { routePermissions } from "~/lib/access-control";
 import type { AuthenticatedEagerRouteId } from "~/types";
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/_authenticated")({
       routeId: TRouteId,
       ...input: TPermission extends (
         tx: ReadTransaction,
-        user: DeepReadonlyObject<UserData>,
+        user: DeepReadonlyObject<User>,
         ...input: infer TInput
       ) => unknown
         ? TInput

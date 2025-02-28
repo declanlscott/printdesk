@@ -1,7 +1,6 @@
 import * as R from "remeda";
 
-import { Api } from "../backend/api";
-import { publish } from "../realtime/publisher";
+import { Realtime } from "../realtime";
 import { Constants } from "../utils/constants";
 
 import type { StartsWith } from "../utils/types";
@@ -12,11 +11,11 @@ export async function poke<TChannel extends string>(
   const uniqueChannels = R.unique(channels);
   if (R.isEmpty(uniqueChannels)) return;
 
-  const { http: httpDomainName } = await Api.getRealtimeDns();
+  const { http: httpDomainName } = await Realtime.getDns();
 
   const results = await Promise.allSettled(
     uniqueChannels.map((channel) =>
-      publish(httpDomainName, `/replicache${channel}`, [
+      Realtime.publish(httpDomainName, `/replicache${channel}`, [
         Constants.REPLICACHE_POKE,
       ]),
     ),

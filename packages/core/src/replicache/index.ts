@@ -78,7 +78,7 @@ export namespace Replicache {
       tx
         .select({
           id: replicacheClientsTable.id,
-          rowVersion: replicacheClientsTable.lastMutationId,
+          version: replicacheClientsTable.lastMutationId,
         })
         .from(replicacheClientsTable)
         .where(eq(replicacheClientsTable.clientGroupId, groupId)),
@@ -225,9 +225,9 @@ export namespace Replicache {
 
             // 6: Read all id/version pairs from the database that should be in the client view
             const metadata = R.uniqueBy(
-              await AccessControl.syncedTableResourceMetadata[
-                useUser().profile.role
-              ][name](),
+              await AccessControl.syncedTableResourceMetadata[useUser().role][
+                name
+              ](),
               R.prop("id"),
             );
 

@@ -8,7 +8,6 @@ import {
   billingAccountsTable,
 } from "../billing-accounts/sql";
 import { commentsTable } from "../comments/sql";
-import { getRowVersionColumn } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
 import { invoicesTable } from "../invoices/sql";
 import { ordersTable } from "../orders/sql";
@@ -21,9 +20,8 @@ import {
 import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
 import { useUser } from "../users/context";
-import { userProfilesTable, usersTable } from "../users/sql";
+import { usersTable } from "../users/sql";
 
-import type { SQL } from "drizzle-orm";
 import type { PgSelectBase } from "drizzle-orm/pg-core";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
@@ -42,7 +40,7 @@ export namespace AccessControl {
       TName,
       {
         id: TableByName<TName>["_"]["columns"]["id"];
-        rowVersion: SQL<number>;
+        version: TableByName<TName>["_"]["columns"]["version"];
       },
       "partial",
       Record<TName, "not-null">,
@@ -55,7 +53,7 @@ export namespace AccessControl {
       tx
         .select({
           id: announcementsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(announcementsTable)),
+          version: announcementsTable.version,
         })
         .from(announcementsTable)
         .where(eq(announcementsTable.tenantId, useTenant().id))
@@ -64,7 +62,7 @@ export namespace AccessControl {
       tx
         .select({
           id: billingAccountsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(billingAccountsTable)),
+          version: billingAccountsTable.version,
         })
         .from(billingAccountsTable)
         .where(eq(billingAccountsTable.tenantId, useTenant().id))
@@ -73,9 +71,7 @@ export namespace AccessControl {
       tx
         .select({
           id: billingAccountCustomerAuthorizationsTable.id,
-          rowVersion: getRowVersionColumn(
-            getTableName(billingAccountCustomerAuthorizationsTable),
-          ),
+          version: billingAccountCustomerAuthorizationsTable.version,
         })
         .from(billingAccountCustomerAuthorizationsTable)
         .where(
@@ -89,9 +85,7 @@ export namespace AccessControl {
       tx
         .select({
           id: billingAccountManagerAuthorizationsTable.id,
-          rowVersion: getRowVersionColumn(
-            getTableName(billingAccountManagerAuthorizationsTable),
-          ),
+          version: billingAccountManagerAuthorizationsTable.version,
         })
         .from(billingAccountManagerAuthorizationsTable)
         .where(
@@ -102,7 +96,7 @@ export namespace AccessControl {
       tx
         .select({
           id: commentsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(commentsTable)),
+          version: commentsTable.version,
         })
         .from(commentsTable)
         .where(eq(commentsTable.tenantId, useTenant().id))
@@ -111,7 +105,7 @@ export namespace AccessControl {
       tx
         .select({
           id: deliveryOptionsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(deliveryOptionsTable)),
+          version: deliveryOptionsTable.version,
         })
         .from(deliveryOptionsTable)
         .where(eq(deliveryOptionsTable.tenantId, useTenant().id))
@@ -120,7 +114,7 @@ export namespace AccessControl {
       tx
         .select({
           id: invoicesTable.id,
-          rowVersion: getRowVersionColumn(getTableName(invoicesTable)),
+          version: invoicesTable.version,
         })
         .from(invoicesTable)
         .where(eq(invoicesTable.tenantId, useTenant().id))
@@ -129,7 +123,7 @@ export namespace AccessControl {
       tx
         .select({
           id: ordersTable.id,
-          rowVersion: getRowVersionColumn(getTableName(ordersTable)),
+          version: ordersTable.version,
         })
         .from(ordersTable)
         .where(
@@ -143,7 +137,7 @@ export namespace AccessControl {
       tx
         .select({
           id: productsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(productsTable)),
+          version: productsTable.version,
         })
         .from(productsTable)
         .where(eq(productsTable.tenantId, useTenant().id))
@@ -152,7 +146,7 @@ export namespace AccessControl {
       tx
         .select({
           id: roomsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(roomsTable)),
+          version: roomsTable.version,
         })
         .from(roomsTable)
         .where(eq(roomsTable.tenantId, useTenant().id))
@@ -161,7 +155,7 @@ export namespace AccessControl {
       tx
         .select({
           id: tenantsTable.id,
-          rowVersion: getRowVersionColumn(getTableName(tenantsTable)),
+          version: tenantsTable.version,
         })
         .from(tenantsTable)
         .where(eq(tenantsTable.id, useTenant().id))
@@ -170,16 +164,9 @@ export namespace AccessControl {
       tx
         .select({
           id: usersTable.id,
-          rowVersion: getRowVersionColumn(getTableName(usersTable)),
+          version: usersTable.version,
         })
         .from(usersTable)
-        .innerJoin(
-          userProfilesTable,
-          and(
-            eq(usersTable.id, userProfilesTable.userId),
-            eq(usersTable.tenantId, userProfilesTable.tenantId),
-          ),
-        )
         .where(
           and(
             eq(usersTable.tenantId, useTenant().id),
@@ -191,7 +178,7 @@ export namespace AccessControl {
       tx
         .select({
           id: workflowStatusesTable.id,
-          rowVersion: getRowVersionColumn(getTableName(workflowStatusesTable)),
+          version: workflowStatusesTable.version,
         })
         .from(workflowStatusesTable)
         .where(and(eq(workflowStatusesTable.tenantId, useTenant().id)))
@@ -355,7 +342,7 @@ export namespace AccessControl {
         useTransaction((tx) =>
           syncedTableResourceMetadataBaseQuery[getTableName(usersTable)](
             tx,
-          ).where(isNull(userProfilesTable.deletedAt)),
+          ).where(isNull(usersTable.deletedAt)),
         ),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
@@ -547,7 +534,7 @@ export namespace AccessControl {
         useTransaction((tx) =>
           syncedTableResourceMetadataBaseQuery[getTableName(usersTable)](
             tx,
-          ).where(isNull(userProfilesTable.deletedAt)),
+          ).where(isNull(usersTable.deletedAt)),
         ),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
@@ -675,7 +662,7 @@ export namespace AccessControl {
         useTransaction((tx) =>
           syncedTableResourceMetadataBaseQuery[getTableName(usersTable)](
             tx,
-          ).where(isNull(userProfilesTable.deletedAt)),
+          ).where(isNull(usersTable.deletedAt)),
         ),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
@@ -1430,9 +1417,9 @@ export namespace AccessControl {
       ? TInput
       : Array<never>
   ) {
-    const permission = (permissions as Permissions)[useUser().profile.role][
-      resource
-    ][action];
+    const permission = (permissions as Permissions)[useUser().role][resource][
+      action
+    ];
 
     return new Promise<boolean>((resolve) => {
       if (typeof permission === "boolean") return resolve(permission);

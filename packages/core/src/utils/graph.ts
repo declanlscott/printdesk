@@ -25,9 +25,15 @@ export namespace Graph {
 
   export const me = async () => useGraph().api("/me").get() as Promise<User>;
 
-  export const photoResponse = async (userId: string) =>
+  export const user = async (idOrEmail: string) =>
     useGraph()
-      .api(`/users/${userId}/photo/$value`)
+      .api(`/users/${idOrEmail}`)
+      .responseType(ResponseType.JSON)
+      .get() as Promise<User>;
+
+  export const userPhotoResponse = async (id: string) =>
+    useGraph()
+      .api(`/users/${id}/photo/$value`)
       .responseType(ResponseType.RAW)
       .get() as Promise<Response>;
 }

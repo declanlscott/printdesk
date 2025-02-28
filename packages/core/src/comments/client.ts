@@ -46,7 +46,7 @@ export namespace Comments {
       }),
     ({ user }) =>
       async (tx, values) => {
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(tx, commentsTableName, values.id);
 
           return Replicache.set(tx, commentsTableName, values.id, {

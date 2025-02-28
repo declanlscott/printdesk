@@ -46,7 +46,7 @@ export namespace Announcements {
       }),
     ({ user }) =>
       async (tx, values) => {
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(
             tx,
             announcementsTableName,

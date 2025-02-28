@@ -10,7 +10,8 @@ export namespace ApplicationError {
     | "EntityNotFound"
     | "AccessDenied"
     | "MissingContext"
-    | "MissingContextProvider";
+    | "MissingContextProvider"
+    | "InvalidActor";
 
   export class Error extends globalThis.Error {
     declare public readonly name: ErrorName;
@@ -80,6 +81,12 @@ export namespace ApplicationError {
     constructor(value: never) {
       // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       super(`Non-exhaustive value: ${value}`);
+    }
+  }
+
+  export class InvalidActor extends ApplicationError.Error {
+    constructor(message = "Invalid actor") {
+      super(message);
     }
   }
 }

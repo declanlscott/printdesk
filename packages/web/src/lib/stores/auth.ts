@@ -14,7 +14,7 @@ import type { Oauth2ProviderType } from "@printworks/core/auth/shared";
 export type AuthStore = {
   client: Client;
   flow: {
-    challenge: Required<Challenge>;
+    challenge: Challenge;
     redirectUri: URL;
   } | null;
   tokens: Tokens | null;
@@ -58,7 +58,7 @@ export const AuthStoreApi = createStoreApiContext<
 
             set(() => ({
               flow: {
-                challenge: result.challenge as Required<Challenge>,
+                challenge: result.challenge,
                 redirectUri,
               },
             }));

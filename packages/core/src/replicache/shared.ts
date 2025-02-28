@@ -12,7 +12,7 @@ import {
   workflowMutationNames,
 } from "../rooms/shared";
 import { tenantMutationNames } from "../tenants/shared";
-import { userProfileMutationNames } from "../users/shared";
+import { userMutationNames } from "../users/shared";
 
 import type { ReadonlyJSONObject } from "replicache";
 import type { SuperJSONResult } from "superjson";
@@ -41,7 +41,7 @@ export const mutationNameSchema = v.picklist([
   ...tenantMutationNames,
   ...productMutationNames,
   ...roomMutationNames,
-  ...userProfileMutationNames,
+  ...userMutationNames,
   ...workflowMutationNames,
 ]);
 export type MutationName = v.InferOutput<typeof mutationNameSchema>;

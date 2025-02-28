@@ -6,7 +6,7 @@ import { tenantTable } from "../drizzle/tables";
 import { invoiceStatus } from "../utils/sql";
 import { invoicesTableName, lineItemSchema } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferTable } from "../utils/types";
 
 export const invoicesTable = tenantTable(
   invoicesTableName,
@@ -21,4 +21,4 @@ export const invoicesTable = tenantTable(
 
 export type InvoicesTable = typeof invoicesTable;
 
-export type Invoice = InferSelectModel<InvoicesTable>;
+export type Invoice = InferTable<InvoicesTable>;

@@ -24,9 +24,7 @@ export function DeployingStatusItem() {
     case "waitForGoodHealth":
       return <PendingItem name={name} isActive />;
     case "configure":
-    case "dispatchSync":
-    case "waitForSync":
-    case "activate":
+    case "testPapercutConnection":
     case "complete":
       return <SuccessItem name={name} />;
     case "failure":
@@ -42,9 +40,7 @@ export function DeployingStatusItem() {
         case "waitForGoodHealth":
           return <FailureItem name={name} isActive />;
         case "configure":
-        case "dispatchSync":
-        case "waitForSync":
-        case "activate":
+        case "testPapercutConnection":
           return <SuccessItem name={name} />;
         default:
           throw new ApplicationError.NonExhaustiveValue(context.failureStatus);

@@ -7,9 +7,9 @@ import {
   SuccessItem,
 } from "~/routes/setup/-components/status/items";
 
-const name = "Activating";
+const name = "Testing PaperCut Connection";
 
-export function ActivatingStatusItem() {
+export function TestingPapercutConnectionStatusItem() {
   const state = useSetupStatusState();
   const context = useSetupContext();
 
@@ -22,10 +22,8 @@ export function ActivatingStatusItem() {
     case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
-    case "dispatchSync":
-    case "waitForSync":
       return <PendingItem name={name} />;
-    case "activate":
+    case "testPapercutConnection":
       return <PendingItem name={name} isActive />;
     case "complete":
       return <SuccessItem name={name} />;
@@ -40,12 +38,9 @@ export function ActivatingStatusItem() {
         case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
-        case "dispatchSync":
           return <PendingItem name={name} />;
-        case "waitForSync":
+        case "testPapercutConnection":
           return <FailureItem name={name} isActive />;
-        case "activate":
-          return <SuccessItem name={name} />;
         default:
           throw new ApplicationError.NonExhaustiveValue(context.failureStatus);
       }

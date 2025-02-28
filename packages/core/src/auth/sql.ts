@@ -4,7 +4,7 @@ import { id, timestamps } from "../drizzle/columns";
 import { oauth2ProviderType } from "../utils/sql";
 import { oauth2ProvidersTableName } from "./shared";
 
-import type { InferSelectModel } from "drizzle-orm";
+import type { InferTable } from "../utils/types";
 
 export const oauth2ProvidersTable = pgTable(
   oauth2ProvidersTableName,
@@ -19,4 +19,4 @@ export const oauth2ProvidersTable = pgTable(
 
 export type Oauth2ProvidersTable = typeof oauth2ProvidersTable;
 
-export type Oauth2Provider = InferSelectModel<Oauth2ProvidersTable>;
+export type Oauth2Provider = InferTable<Oauth2ProvidersTable>;

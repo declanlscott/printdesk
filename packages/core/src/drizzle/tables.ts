@@ -1,7 +1,7 @@
 import { pgTable, primaryKey } from "drizzle-orm/pg-core";
 
 import { generateId } from "../utils/shared";
-import { id, timestamps } from "./columns";
+import { id, timestamps, version } from "./columns";
 
 import type { BuildColumns, BuildExtraConfigColumns } from "drizzle-orm";
 import type {
@@ -22,6 +22,10 @@ export const tenantIdColumns = {
   },
 };
 
+type DefaultTenantTableColumns = typeof tenantIdColumns &
+  typeof timestamps &
+  typeof version;
+
 /**
  * Wrapper for tenant owned tables with timestamps and default ID
  */
@@ -34,7 +38,7 @@ export const tenantTable = <
   extraConfig?: (
     self: BuildExtraConfigColumns<
       TTableName,
-      TColumnsMap & typeof tenantIdColumns & typeof timestamps,
+      TColumnsMap & DefaultTenantTableColumns,
       "pg"
     >,
   ) => Array<PgTableExtraConfigValue>,
@@ -43,12 +47,16 @@ export const tenantTable = <
   schema: undefined;
   columns: BuildColumns<
     TTableName,
-    TColumnsMap & typeof tenantIdColumns & typeof timestamps,
+    TColumnsMap & DefaultTenantTableColumns,
     "pg"
   >;
   dialect: "pg";
 }> =>
-  pgTable(name, { ...tenantIdColumns, ...timestamps, ...columns }, (table) => [
-    primaryKey({ columns: [table.id, table.tenantId] }),
-    ...(extraConfig?.(table) ?? []),
-  ]);
+  pgTable(
+    name,
+    { ...tenantIdColumns, ...timestamps, ...version, ...columns },
+    (table) => [
+      primaryKey({ columns: [table.id, table.tenantId] }),
+      ...(extraConfig?.(table) ?? []),
+    ],
+  );

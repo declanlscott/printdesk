@@ -60,7 +60,7 @@ export namespace BillingAccounts {
       }),
     ({ user }) =>
       async (tx, { id, ...values }) => {
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(tx, billingAccountsTableName, id);
 
           return Replicache.set(tx, billingAccountsTableName, id, {
@@ -85,7 +85,7 @@ export namespace BillingAccounts {
       ),
     ({ user }) =>
       async (tx, { id, ...values }) => {
-        if (user.profile.role === "administrator") {
+        if (user.role === "administrator") {
           const prev = await Replicache.get(
             tx,
             billingAccountManagerAuthorizationsTableName,

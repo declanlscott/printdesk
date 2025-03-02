@@ -12,22 +12,22 @@
     "format:write": "prettier --write ."
   },
   "dependencies": {
-    "@aws-sdk/client-appsync": "^3.750.0",
-    "@aws-sdk/client-dsql": "^3.750.0",
-    "@aws-sdk/credential-providers": "^3.750.0",
-    "@aws-sdk/dsql-signer": "^3.750.0",
-    "@openauthjs/openauth": "^0.4.0",
+    "@aws-sdk/client-appsync": "^3.758.0",
+    "@aws-sdk/client-dsql": "^3.758.0",
+    "@aws-sdk/credential-providers": "^3.758.0",
+    "@aws-sdk/dsql-signer": "^3.758.0",
+    "@openauthjs/openauth": "^0.4.2",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.40.0",
     "hono": "^4.7.2",
-    "remeda": "^2.20.2",
+    "remeda": "^2.21.0",
     "replicache": "^15.0.1",
-    "sst": "^3.9.10",
+    "sst": "^3.9.20",
     "superjson": "^2.2.2",
-    "valibot": "^1.0.0-rc.2"
+    "valibot": "^1.0.0-rc.3"
   },
   "devDependencies": {
-    "@aws-sdk/client-sts": "^3.750.0",
+    "@aws-sdk/client-sts": "^3.758.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@smithy/util-waiter": "^4.0.2",
     "@tanstack/eslint-plugin-query": "^5.66.1",
@@ -38,15 +38,15 @@
     "@typescript-eslint/eslint-plugin": "^8.25.0",
     "@typescript-eslint/parser": "^8.25.0",
     "eslint": "^8.57.1",
-    "eslint-config-prettier": "^10.0.1",
+    "eslint-config-prettier": "^10.0.2",
     "eslint-plugin-astro": "^1.3.1",
     "eslint-plugin-drizzle": "^0.2.3",
-    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "prettier": "^3.5.2",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.2"
   },
   "pnpm": {
     "patchedDependencies": {

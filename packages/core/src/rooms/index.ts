@@ -1,4 +1,12 @@
-import { and, eq, getTableName, gte, inArray, notInArray } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableName,
+  gte,
+  inArray,
+  notInArray,
+  sql,
+} from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
@@ -188,15 +196,18 @@ export namespace Rooms {
             workflowStatusesTable.roomId,
             workflowStatusesTable.tenantId,
           ],
-          set: buildConflictUpdateColumns(workflowStatusesTable, [
-            "id",
-            "type",
-            "charging",
-            "color",
-            "index",
-            "roomId",
-            "tenantId",
-          ]),
+          set: {
+            ...buildConflictUpdateColumns(workflowStatusesTable, [
+              "id",
+              "type",
+              "charging",
+              "color",
+              "index",
+              "roomId",
+              "tenantId",
+            ]),
+            version: sql`version + 1`,
+          },
         })
         .returning();
 
@@ -262,15 +273,18 @@ export namespace Rooms {
               deliveryOptionsTable.roomId,
               deliveryOptionsTable.tenantId,
             ],
-            set: buildConflictUpdateColumns(deliveryOptionsTable, [
-              "id",
-              "description",
-              "detailsLabel",
-              "cost",
-              "index",
-              "roomId",
-              "tenantId",
-            ]),
+            set: {
+              ...buildConflictUpdateColumns(deliveryOptionsTable, [
+                "id",
+                "description",
+                "detailsLabel",
+                "cost",
+                "index",
+                "roomId",
+                "tenantId",
+              ]),
+              version: sql`version + 1`,
+            },
           })
           .returning();
 

@@ -5,6 +5,7 @@ import * as R from "remeda";
 
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
+import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
 import { oauth2ProvidersTable } from "./sql";
 
@@ -64,6 +65,14 @@ export namespace Auth {
             "type",
           ]),
         }),
+    );
+
+  export const readOauth2Providers = async () =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(oauth2ProvidersTable)
+        .where(eq(oauth2ProvidersTable.tenantId, useTenant().id)),
     );
 
   export const readOauth2ProvidersBySlug = async (slug: Tenant["slug"]) =>

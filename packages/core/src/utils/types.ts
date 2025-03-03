@@ -26,9 +26,9 @@ export type NonNullableProperties<TInput> = {
 };
 
 export type PartialExcept<
-  TInput extends object,
-  TKey extends keyof TInput,
-> = Partial<Omit<TInput, TKey>> & Pick<TInput, TKey>;
+  TObject extends object,
+  TKey extends keyof TObject,
+> = Partial<Omit<TObject, TKey>> & Pick<TObject, TKey>;
 
 export type InferTable<TTable extends Table> = Omit<
   InferSelectModel<TTable>,

@@ -1,5 +1,4 @@
-import { and, eq, getTableName, inArray, not } from "drizzle-orm";
-import * as R from "remeda";
+import { and, eq, getTableName, inArray, not, sql } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
@@ -27,6 +26,7 @@ import type {
   BillingAccountCustomerAuthorization,
   BillingAccountCustomerAuthorizationsTable,
   BillingAccountManagerAuthorization,
+  BillingAccountOf,
   BillingAccountsTable,
 } from "./sql";
 
@@ -44,13 +44,16 @@ export namespace BillingAccounts {
             billingAccountsTable.papercutAccountId,
             billingAccountsTable.tenantId,
           ],
-          set: buildConflictUpdateColumns(billingAccountsTable, [
-            "papercutAccountId",
-            "name",
-            "type",
-            "tenantId",
-            "deletedAt",
-          ]),
+          set: {
+            ...buildConflictUpdateColumns(billingAccountsTable, [
+              "papercutAccountId",
+              "name",
+              "type",
+              "tenantId",
+              "deletedAt",
+            ]),
+            version: sql`version + 1`,
+          },
         })
         .returning(),
     );
@@ -68,24 +71,42 @@ export namespace BillingAccounts {
         ),
     );
 
-  export const fromPapercut = async () =>
+  export const byPapercutAccounts = (
+    ids: Array<BillingAccount["papercutAccountId"]>,
+  ) =>
     useTransaction((tx) =>
       tx
         .select()
         .from(billingAccountsTable)
         .where(
           and(
-            eq(billingAccountsTable.type, "papercut"),
+            inArray(billingAccountsTable.papercutAccountId, ids),
             not(eq(billingAccountsTable.papercutAccountId, -1)),
+            eq(billingAccountsTable.type, "papercut"),
             eq(billingAccountsTable.tenantId, useTenant().id),
           ),
-        )
-        .then(
-          R.map((account) => ({
-            ...account,
-            type: "papercut" as const,
-          })),
         ),
+    );
+
+  export const byType = async <
+    TBillingAccountType extends BillingAccount["type"],
+  >(
+    type: TBillingAccountType,
+  ) =>
+    useTransaction(
+      (tx) =>
+        tx
+          .select()
+          .from(billingAccountsTable)
+          .where(
+            and(
+              eq(billingAccountsTable.type, type),
+              type === "papercut"
+                ? not(eq(billingAccountsTable.papercutAccountId, -1))
+                : undefined,
+              eq(billingAccountsTable.tenantId, useTenant().id),
+            ),
+          ) as unknown as Promise<Array<BillingAccountOf<TBillingAccountType>>>,
     );
 
   export const updateReviewThreshold = fn(
@@ -216,10 +237,13 @@ export namespace BillingAccounts {
             billingAccountCustomerAuthorizationsTable.billingAccountId,
             billingAccountCustomerAuthorizationsTable.tenantId,
           ],
-          set: buildConflictUpdateColumns(
-            billingAccountCustomerAuthorizationsTable,
-            ["customerId", "billingAccountId", "tenantId", "deletedAt"],
-          ),
+          set: {
+            ...buildConflictUpdateColumns(
+              billingAccountCustomerAuthorizationsTable,
+              ["customerId", "billingAccountId", "tenantId", "deletedAt"],
+            ),
+            version: sql`version + 1`,
+          },
         }),
     );
 

@@ -9,6 +9,9 @@ export const userSubjectPropertiesSchema = v.object({
   id: nanoIdSchema,
   tenantId: nanoIdSchema,
 });
+export type UserSubjectProperties = v.InferOutput<
+  typeof userSubjectPropertiesSchema
+>;
 
 export const subjects = createSubjects({
   user: userSubjectPropertiesSchema,

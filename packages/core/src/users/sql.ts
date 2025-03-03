@@ -30,3 +30,6 @@ export const usersTable = tenantTable(
 export type UsersTable = typeof usersTable;
 
 export type User = InferTable<UsersTable>;
+export type UserOf<TUserType extends User["type"]> = Omit<User, "type"> & {
+  type: TUserType;
+};

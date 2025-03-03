@@ -1,4 +1,4 @@
-import { and, eq, getTableName, inArray } from "drizzle-orm";
+import { and, eq, getTableName, inArray, sql } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
@@ -24,8 +24,9 @@ import { usersTable } from "./sql";
 import type { InferInsertModel } from "drizzle-orm";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
+import type { PartialExcept } from "../utils/types";
 import type { UserRole } from "./shared";
-import type { User, UsersTable } from "./sql";
+import type { User, UserOf, UsersTable } from "./sql";
 
 export namespace Users {
   export const put = async (values: Array<InferInsertModel<UsersTable>>) =>
@@ -34,13 +35,20 @@ export namespace Users {
         .insert(usersTable)
         .values(values)
         .onConflictDoUpdate({
-          target: [usersTable.type, usersTable.username, usersTable.tenantId],
-          set: buildConflictUpdateColumns(usersTable, [
-            "type",
-            "username",
-            "tenantId",
-            "deletedAt",
-          ]),
+          target: [usersTable.id, usersTable.tenantId],
+          set: {
+            ...buildConflictUpdateColumns(usersTable, [
+              "type",
+              "username",
+              "oauth2UserId",
+              "oauth2ProviderId",
+              "name",
+              "email",
+              "updatedAt",
+              "deletedAt",
+            ]),
+            version: sql`version + 1`,
+          },
         })
         .returning(),
     );
@@ -78,14 +86,47 @@ export namespace Users {
         ),
     );
 
-  export const byType = async (type: User["type"]) =>
+  export const byType = async <TUserType extends User["type"]>(
+    type: TUserType,
+  ) =>
+    useTransaction(
+      (tx) =>
+        tx
+          .select()
+          .from(usersTable)
+          .where(
+            and(
+              eq(usersTable.type, type),
+              eq(usersTable.tenantId, useTenant().id),
+            ),
+          ) as unknown as Promise<Array<UserOf<TUserType>>>,
+    );
+
+  export const byOauth2 = async (
+    userId: User["oauth2UserId"],
+    providerId: User["oauth2ProviderId"],
+  ) =>
     useTransaction((tx) =>
       tx
         .select()
         .from(usersTable)
         .where(
           and(
-            eq(usersTable.type, type),
+            eq(usersTable.oauth2UserId, userId),
+            eq(usersTable.oauth2ProviderId, providerId),
+            eq(usersTable.tenantId, useTenant().id),
+          ),
+        ),
+    );
+
+  export const byUsernames = async (usernames: Array<User["username"]>) =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(usersTable)
+        .where(
+          and(
+            inArray(usersTable.username, usernames),
             eq(usersTable.tenantId, useTenant().id),
           ),
         ),
@@ -196,6 +237,21 @@ export namespace Users {
           ),
         ),
     );
+
+  export const updateOne = async (values: PartialExcept<User, "id">) =>
+    useTransaction(async (tx) => {
+      await tx
+        .update(usersTable)
+        .set(values)
+        .where(
+          and(
+            eq(usersTable.id, values.id),
+            eq(usersTable.tenantId, useTenant().id),
+          ),
+        );
+
+      await afterTransaction(() => poke(["/tenant"]));
+    });
 
   export const updateRole = fn(
     updateUserRoleMutationArgsSchema,

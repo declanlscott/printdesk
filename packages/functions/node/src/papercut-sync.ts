@@ -1,6 +1,6 @@
 import { withActor } from "@printworks/core/actors/context";
 import { Backend } from "@printworks/core/backend";
-import { Papercut } from "@printworks/core/papercut";
+import { Sync } from "@printworks/core/papercut/sync";
 import { Realtime } from "@printworks/core/realtime";
 import { Tenants } from "@printworks/core/tenants";
 import { Credentials, SignatureV4, withAws } from "@printworks/core/utils/aws";
@@ -61,24 +61,26 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
         },
       },
       async () => {
-        const { http: publishDomain } = await Realtime.getDns();
-
         let error = undefined;
         try {
-          await withXml(Papercut.syncUsers);
+          await withXml(Sync.all);
         } catch (e) {
           console.error(e);
           error = e;
         }
 
         if (event.source === Backend.getReverseDns())
-          await Realtime.publish(publishDomain, `/events/${event.id}`, [
-            JSON.stringify({
-              type: "papercut-sync",
-              success: !!error,
-              dispatchId: event.id,
-            }),
-          ]);
+          await Realtime.publish(
+            (await Realtime.getDns()).http,
+            `/events/${event.id}`,
+            [
+              JSON.stringify({
+                type: "papercut-sync",
+                success: !!error,
+                dispatchId: event.id,
+              }),
+            ],
+          );
 
         if (error) throw error;
       },

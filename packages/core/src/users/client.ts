@@ -21,7 +21,7 @@ import type { Order } from "../orders/sql";
 import type { UserRole } from "./shared";
 
 export namespace Users {
-  export const fromRoles = async (
+  export const byRoles = async (
     tx: WriteTransaction,
     roles: Array<UserRole> = [
       "administrator",
@@ -41,7 +41,7 @@ export namespace Users {
     const order = await Replicache.get(tx, ordersTableName, orderId);
 
     const [adminsOps, managers, customer] = await Promise.all([
-      fromRoles(tx, ["administrator", "operator"]),
+      byRoles(tx, ["administrator", "operator"]),
       withManagerAuthorization(tx, order.billingAccountId),
       Replicache.get(tx, usersTableName, order.customerId),
     ]);

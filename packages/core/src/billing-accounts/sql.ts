@@ -31,6 +31,9 @@ export const billingAccountsTable = tenantTable(
 );
 export type BillingAccountsTable = typeof billingAccountsTable;
 export type BillingAccount = InferTable<BillingAccountsTable>;
+export type BillingAccountOf<
+  TBillingAccountType extends BillingAccount["type"],
+> = BillingAccount & { type: TBillingAccountType };
 
 export const billingAccountCustomerAuthorizationsTable = tenantTable(
   billingAccountCustomerAuthorizationsTableName,

@@ -1,17 +1,22 @@
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
-import { and, eq } from "drizzle-orm";
+import * as R from "remeda";
 import { Resource } from "sst";
 import * as v from "valibot";
 
+import { withActor } from "../actors/context";
 import { useTransaction } from "../drizzle/context";
+import { Tenants } from "../tenants";
+import { useTenant } from "../tenants/context";
 import { Users } from "../users";
-import { userProfilesTable, usersTable } from "../users/sql";
+import { Credentials, SignatureV4, withAws } from "../utils/aws";
 import { Constants } from "../utils/constants";
+import { ApplicationError } from "../utils/errors";
 import { Graph } from "../utils/graph";
 import { fn } from "../utils/shared";
 
 import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
+import type { UserSubjectProperties } from "./subjects";
 
 export namespace EntraId {
   export interface ProviderConfig extends Oauth2WrappedConfig {
@@ -30,81 +35,120 @@ export namespace EntraId {
 
   export const handleUser = fn(
     v.looseObject({ aud: v.string(), tid: v.string() }),
-    async ({ aud, tid }) => {
+    async ({ aud, tid }): Promise<UserSubjectProperties> => {
       if (aud !== Resource.Oauth2.entraId.clientId)
         throw new Error("invalid audience");
 
       const { id, userPrincipalName, preferredName, mail } = await Graph.me();
       if (!id || !userPrincipalName || !preferredName || !mail)
-        throw new Error("missing graph user data");
+        throw new Error("missing user info");
 
-      return useTransaction(async (tx) => {
-        const user = await Users.fromOauth(
-          userPrincipalName,
-          tid,
-          Constants.ENTRA_ID,
-        );
+      const tenant = await Tenants.byOauth2Provider(Constants.ENTRA_ID, tid);
+      if (!tenant) throw new Error("tenant not found");
 
-        let shouldPoke = false;
+      return withActor(
+        { type: "system", properties: { tenantId: tenant.id } },
+        async () =>
+          withAws(
+            {
+              sigv4: {
+                signers: {
+                  "execute-api": SignatureV4.buildSigner({
+                    region: Resource.Aws.region,
+                    service: "execute-api",
+                  }),
+                  appsync: SignatureV4.buildSigner({
+                    region: Resource.Aws.region,
+                    service: "appsync",
+                    credentials: Credentials.fromRoleChain([
+                      {
+                        RoleArn: Credentials.buildRoleArn(
+                          Resource.Aws.account.id,
+                          Resource.Aws.tenant.roles.realtimePublisher
+                            .nameTemplate,
+                          useTenant().id,
+                        ),
+                        RoleSessionName: "EntraIdUserHandler",
+                      },
+                    ]),
+                  }),
+                },
+              },
+            },
+            async () =>
+              useTransaction(async () => {
+                let user = await Users.byOauth2(id, tid).then(R.first());
 
-        if (user.username !== userPrincipalName) {
-          await tx
-            .update(usersTable)
-            .set({ username: userPrincipalName })
-            .where(
-              and(
-                eq(usersTable.id, user.id),
-                eq(usersTable.tenantId, user.tenantId),
-              ),
-            );
+                switch (tenant.status) {
+                  case "setup": {
+                    if (!user) {
+                      user = await Users.put([
+                        {
+                          type: "internal",
+                          username: userPrincipalName,
+                          oauth2UserId: id,
+                          oauth2ProviderId: tid,
+                          role: "administrator",
+                          name: preferredName,
+                          email: mail,
+                          tenantId: tenant.id,
+                        },
+                      ]).then(R.first());
+                      if (!user) throw new Error("failed to create admin user");
 
-          shouldPoke = true;
-        }
+                      return {
+                        id: user.id,
+                        tenantId: tenant.id,
+                      };
+                    }
 
-        if (!user.profile) {
-          const profile = await Users.createProfile({
-            userId: user.id,
-            oauth2UserId: id,
-            oauth2ProviderId: tid,
-            name: preferredName,
-            email: mail,
-            tenantId: user.tenantId,
-          });
-          if (!profile) throw new Error("Failed creating user profile.");
+                    if (
+                      user.username !== userPrincipalName ||
+                      user.name !== preferredName ||
+                      user.email !== mail
+                    )
+                      await Users.updateOne({
+                        id: user.id,
+                        username: userPrincipalName,
+                        name: preferredName,
+                        email: mail,
+                      });
 
-          user.profile = profile;
+                    return {
+                      id: user.id,
+                      tenantId: tenant.id,
+                    };
+                  }
+                  case "active": {
+                    if (!user) throw new Error("user not found");
 
-          shouldPoke = true;
-        }
+                    if (
+                      user.username !== userPrincipalName ||
+                      user.name !== preferredName ||
+                      user.email !== mail
+                    )
+                      await Users.updateOne({
+                        id: user.id,
+                        username: userPrincipalName,
+                        name: preferredName,
+                        email: mail,
+                      });
 
-        if (
-          user.profile.name !== preferredName ||
-          user.profile.email !== mail
-        ) {
-          await tx
-            .update(userProfilesTable)
-            .set({
-              name: user.profile.name,
-              email: mail,
-            })
-            .where(
-              and(
-                eq(userProfilesTable.userId, user.id),
-                eq(userProfilesTable.tenantId, user.tenantId),
-              ),
-            );
-
-          shouldPoke = true;
-        }
-
-        return {
-          shouldPoke,
-          properties: {
-            id: user.id,
-            tenantId: user.tenantId,
-          },
-        };
-      });
+                    return {
+                      id: user.id,
+                      tenantId: tenant.id,
+                    };
+                  }
+                  case "suspended":
+                    throw new Error("tenant suspended");
+                  default:
+                    throw new ApplicationError.NonExhaustiveValue(
+                      tenant.status,
+                    );
+                }
+              }),
+          ),
+      );
     },
   );
 

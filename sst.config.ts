@@ -17,7 +17,7 @@ export default $config({
           profile: input?.stage === "production" ? "prod" : "dev",
           region: AWS_REGION as aws.Region,
         },
-        awsx: { version: "2.19.0" },
+        awsx: true,
         cloudflare: true,
         azuread: true,
         "@pulumiverse/time": true,

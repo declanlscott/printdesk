@@ -1,7 +1,8 @@
-import sst from "astro-sst";
+import aws from "astro-sst";
 import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
-  adapter: sst(),
+  output: "static",
+  adapter: aws(),
 });

@@ -9,7 +9,7 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "astro": "legacy",
-    "astro-sst": "^2.45.2"
+    "astro": "5.4.2",
+    "astro-sst": "^3.0.4"
   }
 }

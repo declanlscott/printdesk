@@ -121,20 +121,19 @@ export namespace BillingAccounts {
       );
 
       return useTransaction(async (tx) => {
-        await tx
-          .update(billingAccountsTable)
-          .set(values)
-          .where(
-            and(
-              eq(billingAccountsTable.id, id),
-              eq(billingAccountsTable.tenantId, useTenant().id),
-            ),
-          );
-
         const [adminsOps, managers, customers] = await Promise.all([
           Users.byRoles(["administrator", "operator"]),
           Users.withManagerAuthorization(id),
           Users.withCustomerAuthorization(id),
+          tx
+            .update(billingAccountsTable)
+            .set(values)
+            .where(
+              and(
+                eq(billingAccountsTable.id, id),
+                eq(billingAccountsTable.tenantId, useTenant().id),
+              ),
+            ),
         ]);
 
         await afterTransaction(() =>

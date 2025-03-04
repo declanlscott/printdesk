@@ -19,7 +19,7 @@ import {
 } from "./shared";
 
 export namespace Rooms {
-  export const create = Replicache.optimisticMutator(
+  export const create = Replicache.mutator(
     createRoomMutationArgsSchema,
     async (tx, user) =>
       AccessControl.enforce([tx, user, roomsTableName, "create"], {
@@ -55,7 +55,7 @@ export namespace Rooms {
     },
   );
 
-  export const update = Replicache.optimisticMutator(
+  export const update = Replicache.mutator(
     updateRoomMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, roomsTableName, "update"], {
@@ -73,7 +73,7 @@ export namespace Rooms {
       },
   );
 
-  export const delete_ = Replicache.optimisticMutator(
+  export const delete_ = Replicache.mutator(
     deleteRoomMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, roomsTableName, "delete"], {
@@ -110,7 +110,7 @@ export namespace Rooms {
       },
   );
 
-  export const restore = Replicache.optimisticMutator(
+  export const restore = Replicache.mutator(
     restoreRoomMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, roomsTableName, "update"], {
@@ -127,7 +127,7 @@ export namespace Rooms {
     },
   );
 
-  export const setWorkflow = Replicache.optimisticMutator(
+  export const setWorkflow = Replicache.mutator(
     setWorkflowMutationArgsSchema,
     async (tx, user) =>
       AccessControl.enforce([tx, user, roomsTableName, "create"], {
@@ -163,7 +163,7 @@ export namespace Rooms {
       },
   );
 
-  export const setDeliveryOptions = Replicache.optimisticMutator(
+  export const setDeliveryOptions = Replicache.mutator(
     setDeliveryOptionsMutationArgsSchema,
     async (tx, user) =>
       AccessControl.enforce([tx, user, deliveryOptionsTableName, "create"], {

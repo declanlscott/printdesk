@@ -9,7 +9,7 @@ import {
 } from "./shared";
 
 export namespace Comments {
-  export const create = Replicache.optimisticMutator(
+  export const create = Replicache.mutator(
     createCommentMutationArgsSchema,
     async (tx, user, { orderId }) =>
       AccessControl.enforce([tx, user, commentsTableName, "create", orderId], {
@@ -20,7 +20,7 @@ export namespace Comments {
       Replicache.set(tx, commentsTableName, values.id, values),
   );
 
-  export const update = Replicache.optimisticMutator(
+  export const update = Replicache.mutator(
     updateCommentMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, commentsTableName, "update", id], {
@@ -37,7 +37,7 @@ export namespace Comments {
     },
   );
 
-  export const delete_ = Replicache.optimisticMutator(
+  export const delete_ = Replicache.mutator(
     deleteCommentMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, commentsTableName, "delete", id], {

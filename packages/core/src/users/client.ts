@@ -82,7 +82,7 @@ export namespace Users {
         ).then((users) => users.filter(Boolean)),
     );
 
-  export const updateRole = Replicache.optimisticMutator(
+  export const updateRole = Replicache.mutator(
     updateUserRoleMutationArgsSchema,
     (tx, user, { id }) =>
       AccessControl.enforce([tx, user, usersTableName, "update"], {
@@ -100,7 +100,7 @@ export namespace Users {
       },
   );
 
-  export const delete_ = Replicache.optimisticMutator(
+  export const delete_ = Replicache.mutator(
     deleteUserMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, usersTableName, "delete"], {
@@ -123,7 +123,7 @@ export namespace Users {
       },
   );
 
-  export const restore = Replicache.optimisticMutator(
+  export const restore = Replicache.mutator(
     restoreUserMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, usersTableName, "update"], {

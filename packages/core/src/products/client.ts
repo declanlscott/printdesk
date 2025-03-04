@@ -9,7 +9,7 @@ import {
 } from "./shared";
 
 export namespace Products {
-  export const create = Replicache.optimisticMutator(
+  export const create = Replicache.mutator(
     createProductMutationArgsSchema,
     async (tx, user) =>
       AccessControl.enforce([tx, user, productsTableName, "create"], {
@@ -20,7 +20,7 @@ export namespace Products {
       Replicache.set(tx, productsTableName, values.id, values),
   );
 
-  export const update = Replicache.optimisticMutator(
+  export const update = Replicache.mutator(
     updateProductMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, productsTableName, "update"], {
@@ -38,7 +38,7 @@ export namespace Products {
       },
   );
 
-  export const delete_ = Replicache.optimisticMutator(
+  export const delete_ = Replicache.mutator(
     deleteProductMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, productsTableName, "delete"], {

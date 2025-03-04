@@ -25,6 +25,7 @@ import { tenantsTableName } from "../tenants/shared";
 import { Users } from "../users";
 import { usersTableName } from "../users/shared";
 
+import type { InferSelectModel } from "drizzle-orm";
 import type * as v from "valibot";
 import type {
   NonSyncedTableName,
@@ -37,7 +38,7 @@ import type {
 import type { MutationName } from "./shared";
 
 export type Metadata<TTable extends Table = TableByName<TableName>> = {
-  id: TTable["$inferSelect"]["id"];
+  id: NonNullable<InferSelectModel<TTable>["id"]>;
   version: number;
 };
 
@@ -54,13 +55,18 @@ export type TableMetadata = [
   Array<Metadata<TableByName<TableName>>>,
 ];
 
-export type Data = {
-  [TName in SyncedTableName]: (
-    ids: Array<TableByName<TName>["$inferSelect"]["id"]>,
-  ) => Promise<Array<TableByName<TName>["$inferSelect"]>>;
+export type Query<TSyncedTableName extends SyncedTableName> = (
+  ids: Array<InferSelectModel<TableByName<TSyncedTableName>>["id"]>,
+) => Promise<Array<InferSelectModel<TableByName<TSyncedTableName>>>>;
+
+export type QueryRepository = {
+  [TName in SyncedTableName]: Query<TName>;
 };
 
-export const dataFactory = {
+/**
+ * A collection of queries for Replicache.
+ */
+export const queryRepository = {
   [announcementsTableName]: Announcements.read,
   [billingAccountsTableName]: BillingAccounts.read,
   [billingAccountCustomerAuthorizationsTableName]:
@@ -76,11 +82,11 @@ export const dataFactory = {
   [tenantsTableName]: Tenants.read,
   [usersTableName]: Users.read,
   [workflowStatusesTableName]: Rooms.readWorkflow,
-} satisfies Data;
+} satisfies QueryRepository;
 
 export type TablePatchData<TTable extends SyncedTable> = {
-  puts: Array<TTable["$inferSelect"]>;
-  dels: Array<TTable["$inferSelect"]["id"]>;
+  puts: Array<InferSelectModel<TTable>>;
+  dels: Array<InferSelectModel<TTable>["id"]>;
 };
 
 export type TableData = [
@@ -88,13 +94,16 @@ export type TableData = [
   TablePatchData<TableByName<SyncedTableName>>,
 ];
 
-export type AuthoritativeMutatorFn = <TSchema extends v.GenericSchema>(
+export type Command = <TSchema extends v.GenericSchema>(
   args: v.InferOutput<TSchema>,
 ) => Promise<void>;
 
-export type AuthoritativeMutator = Record<MutationName, AuthoritativeMutatorFn>;
+export type CommandRepository = Record<MutationName, Command>;
 
-export const authoritativeMutator = {
+/**
+ * A collection of authoritative mutators for Replicache. This should match the corresponding client-side mutators.
+ */
+export const commandRepository = {
   createAnnouncement: Announcements.create,
   updateAnnouncement: Announcements.update,
   deleteAnnouncement: Announcements.delete_,
@@ -124,4 +133,4 @@ export const authoritativeMutator = {
   deleteUser: Users.delete_,
   restoreUser: Users.restore,
   setWorkflow: Rooms.setWorkflow,
-} satisfies AuthoritativeMutator;
+} satisfies CommandRepository;

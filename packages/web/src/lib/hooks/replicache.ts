@@ -86,6 +86,9 @@ export function useIsSyncing() {
   return isSyncing;
 }
 
+/**
+ * Returns a collection of optimistic mutators for Replicache. This should match the corresponding server-side mutators.
+ */
 export function useMutators() {
   const { user } = useAuth();
 
@@ -141,8 +144,7 @@ export function useMutators() {
       setWorkflow: getMutator(Rooms.setWorkflow),
     }),
     [getMutator],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ) satisfies Record<MutationName, Replicache.OptimisticMutator<any>>;
+  ) satisfies Record<MutationName, Replicache.MutatorFn>;
 }
 
 export type Mutators = ReturnType<typeof useMutators>;

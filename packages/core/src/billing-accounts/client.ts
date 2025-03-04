@@ -11,7 +11,7 @@ import {
 } from "./shared";
 
 export namespace BillingAccounts {
-  export const createManagerAuthorization = Replicache.optimisticMutator(
+  export const createManagerAuthorization = Replicache.mutator(
     createBillingAccountManagerAuthorizationMutationArgsSchema,
     async (tx, user) =>
       AccessControl.enforce(
@@ -30,7 +30,7 @@ export namespace BillingAccounts {
       ),
   );
 
-  export const updateReviewThreshold = Replicache.optimisticMutator(
+  export const updateReviewThreshold = Replicache.mutator(
     updateBillingAccountReviewThresholdMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce(
@@ -51,7 +51,7 @@ export namespace BillingAccounts {
       },
   );
 
-  export const delete_ = Replicache.optimisticMutator(
+  export const delete_ = Replicache.mutator(
     deleteBillingAccountMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, billingAccountsTableName, "delete"], {
@@ -73,7 +73,7 @@ export namespace BillingAccounts {
       },
   );
 
-  export const deleteManagerAuthorization = Replicache.optimisticMutator(
+  export const deleteManagerAuthorization = Replicache.mutator(
     deleteBillingAccountManagerAuthorizationMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce(

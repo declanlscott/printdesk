@@ -16,12 +16,12 @@ import type { InferTable } from "../utils/types";
 import type { Serialized } from "./shared";
 
 export namespace Replicache {
-  export type OptimisticMutator<TSchema extends v.GenericSchema> = (
+  export type MutatorFn<TSchema extends v.GenericSchema = v.AnySchema> = (
     tx: WriteTransaction,
     args: v.InferOutput<TSchema>,
   ) => Promise<void>;
 
-  export const optimisticMutator =
+  export const mutator =
     <
       TSchema extends v.GenericSchema,
       TAuthorizer extends (
@@ -29,14 +29,14 @@ export namespace Replicache {
         user: DeepReadonlyObject<User>,
         args: v.InferOutput<TSchema>,
       ) => ReturnType<TAuthorizer>,
-      TMutator extends OptimisticMutator<TSchema>,
+      TMutatorFn extends MutatorFn<TSchema>,
     >(
       schema: TSchema,
       authorizer: TAuthorizer,
-      getMutator: (context: {
+      getMutatorFn: (context: {
         user: DeepReadonlyObject<User>;
         authorized: Awaited<ReturnType<TAuthorizer>>;
-      }) => TMutator,
+      }) => TMutatorFn,
     ) =>
     (userId: User["id"]) =>
     async (tx: WriteTransaction, args: v.InferInput<TSchema>) => {
@@ -46,9 +46,9 @@ export namespace Replicache {
 
       const authorized = await Promise.resolve(authorizer(tx, user, values));
 
-      const mutator = getMutator({ user, authorized });
+      const mutatorFn = getMutatorFn({ user, authorized });
 
-      return mutator(tx, values);
+      return mutatorFn(tx, values);
     };
 
   export async function get<TTableName extends SyncedTableName>(

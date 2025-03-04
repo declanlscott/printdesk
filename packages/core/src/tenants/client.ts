@@ -4,7 +4,7 @@ import { ApplicationError } from "../utils/errors";
 import { tenantsTableName, updateTenantMutationArgsSchema } from "./shared";
 
 export namespace Tenants {
-  export const update = Replicache.optimisticMutator(
+  export const update = Replicache.mutator(
     updateTenantMutationArgsSchema,
     async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, tenantsTableName, "update"], {

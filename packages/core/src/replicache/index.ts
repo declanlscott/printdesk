@@ -14,7 +14,7 @@ import { ReplicacheError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { syncedTables } from "../utils/tables";
 import { buildCvr, diffCvr, isCvrDiffEmpty } from "./client-view-record";
-import { authoritativeMutator, dataFactory } from "./data";
+import { commandRepository, queryRepository } from "./data";
 import {
   genericMutationSchema,
   isSerialized,
@@ -264,11 +264,8 @@ export namespace Replicache {
             for (const ids of R.chunk(
               diff[name].puts,
               Constants.REPLICACHE_PULL_CHUNK_SIZE,
-            )) {
-              const data = await dataFactory[name](ids);
-
-              puts.push(...data);
-            }
+            ))
+              puts.push(...(await queryRepository[name](ids)));
 
             return [
               name,
@@ -487,8 +484,8 @@ export namespace Replicache {
                   );
 
                 // 10(i): Business logic
-                // 10(i)(a): xmin column is automatically updated by Postgres on any affected rows
-                await authoritativeMutator[mutation.name](
+                // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
+                await commandRepository[mutation.name](
                   deserialize(mutation.args),
                 );
               } catch (e) {

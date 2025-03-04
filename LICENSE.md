@@ -6,7 +6,7 @@ FSL-1.1-ALv2
 
 ## Notice
 
-Copyright 2024 Declan L. Scott
+Copyright 2025 Declan L. Scott
 
 ## Terms and Conditions
 

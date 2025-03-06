@@ -1,4 +1,6 @@
 packages:
-  - "packages/*"
-  - "packages/functions/node"
-  - "packages/workers/api-rate-limiters"
+  - packages/*
+  - packages/functions/node
+  - packages/workers/api-rate-limiters
+onlyBuiltDependencies:
+  - workerd

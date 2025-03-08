@@ -1,4 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
+import { Constants } from "@printworks/core/utils/constants";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import * as v from "valibot";
 
@@ -11,6 +12,6 @@ export const systemAuthzHeadersValidator = vValidator(
   "header",
   v.object({
     authorization: v.string(),
-    "x-tenant-id": nanoIdSchema,
+    [Constants.HEADER_NAMES.TENANT_ID]: nanoIdSchema,
   }),
 );

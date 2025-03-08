@@ -2,6 +2,7 @@
 import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
+import { Constants } from "@printworks/core/utils/constants";
 import { HttpError } from "@printworks/core/utils/errors";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
@@ -26,7 +27,7 @@ export const rateLimiter = createMiddleware(
               console.error("Token verification failed:", verified.err);
               return false;
             }
-            if (verified.subject.type !== "user") {
+            if (verified.subject.type !== Constants.SUBJECT_TYPES.USER) {
               console.error("Invalid subject type:", verified.subject.type);
               return false;
             }
@@ -43,7 +44,7 @@ export const rateLimiter = createMiddleware(
             };
           };
         }>(async (c, next) => {
-          const { tenantId, id: userId } = c.get("subject").properties;
+          const { tenantId, id: userId } = c.var.subject.properties;
           const key = `${tenantId}#${userId}`;
 
           console.log("Rate limiting by user:", key);
@@ -75,8 +76,8 @@ export const rateLimiter = createMiddleware(
       }),
     ),
     createMiddleware((c, next) => {
-      const outcome = c.get("rateLimitOutcome");
-      if (!outcome.success) throw new HttpError.TooManyRequests();
+      if (!c.var.rateLimitOutcome.success)
+        throw new HttpError.TooManyRequests();
 
       return next();
     }),

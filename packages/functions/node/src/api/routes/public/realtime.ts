@@ -1,5 +1,6 @@
 import { vValidator } from "@hono/valibot-validator";
 import { Realtime } from "@printworks/core/realtime";
+import { Constants } from "@printworks/core/utils/constants";
 import { Hono } from "hono";
 import { Resource } from "sst";
 import * as v from "valibot";
@@ -9,7 +10,7 @@ import { appsyncSigner } from "~/api/middleware/aws";
 import { systemAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
-  .use(authn("system"))
+  .use(authn(Constants.ACTOR_TYPES.SYSTEM))
   .get("/url", systemAuthzHeadersValidator, async (c) => {
     const url = await Realtime.getUrl();
 

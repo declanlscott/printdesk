@@ -1,7 +1,15 @@
 import * as v from "valibot";
 
 import { Constants } from "../utils/constants";
-import { timestampsSchema } from "../utils/shared";
+import { nanoIdSchema, timestampsSchema } from "../utils/shared";
+
+export const userSubjectPropertiesSchema = v.object({
+  id: nanoIdSchema,
+  tenantId: nanoIdSchema,
+});
+export type UserSubjectProperties = v.InferOutput<
+  typeof userSubjectPropertiesSchema
+>;
 
 export const oauth2ProvidersTableName = "oauth2_providers";
 

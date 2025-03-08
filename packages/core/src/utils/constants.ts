@@ -7,6 +7,29 @@
 import type { Duration } from "date-fns";
 
 export namespace Constants {
+  export const SUBJECT_TYPES = {
+    USER: "user",
+  } as const;
+
+  export const ACTOR_TYPES = {
+    PUBLIC: "public",
+    SYSTEM: "system",
+    USER: SUBJECT_TYPES.USER,
+  } as const;
+
+  export const HEADER_NAMES = {
+    TENANT_ID: "x-tenant-id",
+  } as const;
+
+  export const CONTEXT_NAMES = {
+    ACTOR: "Actor",
+    AWS: "Aws",
+    GRAPH: "Graph",
+    PUSH: "Push",
+    TRANSACTION: "Transaction",
+    XML: "Xml",
+  } as const;
+
   export const ENTRA_ID = "entra-id";
   export const GOOGLE = "google";
 

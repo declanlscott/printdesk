@@ -21,7 +21,7 @@ export default new Hono()
   .use(logger())
   .use(rateLimiter)
   .use(proxy)
-  .all("*", (c) => c.get("proxy")(c.req.raw))
+  .all("*", (c) => c.var.proxy(c.req.raw))
   .onError((e, c) => {
     console.error(e);
 

@@ -20,10 +20,9 @@ export type TransactionContext<
   effects: Array<TEffect>;
 };
 
-const contextName = "Transaction";
-
-export const TransactionContext =
-  Utils.createContext<TransactionContext>(contextName);
+export const TransactionContext = Utils.createContext<TransactionContext>(
+  Constants.CONTEXT_NAMES.TRANSACTION,
+);
 
 export async function useTransaction<
   TCallback extends (tx: Transaction) => ReturnType<TCallback>,
@@ -33,7 +32,7 @@ export async function useTransaction<
   } catch (e) {
     if (
       e instanceof ApplicationError.MissingContext &&
-      e.contextName === contextName
+      e.contextName === Constants.CONTEXT_NAMES.TRANSACTION
     )
       return createTransaction(callback);
 

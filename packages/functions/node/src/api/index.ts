@@ -1,3 +1,4 @@
+import { Constants } from "@printworks/core/utils/constants";
 import { HttpError } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
@@ -19,7 +20,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 const app = new Hono()
   .use(logger())
   .use(actor)
-  .use(except("/public/*", authn("user")))
+  .use(except("/public/*", authn(Constants.ACTOR_TYPES.USER)))
   .route("/files", filesRoute)
   .route("/public", publicRoute)
   .route("/realtime", realtimeRoute)

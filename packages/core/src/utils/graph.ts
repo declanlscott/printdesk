@@ -10,11 +10,14 @@ import {
 } from "@microsoft/microsoft-graph-client";
 
 import { Utils } from ".";
+import { Constants } from "./constants";
 
 import type { User } from "@microsoft/microsoft-graph-types";
 
 export type GraphContext = GraphClient;
-export const GraphContext = Utils.createContext<GraphContext>("Graph");
+export const GraphContext = Utils.createContext<GraphContext>(
+  Constants.CONTEXT_NAMES.GRAPH,
+);
 
 export const useGraph = GraphContext.use;
 export const withGraph = GraphContext.with;

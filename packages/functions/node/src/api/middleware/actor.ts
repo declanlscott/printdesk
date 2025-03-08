@@ -4,6 +4,7 @@ import { Auth } from "@printworks/core/auth";
 import { subjects } from "@printworks/core/auth/subjects";
 import { useTransaction } from "@printworks/core/drizzle/context";
 import { tenantMetadataTable } from "@printworks/core/tenants/sql";
+import { Constants } from "@printworks/core/utils/constants";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { bearerAuth } from "hono/bearer-auth";
 import { every, some } from "hono/combine";
@@ -20,7 +21,7 @@ export const actor = createMiddleware(
     every(
       bearerAuth({
         async verifyToken(token, c: Context<Env>) {
-          const tenantId = c.req.header("X-Tenant-Id");
+          const tenantId = c.req.header(Constants.HEADER_NAMES.TENANT_ID);
           if (tenantId) {
             const result = await useTransaction((tx) =>
               tx
@@ -30,7 +31,7 @@ export const actor = createMiddleware(
                   and(
                     eq(
                       tenantMetadataTable.tenantId,
-                      c.req.header("X-Tenant-Id")!,
+                      c.req.header(Constants.HEADER_NAMES.TENANT_ID)!,
                     ),
                     isNotNull(tenantMetadataTable.apiKey),
                   ),
@@ -48,7 +49,10 @@ export const actor = createMiddleware(
               return false;
             }
 
-            c.set("privateActor", { type: "system", properties: { tenantId } });
+            c.set("privateActor", {
+              type: Constants.ACTOR_TYPES.SYSTEM,
+              properties: { tenantId },
+            });
             return true;
           }
 
@@ -61,7 +65,7 @@ export const actor = createMiddleware(
             console.error("JWT verification failed:", verified.err);
             return false;
           }
-          if (verified.subject.type !== "user") {
+          if (verified.subject.type !== Constants.SUBJECT_TYPES.USER) {
             console.error("Invalid subject type:", verified.subject.type);
             return false;
           }
@@ -70,10 +74,9 @@ export const actor = createMiddleware(
           return true;
         },
       }),
-      createMiddleware<Env>((c, next) =>
-        withActor(c.get("privateActor"), next),
-      ),
+      createMiddleware<Env>((c, next) => withActor(c.var.privateActor, next)),
     ),
-    (_, next) => withActor({ type: "public", properties: {} }, next),
+    (_, next) =>
+      withActor({ type: Constants.ACTOR_TYPES.PUBLIC, properties: {} }, next),
   ),
 );

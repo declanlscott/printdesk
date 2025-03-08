@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
+import { Constants } from "@printworks/core/utils/constants";
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { AlertCircle, ArrowLeft, CircleCheckBig, LogIn } from "lucide-react";
 
@@ -142,7 +143,7 @@ function PostInitializedStatusItems() {
     const res = await api.client.public.realtime.url.$get({
       header: {
         authorization: `Bearer ${apiKey}`,
-        "x-tenant-id": tenantId,
+        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
       },
     });
     if (!res.ok)
@@ -161,7 +162,7 @@ function PostInitializedStatusItems() {
       const res = await api.client.public.realtime.auth.$get({
         header: {
           authorization: `Bearer ${apiKey}`,
-          "x-tenant-id": tenantId,
+          [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
         },
         query: { channel },
       });

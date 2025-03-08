@@ -90,7 +90,7 @@ const register = (api: Client) =>
     const res = await api.public.setup.register.$put({
       header: {
         authorization: `Bearer ${apiKey}`,
-        "x-tenant-id": tenantId,
+        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
       },
       json,
     });
@@ -108,7 +108,7 @@ const dispatchInfra = (api: Client) =>
     const res = await api.public.setup["dispatch-infra"].$post({
       header: {
         authorization: `Bearer ${apiKey}`,
-        "x-tenant-id": tenantId,
+        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
       },
     });
     if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
@@ -148,7 +148,7 @@ const configure = (api: Client) =>
     const res = await api.public.setup.configure.$put({
       header: {
         authorization: `Bearer ${apiKey}`,
-        "x-tenant-id": tenantId,
+        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
       },
       json,
     });
@@ -164,7 +164,7 @@ const testPapercutConnection = (api: Client) =>
       const res = await api.public.setup["test-papercut-connection"].$post({
         header: {
           authorization: `Bearer ${apiKey}`,
-          "x-tenant-id": tenantId,
+          [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
         },
       });
       if (!res.ok) throw new HttpError.Error(res.statusText, res.status);

@@ -28,7 +28,7 @@ export default new Hono()
   })
   .put(
     "/register",
-    authn("system"),
+    authn(Constants.ACTOR_TYPES.SYSTEM),
     systemAuthzHeadersValidator,
     vValidator("json", registerDataSchema),
     async (c) => {
@@ -39,7 +39,7 @@ export default new Hono()
   )
   .post(
     "/dispatch-infra",
-    authn("system"),
+    authn(Constants.ACTOR_TYPES.SYSTEM),
     systemAuthzHeadersValidator,
     sqsClient(),
     async (c) => {
@@ -50,7 +50,7 @@ export default new Hono()
   )
   .put(
     "/configure",
-    authn("system"),
+    authn(Constants.ACTOR_TYPES.SYSTEM),
     systemAuthzHeadersValidator,
     vValidator("json", configureDataSchema),
     ssmClient(() => ({
@@ -77,7 +77,7 @@ export default new Hono()
   )
   .post(
     "/test-papercut-connection",
-    authn("system"),
+    authn(Constants.ACTOR_TYPES.SYSTEM),
     systemAuthzHeadersValidator,
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(

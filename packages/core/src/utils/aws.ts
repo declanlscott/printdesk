@@ -34,6 +34,7 @@ import * as R from "remeda";
 import * as v from "valibot";
 
 import { Utils } from ".";
+import { Constants } from "./constants";
 import { ApplicationError } from "./errors";
 
 import type {
@@ -64,8 +65,9 @@ export type AwsContext = {
   ssm?: { client: SSMClient };
 };
 
-const contextName = "Aws";
-export const AwsContext = Utils.createContext<AwsContext>(contextName);
+export const AwsContext = Utils.createContext<AwsContext>(
+  Constants.CONTEXT_NAMES.AWS,
+);
 
 export function useAws<TServiceName extends keyof AwsContext>(
   serviceName: TServiceName,
@@ -88,7 +90,7 @@ export async function withAws<
     if (
       !(
         e instanceof ApplicationError.MissingContext &&
-        e.contextName === contextName
+        e.contextName === Constants.CONTEXT_NAMES.AWS
       )
     )
       throw e;

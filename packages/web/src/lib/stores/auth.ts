@@ -8,8 +8,10 @@ import { createStore } from "zustand/vanilla";
 import { createStoreApiContext } from "~/lib/contexts/store";
 
 import type { Challenge, Client, Tokens } from "@openauthjs/openauth/client";
-import type { SubjectPayload } from "@openauthjs/openauth/subject";
-import type { Oauth2ProviderType } from "@printworks/core/auth/shared";
+import type {
+  Oauth2ProviderType,
+  UserSubjectProperties,
+} from "@printworks/core/auth/shared";
 
 export type AuthStore = {
   client: Client;
@@ -18,9 +20,7 @@ export type AuthStore = {
     redirectUri: URL;
   } | null;
   tokens: Tokens | null;
-  user:
-    | Extract<SubjectPayload<typeof subjects>, { type: "user" }>["properties"]
-    | null;
+  user: UserSubjectProperties | null;
   actions: {
     authorize: (provider: Oauth2ProviderType, from?: string) => Promise<string>;
     exchange: (code: string, state: string) => Promise<void>;

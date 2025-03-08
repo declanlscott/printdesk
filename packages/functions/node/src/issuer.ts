@@ -37,7 +37,7 @@ const app = issuer({
               decodeJWT(value.tokenset.access),
             );
 
-            return ctx.subject("user", properties);
+            return ctx.subject(Constants.SUBJECT_TYPES.USER, properties);
           },
         );
       }

@@ -16,7 +16,7 @@ import { Graph } from "../utils/graph";
 import { fn } from "../utils/shared";
 
 import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
-import type { UserSubjectProperties } from "./subjects";
+import type { UserSubjectProperties } from "./shared";
 
 export namespace EntraId {
   export interface ProviderConfig extends Oauth2WrappedConfig {
@@ -47,7 +47,10 @@ export namespace EntraId {
       if (!tenant) throw new Error("tenant not found");
 
       return withActor(
-        { type: "system", properties: { tenantId: tenant.id } },
+        {
+          type: Constants.ACTOR_TYPES.SYSTEM,
+          properties: { tenantId: tenant.id },
+        },
         async () =>
           withAws(
             {

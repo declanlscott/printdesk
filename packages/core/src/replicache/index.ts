@@ -386,7 +386,9 @@ export namespace Replicache {
       if (pushRequest.pushVersion !== 1)
         return { error: "VersionNotSupported", versionType: "push" };
 
-      const context = Utils.createContext<{ errorMode: boolean }>("Push");
+      const context = Utils.createContext<{ errorMode: boolean }>(
+        Constants.CONTEXT_NAMES.PUSH,
+      );
 
       for (const mutation of pushRequest.mutations) {
         try {

@@ -4,11 +4,9 @@ module.exports = {
     "../../.eslintrc.cjs",
     "plugin:react-hooks/recommended",
     "plugin:@tanstack/eslint-plugin-router/recommended",
-    "plugin:@tanstack/eslint-plugin-query/recommended"
+    "plugin:@tanstack/eslint-plugin-query/recommended",
   ],
-  ignorePatterns: [
-    "vite-env.d.ts"
-  ],
+  ignorePatterns: ["vite-env.d.ts"],
   env: {
     browser: true,
     es2020: true,

@@ -4,5 +4,5 @@ routeTree.gen.ts
 .astro/
 dist
 .sst
-.migrations
+migrations
 sst-env.d.ts

@@ -4,6 +4,7 @@ CREATE TABLE "announcements" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"content" text NOT NULL,
 	"room_id" char(20) NOT NULL,
 	CONSTRAINT "announcements_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
@@ -25,6 +26,7 @@ CREATE TABLE "billing_account_customer_authorizations" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"customer_id" char(20) NOT NULL,
 	"billing_account_id" char(20) NOT NULL,
 	CONSTRAINT "billing_account_customer_authorizations_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
@@ -36,6 +38,7 @@ CREATE TABLE "billing_account_manager_authorizations" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"manager_id" char(20) NOT NULL,
 	"billing_account_id" char(20) NOT NULL,
 	CONSTRAINT "billing_account_manager_authorizations_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
@@ -47,10 +50,11 @@ CREATE TABLE "billing_accounts" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"type" varchar(50) NOT NULL,
 	"name" text NOT NULL,
 	"review_threshold" numeric,
-	"papercutAccountId" bigint NOT NULL,
+	"papercutAccountId" bigint DEFAULT -1 NOT NULL,
 	CONSTRAINT "billing_accounts_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
 );
 --> statement-breakpoint
@@ -60,6 +64,7 @@ CREATE TABLE "comments" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"order_id" char(20) NOT NULL,
 	"author_id" char(20) NOT NULL,
 	"content" text NOT NULL,
@@ -73,6 +78,7 @@ CREATE TABLE "invoices" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"line_items" "bytea" NOT NULL,
 	"status" varchar(50) DEFAULT 'processing' NOT NULL,
 	"charged_at" timestamp,
@@ -86,6 +92,7 @@ CREATE TABLE "orders" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"customer_id" char(20) NOT NULL,
 	"manager_id" char(20),
 	"operator_id" char(20),
@@ -104,6 +111,7 @@ CREATE TABLE "products" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"name" varchar(40) NOT NULL,
 	"status" varchar(50) NOT NULL,
 	"room_id" char(20) NOT NULL,
@@ -157,6 +165,7 @@ CREATE TABLE "delivery_options" (
 	"index" smallint NOT NULL,
 	"room_id" char(20) NOT NULL,
 	"tenant_id" char(20) NOT NULL,
+	"version" integer DEFAULT 1 NOT NULL,
 	CONSTRAINT "delivery_options_name_room_id_tenant_id_pk" PRIMARY KEY("name","room_id","tenant_id"),
 	CONSTRAINT "delivery_options_index_room_id_unique" UNIQUE("index","room_id")
 );
@@ -167,6 +176,7 @@ CREATE TABLE "rooms" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
 	"name" varchar(40) NOT NULL,
 	"status" varchar(50) NOT NULL,
 	"details" text,
@@ -182,6 +192,7 @@ CREATE TABLE "workflow_statuses" (
 	"index" smallint NOT NULL,
 	"room_id" char(20) NOT NULL,
 	"tenant_id" char(20) NOT NULL,
+	"version" integer DEFAULT 1 NOT NULL,
 	CONSTRAINT "workflow_statuses_name_room_id_tenant_id_pk" PRIMARY KEY("name","room_id","tenant_id"),
 	CONSTRAINT "workflow_statuses_index_room_id_unique" UNIQUE("index","room_id")
 );
@@ -209,25 +220,8 @@ CREATE TABLE "tenants" (
 	"status" varchar(50) DEFAULT 'setup' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp
-);
---> statement-breakpoint
-CREATE TABLE "user_profiles" (
-	"id" char(20) NOT NULL,
-	"tenant_id" char(20) NOT NULL,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
-	"user_id" char(20) NOT NULL,
-	"oauth2_user_id" text NOT NULL,
-	"oauth2_provider_id" text NOT NULL,
-	"role" varchar(50) DEFAULT 'customer' NOT NULL,
-	"name" text NOT NULL,
-	"email" text NOT NULL,
-	CONSTRAINT "user_profiles_id_tenant_id_pk" PRIMARY KEY("id","tenant_id"),
-	CONSTRAINT "user_profiles_user_id_tenant_id_unique" UNIQUE("user_id","tenant_id"),
-	CONSTRAINT "user_profiles_oauth2_user_id_tenant_id_unique" UNIQUE("oauth2_user_id","tenant_id"),
-	CONSTRAINT "user_profiles_email_tenant_id_unique" UNIQUE("email","tenant_id")
+	"version" integer DEFAULT 1 NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
@@ -236,9 +230,17 @@ CREATE TABLE "users" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
-	"type" varchar(50) NOT NULL,
+	"version" integer DEFAULT 1 NOT NULL,
+	"type" varchar(50) DEFAULT 'internal' NOT NULL,
 	"username" text NOT NULL,
-	CONSTRAINT "users_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
+	"oauth2_user_id" text NOT NULL,
+	"oauth2_provider_id" text NOT NULL,
+	"role" varchar(50) DEFAULT 'customer' NOT NULL,
+	"name" text NOT NULL,
+	"email" text NOT NULL,
+	CONSTRAINT "users_id_tenant_id_pk" PRIMARY KEY("id","tenant_id"),
+	CONSTRAINT "users_oauth2_user_id_tenant_id_unique" UNIQUE("oauth2_user_id","tenant_id"),
+	CONSTRAINT "users_email_tenant_id_unique" UNIQUE("email","tenant_id")
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX "billing_account_customer_authorizations_customer_id_billing_account_id_tenant_id_index" ON "billing_account_customer_authorizations" USING btree ("customer_id","billing_account_id","tenant_id");--> statement-breakpoint
@@ -259,7 +261,7 @@ CREATE INDEX "replicache_clients_client_group_id_index" ON "replicache_clients" 
 CREATE INDEX "replicache_clients_updated_at_index" ON "replicache_clients" USING btree ("updated_at");--> statement-breakpoint
 CREATE INDEX "rooms_status_index" ON "rooms" USING btree ("status");--> statement-breakpoint
 CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" USING btree ("slug");--> statement-breakpoint
-CREATE INDEX "user_profiles_oauth2_user_id_index" ON "user_profiles" USING btree ("oauth2_user_id");--> statement-breakpoint
-CREATE INDEX "user_profiles_oauth2_provider_id_index" ON "user_profiles" USING btree ("oauth2_provider_id");--> statement-breakpoint
-CREATE INDEX "user_profiles_role_index" ON "user_profiles" USING btree ("role");--> statement-breakpoint
-CREATE UNIQUE INDEX "users_type_username_tenant_id_index" ON "users" USING btree ("type","username","tenant_id");
+CREATE UNIQUE INDEX "users_type_username_tenant_id_index" ON "users" USING btree ("type","username","tenant_id");--> statement-breakpoint
+CREATE INDEX "users_oauth2_user_id_index" ON "users" USING btree ("oauth2_user_id");--> statement-breakpoint
+CREATE INDEX "users_oauth2_provider_id_index" ON "users" USING btree ("oauth2_provider_id");--> statement-breakpoint
+CREATE INDEX "users_role_index" ON "users" USING btree ("role");

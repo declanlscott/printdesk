@@ -1,5 +1,5 @@
 {
-  "id": "f46da77a-897f-48ed-aa57-5d5f52c4dbf3",
+  "id": "30f3b56d-4f59-461b-8b48-430f7bb189ed",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -39,6 +39,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "content": {
           "name": "content",
@@ -164,6 +171,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
         "customer_id": {
           "name": "customer_id",
           "type": "char(20)",
@@ -271,6 +285,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "manager_id": {
           "name": "manager_id",
@@ -380,6 +401,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
         "type": {
           "name": "type",
           "type": "varchar(50)",
@@ -402,7 +430,8 @@
           "name": "papercutAccountId",
           "type": "bigint",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": -1
         }
       },
       "indexes": {
@@ -490,6 +519,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "order_id": {
           "name": "order_id",
@@ -599,6 +635,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
         "line_items": {
           "name": "line_items",
           "type": "bytea",
@@ -692,6 +735,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "customer_id": {
           "name": "customer_id",
@@ -830,6 +880,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "name": {
           "name": "name",
@@ -1233,6 +1290,13 @@
           "type": "char(20)",
           "primaryKey": false,
           "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         }
       },
       "indexes": {},
@@ -1296,6 +1360,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         },
         "name": {
           "name": "name",
@@ -1402,6 +1473,13 @@
           "type": "char(20)",
           "primaryKey": false,
           "notNull": true
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         }
       },
       "indexes": {},
@@ -1570,6 +1648,13 @@
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
         }
       },
       "indexes": {
@@ -1592,167 +1677,6 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.user_profiles": {
-      "name": "user_profiles",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "char(20)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "tenant_id": {
-          "name": "tenant_id",
-          "type": "char(20)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "char(20)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "oauth2_user_id": {
-          "name": "oauth2_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "oauth2_provider_id": {
-          "name": "oauth2_provider_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "role": {
-          "name": "role",
-          "type": "varchar(50)",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'customer'"
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "user_profiles_oauth2_user_id_index": {
-          "name": "user_profiles_oauth2_user_id_index",
-          "columns": [
-            {
-              "expression": "oauth2_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "user_profiles_oauth2_provider_id_index": {
-          "name": "user_profiles_oauth2_provider_id_index",
-          "columns": [
-            {
-              "expression": "oauth2_provider_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "user_profiles_role_index": {
-          "name": "user_profiles_role_index",
-          "columns": [
-            {
-              "expression": "role",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "user_profiles_id_tenant_id_pk": {
-          "name": "user_profiles_id_tenant_id_pk",
-          "columns": [
-            "id",
-            "tenant_id"
-          ]
-        }
-      },
-      "uniqueConstraints": {
-        "user_profiles_user_id_tenant_id_unique": {
-          "name": "user_profiles_user_id_tenant_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "tenant_id"
-          ]
-        },
-        "user_profiles_oauth2_user_id_tenant_id_unique": {
-          "name": "user_profiles_oauth2_user_id_tenant_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "oauth2_user_id",
-            "tenant_id"
-          ]
-        },
-        "user_profiles_email_tenant_id_unique": {
-          "name": "user_profiles_email_tenant_id_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "email",
-            "tenant_id"
-          ]
-        }
-      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -1793,14 +1717,53 @@
           "primaryKey": false,
           "notNull": false
         },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 1
+        },
         "type": {
           "name": "type",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'internal'"
         },
         "username": {
           "name": "username",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "oauth2_user_id": {
+          "name": "oauth2_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "oauth2_provider_id": {
+          "name": "oauth2_provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'customer'"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
           "type": "text",
           "primaryKey": false,
           "notNull": true
@@ -1833,6 +1796,51 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "users_oauth2_user_id_index": {
+          "name": "users_oauth2_user_id_index",
+          "columns": [
+            {
+              "expression": "oauth2_user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_oauth2_provider_id_index": {
+          "name": "users_oauth2_provider_id_index",
+          "columns": [
+            {
+              "expression": "oauth2_provider_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "users_role_index": {
+          "name": "users_role_index",
+          "columns": [
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -1845,7 +1853,24 @@
           ]
         }
       },
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "users_oauth2_user_id_tenant_id_unique": {
+          "name": "users_oauth2_user_id_tenant_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "oauth2_user_id",
+            "tenant_id"
+          ]
+        },
+        "users_email_tenant_id_unique": {
+          "name": "users_email_tenant_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email",
+            "tenant_id"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

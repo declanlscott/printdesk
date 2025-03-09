@@ -196,7 +196,7 @@ export const infraFunction = new aws.lambda.Function("InfraFunction", {
   role: infraFunctionRole.arn,
   timeout: 900,
   architectures: ["arm64"],
-  memorySize: 2048,
+  memorySize: 3008,
   ephemeralStorage: { size: 1536 },
   loggingConfig: {
     logFormat: "Text",

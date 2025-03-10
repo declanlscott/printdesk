@@ -4,4 +4,5 @@ packages:
   - packages/workers/api-rate-limiters
 onlyBuiltDependencies:
   - aws-sdk
+  - esbuild
   - workerd

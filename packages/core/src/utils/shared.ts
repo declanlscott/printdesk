@@ -87,6 +87,10 @@ export const isUniqueByKey = <
     R.isDeepEqual(input.length),
   );
 
+export const isSingleton = <TElement, TInput extends ArrayLike<TElement>>(
+  input: TInput,
+) => R.pipe(input, R.length(), R.isDeepEqual(1));
+
 export const nanoIdSchema = v.pipe(v.string(), v.regex(Constants.NANOID_REGEX));
 export type NanoId = v.InferOutput<typeof nanoIdSchema>;
 

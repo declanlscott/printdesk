@@ -4,6 +4,7 @@ import * as v from "valibot";
 import { Constants } from "../utils/constants";
 import {
   costSchema,
+  isSingleton,
   isUniqueByKey,
   nanoIdSchema,
   tenantTableSchema,
@@ -150,8 +151,7 @@ export const workflowSchema = v.pipe(
             R.pipe(
               workflow,
               R.filter((status) => status.type === "New"),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             ),
           ),
         ),

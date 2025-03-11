@@ -18,6 +18,7 @@ import {
 } from "../rooms/shared";
 import { tenantsTableName } from "../tenants/shared";
 import { usersTableName } from "../users/shared";
+import { isSingleton } from "../utils/shared";
 
 import type {
   DeepReadonlyObject,
@@ -275,8 +276,7 @@ export namespace AccessControl {
                   authorization.billingAccountId === billingAccount.id &&
                   authorization.managerId === user.id,
               ),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             );
           } catch {
             return false;
@@ -317,8 +317,7 @@ export namespace AccessControl {
                   authorization.billingAccountId === billingAccount.id &&
                   authorization.managerId === user.id,
               ),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             );
           } catch {
             return false;
@@ -384,8 +383,7 @@ export namespace AccessControl {
                   authorization.billingAccountId === billingAccountId &&
                   authorization.customerId === user.id,
               ),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             );
           } catch {
             return false;
@@ -420,8 +418,7 @@ export namespace AccessControl {
                   authorization.billingAccountId === billingAccount.id &&
                   authorization.managerId === user.id,
               ),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             );
           } catch {
             return false;
@@ -456,8 +453,7 @@ export namespace AccessControl {
                   authorization.billingAccountId === billingAccount.id &&
                   authorization.managerId === user.id,
               ),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             );
           } catch {
             return false;
@@ -597,8 +593,7 @@ export namespace AccessControl {
                   authorization.billingAccountId === billingAccount.id &&
                   authorization.customerId === user.id,
               ),
-              R.length(),
-              R.isDeepEqual(1),
+              isSingleton,
             );
           } catch {
             return false;

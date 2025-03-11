@@ -4,7 +4,7 @@ import { tenantTable } from "../drizzle/tables";
 import { userRole, userType } from "../utils/sql";
 import { usersTableName } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { Discriminate, InferTable } from "../utils/types";
 
 export const usersTable = tenantTable(
   usersTableName,
@@ -30,6 +30,8 @@ export const usersTable = tenantTable(
 export type UsersTable = typeof usersTable;
 
 export type User = InferTable<UsersTable>;
-export type UserOf<TUserType extends User["type"]> = Omit<User, "type"> & {
-  type: TUserType;
-};
+export type UserByType<TUserType extends User["type"]> = Discriminate<
+  User,
+  "type",
+  TUserType
+>;

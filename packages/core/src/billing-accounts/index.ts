@@ -23,10 +23,10 @@ import {
 import type { InferInsertModel } from "drizzle-orm";
 import type {
   BillingAccount,
+  BillingAccountByType,
   BillingAccountCustomerAuthorization,
   BillingAccountCustomerAuthorizationsTable,
   BillingAccountManagerAuthorization,
-  BillingAccountOf,
   BillingAccountsTable,
 } from "./sql";
 
@@ -106,7 +106,9 @@ export namespace BillingAccounts {
                 : undefined,
               eq(billingAccountsTable.tenantId, useTenant().id),
             ),
-          ) as unknown as Promise<Array<BillingAccountOf<TBillingAccountType>>>,
+          ) as unknown as Promise<
+          Array<BillingAccountByType<TBillingAccountType>>
+        >,
     );
 
   export const updateReviewThreshold = fn(

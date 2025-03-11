@@ -26,7 +26,7 @@ import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { PartialExcept } from "../utils/types";
 import type { UserRole } from "./shared";
-import type { User, UserOf, UsersTable } from "./sql";
+import type { User, UserByType, UsersTable } from "./sql";
 
 export namespace Users {
   export const put = async (values: Array<InferInsertModel<UsersTable>>) =>
@@ -99,7 +99,7 @@ export namespace Users {
               eq(usersTable.type, type),
               eq(usersTable.tenantId, useTenant().id),
             ),
-          ) as unknown as Promise<Array<UserOf<TUserType>>>,
+          ) as unknown as Promise<Array<UserByType<TUserType>>>,
     );
 
   export const byOauth2 = async (

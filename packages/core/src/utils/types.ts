@@ -34,3 +34,9 @@ export type InferTable<TTable extends Table> = Omit<
   InferSelectModel<TTable>,
   "version"
 >;
+
+export type Discriminate<
+  TEntity,
+  TKey extends keyof TEntity,
+  TValue extends TEntity[TKey],
+> = Omit<TEntity, TKey> & Record<TKey, TValue>;

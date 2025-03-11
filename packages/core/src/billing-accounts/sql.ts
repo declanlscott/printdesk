@@ -9,7 +9,7 @@ import {
   billingAccountsTableName,
 } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { Discriminate, InferTable } from "../utils/types";
 
 export const billingAccountsTable = tenantTable(
   billingAccountsTableName,
@@ -31,9 +31,9 @@ export const billingAccountsTable = tenantTable(
 );
 export type BillingAccountsTable = typeof billingAccountsTable;
 export type BillingAccount = InferTable<BillingAccountsTable>;
-export type BillingAccountOf<
+export type BillingAccountByType<
   TBillingAccountType extends BillingAccount["type"],
-> = BillingAccount & { type: TBillingAccountType };
+> = Discriminate<BillingAccount, "type", TBillingAccountType>;
 
 export const billingAccountCustomerAuthorizationsTable = tenantTable(
   billingAccountCustomerAuthorizationsTableName,

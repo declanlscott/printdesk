@@ -29,7 +29,7 @@ export const CommandBarStoreApi = createStoreApiContext<
         set(({ pages }) => ({ input: "", pages: [...pages, page] })),
       popPage: () => set(({ pages }) => ({ pages: pages.toSpliced(-1, 1) })),
       getActivePage: () => get().pages[get().pages.length - 1],
-      reset: () => set(() => ({ input: "", pages: [{ type: "home" }] })),
+      reset: () => set(() => ({ input: "", pages: [{ kind: "home" }] })),
     },
   })),
 );

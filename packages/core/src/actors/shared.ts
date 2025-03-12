@@ -5,24 +5,24 @@ import { Constants } from "../utils/constants";
 import { nanoIdSchema } from "../utils/shared";
 
 export const publicActorSchema = v.object({
-  type: v.literal(Constants.ACTOR_TYPES.PUBLIC),
+  kind: v.literal(Constants.ACTOR_KINDS.PUBLIC),
   properties: v.object({}),
 });
 export type PublicActor = v.InferOutput<typeof publicActorSchema>;
 
 export const userActorSchema = v.object({
-  type: v.literal(Constants.ACTOR_TYPES.USER),
+  kind: v.literal(Constants.ACTOR_KINDS.USER),
   properties: userSubjectPropertiesSchema,
 });
 export type UserActor = v.InferOutput<typeof userActorSchema>;
 
 export const systemActorSchema = v.object({
-  type: v.literal(Constants.ACTOR_TYPES.SYSTEM),
+  kind: v.literal(Constants.ACTOR_KINDS.SYSTEM),
   properties: v.object({ tenantId: nanoIdSchema }),
 });
 export type SystemActor = v.InferOutput<typeof systemActorSchema>;
 
-export const actorSchema = v.variant("type", [
+export const actorSchema = v.variant("kind", [
   publicActorSchema,
   userActorSchema,
   systemActorSchema,

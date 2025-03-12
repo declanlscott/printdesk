@@ -71,7 +71,7 @@ export const setupWizardStep1Schema = v.object({
 export type SetupWizardStep1 = v.InferOutput<typeof setupWizardStep1Schema>;
 
 export const setupWizardStep2Schema = v.object({
-  userOauthProviderType: oauth2ProvidersSchema.entries.type,
+  userOauthProviderKind: oauth2ProvidersSchema.entries.kind,
   userOauthProviderId: oauth2ProvidersSchema.entries.id,
 });
 export type SetupWizardStep2 = v.InferOutput<typeof setupWizardStep2Schema>;

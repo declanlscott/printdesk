@@ -20,7 +20,7 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 const app = new Hono()
   .use(logger())
   .use(actor)
-  .use(except("/public/*", authn(Constants.ACTOR_TYPES.USER)))
+  .use(except("/public/*", authn(Constants.ACTOR_KINDS.USER)))
   .route("/files", filesRoute)
   .route("/public", publicRoute)
   .route("/realtime", realtimeRoute)

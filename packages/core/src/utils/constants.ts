@@ -7,14 +7,16 @@
 import type { Duration } from "date-fns";
 
 export namespace Constants {
-  export const SUBJECT_TYPES = {
+  export const TOKEN_DELIMITER = ":";
+
+  export const SUBJECT_KINDS = {
     USER: "user",
   } as const;
 
-  export const ACTOR_TYPES = {
+  export const ACTOR_KINDS = {
     PUBLIC: "public",
     SYSTEM: "system",
-    USER: SUBJECT_TYPES.USER,
+    USER: SUBJECT_KINDS.USER,
   } as const;
 
   export const HEADER_NAMES = {

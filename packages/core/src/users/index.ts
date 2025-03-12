@@ -26,7 +26,7 @@ import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { PartialExcept } from "../utils/types";
 import type { UserRole } from "./shared";
-import type { User, UserByType, UsersTable } from "./sql";
+import type { User, UserByOrigin, UsersTable } from "./sql";
 
 export namespace Users {
   export const put = async (values: Array<InferInsertModel<UsersTable>>) =>
@@ -38,12 +38,14 @@ export namespace Users {
           target: [usersTable.id, usersTable.tenantId],
           set: {
             ...buildConflictUpdateColumns(usersTable, [
-              "type",
+              "origin",
               "username",
               "oauth2UserId",
               "oauth2ProviderId",
               "name",
               "email",
+              "role",
+              "createdAt",
               "updatedAt",
               "deletedAt",
             ]),
@@ -86,8 +88,8 @@ export namespace Users {
         ),
     );
 
-  export const byType = async <TUserType extends User["type"]>(
-    type: TUserType,
+  export const byOrigin = async <TUserOrigin extends User["origin"]>(
+    origin: TUserOrigin,
   ) =>
     useTransaction(
       (tx) =>
@@ -96,10 +98,10 @@ export namespace Users {
           .from(usersTable)
           .where(
             and(
-              eq(usersTable.type, type),
+              eq(usersTable.origin, origin),
               eq(usersTable.tenantId, useTenant().id),
             ),
-          ) as unknown as Promise<Array<UserByType<TUserType>>>,
+          ) as unknown as Promise<Array<UserByOrigin<TUserOrigin>>>,
     );
 
   export const byOauth2 = async (
@@ -256,8 +258,6 @@ export namespace Users {
   export const updateRole = fn(
     updateUserRoleMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([getTableName(usersTable), "update"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: getTableName(usersTable), id }],
@@ -268,7 +268,7 @@ export namespace Users {
           .update(usersTable)
           .set(values)
           .where(
-            and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
+            and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
           );
 
         await afterTransaction(() => poke(["/tenant"]));
@@ -279,8 +279,6 @@ export namespace Users {
   export const delete_ = fn(
     deleteUserMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce([getTableName(usersTable), "delete", id], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: getTableName(usersTable), id }],
@@ -289,9 +287,9 @@ export namespace Users {
       return useTransaction(async (tx) => {
         await tx
           .update(usersTable)
-          .set(values)
+          .set({ ...values, role: "customer" })
           .where(
-            and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)),
+            and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
           );
 
         await afterTransaction(() => poke(["/tenant"]));
@@ -300,8 +298,6 @@ export namespace Users {
   );
 
   export const restore = fn(restoreUserMutationArgsSchema, async ({ id }) => {
-    const tenant = useTenant();
-
     await AccessControl.enforce([getTableName(usersTable), "update"], {
       Error: ApplicationError.AccessDenied,
       args: [{ name: getTableName(usersTable), id }],
@@ -311,7 +307,9 @@ export namespace Users {
       await tx
         .update(usersTable)
         .set({ deletedAt: null })
-        .where(and(eq(usersTable.id, id), eq(usersTable.tenantId, tenant.id)));
+        .where(
+          and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
+        );
 
       await afterTransaction(() => poke(["/tenant"]));
     });

@@ -1,4 +1,4 @@
-import { and, eq, getTableName, isNull, or } from "drizzle-orm";
+import { and, eq, getTableName, isNull, or, sql } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";
 
@@ -32,12 +32,16 @@ export namespace Tenants {
         .values({ ...values, status: "setup" })
         .onConflictDoUpdate({
           target: [tenantsTable.id],
-          set: buildConflictUpdateColumns(tenantsTable, [
-            "id",
-            "name",
-            "slug",
-            "status",
-          ]),
+          set: {
+            ...buildConflictUpdateColumns(tenantsTable, [
+              "id",
+              "name",
+              "slug",
+              "status",
+            ]),
+            version: sql`version + 1`,
+            updatedAt: new Date(),
+          },
           setWhere: eq(tenantsTable.status, "setup"),
         }),
     );
@@ -48,7 +52,7 @@ export namespace Tenants {
     );
 
   export const byOauth2Provider = async (
-    type: Oauth2Provider["type"],
+    kind: Oauth2Provider["kind"],
     id: Oauth2Provider["id"],
   ) =>
     useTransaction((tx) =>
@@ -61,7 +65,7 @@ export namespace Tenants {
         )
         .where(
           and(
-            eq(oauth2ProvidersTable.type, type),
+            eq(oauth2ProvidersTable.kind, kind),
             eq(oauth2ProvidersTable.id, id),
           ),
         )
@@ -146,10 +150,13 @@ export namespace Tenants {
         .values(values)
         .onConflictDoUpdate({
           target: [tenantMetadataTable.tenantId],
-          set: buildConflictUpdateColumns(tenantMetadataTable, [
-            "infraProgramInput",
-            "apiKey",
-          ]),
+          set: {
+            ...buildConflictUpdateColumns(tenantMetadataTable, [
+              "infraProgramInput",
+              "apiKey",
+            ]),
+            updatedAt: new Date(),
+          },
         }),
     );
 
@@ -181,7 +188,7 @@ export namespace Tenants {
         }),
         Auth.putOauth2Provider({
           id: data.userOauthProviderId,
-          type: data.userOauthProviderType,
+          kind: data.userOauthProviderKind,
           tenantId: useTenant().id,
         }),
       ]),

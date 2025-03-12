@@ -55,15 +55,15 @@ export const messageSchema = v.variant("type", [
 ]);
 export type Message = v.InferOutput<typeof messageSchema>;
 
-export const eventSchema = v.variant("type", [
+export const eventSchema = v.variant("kind", [
   v.object({
-    type: v.literal("infra"),
+    kind: v.literal("infra"),
     success: v.boolean(),
     dispatchId: v.string(),
     retrying: v.boolean(),
   }),
   v.object({
-    type: v.literal("papercut-sync"),
+    kind: v.literal("papercut-sync"),
     success: v.boolean(),
     dispatchId: v.string(),
   }),

@@ -1,4 +1,5 @@
 import { and, eq, getTableName, inArray, not, sql } from "drizzle-orm";
+import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
@@ -23,7 +24,7 @@ import {
 import type { InferInsertModel } from "drizzle-orm";
 import type {
   BillingAccount,
-  BillingAccountByType,
+  BillingAccountByOrigin,
   BillingAccountCustomerAuthorization,
   BillingAccountCustomerAuthorizationsTable,
   BillingAccountManagerAuthorization,
@@ -46,10 +47,12 @@ export namespace BillingAccounts {
           ],
           set: {
             ...buildConflictUpdateColumns(billingAccountsTable, [
-              "papercutAccountId",
+              "origin",
               "name",
-              "type",
+              "papercutAccountId",
               "tenantId",
+              "createdAt",
+              "updatedAt",
               "deletedAt",
             ]),
             version: sql`version + 1`,
@@ -71,27 +74,10 @@ export namespace BillingAccounts {
         ),
     );
 
-  export const byPapercutAccounts = (
-    ids: Array<BillingAccount["papercutAccountId"]>,
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(billingAccountsTable)
-        .where(
-          and(
-            inArray(billingAccountsTable.papercutAccountId, ids),
-            not(eq(billingAccountsTable.papercutAccountId, -1)),
-            eq(billingAccountsTable.type, "papercut"),
-            eq(billingAccountsTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
-
-  export const byType = async <
-    TBillingAccountType extends BillingAccount["type"],
+  export const byOrigin = async <
+    TBillingAccountOrigin extends BillingAccount["origin"],
   >(
-    type: TBillingAccountType,
+    origin: TBillingAccountOrigin,
   ) =>
     useTransaction(
       (tx) =>
@@ -100,14 +86,14 @@ export namespace BillingAccounts {
           .from(billingAccountsTable)
           .where(
             and(
-              eq(billingAccountsTable.type, type),
-              type === "papercut"
+              eq(billingAccountsTable.origin, origin),
+              origin === "papercut"
                 ? not(eq(billingAccountsTable.papercutAccountId, -1))
                 : undefined,
               eq(billingAccountsTable.tenantId, useTenant().id),
             ),
           ) as unknown as Promise<
-          Array<BillingAccountByType<TBillingAccountType>>
+          Array<BillingAccountByOrigin<TBillingAccountOrigin>>
         >,
     );
 
@@ -241,11 +227,19 @@ export namespace BillingAccounts {
           set: {
             ...buildConflictUpdateColumns(
               billingAccountCustomerAuthorizationsTable,
-              ["customerId", "billingAccountId", "tenantId", "deletedAt"],
+              [
+                "customerId",
+                "billingAccountId",
+                "tenantId",
+                "createdAt",
+                "updatedAt",
+                "deletedAt",
+              ],
             ),
             version: sql`version + 1`,
           },
-        }),
+        })
+        .returning(),
     );
 
   export const readCustomerAuthorizations = async (
@@ -264,6 +258,45 @@ export namespace BillingAccounts {
             ),
           ),
         ),
+    );
+
+  export const readCustomerAuthorizationsByOrigin = async <
+    TBillingAccountOrigin extends BillingAccount["origin"],
+  >(
+    origin: TBillingAccountOrigin,
+  ) =>
+    useTransaction((tx) =>
+      tx
+        .select({
+          customerAuthorization: billingAccountCustomerAuthorizationsTable,
+        })
+        .from(billingAccountCustomerAuthorizationsTable)
+        .innerJoin(
+          billingAccountsTable,
+          and(
+            eq(
+              billingAccountsTable.id,
+              billingAccountCustomerAuthorizationsTable.billingAccountId,
+            ),
+            eq(
+              billingAccountsTable.tenantId,
+              billingAccountCustomerAuthorizationsTable.tenantId,
+            ),
+          ),
+        )
+        .where(
+          and(
+            eq(billingAccountsTable.origin, origin),
+            origin === "papercut"
+              ? not(eq(billingAccountsTable.papercutAccountId, -1))
+              : undefined,
+            eq(
+              billingAccountCustomerAuthorizationsTable.tenantId,
+              useTenant().id,
+            ),
+          ),
+        )
+        .then(R.map(R.prop("customerAuthorization"))),
     );
 
   export const createManagerAuthorization = fn(
@@ -311,8 +344,6 @@ export namespace BillingAccounts {
   export const deleteManagerAuthorization = fn(
     deleteBillingAccountManagerAuthorizationMutationArgsSchema,
     async ({ id, ...values }) => {
-      const tenant = useTenant();
-
       await AccessControl.enforce(
         [getTableName(billingAccountManagerAuthorizationsTable), "delete"],
         {
@@ -333,7 +364,10 @@ export namespace BillingAccounts {
           .where(
             and(
               eq(billingAccountManagerAuthorizationsTable.id, id),
-              eq(billingAccountManagerAuthorizationsTable.tenantId, tenant.id),
+              eq(
+                billingAccountManagerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
             ),
           );
 

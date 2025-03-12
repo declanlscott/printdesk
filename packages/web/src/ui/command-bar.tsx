@@ -55,7 +55,7 @@ export function CommandBar() {
       <CommandDialog
         commandProps={{
           onKeyDown(e) {
-            if (activePage.type === "home" || !R.isEmpty(input)) return;
+            if (activePage.kind === "home" || !R.isEmpty(input)) return;
 
             if (e.key === "Backspace") {
               e.preventDefault();
@@ -65,19 +65,19 @@ export function CommandBar() {
           },
         }}
       >
-        {activePage.type === "home" && <HomeCommand {...activePage} />}
+        {activePage.kind === "home" && <HomeCommand {...activePage} />}
 
-        {activePage.type === "room" && <RoomCommand {...activePage} />}
+        {activePage.kind === "room" && <RoomCommand {...activePage} />}
 
-        {activePage.type === "room-settings-select-room" && (
+        {activePage.kind === "room-settings-select-room" && (
           <RoomSettingsSelectRoomCommand {...activePage} />
         )}
 
-        {activePage.type === "product-settings-select-room" && (
+        {activePage.kind === "product-settings-select-room" && (
           <ProductSettingsSelectRoomCommand {...activePage} />
         )}
 
-        {activePage.type === "product-settings-select-product" && (
+        {activePage.kind === "product-settings-select-product" && (
           <ProductSettingsSelectProductCommand {...activePage} />
         )}
       </CommandDialog>
@@ -85,7 +85,7 @@ export function CommandBar() {
   );
 }
 
-type HomeCommandProps = Extract<CommandBarPage, { type: "home" }>;
+type HomeCommandProps = Extract<CommandBarPage, { kind: "home" }>;
 function HomeCommand(_props: HomeCommandProps) {
   const user = useUser();
 
@@ -151,7 +151,7 @@ function HomeCommand(_props: HomeCommandProps) {
               {rooms.map((room) => (
                 <CommandItem
                   key={room.id}
-                  onSelect={() => pushPage({ type: "room", roomId: room.id })}
+                  onSelect={() => pushPage({ kind: "room", roomId: room.id })}
                   keywords={["rooms", "room"]}
                 >
                   <Home className="mr-2 size-5" />
@@ -227,7 +227,7 @@ function HomeCommand(_props: HomeCommandProps) {
               key={`room-settings-${link.name}`}
               onSelect={() =>
                 pushPage({
-                  type: "room-settings-select-room",
+                  kind: "room-settings-select-room",
                   to: link.props.href.to,
                 })
               }
@@ -247,7 +247,7 @@ function HomeCommand(_props: HomeCommandProps) {
               key={`product-settings-${link.name}`}
               onSelect={() =>
                 pushPage({
-                  type: "product-settings-select-room",
+                  kind: "product-settings-select-room",
                   to: link.props.href.to,
                 })
               }
@@ -267,7 +267,7 @@ function HomeCommand(_props: HomeCommandProps) {
   );
 }
 
-type RoomCommandProps = Extract<CommandBarPage, { type: "room" }>;
+type RoomCommandProps = Extract<CommandBarPage, { kind: "room" }>;
 function RoomCommand(props: RoomCommandProps) {
   const state = useContext(OverlayTriggerStateContext);
 
@@ -349,7 +349,7 @@ function RoomCommand(props: RoomCommandProps) {
 
 type RoomSettingsSelectRoomCommandProps = Extract<
   CommandBarPage,
-  { type: "room-settings-select-room" }
+  { kind: "room-settings-select-room" }
 >;
 function RoomSettingsSelectRoomCommand(
   props: RoomSettingsSelectRoomCommandProps,
@@ -398,7 +398,7 @@ function RoomSettingsSelectRoomCommand(
 
 type ProductSettingsSelectRoomCommandProps = Extract<
   CommandBarPage,
-  { type: "product-settings-select-room" }
+  { kind: "product-settings-select-room" }
 >;
 function ProductSettingsSelectRoomCommand(
   props: ProductSettingsSelectRoomCommandProps,
@@ -427,7 +427,7 @@ function ProductSettingsSelectRoomCommand(
               key={room.id}
               onSelect={() =>
                 pushPage({
-                  type: "product-settings-select-product",
+                  kind: "product-settings-select-product",
                   roomId: room.id,
                   to: props.to,
                 })
@@ -444,7 +444,7 @@ function ProductSettingsSelectRoomCommand(
 
 type ProductSettingsSelectProductCommandProps = Extract<
   CommandBarPage,
-  { type: "product-settings-select-product" }
+  { kind: "product-settings-select-product" }
 >;
 function ProductSettingsSelectProductCommand(
   props: ProductSettingsSelectProductCommandProps,

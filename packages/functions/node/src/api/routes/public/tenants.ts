@@ -39,7 +39,7 @@ export default new Hono()
     async (c) => {
       const providers = await Auth.readOauth2ProvidersBySlug(
         c.req.valid("query").slug,
-      ).then(R.map(R.prop("type")));
+      ).then(R.map(R.prop("kind")));
       if (R.isEmpty(providers))
         throw new HttpError.NotFound("Tenant not found");
 

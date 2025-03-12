@@ -110,7 +110,7 @@ export namespace Replicache {
             replicacheClientGroupsTable.id,
             replicacheClientGroupsTable.tenantId,
           ],
-          set: clientGroup,
+          set: { ...clientGroup, updatedAt: new Date() },
         }),
     );
 
@@ -133,7 +133,7 @@ export namespace Replicache {
         .values(client)
         .onConflictDoUpdate({
           target: [replicacheClientsTable.id, replicacheClientsTable.tenantId],
-          set: client,
+          set: { ...client, updatedAt: new Date() },
         }),
     );
 

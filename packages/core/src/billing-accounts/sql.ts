@@ -2,7 +2,7 @@ import { bigint, index, numeric, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
-import { billingAccountType } from "../utils/sql";
+import { billingAccountOrigin } from "../utils/sql";
 import {
   billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
@@ -14,7 +14,7 @@ import type { Discriminate, InferTable } from "../utils/types";
 export const billingAccountsTable = tenantTable(
   billingAccountsTableName,
   {
-    type: billingAccountType("type").notNull(),
+    origin: billingAccountOrigin("origin").default("internal").notNull(),
     name: text("name").notNull(),
     reviewThreshold: numeric("review_threshold"),
     // NOTE: Set to -1 if the billing account is not a papercut shared account
@@ -22,7 +22,7 @@ export const billingAccountsTable = tenantTable(
   },
   (table) => [
     uniqueIndex().on(
-      table.type,
+      table.origin,
       table.name,
       table.papercutAccountId,
       table.tenantId,
@@ -31,9 +31,9 @@ export const billingAccountsTable = tenantTable(
 );
 export type BillingAccountsTable = typeof billingAccountsTable;
 export type BillingAccount = InferTable<BillingAccountsTable>;
-export type BillingAccountByType<
-  TBillingAccountType extends BillingAccount["type"],
-> = Discriminate<BillingAccount, "type", TBillingAccountType>;
+export type BillingAccountByOrigin<
+  TBillingAccountOrigin extends BillingAccount["origin"],
+> = Discriminate<BillingAccount, "origin", TBillingAccountOrigin>;
 
 export const billingAccountCustomerAuthorizationsTable = tenantTable(
   billingAccountCustomerAuthorizationsTableName,

@@ -5,6 +5,7 @@ import { Auth } from "../auth";
 import { EntraId } from "../auth/entra-id";
 import { BillingAccounts } from "../billing-accounts";
 import { useTransaction } from "../drizzle/context";
+import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
@@ -15,6 +16,7 @@ import type { User as GraphUser } from "@microsoft/microsoft-graph-types";
 import type { InferInsertModel } from "drizzle-orm";
 import type {
   BillingAccount,
+  BillingAccountCustomerAuthorization,
   BillingAccountCustomerAuthorizationsTable,
   BillingAccountsTable,
 } from "../billing-accounts/sql";
@@ -22,134 +24,20 @@ import type { User, UsersTable } from "../users/sql";
 import type { NonNullableProperties } from "../utils/types";
 
 export namespace Sync {
-  export async function billingAccounts() {
-    const tenant = useTenant();
+  export async function all() {
+    let shouldPoke = false;
 
-    const next = new Map<
-      NonNullable<BillingAccount["papercutAccountId"]>,
-      { name: BillingAccount["name"] }
-    >();
-
-    const names = await Papercut.listSharedAccounts();
-
-    // NOTE: Batch api requests to avoid overloading the customer's papercut server
-    for (const batch of R.chunk(
-      names,
-      Constants.PAPERCUT_API_REQUEST_BATCH_SIZE,
-    ))
-      await Promise.all(
-        batch.map(async (name) => {
-          const [accountId] = await Papercut.getSharedAccountProperties(
-            name,
-            "account-id",
-          );
-          if (accountId === undefined)
-            throw new Error(`Missing account-id for ${name}`);
-
-          next.set(accountId, { name });
-        }),
+    const flagIfChanged = <TValue>(values: Array<TValue>) =>
+      R.pipe(
+        values,
+        R.conditional([R.isNot(R.isEmpty), () => (shouldPoke = true)]),
       );
 
-    return useTransaction(async () => {
-      const prev = await BillingAccounts.byType("papercut");
+    await users().then(flagIfChanged);
+    await billingAccounts().then(flagIfChanged);
+    await billingAccountCustomerAuthorizations().then(flagIfChanged);
 
-      type Values = Array<InferInsertModel<BillingAccountsTable>>;
-      const puts: Values = [];
-      const dels: Values = [];
-
-      for (const [papercutAccountId, { name }] of next)
-        puts.push({
-          papercutAccountId,
-          name,
-          type: "papercut" as const,
-          tenantId: tenant.id,
-          deletedAt: null,
-        });
-
-      const deletedAt = new Date();
-      for (const { papercutAccountId, name } of prev)
-        if (!next.has(papercutAccountId))
-          dels.push({
-            papercutAccountId,
-            name,
-            type: "papercut" as const,
-            tenantId: tenant.id,
-            deletedAt,
-          });
-
-      const values = [...puts, ...dels];
-      if (R.isEmpty(values)) return [];
-
-      return BillingAccounts.put(values);
-    });
-  }
-
-  export async function billingAccountCustomerAuthorizations() {
-    const deletedAt = new Date();
-
-    const [users, billingAccountsMap] = await useTransaction(() =>
-      Promise.all([
-        Users.byType("papercut"),
-        BillingAccounts.byType("papercut").then(
-          (accounts) =>
-            new Map(accounts.map((account) => [account.name, account])),
-        ),
-      ]),
-    );
-
-    const userAccountsMap = new Map<
-      User["id"],
-      Array<BillingAccount["name"]>
-    >();
-    // NOTE: Batch api requests to avoid overloading the customer's papercut server
-    for (const batch of R.chunk(
-      users,
-      Constants.PAPERCUT_API_REQUEST_BATCH_SIZE,
-    ))
-      await Promise.all(
-        batch.map(async (user) =>
-          userAccountsMap.set(
-            user.id,
-            await Papercut.listUserSharedAccounts(user.username, true),
-          ),
-        ),
-      );
-
-    type BillingAccountCustomerAuthorizationValues = Array<
-      InferInsertModel<BillingAccountCustomerAuthorizationsTable>
-    >;
-    const puts: BillingAccountCustomerAuthorizationValues = [];
-    const dels: BillingAccountCustomerAuthorizationValues = [];
-
-    for (const user of users) {
-      const accountNames = userAccountsMap.get(user.username) ?? [];
-
-      if (!user.deletedAt) {
-        for (const accountName of accountNames)
-          puts.push({
-            customerId: user.id,
-            billingAccountId: billingAccountsMap.get(accountName)!.id,
-            tenantId: useTenant().id,
-            deletedAt: null,
-          });
-
-        continue;
-      }
-
-      for (const accountName of accountNames) {
-        dels.push({
-          customerId: user.id,
-          billingAccountId: billingAccountsMap.get(accountName)!.id,
-          tenantId: useTenant().id,
-          deletedAt,
-        });
-      }
-    }
-
-    const values = [...puts, ...dels];
-
-    if (R.pipe(values, R.isNot(R.isEmpty)))
-      await BillingAccounts.putCustomerAuthorizations(values);
+    if (shouldPoke) await poke(["/tenant"]);
   }
 
   export async function users() {
@@ -163,13 +51,16 @@ export namespace Sync {
         message: "papercut task status not yet completed",
       });
 
-    const papercutUsernames = new Set(await Papercut.listUserAccounts());
+    const usernames = new Set(await Papercut.listUserAccounts());
 
     const oauth2Providers = await Auth.readOauth2Providers();
 
-    const users: Array<User> = [];
+    const next = new Map<
+      User["oauth2UserId"],
+      Pick<User, "oauth2ProviderId" | "username" | "name" | "email">
+    >();
     for (const oauth2Provider of oauth2Providers)
-      switch (oauth2Provider.type) {
+      switch (oauth2Provider.kind) {
         case Constants.ENTRA_ID:
           await withGraph(
             Graph.Client.initWithMiddleware({
@@ -179,103 +70,342 @@ export namespace Sync {
               },
             }),
             async () => {
-              const deletedAt = new Date();
+              const users = await Graph.users().then(
+                R.reduce(
+                  (users, { userPrincipalName, id, displayName, mail }) => {
+                    if (userPrincipalName && id && displayName && mail)
+                      users.push({ userPrincipalName, id, displayName, mail });
 
-              const prevUsers = await Users.byType("papercut").then(
-                (users) => new Map(users.map((user) => [user.username, user])),
+                    return users;
+                  },
+                  [] as Array<
+                    NonNullableProperties<
+                      Required<
+                        Pick<
+                          GraphUser,
+                          "userPrincipalName" | "id" | "displayName" | "mail"
+                        >
+                      >
+                    >
+                  >,
+                ),
               );
 
-              const entraUsers = await Graph.users().then(
-                (users) =>
-                  new Map(
-                    (() => {
-                      const values: Array<
-                        [
-                          NonNullable<GraphUser["userPrincipalName"]>,
-                          NonNullableProperties<
-                            Required<
-                              Pick<GraphUser, "id" | "displayName" | "mail">
-                            >
-                          >,
-                        ]
-                      > = [];
-
-                      for (const user of users)
-                        if (
-                          user.userPrincipalName &&
-                          user.id &&
-                          user.mail &&
-                          user.displayName
-                        )
-                          values.push([
-                            user.userPrincipalName,
-                            {
-                              id: user.id,
-                              displayName: user.displayName,
-                              mail: user.mail,
-                            },
-                          ]);
-
-                      return values;
-                    })(),
-                  ),
-              );
-
-              const nextUsernames = new Set<string>();
-              for (const username of papercutUsernames)
-                if (entraUsers.has(username)) nextUsernames.add(username);
-
-              type Values = Array<InferInsertModel<UsersTable>>;
-              const puts: Values = [];
-              const dels: Values = [];
-
-              for (const username of nextUsernames) {
-                const entraUser = entraUsers.get(username)!;
-                puts.push({
-                  type: "papercut",
-                  username,
-                  oauth2UserId: entraUser.id,
-                  oauth2ProviderId: oauth2Provider.id,
-                  name: entraUser.displayName,
-                  email: entraUser.mail,
-                  deletedAt: null,
-                  tenantId: oauth2Provider.tenantId,
-                });
-              }
-
-              for (const [username, user] of prevUsers)
-                if (!nextUsernames.has(username)) {
-                  const entraUser = entraUsers.get(username);
-                  dels.push({
-                    type: "papercut",
-                    username: entraUser?.displayName ?? user.username,
-                    oauth2UserId: entraUser?.id ?? user.oauth2UserId,
+              for (const user of users)
+                if (usernames.has(user.userPrincipalName))
+                  next.set(user.id, {
                     oauth2ProviderId: oauth2Provider.id,
-                    name: entraUser?.displayName ?? user.name,
-                    email: entraUser?.mail ?? user.email,
-                    deletedAt,
-                    tenantId: oauth2Provider.tenantId,
+                    username: user.userPrincipalName,
+                    name: user.displayName,
+                    email: user.mail,
                   });
-                }
-
-              const values = [...puts, ...dels];
-              if (R.pipe(values, R.isNot(R.isEmpty)))
-                users.push(...(await Users.put(values)));
             },
           );
+
           break;
         case Constants.GOOGLE:
-          throw new Error("google sync is not implemented yet");
+          throw new Error("Google sync not implemented");
         default:
-          throw new ApplicationError.NonExhaustiveValue(oauth2Provider.type);
+          throw new ApplicationError.NonExhaustiveValue(oauth2Provider.kind);
       }
 
-    return users;
+    const prev = await Users.byOrigin("papercut").then(
+      (users) =>
+        new Map<User["oauth2UserId"], User>(
+          users.map((user) => [user.oauth2UserId, user]),
+        ),
+    );
+
+    const now = new Date();
+    const values = R.pipe(
+      [...prev.keys().toArray(), ...next.keys().toArray()],
+      R.unique(),
+      R.reduce(
+        (users, oauth2UserId) => {
+          const prevUser = prev.get(oauth2UserId);
+          const nextUser = next.get(oauth2UserId);
+
+          const base = {
+            origin: "papercut",
+            oauth2UserId,
+            tenantId: useTenant().id,
+          } as const;
+
+          // Create (or restore) user
+          if ((!prevUser || prevUser.deletedAt) && nextUser) {
+            users.push({
+              ...base,
+              ...nextUser,
+              id: prevUser?.id,
+              role: "customer",
+              createdAt: prevUser?.createdAt ?? now,
+              updatedAt: now,
+              deletedAt: null,
+            });
+
+            return users;
+          }
+
+          // Delete user if it's not already
+          if (prevUser && !prevUser.deletedAt && !nextUser) {
+            users.push({
+              ...prevUser,
+              ...base,
+              role: "customer",
+              updatedAt: now,
+              deletedAt: now,
+            });
+
+            return users;
+          }
+
+          // Update user if some properties have changed
+          if (
+            prevUser &&
+            nextUser &&
+            !R.isDeepEqual(
+              R.pick(prevUser, ["name", "username", "email"]),
+              R.pick(nextUser, ["name", "username", "email"]),
+            )
+          ) {
+            users.push({
+              ...prevUser,
+              ...base,
+              ...nextUser,
+              updatedAt: now,
+              deletedAt: null,
+            });
+
+            return users;
+          }
+
+          // Do nothing
+          return users;
+        },
+        [] as Array<InferInsertModel<UsersTable>>,
+      ),
+    );
+
+    if (R.isEmpty(values)) return [];
+
+    return Users.put(values);
   }
 
-  export async function all() {
-    await users();
-    await billingAccounts();
-    await billingAccountCustomerAuthorizations();
+  export async function billingAccounts() {
+    const names = await Papercut.listSharedAccounts();
+
+    const next = new Map<
+      BillingAccount["papercutAccountId"],
+      BillingAccount["name"]
+    >();
+
+    // NOTE: Batch api requests to avoid overloading the customer's papercut server
+    for (const batch of R.chunk(
+      names,
+      Constants.PAPERCUT_API_REQUEST_BATCH_SIZE,
+    ))
+      await Promise.all(
+        batch.map(async (name) => {
+          const [accountId] = await Papercut.getSharedAccountProperties(
+            name,
+            "account-id",
+          );
+          if (accountId === undefined)
+            throw new Error(`Missing papercut account-id for ${name}`);
+
+          next.set(accountId, name);
+        }),
+      );
+
+    const prev = await BillingAccounts.byOrigin("papercut").then(
+      (billingAccounts) =>
+        new Map<BillingAccount["papercutAccountId"], BillingAccount>(
+          billingAccounts.map((billingAccount) => [
+            billingAccount.papercutAccountId,
+            billingAccount,
+          ]),
+        ),
+    );
+
+    const now = new Date();
+    const values = R.pipe(
+      [...prev.keys().toArray(), ...next.keys().toArray()],
+      R.unique(),
+      R.reduce(
+        (billingAccounts, papercutAccountId) => {
+          const billingAccount = prev.get(papercutAccountId);
+          const name = next.get(papercutAccountId);
+
+          const base = {
+            origin: "papercut",
+            papercutAccountId,
+            tenantId: useTenant().id,
+          } as const;
+
+          // Create (or restore) billing account
+          if ((!billingAccount || billingAccount.deletedAt) && name) {
+            billingAccounts.push({
+              ...base,
+              id: billingAccount?.id,
+              name,
+              createdAt: billingAccount?.createdAt ?? now,
+              updatedAt: now,
+              deletedAt: null,
+            });
+
+            return billingAccounts;
+          }
+
+          // Delete billing account if it's not already
+          if (billingAccount && !billingAccount.deletedAt && !name) {
+            billingAccounts.push({
+              ...billingAccount,
+              ...base,
+              updatedAt: now,
+              deletedAt: now,
+            });
+
+            return billingAccounts;
+          }
+
+          // Update billing account if name changed
+          if (billingAccount && name && billingAccount.name !== name) {
+            billingAccounts.push({
+              ...billingAccount,
+              ...base,
+              name,
+              updatedAt: now,
+              deletedAt: null,
+            });
+
+            return billingAccounts;
+          }
+
+          // Do nothing
+          return billingAccounts;
+        },
+        [] as Array<InferInsertModel<BillingAccountsTable>>,
+      ),
+    );
+
+    if (R.isEmpty(values)) return [];
+
+    return BillingAccounts.put(values);
+  }
+
+  export async function billingAccountCustomerAuthorizations() {
+    const [users, billingAccounts] = await useTransaction(() =>
+      Promise.all([
+        Users.byOrigin("papercut"),
+        BillingAccounts.byOrigin("papercut").then(
+          (billingAccounts) =>
+            new Map<BillingAccount["name"], BillingAccount>(
+              billingAccounts.map((billingAccount) => [
+                billingAccount.name,
+                billingAccount,
+              ]),
+            ),
+        ),
+      ]),
+    );
+
+    type CustomerAuthorizationCompositeKey =
+      `${BillingAccountCustomerAuthorization["customerId"]}${typeof Constants.TOKEN_DELIMITER}${BillingAccountCustomerAuthorization["billingAccountId"]}`;
+
+    const next = new Set<CustomerAuthorizationCompositeKey>();
+    for (const batch of R.chunk(
+      users,
+      Constants.PAPERCUT_API_REQUEST_BATCH_SIZE,
+    ))
+      await Promise.all(
+        batch.map(async (user) => {
+          const accountNames = await Papercut.listUserSharedAccounts(
+            user.username,
+            true,
+          );
+
+          for (const name of accountNames) {
+            const billingAccount = billingAccounts.get(name);
+            if (billingAccount)
+              next.add(
+                `${user.id}${Constants.TOKEN_DELIMITER}${billingAccount.id}`,
+              );
+          }
+        }),
+      );
+
+    const prev = await BillingAccounts.readCustomerAuthorizationsByOrigin(
+      "papercut",
+    ).then(
+      (customerAuthorizations) =>
+        new Map<
+          CustomerAuthorizationCompositeKey,
+          BillingAccountCustomerAuthorization
+        >(
+          customerAuthorizations.map((customerAuthorization) => [
+            `${customerAuthorization.customerId}${Constants.TOKEN_DELIMITER}${customerAuthorization.billingAccountId}`,
+            customerAuthorization,
+          ]),
+        ),
+    );
+
+    const now = new Date();
+    const values = R.pipe(
+      [...prev.keys().toArray(), ...next.values().toArray()],
+      R.unique(),
+      R.reduce(
+        (customerAuthorizations, compositeKey) => {
+          const [customerId, billingAccountId] = compositeKey.split(
+            Constants.TOKEN_DELIMITER,
+          );
+
+          const customerAuthorization = prev.get(compositeKey);
+          const isAuthorized = next.has(compositeKey);
+
+          // Create (or restore) customer authorization
+          if (
+            (!customerAuthorization || customerAuthorization.deletedAt) &&
+            isAuthorized
+          ) {
+            customerAuthorizations.push({
+              id: customerAuthorization?.id,
+              customerId,
+              billingAccountId,
+              tenantId: useTenant().id,
+              createdAt: customerAuthorization?.createdAt ?? now,
+              updatedAt: now,
+              deletedAt: null,
+            });
+
+            return customerAuthorizations;
+          }
+
+          // Delete customer authorization if it's not already
+          if (
+            customerAuthorization &&
+            !customerAuthorization.deletedAt &&
+            !isAuthorized
+          ) {
+            customerAuthorizations.push({
+              ...customerAuthorization,
+              updatedAt: now,
+              deletedAt: now,
+            });
+
+            return customerAuthorizations;
+          }
+
+          // Do nothing
+          return customerAuthorizations;
+        },
+        [] as Array<
+          InferInsertModel<BillingAccountCustomerAuthorizationsTable>
+        >,
+      ),
+    );
+
+    if (R.isEmpty(values)) return [];
+
+    return BillingAccounts.putCustomerAuthorizations(values);
   }
 }

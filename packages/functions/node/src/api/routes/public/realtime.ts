@@ -10,7 +10,7 @@ import { appsyncSigner } from "~/api/middleware/aws";
 import { systemAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
-  .use(authn(Constants.ACTOR_TYPES.SYSTEM))
+  .use(authn(Constants.ACTOR_KINDS.SYSTEM))
   .get("/url", systemAuthzHeadersValidator, async (c) => {
     const url = await Realtime.getUrl();
 

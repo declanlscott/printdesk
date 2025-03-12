@@ -9,7 +9,7 @@ import { createStoreApiContext } from "~/lib/contexts/store";
 
 import type { Challenge, Client, Tokens } from "@openauthjs/openauth/client";
 import type {
-  Oauth2ProviderType,
+  Oauth2ProviderKind,
   UserSubjectProperties,
 } from "@printworks/core/auth/shared";
 
@@ -22,7 +22,7 @@ export type AuthStore = {
   tokens: Tokens | null;
   user: UserSubjectProperties | null;
   actions: {
-    authorize: (provider: Oauth2ProviderType, from?: string) => Promise<string>;
+    authorize: (provider: Oauth2ProviderKind, from?: string) => Promise<string>;
     exchange: (code: string, state: string) => Promise<void>;
     verify: () => Promise<void>;
     refresh: () => Promise<void>;

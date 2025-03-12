@@ -48,7 +48,7 @@ export namespace EntraId {
 
       return withActor(
         {
-          type: Constants.ACTOR_TYPES.SYSTEM,
+          kind: Constants.ACTOR_KINDS.SYSTEM,
           properties: { tenantId: tenant.id },
         },
         async () =>
@@ -87,7 +87,7 @@ export namespace EntraId {
                     if (!user) {
                       user = await Users.put([
                         {
-                          type: "internal",
+                          origin: "internal",
                           username: userPrincipalName,
                           oauth2UserId: id,
                           oauth2ProviderId: tid,

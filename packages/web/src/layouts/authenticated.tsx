@@ -72,7 +72,7 @@ function Realtime() {
 
   return (
     <CommandBarStoreApi.Provider
-      input={{ input: "", pages: [{ type: "home" }] }}
+      input={{ input: "", pages: [{ kind: "home" }] }}
     >
       <MainNav />
 

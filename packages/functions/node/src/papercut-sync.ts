@@ -22,7 +22,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
   );
 
   return withActor(
-    { type: Constants.ACTOR_TYPES.SYSTEM, properties: { tenantId } },
+    { kind: Constants.ACTOR_KINDS.SYSTEM, properties: { tenantId } },
     async () => {
       const tenant = await Tenants.read().then(R.first());
       if (!tenant) throw new Error("Tenant not found");
@@ -78,7 +78,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
               `/events/${event.id}`,
               [
                 JSON.stringify({
-                  type: "papercut-sync",
+                  kind: "papercut-sync",
                   success: !!error,
                   dispatchId: event.id,
                 }),

@@ -13,13 +13,13 @@ export const billingAccountCustomerAuthorizationsTableName =
 export const billingAccountManagerAuthorizationsTableName =
   "billing_account_manager_authorizations";
 
-export const billingAccountTypes = ["papercut", "internal"] as const;
-export type BillingAccountType = (typeof billingAccountTypes)[number];
+export const billingAccountOrigins = ["papercut", "internal"] as const;
+export type BillingAccountOrigin = (typeof billingAccountOrigins)[number];
 
 export const billingAccountSchema = v.object({
   id: nanoIdSchema,
   tenantId: nanoIdSchema,
-  type: v.picklist(billingAccountTypes),
+  origin: v.picklist(billingAccountOrigins),
   name: v.string(),
   reviewThreshold: v.nullable(v.pipe(costSchema, v.transform(String))),
   ...timestampsSchema.entries,

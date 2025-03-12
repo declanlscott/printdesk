@@ -27,7 +27,7 @@ export const rateLimiter = createMiddleware(
               console.error("Token verification failed:", verified.err);
               return false;
             }
-            if (verified.subject.type !== Constants.SUBJECT_TYPES.USER) {
+            if (verified.subject.type !== Constants.SUBJECT_KINDS.USER) {
               console.error("Invalid subject type:", verified.subject.type);
               return false;
             }
@@ -45,7 +45,7 @@ export const rateLimiter = createMiddleware(
           };
         }>(async (c, next) => {
           const { tenantId, id: userId } = c.var.subject.properties;
-          const key = `${tenantId}#${userId}`;
+          const key = `${tenantId}${Constants.TOKEN_DELIMITER}${userId}`;
 
           console.log("Rate limiting by user:", key);
           c.set(

@@ -49,7 +49,7 @@ const getInitialWizardContext = (tenantSlug: Tenant["slug"]) =>
     tenantSlug,
 
     // Step 2
-    userOauthProviderType: Constants.ENTRA_ID,
+    userOauthProviderKind: Constants.ENTRA_ID,
     userOauthProviderId: "",
 
     // Step 3
@@ -223,8 +223,8 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
               "wizard.step2.next": {
                 target: "step3",
                 actions: assign({
-                  userOauthProviderType: ({ event }) =>
-                    event.userOauthProviderType,
+                  userOauthProviderKind: ({ event }) =>
+                    event.userOauthProviderKind,
                   userOauthProviderId: ({ event }) => event.userOauthProviderId,
                 }),
               },
@@ -294,7 +294,7 @@ export const getSetupMachine = (api: Client, resource: ViteResource) =>
                 tenantId: context.tenantId,
                 tenantName: context.tenantName,
                 tenantSlug: context.tenantSlug,
-                userOauthProviderType: context.userOauthProviderType,
+                userOauthProviderKind: context.userOauthProviderKind,
                 userOauthProviderId: context.userOauthProviderId,
               }),
               onDone: "dispatchInfra",

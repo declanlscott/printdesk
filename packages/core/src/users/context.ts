@@ -16,7 +16,7 @@ export async function withUser<TCallback extends () => ReturnType<TCallback>>(
   callback: TCallback,
 ) {
   const user = await Users.read([
-    assertActor(Constants.ACTOR_TYPES.USER).properties.id,
+    assertActor(Constants.ACTOR_KINDS.USER).properties.id,
   ]).then(R.first());
   if (!user) throw new Error("user not found");
 

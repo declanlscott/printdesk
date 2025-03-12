@@ -7,6 +7,7 @@ import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
+import { Constants } from "../utils/constants";
 import { oauth2ProvidersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -23,23 +24,21 @@ export namespace Auth {
       ),
     );
 
-  const hashSeparator = ":";
-
   export async function hashSecret(secret: string) {
     const salt = generateToken(16);
 
     const derivedKey = await deriveKeyFromSecret(secret, salt);
 
-    const hashParts = [salt, derivedKey];
-    const hash = hashParts.join(hashSeparator);
+    const tokens = [salt, derivedKey];
+    const hash = tokens.join(Constants.TOKEN_DELIMITER);
 
     return hash;
   }
 
   export async function verifySecret(secret: string, hash: string) {
-    const hashParts = hash.split(hashSeparator);
-    if (hashParts.length !== 2) return false;
-    const [salt, storedKey] = hashParts;
+    const tokens = hash.split(Constants.TOKEN_DELIMITER);
+    if (tokens.length !== 2) return false;
+    const [salt, storedKey] = tokens;
 
     const derivedKey = await deriveKeyFromSecret(secret, salt);
 
@@ -59,11 +58,14 @@ export namespace Auth {
         .values(values)
         .onConflictDoUpdate({
           target: [oauth2ProvidersTable.id, oauth2ProvidersTable.tenantId],
-          set: buildConflictUpdateColumns(oauth2ProvidersTable, [
-            "id",
-            "tenantId",
-            "type",
-          ]),
+          set: {
+            ...buildConflictUpdateColumns(oauth2ProvidersTable, [
+              "id",
+              "tenantId",
+              "kind",
+            ]),
+            updatedAt: new Date(),
+          },
         }),
     );
 

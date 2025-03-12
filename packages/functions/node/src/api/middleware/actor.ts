@@ -50,7 +50,7 @@ export const actor = createMiddleware(
             }
 
             c.set("privateActor", {
-              type: Constants.ACTOR_TYPES.SYSTEM,
+              kind: Constants.ACTOR_KINDS.SYSTEM,
               properties: { tenantId },
             });
             return true;
@@ -65,18 +65,22 @@ export const actor = createMiddleware(
             console.error("JWT verification failed:", verified.err);
             return false;
           }
-          if (verified.subject.type !== Constants.SUBJECT_TYPES.USER) {
+          if (verified.subject.type !== Constants.SUBJECT_KINDS.USER) {
             console.error("Invalid subject type:", verified.subject.type);
             return false;
           }
 
-          c.set("privateActor", verified.subject);
+          c.set("privateActor", {
+            kind: verified.subject.type,
+            properties: verified.subject.properties,
+          });
+
           return true;
         },
       }),
       createMiddleware<Env>((c, next) => withActor(c.var.privateActor, next)),
     ),
     (_, next) =>
-      withActor({ type: Constants.ACTOR_TYPES.PUBLIC, properties: {} }, next),
+      withActor({ kind: Constants.ACTOR_KINDS.PUBLIC, properties: {} }, next),
   ),
 );

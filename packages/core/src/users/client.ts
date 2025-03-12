@@ -116,6 +116,7 @@ export namespace Users {
           return Replicache.set(tx, usersTableName, id, {
             ...prev,
             ...values,
+            role: "customer",
           });
         }
 

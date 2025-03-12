@@ -4,8 +4,8 @@ import { nanoIdSchema, tenantTableSchema } from "../utils/shared";
 
 export const usersTableName = "users";
 
-export const userTypes = ["papercut", "internal"] as const;
-export type UserType = (typeof userTypes)[number];
+export const userOrigins = ["papercut", "internal"] as const;
+export type UserOrigin = (typeof userOrigins)[number];
 
 export const userRoles = [
   "administrator",
@@ -17,7 +17,7 @@ export type UserRole = (typeof userRoles)[number];
 
 export const userSchema = v.object({
   ...tenantTableSchema.entries,
-  type: v.picklist(userTypes),
+  origin: v.picklist(userOrigins),
   username: v.string(),
   oauth2UserId: v.string(),
   oauth2ProviderId: v.string(),

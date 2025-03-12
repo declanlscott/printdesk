@@ -6,12 +6,12 @@ import { userSubjectPropertiesSchema } from "./shared";
 import type { SubjectPayload } from "@openauthjs/openauth/subject";
 
 export const subjects = createSubjects({
-  [Constants.SUBJECT_TYPES.USER]: userSubjectPropertiesSchema,
+  [Constants.SUBJECT_KINDS.USER]: userSubjectPropertiesSchema,
 });
 
 export type Subject = SubjectPayload<typeof subjects>;
 
 export type UserSubject = Extract<
   SubjectPayload<typeof subjects>,
-  { type: typeof Constants.SUBJECT_TYPES.USER }
+  { type: typeof Constants.SUBJECT_KINDS.USER }
 >;

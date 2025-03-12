@@ -12,28 +12,28 @@ export const ActorContext = Utils.createContext<ActorContext>(
 export const useActor = ActorContext.use;
 export const withActor = ActorContext.with;
 
-export function assertActor<TActorType extends Actor["type"]>(
-  type: TActorType,
+export function assertActor<TActorKind extends Actor["kind"]>(
+  kind: TActorKind,
 ) {
   const actor = useActor();
 
-  if (actor.type !== type)
+  if (actor.kind !== kind)
     throw new ApplicationError.InvalidActor(
-      `Expected actor type "${type}", got "${actor.type}".`,
+      `Expected actor kind "${kind}", got "${actor.kind}".`,
     );
 
-  return actor as Extract<Actor, { type: TActorType }>;
+  return actor as Extract<Actor, { kind: TActorKind }>;
 }
 
 export type PrivateActor = Exclude<
   Actor,
-  { type: typeof Constants.ACTOR_TYPES.PUBLIC }
+  { kind: typeof Constants.ACTOR_KINDS.PUBLIC }
 >;
 
 export function assertPrivateActor(): PrivateActor {
   const actor = useActor();
 
-  if (actor.type === Constants.ACTOR_TYPES.PUBLIC)
+  if (actor.kind === Constants.ACTOR_KINDS.PUBLIC)
     throw new ApplicationError.InvalidActor("Expected private actor.");
 
   return actor;

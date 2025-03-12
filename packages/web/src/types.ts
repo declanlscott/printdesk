@@ -70,18 +70,18 @@ export type AuthenticatedEagerRouteId = EagerRouteId<
 export type RoutePath = Exclude<NonNullable<ToOptions["to"]>, "" | "." | "..">;
 
 export type CommandBarPage =
-  | { type: "home" }
-  | { type: "room"; roomId: Room["id"] }
+  | { kind: "home" }
+  | { kind: "room"; roomId: Room["id"] }
   | {
-      type: "room-settings-select-room";
+      kind: "room-settings-select-room";
       to: StartsWith<"/settings/rooms/$roomId", RoutePath>;
     }
   | {
-      type: "product-settings-select-room";
+      kind: "product-settings-select-room";
       to: StartsWith<"/settings/rooms/$roomId/products/$productId", RoutePath>;
     }
   | {
-      type: "product-settings-select-product";
+      kind: "product-settings-select-product";
       roomId: Room["id"];
       to: StartsWith<"/settings/rooms/$roomId/products/$productId", RoutePath>;
     };

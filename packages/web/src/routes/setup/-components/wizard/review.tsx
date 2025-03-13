@@ -96,13 +96,13 @@ function Step1() {
 }
 
 function Step2() {
-  const { userOauthProviderType, userOauthProviderId } =
+  const { userOauthProviderKind, userOauthProviderId } =
     useSetupMachine().useSelector(({ context }) => ({
-      userOauthProviderType: context.userOauthProviderType,
+      userOauthProviderKind: context.userOauthProviderKind,
       userOauthProviderId: context.userOauthProviderId,
     }));
 
-  const userOauthProviderMap = {
+  const userOauthProviderNames = {
     [Constants.ENTRA_ID]: "Microsoft Entra ID",
     [Constants.GOOGLE]: "Google",
   };
@@ -118,7 +118,7 @@ function Step2() {
 
             <Input
               disabled
-              value={userOauthProviderMap[userOauthProviderType]}
+              value={userOauthProviderNames[userOauthProviderKind]}
             />
           </div>
 

@@ -67,7 +67,7 @@ function WaitForInfra({ dispatchId }: { dispatchId: string }) {
   useRealtimeChannel(
     `/events/${dispatchId}`,
     Realtime.handleEvent((event) => {
-      if (event.type === "infra" && event.dispatchId === dispatchId) {
+      if (event.kind === "infra" && event.dispatchId === dispatchId) {
         if (event.success) return actor.send({ type: "status.healthcheck" });
 
         if (!event.success)

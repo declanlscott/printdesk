@@ -9,12 +9,12 @@ import type { PrivateActor } from "@printworks/core/actors/context";
 /**
  * NOTE: Depends on actor middleware
  */
-export const authn = <TActorType extends PrivateActor["type"]>(
-  actorType: TActorType,
+export const authn = <TActorKind extends PrivateActor["kind"]>(
+  actorKind: TActorKind,
 ) =>
   createMiddleware((_, next) => {
     try {
-      assertActor(actorType);
+      assertActor(actorKind);
     } catch {
       throw new HttpError.Unauthorized();
     }

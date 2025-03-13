@@ -27,7 +27,7 @@ export function SetupWizardStep2() {
   const actorRef = setupMachine.useActorRef();
 
   const defaultValues = setupMachine.useSelector(({ context }) => ({
-    userOauthProviderType: context.userOauthProviderType,
+    userOauthProviderKind: context.userOauthProviderKind,
     userOauthProviderId: context.userOauthProviderId,
   }));
 
@@ -54,7 +54,7 @@ export function SetupWizardStep2() {
       <Card>
         <CardContent className="grid gap-4 pt-6">
           <form.Field
-            name="userOauthProviderType"
+            name="userOauthProviderKind"
             validators={{
               onBlur: setupWizardStep2Schema.entries.userOauthProviderType,
             }}
@@ -66,7 +66,7 @@ export function SetupWizardStep2() {
                   selectedKey={field.state.value}
                   onSelectionChange={(value) =>
                     field.handleChange(
-                      value as SetupWizardStep2["userOauthProviderType"],
+                      value as SetupWizardStep2["userOauthProviderKind"],
                     )
                   }
                   onBlur={field.handleBlur}

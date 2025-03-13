@@ -201,7 +201,7 @@ function TenantStatusSelect() {
   const isConfirmed = confirmationText === tenant.name;
 
   async function mutate(status: TenantStatus) {
-    if (status === "initializing") return;
+    if (status === "setup") return;
     if (status === tenant.status) return;
 
     await updateTenant({
@@ -237,7 +237,7 @@ function TenantStatusSelect() {
         <SelectPopover>
           <SelectListBox
             items={tenantStatuses
-              .filter((status) => status !== "initializing")
+              .filter((status) => status !== "setup")
               .map(collectionItem)}
           >
             {(item) => (

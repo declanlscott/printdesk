@@ -10,8 +10,7 @@ import * as R from "remeda";
 
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
 import { useCommandBar, useCommandBarActions } from "~/lib/hooks/command-bar";
-import { query, useMutator } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
+import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { links } from "~/lib/links";
 import { AuthStoreApi } from "~/lib/stores/auth";
@@ -279,7 +278,7 @@ function RoomCommand(props: RoomCommandProps) {
 
   const [, setSelectedRoomId] = useAtom(selectedRoomIdAtom);
 
-  const { updateRoom } = useMutator();
+  const { updateRoom } = useMutators();
 
   const room = useSubscribe(Rooms.byId(props.roomId));
 

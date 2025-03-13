@@ -3,7 +3,6 @@ import { HttpError } from "@printworks/core/utils/errors";
 import { queryOptions } from "@tanstack/react-query";
 
 import { useApi } from "~/lib/hooks/api";
-import { useReplicache } from "~/lib/hooks/replicache";
 import { AuthStoreApi } from "~/lib/stores/auth";
 
 import type {
@@ -29,8 +28,6 @@ export const query = {
       },
     }),
 };
-
-export const useMutator = () => useReplicache().mutate;
 
 export function useMutationOptions() {
   const api = useApi();

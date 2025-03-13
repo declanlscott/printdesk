@@ -21,8 +21,7 @@ import {
 } from "lucide-react";
 
 import { fuzzyFilter } from "~/lib/fuzzy";
-import { useMutator } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
+import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { EnforceAbac, EnforceRouteAbac } from "~/ui/access-control";
@@ -329,7 +328,7 @@ interface UserRoleCellProps {
 function UserRoleCell(props: UserRoleCellProps) {
   const role = props.user.role;
 
-  const { updateUserRole } = useMutator();
+  const { updateUserRole } = useMutators();
 
   const isSelf = useUser().id === props.user.id;
 
@@ -382,7 +381,7 @@ interface UserActionsMenuProps {
 function UserActionsMenu(props: UserActionsMenuProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(() => false);
 
-  const { restoreUser } = useMutator();
+  const { restoreUser } = useMutators();
 
   return (
     <MenuTrigger>

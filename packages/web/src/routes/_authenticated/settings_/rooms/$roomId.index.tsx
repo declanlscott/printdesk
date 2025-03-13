@@ -5,8 +5,7 @@ import { roomStatuses } from "@printworks/core/rooms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Delete, HousePlus, Lock, LockOpen, Pencil, Save } from "lucide-react";
 
-import { useMutator } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
+import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { labelStyles } from "~/styles/components/primitives/field";
 import { inputStyles } from "~/styles/components/primitives/text-field";
@@ -69,7 +68,7 @@ function RoomCard() {
   const [isLocked, setIsLocked] = useState(() => true);
   const [name, setName] = useState(() => room.name);
 
-  const { updateRoom } = useMutator();
+  const { updateRoom } = useMutators();
 
   async function mutateName() {
     if (name !== room.name)
@@ -141,7 +140,7 @@ function RoomStatus() {
     defaultData: initialRoom,
   });
 
-  const { updateRoom } = useMutator();
+  const { updateRoom } = useMutators();
 
   async function mutate(status: RoomStatus) {
     if (status !== room.status)
@@ -207,7 +206,7 @@ function RoomDetails(props: RoomDetailsProps) {
 
   const markdown = props.isLocked ? room.details : details;
 
-  const { updateRoom } = useMutator();
+  const { updateRoom } = useMutators();
 
   const saveDetails = async () => {
     if (room && details !== room.details)
@@ -342,7 +341,7 @@ function DeleteRoom() {
 function RestoreRoom() {
   const { roomId } = Route.useParams();
 
-  const { restoreRoom } = useMutator();
+  const { restoreRoom } = useMutators();
 
   return (
     <div className="flex justify-between gap-4">

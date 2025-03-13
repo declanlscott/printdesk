@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { Announcements } from "@printworks/core/announcements/client";
 import { BillingAccounts } from "@printworks/core/billing-accounts/client";
 import { Comments } from "@printworks/core/comments/client";
@@ -11,7 +11,6 @@ import { Users } from "@printworks/core/users/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
-import { useAuth } from "~/lib/hooks/auth";
 import { useRouteApi } from "~/lib/hooks/route-api";
 
 import type { Replicache } from "@printworks/core/replicache/client";
@@ -89,62 +88,44 @@ export function useIsSyncing() {
 /**
  * Returns a collection of optimistic mutators for Replicache. This should match the corresponding server-side mutators.
  */
-export function useMutators() {
-  const { user } = useAuth();
-
-  const getMutator = useCallback(
-    <
-      TMutator extends (
-        userId: User["id"],
-      ) => (
-        ...params: Parameters<ReturnType<TMutator>>
-      ) => ReturnType<ReturnType<TMutator>>,
-    >(
-      mutator: TMutator,
-    ) =>
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      user ? mutator(user.id) : async () => {},
-    [user],
+export const useGetMutators = () =>
+  useCallback(
+    (userId: User["id"]) =>
+      ({
+        createAnnouncement: Announcements.create(userId),
+        updateAnnouncement: Announcements.update(userId),
+        deleteAnnouncement: Announcements.delete_(userId),
+        updateBillingAccountReviewThreshold:
+          BillingAccounts.updateReviewThreshold(userId),
+        deleteBillingAccount: BillingAccounts.delete_(userId),
+        createBillingAccountManagerAuthorization:
+          BillingAccounts.createManagerAuthorization(userId),
+        deleteBillingAccountManagerAuthorization:
+          BillingAccounts.deleteManagerAuthorization(userId),
+        createComment: Comments.create(userId),
+        updateComment: Comments.update(userId),
+        deleteComment: Comments.delete_(userId),
+        setDeliveryOptions: Rooms.setDeliveryOptions(userId),
+        createInvoice: Invoices.create(userId),
+        createOrder: Orders.create(userId),
+        updateOrder: Orders.update(userId),
+        deleteOrder: Orders.delete_(userId),
+        updateTenant: Tenants.update(userId),
+        createProduct: Products.create(userId),
+        updateProduct: Products.update(userId),
+        deleteProduct: Products.delete_(userId),
+        createRoom: Rooms.create(userId),
+        updateRoom: Rooms.update(userId),
+        deleteRoom: Rooms.delete_(userId),
+        restoreRoom: Rooms.restore(userId),
+        updateUserRole: Users.updateRole(userId),
+        deleteUser: Users.delete_(userId),
+        restoreUser: Users.restore(userId),
+        setWorkflow: Rooms.setWorkflow(userId),
+      }) satisfies Record<MutationName, Replicache.MutatorFn>,
+    [],
   );
 
-  return useMemo(
-    () => ({
-      createAnnouncement: getMutator(Announcements.create),
-      updateAnnouncement: getMutator(Announcements.update),
-      deleteAnnouncement: getMutator(Announcements.delete_),
-      updateBillingAccountReviewThreshold: getMutator(
-        BillingAccounts.updateReviewThreshold,
-      ),
-      deleteBillingAccount: getMutator(BillingAccounts.delete_),
-      createBillingAccountManagerAuthorization: getMutator(
-        BillingAccounts.createManagerAuthorization,
-      ),
-      deleteBillingAccountManagerAuthorization: getMutator(
-        BillingAccounts.deleteManagerAuthorization,
-      ),
-      createComment: getMutator(Comments.create),
-      updateComment: getMutator(Comments.update),
-      deleteComment: getMutator(Comments.delete_),
-      setDeliveryOptions: getMutator(Rooms.setDeliveryOptions),
-      createInvoice: getMutator(Invoices.create),
-      createOrder: getMutator(Orders.create),
-      updateOrder: getMutator(Orders.update),
-      deleteOrder: getMutator(Orders.delete_),
-      updateTenant: getMutator(Tenants.update),
-      createProduct: getMutator(Products.create),
-      updateProduct: getMutator(Products.update),
-      deleteProduct: getMutator(Products.delete_),
-      createRoom: getMutator(Rooms.create),
-      updateRoom: getMutator(Rooms.update),
-      deleteRoom: getMutator(Rooms.delete_),
-      restoreRoom: getMutator(Rooms.restore),
-      updateUserRole: getMutator(Users.updateRole),
-      deleteUser: getMutator(Users.delete_),
-      restoreUser: getMutator(Users.restore),
-      setWorkflow: getMutator(Rooms.setWorkflow),
-    }),
-    [getMutator],
-  ) satisfies Record<MutationName, Replicache.MutatorFn>;
-}
+export type Mutators = ReturnType<ReturnType<typeof useGetMutators>>;
 
-export type Mutators = ReturnType<typeof useMutators>;
+export const useMutators = () => useReplicache().mutate;

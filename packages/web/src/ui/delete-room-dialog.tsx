@@ -2,8 +2,7 @@ import { useState } from "react";
 import { TextField as AriaTextField } from "react-aria-components";
 import { Rooms } from "@printworks/core/rooms/client";
 
-import { useMutator } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
+import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { Button } from "~/ui/primitives/button";
 import {
   DialogContent,
@@ -26,7 +25,7 @@ export interface DeleteRoomDialogProps {
 export function DeleteRoomDialog(props: DeleteRoomDialogProps) {
   const roomToDelete = useSubscribe(Rooms.byId(props.roomId));
 
-  const { deleteRoom } = useMutator();
+  const { deleteRoom } = useMutators();
 
   const targetConfirmationText = "delete";
   const [confirmationText, setConfirmationText] = useState(() => "");

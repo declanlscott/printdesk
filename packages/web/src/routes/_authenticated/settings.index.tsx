@@ -4,7 +4,7 @@ import { tenantStatuses } from "@printworks/core/tenants/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock, LockOpen, Pencil, UserRoundX } from "lucide-react";
 
-import { useMutator } from "~/lib/hooks/data";
+import { useMutators } from "~/lib/hooks/replicache";
 import { useTenant } from "~/lib/hooks/tenant";
 import { useUser } from "~/lib/hooks/user";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
@@ -66,7 +66,7 @@ function OrganizationCard() {
   const [fullName, setFullName] = useState(() => tenant.name);
   const [shortName, setShortName] = useState(() => tenant.slug);
 
-  const { updateTenant } = useMutator();
+  const { updateTenant } = useMutators();
 
   async function mutateName() {
     const name = fullName.trim();
@@ -190,7 +190,7 @@ function DeleteAccount() {
 function TenantStatusSelect() {
   const tenant = useTenant();
 
-  const { updateTenant } = useMutator();
+  const { updateTenant } = useMutators();
 
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(
     () => false,

@@ -21,8 +21,7 @@ import {
 } from "lucide-react";
 
 import { fuzzyFilter } from "~/lib/fuzzy";
-import { useMutator } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
+import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { EnforceAbac } from "~/ui/access-control";
@@ -298,7 +297,7 @@ interface RoomStatusSelectProps {
 function RoomStatusSelect(props: RoomStatusSelectProps) {
   const status = props.room.status;
 
-  const { updateRoom } = useMutator();
+  const { updateRoom } = useMutators();
 
   const mutate = async (status: Room["status"]) =>
     await updateRoom({
@@ -345,7 +344,7 @@ interface RoomActionsMenuProps {
 function RoomActionsMenu(props: RoomActionsMenuProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(() => false);
 
-  const { restoreRoom } = useMutator();
+  const { restoreRoom } = useMutators();
 
   return (
     <MenuTrigger>

@@ -13,8 +13,7 @@ import * as R from "remeda";
 import { toast } from "sonner";
 import * as v from "valibot";
 
-import { query, useMutator } from "~/lib/hooks/data";
-import { useSubscribe } from "~/lib/hooks/replicache";
+import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { collectionItem } from "~/lib/ui";
 import { cardStyles } from "~/styles/components/primitives/card";
 import { Button } from "~/ui/primitives/button";
@@ -89,7 +88,7 @@ function WorkflowCard() {
     defaultData: Route.useLoaderData().initialWorkflow,
   });
 
-  const { setWorkflow } = useMutator();
+  const { setWorkflow } = useMutators();
 
   const form = useForm({
     validators: { onBlur: v.object({ workflow: workflowSchema }) },
@@ -417,7 +416,7 @@ function DeliveryOptionsCard() {
     defaultData: Route.useLoaderData().initialDeliveryOptions,
   });
 
-  const { setDeliveryOptions } = useMutator();
+  const { setDeliveryOptions } = useMutators();
 
   const form = useForm({
     validators: {

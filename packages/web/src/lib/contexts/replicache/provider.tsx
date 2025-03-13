@@ -5,7 +5,7 @@ import { serialize } from "superjson";
 import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useApi } from "~/lib/hooks/api";
 import { useAuth } from "~/lib/hooks/auth";
-import { useMutators } from "~/lib/hooks/replicache";
+import { useGetMutators } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
 import { AuthStoreApi } from "~/lib/stores/auth";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
@@ -21,7 +21,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
 
   const { AppData, ReplicacheLicenseKey } = useResource();
 
-  const mutators = useMutators();
+  const getMutators = useGetMutators();
 
   const api = useApi();
 
@@ -34,7 +34,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       name: `${user.tenantId}:${user.id}`,
       licenseKey: ReplicacheLicenseKey.value,
       logLevel: AppData.isDev ? "info" : "error",
-      mutators,
+      mutators: getMutators(user.id),
       auth: getAuth(),
       pullURL: new URL("/replicache/pull", api.baseUrl).toString(),
       pusher: async (req) => {
@@ -83,7 +83,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     api,
     AppData.isDev,
     getAuth,
-    mutators,
+    getMutators,
     refresh,
     ReplicacheLicenseKey.value,
     user,

@@ -1,5 +1,8 @@
 import { useContext, useEffect } from "react";
 import { OverlayTriggerStateContext } from "react-aria-components";
+import { Products } from "@printworks/core/products/client";
+import { Rooms } from "@printworks/core/rooms/client";
+import { Users } from "@printworks/core/users/client";
 import { useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
@@ -96,8 +99,8 @@ function HomeCommand(_props: HomeCommandProps) {
 
   const navigate = useNavigate();
 
-  const rooms = useSubscribe(query.rooms(), { defaultData: [] });
-  const users = useSubscribe(query.users(), { defaultData: [] });
+  const rooms = useSubscribe(Rooms.all(), { defaultData: [] });
+  const users = useSubscribe(Users.all(), { defaultData: [] });
 
   const { logout } = AuthStoreApi.useActions();
 
@@ -278,7 +281,7 @@ function RoomCommand(props: RoomCommandProps) {
 
   const { updateRoom } = useMutator();
 
-  const room = useSubscribe(query.room(props.roomId));
+  const room = useSubscribe(Rooms.byId(props.roomId));
 
   function selectRoom() {
     setSelectedRoomId(props.roomId);
@@ -359,7 +362,7 @@ function RoomSettingsSelectRoomCommand(
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();
 
-  const rooms = useSubscribe(query.rooms());
+  const rooms = useSubscribe(Rooms.all());
 
   const navigate = useNavigate();
 
@@ -406,7 +409,7 @@ function ProductSettingsSelectRoomCommand(
   const { input } = useCommandBar();
   const { setInput, popPage, pushPage } = useCommandBarActions();
 
-  const rooms = useSubscribe(query.rooms());
+  const rooms = useSubscribe(Rooms.all());
 
   return (
     <>
@@ -454,7 +457,7 @@ function ProductSettingsSelectProductCommand(
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();
 
-  const products = useSubscribe(query.products(), {
+  const products = useSubscribe(Products.all(), {
     defaultData: [],
     onData: (products) =>
       products.filter((product) => product.roomId === props.roomId),

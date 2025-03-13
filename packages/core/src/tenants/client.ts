@@ -3,7 +3,16 @@ import { Replicache } from "../replicache/client";
 import { ApplicationError } from "../utils/errors";
 import { tenantsTableName, updateTenantMutationArgsSchema } from "./shared";
 
+import type { Tenant } from "./sql";
+
 export namespace Tenants {
+  export const get = Replicache.query(
+    (id: Tenant["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, tenantsTableName, id),
+  );
+
   export const update = Replicache.mutator(
     updateTenantMutationArgsSchema,
     async (tx, user, { id }) =>

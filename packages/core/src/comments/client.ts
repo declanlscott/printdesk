@@ -8,6 +8,8 @@ import {
   updateCommentMutationArgsSchema,
 } from "./shared";
 
+import type { Comment } from "./sql";
+
 export namespace Comments {
   export const create = Replicache.mutator(
     createCommentMutationArgsSchema,
@@ -18,6 +20,18 @@ export namespace Comments {
       }),
     () => async (tx, values) =>
       Replicache.set(tx, commentsTableName, values.id, values),
+  );
+
+  export const all = Replicache.query(
+    () => ({}),
+    () => async (tx) => Replicache.scan(tx, commentsTableName),
+  );
+
+  export const byId = Replicache.query(
+    (id: Comment["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, commentsTableName, id),
   );
 
   export const update = Replicache.mutator(

@@ -1,11 +1,13 @@
 import { Replicache } from "@printworks/core/replicache/client";
+import { Rooms } from "@printworks/core/rooms/client";
+import { Tenants } from "@printworks/core/tenants/client";
+import { Users } from "@printworks/core/users/client";
 import { usersTableName } from "@printworks/core/users/shared";
 import { ApplicationError } from "@printworks/core/utils/errors";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { AuthenticatedLayout } from "~/layouts/authenticated";
 import { checkRoutePermission } from "~/lib/access-control";
-import { query } from "~/lib/hooks/data";
 
 import type { UserRole } from "@printworks/core/users/shared";
 import type { User } from "@printworks/core/users/sql";
@@ -71,9 +73,9 @@ export const Route = createFileRoute("/_authenticated")({
   },
   loader: async ({ context }) => {
     const [initialTenant, initialRooms, initialUser] = await Promise.all([
-      context.replicache.query(query.tenant(context.user.tenantId)),
-      context.replicache.query(query.rooms()),
-      context.replicache.query(query.user(context.user.id)),
+      context.replicache.query(Tenants.get(context.user.tenantId)),
+      context.replicache.query(Rooms.all()),
+      context.replicache.query(Users.byId(context.user.id)),
     ]);
 
     return { initialTenant, initialRooms, initialUser };

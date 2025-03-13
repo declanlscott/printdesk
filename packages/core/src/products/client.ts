@@ -8,6 +8,8 @@ import {
   updateProductMutationArgsSchema,
 } from "./shared";
 
+import type { Product } from "./sql";
+
 export namespace Products {
   export const create = Replicache.mutator(
     createProductMutationArgsSchema,
@@ -18,6 +20,18 @@ export namespace Products {
       }),
     () => async (tx, values) =>
       Replicache.set(tx, productsTableName, values.id, values),
+  );
+
+  export const all = Replicache.query(
+    () => ({}),
+    () => async (tx) => Replicache.scan(tx, productsTableName),
+  );
+
+  export const byId = Replicache.query(
+    (id: Product["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, productsTableName, id),
   );
 
   export const update = Replicache.mutator(

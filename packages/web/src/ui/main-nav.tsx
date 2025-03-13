@@ -1,4 +1,5 @@
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
+import { Rooms } from "@printworks/core/rooms/client";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useAtom } from "jotai/react";
 import {
@@ -12,7 +13,6 @@ import {
 import logo from "~/assets/logo.svg";
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
 import { useCommandBarActions } from "~/lib/hooks/command-bar";
-import { query } from "~/lib/hooks/data";
 import { useIsSyncing, useSubscribe } from "~/lib/hooks/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { useUser } from "~/lib/hooks/user";
@@ -70,7 +70,7 @@ function RoomSelector() {
   const [selectedRoomId, setSelectedRoomId] = useAtom(selectedRoomIdAtom);
 
   const { initialRooms } = useRouteApi("/_authenticated").useLoaderData();
-  const rooms = useSubscribe(query.rooms(), {
+  const rooms = useSubscribe(Rooms.all(), {
     defaultData: initialRooms,
     onData: (rooms) => {
       if (selectedRoomId && !rooms.some((room) => room.id === selectedRoomId))

@@ -1,4 +1,5 @@
-import { query } from "~/lib/hooks/data";
+import { BillingAccounts } from "@printworks/core/billing-accounts/client";
+import * as R from "remeda";
 
 import type { UserRole } from "@printworks/core/users/shared";
 import type { User } from "@printworks/core/users/sql";
@@ -63,17 +64,21 @@ export const routePermissions = {
     "/_authenticated/settings_/rooms/$roomId/products": false,
     "/_authenticated/settings_/rooms/$roomId_/products/$productId/": false,
     "/_authenticated/users/": true,
-    "/_authenticated/users/$userId": async (
-      tx,
-      manager,
-      userId: User["id"],
-    ) => {
-      const getManagedCustomerIds = query.managedCustomerIds(manager.id);
-
-      return getManagedCustomerIds(tx).then((customerIds) =>
-        customerIds.includes(userId),
-      );
-    },
+    "/_authenticated/users/$userId": async (tx, manager, userId: User["id"]) =>
+      R.pipe(
+        await BillingAccounts.allManagerAuthorizations()(tx),
+        R.filter((authorization) => authorization.managerId === manager.id),
+        R.map(R.prop("billingAccountId")),
+        async (billingAccountIds) =>
+          R.pipe(
+            await BillingAccounts.allCustomerAuthorizations()(tx),
+            R.filter((authorization) =>
+              billingAccountIds.includes(authorization.billingAccountId),
+            ),
+            R.map(R.prop("customerId")),
+            (customerIds) => customerIds.includes(userId),
+          ),
+      ),
   },
   customer: {
     "/_authenticated/": true,

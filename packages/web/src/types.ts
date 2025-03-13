@@ -13,7 +13,6 @@ import type {
 } from "@tanstack/react-router";
 import type { FilterFn } from "@tanstack/react-table";
 import type { RoutesById } from "@tanstack/router-core";
-import type { ReadTransaction } from "replicache";
 import type { Resource } from "sst";
 import type { routeTree } from "~/routeTree.gen";
 
@@ -85,12 +84,6 @@ export type CommandBarPage =
       roomId: Room["id"];
       to: StartsWith<"/settings/rooms/$roomId/products/$productId", RoutePath>;
     };
-
-export type Query = Record<
-  string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (...args: Array<any>) => (tx: ReadTransaction) => Promise<any>
->;
 
 export type MutationOptions = Record<
   string,

@@ -1,8 +1,8 @@
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
+import { Rooms } from "@printworks/core/rooms/client";
 import { createLazyFileRoute, Outlet } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
-import { query } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { buttonStyles } from "~/styles/components/primitives/button";
 import {
@@ -20,7 +20,7 @@ export const Route = createLazyFileRoute(
 function RouteComponent() {
   const { roomId } = Route.useParams();
 
-  const room = useSubscribe(query.room(roomId));
+  const room = useSubscribe(Rooms.byId(roomId));
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">

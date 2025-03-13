@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import * as R from "remeda";
 
 import { Papercut } from ".";
@@ -7,6 +8,7 @@ import { BillingAccounts } from "../billing-accounts";
 import { useTransaction } from "../drizzle/context";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
+import { tenantMetadataTable } from "../tenants/sql";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
 import { ApplicationError, HttpError } from "../utils/errors";
@@ -25,19 +27,26 @@ import type { NonNullableProperties } from "../utils/types";
 
 export namespace Sync {
   export async function all() {
-    let shouldPoke = false;
+    let hasChanged = false;
 
     const flagIfChanged = <TValue>(values: Array<TValue>) =>
       R.pipe(
         values,
-        R.conditional([R.isNot(R.isEmpty), () => (shouldPoke = true)]),
+        R.conditional([R.isNot(R.isEmpty), () => (hasChanged = true)]),
       );
 
     await users().then(flagIfChanged);
     await billingAccounts().then(flagIfChanged);
     await billingAccountCustomerAuthorizations().then(flagIfChanged);
 
-    if (shouldPoke) await poke(["/tenant"]);
+    await useTransaction((tx) =>
+      tx
+        .update(tenantMetadataTable)
+        .set({ lastPapercutSyncAt: new Date() })
+        .where(eq(tenantMetadataTable.tenantId, useTenant().id)),
+    );
+
+    if (hasChanged) await poke(["/tenant"]);
   }
 
   export async function users() {

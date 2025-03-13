@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { TextField as AriaTextField } from "react-aria-components";
+import { Rooms } from "@printworks/core/rooms/client";
 import { roomStatuses } from "@printworks/core/rooms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Delete, HousePlus, Lock, LockOpen, Pencil, Save } from "lucide-react";
 
-import { query, useMutator } from "~/lib/hooks/data";
+import { useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { labelStyles } from "~/styles/components/primitives/field";
@@ -39,7 +40,7 @@ export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context, params }) => {
     const initialRoom = await context.replicache.query(
-      query.room(params.roomId),
+      Rooms.byId(params.roomId),
     );
 
     return { initialRoom };
@@ -61,7 +62,7 @@ function RoomCard() {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useSubscribe(query.room(roomId), {
+  const room = useSubscribe(Rooms.byId(roomId), {
     defaultData: initialRoom,
   });
 
@@ -136,7 +137,7 @@ function RoomStatus() {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useSubscribe(query.room(roomId), {
+  const room = useSubscribe(Rooms.byId(roomId), {
     defaultData: initialRoom,
   });
 
@@ -197,7 +198,7 @@ function RoomDetails(props: RoomDetailsProps) {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useSubscribe(query.room(roomId), {
+  const room = useSubscribe(Rooms.byId(roomId), {
     defaultData: initialRoom,
   });
 
@@ -290,7 +291,7 @@ function DangerZoneCard() {
   const { roomId } = Route.useParams();
   const { initialRoom } = Route.useLoaderData();
 
-  const room = useSubscribe(query.room(roomId), {
+  const room = useSubscribe(Rooms.byId(roomId), {
     defaultData: initialRoom,
   });
 

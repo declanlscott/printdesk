@@ -8,6 +8,8 @@ import {
   updateAnnouncementMutationArgsSchema,
 } from "./shared";
 
+import type { Announcement } from "./sql";
+
 export namespace Announcements {
   export const create = Replicache.mutator(
     createAnnouncementMutationArgsSchema,
@@ -18,6 +20,18 @@ export namespace Announcements {
       }),
     () => async (tx, values) =>
       Replicache.set(tx, announcementsTableName, values.id, values),
+  );
+
+  export const all = Replicache.query(
+    () => ({}),
+    () => async (tx) => Replicache.scan(tx, announcementsTableName),
+  );
+
+  export const byId = Replicache.query(
+    (id: Announcement["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, announcementsTableName, id),
   );
 
   export const update = Replicache.mutator(

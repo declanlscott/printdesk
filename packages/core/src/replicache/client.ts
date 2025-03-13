@@ -16,6 +16,30 @@ import type { InferTable } from "../utils/types";
 import type { Serialized } from "./shared";
 
 export namespace Replicache {
+  export const query =
+    <
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      TGetDeps extends (...input: Array<any>) => ReturnType<TGetDeps>,
+      TQueryFn extends (tx: ReadTransaction) => ReturnType<TQueryFn>,
+    >(
+      getDeps: TGetDeps,
+      getQueryFn: (deps: ReturnType<TGetDeps>) => TQueryFn,
+    ) =>
+    (
+      ...input: TGetDeps extends (
+        ...input: infer TInput
+      ) => ReturnType<TGetDeps>
+        ? TInput
+        : Array<never>
+    ) =>
+    (tx: ReadTransaction) => {
+      const deps = getDeps(...input);
+
+      const queryFn = getQueryFn(deps);
+
+      return queryFn(tx);
+    };
+
   export type MutatorFn<TSchema extends v.GenericSchema = v.AnySchema> = (
     tx: WriteTransaction,
     args: v.InferOutput<TSchema>,

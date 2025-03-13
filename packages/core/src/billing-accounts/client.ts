@@ -2,6 +2,7 @@ import { AccessControl } from "../access-control/client";
 import { Replicache } from "../replicache/client";
 import { ApplicationError } from "../utils/errors";
 import {
+  billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
   billingAccountsTableName,
   createBillingAccountManagerAuthorizationMutationArgsSchema,
@@ -10,7 +11,33 @@ import {
   updateBillingAccountReviewThresholdMutationArgsSchema,
 } from "./shared";
 
+import type { BillingAccount } from "./sql";
+
 export namespace BillingAccounts {
+  export const all = Replicache.query(
+    () => ({}),
+    () => async (tx) => Replicache.scan(tx, billingAccountsTableName),
+  );
+
+  export const byId = Replicache.query(
+    (id: BillingAccount["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, billingAccountsTableName, id),
+  );
+
+  export const allCustomerAuthorizations = Replicache.query(
+    () => ({}),
+    () => async (tx) =>
+      Replicache.scan(tx, billingAccountCustomerAuthorizationsTableName),
+  );
+
+  export const allManagerAuthorizations = Replicache.query(
+    () => ({}),
+    () => async (tx) =>
+      Replicache.scan(tx, billingAccountManagerAuthorizationsTableName),
+  );
+
   export const createManagerAuthorization = Replicache.mutator(
     createBillingAccountManagerAuthorizationMutationArgsSchema,
     async (tx, user) =>

@@ -15,72 +15,96 @@ import {
   usersTableName,
 } from "./shared";
 
-import type { WriteTransaction } from "replicache";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "./shared";
+import type { User } from "./sql";
 
 export namespace Users {
-  export const byRoles = async (
-    tx: WriteTransaction,
-    roles: Array<UserRole> = [
-      "administrator",
-      "operator",
-      "manager",
-      "customer",
-    ],
-  ) =>
-    Replicache.scan(tx, usersTableName).then(
-      R.filter((user) => roles.includes(user.role)),
-    );
+  export const all = Replicache.query(
+    () => ({}),
+    () => async (tx) => Replicache.scan(tx, usersTableName),
+  );
 
-  export async function withOrderAccess(
-    tx: WriteTransaction,
-    orderId: Order["id"],
-  ) {
-    const order = await Replicache.get(tx, ordersTableName, orderId);
+  export const byId = Replicache.query(
+    (id: User["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, usersTableName, id),
+  );
 
-    const [adminsOps, managers, customer] = await Promise.all([
-      byRoles(tx, ["administrator", "operator"]),
-      withManagerAuthorization(tx, order.billingAccountId),
-      Replicache.get(tx, usersTableName, order.customerId),
-    ]);
+  export const byRoles = Replicache.query(
+    (
+      roles: Array<UserRole> = [
+        "administrator",
+        "operator",
+        "manager",
+        "customer",
+      ],
+    ) => ({ roles }),
+    ({ roles }) =>
+      async (tx) =>
+        Replicache.scan(tx, usersTableName).then(
+          R.filter((user) => roles.includes(user.role)),
+        ),
+  );
 
-    return R.uniqueBy(
-      [...adminsOps, ...managers, customer].filter(Boolean),
-      R.prop("id"),
-    );
-  }
+  export const withOrderAccess = Replicache.query(
+    (orderId: Order["id"]) => ({ orderId }),
+    ({ orderId }) =>
+      async (tx) => {
+        const order = await Replicache.get(tx, ordersTableName, orderId);
 
-  export const withManagerAuthorization = async (
-    tx: WriteTransaction,
-    accountId: BillingAccount["id"],
-  ) =>
-    R.pipe(
-      await Replicache.scan(tx, billingAccountManagerAuthorizationsTableName),
-      R.filter(({ billingAccountId }) => billingAccountId === accountId),
-      async (authorizations) =>
-        Promise.all(
-          authorizations.map(({ managerId }) =>
-            Replicache.get(tx, usersTableName, managerId),
+        const [adminsOps, managers, customer] = await Promise.all([
+          byRoles(["administrator", "operator"])(tx),
+          withManagerAuthorization(order.billingAccountId)(tx),
+          byId(order.customerId)(tx),
+        ]);
+
+        return R.uniqueBy(
+          [...adminsOps, ...managers, customer].filter(Boolean),
+          R.prop("id"),
+        );
+      },
+  );
+
+  export const withManagerAuthorization = Replicache.query(
+    (accountId: BillingAccount["id"]) => ({ accountId }),
+    ({ accountId }) =>
+      async (tx) =>
+        R.pipe(
+          await Replicache.scan(
+            tx,
+            billingAccountManagerAuthorizationsTableName,
           ),
-        ).then((users) => users.filter(Boolean)),
-    );
+          R.filter(({ billingAccountId }) => billingAccountId === accountId),
+          async (authorizations) =>
+            Promise.all(
+              authorizations.map(({ managerId }) =>
+                Replicache.get(tx, usersTableName, managerId),
+              ),
+            ).then((users) => users.filter(Boolean)),
+        ),
+  );
 
-  export const withCustomerAuthorization = async (
-    tx: WriteTransaction,
-    accountId: BillingAccount["id"],
-  ) =>
-    R.pipe(
-      await Replicache.scan(tx, billingAccountCustomerAuthorizationsTableName),
-      R.filter(({ billingAccountId }) => billingAccountId === accountId),
-      async (authorizations) =>
-        Promise.all(
-          authorizations.map(({ customerId }) =>
-            Replicache.get(tx, usersTableName, customerId),
+  export const withCustomerAuthorization = Replicache.query(
+    (accountId: BillingAccount["id"]) => ({ accountId }),
+    ({ accountId }) =>
+      async (tx) =>
+        R.pipe(
+          await Replicache.scan(
+            tx,
+            billingAccountCustomerAuthorizationsTableName,
           ),
-        ).then((users) => users.filter(Boolean)),
-    );
+          R.filter(({ billingAccountId }) => billingAccountId === accountId),
+          async (authorizations) =>
+            Promise.all(
+              authorizations.map(({ customerId }) =>
+                Replicache.get(tx, usersTableName, customerId),
+              ),
+            ).then((users) => users.filter(Boolean)),
+        ),
+  );
 
   export const updateRole = Replicache.mutator(
     updateUserRoleMutationArgsSchema,

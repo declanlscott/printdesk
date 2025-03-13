@@ -18,6 +18,9 @@ import {
   workflowStatusesTableName,
 } from "./shared";
 
+import type { DeliveryOptions, Workflow } from "./shared";
+import type { Room } from "./sql";
+
 export namespace Rooms {
   export const create = Replicache.mutator(
     createRoomMutationArgsSchema,
@@ -53,6 +56,18 @@ export namespace Rooms {
         ),
       ]);
     },
+  );
+
+  export const all = Replicache.query(
+    () => ({}),
+    () => async (tx) => Replicache.scan(tx, roomsTableName),
+  );
+
+  export const byId = Replicache.query(
+    (id: Room["id"]) => ({ id }),
+    ({ id }) =>
+      async (tx) =>
+        Replicache.get(tx, roomsTableName, id),
   );
 
   export const update = Replicache.mutator(
@@ -127,6 +142,30 @@ export namespace Rooms {
     },
   );
 
+  export const getWorkflow = Replicache.query(
+    (roomId: Room["id"]) => ({ roomId }),
+    ({ roomId }) =>
+      async (tx) =>
+        Replicache.scan(tx, workflowStatusesTableName).then((statuses) =>
+          R.pipe(
+            statuses,
+            R.filter((status) => status.roomId === roomId),
+            R.sortBy(R.prop("index")),
+            R.reduce((workflow, status) => {
+              if (status.type !== "Review")
+                workflow.push({
+                  id: status.id,
+                  type: status.type,
+                  color: status.color,
+                  charging: status.charging,
+                });
+
+              return workflow;
+            }, [] as Workflow),
+          ),
+        ),
+  );
+
   export const setWorkflow = Replicache.mutator(
     setWorkflowMutationArgsSchema,
     async (tx, user) =>
@@ -161,6 +200,29 @@ export namespace Rooms {
             ),
         );
       },
+  );
+
+  export const getDeliveryOptions = Replicache.query(
+    (roomId: Room["id"]) => ({ roomId }),
+    ({ roomId }) =>
+      async (tx) =>
+        Replicache.scan(tx, deliveryOptionsTableName).then((options) =>
+          R.pipe(
+            options,
+            R.filter((option) => option.roomId === roomId),
+            R.sortBy(R.prop("index")),
+            R.reduce((options, option) => {
+              options.push({
+                id: option.id,
+                description: option.description,
+                detailsLabel: option.detailsLabel,
+                cost: option.cost,
+              });
+
+              return options;
+            }, [] as DeliveryOptions),
+          ),
+        ),
   );
 
   export const setDeliveryOptions = Replicache.mutator(

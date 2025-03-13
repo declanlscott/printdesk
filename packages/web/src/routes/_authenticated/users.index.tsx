@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Users } from "@printworks/core/users/client";
 import { userRoles } from "@printworks/core/users/shared";
 import { Utils } from "@printworks/core/utils/client";
 import { createFileRoute } from "@tanstack/react-router";
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 
 import { fuzzyFilter } from "~/lib/fuzzy";
-import { query, useMutator } from "~/lib/hooks/data";
+import { useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
@@ -77,7 +78,7 @@ const routeId = "/_authenticated/users/";
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context }) => {
-    const initialUsers = await context.replicache.query(query.users());
+    const initialUsers = await context.replicache.query(Users.all());
 
     return { initialUsers };
   },
@@ -162,7 +163,9 @@ const columns = [
 function UsersCard() {
   const { initialUsers } = Route.useLoaderData();
 
-  const data = useSubscribe(query.users(), { defaultData: initialUsers });
+  const data = useSubscribe(Users.all(), {
+    defaultData: initialUsers,
+  });
 
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState(() => "");

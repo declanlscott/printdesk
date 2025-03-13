@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { TextField as AriaTextField } from "react-aria-components";
+import { Rooms } from "@printworks/core/rooms/client";
 
-import { query, useMutator } from "~/lib/hooks/data";
+import { useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -23,7 +24,7 @@ export interface DeleteRoomDialogProps {
 }
 
 export function DeleteRoomDialog(props: DeleteRoomDialogProps) {
-  const roomToDelete = useSubscribe(query.room(props.roomId));
+  const roomToDelete = useSubscribe(Rooms.byId(props.roomId));
 
   const { deleteRoom } = useMutator();
 

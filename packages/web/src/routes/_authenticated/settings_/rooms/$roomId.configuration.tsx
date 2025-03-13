@@ -1,4 +1,5 @@
 import { FileTrigger } from "react-aria-components";
+import { Rooms } from "@printworks/core/rooms/client";
 import {
   deliveryOptionsSchema,
   workflowSchema,
@@ -62,8 +63,8 @@ export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
   loader: async ({ context, params }) => {
     const [initialDeliveryOptions, initialWorkflow] = await Promise.all([
-      context.replicache.query(query.deliveryOptions(params.roomId)),
-      context.replicache.query(query.workflow(params.roomId)),
+      context.replicache.query(Rooms.getDeliveryOptions(params.roomId)),
+      context.replicache.query(Rooms.getWorkflow(params.roomId)),
     ]);
 
     return { initialDeliveryOptions, initialWorkflow };
@@ -84,7 +85,7 @@ function RouteComponent() {
 function WorkflowCard() {
   const roomId = Route.useParams().roomId;
 
-  const workflow = useSubscribe(query.workflow(roomId), {
+  const workflow = useSubscribe(Rooms.getWorkflow(roomId), {
     defaultData: Route.useLoaderData().initialWorkflow,
   });
 
@@ -412,7 +413,7 @@ function WorkflowCard() {
 function DeliveryOptionsCard() {
   const { roomId } = Route.useParams();
 
-  const deliveryOptions = useSubscribe(query.deliveryOptions(roomId), {
+  const deliveryOptions = useSubscribe(Rooms.getDeliveryOptions(roomId), {
     defaultData: Route.useLoaderData().initialDeliveryOptions,
   });
 

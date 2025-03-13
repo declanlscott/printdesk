@@ -1,17 +1,17 @@
+import { useMemo } from "react";
+import { BillingAccounts } from "@printworks/core/billing-accounts/client";
+import { Users } from "@printworks/core/users/client";
 import { ApplicationError } from "@printworks/core/utils/errors";
+import * as R from "remeda";
 
 import { useUserSubject } from "~/lib/hooks/auth";
-import { query } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
-
-import type { BillingAccount } from "@printworks/core/billing-accounts/sql";
-import type { User } from "@printworks/core/users/sql";
 
 export function useUser() {
   const { initialUser } = useRouteApi("/_authenticated").useLoaderData();
 
-  return useSubscribe(query.user(useUserSubject().id), {
+  return useSubscribe(Users.byId(useUserSubject().id), {
     defaultData: initialUser,
   });
 }
@@ -21,14 +21,35 @@ export function useManager() {
 
   if (user.role !== "manager") throw new ApplicationError.AccessDenied();
 
-  const billingAccountIds = useSubscribe(
-    query.managedBillingAccountIds(user.id),
-    { defaultData: [] as Array<BillingAccount["id"]> },
+  const managerAuthorizations = useSubscribe(
+    BillingAccounts.allManagerAuthorizations(),
   );
 
-  const customerIds = useSubscribe(query.managedCustomerIds(user.id), {
-    defaultData: [] as Array<User["id"]>,
-  });
+  const billingAccountIds = useMemo(
+    () =>
+      R.pipe(
+        managerAuthorizations ?? [],
+        R.filter((authorization) => authorization.managerId === user.id),
+        R.map(R.prop("billingAccountId")),
+      ),
+    [managerAuthorizations, user.id],
+  );
+
+  const customerAuthorizations = useSubscribe(
+    BillingAccounts.allCustomerAuthorizations(),
+  );
+
+  const customerIds = useMemo(
+    () =>
+      R.pipe(
+        customerAuthorizations ?? [],
+        R.filter((authorization) =>
+          billingAccountIds.includes(authorization.billingAccountId),
+        ),
+        R.map(R.prop("customerId")),
+      ),
+    [billingAccountIds, customerAuthorizations],
+  );
 
   return { billingAccountIds, customerIds };
 }

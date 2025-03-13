@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { TextField as AriaTextField } from "react-aria-components";
+import { Users } from "@printworks/core/users/client";
 
-import { query, useMutator } from "~/lib/hooks/data";
+import { useMutator } from "~/lib/hooks/data";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { Button } from "~/ui/primitives/button";
@@ -26,7 +27,7 @@ export interface DeleteUserDialogProps {
 export function DeleteUserDialog(props: DeleteUserDialogProps) {
   const user = useUser();
 
-  const userToDelete = useSubscribe(query.user(props.userId));
+  const userToDelete = useSubscribe(Users.byId(props.userId));
 
   const isSelf = user?.id === props.userId;
 

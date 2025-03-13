@@ -128,5 +128,6 @@ export const tenantMetadataSchema = v.object({
   tenantId: nanoIdSchema,
   infraProgramInput: infraProgramInputSchema,
   apiKey: v.nullable(v.string()),
+  lastPapercutSyncAt: v.nullable(v.date()),
   ...timestampsSchema.entries,
 });

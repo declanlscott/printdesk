@@ -1,4 +1,10 @@
-import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 import {
   customJsonb,
@@ -48,6 +54,7 @@ export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
     infraProgramInputSchema,
   ).notNull(),
   apiKey: varchar("api_key"),
+  lastPapercutSyncAt: timestamp("last_papercut_sync_at"),
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;

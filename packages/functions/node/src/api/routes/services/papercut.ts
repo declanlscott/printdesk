@@ -5,8 +5,10 @@ import {
   updateServerAuthTokenSchema,
   updateServerTailnetUriSchema,
 } from "@printworks/core/papercut/shared";
+import { Tenants } from "@printworks/core/tenants";
 import { useTenant } from "@printworks/core/tenants/context";
 import { Credentials } from "@printworks/core/utils/aws";
+import { HttpError } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
 import { Resource } from "sst";
 
@@ -79,4 +81,11 @@ export default new Hono()
 
       return c.json({ dispatchId }, 202);
     },
-  );
+  )
+  .get("/last-sync", async (c) => {
+    const metadata = await Tenants.readMetadata();
+    if (!metadata) throw new HttpError.NotFound("Tenant metadata not found");
+    const lastSyncedAt = metadata.lastPapercutSyncAt?.toISOString() ?? null;
+
+    return c.json({ lastSyncedAt }, 200);
+  });

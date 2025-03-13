@@ -160,6 +160,15 @@ export namespace Tenants {
         }),
     );
 
+  export const readMetadata = async () =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(tenantMetadataTable)
+        .where(eq(tenantMetadataTable.tenantId, useTenant().id))
+        .then(R.first()),
+    );
+
   export async function initialize(
     licenseKey: License["key"],
     infraProgramInput: InfraProgramInput,

@@ -88,7 +88,7 @@ export function useIsSyncing() {
 /**
  * Returns a collection of optimistic mutators for Replicache. This should match the corresponding server-side mutators.
  */
-export const useGetMutators = () =>
+export const useMutatorsBuilder = () =>
   useCallback(
     (userId: User["id"]) =>
       ({
@@ -122,10 +122,10 @@ export const useGetMutators = () =>
         deleteUser: Users.delete_(userId),
         restoreUser: Users.restore(userId),
         setWorkflow: Rooms.setWorkflow(userId),
-      }) satisfies Record<MutationName, Replicache.MutatorFn>,
+      }) satisfies Record<MutationName, Replicache.Mutator>,
     [],
   );
 
-export type Mutators = ReturnType<ReturnType<typeof useGetMutators>>;
+export type Mutators = ReturnType<ReturnType<typeof useMutatorsBuilder>>;
 
 export const useMutators = () => useReplicache().mutate;

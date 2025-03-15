@@ -22,14 +22,13 @@ import type { DeliveryOptions, Workflow } from "./shared";
 import type { Room } from "./sql";
 
 export namespace Rooms {
-  export const create = Replicache.mutator(
-    createRoomMutationArgsSchema,
-    async (tx, user) =>
+  export const create = Replicache.createMutator(createRoomMutationArgsSchema, {
+    authorizer: async (tx, user) =>
       AccessControl.enforce([tx, user, roomsTableName, "create"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: roomsTableName }],
       }),
-    () => async (tx, values) => {
+    getMutator: () => async (tx, values) => {
       await Promise.all([
         Replicache.set(tx, roomsTableName, values.id, values),
         Replicache.set(
@@ -56,28 +55,28 @@ export namespace Rooms {
         ),
       ]);
     },
-  );
+  });
 
-  export const all = Replicache.query(
-    () => ({}),
-    () => async (tx) => Replicache.scan(tx, roomsTableName),
-  );
+  export const all = Replicache.createQuery({
+    getQuery: () => async (tx) => Replicache.scan(tx, roomsTableName),
+  });
 
-  export const byId = Replicache.query(
-    (id: Room["id"]) => ({ id }),
-    ({ id }) =>
+  export const byId = Replicache.createQuery({
+    getDeps: (id: Room["id"]) => ({ id }),
+    getQuery:
+      ({ id }) =>
       async (tx) =>
         Replicache.get(tx, roomsTableName, id),
-  );
+  });
 
-  export const update = Replicache.mutator(
-    updateRoomMutationArgsSchema,
-    async (tx, user, { id }) =>
+  export const update = Replicache.createMutator(updateRoomMutationArgsSchema, {
+    authorizer: async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, roomsTableName, "update"], {
         Error: ApplicationError.AccessDenied,
         args: [{ name: roomsTableName, id }],
       }),
-    () =>
+    getMutator:
+      () =>
       async (tx, { id, ...values }) => {
         const prev = await Replicache.get(tx, roomsTableName, id);
 
@@ -86,65 +85,71 @@ export namespace Rooms {
           ...values,
         });
       },
-  );
+  });
 
-  export const delete_ = Replicache.mutator(
+  export const delete_ = Replicache.createMutator(
     deleteRoomMutationArgsSchema,
-    async (tx, user, { id }) =>
-      AccessControl.enforce([tx, user, roomsTableName, "delete"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: roomsTableName, id }],
-      }),
-    ({ user }) =>
-      async (tx, { id, ...values }) => {
-        // Set all products in the room to draft
-        const products = await Replicache.scan(tx, productsTableName).then(
-          R.filter((product) => product.roomId === id),
-        );
-        await Promise.all(
-          products.map(async (p) => {
-            const prev = await Replicache.get(tx, productsTableName, p.id);
+    {
+      authorizer: async (tx, user, { id }) =>
+        AccessControl.enforce([tx, user, roomsTableName, "delete"], {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: roomsTableName, id }],
+        }),
+      getMutator:
+        ({ user }) =>
+        async (tx, { id, ...values }) => {
+          // Set all products in the room to draft
+          const products = await Replicache.scan(tx, productsTableName).then(
+            R.filter((product) => product.roomId === id),
+          );
+          await Promise.all(
+            products.map(async (p) => {
+              const prev = await Replicache.get(tx, productsTableName, p.id);
 
-            return Replicache.set(tx, productsTableName, p.id, {
+              return Replicache.set(tx, productsTableName, p.id, {
+                ...prev,
+                status: "draft",
+              });
+            }),
+          );
+
+          if (user.role === "administrator") {
+            const prev = await Replicache.get(tx, roomsTableName, id);
+
+            return Replicache.set(tx, roomsTableName, id, {
               ...prev,
-              status: "draft",
+              ...values,
             });
-          }),
-        );
+          }
 
-        if (user.role === "administrator") {
-          const prev = await Replicache.get(tx, roomsTableName, id);
-
-          return Replicache.set(tx, roomsTableName, id, {
-            ...prev,
-            ...values,
-          });
-        }
-
-        await Replicache.del(tx, roomsTableName, id);
-      },
-  );
-
-  export const restore = Replicache.mutator(
-    restoreRoomMutationArgsSchema,
-    async (tx, user, { id }) =>
-      AccessControl.enforce([tx, user, roomsTableName, "update"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: roomsTableName, id }],
-      }),
-    () => async (tx, values) => {
-      const prev = await Replicache.get(tx, roomsTableName, values.id);
-
-      return Replicache.set(tx, roomsTableName, values.id, {
-        ...prev,
-        deletedAt: null,
-      });
+          await Replicache.del(tx, roomsTableName, id);
+        },
     },
   );
 
-  export const getWorkflow = Replicache.query(
-    (roomId: Room["id"]) => ({ roomId }),
-    ({ roomId }) =>
+  export const restore = Replicache.createMutator(
+    restoreRoomMutationArgsSchema,
+    {
+      authorizer: async (tx, user, { id }) =>
+        AccessControl.enforce([tx, user, roomsTableName, "update"], {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: roomsTableName, id }],
+        }),
+      getMutator: () => async (tx, values) => {
+        const prev = await Replicache.get(tx, roomsTableName, values.id);
+
+        return Replicache.set(tx, roomsTableName, values.id, {
+          ...prev,
+          deletedAt: null,
+        });
+      },
+    },
+  );
+
+  export const getWorkflow = Replicache.createQuery({
+    getDeps: (roomId: Room["id"]) => ({ roomId }),
+    getQuery:
+      ({ roomId }) =>
       async (tx) =>
         Replicache.scan(tx, workflowStatusesTableName).then((statuses) =>
           R.pipe(
@@ -164,47 +169,51 @@ export namespace Rooms {
             }, [] as Workflow),
           ),
         ),
-  );
+  });
 
-  export const setWorkflow = Replicache.mutator(
+  export const setWorkflow = Replicache.createMutator(
     setWorkflowMutationArgsSchema,
-    async (tx, user) =>
-      AccessControl.enforce([tx, user, roomsTableName, "create"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: roomsTableName }],
-      }),
-    () =>
-      async (tx, { workflow, roomId }) => {
-        const room = await Replicache.get(tx, roomsTableName, roomId);
+    {
+      authorizer: async (tx, user) =>
+        AccessControl.enforce([tx, user, roomsTableName, "create"], {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: roomsTableName }],
+        }),
+      getMutator:
+        () =>
+        async (tx, { workflow, roomId }) => {
+          const room = await Replicache.get(tx, roomsTableName, roomId);
 
-        let index = 0;
-        for (const status of workflow) {
-          await Replicache.set(tx, workflowStatusesTableName, status.id, {
-            ...status,
-            index,
-            roomId,
-            tenantId: room.tenantId,
-          });
+          let index = 0;
+          for (const status of workflow) {
+            await Replicache.set(tx, workflowStatusesTableName, status.id, {
+              ...status,
+              index,
+              roomId,
+              tenantId: room.tenantId,
+            });
 
-          index++;
-        }
+            index++;
+          }
 
-        await R.pipe(
-          await Replicache.scan(tx, workflowStatusesTableName),
-          R.filter((status) => !workflow.some((s) => s.id === status.id)),
-          async (dels) =>
-            Promise.all(
-              dels.map((status) =>
-                Replicache.del(tx, workflowStatusesTableName, status.id),
+          await R.pipe(
+            await Replicache.scan(tx, workflowStatusesTableName),
+            R.filter((status) => !workflow.some((s) => s.id === status.id)),
+            async (dels) =>
+              Promise.all(
+                dels.map((status) =>
+                  Replicache.del(tx, workflowStatusesTableName, status.id),
+                ),
               ),
-            ),
-        );
-      },
+          );
+        },
+    },
   );
 
-  export const getDeliveryOptions = Replicache.query(
-    (roomId: Room["id"]) => ({ roomId }),
-    ({ roomId }) =>
+  export const getDeliveryOptions = Replicache.createQuery({
+    getDeps: (roomId: Room["id"]) => ({ roomId }),
+    getQuery:
+      ({ roomId }) =>
       async (tx) =>
         Replicache.scan(tx, deliveryOptionsTableName).then((options) =>
           R.pipe(
@@ -223,41 +232,44 @@ export namespace Rooms {
             }, [] as DeliveryOptions),
           ),
         ),
-  );
+  });
 
-  export const setDeliveryOptions = Replicache.mutator(
+  export const setDeliveryOptions = Replicache.createMutator(
     setDeliveryOptionsMutationArgsSchema,
-    async (tx, user) =>
-      AccessControl.enforce([tx, user, deliveryOptionsTableName, "create"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: deliveryOptionsTableName }],
-      }),
-    () =>
-      async (tx, { options, roomId }) => {
-        const room = await Replicache.get(tx, roomsTableName, roomId);
+    {
+      authorizer: async (tx, user) =>
+        AccessControl.enforce([tx, user, deliveryOptionsTableName, "create"], {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: deliveryOptionsTableName }],
+        }),
+      getMutator:
+        () =>
+        async (tx, { options, roomId }) => {
+          const room = await Replicache.get(tx, roomsTableName, roomId);
 
-        let index = 0;
-        for (const option of options) {
-          await Replicache.set(tx, deliveryOptionsTableName, option.id, {
-            ...option,
-            index,
-            roomId,
-            tenantId: room.tenantId,
-          });
+          let index = 0;
+          for (const option of options) {
+            await Replicache.set(tx, deliveryOptionsTableName, option.id, {
+              ...option,
+              index,
+              roomId,
+              tenantId: room.tenantId,
+            });
 
-          index++;
-        }
+            index++;
+          }
 
-        await R.pipe(
-          await Replicache.scan(tx, deliveryOptionsTableName),
-          R.filter((option) => !options.some((o) => o.id === option.id)),
-          async (dels) =>
-            Promise.all(
-              dels.map((option) =>
-                Replicache.del(tx, deliveryOptionsTableName, option.id),
+          await R.pipe(
+            await Replicache.scan(tx, deliveryOptionsTableName),
+            R.filter((option) => !options.some((o) => o.id === option.id)),
+            async (dels) =>
+              Promise.all(
+                dels.map((option) =>
+                  Replicache.del(tx, deliveryOptionsTableName, option.id),
+                ),
               ),
-            ),
-        );
-      },
+          );
+        },
+    },
   );
 }

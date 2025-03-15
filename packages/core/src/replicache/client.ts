@@ -16,15 +16,20 @@ import type { InferTable } from "../utils/types";
 import type { Serialized } from "./shared";
 
 export namespace Replicache {
-  export const query =
+  export const createQuery =
     <
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      TGetDeps extends (...input: Array<any>) => ReturnType<TGetDeps>,
-      TQueryFn extends (tx: ReadTransaction) => ReturnType<TQueryFn>,
-    >(
-      getDeps: TGetDeps,
-      getQueryFn: (deps: ReturnType<TGetDeps>) => TQueryFn,
-    ) =>
+      TQuery extends (tx: ReadTransaction) => ReturnType<TQuery>,
+      TGetDeps extends (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...input: Array<any>
+      ) => ReturnType<TGetDeps> = () => undefined,
+    >({
+      getDeps = (() => undefined) as TGetDeps,
+      getQuery,
+    }: {
+      getDeps?: TGetDeps;
+      getQuery: (deps: ReturnType<TGetDeps>) => TQuery;
+    }) =>
     (
       ...input: TGetDeps extends (
         ...input: infer TInput
@@ -35,17 +40,17 @@ export namespace Replicache {
     (tx: ReadTransaction) => {
       const deps = getDeps(...input);
 
-      const queryFn = getQueryFn(deps);
+      const query = getQuery(deps);
 
-      return queryFn(tx);
+      return query(tx);
     };
 
-  export type MutatorFn<TSchema extends v.GenericSchema = v.AnySchema> = (
+  export type Mutator<TSchema extends v.GenericSchema = v.AnySchema> = (
     tx: WriteTransaction,
     args: v.InferOutput<TSchema>,
   ) => Promise<void>;
 
-  export const mutator =
+  export const createMutator =
     <
       TSchema extends v.GenericSchema,
       TAuthorizer extends (
@@ -53,14 +58,19 @@ export namespace Replicache {
         user: DeepReadonlyObject<User>,
         args: v.InferOutput<TSchema>,
       ) => ReturnType<TAuthorizer>,
-      TMutatorFn extends MutatorFn<TSchema>,
+      TMutator extends Mutator<TSchema>,
     >(
       schema: TSchema,
-      authorizer: TAuthorizer,
-      getMutatorFn: (context: {
-        user: DeepReadonlyObject<User>;
-        authorized: Awaited<ReturnType<TAuthorizer>>;
-      }) => TMutatorFn,
+      {
+        authorizer,
+        getMutator,
+      }: {
+        authorizer: TAuthorizer;
+        getMutator: (context: {
+          user: DeepReadonlyObject<User>;
+          authorized: Awaited<ReturnType<TAuthorizer>>;
+        }) => TMutator;
+      },
     ) =>
     (userId: User["id"]) =>
     async (tx: WriteTransaction, args: v.InferInput<TSchema>) => {
@@ -70,9 +80,9 @@ export namespace Replicache {
 
       const authorized = await Promise.resolve(authorizer(tx, user, values));
 
-      const mutatorFn = getMutatorFn({ user, authorized });
+      const mutator = getMutator({ user, authorized });
 
-      return mutatorFn(tx, values);
+      return mutator(tx, values);
     };
 
   export async function get<TTableName extends SyncedTableName>(

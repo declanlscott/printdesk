@@ -6,26 +6,28 @@ import { createInvoiceMutationArgsSchema, invoicesTableName } from "./shared";
 import type { Invoice } from "./sql";
 
 export namespace Invoices {
-  export const create = Replicache.mutator(
+  export const create = Replicache.createMutator(
     createInvoiceMutationArgsSchema,
-    async (tx, user) =>
-      AccessControl.enforce([tx, user, invoicesTableName, "create"], {
-        Error: ApplicationError.AccessDenied,
-        args: [{ name: invoicesTableName }],
-      }),
-    () => async (tx, values) =>
-      Replicache.set(tx, invoicesTableName, values.id, values),
+    {
+      authorizer: async (tx, user) =>
+        AccessControl.enforce([tx, user, invoicesTableName, "create"], {
+          Error: ApplicationError.AccessDenied,
+          args: [{ name: invoicesTableName }],
+        }),
+      getMutator: () => async (tx, values) =>
+        Replicache.set(tx, invoicesTableName, values.id, values),
+    },
   );
 
-  export const all = Replicache.query(
-    () => ({}),
-    () => async (tx) => Replicache.scan(tx, invoicesTableName),
-  );
+  export const all = Replicache.createQuery({
+    getQuery: () => async (tx) => Replicache.scan(tx, invoicesTableName),
+  });
 
-  export const byId = Replicache.query(
-    (id: Invoice["id"]) => ({ id }),
-    ({ id }) =>
+  export const byId = Replicache.createQuery({
+    getDeps: (id: Invoice["id"]) => ({ id }),
+    getQuery:
+      ({ id }) =>
       async (tx) =>
         Replicache.get(tx, invoicesTableName, id),
-  );
+  });
 }

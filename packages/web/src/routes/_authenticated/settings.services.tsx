@@ -4,13 +4,14 @@ import {
   updateServerTailnetUriSchema,
 } from "@printworks/core/papercut/shared";
 import { tailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
-import { useForm } from "@tanstack/react-form";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { KeySquare, Link } from "lucide-react";
+import * as R from "remeda";
 import { toast } from "sonner";
 
 import { useMutationOptions } from "~/lib/hooks/data";
+import { useAppForm } from "~/lib/hooks/form";
 import { labelStyles } from "~/styles/components/primitives/field";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -28,8 +29,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/ui/primitives/dialog";
-import { Label } from "~/ui/primitives/field";
-import { Input } from "~/ui/primitives/text-field";
 
 const routeId = "/_authenticated/settings/services";
 
@@ -100,7 +99,7 @@ function UpdateTailscaleOauthClient() {
       ),
   });
 
-  const form = useForm({
+  const form = useAppForm({
     validators: {
       onBlur: tailscaleOauthClientSchema,
     },
@@ -132,43 +131,33 @@ function UpdateTailscaleOauthClient() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <form.Field name="id">
-              {({ name, state, handleChange, handleBlur }) => (
-                <div>
-                  <Label htmlFor={name}>ID</Label>
-
-                  <Input
-                    id={name}
-                    value={state.value}
-                    onChange={(e) => handleChange(e.target.value)}
-                    onBlur={handleBlur}
-                  />
-
-                  <span className="text-sm text-red-500">
-                    {state.meta.errors.join(", ")}
-                  </span>
-                </div>
+            <form.AppField name="id">
+              {(field) => (
+                <field.TextField
+                  labelProps={{ children: "ID" }}
+                  errorMessageProps={{
+                    children: field.state.meta.errors
+                      .filter(Boolean)
+                      .map(R.prop("message"))
+                      .join(", "),
+                  }}
+                />
               )}
-            </form.Field>
+            </form.AppField>
 
-            <form.Field name="secret">
-              {({ name, state, handleChange, handleBlur }) => (
-                <div>
-                  <Label htmlFor={name}>Secret</Label>
-
-                  <Input
-                    id={name}
-                    value={state.value}
-                    onChange={(e) => handleChange(e.target.value)}
-                    onBlur={handleBlur}
-                  />
-
-                  <span className="text-sm text-red-500">
-                    {state.meta.errors.join(", ")}
-                  </span>
-                </div>
+            <form.AppField name="secret">
+              {(field) => (
+                <field.TextField
+                  labelProps={{ children: "Secret" }}
+                  errorMessageProps={{
+                    children: field.state.meta.errors
+                      .filter(Boolean)
+                      .map(R.prop("message"))
+                      .join(", "),
+                  }}
+                />
               )}
-            </form.Field>
+            </form.AppField>
           </div>
 
           <DialogFooter>
@@ -176,13 +165,9 @@ function UpdateTailscaleOauthClient() {
               Cancel
             </Button>
 
-            <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-              {(canSubmit) => (
-                <Button type="submit" isDisabled={!canSubmit}>
-                  Save
-                </Button>
-              )}
-            </form.Subscribe>
+            <form.AppForm>
+              <form.SubmitButton>Save</form.SubmitButton>
+            </form.AppForm>
           </DialogFooter>
         </form>
       )}
@@ -262,7 +247,7 @@ function UpdatePapercutServerTailnetUri() {
       toast.success("Successfully saved the PaperCut server Tailnet URI."),
   });
 
-  const form = useForm({
+  const form = useAppForm({
     validators: {
       onBlur: updateServerTailnetUriSchema,
     },
@@ -293,26 +278,23 @@ function UpdatePapercutServerTailnetUri() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <form.Field name="tailnetUri">
-              {({ name, state, handleChange, handleBlur }) => (
-                <div>
-                  <Label htmlFor={name}>Server Tailnet URI</Label>
-
-                  <Input
-                    id={name}
-                    type="url"
-                    placeholder="http://100.x.y.z:9191"
-                    value={state.value}
-                    onChange={(e) => handleChange(e.target.value)}
-                    onBlur={handleBlur}
-                  />
-
-                  <span className="text-sm text-red-500">
-                    {state.meta.errors.join(", ")}
-                  </span>
-                </div>
+            <form.AppField name="tailnetUri">
+              {(field) => (
+                <field.TextField
+                  labelProps={{ children: "Server Tailnet URI" }}
+                  inputProps={{
+                    type: "url",
+                    placeholder: "http://100.x.y.z:9191",
+                  }}
+                  errorMessageProps={{
+                    children: field.state.meta.errors
+                      .filter(Boolean)
+                      .map(R.prop("message"))
+                      .join(", "),
+                  }}
+                />
               )}
-            </form.Field>
+            </form.AppField>
           </div>
 
           <DialogFooter>
@@ -320,13 +302,9 @@ function UpdatePapercutServerTailnetUri() {
               Cancel
             </Button>
 
-            <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-              {(canSubmit) => (
-                <Button type="submit" isDisabled={!canSubmit}>
-                  Save
-                </Button>
-              )}
-            </form.Subscribe>
+            <form.AppForm>
+              <form.SubmitButton>Save</form.SubmitButton>
+            </form.AppForm>
           </DialogFooter>
         </form>
       )}
@@ -343,7 +321,7 @@ function UpdatePapercutServerAuthToken() {
       toast.success("Successfully saved the PaperCut server auth token."),
   });
 
-  const form = useForm({
+  const form = useAppForm({
     validators: {
       onBlur: updateServerAuthTokenSchema,
     },
@@ -373,24 +351,19 @@ function UpdatePapercutServerAuthToken() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            <form.Field name="authToken">
-              {({ name, state, handleChange, handleBlur }) => (
-                <div>
-                  <Label htmlFor={name}>Server Auth Token</Label>
-
-                  <Input
-                    id={name}
-                    value={state.value}
-                    onChange={(e) => handleChange(e.target.value)}
-                    onBlur={handleBlur}
-                  />
-
-                  <span className="text-sm text-red-500">
-                    {state.meta.errors.join(", ")}
-                  </span>
-                </div>
+            <form.AppField name="authToken">
+              {(field) => (
+                <field.TextField
+                  labelProps={{ children: "Server Auth Token" }}
+                  errorMessageProps={{
+                    children: field.state.meta.errors
+                      .filter(Boolean)
+                      .map(R.prop("message"))
+                      .join(", "),
+                  }}
+                />
               )}
-            </form.Field>
+            </form.AppField>
           </div>
 
           <DialogFooter>
@@ -398,13 +371,9 @@ function UpdatePapercutServerAuthToken() {
               Cancel
             </Button>
 
-            <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-              {(canSubmit) => (
-                <Button type="submit" isDisabled={!canSubmit}>
-                  Save
-                </Button>
-              )}
-            </form.Subscribe>
+            <form.AppForm>
+              <form.SubmitButton>Save</form.SubmitButton>
+            </form.AppForm>
           </DialogFooter>
         </form>
       )}

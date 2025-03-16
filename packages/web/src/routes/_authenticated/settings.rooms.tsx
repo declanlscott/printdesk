@@ -25,7 +25,7 @@ import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { EnforceAbac } from "~/ui/access-control";
-import { DeleteRoomDialog } from "~/ui/delete-room-dialog";
+import { DeleteRoomDialog } from "~/ui/dialogs/delete-room";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
 import {

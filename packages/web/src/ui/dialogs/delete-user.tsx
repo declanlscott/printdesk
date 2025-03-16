@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { TextField as AriaTextField } from "react-aria-components";
 import { Users } from "@printworks/core/users/client";
 
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
@@ -12,8 +11,7 @@ import {
   DialogOverlay,
   DialogTitle,
 } from "~/ui/primitives/dialog";
-import { Label } from "~/ui/primitives/field";
-import { Input } from "~/ui/primitives/text-field";
+import { TextField } from "~/ui/primitives/text-field";
 
 import type { User } from "@printworks/core/users/sql";
 import type { DialogOverlayProps } from "~/ui/primitives/dialog";
@@ -73,15 +71,14 @@ export function DeleteUserDialog(props: DeleteUserDialogProps) {
             </DialogHeader>
 
             <div className="grid gap-4 py-4">
-              <AriaTextField>
-                <Label>Confirm</Label>
-
-                <Input
-                  placeholder={targetConfirmationText}
-                  value={confirmationText}
-                  onChange={(e) => setConfirmationText(e.target.value)}
-                />
-              </AriaTextField>
+              <TextField
+                labelProps={{ children: "Confirm" }}
+                inputProps={{
+                  placeholder: targetConfirmationText,
+                  value: confirmationText,
+                  onChange: (e) => setConfirmationText(e.target.value),
+                }}
+              />
             </div>
 
             <DialogFooter>

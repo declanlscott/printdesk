@@ -10,7 +10,7 @@ import { useReplicache } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { AuthStoreApi } from "~/lib/stores/auth";
 import { CommandBarStoreApi } from "~/lib/stores/command-bar";
-import { MainNav } from "~/ui/main-nav";
+import { MainNav } from "~/ui/nav/main";
 
 export function AuthenticatedLayout() {
   const api = useApi();

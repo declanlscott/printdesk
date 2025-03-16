@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { TextField as AriaTextField } from "react-aria-components";
 import { Rooms } from "@printworks/core/rooms/client";
 import { roomStatuses } from "@printworks/core/rooms/shared";
 import { createFileRoute } from "@tanstack/react-router";
@@ -8,9 +7,8 @@ import { Delete, HousePlus, Lock, LockOpen, Pencil, Save } from "lucide-react";
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { labelStyles } from "~/styles/components/primitives/field";
-import { inputStyles } from "~/styles/components/primitives/text-field";
 import { EnforceAbac } from "~/ui/access-control";
-import { DeleteRoomDialog } from "~/ui/delete-room-dialog";
+import { DeleteRoomDialog } from "~/ui/dialogs/delete-room";
 import { Markdown } from "~/ui/markdown";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -21,14 +19,14 @@ import {
   CardTitle,
 } from "~/ui/primitives/card";
 import { DialogTrigger } from "~/ui/primitives/dialog";
-import { Label } from "~/ui/primitives/field";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
 } from "~/ui/primitives/select";
-import { Input, TextArea } from "~/ui/primitives/text-field";
+import { TextArea } from "~/ui/primitives/text-area";
+import { TextField } from "~/ui/primitives/text-field";
 import { Toggle } from "~/ui/primitives/toggle";
 
 import type { RoomStatus } from "@printworks/core/rooms/shared";
@@ -106,23 +104,27 @@ function RoomCard() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <AriaTextField>
-          <Label>Name</Label>
-
-          <EnforceAbac
-            resource="rooms"
-            action="update"
-            input={[]}
-            unauthorized={<span className={inputStyles()}>{name}</span>}
-          >
-            <Input
-              disabled={isLocked}
-              value={name ?? ""}
-              onChange={(e) => setName(e.target.value)}
-              onBlur={mutateName}
+        <EnforceAbac
+          resource="rooms"
+          action="update"
+          input={[]}
+          unauthorized={
+            <TextField
+              labelProps={{ children: "Name" }}
+              inputProps={{ value: name ?? "" }}
             />
-          </EnforceAbac>
-        </AriaTextField>
+          }
+        >
+          <TextField
+            labelProps={{ children: "Name" }}
+            inputProps={{
+              disabled: isLocked,
+              value: name ?? "",
+              onChange: (e) => setName(e.target.value),
+              onBlur: void mutateName,
+            }}
+          />
+        </EnforceAbac>
 
         <RoomStatus />
 

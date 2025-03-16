@@ -6,13 +6,13 @@ import {
   workflowStatusTypes,
 } from "@printworks/core/rooms/shared";
 import { formatPascalCase } from "@printworks/core/utils/shared";
-import { useForm } from "@tanstack/react-form";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp, Import, Plus, Save, X } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
 import * as v from "valibot";
 
+import { useAppForm } from "~/lib/hooks/form";
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { collectionItem } from "~/lib/ui";
 import { cardStyles } from "~/styles/components/primitives/card";
@@ -39,6 +39,7 @@ import {
 import { Dialog, DialogTrigger } from "~/ui/primitives/dialog";
 import { FieldGroup, Label } from "~/ui/primitives/field";
 import { IconButton } from "~/ui/primitives/icon-button";
+import { Input } from "~/ui/primitives/input";
 import {
   NumberField,
   NumberFieldInput,
@@ -52,7 +53,6 @@ import {
   SelectPopover,
   SelectTrigger,
 } from "~/ui/primitives/select";
-import { Input } from "~/ui/primitives/text-field";
 
 import type { PostReviewWorkflowStatusType } from "@printworks/core/rooms/shared";
 
@@ -90,7 +90,7 @@ function WorkflowCard() {
 
   const { setWorkflow } = useMutators();
 
-  const form = useForm({
+  const form = useAppForm({
     validators: { onBlur: v.object({ workflow: workflowSchema }) },
     defaultValues: { workflow },
     onSubmit: async ({ value }) => {
@@ -137,11 +137,13 @@ function WorkflowCard() {
         <form.Subscribe selector={(state) => state.errors}>
           {(errors) => (
             <ul className="list-disc pl-6 pt-2">
-              {errors.map((e, i) => (
-                <li key={i} className="text-destructive">
-                  {e}
-                </li>
-              ))}
+              {errors.map((error, index) =>
+                error ? (
+                  <li key={index} className="text-destructive">
+                    {error.message}
+                  </li>
+                ) : null,
+              )}
             </ul>
           )}
         </form.Subscribe>
@@ -418,7 +420,7 @@ function DeliveryOptionsCard() {
 
   const { setDeliveryOptions } = useMutators();
 
-  const form = useForm({
+  const form = useAppForm({
     validators: {
       onBlur: v.object({ deliveryOptions: deliveryOptionsSchema }),
     },

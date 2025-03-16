@@ -25,7 +25,7 @@ import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { EnforceAbac, EnforceRouteAbac } from "~/ui/access-control";
-import { DeleteUserDialog } from "~/ui/delete-user-dialog";
+import { DeleteUserDialog } from "~/ui/dialogs/delete-user";
 import { Avatar, AvatarFallback, AvatarImage } from "~/ui/primitives/avatar";
 import { Badge } from "~/ui/primitives/badge";
 import { Button } from "~/ui/primitives/button";
@@ -46,6 +46,7 @@ import {
   MenuSeparator,
   MenuTrigger,
 } from "~/ui/primitives/menu";
+import { SearchField } from "~/ui/primitives/search-field";
 import {
   Select,
   SelectItem,
@@ -61,7 +62,6 @@ import {
   TableHeader,
   TableRow,
 } from "~/ui/primitives/table";
-import { Input } from "~/ui/primitives/text-field";
 
 import type { UserRole } from "@printworks/core/users/shared";
 import type { User } from "@printworks/core/users/sql";
@@ -198,11 +198,13 @@ function UsersCard() {
         <CardTitle>Users</CardTitle>
 
         <div className="flex gap-2">
-          <Input
-            placeholder="Filter users..."
-            value={globalFilter}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-44"
+          <SearchField
+            inputProps={{
+              placeholder: "Filter users...",
+              value: globalFilter,
+              onChange: (e) => setGlobalFilter(e.target.value),
+              className: "w-44",
+            }}
           />
 
           <MenuTrigger>

@@ -1,6 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
 
-import { SideNav } from "~/ui/side-nav";
+import { SideNav } from "~/ui/nav/side";
 
 import type { ReactNode } from "react";
 import type { ResolvedAppLink } from "~/types";

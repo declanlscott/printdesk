@@ -1,40 +1,55 @@
 import {
-  Input as AriaInput,
-  TextArea as AriaTextArea,
   TextField as AriaTextField,
-  composeRenderProps,
+  Input,
+  Label,
 } from "react-aria-components";
 
-import {
-  inputStyles,
-  textAreaStyles,
-} from "~/styles/components/primitives/text-field";
+import { Description, ErrorMessage, FieldGroup } from "~/ui/primitives/field";
 
-import type { ComponentProps } from "react";
 import type {
-  InputStyles,
-  TextAreaStyles,
-} from "~/styles/components/primitives/text-field";
+  TextFieldProps as AriaTextFieldProps,
+  InputProps,
+  LabelProps,
+} from "react-aria-components";
+import type {
+  DescriptionProps,
+  ErrorMessageProps,
+  FieldGroupProps,
+} from "~/ui/primitives/field";
 
-export const TextField = AriaTextField;
+export interface TextFieldProps extends AriaTextFieldProps {
+  labelProps: LabelProps;
+  descriptionProps?: DescriptionProps;
+  inputProps?: InputProps;
+  groupProps?: FieldGroupProps;
+  errorMessageProps?: ErrorMessageProps;
+}
 
-export type InputProps = ComponentProps<typeof AriaInput> & InputStyles;
-export const Input = ({ className, ...props }: InputProps) => (
-  <AriaInput
-    {...props}
-    className={composeRenderProps(className, (className, renderProps) =>
-      inputStyles({ className, ...renderProps }),
-    )}
-  />
-);
+export const TextField = ({
+  labelProps,
+  descriptionProps,
+  inputProps = {},
+  groupProps = {},
+  errorMessageProps,
+  ...props
+}: TextFieldProps) => (
+  <AriaTextField {...props}>
+    <Label {...labelProps} />
 
-export type TextAreaProps = ComponentProps<typeof AriaTextArea> &
-  TextAreaStyles;
-export const TextArea = ({ className, ...props }: TextAreaProps) => (
-  <AriaTextArea
-    {...props}
-    className={composeRenderProps(className, (className, renderProps) =>
-      textAreaStyles({ className, ...renderProps }),
-    )}
-  />
+    {descriptionProps ? <Description {...descriptionProps} /> : null}
+
+    <FieldGroup {...groupProps}>
+      {(values) => (
+        <>
+          <Input {...inputProps} />
+
+          {typeof groupProps.children === "function"
+            ? groupProps.children(values)
+            : groupProps.children}
+        </>
+      )}
+    </FieldGroup>
+
+    {errorMessageProps ? <ErrorMessage {...errorMessageProps} /> : null}
+  </AriaTextField>
 );

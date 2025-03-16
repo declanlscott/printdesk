@@ -1,10 +1,10 @@
 import { Text } from "react-aria-components";
 import { setupWizardStep2Schema } from "@printworks/core/tenants/shared";
 import { Constants } from "@printworks/core/utils/constants";
-import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import * as R from "remeda";
 
+import { useAppForm } from "~/lib/hooks/form";
 import { useSetupMachine } from "~/lib/hooks/setup";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/ui/primitives/select";
-import { Input } from "~/ui/primitives/text-field";
 
 import type { SetupWizardStep2 } from "@printworks/core/tenants/shared";
 
@@ -31,7 +30,7 @@ export function SetupWizardStep2() {
     userOauthProviderId: context.userOauthProviderId,
   }));
 
-  const form = useForm({
+  const form = useAppForm({
     validators: {
       onSubmit: setupWizardStep2Schema,
     },
@@ -53,10 +52,10 @@ export function SetupWizardStep2() {
 
       <Card>
         <CardContent className="grid gap-4 pt-6">
-          <form.Field
+          <form.AppField
             name="userOauthProviderKind"
             validators={{
-              onBlur: setupWizardStep2Schema.entries.userOauthProviderType,
+              onBlur: setupWizardStep2Schema.entries.userOauthProviderKind,
             }}
           >
             {(field) => (
@@ -113,37 +112,29 @@ export function SetupWizardStep2() {
                 </Select>
               </div>
             )}
-          </form.Field>
+          </form.AppField>
 
-          <form.Field
+          <form.AppField
             name="userOauthProviderId"
             validators={{
               onBlur: setupWizardStep2Schema.entries.userOauthProviderId,
             }}
           >
             {(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>Tenant ID</Label>
-
-                <CardDescription>
-                  The ID of your tenant, as listed in Entra ID.
-                </CardDescription>
-
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                />
-
-                {R.isEmpty(field.state.meta.errors) ? null : (
-                  <span className="text-sm text-red-500">
-                    {field.state.meta.errors.join(", ")}
-                  </span>
-                )}
-              </div>
+              <field.TextField
+                labelProps={{ children: "Tenant ID" }}
+                descriptionProps={{
+                  children: "The ID of your tenant, as listed in Entra ID.",
+                }}
+                errorMessageProps={{
+                  children: field.state.meta.errors
+                    .filter(Boolean)
+                    .map(R.prop("message"))
+                    .join(", "),
+                }}
+              />
             )}
-          </form.Field>
+          </form.AppField>
         </CardContent>
       </Card>
 
@@ -157,13 +148,12 @@ export function SetupWizardStep2() {
           Back
         </Button>
 
-        <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-          {(canSubmit) => (
-            <Button type="submit" className="gap-2" isDisabled={!canSubmit}>
-              Next <ArrowRight className="size-5" />
-            </Button>
-          )}
-        </form.Subscribe>
+        <form.AppForm>
+          <form.SubmitButton>
+            Next
+            <ArrowRight className="size-5" />
+          </form.SubmitButton>
+        </form.AppForm>
       </div>
     </form>
   );

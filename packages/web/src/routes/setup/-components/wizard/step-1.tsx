@@ -1,18 +1,14 @@
 import { setupWizardStep1Schema } from "@printworks/core/tenants/shared";
-import { useForm } from "@tanstack/react-form";
 import { ArrowRight } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
-import * as v from "valibot";
 
 import { useApi } from "~/lib/hooks/api";
+import { useAppForm } from "~/lib/hooks/form";
 import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine } from "~/lib/hooks/setup";
-import { Button } from "~/ui/primitives/button";
-import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
-import { Label } from "~/ui/primitives/field";
+import { Card, CardContent } from "~/ui/primitives/card";
 import { Link } from "~/ui/primitives/link";
-import { Input } from "~/ui/primitives/text-field";
 
 export function SetupWizardStep1() {
   const setupMachine = useSetupMachine();
@@ -27,10 +23,8 @@ export function SetupWizardStep1() {
 
   const api = useApi();
 
-  const form = useForm({
-    validators: {
-      onSubmit: v.omit(setupWizardStep1Schema, ["tenantSlug"]),
-    },
+  const form = useAppForm({
+    validators: { onSubmit: setupWizardStep1Schema },
     defaultValues,
     onSubmit: async ({ value }) => {
       const res = await api.client.public.tenants["license-key-availability"][
@@ -68,104 +62,82 @@ export function SetupWizardStep1() {
 
       <Card>
         <CardContent className="grid gap-4 pt-6">
-          <form.Field
+          <form.AppField
             name="licenseKey"
             validators={{
               onBlur: setupWizardStep1Schema.entries.licenseKey,
             }}
           >
             {(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>License Key</Label>
-
-                <CardDescription>
-                  Your valid application license key.
-                </CardDescription>
-
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  placeholder="XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
-                />
-
-                {R.isEmpty(field.state.meta.errors) ? null : (
-                  <span className="text-sm text-red-500">
-                    {field.state.meta.errors.join(", ")}
-                  </span>
-                )}
-              </div>
+              <field.TextField
+                labelProps={{ children: "License Key" }}
+                descriptionProps={{
+                  children: "Your valid application license key.",
+                }}
+                inputProps={{
+                  placeholder: "XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX",
+                }}
+                errorMessageProps={{
+                  children: field.state.meta.errors
+                    .filter(Boolean)
+                    .map(R.prop("message"))
+                    .join(", "),
+                }}
+              />
             )}
-          </form.Field>
+          </form.AppField>
 
-          <form.Field
+          <form.AppField
             name="tenantName"
-            validators={{
-              onBlur: setupWizardStep1Schema.entries.tenantName,
-            }}
+            validators={{ onBlur: setupWizardStep1Schema.entries.tenantName }}
           >
             {(field) => (
-              <div className="grid gap-2">
-                <Label htmlFor={field.name}>Name</Label>
-
-                <CardDescription>
-                  The full name of your organization.
-                </CardDescription>
-
-                <Input
-                  id={field.name}
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  onBlur={field.handleBlur}
-                  placeholder="Acme Inc."
-                />
-
-                {R.isEmpty(field.state.meta.errors) ? null : (
-                  <span className="text-sm text-red-500">
-                    {field.state.meta.errors.join(", ")}
-                  </span>
-                )}
-              </div>
+              <field.TextField
+                labelProps={{ children: "Name" }}
+                descriptionProps={{
+                  children: "The full name of your organization.",
+                }}
+                inputProps={{ placeholder: "Acme Inc." }}
+                errorMessageProps={{
+                  children: field.state.meta.errors
+                    .filter(Boolean)
+                    .map(R.prop("message"))
+                    .join(", "),
+                }}
+              />
             )}
-          </form.Field>
+          </form.AppField>
 
-          <div className="grid gap-2">
-            <Label>Slug</Label>
-
-            <CardDescription>
-              A unique identifier for your organization, used for accessing the
-              application:
-              <Link href={{ to: "/" }} target="_blank">
-                {defaultValues.tenantSlug.toLowerCase()}.
-                {AppData.domainName.fullyQualified}
-              </Link>
-            </CardDescription>
-
-            <Input value={defaultValues.tenantSlug} disabled />
-          </div>
+          <form.AppField name="tenantSlug">
+            {(field) => (
+              <field.TextField
+                labelProps={{ children: "Slug" }}
+                descriptionProps={{
+                  children: (
+                    <>
+                      A unique identifier for your organization, used for
+                      accessing the application:
+                      <Link href={{ to: "/" }} target="_blank">
+                        {defaultValues.tenantSlug.toLowerCase()}.
+                        {AppData.domainName.fullyQualified}
+                      </Link>
+                    </>
+                  ),
+                }}
+                inputProps={{ disabled: true }}
+              />
+            )}
+          </form.AppField>
         </CardContent>
       </Card>
 
       <div className="flex justify-end">
-        <form.Subscribe
-          selector={({ canSubmit, isSubmitting }) => ({
-            canSubmit,
-            isSubmitting,
-          })}
-        >
-          {({ canSubmit, isSubmitting }) => (
-            <Button
-              type="submit"
-              className="gap-2"
-              isDisabled={!canSubmit}
-              isLoading={isSubmitting}
-            >
-              Next
-              <ArrowRight className="size-5" />
-            </Button>
-          )}
-        </form.Subscribe>
+        <form.AppForm>
+          <form.SubmitButton>
+            Next
+            <ArrowRight className="size-5" />
+          </form.SubmitButton>
+        </form.AppForm>
       </div>
     </form>
   );

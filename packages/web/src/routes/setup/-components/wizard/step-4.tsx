@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { Button as AriaButton } from "react-aria-components";
 import { setupWizardStep4Schema } from "@printworks/core/tenants/shared";
-import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
 import { useCopyToClipboard } from "~/lib/hooks/copy-to-clipboard";
+import { useAppForm } from "~/lib/hooks/form";
 import { useSetupMachine } from "~/lib/hooks/setup";
 import { onSelectionChange } from "~/lib/ui";
 import { linkStyles } from "~/styles/components/primitives/link";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
-import { Label } from "~/ui/primitives/field";
 import { Tab, TabList, TabPanel, Tabs } from "~/ui/primitives/tabs";
-import { Input } from "~/ui/primitives/text-field";
 
 export function SetupWizardStep4() {
   const setupMachine = useSetupMachine();
@@ -26,10 +24,8 @@ export function SetupWizardStep4() {
     papercutServerAuthToken: context.papercutServerAuthToken,
   }));
 
-  const form = useForm({
-    validators: {
-      onSubmit: setupWizardStep4Schema,
-    },
+  const form = useAppForm({
+    validators: { onSubmit: setupWizardStep4Schema },
     defaultValues,
     onSubmit: async ({ value }) =>
       actorRef.send({ type: "wizard.step4.next", ...value }),
@@ -126,7 +122,7 @@ export function SetupWizardStep4() {
         <TabPanel id="security">
           <Card>
             <CardContent className="grid gap-4 pt-6">
-              <form.Field
+              <form.AppField
                 name="tailnetPapercutServerUri"
                 validators={{
                   onBlur:
@@ -134,43 +130,41 @@ export function SetupWizardStep4() {
                 }}
               >
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor={field.name}>
-                      Tailnet PaperCut Server URL
-                    </Label>
-
-                    <CardDescription>
-                      The URL of the server using the tailnet address as listed
-                      in the{" "}
-                      <a
-                        href="https://login.tailscale.com/admin/machines"
-                        className={linkStyles({ className: "hover:underline" })}
-                        target="_blank"
-                      >
-                        admin console
-                      </a>
-                      .
-                    </CardDescription>
-
-                    <Input
-                      id={field.name}
-                      type="url"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      placeholder="http://100.x.x.x:9191"
-                    />
-
-                    {R.isEmpty(field.state.meta.errors) ? null : (
-                      <span className="text-sm text-red-500">
-                        {field.state.meta.errors.join(", ")}
-                      </span>
-                    )}
-                  </div>
+                  <field.TextField
+                    labelProps={{ children: "Tailnet PaperCut Server URL" }}
+                    descriptionProps={{
+                      children: (
+                        <>
+                          The URL of the server using the tailnet address as
+                          listed in the{" "}
+                          <a
+                            href="https://login.tailscale.com/admin/machines"
+                            className={linkStyles({
+                              className: "hover:underline",
+                            })}
+                            target="_blank"
+                          >
+                            admin console
+                          </a>
+                          .
+                        </>
+                      ),
+                    }}
+                    inputProps={{
+                      type: "url",
+                      placeholder: "http://100.x.x.x:9191",
+                    }}
+                    errorMessageProps={{
+                      children: field.state.meta.errors
+                        .filter(Boolean)
+                        .map(R.prop("message"))
+                        .join(", "),
+                    }}
+                  />
                 )}
-              </form.Field>
+              </form.AppField>
 
-              <form.Field
+              <form.AppField
                 name="papercutServerAuthToken"
                 validators={{
                   onBlur:
@@ -178,49 +172,50 @@ export function SetupWizardStep4() {
                 }}
               >
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor={field.name}>
-                      PaperCut Server Auth Token
-                    </Label>
-
-                    <CardDescription>
-                      The auth token you configured on your server. Printworks
-                      encrypts this and it will <strong>not</strong> be
-                      accessible to you after completing setup.
-                    </CardDescription>
-
-                    <div className="flex gap-2">
-                      <Input
-                        id={field.name}
-                        type={isTokenVisible ? "text" : "password"}
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onPress={() =>
-                          setIsTokenVisible((isTokenVisible) => !isTokenVisible)
-                        }
-                      >
-                        {isTokenVisible ? (
-                          <EyeOff className="size-5" />
-                        ) : (
-                          <Eye className="size-5" />
-                        )}
-                      </Button>
-                    </div>
-
-                    {R.isEmpty(field.state.meta.errors) ? null : (
-                      <span className="text-sm text-red-500">
-                        {field.state.meta.errors.join(", ")}
-                      </span>
-                    )}
-                  </div>
+                  <field.TextField
+                    labelProps={{ children: "PaperCut Server Auth Token" }}
+                    descriptionProps={{
+                      children: (
+                        <>
+                          The auth token you configured on your server.
+                          Printworks encrypts this and it will{" "}
+                          <strong>not</strong> be accessible to you after
+                          completing setup.
+                        </>
+                      ),
+                    }}
+                    inputProps={{
+                      type: isTokenVisible ? "text" : "password",
+                    }}
+                    groupProps={{
+                      className: "flex gap-2",
+                      children: (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onPress={() =>
+                            setIsTokenVisible(
+                              (isTokenVisible) => !isTokenVisible,
+                            )
+                          }
+                        >
+                          {isTokenVisible ? (
+                            <EyeOff className="size-5" />
+                          ) : (
+                            <Eye className="size-5" />
+                          )}
+                        </Button>
+                      ),
+                    }}
+                    errorMessageProps={{
+                      children: field.state.meta.errors
+                        .filter(Boolean)
+                        .map(R.prop("message"))
+                        .join(", "),
+                    }}
+                  />
                 )}
-              </form.Field>
+              </form.AppField>
             </CardContent>
           </Card>
         </TabPanel>
@@ -236,18 +231,12 @@ export function SetupWizardStep4() {
           Back
         </Button>
 
-        <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-          {(canSubmit) => (
-            <Button
-              type="submit"
-              onPress={() => setSelectedTab(() => "security")}
-              className="gap-2"
-              isDisabled={!canSubmit}
-            >
-              Next <ArrowRight className="size-5" />
-            </Button>
-          )}
-        </form.Subscribe>
+        <form.AppForm>
+          <form.SubmitButton onPress={() => setSelectedTab(() => "security")}>
+            Next
+            <ArrowRight className="size-5" />
+          </form.SubmitButton>
+        </form.AppForm>
       </div>
     </form>
   );

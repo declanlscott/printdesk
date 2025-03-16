@@ -19,6 +19,7 @@ import { useUser } from "~/lib/hooks/user";
 import { links } from "~/lib/links";
 import { linkStyles, logoStyles } from "~/styles/components/main-nav";
 import { CommandBar } from "~/ui/command-bar";
+import { UserMenu } from "~/ui/menus/user";
 import { Button } from "~/ui/primitives/button";
 import {
   BaseCombobox,
@@ -33,7 +34,6 @@ import { FieldGroup } from "~/ui/primitives/field";
 import { KeyboardShortcut } from "~/ui/primitives/keyboard-shortcut";
 import { Separator } from "~/ui/primitives/separator";
 import { Tooltip, TooltipTrigger } from "~/ui/primitives/tooltip";
-import { UserMenu } from "~/ui/user-menu";
 
 import type { ComponentProps } from "react";
 

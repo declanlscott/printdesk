@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { TextField as AriaTextField } from "react-aria-components";
 import { tenantStatuses } from "@printworks/core/tenants/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock, LockOpen, Pencil, UserRoundX } from "lucide-react";
@@ -10,7 +9,7 @@ import { useUser } from "~/lib/hooks/user";
 import { collectionItem, onSelectionChange } from "~/lib/ui";
 import { labelStyles } from "~/styles/components/primitives/field";
 import { EnforceAbac } from "~/ui/access-control";
-import { DeleteUserDialog } from "~/ui/delete-user-dialog";
+import { DeleteUserDialog } from "~/ui/dialogs/delete-user";
 import { Button } from "~/ui/primitives/button";
 import {
   Card,
@@ -27,14 +26,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/ui/primitives/dialog";
-import { Label } from "~/ui/primitives/field";
 import {
   Select,
   SelectItem,
   SelectListBox,
   SelectPopover,
 } from "~/ui/primitives/select";
-import { Input } from "~/ui/primitives/text-field";
+import { TextField } from "~/ui/primitives/text-field";
 import { Toggle } from "~/ui/primitives/toggle";
 
 import type { TenantStatus } from "@printworks/core/tenants/shared";
@@ -120,27 +118,25 @@ function OrganizationCard() {
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <AriaTextField>
-          <Label>Full Name</Label>
+        <TextField
+          labelProps={{ children: "Full Name" }}
+          inputProps={{
+            disabled: isLocked,
+            value: fullName ?? "",
+            onChange: (e) => setFullName(e.target.value),
+            onBlur: void mutateName,
+          }}
+        />
 
-          <Input
-            disabled={isLocked}
-            value={fullName ?? ""}
-            onChange={(e) => setFullName(e.target.value)}
-            onBlur={mutateName}
-          />
-        </AriaTextField>
-
-        <AriaTextField>
-          <Label>Short Name</Label>
-
-          <Input
-            disabled={isLocked}
-            value={shortName ?? ""}
-            onChange={(e) => setShortName(e.target.value)}
-            onBlur={mutateSlug}
-          />
-        </AriaTextField>
+        <TextField
+          labelProps={{ children: "Short Name" }}
+          inputProps={{
+            disabled: isLocked,
+            value: shortName ?? "",
+            onChange: (e) => setShortName(e.target.value),
+            onBlur: void mutateSlug,
+          }}
+        />
       </CardContent>
     </Card>
   );
@@ -276,15 +272,14 @@ function TenantStatusSelect() {
               </DialogHeader>
 
               <div className="grid gap-4 py-4">
-                <AriaTextField>
-                  <Label>Full Name</Label>
-
-                  <Input
-                    placeholder={tenant.name}
-                    value={confirmationText}
-                    onChange={(e) => setConfirmationText(e.target.value)}
-                  />
-                </AriaTextField>
+                <TextField
+                  labelProps={{ children: "Full Name" }}
+                  inputProps={{
+                    placeholder: tenant.name,
+                    value: confirmationText,
+                    onChange: (e) => setConfirmationText(e.target.value),
+                  }}
+                />
               </div>
 
               <DialogFooter>

@@ -1,18 +1,16 @@
 import { useState } from "react";
 import { setupWizardStep3Schema } from "@printworks/core/tenants/shared";
-import { useForm } from "@tanstack/react-form";
 import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 
+import { useAppForm } from "~/lib/hooks/form";
 import { useSetupMachine } from "~/lib/hooks/setup";
 import { onSelectionChange } from "~/lib/ui";
 import { linkStyles } from "~/styles/components/primitives/link";
 import { Markdown } from "~/ui/markdown";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardDescription } from "~/ui/primitives/card";
-import { Label } from "~/ui/primitives/field";
 import { Tab, TabList, TabPanel, Tabs } from "~/ui/primitives/tabs";
-import { Input } from "~/ui/primitives/text-field";
 
 export function SetupWizardStep3() {
   const setupMachine = useSetupMachine();
@@ -24,10 +22,8 @@ export function SetupWizardStep3() {
     tailscaleOauthClientSecret: context.tailscaleOauthClientSecret,
   }));
 
-  const form = useForm({
-    validators: {
-      onSubmit: setupWizardStep3Schema,
-    },
+  const form = useAppForm({
+    validators: { onSubmit: setupWizardStep3Schema },
     defaultValues,
     onSubmit: async ({ value }) =>
       actorRef.send({ type: "wizard.step3.next", ...value }),
@@ -131,33 +127,26 @@ export function SetupWizardStep3() {
                 accessible to you after completing setup.
               </CardDescription>
 
-              <form.Field
+              <form.AppField
                 name="tailscaleOauthClientId"
                 validators={{
                   onBlur: setupWizardStep3Schema.entries.tailscaleOauthClientId,
                 }}
               >
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor={field.name}>Client ID</Label>
-
-                    <Input
-                      id={field.name}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                    />
-
-                    {R.isEmpty(field.state.meta.errors) ? null : (
-                      <span className="text-sm text-red-500">
-                        {field.state.meta.errors.join(", ")}
-                      </span>
-                    )}
-                  </div>
+                  <field.TextField
+                    labelProps={{ children: "Client ID" }}
+                    errorMessageProps={{
+                      children: field.state.meta.errors
+                        .filter(Boolean)
+                        .map(R.prop("message"))
+                        .join(", "),
+                    }}
+                  />
                 )}
-              </form.Field>
+              </form.AppField>
 
-              <form.Field
+              <form.AppField
                 name="tailscaleOauthClientSecret"
                 validators={{
                   onBlur:
@@ -165,43 +154,38 @@ export function SetupWizardStep3() {
                 }}
               >
                 {(field) => (
-                  <div className="grid gap-2">
-                    <Label htmlFor={field.name}>Client Secret</Label>
-
-                    <div className="flex gap-2">
-                      <Input
-                        id={field.name}
-                        type={isSecretVisible ? "text" : "password"}
-                        value={field.state.value}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        onBlur={field.handleBlur}
-                      />
-
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onPress={() =>
-                          setIsSecretVisible(
-                            (isSecretVisible) => !isSecretVisible,
-                          )
-                        }
-                      >
-                        {isSecretVisible ? (
-                          <EyeOff className="size-5" />
-                        ) : (
-                          <Eye className="size-5" />
-                        )}
-                      </Button>
-                    </div>
-
-                    {R.isEmpty(field.state.meta.errors) ? null : (
-                      <span className="text-sm text-red-500">
-                        {field.state.meta.errors.join(", ")}
-                      </span>
-                    )}
-                  </div>
+                  <field.TextField
+                    labelProps={{ children: "Client Secret" }}
+                    inputProps={{ type: isSecretVisible ? "text" : "password" }}
+                    groupProps={{
+                      className: "flex gap-2",
+                      children: (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onPress={() =>
+                            setIsSecretVisible(
+                              (isSecretVisible) => !isSecretVisible,
+                            )
+                          }
+                        >
+                          {isSecretVisible ? (
+                            <EyeOff className="size-5" />
+                          ) : (
+                            <Eye className="size-5" />
+                          )}
+                        </Button>
+                      ),
+                    }}
+                    errorMessageProps={{
+                      children: field.state.meta.errors
+                        .filter(Boolean)
+                        .map(R.prop("message"))
+                        .join(", "),
+                    }}
+                  />
                 )}
-              </form.Field>
+              </form.AppField>
             </CardContent>
           </Card>
         </TabPanel>
@@ -217,18 +201,14 @@ export function SetupWizardStep3() {
           Back
         </Button>
 
-        <form.Subscribe selector={({ canSubmit }) => canSubmit}>
-          {(canSubmit) => (
-            <Button
-              type="submit"
-              onPress={() => setSelectedTab(() => "oauth-client")}
-              className="gap-2"
-              isDisabled={!canSubmit}
-            >
-              Next <ArrowRight className="size-5" />
-            </Button>
-          )}
-        </form.Subscribe>
+        <form.AppForm>
+          <form.SubmitButton
+            onPress={() => setSelectedTab(() => "oauth-client")}
+          >
+            Next
+            <ArrowRight className="size-5" />
+          </form.SubmitButton>
+        </form.AppForm>
       </div>
     </form>
   );

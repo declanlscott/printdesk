@@ -11,8 +11,7 @@ import {
   DisclosureHeader,
   DisclosurePanel,
 } from "~/ui/primitives/disclosure";
-import { Label } from "~/ui/primitives/field";
-import { Input } from "~/ui/primitives/text-field";
+import { TextField } from "~/ui/primitives/text-field";
 
 export function SetupWizardReview() {
   const setupMachine = useSetupMachine();
@@ -74,21 +73,24 @@ function Step1() {
 
       <DisclosurePanel className="grid gap-4">
         <div className="grid gap-2">
-          <Label>License Key</Label>
-
-          <Input disabled value={licenseKey} />
+          <TextField
+            labelProps={{ children: "License Key" }}
+            inputProps={{ disabled: true, value: licenseKey }}
+          />
         </div>
 
         <div className="grid gap-2">
-          <Label>Name</Label>
-
-          <Input disabled value={tenantName} />
+          <TextField
+            labelProps={{ children: "Name" }}
+            inputProps={{ disabled: true, value: tenantName }}
+          />
         </div>
 
         <div className="grid gap-2">
-          <Label>Slug</Label>
-
-          <Input disabled value={tenantSlug} />
+          <TextField
+            labelProps={{ children: "Slug" }}
+            inputProps={{ disabled: true, value: tenantSlug }}
+          />
         </div>
       </DisclosurePanel>
     </Disclosure>
@@ -114,18 +116,20 @@ function Step2() {
       <DisclosurePanel>
         <DisclosurePanel className="grid gap-4">
           <div className="grid gap-2">
-            <Label>Type</Label>
-
-            <Input
-              disabled
-              value={userOauthProviderNames[userOauthProviderKind]}
+            <TextField
+              labelProps={{ children: "Type" }}
+              inputProps={{
+                disabled: true,
+                value: userOauthProviderNames[userOauthProviderKind],
+              }}
             />
           </div>
 
           <div className="grid gap-2">
-            <Label>Tenant ID</Label>
-
-            <Input disabled value={userOauthProviderId} />
+            <TextField
+              labelProps={{ children: "Tenant ID" }}
+              inputProps={{ disabled: true, value: userOauthProviderId }}
+            />
           </div>
         </DisclosurePanel>
       </DisclosurePanel>
@@ -148,35 +152,39 @@ function Step3() {
 
       <DisclosurePanel className="grid gap-4">
         <div className="grid gap-2">
-          <Label>Client ID</Label>
-
-          <Input disabled value={tailscaleOauthClientId} />
+          <TextField
+            labelProps={{ children: "Client ID" }}
+            inputProps={{ disabled: true, value: tailscaleOauthClientId }}
+          />
         </div>
 
         <div className="grid gap-2">
-          <Label>Client Secret</Label>
-
-          <div className="flex gap-2">
-            <Input
-              type={isSecretVisible ? "text" : "password"}
-              disabled
-              value={tailscaleOauthClientSecret}
-            />
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={() =>
-                setIsSecretVisible((isSecretVisible) => !isSecretVisible)
-              }
-            >
-              {isSecretVisible ? (
-                <EyeOff className="size-5" />
-              ) : (
-                <Eye className="size-5" />
-              )}
-            </Button>
-          </div>
+          <TextField
+            labelProps={{ children: "Client Secret" }}
+            inputProps={{
+              type: isSecretVisible ? "text" : "password",
+              disabled: true,
+              value: tailscaleOauthClientSecret,
+            }}
+            groupProps={{
+              className: "flex gap-2",
+              children: (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onPress={() =>
+                    setIsSecretVisible((isSecretVisible) => !isSecretVisible)
+                  }
+                >
+                  {isSecretVisible ? (
+                    <EyeOff className="size-5" />
+                  ) : (
+                    <Eye className="size-5" />
+                  )}
+                </Button>
+              ),
+            }}
+          />
         </div>
       </DisclosurePanel>
     </Disclosure>
@@ -198,35 +206,39 @@ function Step4() {
 
       <DisclosurePanel className="grid gap-4">
         <div className="grid gap-2">
-          <Label>Tailnet PaperCut Server URL</Label>
-
-          <Input disabled value={tailnetPapercutServerUri} />
+          <TextField
+            labelProps={{ children: "PaperCut Server URL" }}
+            inputProps={{ disabled: true, value: tailnetPapercutServerUri }}
+          />
         </div>
 
         <div className="grid gap-2">
-          <Label>PaperCut Server Auth Token</Label>
-
-          <div className="flex gap-2">
-            <Input
-              type={isTokenVisible ? "text" : "password"}
-              disabled
-              value={papercutServerAuthToken}
-            />
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onPress={() =>
-                setIsTokenVisible((isTokenVisible) => !isTokenVisible)
-              }
-            >
-              {isTokenVisible ? (
-                <EyeOff className="size-5" />
-              ) : (
-                <Eye className="size-5" />
-              )}
-            </Button>
-          </div>
+          <TextField
+            labelProps={{ children: "PaperCut Server Auth Token" }}
+            inputProps={{
+              type: isTokenVisible ? "text" : "password",
+              disabled: true,
+              value: papercutServerAuthToken,
+            }}
+            groupProps={{
+              className: "flex gap-2",
+              children: (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onPress={() =>
+                    setIsTokenVisible((isTokenVisible) => !isTokenVisible)
+                  }
+                >
+                  {isTokenVisible ? (
+                    <EyeOff className="size-5" />
+                  ) : (
+                    <Eye className="size-5" />
+                  )}
+                </Button>
+              ),
+            }}
+          />
         </div>
       </DisclosurePanel>
     </Disclosure>

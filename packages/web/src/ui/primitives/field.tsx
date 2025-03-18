@@ -1,4 +1,5 @@
 import {
+  FieldError as AriaFieldError,
   Group as AriaGroup,
   Label as AriaLabel,
   Text as AriaText,
@@ -10,6 +11,7 @@ import {
   fieldGroupStyles,
   labelStyles,
 } from "~/styles/components/primitives/field";
+import { composeTwRenderProps } from "~/styles/utils";
 
 import type { ComponentProps } from "react";
 
@@ -32,6 +34,17 @@ export const ErrorMessage = ({ className, ...props }: ErrorMessageProps) => (
   <AriaText
     slot="errorMessage"
     className={twMerge("text-destructive text-sm font-medium", className)}
+    {...props}
+  />
+);
+
+export type FieldErrorProps = ComponentProps<typeof AriaFieldError>;
+export const FieldError = ({ className, ...props }: FieldErrorProps) => (
+  <AriaFieldError
+    className={composeTwRenderProps(
+      className,
+      "text-destructive text-sm font-medium",
+    )}
     {...props}
   />
 );

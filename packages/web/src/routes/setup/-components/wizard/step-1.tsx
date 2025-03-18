@@ -83,6 +83,7 @@ export function SetupWizardStep1() {
                     .map(R.prop("message"))
                     .join(", "),
                 }}
+                className="grid gap-2"
               />
             )}
           </form.AppField>
@@ -104,6 +105,7 @@ export function SetupWizardStep1() {
                     .map(R.prop("message"))
                     .join(", "),
                 }}
+                className="grid gap-2"
               />
             )}
           </form.AppField>
@@ -125,6 +127,7 @@ export function SetupWizardStep1() {
                   ),
                 }}
                 inputProps={{ disabled: true }}
+                className="grid gap-2"
               />
             )}
           </form.AppField>

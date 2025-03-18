@@ -1,4 +1,5 @@
 import { auth } from "./auth";
+import { temporaryBucket } from "./buckets";
 import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import { apiFqdn } from "./dns";
@@ -17,6 +18,7 @@ export const api = new custom.aws.Function("Api", {
     cloudfrontPrivateKey,
     dsqlCluster,
     infraQueue,
+    temporaryBucket,
   ],
   permissions: [
     {

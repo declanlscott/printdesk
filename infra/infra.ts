@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { codeBucket, pulumiBucket } from "./buckets";
 import * as custom from "./custom";
 import { dbMigratorInvocationSuccessResult, dsqlCluster } from "./db";
 import {
@@ -11,24 +12,6 @@ import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
 import { infraFunctionRole, pulumiRole, realtimePublisherRole } from "./roles";
 import { injectLinkables, normalizePath } from "./utils";
-
-export const codeBucket = new sst.aws.Bucket("CodeBucket", {
-  versioning: true,
-  transform: {
-    policy: (args) => {
-      args.policy = sst.aws.iamEdit(args.policy, (policy) => {
-        policy.Statement.push({
-          Effect: "Allow",
-          Action: ["s3:GetObject"],
-          Resource: $interpolate`arn:aws:s3:::${args.bucket}/*`,
-          Principal: { AWS: pulumiRole.arn },
-        });
-      });
-    },
-  },
-});
-
-export const pulumiBucket = new sst.aws.Bucket("PulumiBucket");
 
 export const repository = new awsx.ecr.Repository(
   "Repository",

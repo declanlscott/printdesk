@@ -1,4 +1,9 @@
+import { vValidator } from "@hono/valibot-validator";
 import { Replicache } from "@printworks/core/replicache";
+import {
+  pullRequestSchema,
+  pushRequestSchema,
+} from "@printworks/core/replicache/shared";
 import { useTenant } from "@printworks/core/tenants/context";
 import { Credentials } from "@printworks/core/utils/aws";
 import {
@@ -10,20 +15,30 @@ import { Hono } from "hono";
 import { Resource } from "sst";
 
 import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
+import { handleLargeResponse } from "~/api/middleware/response";
 import { user } from "~/api/middleware/user";
 
 export default new Hono()
   .use(user)
-  .post("/pull", async (c) => {
-    const pullRequest: unknown = await c.req.json();
+  .post(
+    "/pull",
+    vValidator("json", pullRequestSchema),
+    async (c, next) =>
+      handleLargeResponse(`/replicache/pull/${c.req.valid("json").profileID}`)(
+        c,
+        next,
+      ),
+    async (c) => {
+      const pullResponse = await Replicache.pull(c.req.valid("json")).catch(
+        rethrowHttpError,
+      );
 
-    const pullResponse =
-      await Replicache.pull(pullRequest).catch(rethrowHttpError);
-
-    return c.json(pullResponse, 200);
-  })
+      return c.json(pullResponse, 200);
+    },
+  )
   .post(
     "/push",
+    vValidator("json", pushRequestSchema),
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,
@@ -41,10 +56,9 @@ export default new Hono()
       RoleSessionName: "ApiReplicachePush",
     })),
     async (c) => {
-      const pushRequest: unknown = await c.req.json();
-
-      const pushResponse =
-        await Replicache.push(pushRequest).catch(rethrowHttpError);
+      const pushResponse = await Replicache.push(c.req.valid("json")).catch(
+        rethrowHttpError,
+      );
 
       return c.json(pushResponse, 200);
     },

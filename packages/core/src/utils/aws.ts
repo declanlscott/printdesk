@@ -159,6 +159,10 @@ export namespace S3 {
     args?: RequestPresigningArguments,
   ) => getSignedUrl(useAws("s3").client, new GetObjectCommand(input), args);
 
+  export const putObject = async (
+    input: NonNullableProperties<PutObjectCommandInput>,
+  ) => useAws("s3").client.send(new PutObjectCommand(input));
+
   export const deleteObject = async (
     input: NonNullableProperties<DeleteObjectCommandInput>,
   ) => useAws("s3").client.send(new DeleteObjectCommand(input));

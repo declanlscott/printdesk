@@ -22,14 +22,19 @@ export const replicacheClientGroupsTableName = "replicache_client_groups";
 export const replicacheClientsTableName = "replicache_clients";
 export const replicacheClientViewsTableName = "replicache_client_views";
 
-export const genericMutationSchema = v.object({
+export const mutationV0Schema = v.object({
   name: v.string(),
   args: v.any(),
   id: v.number(),
   timestamp: v.number(),
+});
+export type MutationV0 = v.InferOutput<typeof mutationV0Schema>;
+
+export const mutationV1Schema = v.object({
+  ...mutationV0Schema.entries,
   clientID: v.pipe(v.string(), v.uuid()),
 });
-export type GenericMutation = v.InferOutput<typeof genericMutationSchema>;
+export type MutationV1 = v.InferOutput<typeof mutationV1Schema>;
 
 export const mutationNameSchema = v.picklist([
   ...announcementMutationNames,
@@ -49,11 +54,15 @@ export type MutationName = v.InferOutput<typeof mutationNameSchema>;
 export const pushRequestSchema = v.variant("pushVersion", [
   v.looseObject({
     pushVersion: v.literal(0),
+    clientID: v.pipe(v.string(), v.uuid()),
+    mutations: v.array(mutationV0Schema),
+    profileID: v.string(),
+    schemaVersion: v.string(),
   }),
   v.object({
     pushVersion: v.literal(1),
     clientGroupID: v.pipe(v.string(), v.uuid()),
-    mutations: v.array(genericMutationSchema),
+    mutations: v.array(mutationV1Schema),
     profileID: v.string(),
     schemaVersion: v.string(),
   }),
@@ -61,8 +70,12 @@ export const pushRequestSchema = v.variant("pushVersion", [
 export type PushRequest = v.InferOutput<typeof pushRequestSchema>;
 
 export const pullRequestSchema = v.variant("pullVersion", [
-  v.looseObject({
+  v.object({
     pullVersion: v.literal(0),
+    schemaVersion: v.string(),
+    profileID: v.string(),
+    cookie: v.nullable(v.looseObject({})),
+    lastMutationID: v.number(),
   }),
   v.object({
     pullVersion: v.literal(1),

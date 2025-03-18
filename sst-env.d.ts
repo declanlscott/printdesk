@@ -208,6 +208,10 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "TemporaryBucket": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
     "Web": {
       "type": "sst.aws.StaticSite"
       "url": string

@@ -16,11 +16,9 @@ import { syncedTables } from "../utils/tables";
 import { buildCvr, diffCvr, isCvrDiffEmpty } from "./client-view-record";
 import { commandRepository, queryRepository } from "./data";
 import {
-  genericMutationSchema,
   isSerialized,
   mutationNameSchema,
-  pullRequestSchema,
-  pushRequestSchema,
+  mutationV1Schema,
   replicacheClientsTableName,
 } from "./shared";
 import {
@@ -48,7 +46,7 @@ import type {
   TableMetadata,
   TablePatchData,
 } from "./data";
-import type { Serialized } from "./shared";
+import type { PullRequest, PushRequest, Serialized } from "./shared";
 import type { ReplicacheClient, ReplicacheClientGroup } from "./sql";
 
 export namespace Replicache {
@@ -166,19 +164,20 @@ export namespace Replicache {
   /**
    * Implements the row version strategy pull algorithm from the [Replicache docs](https://doc.replicache.dev/strategies/row-version#pull).
    */
-  export const pull = fn(
-    pullRequestSchema,
-    async (pullRequest): Promise<PullResponseV1> => {
-      if (pullRequest.pullVersion !== 1)
-        return {
-          error: "VersionNotSupported",
-          versionType: "pull",
-        };
+  export async function pull(
+    pullRequest: PullRequest,
+  ): Promise<PullResponseV1> {
+    if (pullRequest.pullVersion !== 1)
+      return {
+        error: "VersionNotSupported",
+        versionType: "pull",
+      };
 
-      const cookieOrder = pullRequest.cookie?.order ?? 0;
+    const cookieOrder = pullRequest.cookie?.order ?? 0;
 
-      // 3: Begin transaction
-      const result: PullTransactionResult = await useTransaction(async (tx) => {
+    // 3: Begin transaction
+    const result = await useTransaction(
+      async (tx): Promise<PullTransactionResult> => {
         // 1: Fetch previous client view record
         const prevClientView = pullRequest.cookie
           ? await tx
@@ -333,196 +332,187 @@ export namespace Replicache {
             },
           },
         };
-      });
+      },
+    );
 
-      // 10: If transaction result returns empty diff, return no-op
-      if (!result)
-        return {
-          patch: [],
-          cookie: pullRequest.cookie,
-          lastMutationIDChanges: {},
-        };
-
-      // 18(i): Build patch
-      const patch: Array<PatchOperation> = [];
-      if (result.cvr.prev.value === undefined) patch.push({ op: "clear" });
-      for (const [name, { puts, dels }] of result.data) {
-        for (const value of puts)
-          patch.push({
-            op: "put",
-            key: `${name}/${value.id}`,
-            value: serialize(value) as Serialized,
-          });
-
-        for (const id of dels) patch.push({ op: "del", key: `${name}/${id}` });
-      }
-
-      // 18(ii): Construct cookie
-      const cookie = result.cvr.next.version;
-
-      // 18(iii): Last mutation ID changes
-      const lastMutationIDChanges = result.clients;
-
+    // 10: If transaction result returns empty diff, return no-op
+    if (!result)
       return {
-        patch,
-        cookie,
-        lastMutationIDChanges,
+        patch: [],
+        cookie: pullRequest.cookie,
+        lastMutationIDChanges: {},
       };
-    },
-    {
-      Error: ReplicacheError.BadRequest,
-      args: ["Failed to parse pull request"],
-    },
-  );
+
+    // 18(i): Build patch
+    const patch: Array<PatchOperation> = [];
+    if (result.cvr.prev.value === undefined) patch.push({ op: "clear" });
+    for (const [name, { puts, dels }] of result.data) {
+      for (const value of puts)
+        patch.push({
+          op: "put",
+          key: `${name}/${value.id}`,
+          value: serialize(value) as Serialized,
+        });
+
+      for (const id of dels) patch.push({ op: "del", key: `${name}/${id}` });
+    }
+
+    // 18(ii): Construct cookie
+    const cookie = result.cvr.next.version;
+
+    // 18(iii): Last mutation ID changes
+    const lastMutationIDChanges = result.clients;
+
+    return {
+      patch,
+      cookie,
+      lastMutationIDChanges,
+    };
+  }
 
   /**
    * Implements the row version strategy push algorithm from the [Replicache docs](https://doc.replicache.dev/strategies/row-version#push).
    */
-  export const push = fn(
-    pushRequestSchema,
-    async (pushRequest): Promise<PushResponse | null> => {
-      if (pushRequest.pushVersion !== 1)
-        return { error: "VersionNotSupported", versionType: "push" };
+  export async function push(
+    pushRequest: PushRequest,
+  ): Promise<PushResponse | null> {
+    if (pushRequest.pushVersion !== 1)
+      return { error: "VersionNotSupported", versionType: "push" };
 
-      const context = Utils.createContext<{ errorMode: boolean }>(
-        Constants.CONTEXT_NAMES.PUSH,
-      );
+    const context = Utils.createContext<{ errorMode: boolean }>(
+      Constants.CONTEXT_NAMES.PUSH,
+    );
 
-      for (const mutation of pushRequest.mutations) {
-        try {
-          // 1: Error mode is initially false
-          await context.with({ errorMode: false }, async () =>
-            processMutation(mutation),
-          );
-        } catch (error) {
-          console.error(error);
+    for (const mutation of pushRequest.mutations) {
+      try {
+        // 1: Error mode is initially false
+        await context.with({ errorMode: false }, async () =>
+          processMutation(mutation),
+        );
+      } catch (error) {
+        console.error(error);
 
-          console.log(
-            `Encountered error during push on mutation "${mutation.id}"`,
-          );
+        console.log(
+          `Encountered error during push on mutation "${mutation.id}"`,
+        );
 
-          if (error instanceof ReplicacheError.ClientStateNotFound)
-            return { error: error.name };
+        if (error instanceof ReplicacheError.ClientStateNotFound)
+          return { error: error.name };
 
-          console.log(`Retrying mutation "${mutation.id}" in error mode`);
+        console.log(`Retrying mutation "${mutation.id}" in error mode`);
 
-          // retry in error mode
-          await context.with({ errorMode: true }, async () =>
-            processMutation(mutation),
-          );
-        }
+        // retry in error mode
+        await context.with({ errorMode: true }, async () =>
+          processMutation(mutation),
+        );
       }
+    }
 
-      const processMutation = fn(
-        v.object({
-          ...genericMutationSchema.entries,
-          name: mutationNameSchema,
-        }),
-        async (mutation) =>
-          // 2: Begin transaction
-          useTransaction(async () => {
-            const clientGroupId = pushRequest.clientGroupID;
+    const processMutation = fn(
+      v.object({
+        ...mutationV1Schema.entries,
+        name: mutationNameSchema,
+      }),
+      async (mutation) =>
+        // 2: Begin transaction
+        useTransaction(async () => {
+          const clientGroupId = pushRequest.clientGroupID;
 
-            // 3: Get client group
-            const clientGroup =
-              (await clientGroupFromId(clientGroupId)) ??
-              ({
-                id: clientGroupId,
-                tenantId: useTenant().id,
-                cvrVersion: 0,
-                userId: useUser().id,
-              } satisfies OmitTimestamps<ReplicacheClientGroup>);
+          // 3: Get client group
+          const clientGroup =
+            (await clientGroupFromId(clientGroupId)) ??
+            ({
+              id: clientGroupId,
+              tenantId: useTenant().id,
+              cvrVersion: 0,
+              userId: useUser().id,
+            } satisfies OmitTimestamps<ReplicacheClientGroup>);
 
-            // 4: Verify requesting user owns the client group
-            if (clientGroup.userId !== useUser().id)
-              throw new ReplicacheError.Unauthorized(
-                `User "${useUser().id}" does not own client group "${clientGroupId}"`,
-              );
-
-            // 5: Get client
-            const client =
-              (await clientFromId(mutation.clientID)) ??
-              ({
-                id: mutation.clientID,
-                tenantId: useTenant().id,
-                clientGroupId: clientGroupId,
-                lastMutationId: 0,
-              } satisfies OmitTimestamps<ReplicacheClient>);
-
-            // 6: Verify requesting client group owns the client
-            if (client.clientGroupId !== clientGroupId)
-              throw new ReplicacheError.Unauthorized(
-                `Client ${mutation.clientID} does not belong to client group ${clientGroupId}`,
-              );
-
-            if (client.lastMutationId === 0 && mutation.id > 1)
-              throw new ReplicacheError.ClientStateNotFound();
-
-            // 7: Next mutation ID
-            const nextMutationId = client.lastMutationId + 1;
-
-            // 8: Rollback and skip if mutation already processed
-            if (mutation.id < nextMutationId)
-              return console.log(
-                `Mutation "${mutation.id}" already processed - skipping`,
-              );
-
-            // 9: Rollback and throw if mutation is from the future
-            if (mutation.id > nextMutationId)
-              throw new ReplicacheError.MutationConflict(
-                `Mutation "${mutation.id}" is from the future - aborting`,
-              );
-
-            const start = Date.now();
-
-            // 10. Perform mutation
-            if (!context.use().errorMode) {
-              try {
-                if (!isSerialized(mutation.args))
-                  throw new ReplicacheError.BadRequest(
-                    "Mutation args not serialized",
-                  );
-
-                // 10(i): Business logic
-                // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
-                await commandRepository[mutation.name](
-                  deserialize(mutation.args),
-                );
-              } catch (e) {
-                // 10(ii)(a-c): Log, abort, and retry
-                console.log(`Error processing mutation "${mutation.id}"`);
-
-                throw e;
-              }
-            }
-
-            const nextClient = {
-              id: client.id,
-              tenantId: client.tenantId,
-              clientGroupId,
-              lastMutationId: nextMutationId,
-            } satisfies OmitTimestamps<ReplicacheClient>;
-
-            await Promise.all([
-              // 11. Upsert client group
-              await putClientGroup(clientGroup),
-
-              // 12. Upsert client
-              await putClient(nextClient),
-            ]);
-
-            const end = Date.now();
-            console.log(
-              `Processed mutation "${mutation.id}" in ${end - start}ms`,
+          // 4: Verify requesting user owns the client group
+          if (clientGroup.userId !== useUser().id)
+            throw new ReplicacheError.Unauthorized(
+              `User "${useUser().id}" does not own client group "${clientGroupId}"`,
             );
-          }),
-      );
 
-      return null;
-    },
-    {
-      Error: ReplicacheError.BadRequest,
-      args: ["Failed to parse push request"],
-    },
-  );
+          // 5: Get client
+          const client =
+            (await clientFromId(mutation.clientID)) ??
+            ({
+              id: mutation.clientID,
+              tenantId: useTenant().id,
+              clientGroupId: clientGroupId,
+              lastMutationId: 0,
+            } satisfies OmitTimestamps<ReplicacheClient>);
+
+          // 6: Verify requesting client group owns the client
+          if (client.clientGroupId !== clientGroupId)
+            throw new ReplicacheError.Unauthorized(
+              `Client ${mutation.clientID} does not belong to client group ${clientGroupId}`,
+            );
+
+          if (client.lastMutationId === 0 && mutation.id > 1)
+            throw new ReplicacheError.ClientStateNotFound();
+
+          // 7: Next mutation ID
+          const nextMutationId = client.lastMutationId + 1;
+
+          // 8: Rollback and skip if mutation already processed
+          if (mutation.id < nextMutationId)
+            return console.log(
+              `Mutation "${mutation.id}" already processed - skipping`,
+            );
+
+          // 9: Rollback and throw if mutation is from the future
+          if (mutation.id > nextMutationId)
+            throw new ReplicacheError.MutationConflict(
+              `Mutation "${mutation.id}" is from the future - aborting`,
+            );
+
+          const start = Date.now();
+
+          // 10. Perform mutation
+          if (!context.use().errorMode) {
+            try {
+              if (!isSerialized(mutation.args))
+                throw new ReplicacheError.BadRequest(
+                  "Mutation args not serialized",
+                );
+
+              // 10(i): Business logic
+              // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
+              await commandRepository[mutation.name](
+                deserialize(mutation.args),
+              );
+            } catch (e) {
+              // 10(ii)(a-c): Log, abort, and retry
+              console.log(`Error processing mutation "${mutation.id}"`);
+
+              throw e;
+            }
+          }
+
+          const nextClient = {
+            id: client.id,
+            tenantId: client.tenantId,
+            clientGroupId,
+            lastMutationId: nextMutationId,
+          } satisfies OmitTimestamps<ReplicacheClient>;
+
+          await Promise.all([
+            // 11. Upsert client group
+            await putClientGroup(clientGroup),
+
+            // 12. Upsert client
+            await putClient(nextClient),
+          ]);
+
+          const end = Date.now();
+          console.log(
+            `Processed mutation "${mutation.id}" in ${end - start}ms`,
+          );
+        }),
+    );
+
+    return null;
+  }
 }

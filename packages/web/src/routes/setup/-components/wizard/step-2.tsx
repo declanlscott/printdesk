@@ -132,6 +132,7 @@ export function SetupWizardStep2() {
                     .map(R.prop("message"))
                     .join(", "),
                 }}
+                className="grid gap-2"
               />
             )}
           </form.AppField>

@@ -1,10 +1,10 @@
 import {
+  Group as AriaGroup,
   TextField as AriaTextField,
-  Input,
-  Label,
 } from "react-aria-components";
 
-import { Description, ErrorMessage, FieldGroup } from "~/ui/primitives/field";
+import { Description, ErrorMessage, Label } from "~/ui/primitives/field";
+import { Input } from "~/ui/primitives/input";
 
 import type {
   TextFieldProps as AriaTextFieldProps,
@@ -38,7 +38,7 @@ export const TextField = ({
 
     {descriptionProps ? <Description {...descriptionProps} /> : null}
 
-    <FieldGroup {...groupProps}>
+    <AriaGroup {...groupProps}>
       {(values) => (
         <>
           <Input {...inputProps} />
@@ -48,8 +48,10 @@ export const TextField = ({
             : groupProps.children}
         </>
       )}
-    </FieldGroup>
+    </AriaGroup>
 
-    {errorMessageProps ? <ErrorMessage {...errorMessageProps} /> : null}
+    {errorMessageProps?.children ? (
+      <ErrorMessage {...errorMessageProps} />
+    ) : null}
   </AriaTextField>
 );

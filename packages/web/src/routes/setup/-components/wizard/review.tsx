@@ -76,6 +76,7 @@ function Step1() {
           <TextField
             labelProps={{ children: "License Key" }}
             inputProps={{ disabled: true, value: licenseKey }}
+            className="grid gap-2"
           />
         </div>
 
@@ -83,6 +84,7 @@ function Step1() {
           <TextField
             labelProps={{ children: "Name" }}
             inputProps={{ disabled: true, value: tenantName }}
+            className="grid gap-2"
           />
         </div>
 
@@ -90,6 +92,7 @@ function Step1() {
           <TextField
             labelProps={{ children: "Slug" }}
             inputProps={{ disabled: true, value: tenantSlug }}
+            className="grid gap-2"
           />
         </div>
       </DisclosurePanel>
@@ -122,6 +125,7 @@ function Step2() {
                 disabled: true,
                 value: userOauthProviderNames[userOauthProviderKind],
               }}
+              className="grid gap-2"
             />
           </div>
 
@@ -129,6 +133,7 @@ function Step2() {
             <TextField
               labelProps={{ children: "Tenant ID" }}
               inputProps={{ disabled: true, value: userOauthProviderId }}
+              className="grid gap-2"
             />
           </div>
         </DisclosurePanel>
@@ -155,6 +160,7 @@ function Step3() {
           <TextField
             labelProps={{ children: "Client ID" }}
             inputProps={{ disabled: true, value: tailscaleOauthClientId }}
+            className="grid gap-2"
           />
         </div>
 
@@ -184,6 +190,7 @@ function Step3() {
                 </Button>
               ),
             }}
+            className="grid gap-2"
           />
         </div>
       </DisclosurePanel>
@@ -209,6 +216,7 @@ function Step4() {
           <TextField
             labelProps={{ children: "PaperCut Server URL" }}
             inputProps={{ disabled: true, value: tailnetPapercutServerUri }}
+            className="grid gap-2"
           />
         </div>
 
@@ -238,6 +246,7 @@ function Step4() {
                 </Button>
               ),
             }}
+            className="grid gap-2"
           />
         </div>
       </DisclosurePanel>

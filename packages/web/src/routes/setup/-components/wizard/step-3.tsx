@@ -123,8 +123,9 @@ export function SetupWizardStep3() {
           <Card>
             <CardContent className="grid gap-4 pt-6">
               <CardDescription>
-                Printworks encrypts the OAuth client data and it will not be
-                accessible to you after completing setup.
+                Printworks encrypts the OAuth client data and it will{" "}
+                <strong>not</strong> be accessible to you after completing
+                setup.
               </CardDescription>
 
               <form.AppField
@@ -142,6 +143,7 @@ export function SetupWizardStep3() {
                         .map(R.prop("message"))
                         .join(", "),
                     }}
+                    className="grid gap-2"
                   />
                 )}
               </form.AppField>
@@ -183,6 +185,7 @@ export function SetupWizardStep3() {
                         .map(R.prop("message"))
                         .join(", "),
                     }}
+                    className="grid gap-2"
                   />
                 )}
               </form.AppField>

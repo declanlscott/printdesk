@@ -225,9 +225,7 @@ export namespace Replicache {
 
             // 6: Read all id/version pairs from the database that should be in the client view
             const metadata = R.uniqueBy(
-              await AccessControl.syncedTableResourceMetadata[useUser().role][
-                name
-              ](),
+              await AccessControl.syncedTableMetadata[useUser().role][name](),
               R.prop("id"),
             );
 

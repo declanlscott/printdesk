@@ -35,20 +35,24 @@ import type { AnyError, CustomError, InferCustomError } from "../utils/types";
 import type { Action, Resource } from "./shared";
 
 export namespace AccessControl {
-  type SyncedTableResourceMetadataBaseQuery = {
-    [TName in SyncedTableName]: (tx: Transaction) => PgSelectBase<
-      TName,
-      {
-        id: TableByName<TName>["_"]["columns"]["id"];
-        version: TableByName<TName>["_"]["columns"]["version"];
-      },
-      "partial",
-      Record<TName, "not-null">,
-      true
-    >;
+  type MetadataBaseQuery<TTableName extends SyncedTableName> = PgSelectBase<
+    TTableName,
+    {
+      id: TableByName<TTableName>["_"]["columns"]["id"];
+      version: TableByName<TTableName>["_"]["columns"]["version"];
+    },
+    "partial",
+    Record<TTableName, "not-null">,
+    true
+  >;
+
+  type SyncedTableMetadataBaseQuery = {
+    [TTableName in SyncedTableName]: (
+      tx: Transaction,
+    ) => MetadataBaseQuery<TTableName>;
   };
 
-  const syncedTableResourceMetadataBaseQuery = {
+  const syncedTableMetadataBaseQuery = {
     [getTableName(announcementsTable)]: (tx) =>
       tx
         .select({
@@ -183,9 +187,9 @@ export namespace AccessControl {
         .from(workflowStatusesTable)
         .where(and(eq(workflowStatusesTable.tenantId, useTenant().id)))
         .$dynamic(),
-  } as const satisfies SyncedTableResourceMetadataBaseQuery;
+  } as const satisfies SyncedTableMetadataBaseQuery;
 
-  export type SyncedTableResourceMetadata = Record<
+  export type SyncedTableMetadata = Record<
     UserRole,
     {
       [TName in SyncedTableName]: () => Promise<
@@ -194,111 +198,111 @@ export namespace AccessControl {
     }
   >;
 
-  export const syncedTableResourceMetadata = {
+  export const syncedTableMetadata = {
     administrator: {
       [getTableName(announcementsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(announcementsTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(announcementsTable)],
         ),
       [getTableName(billingAccountsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(billingAccountsTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(billingAccountsTable)],
         ),
       [getTableName(billingAccountCustomerAuthorizationsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountCustomerAuthorizationsTable)
           ],
         ),
       [getTableName(billingAccountManagerAuthorizationsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountManagerAuthorizationsTable)
           ],
         ),
       [getTableName(commentsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(commentsTable)],
+          syncedTableMetadataBaseQuery[getTableName(commentsTable)],
         ),
       [getTableName(deliveryOptionsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(deliveryOptionsTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(deliveryOptionsTable)],
         ),
       [getTableName(invoicesTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(invoicesTable)],
+          syncedTableMetadataBaseQuery[getTableName(invoicesTable)],
         ),
       [getTableName(ordersTable)]: async () =>
-        useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(ordersTable)],
-        ),
+        useTransaction(syncedTableMetadataBaseQuery[getTableName(ordersTable)]),
       [getTableName(productsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(productsTable)],
+          syncedTableMetadataBaseQuery[getTableName(productsTable)],
         ),
       [getTableName(roomsTable)]: async () =>
-        useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(roomsTable)],
-        ),
+        useTransaction(syncedTableMetadataBaseQuery[getTableName(roomsTable)]),
       [getTableName(tenantsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(tenantsTable)],
+          syncedTableMetadataBaseQuery[getTableName(tenantsTable)],
         ),
       [getTableName(usersTable)]: async () =>
-        useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(usersTable)],
-        ),
+        useTransaction(syncedTableMetadataBaseQuery[getTableName(usersTable)]),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(workflowStatusesTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(workflowStatusesTable)],
         ),
     },
     operator: {
       [getTableName(announcementsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(announcementsTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(announcementsTable)],
         ),
       [getTableName(billingAccountsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(billingAccountsTable)
-          ](tx).where(isNull(billingAccountsTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(billingAccountsTable)](
+            tx,
+          ).where(
+            and(
+              eq(billingAccountsTable.tenantId, useTenant().id),
+              isNull(billingAccountsTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(billingAccountCustomerAuthorizationsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountCustomerAuthorizationsTable)
           ](tx).where(
-            isNull(billingAccountCustomerAuthorizationsTable.deletedAt),
+            and(
+              eq(
+                billingAccountCustomerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
+              isNull(billingAccountCustomerAuthorizationsTable.deletedAt),
+            ),
           ),
         ),
       [getTableName(billingAccountManagerAuthorizationsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountManagerAuthorizationsTable)
           ](tx).where(
-            isNull(billingAccountManagerAuthorizationsTable.deletedAt),
+            and(
+              eq(
+                billingAccountManagerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
+              isNull(billingAccountManagerAuthorizationsTable.deletedAt),
+            ),
           ),
         ),
       [getTableName(commentsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(commentsTable)](
-            tx,
-          ).where(
+          syncedTableMetadataBaseQuery[getTableName(commentsTable)](tx).where(
             and(
+              eq(commentsTable.tenantId, useTenant().id),
               sql`
                 STRING_TO_ARRAY(${commentsTable.visibleTo}, ',') &&
-                  ARRAY['operator', 'manager', 'customer']
+                  ARRAY['operator','manager','customer']
               `,
               isNull(commentsTable.deletedAt),
             ),
@@ -306,83 +310,111 @@ export namespace AccessControl {
         ),
       [getTableName(deliveryOptionsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(deliveryOptionsTable)
-          ](tx).where(isNull(roomsTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(deliveryOptionsTable)](
+            tx,
+          ).where(
+            and(
+              eq(deliveryOptionsTable.tenantId, useTenant().id),
+              isNull(roomsTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(invoicesTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(invoicesTable)](
-            tx,
-          ).where(isNull(invoicesTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(invoicesTable)](tx).where(
+            and(
+              eq(invoicesTable.tenantId, useTenant().id),
+              isNull(invoicesTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(ordersTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(ordersTable)](
-            tx,
-          ).where(isNull(ordersTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(ordersTable)](tx),
         ),
       [getTableName(productsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(productsTable)](
-            tx,
-          ).where(isNull(productsTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(productsTable)](tx).where(
+            and(
+              eq(productsTable.tenantId, useTenant().id),
+              isNull(productsTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(roomsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(roomsTable)](
-            tx,
-          ).where(isNull(roomsTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(roomsTable)](tx).where(
+            and(
+              eq(roomsTable.tenantId, useTenant().id),
+              isNull(roomsTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(tenantsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(tenantsTable)],
+          syncedTableMetadataBaseQuery[getTableName(tenantsTable)],
         ),
       [getTableName(usersTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(usersTable)](
-            tx,
-          ).where(isNull(usersTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(usersTable)](tx).where(
+            and(
+              eq(usersTable.tenantId, useTenant().id),
+              isNull(usersTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(workflowStatusesTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(workflowStatusesTable)],
         ),
     },
     manager: {
       [getTableName(announcementsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(announcementsTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(announcementsTable)],
         ),
       [getTableName(billingAccountsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(billingAccountsTable)
-          ](tx).where(isNull(billingAccountsTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(billingAccountsTable)](
+            tx,
+          ).where(
+            and(
+              eq(billingAccountsTable.tenantId, useTenant().id),
+              isNull(billingAccountsTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(billingAccountCustomerAuthorizationsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountCustomerAuthorizationsTable)
           ](tx).where(
-            isNull(billingAccountCustomerAuthorizationsTable.deletedAt),
+            and(
+              eq(
+                billingAccountCustomerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
+              isNull(billingAccountCustomerAuthorizationsTable.deletedAt),
+            ),
           ),
         ),
       [getTableName(billingAccountManagerAuthorizationsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountManagerAuthorizationsTable)
           ](tx).where(
-            isNull(billingAccountManagerAuthorizationsTable.deletedAt),
+            and(
+              eq(
+                billingAccountManagerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
+              isNull(billingAccountManagerAuthorizationsTable.deletedAt),
+            ),
           ),
         ),
       [getTableName(commentsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(commentsTable)](tx)
+          syncedTableMetadataBaseQuery[getTableName(commentsTable)](tx)
             .innerJoin(
               ordersTable,
               and(
@@ -412,9 +444,10 @@ export namespace AccessControl {
             )
             .where(
               and(
+                eq(commentsTable.tenantId, useTenant().id),
                 sql`
                   STRING_TO_ARRAY(${commentsTable.visibleTo}, ',') &&
-                    ARRAY['manager', 'customer']
+                    ARRAY['manager','customer']
                 `,
                 isNull(commentsTable.deletedAt),
               ),
@@ -422,10 +455,11 @@ export namespace AccessControl {
         ),
       [getTableName(deliveryOptionsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(deliveryOptionsTable)
-          ](tx).where(
+          syncedTableMetadataBaseQuery[getTableName(deliveryOptionsTable)](
+            tx,
+          ).where(
             and(
+              eq(deliveryOptionsTable.tenantId, useTenant().id),
               eq(roomsTable.status, "published"),
               isNull(roomsTable.deletedAt),
             ),
@@ -433,7 +467,7 @@ export namespace AccessControl {
         ),
       [getTableName(invoicesTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(invoicesTable)](tx)
+          syncedTableMetadataBaseQuery[getTableName(invoicesTable)](tx)
             .innerJoin(
               ordersTable,
               and(
@@ -462,18 +496,21 @@ export namespace AccessControl {
               ),
             )
             .where(
-              or(
-                isNull(invoicesTable.deletedAt),
-                and(
-                  eq(ordersTable.customerId, useUser().id),
+              and(
+                eq(invoicesTable.tenantId, useTenant().id),
+                or(
                   isNull(invoicesTable.deletedAt),
+                  and(
+                    eq(ordersTable.customerId, useUser().id),
+                    isNull(invoicesTable.deletedAt),
+                  ),
                 ),
               ),
             ),
         ),
       [getTableName(ordersTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(ordersTable)](tx)
+          syncedTableMetadataBaseQuery[getTableName(ordersTable)](tx)
             .innerJoin(
               billingAccountsTable,
               and(
@@ -495,21 +532,23 @@ export namespace AccessControl {
               ),
             )
             .where(
-              or(
-                isNull(ordersTable.deletedAt),
-                and(
-                  eq(ordersTable.customerId, useUser().id),
+              and(
+                eq(ordersTable.tenantId, useTenant().id),
+                or(
                   isNull(ordersTable.deletedAt),
+                  and(
+                    eq(ordersTable.customerId, useUser().id),
+                    isNull(ordersTable.deletedAt),
+                  ),
                 ),
               ),
             ),
         ),
       [getTableName(productsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(productsTable)](
-            tx,
-          ).where(
+          syncedTableMetadataBaseQuery[getTableName(productsTable)](tx).where(
             and(
+              eq(productsTable.tenantId, useTenant().id),
               eq(productsTable.status, "published"),
               isNull(productsTable.deletedAt),
             ),
@@ -517,10 +556,9 @@ export namespace AccessControl {
         ),
       [getTableName(roomsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(roomsTable)](
-            tx,
-          ).where(
+          syncedTableMetadataBaseQuery[getTableName(roomsTable)](tx).where(
             and(
+              eq(roomsTable.tenantId, useTenant().id),
               eq(roomsTable.status, "published"),
               isNull(roomsTable.deletedAt),
             ),
@@ -528,53 +566,69 @@ export namespace AccessControl {
         ),
       [getTableName(tenantsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(tenantsTable)],
+          syncedTableMetadataBaseQuery[getTableName(tenantsTable)],
         ),
       [getTableName(usersTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(usersTable)](
-            tx,
-          ).where(isNull(usersTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(usersTable)](tx).where(
+            and(
+              eq(usersTable.tenantId, useTenant().id),
+              isNull(usersTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(workflowStatusesTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(workflowStatusesTable)],
         ),
     },
     customer: {
       [getTableName(announcementsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(announcementsTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(announcementsTable)],
         ),
       [getTableName(billingAccountsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(billingAccountsTable)
-          ](tx).where(isNull(billingAccountsTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(billingAccountsTable)](
+            tx,
+          ).where(
+            and(
+              eq(billingAccountsTable.tenantId, useTenant().id),
+              isNull(billingAccountsTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(billingAccountCustomerAuthorizationsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountCustomerAuthorizationsTable)
           ](tx).where(
-            isNull(billingAccountCustomerAuthorizationsTable.deletedAt),
+            and(
+              eq(
+                billingAccountCustomerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
+              isNull(billingAccountCustomerAuthorizationsTable.deletedAt),
+            ),
           ),
         ),
       [getTableName(billingAccountManagerAuthorizationsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
+          syncedTableMetadataBaseQuery[
             getTableName(billingAccountManagerAuthorizationsTable)
           ](tx).where(
-            isNull(billingAccountManagerAuthorizationsTable.deletedAt),
+            and(
+              eq(
+                billingAccountManagerAuthorizationsTable.tenantId,
+                useTenant().id,
+              ),
+              isNull(billingAccountManagerAuthorizationsTable.deletedAt),
+            ),
           ),
         ),
       [getTableName(commentsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(commentsTable)](tx)
+          syncedTableMetadataBaseQuery[getTableName(commentsTable)](tx)
             .innerJoin(
               ordersTable,
               and(
@@ -584,6 +638,7 @@ export namespace AccessControl {
             )
             .where(
               and(
+                eq(commentsTable.tenantId, useTenant().id),
                 eq(ordersTable.customerId, useUser().id),
                 sql`
                   STRING_TO_ARRAY(${commentsTable.visibleTo}, ',') &&
@@ -595,10 +650,11 @@ export namespace AccessControl {
         ),
       [getTableName(deliveryOptionsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(deliveryOptionsTable)
-          ](tx).where(
+          syncedTableMetadataBaseQuery[getTableName(deliveryOptionsTable)](
+            tx,
+          ).where(
             and(
+              eq(deliveryOptionsTable.tenantId, useTenant().id),
               eq(roomsTable.status, "published"),
               isNull(roomsTable.deletedAt),
             ),
@@ -606,7 +662,7 @@ export namespace AccessControl {
         ),
       [getTableName(invoicesTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(invoicesTable)](tx)
+          syncedTableMetadataBaseQuery[getTableName(invoicesTable)](tx)
             .innerJoin(
               ordersTable,
               and(
@@ -616,6 +672,7 @@ export namespace AccessControl {
             )
             .where(
               and(
+                eq(invoicesTable.tenantId, useTenant().id),
                 eq(ordersTable.customerId, useUser().id),
                 isNull(invoicesTable.deletedAt),
               ),
@@ -623,21 +680,19 @@ export namespace AccessControl {
         ),
       [getTableName(ordersTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(ordersTable)](
-            tx,
-          ).where(
+          syncedTableMetadataBaseQuery[getTableName(ordersTable)](tx).where(
             and(
-              eq(ordersTable.customerId, useUser().id),
+              eq(ordersTable.tenantId, useTenant().id),
               isNull(ordersTable.deletedAt),
+              eq(ordersTable.customerId, useUser().id),
             ),
           ),
         ),
       [getTableName(productsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(productsTable)](
-            tx,
-          ).where(
+          syncedTableMetadataBaseQuery[getTableName(productsTable)](tx).where(
             and(
+              eq(productsTable.tenantId, useTenant().id),
               eq(productsTable.status, "published"),
               isNull(productsTable.deletedAt),
             ),
@@ -645,10 +700,9 @@ export namespace AccessControl {
         ),
       [getTableName(roomsTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(roomsTable)](
-            tx,
-          ).where(
+          syncedTableMetadataBaseQuery[getTableName(roomsTable)](tx).where(
             and(
+              eq(roomsTable.tenantId, useTenant().id),
               eq(roomsTable.status, "published"),
               isNull(roomsTable.deletedAt),
             ),
@@ -656,22 +710,23 @@ export namespace AccessControl {
         ),
       [getTableName(tenantsTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[getTableName(tenantsTable)],
+          syncedTableMetadataBaseQuery[getTableName(tenantsTable)],
         ),
       [getTableName(usersTable)]: async () =>
         useTransaction((tx) =>
-          syncedTableResourceMetadataBaseQuery[getTableName(usersTable)](
-            tx,
-          ).where(isNull(usersTable.deletedAt)),
+          syncedTableMetadataBaseQuery[getTableName(usersTable)](tx).where(
+            and(
+              eq(usersTable.tenantId, useTenant().id),
+              isNull(usersTable.deletedAt),
+            ),
+          ),
         ),
       [getTableName(workflowStatusesTable)]: async () =>
         useTransaction(
-          syncedTableResourceMetadataBaseQuery[
-            getTableName(workflowStatusesTable)
-          ],
+          syncedTableMetadataBaseQuery[getTableName(workflowStatusesTable)],
         ),
     },
-  } as const satisfies SyncedTableResourceMetadata;
+  } as const satisfies SyncedTableMetadata;
 
   type Permissions = Record<
     UserRole,

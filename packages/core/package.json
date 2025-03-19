@@ -23,8 +23,8 @@
     "@smithy/protocol-http": "^5.0.1",
     "@smithy/signature-v4": "^5.0.1",
     "fast-xml-parser": "^4.5.3",
-    "nanoid": "^5.1.4",
-    "pg": "^8.14.0"
+    "nanoid": "^5.1.5",
+    "pg": "^8.14.1"
   },
   "devDependencies": {
     "@smithy/types": "^4.1.0",

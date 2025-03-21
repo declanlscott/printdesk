@@ -9,6 +9,6 @@
     "@printworks/core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250317.0"
+    "@cloudflare/workers-types": "^4.20250320.0"
   }
 }

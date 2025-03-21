@@ -17,11 +17,13 @@ import { Resource } from "sst";
 import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
 import { handleLargeResponse } from "~/api/middleware/response";
 import { user } from "~/api/middleware/user";
+import { userAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
   .use(user)
   .post(
     "/pull",
+    userAuthzHeadersValidator,
     vValidator("json", pullRequestSchema),
     async (c, next) =>
       handleLargeResponse(`/replicache/pull/${c.req.valid("json").profileID}`)(
@@ -38,6 +40,7 @@ export default new Hono()
   )
   .post(
     "/push",
+    userAuthzHeadersValidator,
     vValidator("json", pushRequestSchema),
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(

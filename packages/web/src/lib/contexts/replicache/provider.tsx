@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ApplicationError } from "@printworks/core/utils/errors";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
@@ -38,10 +39,13 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       auth: getAuth(),
       pullURL: new URL("/replicache/pull", api.baseUrl).toString(),
       pusher: async (req) => {
+        if (req.pushVersion !== 1)
+          throw new ApplicationError.Error(
+            `Unsupported push version: ${req.pushVersion}`,
+          );
+
         const res = await api.client.replicache.push.$post({
-          header: {
-            authorization: getAuth(),
-          },
+          header: { authorization: getAuth() },
           json: {
             ...req,
             mutations: req.mutations.map((mutation) => ({

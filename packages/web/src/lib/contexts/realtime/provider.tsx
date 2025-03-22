@@ -81,7 +81,7 @@ export function RealtimeProvider({
   });
 
   return (
-    <RealtimeContext.Provider value={{ storeApi, webSocket: webSocket }}>
+    <RealtimeContext.Provider value={{ storeApi, webSocket }}>
       {children}
     </RealtimeContext.Provider>
   );

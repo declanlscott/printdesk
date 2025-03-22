@@ -1,5 +1,6 @@
 import {
   Credentials,
+  DynamoDb,
   S3,
   SignatureV4,
   Sqs,
@@ -47,6 +48,24 @@ export const executeApiSigner = (getRoleInput?: GetRoleInput) =>
                 : undefined,
             }),
           },
+        },
+      },
+      next,
+    ),
+  );
+
+export const dynamoDbDocumentClient = (getRoleInput?: GetRoleInput) =>
+  createMiddleware(async (_, next) =>
+    withAws(
+      {
+        dynamoDb: {
+          documentClient: DynamoDb.DocumentClient.from(
+            new DynamoDb.Client({
+              credentials: getRoleInput
+                ? Credentials.fromRoleChain([getRoleInput()])
+                : undefined,
+            }),
+          ),
         },
       },
       next,

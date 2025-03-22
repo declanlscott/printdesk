@@ -212,6 +212,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "UserActivityTable": {
+      "name": string
+      "type": "sst.aws.Dynamo"
+    }
     "Web": {
       "type": "sst.aws.StaticSite"
     }

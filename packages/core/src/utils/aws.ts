@@ -4,6 +4,7 @@
  * core package may depend on sst, but this module should not.
  */
 import { Sha256 } from "@aws-crypto/sha256-js";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
@@ -27,6 +28,7 @@ import {
   fromTemporaryCredentials,
 } from "@aws-sdk/credential-providers";
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
+import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
@@ -59,6 +61,7 @@ import type { NonNullableProperties, PartialExcept } from "./types";
 
 export type AwsContext = {
   dsql?: { signer: DsqlSigner };
+  dynamoDb?: { documentClient: DynamoDBDocument };
   sqs?: { client: SQSClient };
   s3?: { client: S3Client };
   sigv4?: { signers: Record<string, _SignatureV4> };
@@ -141,6 +144,19 @@ export namespace Dsql {
 
   export const generateToken = () =>
     useAws("dsql").signer.getDbConnectAdminAuthToken();
+}
+
+export namespace DynamoDb {
+  export const Client = DynamoDBClient;
+  export type Client = DynamoDBClient;
+
+  export const DocumentClient = DynamoDBDocument;
+  export type DocumentClient = DynamoDBDocument;
+
+  export const documentClient = () => useAws("dynamoDb").documentClient;
+
+  export const delimitKey = (...segments: Array<string>) =>
+    segments.join(Constants.TOKEN_DELIMITER) + Constants.TOKEN_DELIMITER;
 }
 
 export namespace S3 {

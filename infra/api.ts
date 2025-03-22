@@ -3,7 +3,7 @@ import { Constants } from "@printworks/core/utils/constants";
 import { auth } from "./auth";
 import { temporaryBucket } from "./buckets";
 import * as custom from "./custom";
-import { dsqlCluster } from "./db";
+import { dsqlCluster, userActivityTable } from "./db";
 import { apiFqdn } from "./dns";
 import { appData, aws_, cloudfrontPrivateKey } from "./misc";
 import { infraQueue } from "./queues";
@@ -21,6 +21,7 @@ export const api = new custom.aws.Function("Api", {
     dsqlCluster,
     infraQueue,
     temporaryBucket,
+    userActivityTable,
   ],
   permissions: [
     {

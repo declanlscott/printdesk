@@ -1,4 +1,5 @@
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
+import { Constants } from "@printworks/core/utils/constants";
 import * as v from "valibot";
 
 import * as custom from "./custom";
@@ -76,6 +77,43 @@ new sst.x.DevCommand("Studio", {
   },
 });
 
+export const userActivityTable = new sst.aws.Dynamo("UserActivityTable", {
+  fields: {
+    [Constants.PK]: "string",
+    [Constants.SK]: "string",
+    [Constants.GSI.ONE.PK]: "string",
+    [Constants.GSI.ONE.SK]: "string",
+  },
+  primaryIndex: { hashKey: Constants.PK, rangeKey: Constants.SK },
+  globalIndexes: {
+    gsi1: { hashKey: Constants.GSI.ONE.PK, rangeKey: Constants.GSI.ONE.SK },
+  },
+  stream: "new-image",
+});
+
+userActivityTable.subscribe(
+  "IncrementMonthlyActiveUsers",
+  "packages/functions/node/src/increment-mau.handler",
+  {
+    filters: [
+      {
+        eventName: ["INSERT"],
+        dynamodb: {
+          NewImage: {
+            [Constants.GSI.ONE.PK]: {
+              S: [{ prefix: Constants.MONTH + Constants.TOKEN_DELIMITER }],
+            },
+            [Constants.GSI.ONE.SK]: {
+              S: [{ prefix: Constants.USER + Constants.TOKEN_DELIMITER }],
+            },
+          },
+        },
+      },
+    ],
+  },
+);
+
 export const outputs = {
-  db: dsqlCluster.endpoint,
+  dsql: dsqlCluster.endpoint,
+  userActivityTable: userActivityTable.name,
 };

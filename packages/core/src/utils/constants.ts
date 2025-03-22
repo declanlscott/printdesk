@@ -10,9 +10,26 @@ export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
 
   export const TOKEN_DELIMITER = "#";
+  export const PK = "pk";
+  export const SK = "sk";
+  export const GSI = {
+    ONE: {
+      PK: `gsi1${PK}`,
+      SK: `gsi1${SK}`,
+    },
+  } as const;
+  export const USER_COUNT = "user_count";
+  export const CREATED_AT = "created_at";
+  export const UPDATED_AT = "updated_at";
+  export const TENANT = "TENANT";
+  export const MONTH = "MONTH";
+  export const USER = "USER";
+  export const METADATA = "METADATA";
+
   export const SERVICE_BINDING_NAMES = {
     API_RATE_LIMITERS: "API_RATE_LIMITERS",
   };
+
   export const ENTRA_ID_SCOPES = [
     "openid",
     "profile",
@@ -88,4 +105,8 @@ export namespace Constants {
   } as const satisfies Duration;
 
   export const WORKFLOW_REVIEW_STATUS = "Review";
+
+  export const MONTH_TRUNCATED_ISO_DATE_REGEX = new RegExp(
+    /^\d{4}-(?:0[1-9]|1[0-2])$/u,
+  );
 }

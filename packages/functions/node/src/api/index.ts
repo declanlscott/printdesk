@@ -8,6 +8,8 @@ import { logger } from "hono/logger";
 
 import { actor } from "~/api/middleware/actor";
 import { authn } from "~/api/middleware/auth";
+import { dynamoDbDocumentClient } from "~/api/middleware/aws";
+import { activity } from "~/api/middleware/user";
 import filesRoute from "~/api/routes/files";
 import publicRoute from "~/api/routes/public";
 import realtimeRoute from "~/api/routes/realtime";
@@ -20,7 +22,14 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 const app = new Hono()
   .use(logger())
   .use(actor)
-  .use(except("/public/*", authn(Constants.ACTOR_KINDS.USER)))
+  .use(
+    except(
+      "/public/*",
+      authn(Constants.ACTOR_KINDS.USER),
+      dynamoDbDocumentClient(),
+      activity,
+    ),
+  )
   .route("/files", filesRoute)
   .route("/public", publicRoute)
   .route("/realtime", realtimeRoute)

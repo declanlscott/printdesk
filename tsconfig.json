@@ -6,7 +6,8 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "~/.sst/*": [".sst/*"]
+      "~/.sst/*": [".sst/*"],
+      "@printworks/core/*": ["./packages/core/src/*"]
     }
   },
   "exclude": [".eslintrc.cjs", "./packages/web/dist"]

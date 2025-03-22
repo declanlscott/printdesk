@@ -1,3 +1,5 @@
+import { Constants } from "@printworks/core/utils/constants";
+
 import { apiReverseProxy } from "./api";
 import { auth, siteEdgeProtection } from "./auth";
 import { fqdn } from "./dns";
@@ -24,7 +26,7 @@ export const web = new sst.aws.StaticSite("Web", {
       ReplicacheLicenseKey: replicacheLicenseKey,
       Www: www,
     },
-    "VITE_RESOURCE_",
+    Constants.VITE_RESOURCE_PREFIX,
   ),
 });
 

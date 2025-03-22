@@ -6,6 +6,7 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
+import { Constants } from "./constants";
 import { ApplicationError } from "./errors";
 
 export namespace Utils {
@@ -30,5 +31,8 @@ export namespace Utils {
     domainName.split(".").reverse().join(".");
 
   export const buildName = (nameTemplate: string, tenantId: string) =>
-    nameTemplate.replace(/{{tenant_id}}/g, tenantId);
+    nameTemplate.replace(
+      new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"),
+      tenantId,
+    );
 }

@@ -7,7 +7,22 @@
 import type { Duration } from "date-fns";
 
 export namespace Constants {
-  export const TOKEN_DELIMITER = ":";
+  export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
+
+  export const TOKEN_DELIMITER = "#";
+  export const SERVICE_BINDING_NAMES = {
+    API_RATE_LIMITERS: "API_RATE_LIMITERS",
+  };
+  export const ENTRA_ID_SCOPES = [
+    "openid",
+    "profile",
+    "email",
+    "offline_access",
+    "User.Read",
+    "User.ReadBasic.All",
+  ] as const;
+
+  export const VITE_RESOURCE_PREFIX = "VITE_RESOURCE_";
 
   export const SUBJECT_KINDS = {
     USER: "user",

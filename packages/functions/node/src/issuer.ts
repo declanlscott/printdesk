@@ -15,14 +15,7 @@ const app = issuer({
       tenant: "organizations",
       clientID: Resource.Oauth2.entraId.clientId,
       clientSecret: Resource.Oauth2.entraId.clientSecret,
-      scopes: [
-        "openid",
-        "profile",
-        "email",
-        "offline_access",
-        "User.Read",
-        "User.ReadBasic.All",
-      ],
+      scopes: [...Constants.ENTRA_ID_SCOPES],
     }),
   },
   success: async (ctx, value) => {

@@ -2,6 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Link as AriaLink } from "react-aria-components";
 import type { Room } from "@printworks/core/rooms/sql";
 import type { UserRole } from "@printworks/core/users/shared";
+import type { Constants } from "@printworks/core/utils/constants";
 import type { EndsWith, StartsWith } from "@printworks/core/utils/types";
 import type { RankingInfo } from "@tanstack/match-sorter-utils";
 import type { MutationOptions as _MutationOptions } from "@tanstack/react-query";
@@ -17,7 +18,9 @@ import type { Resource } from "sst";
 import type { routeTree } from "~/routeTree.gen";
 
 type ViteResourceKey<TKey extends keyof ImportMetaEnv> =
-  TKey extends `VITE_RESOURCE_${infer TResourceKey}` ? TResourceKey : never;
+  TKey extends `${typeof Constants.VITE_RESOURCE_PREFIX}${infer TResourceKey}`
+    ? TResourceKey
+    : never;
 
 export type ViteResource = {
   [TKey in keyof ImportMetaEnv as ViteResourceKey<TKey>]: ViteResourceKey<TKey> extends keyof Resource

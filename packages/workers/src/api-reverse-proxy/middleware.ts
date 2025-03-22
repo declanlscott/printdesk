@@ -39,18 +39,22 @@ export const rateLimiter = createMiddleware(
         }),
         createMiddleware<{
           Bindings: {
-            API_RATE_LIMITERS: {
+            [Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS]: {
               byUser: RateLimit["limit"];
             };
           };
         }>(async (c, next) => {
           const { tenantId, id: userId } = c.var.subject.properties;
-          const key = `${tenantId}${Constants.TOKEN_DELIMITER}${userId}`;
+          const key = [tenantId, userId].join(Constants.TOKEN_DELIMITER);
 
           console.log("Rate limiting by user:", key);
           c.set(
             "rateLimitOutcome",
-            await c.env.API_RATE_LIMITERS.byUser({ key }),
+            await c.env[
+              Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS
+            ].byUser({
+              key,
+            }),
           );
 
           return next();
@@ -58,7 +62,7 @@ export const rateLimiter = createMiddleware(
       ),
       createMiddleware<{
         Bindings: {
-          API_RATE_LIMITERS: {
+          [Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS]: {
             byIp: RateLimit["limit"];
           };
         };
@@ -69,7 +73,9 @@ export const rateLimiter = createMiddleware(
         console.log("Rate limiting by IP:", ip);
         c.set(
           "rateLimitOutcome",
-          await c.env.API_RATE_LIMITERS.byIp({ key: ip }),
+          await c.env[Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS].byIp({
+            key: ip,
+          }),
         );
 
         return next();

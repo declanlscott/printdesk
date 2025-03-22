@@ -1,4 +1,4 @@
-import { tenantIdPlaceholder } from "./utils";
+import { Constants } from "@printworks/core/utils/constants";
 
 const realtimeAssumeRolePolicy = aws.iam.getPolicyDocumentOutput({
   statements: [
@@ -49,18 +49,18 @@ export const pulumiRole = new aws.iam.Role("PulumiRole", {
 
 export const tenantRoles = {
   apiAccess: {
-    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-ApiAccessRole`,
+    nameTemplate: `pw-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-ApiAccessRole`,
   },
   realtimeSubscriber: {
-    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-RealtimeSubscriberRole`,
+    nameTemplate: `pw-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimeSubscriberRole`,
   },
   realtimePublisher: {
-    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-RealtimePublisherRole`,
+    nameTemplate: `pw-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimePublisherRole`,
   },
   bucketsAccess: {
-    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-BucketsAccessRole`,
+    nameTemplate: `pw-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-BucketsAccessRole`,
   },
   putParameters: {
-    nameTemplate: `pw-${$app.stage}-${tenantIdPlaceholder}-PutParametersRole`,
+    nameTemplate: `pw-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-PutParametersRole`,
   },
 } as const;

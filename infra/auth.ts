@@ -1,3 +1,5 @@
+import { Constants } from "@printworks/core/utils/constants";
+
 import { dsqlCluster } from "./db";
 import { authFqdn, fqdn } from "./dns";
 import { aws_ } from "./misc";
@@ -34,14 +36,9 @@ export const entraIdApplicationApiAccess = new azuread.ApplicationApiAccess(
   {
     applicationId: entraIdApplication.id,
     apiClientId: graphAppId,
-    scopeIds: [
-      "openid",
-      "profile",
-      "email",
-      "offline_access",
-      "User.Read",
-      "User.ReadBasic.All",
-    ].map((scope) => graphServicePrincipal.oauth2PermissionScopeIds[scope]),
+    scopeIds: Constants.ENTRA_ID_SCOPES.map(
+      (scope) => graphServicePrincipal.oauth2PermissionScopeIds[scope],
+    ),
     roleIds: ["User.ReadBasic.All"].map(
       (role) => graphServicePrincipal.appRoleIds[role],
     ),

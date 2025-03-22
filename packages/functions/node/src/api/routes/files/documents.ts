@@ -40,7 +40,7 @@ export default new Hono()
       return c.body(null, 204);
     },
   )
-  .get("/mime-types", async (c) => {
+  .get("/mime-types", userAuthzHeadersValidator, async (c) => {
     const mimeTypes = await Documents.getMimeTypes();
 
     return c.json({ mimeTypes }, 200);
@@ -133,6 +133,7 @@ export default new Hono()
   )
   .get(
     "/size-limit",
+    userAuthzHeadersValidator,
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,

@@ -11,16 +11,17 @@ import { Hono } from "hono";
 import * as R from "remeda";
 import * as v from "valibot";
 
+import { authz } from "~/api/middleware/auth";
 import { dynamoDbDocumentClient } from "~/api/middleware/aws";
 import { user } from "~/api/middleware/user";
 import { userAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
+  .use(user)
   .get(
     "/:id/photo",
     userAuthzHeadersValidator,
     vValidator("param", v.object({ id: nanoIdSchema })),
-    user,
     async (c) => {
       const userId = c.req.valid("param").id;
 
@@ -78,6 +79,7 @@ export default new Hono()
   )
   .get(
     "/monthly-active",
+    authz("monthly-active-users", "read"),
     userAuthzHeadersValidator,
     vValidator(
       "json",

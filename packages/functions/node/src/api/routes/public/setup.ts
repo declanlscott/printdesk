@@ -10,6 +10,7 @@ import {
 import { Credentials } from "@printworks/core/utils/aws";
 import { Constants } from "@printworks/core/utils/constants";
 import { Hono } from "hono";
+import { except } from "hono/combine";
 import { Resource } from "sst";
 
 import { authn } from "~/api/middleware/auth";
@@ -17,6 +18,7 @@ import { executeApiSigner, sqsClient, ssmClient } from "~/api/middleware/aws";
 import { systemAuthzHeadersValidator } from "~/api/middleware/validators";
 
 export default new Hono()
+  .use(except("/initialize", authn(Constants.ACTOR_KINDS.SYSTEM)))
   .put("/initialize", vValidator("json", initializeDataSchema), async (c) => {
     const result = await Tenants.initialize(c.req.valid("json").licenseKey, {
       papercutSyncCronExpression:
@@ -28,7 +30,6 @@ export default new Hono()
   })
   .put(
     "/register",
-    authn(Constants.ACTOR_KINDS.SYSTEM),
     systemAuthzHeadersValidator,
     vValidator("json", registerDataSchema),
     async (c) => {
@@ -39,7 +40,6 @@ export default new Hono()
   )
   .post(
     "/dispatch-infra",
-    authn(Constants.ACTOR_KINDS.SYSTEM),
     systemAuthzHeadersValidator,
     sqsClient(),
     async (c) => {
@@ -50,7 +50,6 @@ export default new Hono()
   )
   .put(
     "/configure",
-    authn(Constants.ACTOR_KINDS.SYSTEM),
     systemAuthzHeadersValidator,
     vValidator("json", configureDataSchema),
     ssmClient(() => ({
@@ -77,7 +76,6 @@ export default new Hono()
   )
   .post(
     "/test-papercut-connection",
-    authn(Constants.ACTOR_KINDS.SYSTEM),
     systemAuthzHeadersValidator,
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(

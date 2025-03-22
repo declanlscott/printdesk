@@ -68,6 +68,7 @@ export default new Hono()
   .post(
     "/sync",
     authz("papercut-sync", "create"),
+    userAuthzHeadersValidator,
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,
@@ -82,10 +83,15 @@ export default new Hono()
       return c.json({ dispatchId }, 202);
     },
   )
-  .get("/last-sync", async (c) => {
-    const metadata = await Tenants.readMetadata();
-    if (!metadata) throw new HttpError.NotFound("Tenant metadata not found");
-    const lastSyncedAt = metadata.lastPapercutSyncAt?.toISOString() ?? null;
+  .get(
+    "/last-sync",
+    authz("papercut-sync", "read"),
+    userAuthzHeadersValidator,
+    async (c) => {
+      const metadata = await Tenants.readMetadata();
+      if (!metadata) throw new HttpError.NotFound("Tenant metadata not found");
+      const lastSyncedAt = metadata.lastPapercutSyncAt?.toISOString() ?? null;
 
-    return c.json({ lastSyncedAt }, 200);
-  });
+      return c.json({ lastSyncedAt }, 200);
+    },
+  );

@@ -12,6 +12,7 @@ import { userAuthzHeadersValidator } from "~/api/middleware/validators";
 export default new Hono()
   .get(
     "/url",
+    userAuthzHeadersValidator,
     executeApiSigner(() => ({
       RoleArn: Credentials.buildRoleArn(
         Resource.Aws.account.id,

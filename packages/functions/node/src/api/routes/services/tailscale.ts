@@ -8,9 +8,10 @@ import { Resource } from "sst";
 
 import { authz } from "~/api/middleware/auth";
 import { ssmClient } from "~/api/middleware/aws";
+import { user } from "~/api/middleware/user";
 import { userAuthzHeadersValidator } from "~/api/middleware/validators";
 
-export default new Hono().put(
+export default new Hono().use(user).put(
   "/oauth-client",
   authz("services", "update"),
   userAuthzHeadersValidator,

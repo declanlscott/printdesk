@@ -1,6 +1,6 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import * as R from "remeda";
 
 import { buildConflictUpdateColumns } from "../drizzle/columns";
@@ -12,7 +12,7 @@ import { oauth2ProvidersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { Tenant } from "../tenants/sql";
-import type { Oauth2ProvidersTable } from "./sql";
+import type { Oauth2Provider, Oauth2ProvidersTable } from "./sql";
 
 export namespace Auth {
   export const generateToken = (size = 32) => randomBytes(size).toString("hex");
@@ -75,6 +75,20 @@ export namespace Auth {
         .select()
         .from(oauth2ProvidersTable)
         .where(eq(oauth2ProvidersTable.tenantId, useTenant().id)),
+    );
+
+  export const readOauth2ProviderById = async (id: Oauth2Provider["id"]) =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(oauth2ProvidersTable)
+        .where(
+          and(
+            eq(oauth2ProvidersTable.id, id),
+            eq(oauth2ProvidersTable.tenantId, useTenant().id),
+          ),
+        )
+        .then(R.first()),
     );
 
   export const readOauth2ProvidersBySlug = async (slug: Tenant["slug"]) =>

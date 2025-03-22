@@ -1,4 +1,5 @@
 import { vValidator } from "@hono/valibot-validator";
+import { Auth } from "@printworks/core/auth";
 import { EntraId } from "@printworks/core/auth/entra-id";
 import { Users } from "@printworks/core/users";
 import { useUser } from "@printworks/core/users/context";
@@ -22,12 +23,26 @@ export default new Hono().get(
     const currentUser = useUser();
     const isSelf = userId === currentUser.id;
 
+    const currentUserOauth2Provider = await Auth.readOauth2ProviderById(
+      currentUser.oauth2ProviderId,
+    );
+    if (!currentUserOauth2Provider)
+      throw new HttpError.InternalServerError(
+        "Missing current user oauth2 provider",
+      );
+
     const user = isSelf
       ? currentUser
       : await Users.read([userId]).then(R.first());
     if (!user) throw new HttpError.NotFound();
 
-    switch (user.oauth2Provider.type) {
+    const userOauth2Provider = isSelf
+      ? currentUserOauth2Provider
+      : await Auth.readOauth2ProviderById(user.oauth2ProviderId);
+    if (!userOauth2Provider)
+      throw new HttpError.NotFound("Missing user oauth2 provider");
+
+    switch (userOauth2Provider?.kind) {
       case Constants.ENTRA_ID:
         return withGraph(
           Graph.Client.initWithMiddleware({
@@ -35,7 +50,7 @@ export default new Hono().get(
               async getAccessToken() {
                 // If the current user was authenticated with entra id,
                 // then use the access token from the request header
-                if (currentUser.oauth2Provider.type === Constants.ENTRA_ID)
+                if (currentUserOauth2Provider.kind === Constants.ENTRA_ID)
                   return c.req.header("Authorization")!.replace("Bearer ", "");
 
                 // Otherwise use the application access token

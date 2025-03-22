@@ -744,86 +744,109 @@ export namespace AccessControl {
     administrator: {
       [getTableName(announcementsTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(billingAccountsTable)]: {
         create: false,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(billingAccountCustomerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountManagerAuthorizationsTable)]: {
         create: true,
+        read: true,
         update: false,
         delete: true,
       },
       [getTableName(commentsTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(deliveryOptionsTable)]: {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [getTableName(invoicesTable)]: {
         create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(ordersTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       "papercut-sync": {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(productsTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(roomsTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       services: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [getTableName(tenantsTable)]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [getTableName(usersTable)]: {
         create: false,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(workflowStatusesTable)]: {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
@@ -831,26 +854,31 @@ export namespace AccessControl {
     operator: {
       [getTableName(announcementsTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(billingAccountsTable)]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [getTableName(billingAccountCustomerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountManagerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(commentsTable)]: {
         create: true,
+        read: true,
         update: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
             tx
@@ -880,63 +908,81 @@ export namespace AccessControl {
               .then(R.isNot(R.isEmpty)),
           ),
       },
+      [getTableName(deliveryOptionsTable)]: {
+        create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
-        update: false,
-        delete: false,
-      },
-      [getTableName(deliveryOptionsTable)]: {
-        create: true,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(invoicesTable)]: {
         create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(ordersTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       "papercut-sync": {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(productsTable)]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [getTableName(roomsTable)]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       services: {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(tenantsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(usersTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: (userId: User["id"]) => userId !== useUser().id,
       },
       [getTableName(workflowStatusesTable)]: {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
@@ -944,11 +990,13 @@ export namespace AccessControl {
     manager: {
       [getTableName(announcementsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountsTable)]: {
         create: false,
+        read: true,
         update: async (billingAccountId: BillingAccount["id"]) =>
           useTransaction((tx) =>
             tx
@@ -985,11 +1033,13 @@ export namespace AccessControl {
       },
       [getTableName(billingAccountCustomerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountManagerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
@@ -1040,6 +1090,7 @@ export namespace AccessControl {
               )
               .then(R.isNot(R.isEmpty)),
           ),
+        read: true,
         update: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
             tx
@@ -1069,23 +1120,33 @@ export namespace AccessControl {
               .then(R.isNot(R.isEmpty)),
           ),
       },
+      [getTableName(deliveryOptionsTable)]: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
-        update: false,
-        delete: false,
-      },
-      [getTableName(deliveryOptionsTable)]: {
-        create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(invoicesTable)]: {
         create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: false,
         update: false,
         delete: false,
       },
@@ -1116,6 +1177,7 @@ export namespace AccessControl {
               )
               .then(R.isNot(R.isEmpty)),
           ),
+        read: true,
         update: async (orderId: Order["id"]) =>
           useTransaction((tx) =>
             tx
@@ -1227,36 +1289,43 @@ export namespace AccessControl {
       },
       "papercut-sync": {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(productsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(roomsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       services: {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(tenantsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(usersTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: (userId: User["id"]) => userId === useUser().id,
       },
       [getTableName(workflowStatusesTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
@@ -1264,21 +1333,25 @@ export namespace AccessControl {
     customer: {
       [getTableName(announcementsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountCustomerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(billingAccountManagerAuthorizationsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
@@ -1298,6 +1371,7 @@ export namespace AccessControl {
               )
               .then(R.isNot(R.isEmpty)),
           ),
+        read: true,
         update: async (commentId: Comment["id"]) =>
           useTransaction((tx) =>
             tx
@@ -1329,23 +1403,33 @@ export namespace AccessControl {
               .then(R.isNot(R.isEmpty)),
           ),
       },
+      [getTableName(deliveryOptionsTable)]: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
-        update: false,
-        delete: false,
-      },
-      [getTableName(deliveryOptionsTable)]: {
-        create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(invoicesTable)]: {
         create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: false,
         update: false,
         delete: false,
       },
@@ -1376,6 +1460,7 @@ export namespace AccessControl {
               )
               .then(R.isNot(R.isEmpty)),
           ),
+        read: true,
         update: async (orderId: Order["id"]) =>
           useTransaction((tx) =>
             tx
@@ -1425,36 +1510,43 @@ export namespace AccessControl {
       },
       "papercut-sync": {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(productsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(roomsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       services: {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [getTableName(tenantsTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [getTableName(usersTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: (userId: User["id"]) => userId === useUser().id,
       },
       [getTableName(workflowStatusesTable)]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },

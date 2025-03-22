@@ -5,6 +5,7 @@ export type Resource =
   | "documents-mime-types"
   | "documents-size-limit"
   | "papercut-sync"
-  | "services";
+  | "services"
+  | "monthly-active-users";
 
-export type Action = "create" | "update" | "delete";
+export type Action = "create" | "read" | "update" | "delete";

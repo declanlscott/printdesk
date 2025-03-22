@@ -55,86 +55,109 @@ export namespace AccessControl {
     administrator: {
       [announcementsTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [billingAccountsTableName]: {
         create: false,
+        read: true,
         update: true,
         delete: true,
       },
       [billingAccountCustomerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountManagerAuthorizationsTableName]: {
         create: true,
+        read: true,
         update: false,
         delete: true,
       },
       [commentsTableName]: {
         create: true,
+        read: true,
+        update: true,
+        delete: true,
+      },
+      [deliveryOptionsTableName]: {
+        create: true,
+        read: true,
         update: true,
         delete: true,
       },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
-      [deliveryOptionsTableName]: {
-        create: true,
-        update: true,
-        delete: true,
-      },
       [invoicesTableName]: {
         create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [ordersTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       "papercut-sync": {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
       [productsTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [roomsTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       services: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [tenantsTableName]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [usersTableName]: {
         create: false,
+        read: true,
         update: true,
         delete: true,
       },
       [workflowStatusesTableName]: {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
@@ -142,26 +165,31 @@ export namespace AccessControl {
     operator: {
       [announcementsTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [billingAccountsTableName]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       [billingAccountCustomerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountManagerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [commentsTableName]: {
         create: true,
+        read: true,
         update: async (tx, user, commentId: Comment["id"]) => {
           try {
             const comment = await Replicache.get(
@@ -189,63 +217,81 @@ export namespace AccessControl {
           }
         },
       },
+      [deliveryOptionsTableName]: {
+        create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
-        update: false,
-        delete: false,
-      },
-      [deliveryOptionsTableName]: {
-        create: true,
+        read: true,
         update: false,
         delete: false,
       },
       [invoicesTableName]: {
         create: true,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [ordersTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       "papercut-sync": {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [productsTableName]: {
         create: true,
+        read: true,
         update: true,
         delete: true,
       },
       [roomsTableName]: {
         create: false,
+        read: true,
         update: true,
         delete: false,
       },
       services: {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [tenantsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [usersTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: (_tx, user, userId: User["id"]) => user.id === userId,
       },
       [workflowStatusesTableName]: {
         create: true,
+        read: true,
         update: false,
         delete: false,
       },
@@ -253,11 +299,13 @@ export namespace AccessControl {
     manager: {
       [announcementsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountsTableName]: {
         create: false,
+        read: true,
         update: async (tx, user, billingAccountId: BillingAccount["id"]) => {
           try {
             const billingAccount = await Replicache.get(
@@ -286,11 +334,13 @@ export namespace AccessControl {
       },
       [billingAccountCustomerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountManagerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
@@ -323,6 +373,7 @@ export namespace AccessControl {
             return false;
           }
         },
+        read: true,
         update: async (tx, user, commentId: Comment["id"]) => {
           try {
             const comment = await Replicache.get(
@@ -350,23 +401,33 @@ export namespace AccessControl {
           }
         },
       },
+      [deliveryOptionsTableName]: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
-        update: false,
-        delete: false,
-      },
-      [deliveryOptionsTableName]: {
-        create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [invoicesTableName]: {
         create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: false,
         update: false,
         delete: false,
       },
@@ -389,6 +450,7 @@ export namespace AccessControl {
             return false;
           }
         },
+        read: true,
         update: async (tx, user, orderId: Order["id"]) => {
           try {
             const order = await Replicache.get(tx, ordersTableName, orderId);
@@ -462,36 +524,43 @@ export namespace AccessControl {
       },
       "papercut-sync": {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [productsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [roomsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       services: {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [tenantsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [usersTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: (_tx, user, userId: User["id"]) => user.id === userId,
       },
       [workflowStatusesTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
@@ -499,21 +568,25 @@ export namespace AccessControl {
     customer: {
       [announcementsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountCustomerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [billingAccountManagerAuthorizationsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
@@ -527,6 +600,7 @@ export namespace AccessControl {
             return false;
           }
         },
+        read: true,
         update: async (tx, user, commentId: Comment["id"]) => {
           try {
             const comment = await Replicache.get(
@@ -554,23 +628,33 @@ export namespace AccessControl {
           }
         },
       },
+      [deliveryOptionsTableName]: {
+        create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
       ["documents-mime-types"]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       ["documents-size-limit"]: {
         create: false,
-        update: false,
-        delete: false,
-      },
-      [deliveryOptionsTableName]: {
-        create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [invoicesTableName]: {
         create: false,
+        read: true,
+        update: false,
+        delete: false,
+      },
+      ["monthly-active-users"]: {
+        create: false,
+        read: false,
         update: false,
         delete: false,
       },
@@ -599,6 +683,7 @@ export namespace AccessControl {
             return false;
           }
         },
+        read: true,
         update: async (tx, user, orderId: Order["id"]) => {
           try {
             const order = await Replicache.get(tx, ordersTableName, orderId);
@@ -634,36 +719,43 @@ export namespace AccessControl {
       },
       "papercut-sync": {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [productsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [roomsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       services: {
         create: false,
+        read: false,
         update: false,
         delete: false,
       },
       [tenantsTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },
       [usersTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: (_tx, user, userId: User["id"]) => user.id === userId,
       },
       [workflowStatusesTableName]: {
         create: false,
+        read: true,
         update: false,
         delete: false,
       },

@@ -25,7 +25,7 @@
     "cmdk": "^1.1.1",
     "jotai": "^2.12.2",
     "lucide-react": "^0.483.0",
-    "partysocket": "^1.0.3",
+    "partysocket": "^1.1.2",
     "react": "^19.0.0",
     "react-aria-components": "^1.7.1",
     "react-dom": "^19.0.0",

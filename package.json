@@ -23,7 +23,7 @@
     "hono": "^4.7.5",
     "remeda": "^2.21.2",
     "replicache": "^15.0.1",
-    "sst": "^3.10.1",
+    "sst": "^3.10.11",
     "superjson": "^2.2.2",
     "valibot": "^1.0.0"
   },
@@ -34,7 +34,7 @@
     "@tanstack/eslint-plugin-query": "^5.68.0",
     "@tanstack/eslint-plugin-router": "^1.114.12",
     "@total-typescript/ts-reset": "^0.6.1",
-    "@tsconfig/node22": "^22.0.0",
+    "@tsconfig/node22": "^22.0.1",
     "@types/aws-lambda": "8.10.147",
     "@typescript-eslint/eslint-plugin": "^8.27.0",
     "@typescript-eslint/parser": "^8.27.0",

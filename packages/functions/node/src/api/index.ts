@@ -10,12 +10,8 @@ import { actor } from "~/api/middleware/actor";
 import { authn } from "~/api/middleware/auth";
 import { dynamoDbDocumentClient } from "~/api/middleware/aws";
 import { activity } from "~/api/middleware/user";
-import filesRoute from "~/api/routes/files";
-import publicRoute from "~/api/routes/public";
-import realtimeRoute from "~/api/routes/realtime";
 import replicacheRoute from "~/api/routes/replicache";
-import servicesRoute from "~/api/routes/services";
-import usersRoute from "~/api/routes/users";
+import trpcRoute from "~/api/routes/trpc";
 
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
@@ -30,12 +26,8 @@ const app = new Hono()
       activity,
     ),
   )
-  .route("/files", filesRoute)
-  .route("/public", publicRoute)
-  .route("/realtime", realtimeRoute)
   .route("/replicache", replicacheRoute)
-  .route("/services", servicesRoute)
-  .route("/users", usersRoute)
+  .route("/trpc", trpcRoute)
   .onError((e, c) => {
     console.error(e);
 

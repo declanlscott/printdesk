@@ -22,14 +22,14 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
   );
 
   return withActor(
-    { kind: Constants.ACTOR_KINDS.SYSTEM, properties: { tenantId } },
+    () => ({ kind: Constants.ACTOR_KINDS.SYSTEM, properties: { tenantId } }),
     async () => {
       const tenant = await Tenants.read().then(R.first());
       if (!tenant) throw new Error("Tenant not found");
       if (tenant.status !== "active") throw new Error("Tenant not active");
 
       return withAws(
-        {
+        () => ({
           sigv4: {
             signers: {
               appsync: SignatureV4.buildSigner({
@@ -62,7 +62,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
               }),
             },
           },
-        },
+        }),
         async () => {
           let error = undefined;
           try {

@@ -22,9 +22,10 @@ const app = issuer({
     switch (value.provider) {
       case Constants.ENTRA_ID: {
         return withGraph(
-          Graph.Client.init({
-            authProvider: (done) => done(null, value.tokenset.access),
-          }),
+          () =>
+            Graph.Client.init({
+              authProvider: (done) => done(null, value.tokenset.access),
+            }),
           async () => {
             const properties = await EntraId.handleUser(
               decodeJWT(value.tokenset.access),

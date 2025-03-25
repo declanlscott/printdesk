@@ -78,9 +78,14 @@ export const actor = createMiddleware(
           return true;
         },
       }),
-      createMiddleware<Env>((c, next) => withActor(c.var.privateActor, next)),
+      createMiddleware<Env>(async (c, next) =>
+        withActor(() => c.var.privateActor, next),
+      ),
     ),
-    (_, next) =>
-      withActor({ kind: Constants.ACTOR_KINDS.PUBLIC, properties: {} }, next),
+    async (_, next) =>
+      withActor(
+        () => ({ kind: Constants.ACTOR_KINDS.PUBLIC, properties: {} }),
+        next,
+      ),
   ),
 );

@@ -12,11 +12,11 @@ import type {
 
 export const handler: DynamoDBStreamHandler = async (event) =>
   withAws(
-    {
+    () => ({
       dynamoDb: {
         documentClient: DynamoDb.DocumentClient.from(new DynamoDb.Client()),
       },
-    },
+    }),
     async () => {
       const batchItemFailures: Array<DynamoDBBatchItemFailure> = [];
 
@@ -49,7 +49,10 @@ export const handler: DynamoDBStreamHandler = async (event) =>
           );
 
           await withActor(
-            { kind: Constants.ACTOR_KINDS.SYSTEM, properties: { tenantId } },
+            () => ({
+              kind: Constants.ACTOR_KINDS.SYSTEM,
+              properties: { tenantId },
+            }),
             async () => Users.incrementMonthlyActive(month),
           );
         } catch (e) {

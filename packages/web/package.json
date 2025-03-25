@@ -21,6 +21,8 @@
     "@tanstack/react-table": "^8.21.2",
     "@tanstack/router-core": "^1.114.25",
     "@tanstack/router-devtools": "^1.114.27",
+    "@trpc/client": "^11.0.0",
+    "@trpc/tanstack-react-query": "^11.0.0",
     "@xstate/react": "^5.0.3",
     "cmdk": "^1.1.1",
     "jotai": "^2.12.2",

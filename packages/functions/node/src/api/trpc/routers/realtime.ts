@@ -17,24 +17,28 @@ export const realtimeRouter = t.router({
     .input(
       v.object({ channel: v.optional(v.pipe(v.string(), v.startsWith("/"))) }),
     )
-    .use(
-      appsyncSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
         RoleSessionName: "PublicRealtimeSubscriber",
-      })),
-    )
+      }),
+    })
+    .use(appsyncSigner)
     .query(async ({ input }) => Realtime.getAuth(JSON.stringify(input))),
   getUrl: userProcedure
-    .use(
-      executeApiSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetRealtimeUrl",
-      })),
-    )
+      }),
+    })
+    .use(executeApiSigner)
     .query(async () => Realtime.getUrl((await Realtime.getDns()).realtime)),
   getAuth: userProcedure
     .input(
@@ -42,26 +46,18 @@ export const realtimeRouter = t.router({
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
       }),
     )
-    .use(
-      executeApiSigner(() => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiGetRealtimeAuth",
-      })),
-    )
-    .use(
-      appsyncSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.realtimeSubscriber.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "TenantRealtimeSubscriber",
-      })),
-    )
+      }),
+    })
+    .use(appsyncSigner)
     .query(async ({ input }) =>
       Realtime.getAuth((await Realtime.getDns()).http, JSON.stringify(input)),
     ),

@@ -1,15 +1,15 @@
+import { useActor } from "@printworks/core/actors/context";
+import { Users } from "@printworks/core/users";
+import { DynamoDb, withAws } from "@printworks/core/utils/aws";
 import { Constants } from "@printworks/core/utils/constants";
 import { HttpError } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
-import { except } from "hono/combine";
+import { every, some } from "hono/combine";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 
 import { actor } from "~/api/middleware/actor";
-import { authn } from "~/api/middleware/auth";
-import { dynamoDbDocumentClient } from "~/api/middleware/aws";
-import { activity } from "~/api/middleware/user";
 import replicacheRoute from "~/api/routes/replicache";
 import trpcRoute from "~/api/routes/trpc";
 
@@ -19,11 +19,26 @@ const app = new Hono()
   .use(logger())
   .use(actor)
   .use(
-    except(
-      "/public/*",
-      authn(Constants.ACTOR_KINDS.USER),
-      dynamoDbDocumentClient(),
-      activity,
+    some(
+      () => useActor().kind !== Constants.ACTOR_KINDS.USER,
+      every(
+        async (_, next) =>
+          withAws(
+            () => ({
+              dynamoDb: {
+                documentClient: DynamoDb.DocumentClient.from(
+                  new DynamoDb.Client(),
+                ),
+              },
+            }),
+            next,
+          ),
+        async (_, next) => {
+          await Users.recordActivity();
+
+          return next();
+        },
+      ),
     ),
   )
   .route("/replicache", replicacheRoute)

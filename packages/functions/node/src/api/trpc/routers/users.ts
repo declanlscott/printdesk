@@ -78,7 +78,12 @@ export const usersRouter = t.router({
       }
     }),
   countMonthlyActive: userProcedure
-    .use(authz("monthly-active-users", "read"))
+    .meta({
+      kind: "access-control",
+      resource: "monthly-active-users",
+      action: "read",
+    })
+    .use(authz)
     .input(
       v.object({
         month: v.pipe(
@@ -87,6 +92,6 @@ export const usersRouter = t.router({
         ),
       }),
     )
-    .use(dynamoDbDocumentClient())
+    .use(dynamoDbDocumentClient)
     .query(async ({ input }) => Users.countMonthlyActive(input.month)),
 });

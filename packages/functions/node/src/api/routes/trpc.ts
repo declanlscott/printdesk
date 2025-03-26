@@ -5,12 +5,5 @@ import { router } from "~/api/trpc/routers";
 
 export default new Hono().use(
   "/*",
-  trpcServer({
-    router,
-    endpoint: "/api/trpc",
-    createContext: (_, c) => ({
-      req: c.req,
-      res: c.res,
-    }),
-  }),
+  trpcServer({ router, createContext: (_, c) => ({ req: c.req, res: c.res }) }),
 );

@@ -1,32 +1,56 @@
 import { AccessControl } from "@printworks/core/access-control";
 import { assertActor } from "@printworks/core/actors/context";
+import { ApplicationError } from "@printworks/core/utils/errors";
 import { TRPCError } from "@trpc/server";
 
 import { t } from "~/api/trpc";
+import { isOfKind } from "~/api/trpc/meta";
 import { user } from "~/api/trpc/middleware/user";
 
-import type { Action, Resource } from "@printworks/core/access-control/shared";
-import type { PrivateActor } from "@printworks/core/actors/context";
+export const authn = t.middleware(async (opts) => {
+  const meta = opts.meta;
+  const isActorMeta = isOfKind(meta, "actor");
+  if (!isActorMeta || meta.actor === "public")
+    throw new TRPCError(
+      isActorMeta
+        ? { code: "UNAUTHORIZED", message: "Expected private actor." }
+        : { code: "INTERNAL_SERVER_ERROR", message: "Missing actor metadata." },
+    );
 
-export const authn = <TActorKind extends PrivateActor["kind"]>(
-  actorKind: TActorKind,
-) =>
-  t.middleware(async ({ next }) => {
-    try {
-      assertActor(actorKind);
-    } catch {
-      throw new TRPCError({ code: "UNAUTHORIZED" });
-    }
+  try {
+    assertActor(meta.actor);
+  } catch (e) {
+    throw new TRPCError(
+      e instanceof ApplicationError.InvalidActor
+        ? { code: "UNAUTHORIZED", message: e.message }
+        : {
+            code: "INTERNAL_SERVER_ERROR",
+            message:
+              e instanceof Error ? e.message : "An unexpected error occurred.",
+          },
+    );
+  }
 
-    return next();
-  });
+  return opts.next(opts);
+});
 
-export const authz = (resource: Resource, action: Action) =>
-  user.unstable_pipe(async ({ next }) => {
-    await AccessControl.enforce([resource, action], {
-      Error: TRPCError,
-      args: [{ code: "FORBIDDEN" }],
+export const authz = user.unstable_pipe(async (opts) => {
+  const meta = opts.meta;
+  if (!isOfKind(meta, "access-control"))
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Missing access control metadata.",
     });
 
-    return next();
+  await AccessControl.enforce([meta.resource, meta.action], {
+    Error: TRPCError,
+    args: [
+      {
+        code: "FORBIDDEN",
+        message: `Access denied for action "${meta.action}" on resource "${meta.resource}".`,
+      },
+    ],
   });
+
+  return opts.next(opts);
+});

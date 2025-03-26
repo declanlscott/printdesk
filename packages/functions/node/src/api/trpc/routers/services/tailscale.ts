@@ -11,18 +11,21 @@ import { userProcedure } from "~/api/trpc/procedures/protected";
 
 export const tailscaleRouter = t.router({
   setOauthClient: userProcedure
-    .use(authz("services", "update"))
+    .meta({ kind: "access-control", resource: "services", action: "update" })
+    .use(authz)
     .input(tailscaleOauthClientSchema)
-    .use(
-      ssmClient(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.putParameters.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiSetTailscaleOauthClient",
-      })),
-    )
+      }),
+    })
+    .use(ssmClient)
     .mutation(async ({ input }) => {
       await Tailscale.setOauthClient(input.id, input.secret);
     }),

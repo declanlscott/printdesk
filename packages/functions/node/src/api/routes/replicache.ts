@@ -1,3 +1,6 @@
+import { pipeline } from "node:stream";
+import { promisify } from "node:util";
+
 import { vValidator } from "@hono/valibot-validator";
 import { Replicache } from "@printworks/core/replicache";
 import {
@@ -5,31 +8,64 @@ import {
   pushRequestSchema,
 } from "@printworks/core/replicache/shared";
 import { useTenant } from "@printworks/core/tenants/context";
-import { Credentials } from "@printworks/core/utils/aws";
+import { withUser } from "@printworks/core/users/context";
+import {
+  Credentials,
+  S3,
+  SignatureV4,
+  withAws,
+} from "@printworks/core/utils/aws";
 import {
   ApplicationError,
   HttpError,
   ReplicacheError,
 } from "@printworks/core/utils/errors";
 import { Hono } from "hono";
+import { compress } from "hono/compress";
 import { Resource } from "sst";
 
-import { appsyncSigner, executeApiSigner } from "~/api/middleware/aws";
-import { handleLargeResponse } from "~/api/middleware/response";
-import { user } from "~/api/middleware/user";
-import { userAuthzHeadersValidator } from "~/api/middleware/validators";
-
 export default new Hono()
-  .use(user)
+  .use(async (_, next) => withUser(next))
   .post(
     "/pull",
-    userAuthzHeadersValidator,
     vValidator("json", pullRequestSchema),
-    async (c, next) =>
-      handleLargeResponse(`/replicache/pull/${c.req.valid("json").profileID}`)(
-        c,
-        next,
-      ),
+    async (c, next) => {
+      await next();
+
+      if (!c.res.body || c.res.headers.get("Content-Encoding") !== "gzip")
+        return;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const chunks: Array<any> = [];
+      await promisify(pipeline)(c.res.body, async (source) => {
+        for await (const chunk of source) chunks.push(chunk);
+      });
+      const buffer = Buffer.concat(chunks);
+
+      if (buffer.length > 5 * 1024 * 1024)
+        return withAws(
+          () => ({ s3: { client: new S3.Client() } }),
+          async () => {
+            const objectKey = `daily/${useTenant().id}/replicache/pull/${c.req.valid("json").profileID}.json.gz`;
+
+            await S3.putObject({
+              Bucket: Resource.TemporaryBucket.name,
+              Key: objectKey,
+              ContentEncoding: "gzip",
+              ContentType: "application/json",
+              Body: buffer,
+            });
+
+            const url = await S3.getSignedGetUrl({
+              Bucket: Resource.TemporaryBucket.name,
+              Key: objectKey,
+            });
+
+            return c.redirect(url);
+          },
+        );
+    },
+    compress({ encoding: "gzip" }),
     async (c) => {
       const pullResponse = await Replicache.pull(c.req.valid("json")).catch(
         rethrowHttpError,
@@ -40,24 +76,45 @@ export default new Hono()
   )
   .post(
     "/push",
-    userAuthzHeadersValidator,
     vValidator("json", pushRequestSchema),
-    executeApiSigner(() => ({
-      RoleArn: Credentials.buildRoleArn(
-        Resource.Aws.account.id,
-        Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-        useTenant().id,
+    async (_, next) =>
+      withAws(
+        () => ({
+          sigv4: {
+            signers: {
+              appsync: SignatureV4.buildSigner({
+                region: Resource.Aws.region,
+                service: "appsync",
+                credentials: Credentials.fromRoleChain([
+                  {
+                    RoleArn: Credentials.buildRoleArn(
+                      Resource.Aws.account.id,
+                      Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+                      useTenant().id,
+                    ),
+                    RoleSessionName: "ApiReplicachePush",
+                  },
+                ]),
+              }),
+              "execute-api": SignatureV4.buildSigner({
+                region: Resource.Aws.region,
+                service: "execute-api",
+                credentials: Credentials.fromRoleChain([
+                  {
+                    RoleArn: Credentials.buildRoleArn(
+                      Resource.Aws.account.id,
+                      Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+                      useTenant().id,
+                    ),
+                    RoleSessionName: "ApiReplicachePush",
+                  },
+                ]),
+              }),
+            },
+          },
+        }),
+        next,
       ),
-      RoleSessionName: "ApiReplicachePush",
-    })),
-    appsyncSigner(() => ({
-      RoleArn: Credentials.buildRoleArn(
-        Resource.Aws.account.id,
-        Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
-        useTenant().id,
-      ),
-      RoleSessionName: "ApiReplicachePush",
-    })),
     async (c) => {
       const pushResponse = await Replicache.push(c.req.valid("json")).catch(
         rethrowHttpError,

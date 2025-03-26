@@ -15,42 +15,53 @@ import { userProcedure } from "~/api/trpc/procedures/protected";
 
 export const documentsRouter = t.router({
   setMimeTypes: userProcedure
-    .use(authz("documents-mime-types", "update"))
+    .meta({
+      kind: "access-control",
+      resource: "documents-mime-types",
+      action: "update",
+    })
+    .use(authz)
     .input(v.object({ mimeTypes: v.array(v.string()) }))
-    .use(
-      ssmClient(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.putParameters.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiSetDocumentsMimeTypes",
-      })),
-    )
-    .use(
-      executeApiSigner(() => ({
+      }),
+    })
+    .use(ssmClient)
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiSetDocumentsMimeTypes",
-      })),
-    )
+      }),
+    })
+    .use(executeApiSigner)
     .mutation(async ({ input }) => {
       await Documents.setMimeTypes(input.mimeTypes);
     }),
   getMimeTypes: userProcedure
-    .use(
-      executeApiSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetDocumentsMimeTypes",
-      })),
-    )
+      }),
+    })
+    .use(executeApiSigner)
     .query(async () => Documents.getMimeTypes()),
   getSignedGetUrl: userProcedure
     .input(
@@ -58,26 +69,30 @@ export const documentsRouter = t.router({
         // TODO
       }),
     )
-    .use(
-      executeApiSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetDocumentsSignedGetUrl",
-      })),
-    )
-    .use(
-      s3Client(() => ({
+      }),
+    })
+    .use(executeApiSigner)
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.bucketsAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetDocumentsSignedGetUrl",
-      })),
-    )
+      }),
+    })
+    .use(s3Client)
     .query(async () =>
       S3.getSignedGetUrl({
         Bucket: await Documents.getBucket(),
@@ -90,26 +105,30 @@ export const documentsRouter = t.router({
         // TODO
       }),
     )
-    .use(
-      executeApiSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetDocumentsSignedPutUrl",
-      })),
-    )
-    .use(
-      s3Client(() => ({
+      }),
+    })
+    .use(executeApiSigner)
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.bucketsAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetDocumentsSignedPutUrl",
-      })),
-    )
+      }),
+    })
+    .use(s3Client)
     .query(async () =>
       S3.getSignedPutUrl({
         Bucket: await Documents.getBucket(),
@@ -117,45 +136,56 @@ export const documentsRouter = t.router({
       }),
     ),
   setSizeLimit: userProcedure
-    .use(authz("documents-size-limit", "update"))
+    .meta({
+      kind: "access-control",
+      resource: "documents-size-limit",
+      action: "update",
+    })
+    .use(authz)
     .input(
       v.object({
         byteSize: v.pipe(v.number(), v.integer(), v.minValue(0)),
       }),
     )
-    .use(
-      ssmClient(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.putParameters.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiSetDocumentsSizeLimit",
-      })),
-    )
-    .use(
-      executeApiSigner(() => ({
+      }),
+    })
+    .use(ssmClient)
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiSetDocumentsSizeLimit",
-      })),
-    )
+      }),
+    })
+    .use(executeApiSigner)
     .mutation(async ({ input }) => {
       await Documents.setSizeLimit(input.byteSize);
     }),
   getSizeLimit: userProcedure
-    .use(
-      executeApiSigner(() => ({
+    .meta({
+      kind: "aws-assume-role",
+      getInput: () => ({
         RoleArn: Credentials.buildRoleArn(
           Resource.Aws.account.id,
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
         RoleSessionName: "ApiGetDocumentsSizeLimit",
-      })),
-    )
+      }),
+    })
+    .use(executeApiSigner)
     .query(async () => Documents.getSizeLimit()),
 });

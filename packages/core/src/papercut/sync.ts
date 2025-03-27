@@ -6,12 +6,13 @@ import { Auth } from "../auth";
 import { EntraId } from "../auth/entra-id";
 import { BillingAccounts } from "../billing-accounts";
 import { useTransaction } from "../drizzle/context";
+import { ServerErrors } from "../errors";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { tenantMetadataTable } from "../tenants/sql";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
-import { ApplicationError, HttpError } from "../utils/errors";
 import { Graph, withGraph } from "../utils/graph";
 
 import type { User as GraphUser } from "@microsoft/microsoft-graph-types";
@@ -52,13 +53,9 @@ export namespace Sync {
   export async function users() {
     const taskStatus = await Papercut.getTaskStatus();
     if (!taskStatus.completed)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.ServiceUnavailable(),
-          text: "",
-        },
-        message: "papercut task status not yet completed",
-      });
+      throw new ServerErrors.ServiceUnavailable(
+        "papercut task status not yet completed",
+      );
 
     const usernames = new Set(await Papercut.listUserAccounts());
 
@@ -72,12 +69,13 @@ export namespace Sync {
       switch (oauth2Provider.kind) {
         case Constants.ENTRA_ID:
           await withGraph(
-            Graph.Client.initWithMiddleware({
-              authProvider: {
-                getAccessToken: async () =>
-                  EntraId.applicationAccessToken(oauth2Provider.id),
-              },
-            }),
+            () =>
+              Graph.Client.initWithMiddleware({
+                authProvider: {
+                  getAccessToken: async () =>
+                    EntraId.applicationAccessToken(oauth2Provider.id),
+                },
+              }),
             async () => {
               const users = await Graph.users().then(
                 R.reduce(
@@ -115,7 +113,7 @@ export namespace Sync {
         case Constants.GOOGLE:
           throw new Error("Google sync not implemented");
         default:
-          throw new ApplicationError.NonExhaustiveValue(oauth2Provider.kind);
+          throw new SharedErrors.NonExhaustiveValue(oauth2Provider.kind);
       }
 
     const prev = await Users.byOrigin("papercut").then(

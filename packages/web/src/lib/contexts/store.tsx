@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { ClientErrors } from "@printworks/core/errors/client";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -24,7 +24,7 @@ export function createStoreApiContext<
   function use() {
     const storeApi = useContext(Context);
 
-    if (!storeApi) throw new ApplicationError.MissingContextProvider();
+    if (!storeApi) throw new ClientErrors.MissingContextProvider();
 
     return storeApi;
   }

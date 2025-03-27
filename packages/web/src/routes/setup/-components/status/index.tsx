@@ -1,13 +1,12 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
 import { Constants } from "@printworks/core/utils/constants";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { AlertCircle, ArrowLeft, CircleCheckBig, LogIn } from "lucide-react";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
 import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
-import { useApi } from "~/lib/hooks/api";
 import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
 import { ConfiguringStatusItem } from "~/routes/setup/-components/status/configuring";
@@ -20,6 +19,8 @@ import { buttonStyles } from "~/styles/components/primitives/button";
 import { Alert, AlertDescription, AlertTitle } from "~/ui/primitives/alert";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/ui/primitives/card";
+
+import type { Router } from "@printworks/functions/api/trpc/routers";
 
 export function SetupStatus() {
   const state = useSetupStatusState();
@@ -133,46 +134,38 @@ function PostInitializedStatusItems() {
     tenantId: context.tenantId,
   }));
 
-  const api = useApi();
+  const resource = useResource();
 
-  const webSocketUrlProvider = useCallback(async () => {
-    if (!apiKey || !tenantId)
-      throw new ApplicationError.Error("Missing API key or tenant ID");
+  const trpcClient = useMemo(
+    () =>
+      createTRPCClient<Router>({
+        links: [
+          httpBatchLink({
+            url: new URL("/trpc", resource.ApiReverseProxy.url),
+            headers: () => {
+              if (!apiKey || !tenantId)
+                throw new Error("Missing API key and/or tenant ID");
 
-    const res = await api.client.public.realtime.url.$get({
-      header: {
-        authorization: `Bearer ${apiKey}`,
-        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
-      },
-    });
-    if (!res.ok)
-      throw new ApplicationError.Error("Failed to get web socket url");
+              return {
+                Authorization: `Bearer ${apiKey}`,
+                [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
+              };
+            },
+          }),
+        ],
+      }),
+    [resource.ApiReverseProxy.url, apiKey, tenantId],
+  );
 
-    const { url } = await res.json();
-
-    return url;
-  }, [api, apiKey, tenantId]);
+  const webSocketUrlProvider = useCallback(
+    async () => trpcClient.realtime.getPublicUrl.query(),
+    [trpcClient],
+  );
 
   const getWebSocketAuth = useCallback(
-    async (channel?: string) => {
-      if (!apiKey || !tenantId)
-        throw new ApplicationError.Error("Missing API key or tenant ID");
-
-      const res = await api.client.public.realtime.auth.$get({
-        header: {
-          authorization: `Bearer ${apiKey}`,
-          [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
-        },
-        query: { channel },
-      });
-      if (!res.ok)
-        throw new ApplicationError.Error("Failed to get web socket auth");
-
-      const { auth } = await res.json();
-
-      return auth;
-    },
-    [api, apiKey, tenantId],
+    async (channel?: string) =>
+      trpcClient.realtime.getPublicAuth.query({ channel }),
+    [trpcClient],
   );
 
   return (

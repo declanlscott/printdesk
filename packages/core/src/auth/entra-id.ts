@@ -6,12 +6,12 @@ import * as v from "valibot";
 
 import { withActor } from "../actors/context";
 import { useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { Tenants } from "../tenants";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { Credentials, SignatureV4, withAws } from "../utils/aws";
 import { Constants } from "../utils/constants";
-import { ApplicationError } from "../utils/errors";
 import { Graph } from "../utils/graph";
 import { fn } from "../utils/shared";
 
@@ -47,13 +47,13 @@ export namespace EntraId {
       if (!tenant) throw new Error("tenant not found");
 
       return withActor(
-        {
+        () => ({
           kind: Constants.ACTOR_KINDS.SYSTEM,
           properties: { tenantId: tenant.id },
-        },
+        }),
         async () =>
           withAws(
-            {
+            () => ({
               sigv4: {
                 signers: {
                   "execute-api": SignatureV4.buildSigner({
@@ -77,7 +77,7 @@ export namespace EntraId {
                   }),
                 },
               },
-            },
+            }),
             async () =>
               useTransaction(async () => {
                 let user = await Users.byOauth2(id, tid).then(R.first());
@@ -145,9 +145,7 @@ export namespace EntraId {
                   case "suspended":
                     throw new Error("tenant suspended");
                   default:
-                    throw new ApplicationError.NonExhaustiveValue(
-                      tenant.status,
-                    );
+                    throw new SharedErrors.NonExhaustiveValue(tenant.status);
                 }
               }),
           ),

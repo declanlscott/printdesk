@@ -3,10 +3,10 @@ import { and, eq, getTableName, inArray } from "drizzle-orm";
 import { AccessControl } from "../access-control";
 import { Api } from "../backend/api";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { createInvoiceMutationArgsSchema } from "./shared";
 import { invoicesTable } from "./sql";
@@ -16,7 +16,7 @@ import type { Invoice } from "./sql";
 export namespace Invoices {
   export const create = fn(createInvoiceMutationArgsSchema, async (values) => {
     await AccessControl.enforce([getTableName(invoicesTable), "create"], {
-      Error: ApplicationError.AccessDenied,
+      Error: SharedErrors.AccessDenied,
       args: [{ name: getTableName(invoicesTable) }],
     });
 

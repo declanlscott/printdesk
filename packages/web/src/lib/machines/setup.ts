@@ -1,6 +1,5 @@
 import { getBackendFqdn } from "@printworks/core/backend/shared";
 import { Constants } from "@printworks/core/utils/constants";
-import { ApplicationError, HttpError } from "@printworks/core/utils/errors";
 import { buildUrl } from "@printworks/core/utils/shared";
 import { assign, fromPromise, setup } from "xstate";
 
@@ -15,7 +14,6 @@ import type {
   SetupWizardStep4,
 } from "@printworks/core/tenants/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
-import type { Client } from "@printworks/functions/api/client";
 import type { ViteResource } from "~/types";
 
 type SetupMachineWizardContext = SetupWizard;
@@ -69,59 +67,55 @@ const initialStatusContext = {
   failureStatus: null,
 } as const satisfies SetupMachineStatusContext;
 
-const initialize = (api: Client) =>
-  fromPromise<{ tenantId: Tenant["id"]; apiKey: string }, InitializeData>(
-    async ({ input: json }) => {
-      const res = await api.public.setup.initialize.$put({ json });
-      if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+const initialize = fromPromise<
+  { tenantId: Tenant["id"]; apiKey: string },
+  InitializeData
+>(async ({ input: json }) => {
+  const res = await api.public.setup.initialize.$put({ json });
+  if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
 
-      return res.json();
+  return res.json();
+});
+
+const register = fromPromise<
+  void,
+  RegisterData & Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
+>(async ({ input: { apiKey, tenantId, ...json } }) => {
+  if (!apiKey || !tenantId) throw new Error("Missing API key or tenant ID");
+
+  const res = await api.public.setup.register.$put({
+    header: {
+      authorization: `Bearer ${apiKey}`,
+      [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
     },
-  );
-
-const register = (api: Client) =>
-  fromPromise<
-    void,
-    RegisterData & Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
-  >(async ({ input: { apiKey, tenantId, ...json } }) => {
-    if (!apiKey || !tenantId)
-      throw new ApplicationError.Error("Missing API key or tenant ID");
-
-    const res = await api.public.setup.register.$put({
-      header: {
-        authorization: `Bearer ${apiKey}`,
-        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
-      },
-      json,
-    });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+    json,
   });
+  if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+});
 
-const dispatchInfra = (api: Client) =>
-  fromPromise<
-    { dispatchId: string },
-    Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
-  >(async ({ input: { apiKey, tenantId } }) => {
-    if (!apiKey || !tenantId)
-      throw new ApplicationError.Error("Missing API key or tenant ID");
+const dispatchInfra = fromPromise<
+  { dispatchId: string },
+  Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
+>(async ({ input: { apiKey, tenantId } }) => {
+  if (!apiKey || !tenantId) throw new Error("Missing API key or tenant ID");
 
-    const res = await api.public.setup["dispatch-infra"].$post({
-      header: {
-        authorization: `Bearer ${apiKey}`,
-        [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
-      },
-    });
-    if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
-
-    return res.json();
+  const res = await api.public.setup["dispatch-infra"].$post({
+    header: {
+      authorization: `Bearer ${apiKey}`,
+      [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
+    },
   });
+  if (!res.ok) throw new HttpError.Error(res.statusText, res.status);
+
+  return res.json();
+});
 
 const healthcheck = (resource: ViteResource) =>
   fromPromise<
     { isHealthy: boolean },
     Pick<SetupMachineStatusContext, "tenantId">
   >(async ({ input }) => {
-    if (!input.tenantId) throw new ApplicationError.Error("Missing tenant ID");
+    if (!input.tenantId) throw new Error("Missing tenant ID");
 
     const res = await fetch(
       buildUrl({
@@ -142,8 +136,7 @@ const configure = (api: Client) =>
     void,
     ConfigureData & Pick<SetupMachineStatusContext, "apiKey" | "tenantId">
   >(async ({ input: { apiKey, tenantId, ...json } }) => {
-    if (!apiKey || !tenantId)
-      throw new ApplicationError.Error("Missing API key or tenant ID");
+    if (!apiKey || !tenantId) throw new Error("Missing API key or tenant ID");
 
     const res = await api.public.setup.configure.$put({
       header: {
@@ -158,8 +151,7 @@ const configure = (api: Client) =>
 const testPapercutConnection = (api: Client) =>
   fromPromise<void, Pick<SetupMachineStatusContext, "apiKey" | "tenantId">>(
     async ({ input: { apiKey, tenantId } }) => {
-      if (!apiKey || !tenantId)
-        throw new ApplicationError.Error("Missing API key or tenant ID");
+      if (!apiKey || !tenantId) throw new Error("Missing API key or tenant ID");
 
       const res = await api.public.setup["test-papercut-connection"].$post({
         header: {
@@ -171,7 +163,7 @@ const testPapercutConnection = (api: Client) =>
     },
   );
 
-export const getSetupMachine = (api: Client, resource: ViteResource) =>
+export const getSetupMachine = (resource: ViteResource) =>
   setup({
     types: {
       input: {} as Pick<SetupWizard, "tenantSlug">,

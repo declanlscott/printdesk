@@ -2,9 +2,9 @@ import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   createProductMutationArgsSchema,
@@ -18,7 +18,7 @@ import type { Product } from "./sql";
 export namespace Products {
   export const create = fn(createProductMutationArgsSchema, async (values) => {
     await AccessControl.enforce([getTableName(productsTable), "create"], {
-      Error: ApplicationError.AccessDenied,
+      Error: SharedErrors.AccessDenied,
       args: [{ name: getTableName(productsTable) }],
     });
 
@@ -46,7 +46,7 @@ export namespace Products {
     updateProductMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(productsTable), "update"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(productsTable), id }],
       });
 
@@ -70,7 +70,7 @@ export namespace Products {
     deleteProductMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(productsTable), "delete"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(productsTable), id }],
       });
 

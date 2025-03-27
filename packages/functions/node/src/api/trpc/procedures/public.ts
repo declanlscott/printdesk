@@ -1,3 +1,3 @@
-import { t } from "~/api/trpc";
+import { procedure } from "~/api/trpc/procedures";
 
-export const publicProcedure = t.procedure;
+export const publicProcedure = procedure;

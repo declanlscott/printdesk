@@ -6,25 +6,49 @@
 
 import { AsyncLocalStorage } from "node:async_hooks";
 
+import * as R from "remeda";
+
+import { ServerErrors } from "../errors";
 import { Constants } from "./constants";
-import { ApplicationError } from "./errors";
 
 export namespace Utils {
-  export function createContext<TContext>(name: string) {
+  export function createContext<TContext extends object>(name: string) {
     const storage = new AsyncLocalStorage<TContext>();
 
-    return {
-      use: () => {
-        const context = storage.getStore();
-        if (!context) throw new ApplicationError.MissingContext(name);
+    function useContext() {
+      const context = storage.getStore();
+      if (!context) throw new ServerErrors.MissingContext(name);
 
-        return context;
-      },
-      with: <TCallback extends () => ReturnType<TCallback>>(
-        context: TContext,
-        callback: TCallback,
-      ) => storage.run(context, callback),
-    };
+      return context;
+    }
+
+    async function withContext<
+      TGetContext extends () => TContext | Promise<TContext>,
+      TCallback extends () => ReturnType<TCallback>,
+    >(getContext: TGetContext, callback: TCallback, opts = { merge: false }) {
+      let context: TContext | undefined;
+      try {
+        context = useContext();
+      } catch (e) {
+        if (
+          !(e instanceof ServerErrors.MissingContext && e.contextName === name)
+        )
+          throw e;
+      }
+
+      if (context) {
+        if (!opts.merge) return storage.run(context, callback);
+
+        return storage.run(
+          R.mergeDeep(context, await Promise.resolve(getContext())) as TContext,
+          callback,
+        );
+      }
+
+      return storage.run(await Promise.resolve(getContext()), callback);
+    }
+
+    return { use: useContext, with: withContext };
   }
 
   export const reverseDns = (domainName: string) =>

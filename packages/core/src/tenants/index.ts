@@ -8,12 +8,12 @@ import { oauth2ProvidersTable } from "../auth/sql";
 import { Documents } from "../backend/documents";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { Papercut } from "../papercut";
 import { poke } from "../replicache/poke";
 import { Tailscale } from "../tailscale";
 import { Sqs } from "../utils/aws";
 import { Constants } from "../utils/constants";
-import { ApplicationError } from "../utils/errors";
 import { fn, generateId } from "../utils/shared";
 import { useTenant } from "./context";
 import { updateTenantMutationArgsSchema } from "./shared";
@@ -74,7 +74,7 @@ export namespace Tenants {
 
   export const update = fn(updateTenantMutationArgsSchema, async (values) => {
     await AccessControl.enforce([getTableName(tenantsTable), "update"], {
-      Error: ApplicationError.AccessDenied,
+      Error: SharedErrors.AccessDenied,
       args: [{ name: getTableName(tenantsTable), id: values.id }],
     });
 

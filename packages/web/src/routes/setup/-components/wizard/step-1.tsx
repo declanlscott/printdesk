@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
-import { useApi } from "~/lib/hooks/api";
+import { useTRPCClient } from "~/lib/contexts/trpc";
 import { useAppForm } from "~/lib/hooks/form";
 import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine } from "~/lib/hooks/setup";
@@ -21,26 +21,16 @@ export function SetupWizardStep1() {
     tenantSlug: context.tenantSlug,
   }));
 
-  const api = useApi();
+  const trpcClient = useTRPCClient();
 
   const form = useAppForm({
     validators: { onSubmit: setupWizardStep1Schema },
     defaultValues,
     onSubmit: async ({ value }) => {
-      const res = await api.client.public.tenants["license-key-availability"][
-        ":value"
-      ].$get({
-        param: { value: value.licenseKey },
+      const isAvailable = await trpcClient.tenants.isLicenseKeyAvailable.query({
+        value: value.licenseKey,
       });
-      if (!res.ok)
-        switch (res.status as number) {
-          case 429:
-            return toast.error("Too many requests, try again later.");
-          default:
-            return toast.error("An unexpected error occurred.");
-        }
 
-      const { isAvailable } = await res.json();
       if (!isAvailable) return toast.error("License key is not available.");
 
       actorRef.send({ type: "wizard.step1.next", ...value });

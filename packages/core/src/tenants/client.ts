@@ -1,6 +1,6 @@
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import { tenantsTableName, updateTenantMutationArgsSchema } from "./shared";
 
 import type { Tenant } from "./sql";
@@ -19,7 +19,7 @@ export namespace Tenants {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, tenantsTableName, "update"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: tenantsTableName, id }],
         }),
       getMutator:

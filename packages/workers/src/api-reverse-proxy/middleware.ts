@@ -3,11 +3,11 @@ import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
 import { Constants } from "@printworks/core/utils/constants";
-import { HttpError } from "@printworks/core/utils/errors";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { Resource } from "sst";
 
 import type { FetchProxy } from "@mjackson/fetch-proxy";
@@ -82,8 +82,7 @@ export const rateLimiter = createMiddleware(
       }),
     ),
     createMiddleware((c, next) => {
-      if (!c.var.rateLimitOutcome.success)
-        throw new HttpError.TooManyRequests();
+      if (!c.var.rateLimitOutcome.success) throw new HTTPException(429);
 
       return next();
     }),

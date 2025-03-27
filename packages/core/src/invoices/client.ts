@@ -1,6 +1,6 @@
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import { createInvoiceMutationArgsSchema, invoicesTableName } from "./shared";
 
 import type { Invoice } from "./sql";
@@ -11,7 +11,7 @@ export namespace Invoices {
     {
       authorizer: async (tx, user) =>
         AccessControl.enforce([tx, user, invoicesTableName, "create"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: invoicesTableName }],
         }),
       getMutator: () => async (tx, values) =>

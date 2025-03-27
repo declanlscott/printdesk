@@ -2,13 +2,13 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { Announcements } from "@printworks/core/announcements/client";
 import { BillingAccounts } from "@printworks/core/billing-accounts/client";
 import { Comments } from "@printworks/core/comments/client";
+import { ClientErrors } from "@printworks/core/errors/client";
 import { Invoices } from "@printworks/core/invoices/client";
 import { Orders } from "@printworks/core/orders/client";
 import { Products } from "@printworks/core/products/client";
 import { Rooms } from "@printworks/core/rooms/client";
 import { Tenants } from "@printworks/core/tenants/client";
 import { Users } from "@printworks/core/users/client";
-import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
@@ -21,8 +21,7 @@ import type { ReadTransaction, SubscribeOptions } from "replicache";
 export function useReplicacheContext() {
   const replicache = useContext(ReplicacheContext);
 
-  if (!replicache)
-    throw new ApplicationError.MissingContextProvider("Replicache");
+  if (!replicache) throw new ClientErrors.MissingContextProvider("Replicache");
 
   return replicache;
 }

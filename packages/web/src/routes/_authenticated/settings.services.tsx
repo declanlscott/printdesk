@@ -10,7 +10,7 @@ import { KeySquare, Link } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
-import { useMutationOptions } from "~/lib/hooks/data";
+import { useTRPC } from "~/lib/contexts/trpc";
 import { useAppForm } from "~/lib/hooks/form";
 import { labelStyles } from "~/styles/components/primitives/field";
 import { Button } from "~/ui/primitives/button";
@@ -48,11 +48,12 @@ function RouteComponent() {
 }
 
 function TailscaleCard() {
-  const { tailscaleOauthClient } = useMutationOptions();
+  const trpc = useTRPC();
 
   const isUpdatingOauthClient =
     useIsMutating({
-      mutationKey: tailscaleOauthClient().mutationKey,
+      mutationKey:
+        trpc.services.tailscale.setOauthClient.mutationOptions().mutationKey,
     }) > 0;
 
   return (
@@ -89,15 +90,15 @@ function TailscaleCard() {
 }
 
 function UpdateTailscaleOauthClient() {
-  const { tailscaleOauthClient } = useMutationOptions();
-
-  const { mutate } = useMutation({
-    ...tailscaleOauthClient(),
-    onSuccess: () =>
-      toast.success(
-        "Successfully saved the Tailscale OAuth client credentials.",
-      ),
-  });
+  const trpc = useTRPC();
+  const setOauthClient = useMutation(
+    trpc.services.tailscale.setOauthClient.mutationOptions({
+      onSuccess: () =>
+        toast.success(
+          "Successfully saved the Tailscale OAuth client credentials.",
+        ),
+    }),
+  );
 
   const form = useAppForm({
     validators: {
@@ -107,7 +108,7 @@ function UpdateTailscaleOauthClient() {
       id: "",
       secret: "",
     },
-    onSubmit: ({ value }) => mutate(value),
+    onSubmit: ({ value }) => setOauthClient.mutate(value),
   });
 
   return (
@@ -176,15 +177,19 @@ function UpdateTailscaleOauthClient() {
 }
 
 function PapercutCard() {
-  const { papercutServerTailnetUri, papercutServerAuthToken } =
-    useMutationOptions();
+  const trpc = useTRPC();
 
   const isUpdatingTailnetUri =
-    useIsMutating({ mutationKey: papercutServerTailnetUri().mutationKey }) > 0;
+    useIsMutating({
+      mutationKey:
+        trpc.services.papercut.setServerTailnetUri.mutationOptions()
+          .mutationKey,
+    }) > 0;
 
   const isUpdatingAuthToken =
     useIsMutating({
-      mutationKey: papercutServerAuthToken().mutationKey,
+      mutationKey:
+        trpc.services.papercut.setServerAuthToken.mutationOptions().mutationKey,
     }) > 0;
 
   return (
@@ -241,11 +246,14 @@ function PapercutCard() {
 }
 
 function UpdatePapercutServerTailnetUri() {
-  const { mutate } = useMutation({
-    ...useMutationOptions().papercutServerTailnetUri(),
-    onSuccess: () =>
-      toast.success("Successfully saved the PaperCut server Tailnet URI."),
-  });
+  const trpc = useTRPC();
+
+  const setServerTailnetUri = useMutation(
+    trpc.services.papercut.setServerTailnetUri.mutationOptions({
+      onSuccess: () =>
+        toast.success("Successfully saved the PaperCut server Tailnet URI."),
+    }),
+  );
 
   const form = useAppForm({
     validators: {
@@ -254,7 +262,7 @@ function UpdatePapercutServerTailnetUri() {
     defaultValues: {
       tailnetUri: "",
     },
-    onSubmit: ({ value }) => mutate(value),
+    onSubmit: ({ value }) => setServerTailnetUri.mutate(value),
   });
 
   return (
@@ -313,13 +321,14 @@ function UpdatePapercutServerTailnetUri() {
 }
 
 function UpdatePapercutServerAuthToken() {
-  const { papercutServerAuthToken } = useMutationOptions();
+  const trpc = useTRPC();
 
-  const { mutate } = useMutation({
-    ...papercutServerAuthToken(),
-    onSuccess: () =>
-      toast.success("Successfully saved the PaperCut server auth token."),
-  });
+  const setServerAuthToken = useMutation(
+    trpc.services.papercut.setServerAuthToken.mutationOptions({
+      onSuccess: () =>
+        toast.success("Successfully saved the PaperCut server auth token."),
+    }),
+  );
 
   const form = useAppForm({
     validators: {
@@ -328,7 +337,7 @@ function UpdatePapercutServerAuthToken() {
     defaultValues: {
       authToken: "",
     },
-    onSubmit: ({ value }) => mutate(value),
+    onSubmit: ({ value }) => setServerAuthToken.mutate(value),
   });
 
   return (

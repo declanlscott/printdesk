@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { BillingAccounts } from "@printworks/core/billing-accounts/client";
+import { SharedErrors } from "@printworks/core/errors/shared";
 import { Users } from "@printworks/core/users/client";
-import { ApplicationError } from "@printworks/core/utils/errors";
 import * as R from "remeda";
 
 import { useUserSubject } from "~/lib/hooks/auth";
@@ -19,7 +19,7 @@ export function useUser() {
 export function useManager() {
   const user = useUser();
 
-  if (user.role !== "manager") throw new ApplicationError.AccessDenied();
+  if (user.role !== "manager") throw new SharedErrors.AccessDenied();
 
   const managerAuthorizations = useSubscribe(
     BillingAccounts.allManagerAuthorizations(),

@@ -1,19 +1,20 @@
 import { useContext, useEffect, useRef } from "react";
+import { ClientErrors } from "@printworks/core/errors/client";
 import { Realtime } from "@printworks/core/realtime/client";
-import { ApplicationError } from "@printworks/core/utils/errors";
 import { generateId } from "@printworks/core/utils/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
 import { RealtimeContext } from "~/lib/contexts/realtime";
+import { useTRPC } from "~/lib/contexts/trpc";
 
 import type { StartsWith } from "@printworks/core/utils/types";
 
 export function useRealtime() {
   const context = useContext(RealtimeContext);
 
-  if (!context) throw new ApplicationError.MissingContextProvider("WebSocket");
+  if (!context) throw new ClientErrors.MissingContextProvider("WebSocket");
 
   return context;
 }
@@ -40,14 +41,15 @@ export function useRealtimeChannel<TChannel extends string>(
     useRealtime().storeApi,
     useShallow(({ isConnected }) => isConnected),
   );
-  const { authenticate } = useRealtimeActions();
 
-  const { data: authorization } = useQuery({
-    queryKey: ["realtime", "auth", channel],
-    queryFn: async () => authenticate(channel),
-    staleTime: Infinity,
-    enabled: isConnected,
-  });
+  const trpc = useTRPC();
+
+  const { data: authorization } = useQuery(
+    trpc.realtime.getAuth.queryOptions(
+      { channel },
+      { staleTime: Infinity, enabled: isConnected },
+    ),
+  );
 
   const webSocket = useRealtimeWebSocket();
 

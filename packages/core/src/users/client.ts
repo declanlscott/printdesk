@@ -5,9 +5,9 @@ import {
   billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
 } from "../billing-accounts/shared";
+import { SharedErrors } from "../errors/shared";
 import { ordersTableName } from "../orders/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import {
   deleteUserMutationArgsSchema,
   restoreUserMutationArgsSchema,
@@ -115,7 +115,7 @@ export namespace Users {
     {
       authorizer: (tx, user, { id }) =>
         AccessControl.enforce([tx, user, usersTableName, "update"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: usersTableName, id }],
         }),
       getMutator:
@@ -136,7 +136,7 @@ export namespace Users {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, usersTableName, "delete"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: usersTableName, id }],
         }),
       getMutator:
@@ -163,7 +163,7 @@ export namespace Users {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, usersTableName, "update"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: usersTableName, id }],
         }),
       getMutator:

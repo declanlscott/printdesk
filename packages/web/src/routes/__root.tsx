@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { RouterProvider } from "react-aria-components";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { SharedErrors } from "@printworks/core/errors/shared";
 import {
   createRootRouteWithContext,
   notFound,
@@ -8,9 +8,10 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 
+import type { Router } from "@printworks/functions/api/trpc/routers";
 import type { QueryClient } from "@tanstack/react-query";
+import type { TRPCClient } from "@trpc/client";
 import type { StoreApi } from "zustand";
-import type { ApiContext } from "~/lib/contexts/api";
 import type { ReplicacheContext } from "~/lib/contexts/replicache";
 import type { ResourceContext } from "~/lib/contexts/resource";
 import type { AuthStore } from "~/lib/stores/auth";
@@ -25,9 +26,9 @@ const TanStackRouterDevtools = import.meta.env.DEV
   : () => null;
 
 type RouterContext = {
-  api: ApiContext;
   authStoreApi: StoreApi<AuthStore>;
   replicache: ReplicacheContext;
+  trpcClient: TRPCClient<Router>;
   resource: ResourceContext;
   queryClient: QueryClient;
 };
@@ -35,7 +36,7 @@ type RouterContext = {
 export const Route = createRootRouteWithContext<RouterContext>()({
   component: RouteComponent,
   onError: (error) => {
-    if (error instanceof ApplicationError.EntityNotFound) throw notFound();
+    if (error instanceof SharedErrors.NotFound) throw notFound();
 
     throw error;
   },

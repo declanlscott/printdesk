@@ -1,6 +1,6 @@
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import {
   commentsTableName,
   createCommentMutationArgsSchema,
@@ -18,7 +18,7 @@ export namespace Comments {
         AccessControl.enforce(
           [tx, user, commentsTableName, "create", orderId],
           {
-            Error: ApplicationError.AccessDenied,
+            Error: SharedErrors.AccessDenied,
             args: [{ name: commentsTableName }],
           },
         ),
@@ -44,7 +44,7 @@ export namespace Comments {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, commentsTableName, "update", id], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: commentsTableName, id }],
         }),
       getMutator: () => async (tx, values) => {
@@ -63,7 +63,7 @@ export namespace Comments {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, commentsTableName, "delete", id], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: commentsTableName, id }],
         }),
       getMutator:

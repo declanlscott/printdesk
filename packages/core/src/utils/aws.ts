@@ -32,12 +32,10 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
-import * as R from "remeda";
 import * as v from "valibot";
 
 import { Utils } from ".";
 import { Constants } from "./constants";
-import { ApplicationError } from "./errors";
 
 import type {
   DeleteObjectCommandInput,
@@ -68,9 +66,7 @@ export type AwsContext = {
   ssm?: { client: SSMClient };
 };
 
-export const AwsContext = Utils.createContext<AwsContext>(
-  Constants.CONTEXT_NAMES.AWS,
-);
+export const AwsContext = Utils.createContext<AwsContext>("Aws");
 
 export function useAws<TServiceName extends keyof AwsContext>(
   serviceName: TServiceName,
@@ -82,28 +78,13 @@ export function useAws<TServiceName extends keyof AwsContext>(
   return service;
 }
 
-export async function withAws<
-  TContext extends AwsContext,
+export const withAws = <
+  TGetContext extends () => AwsContext | Promise<AwsContext>,
   TCallback extends () => ReturnType<TCallback>,
->(context: TContext, callback: TCallback) {
-  let old: AwsContext | undefined;
-  try {
-    old = AwsContext.use();
-  } catch (e) {
-    if (
-      !(
-        e instanceof ApplicationError.MissingContext &&
-        e.contextName === Constants.CONTEXT_NAMES.AWS
-      )
-    )
-      throw e;
-  }
-
-  if (old)
-    return AwsContext.with(R.mergeDeep(old, context) as AwsContext, callback);
-
-  return AwsContext.with(context, callback);
-}
+>(
+  getContext: TGetContext,
+  callback: TCallback,
+) => AwsContext.with(getContext, callback, { merge: true });
 
 export namespace Cloudfront {
   export const getSignedUrl = (...args: Parameters<typeof _getSignedUrl>) =>

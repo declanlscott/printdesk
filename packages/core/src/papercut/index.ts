@@ -2,10 +2,10 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 import { Api } from "../backend/api";
+import { ServerErrors } from "../errors";
 import { useTenant } from "../tenants/context";
 import { Ssm } from "../utils/aws";
 import { Constants } from "../utils/constants";
-import { HttpError } from "../utils/errors";
 import { useXml } from "../utils/xml";
 import {
   xmlRpcAdjustSharedAccountAccountBalanceResponseSchema,
@@ -84,12 +84,10 @@ export namespace Papercut {
     const text = await res.text();
 
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text,
-        },
-      });
+      throw new ServerErrors.InternalServerError(
+        "Failed to adjust account balance",
+        { cause: text },
+      );
 
     const success = v.parse(
       xmlRpcAdjustSharedAccountAccountBalanceResponseSchema,
@@ -131,12 +129,10 @@ export namespace Papercut {
     const text = await res.text();
 
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text,
-        },
-      });
+      throw new ServerErrors.InternalServerError(
+        "Failed to get shared account properties",
+        { cause: text },
+      );
 
     const properties = v.parse(
       xmlRpcGetSharedAccountPropertiesResponseSchema<TPropertyNames>(),
@@ -157,11 +153,8 @@ export namespace Papercut {
     const text = await res.text();
 
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text,
-        },
+      throw new ServerErrors.InternalServerError("Failed to get task status", {
+        cause: text,
       });
 
     const taskStatus = v.parse(
@@ -186,11 +179,8 @@ export namespace Papercut {
     const text = await res.text();
 
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text,
-        },
+      throw new ServerErrors.InternalServerError("Failed to get total users", {
+        cause: text,
       });
 
     const totalUsers = v.parse(
@@ -227,12 +217,10 @@ export namespace Papercut {
       const text = await res.text();
 
       if (!res.ok)
-        throw new HttpError.BadGateway({
-          upstream: {
-            error: new HttpError.Error(res.statusText, res.status),
-            text,
-          },
-        });
+        throw new ServerErrors.InternalServerError(
+          "Failed to list shared accounts",
+          { cause: text },
+        );
 
       const sharedAccounts = v.parse(
         xmlRpcListSharedAccountsResponseSchema,
@@ -275,12 +263,10 @@ export namespace Papercut {
       const text = await res.text();
 
       if (!res.ok)
-        throw new HttpError.BadGateway({
-          upstream: {
-            error: new HttpError.Error(res.statusText, res.status),
-            text,
-          },
-        });
+        throw new ServerErrors.InternalServerError(
+          "Failed to list user accounts",
+          { cause: text },
+        );
 
       const userAccounts = v.parse(
         xmlRpcListUserAccountsResponseSchema,
@@ -325,12 +311,10 @@ export namespace Papercut {
       const text = await res.text();
 
       if (!res.ok)
-        throw new HttpError.BadGateway({
-          upstream: {
-            error: new HttpError.Error(res.statusText, res.status),
-            text,
-          },
-        });
+        throw new ServerErrors.InternalServerError(
+          "Failed to list user shared accounts",
+          { cause: text },
+        );
 
       const userSharedAccounts = v.parse(
         xmlRpcListUserSharedAccountsResponseSchema,

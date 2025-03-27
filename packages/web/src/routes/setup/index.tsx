@@ -1,4 +1,4 @@
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { SharedErrors } from "@printworks/core/errors/shared";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createActorContext } from "@xstate/react";
 import * as v from "valibot";
@@ -29,25 +29,12 @@ export const Route = createFileRoute("/setup/")({
         : window.location.hostname
             .split(`.${context.resource.AppData.domainName.fullyQualified}`)
             .at(0);
-    if (!slug) throw new ApplicationError.Error("Missing slug");
+    if (!slug) throw new Error("Missing slug");
 
-    const res = await context.api.client.public.tenants["slug-availability"][
-      ":value"
-    ].$get({ param: { value: slug } });
-    if (!res.ok) {
-      switch (res.status as number) {
-        case 429:
-          throw new ApplicationError.Error(
-            "Too many requests, try again later.",
-          );
-        default:
-          throw new ApplicationError.Error("An unexpected error occurred.");
-      }
-    }
-
-    const { isAvailable } = await res.json();
-    if (!isAvailable)
-      throw new ApplicationError.Error(`"${slug}" is unavailable to register.`);
+    const isAvailable = await context.trpcClient.tenants.isSlugAvailable.query({
+      value: slug,
+    });
+    if (!isAvailable) throw new Error(`"${slug}" is unavailable to register.`);
 
     const SetupMachineContext = createActorContext(
       getSetupMachine(context.api.client, context.resource),
@@ -76,5 +63,5 @@ function Setup() {
 
   if ("status" in state) return <SetupStatus />;
 
-  throw new ApplicationError.NonExhaustiveValue(state);
+  throw new SharedErrors.NonExhaustiveValue(state);
 }

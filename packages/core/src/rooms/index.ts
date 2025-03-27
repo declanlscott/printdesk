@@ -12,11 +12,11 @@ import * as R from "remeda";
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { productsTable } from "../products/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Constants } from "../utils/constants";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   createRoomMutationArgsSchema,
@@ -34,7 +34,7 @@ import type { DeliveryOption, Room, WorkflowStatus } from "./sql";
 export namespace Rooms {
   export const create = fn(createRoomMutationArgsSchema, async (values) => {
     await AccessControl.enforce([getTableName(roomsTable), "create"], {
-      Error: ApplicationError.AccessDenied,
+      Error: SharedErrors.AccessDenied,
       args: [{ name: getTableName(roomsTable) }],
     });
 
@@ -81,7 +81,7 @@ export namespace Rooms {
     updateRoomMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(roomsTable), "update"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(roomsTable), id }],
       });
 
@@ -104,7 +104,7 @@ export namespace Rooms {
       const tenant = useTenant();
 
       await AccessControl.enforce([getTableName(roomsTable), "delete"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(roomsTable), id }],
       });
 
@@ -135,7 +135,7 @@ export namespace Rooms {
 
   export const restore = fn(restoreRoomMutationArgsSchema, async ({ id }) => {
     await AccessControl.enforce([getTableName(roomsTable), "update"], {
-      Error: ApplicationError.AccessDenied,
+      Error: SharedErrors.AccessDenied,
       args: [{ name: getTableName(roomsTable), id }],
     });
 
@@ -170,7 +170,7 @@ export namespace Rooms {
     await AccessControl.enforce(
       [getTableName(workflowStatusesTable), "create"],
       {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(workflowStatusesTable) }],
       },
     );
@@ -247,7 +247,7 @@ export namespace Rooms {
       await AccessControl.enforce(
         [getTableName(deliveryOptionsTable), "create"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: getTableName(deliveryOptionsTable) }],
         },
       );

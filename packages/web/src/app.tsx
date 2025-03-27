@@ -1,21 +1,26 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { Constants } from "@printworks/core/utils/constants";
 import { parseResource } from "@printworks/core/utils/shared";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createRouter, RouterProvider } from "@tanstack/react-router";
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { Toaster } from "sonner";
 
-import { ApiProvider } from "~/lib/contexts/api/provider";
 import { ReplicacheProvider } from "~/lib/contexts/replicache/provider";
 import { ResourceProvider } from "~/lib/contexts/resource/provider";
-import { useApi } from "~/lib/hooks/api";
+import { TRPCProvider } from "~/lib/contexts/trpc";
 import { useReplicacheContext } from "~/lib/hooks/replicache";
 import { AuthStoreApi } from "~/lib/stores/auth";
 import { routeTree } from "~/routeTree.gen";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
+import type { Router } from "@printworks/functions/api/trpc/routers";
 import type { AppRouter, ViteResource } from "~/types";
 
-const resource = parseResource<ViteResource>("VITE_RESOURCE_", import.meta.env);
+const resource = parseResource<ViteResource>(
+  Constants.VITE_RESOURCE_PREFIX,
+  import.meta.env,
+);
 const queryClient = new QueryClient();
 
 export function App() {
@@ -23,12 +28,12 @@ export function App() {
     createRouter({
       routeTree,
       context: {
-        // NOTE: These will be set when the app router is wrapped with the providers
-        api: undefined!,
-        authStoreApi: undefined!,
-        replicache: undefined!,
         resource,
         queryClient,
+        // NOTE: These will be set when the app router is wrapped with the providers
+        authStoreApi: undefined!,
+        replicache: undefined!,
+        trpcClient: undefined!,
       },
       defaultPendingComponent: AppLoadingIndicator,
       scrollRestoration: true,
@@ -43,17 +48,15 @@ export function App() {
 
   return (
     <ResourceProvider resource={resource}>
-      <ApiProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthStoreApi.Provider input={{ issuer: resource.Auth.url }}>
-            <ReplicacheProvider>
-              <AppRouter router={router} />
+      <QueryClientProvider client={queryClient}>
+        <AuthStoreApi.Provider input={{ issuer: resource.Auth.url }}>
+          <ReplicacheProvider>
+            <AppRouter router={router} />
 
-              <Toaster richColors />
-            </ReplicacheProvider>
-          </AuthStoreApi.Provider>
-        </QueryClientProvider>
-      </ApiProvider>
+            <Toaster richColors />
+          </ReplicacheProvider>
+        </AuthStoreApi.Provider>
+      </QueryClientProvider>
     </ResourceProvider>
   );
 }
@@ -63,14 +66,35 @@ type AppRouterProps = {
 };
 
 function AppRouter(props: AppRouterProps) {
-  const api = useApi();
   const authStoreApi = AuthStoreApi.use();
   const replicache = useReplicacheContext();
 
+  const token = AuthStoreApi.useSelector(({ tokens }) => tokens?.access);
+  const trpcClient = useMemo(
+    () =>
+      createTRPCClient<Router>({
+        links: [
+          httpBatchLink({
+            url: new URL("/trpc", resource.ApiReverseProxy.url),
+            headers: () => (token ? { Authorization: `Bearer ${token}` } : {}),
+          }),
+        ],
+      }),
+    [token],
+  );
+
   return (
-    <RouterProvider
-      router={props.router}
-      context={{ api, authStoreApi, replicache, resource, queryClient }}
-    />
+    <TRPCProvider queryClient={queryClient} trpcClient={trpcClient}>
+      <RouterProvider
+        router={props.router}
+        context={{
+          resource,
+          queryClient,
+          authStoreApi,
+          replicache,
+          trpcClient,
+        }}
+      />
+    </TRPCProvider>
   );
 }

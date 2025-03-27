@@ -1,7 +1,7 @@
 import { db } from ".";
+import { ServerErrors } from "../errors";
 import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
-import { ApplicationError, DatabaseError } from "../utils/errors";
 
 import type { ExtractTablesWithRelations } from "drizzle-orm";
 import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
@@ -20,9 +20,8 @@ export type TransactionContext<
   effects: Array<TEffect>;
 };
 
-export const TransactionContext = Utils.createContext<TransactionContext>(
-  Constants.CONTEXT_NAMES.TRANSACTION,
-);
+export const TransactionContext =
+  Utils.createContext<TransactionContext>("Transaction");
 
 export async function useTransaction<
   TCallback extends (tx: Transaction) => ReturnType<TCallback>,
@@ -31,8 +30,8 @@ export async function useTransaction<
     return callback(TransactionContext.use().tx);
   } catch (e) {
     if (
-      e instanceof ApplicationError.MissingContext &&
-      e.contextName === Constants.CONTEXT_NAMES.TRANSACTION
+      e instanceof ServerErrors.MissingContext &&
+      e.contextName === "Transaction"
     )
       return createTransaction(callback);
 
@@ -76,7 +75,7 @@ export async function createTransaction<
     return result.output;
   }
 
-  throw new DatabaseError.MaximumTransactionRetriesExceeded();
+  throw new ServerErrors.DatabaseMaximumTransactionRetriesExceeded();
 }
 
 type Result<TOutput> =
@@ -95,13 +94,16 @@ async function transact<
 
     return { status: "success", output };
   } catch (error) {
-    if (error instanceof ApplicationError.MissingContext) {
+    if (error instanceof ServerErrors.MissingContext) {
       const effects: TransactionContext["effects"] = [];
 
       try {
         const output = await Promise.resolve(
           db.transaction(async (tx) =>
-            TransactionContext.with({ tx, effects }, () => callback(tx)),
+            TransactionContext.with(
+              () => ({ tx, effects }),
+              () => callback(tx),
+            ),
           ),
         );
 

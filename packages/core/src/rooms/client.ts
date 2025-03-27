@@ -1,10 +1,10 @@
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { productsTableName } from "../products/shared";
 import { Replicache } from "../replicache/client";
 import { Constants } from "../utils/constants";
-import { ApplicationError } from "../utils/errors";
 import {
   createRoomMutationArgsSchema,
   defaultWorkflow,
@@ -25,7 +25,7 @@ export namespace Rooms {
   export const create = Replicache.createMutator(createRoomMutationArgsSchema, {
     authorizer: async (tx, user) =>
       AccessControl.enforce([tx, user, roomsTableName, "create"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: roomsTableName }],
       }),
     getMutator: () => async (tx, values) => {
@@ -72,7 +72,7 @@ export namespace Rooms {
   export const update = Replicache.createMutator(updateRoomMutationArgsSchema, {
     authorizer: async (tx, user, { id }) =>
       AccessControl.enforce([tx, user, roomsTableName, "update"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: roomsTableName, id }],
       }),
     getMutator:
@@ -92,7 +92,7 @@ export namespace Rooms {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, roomsTableName, "delete"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: roomsTableName, id }],
         }),
       getMutator:
@@ -132,7 +132,7 @@ export namespace Rooms {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, roomsTableName, "update"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: roomsTableName, id }],
         }),
       getMutator: () => async (tx, values) => {
@@ -176,7 +176,7 @@ export namespace Rooms {
     {
       authorizer: async (tx, user) =>
         AccessControl.enforce([tx, user, roomsTableName, "create"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: roomsTableName }],
         }),
       getMutator:
@@ -239,7 +239,7 @@ export namespace Rooms {
     {
       authorizer: async (tx, user) =>
         AccessControl.enforce([tx, user, deliveryOptionsTableName, "create"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: deliveryOptionsTableName }],
         }),
       getMutator:

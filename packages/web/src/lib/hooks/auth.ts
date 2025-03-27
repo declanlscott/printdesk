@@ -1,4 +1,3 @@
-import { ApplicationError } from "@printworks/core/utils/errors";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
@@ -17,7 +16,7 @@ export const useAuth = () =>
 export function useUserSubject() {
   const { user } = useAuth();
 
-  if (!user) throw new ApplicationError.Unauthenticated();
+  if (!user) throw new Error("User not authenticated");
 
   return user;
 }

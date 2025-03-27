@@ -1,5 +1,3 @@
-import { ApplicationError } from "@printworks/core/utils/errors";
-
 import { useRouteApi } from "~/lib/hooks/route-api";
 
 export const useSetupMachine = () =>
@@ -16,9 +14,7 @@ export function useSetupWizardState() {
   const stateName = "wizard";
 
   if (!(stateName in state))
-    throw new ApplicationError.Error(
-      `Invalid setup state, expected ${stateName}`,
-    );
+    throw new Error(`Invalid setup state, expected ${stateName}`);
 
   return state.wizard;
 }
@@ -28,9 +24,7 @@ export function useSetupStatusState() {
   const stateName = "status";
 
   if (!(stateName in state))
-    throw new ApplicationError.Error(
-      `Invalid setup state, expected ${stateName}`,
-    );
+    throw new Error(`Invalid setup state, expected ${stateName}`);
 
   return state.status;
 }

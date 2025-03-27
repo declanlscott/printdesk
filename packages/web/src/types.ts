@@ -5,7 +5,6 @@ import type { UserRole } from "@printworks/core/users/shared";
 import type { Constants } from "@printworks/core/utils/constants";
 import type { EndsWith, StartsWith } from "@printworks/core/utils/types";
 import type { RankingInfo } from "@tanstack/match-sorter-utils";
-import type { MutationOptions as _MutationOptions } from "@tanstack/react-query";
 import type {
   createRouter,
   NavigateOptions,
@@ -87,12 +86,6 @@ export type CommandBarPage =
       roomId: Room["id"];
       to: StartsWith<"/settings/rooms/$roomId/products/$productId", RoutePath>;
     };
-
-export type MutationOptions = Record<
-  string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  () => _MutationOptions<any, any, any, any>
->;
 
 export type ResolvedAppLink = {
   name: string;

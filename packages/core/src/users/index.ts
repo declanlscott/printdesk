@@ -18,12 +18,12 @@ import {
 } from "../billing-accounts/sql";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { ordersTable } from "../orders/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { DynamoDb } from "../utils/aws";
 import { Constants } from "../utils/constants";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   deleteUserMutationArgsSchema,
@@ -270,7 +270,7 @@ export namespace Users {
     updateUserRoleMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(usersTable), "update"], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(usersTable), id }],
       });
 
@@ -291,7 +291,7 @@ export namespace Users {
     deleteUserMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(usersTable), "delete", id], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(usersTable), id }],
       });
 
@@ -310,7 +310,7 @@ export namespace Users {
 
   export const restore = fn(restoreUserMutationArgsSchema, async ({ id }) => {
     await AccessControl.enforce([getTableName(usersTable), "update"], {
-      Error: ApplicationError.AccessDenied,
+      Error: SharedErrors.AccessDenied,
       args: [{ name: getTableName(usersTable), id }],
     });
 

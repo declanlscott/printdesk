@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link as AriaLink } from "react-aria-components";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { SharedErrors } from "@printworks/core/errors/shared";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
@@ -86,6 +86,6 @@ function SetupWizardStep() {
     case "review":
       return <SetupWizardReview />;
     default:
-      throw new ApplicationError.NonExhaustiveValue(state);
+      throw new SharedErrors.NonExhaustiveValue(state);
   }
 }

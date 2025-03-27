@@ -1,4 +1,4 @@
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { SharedErrors } from "@printworks/core/errors/shared";
 
 import { useSetupContext, useSetupStatusState } from "~/lib/hooks/setup";
 import {
@@ -43,9 +43,9 @@ export function ConfiguringStatusItem() {
         case "testPapercutConnection":
           return <SuccessItem name={name} />;
         default:
-          throw new ApplicationError.NonExhaustiveValue(context.failureStatus);
+          throw new SharedErrors.NonExhaustiveValue(context.failureStatus);
       }
     default:
-      throw new ApplicationError.NonExhaustiveValue(state);
+      throw new SharedErrors.NonExhaustiveValue(state);
   }
 }

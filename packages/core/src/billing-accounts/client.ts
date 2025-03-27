@@ -1,6 +1,6 @@
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import {
   billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
@@ -43,7 +43,7 @@ export namespace BillingAccounts {
         AccessControl.enforce(
           [tx, user, billingAccountManagerAuthorizationsTableName, "create"],
           {
-            Error: ApplicationError.AccessDenied,
+            Error: SharedErrors.AccessDenied,
             args: [{ name: billingAccountManagerAuthorizationsTableName }],
           },
         ),
@@ -64,7 +64,7 @@ export namespace BillingAccounts {
         AccessControl.enforce(
           [tx, user, billingAccountsTableName, "update", id],
           {
-            Error: ApplicationError.AccessDenied,
+            Error: SharedErrors.AccessDenied,
             args: [{ name: billingAccountsTableName, id }],
           },
         ),
@@ -86,7 +86,7 @@ export namespace BillingAccounts {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, billingAccountsTableName, "delete"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: billingAccountsTableName, id }],
         }),
       getMutator:
@@ -113,7 +113,7 @@ export namespace BillingAccounts {
         AccessControl.enforce(
           [tx, user, billingAccountManagerAuthorizationsTableName, "delete"],
           {
-            Error: ApplicationError.AccessDenied,
+            Error: SharedErrors.AccessDenied,
             args: [{ name: billingAccountManagerAuthorizationsTableName, id }],
           },
         ),

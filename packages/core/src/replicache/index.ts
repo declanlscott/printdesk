@@ -6,11 +6,12 @@ import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
 import { useTransaction } from "../drizzle/context";
+import { ServerErrors } from "../errors";
+import { SharedErrors } from "../errors/shared";
 import { useTenant } from "../tenants/context";
 import { useUser } from "../users/context";
 import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
-import { ReplicacheError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import { syncedTables } from "../utils/tables";
 import { buildCvr, diffCvr, isCvrDiffEmpty } from "./client-view-record";
@@ -19,6 +20,7 @@ import {
   isSerialized,
   mutationNameSchema,
   mutationV1Schema,
+  replicacheClientGroupsTableName,
   replicacheClientsTableName,
 } from "./shared";
 import {
@@ -168,10 +170,7 @@ export namespace Replicache {
     pullRequest: PullRequest,
   ): Promise<PullResponseV1> {
     if (pullRequest.pullVersion !== 1)
-      return {
-        error: "VersionNotSupported",
-        versionType: "pull",
-      };
+      throw new ServerErrors.ReplicacheVersionNotSupported("pull");
 
     const cookieOrder = pullRequest.cookie?.order ?? 0;
 
@@ -214,9 +213,10 @@ export namespace Replicache {
 
         // 5: Verify requesting client group owns requested client
         if (baseClientGroup.userId !== useUser().id)
-          throw new ReplicacheError.Unauthorized(
-            `User "${useUser().id}" does not own client group "${baseClientGroup.id}"`,
-          );
+          throw new SharedErrors.AccessDenied({
+            name: replicacheClientGroupsTableName,
+            id: baseClientGroup.id,
+          });
 
         const metadata = (await Promise.all([
           ...syncedTables.map(async (table) => {
@@ -377,17 +377,16 @@ export namespace Replicache {
     pushRequest: PushRequest,
   ): Promise<PushResponse | null> {
     if (pushRequest.pushVersion !== 1)
-      return { error: "VersionNotSupported", versionType: "push" };
+      throw new ServerErrors.ReplicacheVersionNotSupported("push");
 
-    const context = Utils.createContext<{ errorMode: boolean }>(
-      Constants.CONTEXT_NAMES.PUSH,
-    );
+    const context = Utils.createContext<{ errorMode: boolean }>("Push");
 
     for (const mutation of pushRequest.mutations) {
       try {
         // 1: Error mode is initially false
-        await context.with({ errorMode: false }, async () =>
-          processMutation(mutation),
+        await context.with(
+          () => ({ errorMode: false }),
+          async () => processMutation(mutation),
         );
       } catch (error) {
         console.error(error);
@@ -396,14 +395,15 @@ export namespace Replicache {
           `Encountered error during push on mutation "${mutation.id}"`,
         );
 
-        if (error instanceof ReplicacheError.ClientStateNotFound)
-          return { error: error.name };
+        if (error instanceof ServerErrors.ReplicacheClientStateNotFound)
+          throw error;
 
         console.log(`Retrying mutation "${mutation.id}" in error mode`);
 
         // retry in error mode
-        await context.with({ errorMode: true }, async () =>
-          processMutation(mutation),
+        await context.with(
+          () => ({ errorMode: true }),
+          async () => processMutation(mutation),
         );
       }
     }
@@ -430,9 +430,10 @@ export namespace Replicache {
 
           // 4: Verify requesting user owns the client group
           if (clientGroup.userId !== useUser().id)
-            throw new ReplicacheError.Unauthorized(
-              `User "${useUser().id}" does not own client group "${clientGroupId}"`,
-            );
+            throw new SharedErrors.AccessDenied({
+              name: replicacheClientGroupsTableName,
+              id: clientGroupId,
+            });
 
           // 5: Get client
           const client =
@@ -446,12 +447,13 @@ export namespace Replicache {
 
           // 6: Verify requesting client group owns the client
           if (client.clientGroupId !== clientGroupId)
-            throw new ReplicacheError.Unauthorized(
-              `Client ${mutation.clientID} does not belong to client group ${clientGroupId}`,
-            );
+            throw new SharedErrors.AccessDenied({
+              name: replicacheClientsTableName,
+              id: mutation.clientID,
+            });
 
           if (client.lastMutationId === 0 && mutation.id > 1)
-            throw new ReplicacheError.ClientStateNotFound();
+            throw new ServerErrors.ReplicacheClientStateNotFound();
 
           // 7: Next mutation ID
           const nextMutationId = client.lastMutationId + 1;
@@ -464,7 +466,7 @@ export namespace Replicache {
 
           // 9: Rollback and throw if mutation is from the future
           if (mutation.id > nextMutationId)
-            throw new ReplicacheError.MutationConflict(
+            throw new ServerErrors.MutationConflict(
               `Mutation "${mutation.id}" is from the future - aborting`,
             );
 
@@ -474,7 +476,7 @@ export namespace Replicache {
           if (!context.use().errorMode) {
             try {
               if (!isSerialized(mutation.args))
-                throw new ReplicacheError.BadRequest(
+                throw new ServerErrors.BadRequest(
                   "Mutation args not serialized",
                 );
 

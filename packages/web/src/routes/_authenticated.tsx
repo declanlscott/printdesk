@@ -1,9 +1,9 @@
+import { SharedErrors } from "@printworks/core/errors/shared";
 import { Replicache } from "@printworks/core/replicache/client";
 import { Rooms } from "@printworks/core/rooms/client";
 import { Tenants } from "@printworks/core/tenants/client";
 import { Users } from "@printworks/core/users/client";
 import { usersTableName } from "@printworks/core/users/shared";
-import { ApplicationError } from "@printworks/core/utils/errors";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 import { AuthenticatedLayout } from "~/layouts/authenticated";
@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
         await authStore.actions.verify();
 
         const user = authStore.user;
-        if (!user) throw new ApplicationError.Unauthenticated();
+        if (!user) throw new Error("User not authenticated");
 
         return user;
       } catch (e) {
@@ -66,7 +66,7 @@ export const Route = createFileRoute("/_authenticated")({
           ...input,
         );
 
-        if (!access) throw new ApplicationError.AccessDenied();
+        if (!access) throw new SharedErrors.AccessDenied();
       });
 
     return { user, replicache, authorizeRoute };

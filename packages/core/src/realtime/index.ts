@@ -5,8 +5,8 @@ import * as v from "valibot";
 
 import { Backend } from "../backend";
 import { Api } from "../backend/api";
+import { ServerErrors } from "../errors";
 import { SignatureV4, Util } from "../utils/aws";
-import { HttpError } from "../utils/errors";
 
 import type { StartsWith } from "../utils/types";
 
@@ -16,11 +16,8 @@ export namespace Realtime {
       `/.well-known/appspecific/${Backend.getReverseDns()}.realtime.json`,
     );
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
+      throw new ServerErrors.InternalServerError("Failed to get realtime DNS", {
+        cause: await res.text(),
       });
 
     return v.parse(

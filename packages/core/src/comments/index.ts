@@ -2,10 +2,10 @@ import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   createCommentMutationArgsSchema,
@@ -21,7 +21,7 @@ export namespace Comments {
     await AccessControl.enforce(
       [getTableName(commentsTable), "create", values.orderId],
       {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(commentsTable) }],
       },
     );
@@ -55,7 +55,7 @@ export namespace Comments {
     updateCommentMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(commentsTable), "update", id], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(commentsTable), id }],
       });
 
@@ -84,7 +84,7 @@ export namespace Comments {
     deleteCommentMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(commentsTable), "delete", id], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(commentsTable), id }],
       });
 

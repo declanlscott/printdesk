@@ -2,8 +2,8 @@ import * as R from "remeda";
 import { deserialize, serialize } from "superjson";
 import * as v from "valibot";
 
+import { SharedErrors } from "../errors/shared";
 import { usersTableName } from "../users/shared";
-import { ApplicationError } from "../utils/errors";
 
 import type {
   DeepReadonlyObject,
@@ -91,7 +91,7 @@ export namespace Replicache {
     id: string,
   ) {
     const value = (await tx.get(`${name}/${id}`)) as Serialized | undefined;
-    if (!value) throw new ApplicationError.EntityNotFound({ name, id });
+    if (!value) throw new SharedErrors.NotFound({ name, id });
 
     return deserialize<DeepReadonlyObject<InferTable<TableByName<TTableName>>>>(
       value,
@@ -123,6 +123,6 @@ export namespace Replicache {
     id: string,
   ) {
     const success = await tx.del(`${name}/${id}`);
-    if (!success) throw new ApplicationError.EntityNotFound({ name, id });
+    if (!success) throw new SharedErrors.NotFound({ name, id });
   }
 }

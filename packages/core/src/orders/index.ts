@@ -3,10 +3,10 @@ import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   createOrderMutationArgsSchema,
@@ -22,7 +22,7 @@ export namespace Orders {
     await AccessControl.enforce(
       [getTableName(ordersTable), "create", values.billingAccountId],
       {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(ordersTable) }],
       },
     );
@@ -60,7 +60,7 @@ export namespace Orders {
     updateOrderMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(ordersTable), "update", id], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(ordersTable), id }],
       });
 
@@ -89,7 +89,7 @@ export namespace Orders {
     deleteOrderMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce([getTableName(ordersTable), "delete", id], {
-        Error: ApplicationError.AccessDenied,
+        Error: SharedErrors.AccessDenied,
         args: [{ name: getTableName(ordersTable), id }],
       });
 

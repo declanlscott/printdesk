@@ -1,6 +1,6 @@
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import {
   announcementsTableName,
   createAnnouncementMutationArgsSchema,
@@ -16,7 +16,7 @@ export namespace Announcements {
     {
       authorizer: async (tx, user) =>
         AccessControl.enforce([tx, user, announcementsTableName, "create"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: announcementsTableName }],
         }),
       getMutator: () => async (tx, values) =>
@@ -41,7 +41,7 @@ export namespace Announcements {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, announcementsTableName, "update"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: announcementsTableName, id }],
         }),
       getMutator: () => async (tx, values) => {
@@ -64,7 +64,7 @@ export namespace Announcements {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, announcementsTableName, "delete"], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: announcementsTableName, id }],
         }),
       getMutator:

@@ -4,8 +4,8 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 import { Backend } from ".";
+import { ServerErrors } from "../errors";
 import { Cloudfront, SignatureV4 } from "../utils/aws";
-import { HttpError } from "../utils/errors";
 import { buildUrl } from "../utils/shared";
 
 import type { PutEventsResponse } from "@aws-sdk/client-eventbridge";
@@ -18,11 +18,8 @@ export namespace Api {
       `/.well-known/appspecific/${Backend.getReverseDns()}.buckets.json`,
     );
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
+      throw new ServerErrors.InternalServerError("Failed to get buckets", {
+        cause: await res.text(),
       });
 
     return v.parse(
@@ -37,37 +34,34 @@ export namespace Api {
   export async function dispatchPapercutSync() {
     const res = await send("/papercut/sync", { method: "POST" });
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
+      throw new ServerErrors.InternalServerError(
+        "Failed to dispatch papercut sync",
+        { cause: await res.text() },
+      );
 
     const output = (await res.json()) as Required<PutEventsResponse>;
 
     if (output.FailedEntryCount > 0)
-      throw new HttpError.InternalServerError("Papercut sync event failure");
+      throw new ServerErrors.InternalServerError("Papercut sync event failure");
 
     const dispatchId = output.Entries.at(0)?.EventId;
     if (!dispatchId)
-      throw new HttpError.InternalServerError("Missing papercut sync event id");
+      throw new ServerErrors.InternalServerError(
+        "Missing papercut sync event id",
+      );
 
-    return dispatchId;
+    return { dispatchId };
   }
 
   export async function getParameter<TName extends string>(
     name: StartsWith<"/", TName>,
   ) {
     const res = await send(`/parameters${name}`);
-
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
-      });
+      throw new ServerErrors.InternalServerError(
+        `Failed to get parameter: ${name}`,
+        { cause: await res.text() },
+      );
 
     const result = (await res.json()) as Required<GetParameterResult>;
 
@@ -81,11 +75,8 @@ export namespace Api {
       headers: { "Content-Type": "application/json" },
     });
     if (!res.ok)
-      throw new HttpError.BadGateway({
-        upstream: {
-          error: new HttpError.Error(res.statusText, res.status),
-          text: await res.text(),
-        },
+      throw new ServerErrors.InternalServerError("Failed to invalidate cache", {
+        cause: await res.text(),
       });
   }
 

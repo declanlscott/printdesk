@@ -1,6 +1,6 @@
 import { AccessControl } from "../access-control/client";
+import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
-import { ApplicationError } from "../utils/errors";
 import {
   createOrderMutationArgsSchema,
   deleteOrderMutationArgsSchema,
@@ -18,7 +18,7 @@ export namespace Orders {
         AccessControl.enforce(
           [tx, user, ordersTableName, "create", billingAccountId],
           {
-            Error: ApplicationError.AccessDenied,
+            Error: SharedErrors.AccessDenied,
             args: [{ name: ordersTableName }],
           },
         ),
@@ -44,7 +44,7 @@ export namespace Orders {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, ordersTableName, "update", id], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: ordersTableName, id }],
         }),
       getMutator: () => async (tx, values) => {
@@ -63,7 +63,7 @@ export namespace Orders {
     {
       authorizer: async (tx, user, { id }) =>
         AccessControl.enforce([tx, user, ordersTableName, "delete", id], {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: ordersTableName, id }],
         }),
       getMutator:

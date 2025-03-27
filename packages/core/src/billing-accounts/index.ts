@@ -4,10 +4,10 @@ import * as R from "remeda";
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   createBillingAccountManagerAuthorizationMutationArgsSchema,
@@ -103,7 +103,7 @@ export namespace BillingAccounts {
       await AccessControl.enforce(
         [getTableName(billingAccountsTable), "update", id],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: getTableName(billingAccountsTable), id }],
         },
       );
@@ -145,7 +145,7 @@ export namespace BillingAccounts {
       await AccessControl.enforce(
         [getTableName(billingAccountsTable), "delete"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: getTableName(billingAccountsTable), id }],
         },
       );
@@ -305,7 +305,7 @@ export namespace BillingAccounts {
       await AccessControl.enforce(
         [getTableName(billingAccountManagerAuthorizationsTable), "create"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [
             { name: getTableName(billingAccountManagerAuthorizationsTable) },
           ],
@@ -347,7 +347,7 @@ export namespace BillingAccounts {
       await AccessControl.enforce(
         [getTableName(billingAccountManagerAuthorizationsTable), "delete"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [
             {
               name: getTableName(billingAccountManagerAuthorizationsTable),

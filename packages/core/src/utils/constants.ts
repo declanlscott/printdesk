@@ -52,16 +52,7 @@ export namespace Constants {
   } as const;
 
   export const HEADER_NAMES = {
-    TENANT_ID: "x-tenant-id",
-  } as const;
-
-  export const CONTEXT_NAMES = {
-    ACTOR: "Actor",
-    AWS: "Aws",
-    GRAPH: "Graph",
-    PUSH: "Push",
-    TRANSACTION: "Transaction",
-    XML: "Xml",
+    TENANT_ID: "X-Tenant-Id",
   } as const;
 
   export const ENTRA_ID = "entra-id";

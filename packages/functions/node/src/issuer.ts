@@ -2,8 +2,8 @@ import { issuer } from "@openauthjs/openauth";
 import { decodeJWT } from "@oslojs/jwt";
 import { EntraId } from "@printworks/core/auth/entra-id";
 import { subjects } from "@printworks/core/auth/subjects";
+import { SharedErrors } from "@printworks/core/errors/shared";
 import { Constants } from "@printworks/core/utils/constants";
-import { ApplicationError } from "@printworks/core/utils/errors";
 import { Graph, withGraph } from "@printworks/core/utils/graph";
 import { handle } from "hono/aws-lambda";
 import { Resource } from "sst";
@@ -36,7 +36,7 @@ const app = issuer({
         );
       }
       default:
-        throw new ApplicationError.NonExhaustiveValue(value.provider);
+        throw new SharedErrors.NonExhaustiveValue(value.provider);
     }
   },
 });

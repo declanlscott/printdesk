@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { XmlRpcError } from "../utils/errors";
+import { ServerErrors } from "../errors";
 import { objectsTuple } from "../utils/shared";
 
 export const updateServerTailnetUriSchema = v.object({
@@ -157,7 +157,7 @@ export const xmlRpcAdjustSharedAccountAccountBalanceResponseSchema = v.pipe(
   v.union([xmlRpcBooleanResponseSchema, xmlRpcFaultResponseSchema]),
   v.transform((xml) => {
     if ("fault" in xml)
-      throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+      throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
     return xml.boolean;
   }),
@@ -170,7 +170,7 @@ export const xmlRpcGetSharedAccountPropertiesResponseSchema = <
     v.union([xmlRpcListResponseSchema, xmlRpcFaultResponseSchema]),
     v.transform((xml) => {
       if ("fault" in xml)
-        throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+        throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
       return xml.list as {
         [K in keyof TPropertyNames]: TPropertyNames[K] extends keyof SharedAccountPropertyTypeMap
@@ -222,7 +222,7 @@ export const xmlRpcGetTaskStatusResponseSchema = v.pipe(
   ]),
   v.transform((xml) => {
     if ("fault" in xml)
-      throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+      throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
     return {
       completed:
@@ -236,7 +236,7 @@ export const xmlRpcGetTotalUsersResponseSchema = v.pipe(
   v.union([xmlRpcIntResponseSchema, xmlRpcFaultResponseSchema]),
   v.transform((xml) => {
     if ("fault" in xml)
-      throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+      throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
     return xml.int;
   }),
@@ -246,7 +246,7 @@ export const xmlRpcListSharedAccountsResponseSchema = v.pipe(
   v.union([xmlRpcListResponseSchema, xmlRpcFaultResponseSchema]),
   v.transform((xml) => {
     if ("fault" in xml)
-      throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+      throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
     return xml.list as Array<string>;
   }),
@@ -256,7 +256,7 @@ export const xmlRpcListUserAccountsResponseSchema = v.pipe(
   v.union([xmlRpcListResponseSchema, xmlRpcFaultResponseSchema]),
   v.transform((xml) => {
     if ("fault" in xml)
-      throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+      throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
     return xml.list as Array<string>;
   }),
@@ -266,7 +266,7 @@ export const xmlRpcListUserSharedAccountsResponseSchema = v.pipe(
   v.union([xmlRpcListResponseSchema, xmlRpcFaultResponseSchema]),
   v.transform((xml) => {
     if ("fault" in xml)
-      throw new XmlRpcError.Fault(xml.fault.string, xml.fault.code);
+      throw new ServerErrors.XmlRpcFault(xml.fault.code, xml.fault.string);
 
     return xml.list as Array<string>;
   }),

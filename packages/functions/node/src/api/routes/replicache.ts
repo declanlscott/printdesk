@@ -15,11 +15,6 @@ import {
   SignatureV4,
   withAws,
 } from "@printworks/core/utils/aws";
-import {
-  ApplicationError,
-  HttpError,
-  ReplicacheError,
-} from "@printworks/core/utils/errors";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { Resource } from "sst";
@@ -67,9 +62,7 @@ export default new Hono()
     },
     compress({ encoding: "gzip" }),
     async (c) => {
-      const pullResponse = await Replicache.pull(c.req.valid("json")).catch(
-        rethrowHttpError,
-      );
+      const pullResponse = await Replicache.pull(c.req.valid("json"));
 
       return c.json(pullResponse, 200);
     },
@@ -116,40 +109,8 @@ export default new Hono()
         next,
       ),
     async (c) => {
-      const pushResponse = await Replicache.push(c.req.valid("json")).catch(
-        rethrowHttpError,
-      );
+      const pushResponse = await Replicache.push(c.req.valid("json"));
 
       return c.json(pushResponse, 200);
     },
   );
-
-function rethrowHttpError(error: Error): never {
-  console.error(error);
-
-  if (error instanceof ReplicacheError.UnrecoverableError) {
-    switch (error.name) {
-      case "BadRequest":
-        throw new HttpError.BadRequest(error.message);
-      case "Unauthorized":
-        throw new HttpError.Unauthorized(error.message);
-      case "MutationConflict":
-        throw new HttpError.Conflict(error.message);
-      default:
-        error.name satisfies never;
-        throw new HttpError.InternalServerError(error.message);
-    }
-  }
-  if (error instanceof ApplicationError.Error) {
-    switch (error.name) {
-      case "Unauthenticated":
-        throw new HttpError.Unauthorized(error.message);
-      case "AccessDenied":
-        throw new HttpError.Forbidden(error.message);
-      default:
-        throw new HttpError.InternalServerError(error.message);
-    }
-  }
-
-  throw new HttpError.InternalServerError("An unexpected error occurred");
-}

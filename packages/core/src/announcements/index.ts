@@ -2,9 +2,9 @@ import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
-import { ApplicationError } from "../utils/errors";
 import { fn } from "../utils/shared";
 import {
   createAnnouncementMutationArgsSchema,
@@ -22,7 +22,7 @@ export namespace Announcements {
       await AccessControl.enforce(
         [getTableName(announcementsTable), "create"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: getTableName(announcementsTable) }],
         },
       );
@@ -54,7 +54,7 @@ export namespace Announcements {
       await AccessControl.enforce(
         [getTableName(announcementsTable), "update"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: getTableName(announcementsTable), id }],
         },
       );
@@ -81,7 +81,7 @@ export namespace Announcements {
       await AccessControl.enforce(
         [getTableName(announcementsTable), "delete"],
         {
-          Error: ApplicationError.AccessDenied,
+          Error: SharedErrors.AccessDenied,
           args: [{ name: getTableName(announcementsTable), id }],
         },
       );

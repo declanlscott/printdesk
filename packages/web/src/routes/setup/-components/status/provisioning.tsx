@@ -1,5 +1,5 @@
+import { SharedErrors } from "@printworks/core/errors/shared";
 import { Realtime } from "@printworks/core/realtime/client";
-import { ApplicationError } from "@printworks/core/utils/errors";
 
 import { useRealtimeChannel } from "~/lib/hooks/realtime";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
@@ -54,10 +54,10 @@ export function ProvisioningStatusItem() {
         case "testPapercutConnection":
           return <SuccessItem name={name} />;
         default:
-          throw new ApplicationError.NonExhaustiveValue(failureStatus);
+          throw new SharedErrors.NonExhaustiveValue(failureStatus);
       }
     default:
-      throw new ApplicationError.NonExhaustiveValue(state);
+      throw new SharedErrors.NonExhaustiveValue(state);
   }
 }
 

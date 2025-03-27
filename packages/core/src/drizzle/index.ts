@@ -24,14 +24,14 @@ function getPoolConfig(): PoolConfig {
     ...resource.DsqlCluster,
     password: async () =>
       withAws(
-        {
+        () => ({
           dsql: {
             signer: Dsql.buildSigner({
               hostname: resource.DsqlCluster.host,
               region: resource.Aws.region,
             }),
           },
-        },
+        }),
         Dsql.generateToken,
       ),
   };

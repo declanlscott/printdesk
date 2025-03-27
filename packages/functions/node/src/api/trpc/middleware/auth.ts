@@ -1,6 +1,6 @@
 import { AccessControl } from "@printworks/core/access-control";
 import { assertActor } from "@printworks/core/actors/context";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { ServerErrors } from "@printworks/core/errors";
 import { TRPCError } from "@trpc/server";
 
 import { t } from "~/api/trpc";
@@ -21,8 +21,8 @@ export const authn = t.middleware(async (opts) => {
     assertActor(meta.actor);
   } catch (e) {
     throw new TRPCError(
-      e instanceof ApplicationError.InvalidActor
-        ? { code: "UNAUTHORIZED", message: e.message }
+      e instanceof ServerErrors.InvalidActor
+        ? { code: "UNAUTHORIZED", ...e }
         : {
             code: "INTERNAL_SERVER_ERROR",
             message:

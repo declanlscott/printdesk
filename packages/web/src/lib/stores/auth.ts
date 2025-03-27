@@ -1,6 +1,5 @@
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
-import { ApplicationError } from "@printworks/core/utils/errors";
 import { redirect } from "@tanstack/react-router";
 import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
@@ -69,7 +68,7 @@ export const AuthStoreApi = createStoreApiContext<
             const { flow, client } = get();
 
             if (flow?.challenge.state !== state)
-              throw new ApplicationError.Unauthenticated("Invalid state");
+              throw new Error("Invalid state");
 
             const result = await client.exchange(
               code,
@@ -83,8 +82,7 @@ export const AuthStoreApi = createStoreApiContext<
           },
           verify: async () => {
             const { client, tokens } = get();
-            if (!tokens)
-              throw new ApplicationError.Unauthenticated("Missing tokens");
+            if (!tokens) throw new Error("Missing tokens");
 
             const result = await client.verify(subjects, tokens.access, {
               refresh: tokens.refresh,
@@ -99,8 +97,7 @@ export const AuthStoreApi = createStoreApiContext<
           },
           refresh: async () => {
             const { client, tokens } = get();
-            if (!tokens)
-              throw new ApplicationError.Unauthenticated("Missing tokens");
+            if (!tokens) throw new Error("Missing tokens");
 
             const result = await client.refresh(tokens.refresh);
             if (result.err) throw result.err;
@@ -109,10 +106,7 @@ export const AuthStoreApi = createStoreApiContext<
           },
           getAuth: () => {
             const accessToken = get().tokens?.access;
-            if (!accessToken)
-              throw new ApplicationError.Unauthenticated(
-                "Missing access token",
-              );
+            if (!accessToken) throw new Error("Missing access token");
 
             return `Bearer ${accessToken}`;
           },

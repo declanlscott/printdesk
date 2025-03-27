@@ -1,12 +1,12 @@
 import { useContext } from "react";
-import { ApplicationError } from "@printworks/core/utils/errors";
+import { ClientErrors } from "@printworks/core/errors/client";
 
 import { ResourceContext } from "~/lib/contexts/resource";
 
 export function useResource() {
   const context = useContext(ResourceContext);
 
-  if (!context) throw new ApplicationError.MissingContextProvider("Resource");
+  if (!context) throw new ClientErrors.MissingContextProvider("Resource");
 
   return context;
 }

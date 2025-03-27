@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import { ApplicationError } from "@printworks/core/utils/errors";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
-import { useApi } from "~/lib/hooks/api";
 import { useAuth } from "~/lib/hooks/auth";
 import { useMutatorsBuilder } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
@@ -12,6 +10,7 @@ import { AuthStoreApi } from "~/lib/stores/auth";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { PropsWithChildren } from "react";
+import type { PushResponse } from "replicache";
 
 export function ReplicacheProvider(props: PropsWithChildren) {
   const { user } = useAuth();
@@ -24,7 +23,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
 
   const buildMutators = useMutatorsBuilder();
 
-  const api = useApi();
+  const baseUrl = useResource().ApiReverseProxy.url;
 
   const { getAuth, refresh } = AuthStoreApi.useActions();
 
@@ -37,32 +36,34 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       logLevel: AppData.isDev ? "info" : "error",
       mutators: buildMutators(user.id),
       auth: getAuth(),
-      pullURL: new URL("/replicache/pull", api.baseUrl).toString(),
+      pullURL: new URL("/replicache/pull", baseUrl).toString(),
       pusher: async (req) => {
         if (req.pushVersion !== 1)
-          throw new ApplicationError.Error(
-            `Unsupported push version: ${req.pushVersion}`,
-          );
+          throw new Error(`Unsupported push version: ${req.pushVersion}`);
 
-        const res = await api.client.replicache.push.$post({
-          header: { authorization: getAuth() },
-          json: {
+        const res = await fetch(new URL("/replicache/push", baseUrl), {
+          method: "POST",
+          headers: {
+            Authorization: getAuth(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             ...req,
             mutations: req.mutations.map((mutation) => ({
               ...mutation,
               args: serialize(mutation.args),
             })),
-          },
+          }),
         });
         if (!res.ok)
           return {
             httpRequestInfo: {
-              httpStatusCode: res.status as number,
+              httpStatusCode: res.status,
               errorMessage: await res.text(),
             },
           };
 
-        const json = await res.json();
+        const json = (await res.json()) as PushResponse | null;
 
         return {
           response: json ?? undefined,
@@ -84,7 +85,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       void client.close();
     };
   }, [
-    api,
+    baseUrl,
     AppData.isDev,
     getAuth,
     buildMutators,

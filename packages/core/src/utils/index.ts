@@ -30,10 +30,7 @@ export namespace Utils {
       try {
         context = useContext();
       } catch (e) {
-        if (
-          !(e instanceof ServerErrors.MissingContext && e.contextName === name)
-        )
-          throw e;
+        if (!isMissing(e)) throw e;
       }
 
       if (context) {
@@ -48,7 +45,11 @@ export namespace Utils {
       return storage.run(await Promise.resolve(getContext()), callback);
     }
 
-    return { use: useContext, with: withContext };
+    const isMissing = <TError>(error: TError) =>
+      error instanceof ServerErrors.MissingContext &&
+      error.contextName === name;
+
+    return { use: useContext, with: withContext, isMissing };
   }
 
   export const reverseDns = (domainName: string) =>

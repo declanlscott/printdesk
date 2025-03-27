@@ -1,3 +1,5 @@
+import { DatabaseError } from "pg";
+
 import { db } from ".";
 import { ServerErrors } from "../errors";
 import { Utils } from "../utils";
@@ -29,11 +31,7 @@ export async function useTransaction<
   try {
     return callback(TransactionContext.use().tx);
   } catch (e) {
-    if (
-      e instanceof ServerErrors.MissingContext &&
-      e.contextName === "Transaction"
-    )
-      return createTransaction(callback);
+    if (TransactionContext.isMissing(e)) return createTransaction(callback);
 
     throw e;
   }
@@ -44,100 +42,61 @@ export async function afterTransaction<
 >(effect: TEffect) {
   try {
     TransactionContext.use().effects.push(effect);
-  } catch {
-    await Promise.resolve(effect);
+  } catch (e) {
+    if (TransactionContext.isMissing(e)) await Promise.resolve(effect);
+
+    throw e;
   }
 }
 
-export async function createTransaction<
+async function createTransaction<
   TCallback extends (tx: Transaction) => ReturnType<TCallback>,
 >(callback: TCallback) {
   for (let i = 0; i < Constants.DB_TRANSACTION_MAX_RETRIES; i++) {
-    const result = await transact(callback, (e) => {
+    try {
+      const effects: TransactionContext["effects"] = [];
+
+      const output = await Promise.resolve(
+        db.transaction(async (tx) =>
+          TransactionContext.with(
+            () => ({ tx, effects }),
+            () => callback(tx),
+          ),
+        ),
+      );
+
+      await Promise.all(effects.map((effect) => effect()));
+
+      return output;
+    } catch (e) {
+      console.error(e);
+
       if (shouldRetryTransaction(e)) {
         console.log(
           // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           `Retrying transaction due to error ${e} - attempt number ${i}`,
         );
 
-        return false;
+        continue;
       }
 
-      return true;
-    });
-
-    if (result.status === "error") {
-      if (result.shouldRethrow) throw result.error;
-
-      continue;
+      throw e;
     }
-
-    return result.output;
   }
 
   throw new ServerErrors.DatabaseMaximumTransactionRetriesExceeded();
-}
-
-type Result<TOutput> =
-  | { status: "success"; output: TOutput }
-  | { status: "error"; error: unknown; shouldRethrow: boolean };
-
-async function transact<
-  TCallback extends (tx: Transaction) => ReturnType<TCallback>,
-  TRollback extends (e: unknown) => boolean | Promise<boolean>,
->(
-  callback: TCallback,
-  rollback?: TRollback,
-): Promise<Result<Awaited<ReturnType<TCallback>>>> {
-  try {
-    const output = await Promise.resolve(callback(TransactionContext.use().tx));
-
-    return { status: "success", output };
-  } catch (error) {
-    if (error instanceof ServerErrors.MissingContext) {
-      const effects: TransactionContext["effects"] = [];
-
-      try {
-        const output = await Promise.resolve(
-          db.transaction(async (tx) =>
-            TransactionContext.with(
-              () => ({ tx, effects }),
-              () => callback(tx),
-            ),
-          ),
-        );
-
-        await Promise.all(effects.map((effect) => effect()));
-
-        return { status: "success", output };
-      } catch (error) {
-        console.error(error);
-
-        if (!rollback) return { status: "error", error, shouldRethrow: true };
-
-        const shouldRethrow = await Promise.resolve(rollback(error));
-
-        return { status: "error", error, shouldRethrow };
-      }
-    }
-
-    return { status: "error", error, shouldRethrow: true };
-  }
 }
 
 /**
  * Check error code to determine if we should retry a transaction.
  * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
  *
- * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and, https://www.postgresql.org/docs/10/errcodes-appendix.html and
+ * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
+ * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
  * https://stackoverflow.com/a/16409293/749644
  */
-function shouldRetryTransaction(error: unknown) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-  const code = typeof error === "object" ? String((error as any).code) : null;
-
-  return (
-    code === Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
-    code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE
-  );
-}
+const shouldRetryTransaction = <TError>(error: TError) =>
+  error instanceof DatabaseError
+    ? error.code === Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
+      error.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE
+    : false;

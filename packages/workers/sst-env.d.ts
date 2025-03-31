@@ -215,9 +215,11 @@ declare module "sst" {
     }
     "Web": {
       "type": "sst.aws.StaticSite"
+      "url": string
     }
     "Www": {
       "type": "sst.aws.Astro"
+      "url": string
     }
   }
 }

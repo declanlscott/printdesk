@@ -9,7 +9,6 @@ import type {
   createRouter,
   NavigateOptions,
   ToOptions,
-  TrailingSlashOption,
 } from "@tanstack/react-router";
 import type { FilterFn } from "@tanstack/react-table";
 import type { RoutesById } from "@tanstack/router-core";
@@ -50,7 +49,7 @@ declare module "@tanstack/react-table" {
 }
 
 export type AppRouter = ReturnType<
-  typeof createRouter<typeof routeTree, TrailingSlashOption, boolean>
+  typeof createRouter<typeof routeTree, "never", true>
 >;
 
 /** Deduplicate route ids, filtering out lazy routes from the union */

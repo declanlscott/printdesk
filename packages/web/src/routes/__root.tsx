@@ -26,11 +26,11 @@ const TanStackRouterDevtools = import.meta.env.DEV
   : () => null;
 
 type RouterContext = {
+  resource: ResourceContext;
+  queryClient: QueryClient;
   authStoreApi: StoreApi<AuthStore>;
   replicache: ReplicacheContext;
   trpcClient: TRPCClient<Router>;
-  resource: ResourceContext;
-  queryClient: QueryClient;
 };
 
 export const Route = createRootRouteWithContext<RouterContext>()({

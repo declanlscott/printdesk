@@ -37,6 +37,8 @@ export function App() {
       },
       defaultPendingComponent: AppLoadingIndicator,
       scrollRestoration: true,
+      trailingSlash: "never",
+      defaultStructuralSharing: true,
     }),
   );
 

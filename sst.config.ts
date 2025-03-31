@@ -1,8 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./.sst/platform/config.d.ts" />
 
-import { readdirSync } from "node:fs";
-
 const AWS_REGION = process.env.AWS_REGION;
 if (!AWS_REGION) throw new Error("AWS_REGION is not set");
 
@@ -29,6 +27,8 @@ export default $config({
     };
   },
   async run() {
+    const { readdirSync } = await import("node:fs");
+
     $transform(sst.aws.Function, (args) => {
       args.architecture ??= "arm64";
       args.runtime ??= "nodejs22.x";

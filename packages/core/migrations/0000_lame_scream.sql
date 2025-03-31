@@ -13,7 +13,7 @@ CREATE TABLE "announcements" (
 CREATE TABLE "oauth2_providers" (
 	"id" text NOT NULL,
 	"tenant_id" char(20) NOT NULL,
-	"type" varchar(50) NOT NULL,
+	"kind" varchar(50) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
@@ -51,7 +51,7 @@ CREATE TABLE "billing_accounts" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"type" varchar(50) NOT NULL,
+	"origin" varchar(50) DEFAULT 'internal' NOT NULL,
 	"name" text NOT NULL,
 	"review_threshold" numeric,
 	"papercutAccountId" bigint DEFAULT -1 NOT NULL,
@@ -208,6 +208,7 @@ CREATE TABLE "tenant_metadata" (
 	"tenant_id" char(20) PRIMARY KEY NOT NULL,
 	"infra_program_input" "bytea" NOT NULL,
 	"api_key" varchar,
+	"last_papercut_sync_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
@@ -231,7 +232,7 @@ CREATE TABLE "users" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"type" varchar(50) DEFAULT 'internal' NOT NULL,
+	"origin" varchar(50) DEFAULT 'internal' NOT NULL,
 	"username" text NOT NULL,
 	"oauth2_user_id" text NOT NULL,
 	"oauth2_provider_id" text NOT NULL,
@@ -243,25 +244,25 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_tenant_id_unique" UNIQUE("email","tenant_id")
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX "billing_account_customer_authorizations_customer_id_billing_account_id_tenant_id_index" ON "billing_account_customer_authorizations" USING btree ("customer_id","billing_account_id","tenant_id");--> statement-breakpoint
-CREATE INDEX "billing_account_customer_authorizations_customer_id_index" ON "billing_account_customer_authorizations" USING btree ("customer_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "billing_account_manager_authorizations_billing_account_id_manager_id_tenant_id_index" ON "billing_account_manager_authorizations" USING btree ("billing_account_id","manager_id","tenant_id");--> statement-breakpoint
-CREATE INDEX "billing_account_manager_authorizations_manager_id_index" ON "billing_account_manager_authorizations" USING btree ("manager_id");--> statement-breakpoint
-CREATE UNIQUE INDEX "billing_accounts_type_name_papercutAccountId_tenant_id_index" ON "billing_accounts" USING btree ("type","name","papercutAccountId","tenant_id");--> statement-breakpoint
-CREATE INDEX "comments_order_id_index" ON "comments" USING btree ("order_id");--> statement-breakpoint
-CREATE INDEX "comments_visible_to_index" ON "comments" USING btree ("visible_to");--> statement-breakpoint
-CREATE INDEX "invoices_order_id_index" ON "invoices" USING btree ("order_id");--> statement-breakpoint
-CREATE INDEX "orders_customer_id_index" ON "orders" USING btree ("customer_id");--> statement-breakpoint
-CREATE INDEX "orders_billing_account_id_index" ON "orders" USING btree ("billing_account_id");--> statement-breakpoint
-CREATE INDEX "products_status_index" ON "products" USING btree ("status");--> statement-breakpoint
-CREATE INDEX "products_room_id_index" ON "products" USING btree ("room_id");--> statement-breakpoint
-CREATE INDEX "replicache_client_groups_updated_at_index" ON "replicache_client_groups" USING btree ("updated_at");--> statement-breakpoint
-CREATE INDEX "replicache_client_views_updated_at_index" ON "replicache_client_views" USING btree ("updated_at");--> statement-breakpoint
-CREATE INDEX "replicache_clients_client_group_id_index" ON "replicache_clients" USING btree ("client_group_id");--> statement-breakpoint
-CREATE INDEX "replicache_clients_updated_at_index" ON "replicache_clients" USING btree ("updated_at");--> statement-breakpoint
-CREATE INDEX "rooms_status_index" ON "rooms" USING btree ("status");--> statement-breakpoint
-CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" USING btree ("slug");--> statement-breakpoint
-CREATE UNIQUE INDEX "users_type_username_tenant_id_index" ON "users" USING btree ("type","username","tenant_id");--> statement-breakpoint
-CREATE INDEX "users_oauth2_user_id_index" ON "users" USING btree ("oauth2_user_id");--> statement-breakpoint
-CREATE INDEX "users_oauth2_provider_id_index" ON "users" USING btree ("oauth2_provider_id");--> statement-breakpoint
-CREATE INDEX "users_role_index" ON "users" USING btree ("role");
+CREATE UNIQUE INDEX ASYNC "billing_account_customer_authorizations_customer_id_billing_account_id_tenant_id_index" ON "billing_account_customer_authorizations" ("customer_id","billing_account_id","tenant_id");--> statement-breakpoint
+CREATE INDEX ASYNC "billing_account_customer_authorizations_customer_id_index" ON "billing_account_customer_authorizations" ("customer_id");--> statement-breakpoint
+CREATE UNIQUE INDEX ASYNC "billing_account_manager_authorizations_billing_account_id_manager_id_tenant_id_index" ON "billing_account_manager_authorizations" ("billing_account_id","manager_id","tenant_id");--> statement-breakpoint
+CREATE INDEX ASYNC "billing_account_manager_authorizations_manager_id_index" ON "billing_account_manager_authorizations" ("manager_id");--> statement-breakpoint
+CREATE UNIQUE INDEX ASYNC "billing_accounts_origin_name_papercutAccountId_tenant_id_index" ON "billing_accounts" ("origin","name","papercutAccountId","tenant_id");--> statement-breakpoint
+CREATE INDEX ASYNC "comments_order_id_index" ON "comments" ("order_id");--> statement-breakpoint
+CREATE INDEX ASYNC "comments_visible_to_index" ON "comments" ("visible_to");--> statement-breakpoint
+CREATE INDEX ASYNC "invoices_order_id_index" ON "invoices" ("order_id");--> statement-breakpoint
+CREATE INDEX ASYNC "orders_customer_id_index" ON "orders" ("customer_id");--> statement-breakpoint
+CREATE INDEX ASYNC "orders_billing_account_id_index" ON "orders" ("billing_account_id");--> statement-breakpoint
+CREATE INDEX ASYNC "products_status_index" ON "products" ("status");--> statement-breakpoint
+CREATE INDEX ASYNC "products_room_id_index" ON "products" ("room_id");--> statement-breakpoint
+CREATE INDEX ASYNC "replicache_client_groups_updated_at_index" ON "replicache_client_groups" ("updated_at");--> statement-breakpoint
+CREATE INDEX ASYNC "replicache_client_views_updated_at_index" ON "replicache_client_views" ("updated_at");--> statement-breakpoint
+CREATE INDEX ASYNC "replicache_clients_client_group_id_index" ON "replicache_clients" ("client_group_id");--> statement-breakpoint
+CREATE INDEX ASYNC "replicache_clients_updated_at_index" ON "replicache_clients" ("updated_at");--> statement-breakpoint
+CREATE INDEX ASYNC "rooms_status_index" ON "rooms" ("status");--> statement-breakpoint
+CREATE UNIQUE INDEX ASYNC "tenants_slug_index" ON "tenants" ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX ASYNC "users_origin_username_tenant_id_index" ON "users" ("origin","username","tenant_id");--> statement-breakpoint
+CREATE INDEX ASYNC "users_oauth2_user_id_index" ON "users" ("oauth2_user_id");--> statement-breakpoint
+CREATE INDEX ASYNC "users_oauth2_provider_id_index" ON "users" ("oauth2_provider_id");--> statement-breakpoint
+CREATE INDEX ASYNC "users_role_index" ON "users" ("role");

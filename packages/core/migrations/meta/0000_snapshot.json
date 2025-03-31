@@ -1,5 +1,5 @@
 {
-  "id": "30f3b56d-4f59-461b-8b48-430f7bb189ed",
+  "id": "38ea08a5-a7b1-4863-96fd-78bcfcbfb5ff",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -92,8 +92,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "type": {
-          "name": "type",
+        "kind": {
+          "name": "kind",
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true
@@ -408,11 +408,12 @@
           "notNull": true,
           "default": 1
         },
-        "type": {
-          "name": "type",
+        "origin": {
+          "name": "origin",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'internal'"
         },
         "name": {
           "name": "name",
@@ -435,11 +436,11 @@
         }
       },
       "indexes": {
-        "billing_accounts_type_name_papercutAccountId_tenant_id_index": {
-          "name": "billing_accounts_type_name_papercutAccountId_tenant_id_index",
+        "billing_accounts_origin_name_papercutAccountId_tenant_id_index": {
+          "name": "billing_accounts_origin_name_papercutAccountId_tenant_id_index",
           "columns": [
             {
-              "expression": "type",
+              "expression": "origin",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1571,6 +1572,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "last_papercut_sync_at": {
+          "name": "last_papercut_sync_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -1724,8 +1731,8 @@
           "notNull": true,
           "default": 1
         },
-        "type": {
-          "name": "type",
+        "origin": {
+          "name": "origin",
           "type": "varchar(50)",
           "primaryKey": false,
           "notNull": true,
@@ -1770,11 +1777,11 @@
         }
       },
       "indexes": {
-        "users_type_username_tenant_id_index": {
-          "name": "users_type_username_tenant_id_index",
+        "users_origin_username_tenant_id_index": {
+          "name": "users_origin_username_tenant_id_index",
           "columns": [
             {
-              "expression": "type",
+              "expression": "origin",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

@@ -68,7 +68,7 @@ export async function migrate<TSchema extends Record<string, unknown>>(
       Number(lastMigration.created_at) < migration.folderMillis
     ) {
       for (const statement of migration.sql)
-        await session.execute(sql.raw(statement.replace(" USING btree ", " ")));
+        await session.execute(sql.raw(statement)).then(console.log);
 
       lastMigration = await session
         .all<{ row: string }>(

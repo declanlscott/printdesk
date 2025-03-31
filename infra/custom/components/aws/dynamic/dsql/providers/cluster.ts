@@ -8,6 +8,7 @@ import {
 import type {
   CreateClusterCommandInput,
   CreateClusterOutput,
+  DSQLClient,
 } from "@aws-sdk/client-dsql";
 
 type ClusterInputs = Omit<CreateClusterCommandInput, "tags">;
@@ -36,11 +37,14 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
   private static _getClient = async () =>
     ClusterProvider._getSdk().then((sdk) => new sdk.DSQLClient());
 
-  private static async _untilActive(identifier: string) {
+  private static async _untilActive(
+    client: DSQLClient | undefined,
+    identifier: string,
+  ) {
     const result = await ClusterProvider._getSdk().then(async (sdk) =>
       sdk.waitUntilClusterActive(
         {
-          client: await ClusterProvider._getClient(),
+          client: client ?? (await ClusterProvider._getClient()),
           maxWaitTime: 900,
         },
         { identifier },
@@ -53,11 +57,14 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
       );
   }
 
-  private static async _untilDeleted(identifier: string) {
+  private static async _untilDeleted(
+    client: DSQLClient | undefined,
+    identifier: string,
+  ) {
     const result = await ClusterProvider._getSdk().then(async (sdk) =>
       sdk.waitUntilClusterNotExists(
         {
-          client: await ClusterProvider._getClient(),
+          client: client ?? (await ClusterProvider._getClient()),
           maxWaitTime: 900,
         },
         { identifier },
@@ -111,7 +118,7 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
     if (!ClusterProvider._isValidOutput(cluster, output.$metadata))
       throw new Error("Failed to create cluster");
 
-    await ClusterProvider._untilActive(cluster.identifier);
+    await ClusterProvider._untilActive(client, cluster.identifier);
 
     return {
       id: cluster.identifier,
@@ -175,7 +182,7 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
     if (!ClusterProvider._isValidOutput(cluster, output.$metadata))
       throw new Error("Failed to update cluster");
 
-    await ClusterProvider._untilActive(cluster.identifier);
+    await ClusterProvider._untilActive(client, cluster.identifier);
 
     return {
       outs: {
@@ -206,6 +213,6 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
     if (!ClusterProvider._isValidOutput(cluster, output.$metadata))
       throw new Error("Failed to delete cluster");
 
-    await ClusterProvider._untilDeleted(id);
+    await ClusterProvider._untilDeleted(client, id);
   }
 }

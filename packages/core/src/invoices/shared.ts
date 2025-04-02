@@ -27,8 +27,6 @@ export const invoiceSchema = v.object({
   orderId: nanoIdSchema,
 });
 
-export const invoiceMutationNames = ["createInvoice"] as const;
-
 export const createInvoiceMutationArgsSchema = v.object({
   ...v.omit(invoiceSchema, ["status", "chargedAt", "deletedAt"]).entries,
   status: v.literal("processing"),

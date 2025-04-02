@@ -14,12 +14,6 @@ export const commentSchema = v.object({
   visibleTo: v.array(v.picklist(userRoles)),
 });
 
-export const commentMutationNames = [
-  "createComment",
-  "updateComment",
-  "deleteComment",
-] as const;
-
 export const createCommentMutationArgsSchema = v.pipe(
   v.object({
     ...v.omit(commentSchema, ["deletedAt"]).entries,

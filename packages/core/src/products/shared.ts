@@ -262,12 +262,6 @@ export const productSchema = v.object({
   config: productConfigurationSchema,
 });
 
-export const productMutationNames = [
-  "createProduct",
-  "updateProduct",
-  "deleteProduct",
-] as const;
-
 export const createProductMutationArgsSchema = v.object({
   ...v.omit(productSchema, ["deletedAt"]).entries,
   deletedAt: v.null(),

@@ -26,12 +26,6 @@ export const userSchema = v.object({
   email: v.string(),
 });
 
-export const userMutationNames = [
-  "updateUserRole",
-  "deleteUser",
-  "restoreUser",
-] as const;
-
 export const updateUserRoleMutationArgsSchema = v.object({
   id: nanoIdSchema,
   role: v.picklist(userRoles),

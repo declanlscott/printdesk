@@ -46,32 +46,34 @@ export const generateId = customAlphabet(
 export const formatPascalCase = (value: string) =>
   value.replace(/([a-z])([A-Z])/g, "$1 $2");
 
-export const fn =
-  <
-    TSchema extends v.GenericSchema,
-    TCallback extends (output: v.InferOutput<TSchema>) => ReturnType<TCallback>,
-    TMaybeError extends AnyError | undefined,
-  >(
-    schema: TSchema,
-    callback: TCallback,
-    customError?: TMaybeError extends AnyError
-      ? InferCustomError<CustomError<TMaybeError>>
-      : never,
-  ) =>
-  <TInput>(input: TInput) => {
-    let output: v.InferOutput<TSchema>;
-    try {
-      output = v.parse(schema, input);
-    } catch (e) {
-      if (v.isValiError<TSchema>(e) && customError)
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        throw new customError.Error(...customError.args);
+export const fn = <
+  TSchema extends v.GenericSchema,
+  TCallback extends (output: v.InferOutput<TSchema>) => ReturnType<TCallback>,
+  TMaybeError extends AnyError | undefined,
+>(
+  schema: TSchema,
+  callback: TCallback,
+  customError?: TMaybeError extends AnyError
+    ? InferCustomError<CustomError<TMaybeError>>
+    : never,
+) =>
+  Object.assign(
+    <TInput>(input: TInput) => {
+      let output: v.InferOutput<TSchema>;
+      try {
+        output = v.parse(schema, input);
+      } catch (e) {
+        if (v.isValiError<TSchema>(e) && customError)
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          throw new customError.Error(...customError.args);
 
-      throw e;
-    }
+        throw e;
+      }
 
-    return callback(output);
-  };
+      return callback(output);
+    },
+    { schema },
+  );
 
 export const isUniqueByKey = <
   TKey extends keyof TInput[number],

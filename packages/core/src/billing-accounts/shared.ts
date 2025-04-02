@@ -25,13 +25,6 @@ export const billingAccountSchema = v.object({
   ...timestampsSchema.entries,
 });
 
-export const billingAccountMutationNames = [
-  "updateBillingAccountReviewThreshold",
-  "deleteBillingAccount",
-  "createBillingAccountManagerAuthorization",
-  "deleteBillingAccountManagerAuthorization",
-] as const;
-
 export const billingAccountCustomerAuthorizationSchema = v.object({
   ...tenantTableSchema.entries,
   customerId: nanoIdSchema,

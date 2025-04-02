@@ -10,12 +10,6 @@ export const announcementSchema = v.object({
   roomId: nanoIdSchema,
 });
 
-export const announcementMutationNames = [
-  "createAnnouncement",
-  "updateAnnouncement",
-  "deleteAnnouncement",
-] as const;
-
 export const createAnnouncementMutationArgsSchema = v.object({
   ...v.omit(announcementSchema, ["deletedAt"]).entries,
   deletedAt: v.null(),

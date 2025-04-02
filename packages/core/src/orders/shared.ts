@@ -215,12 +215,6 @@ export const orderSchema = v.object({
   approvedAt: v.nullable(v.date()),
 });
 
-export const orderMutationNames = [
-  "createOrder",
-  "updateOrder",
-  "deleteOrder",
-] as const;
-
 export const createOrderMutationArgsSchema = v.object({
   ...v.omit(orderSchema, ["deletedAt"]).entries,
   deletedAt: v.null(),

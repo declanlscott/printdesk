@@ -18,7 +18,6 @@ import { buildCvr, diffCvr, isCvrDiffEmpty } from "./client-view-record";
 import { commandRepository, queryRepository } from "./data";
 import {
   isSerialized,
-  mutationNameSchema,
   mutationV1Schema,
   replicacheClientGroupsTableName,
   replicacheClientsTableName,
@@ -262,7 +261,7 @@ export namespace Replicache {
               diff[name].puts,
               Constants.REPLICACHE_PULL_CHUNK_SIZE,
             ))
-              puts.push(...(await queryRepository[name](ids)));
+              await queryRepository.dispatch(name, ids).then(R.concat(puts));
 
             return [
               name,
@@ -411,7 +410,7 @@ export namespace Replicache {
     const processMutation = fn(
       v.object({
         ...mutationV1Schema.entries,
-        name: mutationNameSchema,
+        name: v.picklist(commandRepository.names()),
       }),
       async (mutation) =>
         // 2: Begin transaction
@@ -482,7 +481,8 @@ export namespace Replicache {
 
               // 10(i): Business logic
               // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
-              await commandRepository[mutation.name](
+              await commandRepository.dispatch(
+                mutation.name,
                 deserialize(mutation.args),
               );
             } catch (e) {

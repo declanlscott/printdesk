@@ -24,13 +24,6 @@ export const roomSchema = v.object({
   details: v.nullable(v.string()),
 });
 
-export const roomMutationNames = [
-  "createRoom",
-  "updateRoom",
-  "deleteRoom",
-  "restoreRoom",
-] as const;
-
 export const createRoomMutationArgsSchema = v.object({
   ...v.omit(roomSchema, ["deletedAt"]).entries,
   deletedAt: v.null(),
@@ -161,8 +154,6 @@ export const workflowSchema = v.pipe(
 );
 export type Workflow = v.InferOutput<typeof workflowSchema>;
 
-export const workflowMutationNames = ["setWorkflow"] as const;
-
 export const setWorkflowMutationArgsSchema = v.object({
   workflow: workflowSchema,
   roomId: nanoIdSchema,
@@ -192,8 +183,6 @@ export const deliveryOptionsSchema = v.pipe(
   ),
 );
 export type DeliveryOptions = v.InferOutput<typeof deliveryOptionsSchema>;
-
-export const deliveryOptionsMutationNames = ["setDeliveryOptions"] as const;
 
 export const setDeliveryOptionsMutationArgsSchema = v.object({
   options: deliveryOptionsSchema,

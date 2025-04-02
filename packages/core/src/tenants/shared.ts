@@ -50,8 +50,6 @@ export const tenantSchema = v.object({
   ...timestampsSchema.entries,
 });
 
-export const tenantMutationNames = ["updateTenant"] as const;
-
 export const updateTenantMutationArgsSchema = v.object({
   id: nanoIdSchema,
   updatedAt: v.date(),

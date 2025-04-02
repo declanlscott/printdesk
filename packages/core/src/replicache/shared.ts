@@ -1,19 +1,5 @@
 import * as v from "valibot";
 
-import { announcementMutationNames } from "../announcements/shared";
-import { billingAccountMutationNames } from "../billing-accounts/shared";
-import { commentMutationNames } from "../comments/shared";
-import { invoiceMutationNames } from "../invoices/shared";
-import { orderMutationNames } from "../orders/shared";
-import { productMutationNames } from "../products/shared";
-import {
-  deliveryOptionsMutationNames,
-  roomMutationNames,
-  workflowMutationNames,
-} from "../rooms/shared";
-import { tenantMutationNames } from "../tenants/shared";
-import { userMutationNames } from "../users/shared";
-
 import type { ReadonlyJSONObject } from "replicache";
 import type { SuperJSONResult } from "superjson";
 
@@ -35,21 +21,6 @@ export const mutationV1Schema = v.object({
   clientID: v.pipe(v.string(), v.uuid()),
 });
 export type MutationV1 = v.InferOutput<typeof mutationV1Schema>;
-
-export const mutationNameSchema = v.picklist([
-  ...announcementMutationNames,
-  ...billingAccountMutationNames,
-  ...commentMutationNames,
-  ...deliveryOptionsMutationNames,
-  ...invoiceMutationNames,
-  ...orderMutationNames,
-  ...tenantMutationNames,
-  ...productMutationNames,
-  ...roomMutationNames,
-  ...userMutationNames,
-  ...workflowMutationNames,
-]);
-export type MutationName = v.InferOutput<typeof mutationNameSchema>;
 
 export const pushRequestSchema = v.variant("pushVersion", [
   v.looseObject({

@@ -5,6 +5,7 @@ import { deserialize, serialize } from "superjson";
 import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
+import { commandRepository, queryRepository } from "../data";
 import { useTransaction } from "../drizzle/context";
 import { ServerErrors } from "../errors";
 import { SharedErrors } from "../errors/shared";
@@ -15,7 +16,6 @@ import { Constants } from "../utils/constants";
 import { fn } from "../utils/shared";
 import { syncedTables } from "../utils/tables";
 import { buildCvr, diffCvr, isCvrDiffEmpty } from "./client-view-record";
-import { commandRepository, queryRepository } from "./data";
 import {
   isSerialized,
   mutationV1Schema,
@@ -34,19 +34,19 @@ import type {
   PullResponseV1,
   PushResponse,
 } from "replicache";
-import type { OmitTimestamps } from "../drizzle/columns";
-import type { SyncedTable } from "../utils/tables";
-import type {
-  ClientViewRecord,
-  ClientViewRecordEntries,
-} from "./client-view-record";
 import type {
   NonSyncedTableMetadata,
   SyncedTableMetadata,
   TableData,
   TableMetadata,
   TablePatchData,
-} from "./data";
+} from "../data";
+import type { OmitTimestamps } from "../drizzle/columns";
+import type { SyncedTable } from "../utils/tables";
+import type {
+  ClientViewRecord,
+  ClientViewRecordEntries,
+} from "./client-view-record";
 import type { PullRequest, PushRequest, Serialized } from "./shared";
 import type { ReplicacheClient, ReplicacheClientGroup } from "./sql";
 

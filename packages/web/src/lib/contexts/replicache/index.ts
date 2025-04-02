@@ -1,7 +1,7 @@
 import { createContext } from "react";
 
+import type { Mutators } from "@printworks/core/data/client";
 import type { Replicache } from "replicache";
-import type { Mutators } from "~/lib/hooks/replicache";
 
 export type ReplicacheContext =
   | { status: "uninitialized" }

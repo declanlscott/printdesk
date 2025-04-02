@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
+import { createMutators } from "@printworks/core/data/client";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useAuth } from "~/lib/hooks/auth";
-import { useMutatorsBuilder } from "~/lib/hooks/replicache";
 import { useResource } from "~/lib/hooks/resource";
 import { AuthStoreApi } from "~/lib/stores/auth";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
@@ -21,8 +21,6 @@ export function ReplicacheProvider(props: PropsWithChildren) {
 
   const { AppData, ReplicacheLicenseKey } = useResource();
 
-  const buildMutators = useMutatorsBuilder();
-
   const baseUrl = useResource().ApiReverseProxy.url;
 
   const { getAuth, refresh } = AuthStoreApi.useActions();
@@ -34,7 +32,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       name: `${user.tenantId}:${user.id}`,
       licenseKey: ReplicacheLicenseKey.value,
       logLevel: AppData.isDev ? "info" : "error",
-      mutators: buildMutators(user.id),
+      mutators: createMutators(user.id),
       auth: getAuth(),
       pullURL: new URL("/replicache/pull", baseUrl).toString(),
       pusher: async (req) => {
@@ -88,7 +86,6 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     baseUrl,
     AppData.isDev,
     getAuth,
-    buildMutators,
     refresh,
     ReplicacheLicenseKey.value,
     user,

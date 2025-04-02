@@ -54,6 +54,109 @@ export type TableMetadata = [
   Array<Metadata<TableByName<TableName>>>,
 ];
 
+export type TablePatchData<TTable extends SyncedTable> = {
+  puts: Array<InferSelectModel<TTable>>;
+  dels: Array<InferSelectModel<TTable>["id"]>;
+};
+
+export type TableData = [
+  SyncedTableName,
+  TablePatchData<TableByName<SyncedTableName>>,
+];
+
+export interface Command<
+  TName extends string = string,
+  TSchema extends v.GenericSchema = v.AnySchema,
+> {
+  name: TName;
+  schema: TSchema;
+  input: v.InferInput<TSchema>;
+}
+
+export class CommandRepository<
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  TCommands extends Record<string, Command<string, v.GenericSchema>> = {},
+> {
+  private _commands = new Map<
+    string,
+    {
+      fn: (input: unknown) => Promise<void>;
+      schema: v.GenericSchema;
+    }
+  >();
+
+  public command<TName extends string, TSchema extends v.GenericSchema>(
+    name: TName,
+    fn: ((input: v.InferInput<TSchema>) => Promise<void>) & {
+      schema: TSchema;
+    },
+  ) {
+    this._commands.set(name, {
+      fn,
+      schema: fn.schema,
+    });
+
+    return this as CommandRepository<
+      TCommands & Record<TName, Command<TName, TSchema>>
+    >;
+  }
+
+  public dispatch<TName extends keyof TCommands & string>(
+    name: TName,
+    input: TCommands[TName]["input"],
+  ) {
+    const command = this._commands.get(name);
+    if (!command) throw new Error(`Command "${name}" not found`);
+
+    return command.fn(input);
+  }
+
+  public names() {
+    return Array.from(this._commands.keys()) as Array<keyof TCommands & string>;
+  }
+}
+
+/**
+ * A collection of authoritative mutators for Replicache. This should match the corresponding client-side mutators.
+ */
+export const commandRepository = new CommandRepository()
+  .command("createAnnouncement", Announcements.create)
+  .command("updateAnnouncement", Announcements.update)
+  .command("deleteAnnouncement", Announcements.delete_)
+  .command(
+    "updateBillingAccountReviewThreshold",
+    BillingAccounts.updateReviewThreshold,
+  )
+  .command("deleteBillingAccount", BillingAccounts.delete_)
+  .command(
+    "createBillingAccountManagerAuthorization",
+    BillingAccounts.createManagerAuthorization,
+  )
+  .command(
+    "deleteBillingAccountManagerAuthorization",
+    BillingAccounts.deleteManagerAuthorization,
+  )
+  .command("createComment", Comments.create)
+  .command("updateComment", Comments.update)
+  .command("deleteComment", Comments.delete_)
+  .command("setDeliveryOptions", Rooms.setDeliveryOptions)
+  .command("createInvoice", Invoices.create)
+  .command("createOrder", Orders.create)
+  .command("updateOrder", Orders.update)
+  .command("deleteOrder", Orders.delete_)
+  .command("createProduct", Products.create)
+  .command("updateProduct", Products.update)
+  .command("deleteProduct", Products.delete_)
+  .command("createRoom", Rooms.create)
+  .command("updateRoom", Rooms.update)
+  .command("deleteRoom", Rooms.delete_)
+  .command("restoreRoom", Rooms.restore)
+  .command("updateTenant", Tenants.update)
+  .command("updateUserRole", Users.updateRole)
+  .command("deleteUser", Users.delete_)
+  .command("restoreUser", Users.restore)
+  .command("setWorkflow", Rooms.setWorkflow);
+
 export type Query<TSyncedTableName extends SyncedTableName> = (
   ids: Array<InferSelectModel<TableByName<TSyncedTableName>>["id"]>,
 ) => Promise<Array<InferSelectModel<TableByName<TSyncedTableName>>>>;
@@ -69,10 +172,12 @@ export class QueryRepository<
   public query<TTableName extends SyncedTableName>(
     name: TTableName,
     fn: TTableName extends SyncedTableName ? Query<TTableName> : never,
-  ): QueryRepository<TQueries & Record<TTableName, Query<TTableName>>> {
+  ) {
     this._queries.set(name, fn);
 
-    return this;
+    return this as QueryRepository<
+      TQueries & Record<TTableName, Query<TTableName>>
+    >;
   }
 
   public dispatch<TTableName extends SyncedTableName>(
@@ -118,104 +223,3 @@ export const queryRepository = new QueryRepository()
   .query(tenantsTableName, Tenants.read)
   .query(usersTableName, Users.read)
   .query(workflowStatusesTableName, Rooms.readWorkflow);
-
-export type TablePatchData<TTable extends SyncedTable> = {
-  puts: Array<InferSelectModel<TTable>>;
-  dels: Array<InferSelectModel<TTable>["id"]>;
-};
-
-export type TableData = [
-  SyncedTableName,
-  TablePatchData<TableByName<SyncedTableName>>,
-];
-
-export interface Command<
-  TName extends string = string,
-  TSchema extends v.GenericSchema = v.AnySchema,
-> {
-  name: TName;
-  schema: TSchema;
-  input: v.InferInput<TSchema>;
-}
-
-export class CommandRepository<
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  TCommands extends Record<string, Command<string, v.GenericSchema>> = {},
-> {
-  private _commands = new Map<
-    string,
-    {
-      fn: (input: unknown) => Promise<void>;
-      schema: v.GenericSchema;
-    }
-  >();
-
-  public command<TName extends string, TSchema extends v.GenericSchema>(
-    name: TName,
-    fn: ((input: v.InferInput<TSchema>) => Promise<void>) & {
-      schema: TSchema;
-    },
-  ): CommandRepository<TCommands & Record<TName, Command<TName, TSchema>>> {
-    this._commands.set(name, {
-      fn,
-      schema: fn.schema,
-    });
-
-    return this;
-  }
-
-  public dispatch<TName extends keyof TCommands & string>(
-    name: TName,
-    input: TCommands[TName]["input"],
-  ): Promise<void> {
-    const command = this._commands.get(name);
-    if (!command) throw new Error(`Command "${name}" not found`);
-
-    return command.fn(input);
-  }
-
-  public names(): Array<keyof TCommands & string> {
-    return Array.from(this._commands.keys());
-  }
-}
-
-/**
- * A collection of authoritative mutators for Replicache. This should match the corresponding client-side mutators.
- */
-export const commandRepository = new CommandRepository()
-  .command("createAnnouncement", Announcements.create)
-  .command("updateAnnouncement", Announcements.update)
-  .command("deleteAnnouncement", Announcements.delete_)
-  .command(
-    "updateBillingAccountReviewThreshold",
-    BillingAccounts.updateReviewThreshold,
-  )
-  .command("deleteBillingAccount", BillingAccounts.delete_)
-  .command(
-    "createBillingAccountManagerAuthorization",
-    BillingAccounts.createManagerAuthorization,
-  )
-  .command(
-    "deleteBillingAccountManagerAuthorization",
-    BillingAccounts.deleteManagerAuthorization,
-  )
-  .command("createComment", Comments.create)
-  .command("updateComment", Comments.update)
-  .command("deleteComment", Comments.delete_)
-  .command("setDeliveryOptions", Rooms.setDeliveryOptions)
-  .command("createInvoice", Invoices.create)
-  .command("createOrder", Orders.create)
-  .command("updateOrder", Orders.update)
-  .command("deleteOrder", Orders.delete_)
-  .command("createProduct", Products.create)
-  .command("updateProduct", Products.update)
-  .command("deleteProduct", Products.delete_)
-  .command("createRoom", Rooms.create)
-  .command("updateRoom", Rooms.update)
-  .command("deleteRoom", Rooms.delete_)
-  .command("restoreRoom", Rooms.restore)
-  .command("updateTenant", Tenants.update)
-  .command("updateUserRole", Users.updateRole)
-  .command("deleteUser", Users.delete_)
-  .command("restoreUser", Users.restore)
-  .command("setWorkflow", Rooms.setWorkflow);

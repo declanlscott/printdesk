@@ -22,6 +22,10 @@ export const billingAccountSchema = v.object({
   origin: v.picklist(billingAccountOrigins),
   name: v.string(),
   reviewThreshold: v.nullable(v.pipe(costSchema, v.transform(String))),
+  papercutAccountId: v.union([
+    v.literal(-1),
+    v.pipe(v.number(), v.integer(), v.minValue(0)),
+  ]),
   ...timestampsSchema.entries,
 });
 

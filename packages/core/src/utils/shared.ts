@@ -102,11 +102,6 @@ export const tenantTableSchema = v.object({
   ...timestampsSchema.entries,
 });
 
-export const papercutAccountIdSchema = v.pipe(
-  v.string(),
-  v.transform((input) => BigInt(input).toString()),
-);
-
 export const costSchema = v.pipe(
   v.union([v.number(), v.pipe(v.string(), v.decimal())]),
   v.transform(Number),

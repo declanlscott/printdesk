@@ -8,12 +8,13 @@ import { BillingAccounts } from "../billing-accounts";
 import { useTransaction } from "../drizzle/context";
 import { ServerErrors } from "../errors";
 import { SharedErrors } from "../errors/shared";
+import { Graph } from "../graph";
+import { withGraph } from "../graph/context";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { tenantMetadataTable } from "../tenants/sql";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
-import { Graph, withGraph } from "../utils/graph";
 
 import type { User as GraphUser } from "@microsoft/microsoft-graph-types";
 import type { InferInsertModel } from "drizzle-orm";

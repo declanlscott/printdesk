@@ -3,7 +3,12 @@ import { pgTable, primaryKey } from "drizzle-orm/pg-core";
 import { generateId } from "../utils/shared";
 import { id, timestamps, version } from "./columns";
 
-import type { BuildColumns, BuildExtraConfigColumns } from "drizzle-orm";
+import type {
+  BuildColumns,
+  BuildExtraConfigColumns,
+  InferSelectModel,
+  Table,
+} from "drizzle-orm";
 import type {
   PgColumnBuilderBase,
   PgTableExtraConfigValue,
@@ -60,3 +65,8 @@ export const tenantTable = <
       ...(extraConfig?.(table) ?? []),
     ],
   );
+
+export type InferTable<TTable extends Table> = Omit<
+  InferSelectModel<TTable>,
+  "version"
+>;

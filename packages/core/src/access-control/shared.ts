@@ -1,4 +1,4 @@
-import type { SyncedTableName } from "../utils/tables";
+import type { SyncedTableName } from "../data";
 
 export type Resource =
   | SyncedTableName

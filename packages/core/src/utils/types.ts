@@ -1,5 +1,3 @@
-import type { InferSelectModel, Table } from "drizzle-orm";
-
 export type StartsWith<
   TPrefix extends string,
   TValue extends string,
@@ -29,11 +27,6 @@ export type PartialExcept<
   TObject extends object,
   TKey extends keyof TObject,
 > = Partial<Omit<TObject, TKey>> & Pick<TObject, TKey>;
-
-export type InferTable<TTable extends Table> = Omit<
-  InferSelectModel<TTable>,
-  "version"
->;
 
 export type Discriminate<
   TEntity,

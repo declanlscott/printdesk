@@ -1,9 +1,3 @@
-/**
- * NOTE: This module provides shared utility functions and must remain framework-agnostic.
- * For example it should not depend on sst for linked resources. Other modules in the
- * core package may depend on sst, but this module should not.
- */
-
 import { customAlphabet } from "nanoid";
 import * as R from "remeda";
 import * as v from "valibot";

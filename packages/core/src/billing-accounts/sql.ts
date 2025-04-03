@@ -1,15 +1,19 @@
 import { bigint, index, numeric, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { id } from "../drizzle/columns";
+import { customEnum, id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
-import { billingAccountOrigin } from "../utils/sql";
 import {
   billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
+  billingAccountOrigins,
   billingAccountsTableName,
 } from "./shared";
 
-import type { Discriminate, InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
+import type { Discriminate } from "../utils/types";
+
+export const billingAccountOrigin = (name: string) =>
+  customEnum(name, billingAccountOrigins);
 
 export const billingAccountsTable = tenantTable(
   billingAccountsTableName,

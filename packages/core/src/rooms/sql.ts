@@ -10,17 +10,20 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { id, version } from "../drizzle/columns";
+import { customEnum, id, version } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
-import { roomStatus, workflowStatusType } from "../utils/sql";
 import {
   deliveryOptionsTableName,
   roomsTableName,
+  roomStatuses,
   workflowStatusesTableName,
+  workflowStatusTypes,
 } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
+
+export const roomStatus = (name: string) => customEnum(name, roomStatuses);
 
 export const roomsTable = tenantTable(
   roomsTableName,
@@ -36,6 +39,9 @@ export const roomsTable = tenantTable(
 );
 export type RoomsTable = typeof roomsTable;
 export type Room = InferTable<RoomsTable>;
+
+export const workflowStatusType = (name: string) =>
+  customEnum(name, workflowStatusTypes);
 
 export const workflowStatusesTable = pgTable(
   workflowStatusesTableName,

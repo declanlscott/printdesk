@@ -5,7 +5,7 @@ import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
 import { orderAttributesSchema, ordersTableName } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
 
 export const ordersTable = tenantTable(
   ordersTableName,

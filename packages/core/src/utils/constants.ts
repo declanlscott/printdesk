@@ -1,9 +1,3 @@
-/**
- * NOTE: This module provides constants and must remain framework-agnostic.
- * For example it should not depend on sst for linked resources. Other modules in the
- * core package may depend on sst, but this module should not.
- */
-
 import type { Duration } from "date-fns";
 
 export namespace Constants {

@@ -1,9 +1,10 @@
 import { Auth } from "@printworks/core/auth";
 import { EntraId } from "@printworks/core/auth/entra-id";
+import { Graph } from "@printworks/core/graph";
+import { withGraph } from "@printworks/core/graph/context";
 import { Users } from "@printworks/core/users";
 import { useUser } from "@printworks/core/users/context";
 import { Constants } from "@printworks/core/utils/constants";
-import { Graph, withGraph } from "@printworks/core/utils/graph";
 import { nanoIdSchema } from "@printworks/core/utils/shared";
 import { TRPCError } from "@trpc/server";
 import * as R from "remeda";

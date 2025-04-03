@@ -1,40 +1,66 @@
+import { getTableName } from "drizzle-orm";
+
 import { Announcements } from "../announcements";
-import { announcementsTableName } from "../announcements/shared";
+import { announcementsTable } from "../announcements/sql";
 import { BillingAccounts } from "../billing-accounts";
 import {
-  billingAccountCustomerAuthorizationsTableName,
-  billingAccountManagerAuthorizationsTableName,
-  billingAccountsTableName,
-} from "../billing-accounts/shared";
+  billingAccountCustomerAuthorizationsTable,
+  billingAccountManagerAuthorizationsTable,
+  billingAccountsTable,
+} from "../billing-accounts/sql";
 import { Comments } from "../comments";
-import { commentsTableName } from "../comments/shared";
+import { commentsTable } from "../comments/sql";
 import { Invoices } from "../invoices";
-import { invoicesTableName } from "../invoices/shared";
+import { invoicesTable } from "../invoices/sql";
 import { Orders } from "../orders";
-import { ordersTableName } from "../orders/shared";
+import { ordersTable } from "../orders/sql";
 import { Products } from "../products";
-import { productsTableName } from "../products/shared";
+import { productsTable } from "../products/sql";
+import { replicacheClientsTable } from "../replicache/sql";
 import { Rooms } from "../rooms";
 import {
-  deliveryOptionsTableName,
-  roomsTableName,
-  workflowStatusesTableName,
-} from "../rooms/shared";
+  deliveryOptionsTable,
+  roomsTable,
+  workflowStatusesTable,
+} from "../rooms/sql";
 import { Tenants } from "../tenants";
-import { tenantsTableName } from "../tenants/shared";
+import { tenantsTable } from "../tenants/sql";
 import { Users } from "../users";
-import { usersTableName } from "../users/shared";
+import { usersTable } from "../users/sql";
 
 import type { InferSelectModel } from "drizzle-orm";
 import type * as v from "valibot";
-import type {
-  NonSyncedTableName,
-  SyncedTable,
-  SyncedTableName,
+
+export const syncedTables = [
+  announcementsTable,
+  billingAccountsTable,
+  billingAccountCustomerAuthorizationsTable,
+  billingAccountManagerAuthorizationsTable,
+  commentsTable,
+  deliveryOptionsTable,
+  invoicesTable,
+  ordersTable,
+  productsTable,
+  roomsTable,
+  tenantsTable,
+  usersTable,
+  workflowStatusesTable,
+];
+export const nonSyncedTables = [replicacheClientsTable];
+export const tables = [...syncedTables, ...nonSyncedTables];
+
+export type SyncedTable = (typeof syncedTables)[number];
+export type NonSyncedTable = (typeof nonSyncedTables)[number];
+export type Table = SyncedTable | NonSyncedTable;
+
+export type SyncedTableName = SyncedTable["_"]["name"];
+export type NonSyncedTableName = NonSyncedTable["_"]["name"];
+export type TableName = Table["_"]["name"];
+
+export type TableByName<TTableName extends TableName> = Extract<
   Table,
-  TableByName,
-  TableName,
-} from "../utils/tables";
+  { _: { name: TTableName } }
+>;
 
 export type Metadata<TTable extends Table = TableByName<TableName>> = {
   id: NonNullable<InferSelectModel<TTable>["id"]>;
@@ -204,22 +230,22 @@ export class QueryRepository<
  * A collection of queries for Replicache.
  */
 export const queryRepository = new QueryRepository()
-  .query(announcementsTableName, Announcements.read)
-  .query(billingAccountsTableName, BillingAccounts.read)
+  .query(getTableName(announcementsTable), Announcements.read)
+  .query(getTableName(billingAccountsTable), BillingAccounts.read)
   .query(
-    billingAccountCustomerAuthorizationsTableName,
+    getTableName(billingAccountCustomerAuthorizationsTable),
     BillingAccounts.readCustomerAuthorizations,
   )
   .query(
-    billingAccountManagerAuthorizationsTableName,
+    getTableName(billingAccountManagerAuthorizationsTable),
     BillingAccounts.readManagerAuthorizations,
   )
-  .query(commentsTableName, Comments.read)
-  .query(deliveryOptionsTableName, Rooms.readDeliveryOptions)
-  .query(invoicesTableName, Invoices.read)
-  .query(ordersTableName, Orders.read)
-  .query(productsTableName, Products.read)
-  .query(roomsTableName, Rooms.read)
-  .query(tenantsTableName, Tenants.read)
-  .query(usersTableName, Users.read)
-  .query(workflowStatusesTableName, Rooms.readWorkflow);
+  .query(getTableName(commentsTable), Comments.read)
+  .query(getTableName(deliveryOptionsTable), Rooms.readDeliveryOptions)
+  .query(getTableName(invoicesTable), Invoices.read)
+  .query(getTableName(ordersTable), Orders.read)
+  .query(getTableName(productsTable), Products.read)
+  .query(getTableName(roomsTable), Rooms.read)
+  .query(getTableName(tenantsTable), Tenants.read)
+  .query(getTableName(usersTable), Users.read)
+  .query(getTableName(workflowStatusesTable), Rooms.readWorkflow);

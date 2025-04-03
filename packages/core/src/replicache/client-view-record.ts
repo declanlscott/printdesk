@@ -1,12 +1,17 @@
 import { getTableName } from "drizzle-orm";
 import * as R from "remeda";
 
+import { syncedTables } from "../data";
 import { SharedErrors } from "../errors/shared";
-import { syncedTables } from "../utils/tables";
 import { replicacheClientsTableName } from "./shared";
 
-import type { Table, TableByName, TableName } from "../utils/tables";
-import type { Metadata, TableMetadata } from "./data";
+import type {
+  Metadata,
+  Table,
+  TableByName,
+  TableMetadata,
+  TableName,
+} from "../data";
 
 export type ClientViewRecord = {
   [TName in TableName]: ClientViewRecordEntries<TableByName<TName>>;

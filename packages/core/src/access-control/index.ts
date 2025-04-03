@@ -25,12 +25,11 @@ import { usersTable } from "../users/sql";
 import type { PgSelectBase } from "drizzle-orm/pg-core";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
+import type { Metadata, SyncedTableName, TableByName } from "../data";
 import type { Transaction } from "../drizzle/context";
 import type { Order } from "../orders/sql";
-import type { Metadata } from "../replicache/data";
 import type { UserRole } from "../users/shared";
 import type { User } from "../users/sql";
-import type { SyncedTableName, TableByName } from "../utils/tables";
 import type { AnyError, CustomError, InferCustomError } from "../utils/types";
 import type { Action, Resource } from "./shared";
 

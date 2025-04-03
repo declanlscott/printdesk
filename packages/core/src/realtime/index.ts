@@ -3,10 +3,10 @@ import * as R from "remeda";
 import { Resource } from "sst";
 import * as v from "valibot";
 
+import { SignatureV4, Util } from "../aws";
 import { Backend } from "../backend";
 import { Api } from "../backend/api";
 import { ServerErrors } from "../errors";
-import { SignatureV4, Util } from "../utils/aws";
 
 import type { StartsWith } from "../utils/types";
 

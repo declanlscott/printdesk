@@ -1,9 +1,3 @@
-/**
- * NOTE: This module provides server utility functions and must remain framework-agnostic.
- * For example it should not depend on sst for linked resources. Other modules in the
- * core package may depend on sst, but this module should not.
- */
-
 import { AsyncLocalStorage } from "node:async_hooks";
 
 import * as R from "remeda";

@@ -2,7 +2,8 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { Resource } from "sst";
 
-import { Dsql, withAws } from "../utils/aws";
+import { Dsql } from "../aws";
+import { withAws } from "../aws/context";
 
 import type { PoolConfig } from "pg";
 

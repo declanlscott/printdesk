@@ -1,10 +1,14 @@
 import { index, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
+import { customEnum } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
-import { userOrigin, userRole } from "../utils/sql";
-import { usersTableName } from "./shared";
+import { userOrigins, userRoles, usersTableName } from "./shared";
 
-import type { Discriminate, InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
+import type { Discriminate } from "../utils/types";
+
+export const userOrigin = (name: string) => customEnum(name, userOrigins);
+export const userRole = (name: string) => customEnum(name, userRoles);
 
 export const usersTable = tenantTable(
   usersTableName,

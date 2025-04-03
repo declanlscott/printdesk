@@ -10,9 +10,9 @@ import type {
   ReadTransaction,
   WriteTransaction,
 } from "replicache";
+import type { SyncedTableName, TableByName } from "../data";
+import type { InferTable } from "../drizzle/tables";
 import type { User } from "../users/sql";
-import type { SyncedTableName, TableByName } from "../utils/tables";
-import type { InferTable } from "../utils/types";
 import type { Serialized } from "./shared";
 
 export namespace Replicache {

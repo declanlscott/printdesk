@@ -11,6 +11,7 @@ import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
 import { assertActor } from "../actors/context";
+import { DynamoDb } from "../aws";
 import {
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
@@ -22,7 +23,6 @@ import { SharedErrors } from "../errors/shared";
 import { ordersTable } from "../orders/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
-import { DynamoDb } from "../utils/aws";
 import { Constants } from "../utils/constants";
 import { fn } from "../utils/shared";
 import {

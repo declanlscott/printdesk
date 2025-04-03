@@ -1,8 +1,8 @@
 import { Resource } from "sst";
 import * as v from "valibot";
 
+import { Ssm } from "../aws";
 import { useTenant } from "../tenants/context";
-import { Ssm } from "../utils/aws";
 import { Api } from "./api";
 
 export namespace Documents {

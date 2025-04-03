@@ -1,12 +1,12 @@
 import { Resource } from "sst";
 import * as v from "valibot";
 
+import { Ssm } from "../aws";
 import { Api } from "../backend/api";
 import { ServerErrors } from "../errors";
 import { useTenant } from "../tenants/context";
-import { Ssm } from "../utils/aws";
 import { Constants } from "../utils/constants";
-import { useXml } from "../utils/xml";
+import { useXml } from "../xml/context";
 import {
   xmlRpcAdjustSharedAccountAccountBalanceResponseSchema,
   xmlRpcGetSharedAccountPropertiesResponseSchema,

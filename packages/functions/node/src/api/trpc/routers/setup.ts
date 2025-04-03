@@ -1,3 +1,4 @@
+import { Credentials } from "@printworks/core/aws";
 import { Papercut } from "@printworks/core/papercut";
 import { Tenants } from "@printworks/core/tenants";
 import { useTenant } from "@printworks/core/tenants/context";
@@ -6,7 +7,6 @@ import {
   initializeDataSchema,
   registerDataSchema,
 } from "@printworks/core/tenants/shared";
-import { Credentials } from "@printworks/core/utils/aws";
 import { Constants } from "@printworks/core/utils/constants";
 import { Resource } from "sst";
 

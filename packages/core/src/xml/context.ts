@@ -1,6 +1,7 @@
-import { XMLBuilder, XMLParser } from "fast-xml-parser";
+import { Xml } from ".";
+import { Utils } from "../utils";
 
-import { Utils } from ".";
+import type { XMLBuilder, XMLParser } from "fast-xml-parser";
 
 export type XmlContext = {
   builder: XMLBuilder;
@@ -20,11 +21,3 @@ export const withXml = <TCallback extends () => ReturnType<TCallback>>(
     }),
     callback,
   );
-
-export namespace Xml {
-  export const Builder = XMLBuilder;
-  export type Builder = XMLBuilder;
-
-  export const Parser = XMLParser;
-  export type Parser = XMLParser;
-}

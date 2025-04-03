@@ -4,8 +4,8 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 import { Backend } from ".";
+import { Cloudfront, SignatureV4 } from "../aws";
 import { ServerErrors } from "../errors";
-import { Cloudfront, SignatureV4 } from "../utils/aws";
 import { buildUrl } from "../utils/shared";
 
 import type { PutEventsResponse } from "@aws-sdk/client-eventbridge";

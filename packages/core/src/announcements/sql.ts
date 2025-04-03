@@ -4,7 +4,7 @@ import { id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { announcementsTableName } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
 
 export const announcementsTable = tenantTable(announcementsTableName, {
   content: text("content").notNull(),

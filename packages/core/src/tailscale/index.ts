@@ -1,7 +1,7 @@
 import { Resource } from "sst";
 
+import { Ssm } from "../aws";
 import { useTenant } from "../tenants/context";
-import { Ssm } from "../utils/aws";
 
 export namespace Tailscale {
   export const setOauthClient = async (id: string, secret: string) =>

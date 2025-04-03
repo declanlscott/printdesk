@@ -1,8 +1,3 @@
-/**
- * NOTE: This module provides server utility functions and must remain framework-agnostic.
- * For example it should not depend on sst for linked resources. Other modules in the
- * core package may depend on sst, but this module should not.
- */
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
@@ -34,8 +29,9 @@ import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
 import * as v from "valibot";
 
-import { Utils } from ".";
-import { Constants } from "./constants";
+import { Utils } from "../utils";
+import { Constants } from "../utils/constants";
+import { useAws } from "./context";
 
 import type {
   DeleteObjectCommandInput,
@@ -55,36 +51,7 @@ import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
 import type { DsqlSignerConfig } from "@aws-sdk/dsql-signer";
 import type { SignatureV4Init } from "@smithy/signature-v4";
 import type { AwsCredentialIdentityProvider } from "@smithy/types";
-import type { NonNullableProperties, PartialExcept } from "./types";
-
-export type AwsContext = {
-  dsql?: { signer: DsqlSigner };
-  dynamoDb?: { documentClient: DynamoDBDocument };
-  sqs?: { client: SQSClient };
-  s3?: { client: S3Client };
-  sigv4?: { signers: Record<string, _SignatureV4> };
-  ssm?: { client: SSMClient };
-};
-
-export const AwsContext = Utils.createContext<AwsContext>("Aws");
-
-export function useAws<TServiceName extends keyof AwsContext>(
-  serviceName: TServiceName,
-) {
-  const service = AwsContext.use()[serviceName];
-  if (!service)
-    throw new Error(`Missing "${serviceName}" service in aws context`);
-
-  return service;
-}
-
-export const withAws = <
-  TGetContext extends () => AwsContext | Promise<AwsContext>,
-  TCallback extends () => ReturnType<TCallback>,
->(
-  getContext: TGetContext,
-  callback: TCallback,
-) => AwsContext.with(getContext, callback, { merge: true });
+import type { NonNullableProperties, PartialExcept } from "../utils/types";
 
 export namespace Cloudfront {
   export const getSignedUrl = (...args: Parameters<typeof _getSignedUrl>) =>

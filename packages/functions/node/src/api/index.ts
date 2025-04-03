@@ -1,6 +1,7 @@
 import { useActor } from "@printworks/core/actors/context";
+import { DynamoDb } from "@printworks/core/aws";
+import { withAws } from "@printworks/core/aws/context";
 import { Users } from "@printworks/core/users";
-import { DynamoDb, withAws } from "@printworks/core/utils/aws";
 import { Constants } from "@printworks/core/utils/constants";
 import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";

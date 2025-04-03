@@ -4,8 +4,8 @@ import {
   S3,
   SignatureV4,
   Sqs,
-  withAws,
-} from "@printworks/core/utils/aws";
+} from "@printworks/core/aws";
+import { withAws } from "@printworks/core/aws/context";
 import { Resource } from "sst";
 
 import { t } from "~/api/trpc";

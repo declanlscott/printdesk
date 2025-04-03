@@ -1,6 +1,6 @@
+import { Credentials } from "@printworks/core/aws";
 import { Realtime } from "@printworks/core/realtime";
 import { useTenant } from "@printworks/core/tenants/context";
-import { Credentials } from "@printworks/core/utils/aws";
 import { Resource } from "sst";
 import * as v from "valibot";
 

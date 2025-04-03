@@ -7,6 +7,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import {
+  customEnum,
   customJsonb,
   id,
   idPrimaryKey,
@@ -14,15 +15,19 @@ import {
   version,
 } from "../drizzle/columns";
 import { Constants } from "../utils/constants";
-import { licenseStatus, tenantStatus } from "../utils/sql";
 import {
   infraProgramInputSchema,
   licensesTableName,
+  licenseStatuses,
   tenantMetadataTableName,
   tenantsTableName,
+  tenantStatuses,
 } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
+
+export const licenseStatus = (name: string) =>
+  customEnum(name, licenseStatuses);
 
 export const licensesTable = pgTable(licensesTableName, {
   key: uuid("key").defaultRandom().primaryKey(),
@@ -31,6 +36,8 @@ export const licensesTable = pgTable(licensesTableName, {
 });
 export type LicensesTable = typeof licensesTable;
 export type License = InferTable<LicensesTable>;
+
+export const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
 
 export const tenantsTable = pgTable(
   tenantsTableName,

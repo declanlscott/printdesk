@@ -5,14 +5,15 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 import { withActor } from "../actors/context";
+import { Credentials, SignatureV4 } from "../aws";
+import { withAws } from "../aws/context";
 import { useTransaction } from "../drizzle/context";
 import { SharedErrors } from "../errors/shared";
+import { Graph } from "../graph";
 import { Tenants } from "../tenants";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
-import { Credentials, SignatureV4, withAws } from "../utils/aws";
 import { Constants } from "../utils/constants";
-import { Graph } from "../utils/graph";
 import { fn } from "../utils/shared";
 
 import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";

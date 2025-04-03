@@ -1,12 +1,18 @@
 import { index, varchar } from "drizzle-orm/pg-core";
 
-import { customJsonb, id } from "../drizzle/columns";
+import { customEnum, customJsonb, id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
-import { productStatus } from "../utils/sql";
-import { productConfigurationSchema, productsTableName } from "./shared";
+import {
+  productConfigurationSchema,
+  productsTableName,
+  productStatuses,
+} from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
+
+export const productStatus = (name: string) =>
+  customEnum(name, productStatuses);
 
 export const productsTable = tenantTable(
   productsTableName,

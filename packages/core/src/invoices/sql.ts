@@ -1,12 +1,14 @@
 import { index, timestamp } from "drizzle-orm/pg-core";
 import * as v from "valibot";
 
-import { customJsonb, id } from "../drizzle/columns";
+import { customEnum, customJsonb, id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
-import { invoiceStatus } from "../utils/sql";
-import { invoicesTableName, lineItemSchema } from "./shared";
+import { invoicesTableName, invoiceStatuses, lineItemSchema } from "./shared";
 
-import type { InferTable } from "../utils/types";
+import type { InferTable } from "../drizzle/tables";
+
+export const invoiceStatus = (name: string) =>
+  customEnum(name, invoiceStatuses);
 
 export const invoicesTable = tenantTable(
   invoicesTableName,

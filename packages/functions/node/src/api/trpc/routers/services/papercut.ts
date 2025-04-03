@@ -1,3 +1,4 @@
+import { Credentials } from "@printworks/core/aws";
 import { Api } from "@printworks/core/backend/api";
 import { Papercut } from "@printworks/core/papercut";
 import {
@@ -6,7 +7,6 @@ import {
 } from "@printworks/core/papercut/shared";
 import { Tenants } from "@printworks/core/tenants";
 import { useTenant } from "@printworks/core/tenants/context";
-import { Credentials } from "@printworks/core/utils/aws";
 import { TRPCError } from "@trpc/server";
 import { Resource } from "sst";
 

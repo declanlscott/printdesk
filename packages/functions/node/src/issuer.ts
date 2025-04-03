@@ -3,8 +3,9 @@ import { decodeJWT } from "@oslojs/jwt";
 import { EntraId } from "@printworks/core/auth/entra-id";
 import { subjects } from "@printworks/core/auth/subjects";
 import { SharedErrors } from "@printworks/core/errors/shared";
+import { Graph } from "@printworks/core/graph";
+import { withGraph } from "@printworks/core/graph/context";
 import { Constants } from "@printworks/core/utils/constants";
-import { Graph, withGraph } from "@printworks/core/utils/graph";
 import { handle } from "hono/aws-lambda";
 import { Resource } from "sst";
 

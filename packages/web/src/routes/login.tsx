@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import * as R from "remeda";
 import * as v from "valibot";
 
 export const Route = createFileRoute("/login")({
@@ -30,21 +31,11 @@ export const Route = createFileRoute("/login")({
           .at(0);
     if (!slug) throw new Error("Missing slug");
 
-    const res = await context.api.client.public.tenants["oauth-providers"].$get(
-      { query: { slug } },
-    );
-    if (!res.ok) {
-      switch (res.status as number) {
-        case 404:
-          throw redirect({ to: "/setup", search: isDev ? { slug } : {} });
-        case 429:
-          throw new Error("Too many requests, try again later.");
-        default:
-          throw new Error("An unexpected error occurred.");
-      }
-    }
-
-    const { providers } = await res.json();
+    const providers = await context.trpcClient.tenants.getOauthProviders.query({
+      slug,
+    });
+    if (R.isEmpty(providers))
+      throw redirect({ to: "/setup", search: isDev ? { slug } : {} });
 
     // Start the OAuth flow
     const url = await context.authStoreApi

@@ -9,7 +9,7 @@ import {
   productStatuses,
 } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 
 export const productStatus = (name: string) =>
   customEnum(name, productStatuses);
@@ -27,4 +27,4 @@ export const productsTable = tenantTable(
 
 export type ProductsTable = typeof productsTable;
 
-export type Product = InferTable<ProductsTable>;
+export type Product = InferFromTable<ProductsTable>;

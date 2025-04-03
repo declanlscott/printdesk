@@ -5,7 +5,7 @@ import { tenantTable } from "../drizzle/tables";
 import { Constants } from "../utils/constants";
 import { orderAttributesSchema, ordersTableName } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 
 export const ordersTable = tenantTable(
   ordersTableName,
@@ -29,4 +29,4 @@ export const ordersTable = tenantTable(
 
 export type OrdersTable = typeof ordersTable;
 
-export type Order = InferTable<OrdersTable>;
+export type Order = InferFromTable<OrdersTable>;

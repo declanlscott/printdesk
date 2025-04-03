@@ -9,7 +9,7 @@ import {
   billingAccountsTableName,
 } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 import type { Discriminate } from "../utils/types";
 
 export const billingAccountOrigin = (name: string) =>
@@ -34,7 +34,7 @@ export const billingAccountsTable = tenantTable(
   ],
 );
 export type BillingAccountsTable = typeof billingAccountsTable;
-export type BillingAccount = InferTable<BillingAccountsTable>;
+export type BillingAccount = InferFromTable<BillingAccountsTable>;
 export type BillingAccountByOrigin<
   TBillingAccountOrigin extends BillingAccount["origin"],
 > = Discriminate<BillingAccount, "origin", TBillingAccountOrigin>;
@@ -53,7 +53,7 @@ export const billingAccountCustomerAuthorizationsTable = tenantTable(
 export type BillingAccountCustomerAuthorizationsTable =
   typeof billingAccountCustomerAuthorizationsTable;
 export type BillingAccountCustomerAuthorization =
-  InferTable<BillingAccountCustomerAuthorizationsTable>;
+  InferFromTable<BillingAccountCustomerAuthorizationsTable>;
 
 export const billingAccountManagerAuthorizationsTable = tenantTable(
   billingAccountManagerAuthorizationsTableName,
@@ -69,4 +69,4 @@ export const billingAccountManagerAuthorizationsTable = tenantTable(
 export type BillingAccountManagerAuthorizationsTable =
   typeof billingAccountManagerAuthorizationsTable;
 export type BillingAccountManagerAuthorization =
-  InferTable<BillingAccountManagerAuthorizationsTable>;
+  InferFromTable<BillingAccountManagerAuthorizationsTable>;

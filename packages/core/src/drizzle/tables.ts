@@ -66,7 +66,7 @@ export const tenantTable = <
     ],
   );
 
-export type InferTable<TTable extends Table> = Omit<
+export type InferFromTable<TTable extends Table> = Omit<
   InferSelectModel<TTable>,
   "version"
 >;

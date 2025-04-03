@@ -4,7 +4,7 @@ import { customEnum } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { userOrigins, userRoles, usersTableName } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 import type { Discriminate } from "../utils/types";
 
 export const userOrigin = (name: string) => customEnum(name, userOrigins);
@@ -33,7 +33,7 @@ export const usersTable = tenantTable(
 
 export type UsersTable = typeof usersTable;
 
-export type User = InferTable<UsersTable>;
+export type User = InferFromTable<UsersTable>;
 export type UserByOrigin<TUserOrigin extends User["origin"]> = Discriminate<
   User,
   "origin",

@@ -5,7 +5,7 @@ import { tenantTable } from "../drizzle/tables";
 import { userRoles } from "../users/shared";
 import { commentsTableName } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 
 export const commentsTable = tenantTable(
   commentsTableName,
@@ -20,4 +20,4 @@ export const commentsTable = tenantTable(
 
 export type CommentsTable = typeof commentsTable;
 
-export type Comment = InferTable<CommentsTable>;
+export type Comment = InferFromTable<CommentsTable>;

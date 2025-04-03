@@ -21,7 +21,7 @@ import {
   workflowStatusTypes,
 } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 
 export const roomStatus = (name: string) => customEnum(name, roomStatuses);
 
@@ -38,7 +38,7 @@ export const roomsTable = tenantTable(
   ],
 );
 export type RoomsTable = typeof roomsTable;
-export type Room = InferTable<RoomsTable>;
+export type Room = InferFromTable<RoomsTable>;
 
 export const workflowStatusType = (name: string) =>
   customEnum(name, workflowStatusTypes);
@@ -63,7 +63,7 @@ export const workflowStatusesTable = pgTable(
   ],
 );
 export type WorkflowStatusesTable = typeof workflowStatusesTable;
-export type WorkflowStatus = InferTable<WorkflowStatusesTable>;
+export type WorkflowStatus = InferFromTable<WorkflowStatusesTable>;
 
 export const deliveryOptionsTable = pgTable(
   deliveryOptionsTableName,
@@ -89,4 +89,4 @@ export const deliveryOptionsTable = pgTable(
   ],
 );
 export type DeliveryOptionsTable = typeof deliveryOptionsTable;
-export type DeliveryOption = InferTable<DeliveryOptionsTable>;
+export type DeliveryOption = InferFromTable<DeliveryOptionsTable>;

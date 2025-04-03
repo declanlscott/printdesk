@@ -11,7 +11,7 @@ import type {
   WriteTransaction,
 } from "replicache";
 import type { SyncedTableName, TableByName } from "../data";
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 import type { User } from "../users/sql";
 import type { Serialized } from "./shared";
 
@@ -93,9 +93,9 @@ export namespace Replicache {
     const value = (await tx.get(`${name}/${id}`)) as Serialized | undefined;
     if (!value) throw new SharedErrors.NotFound({ name, id });
 
-    return deserialize<DeepReadonlyObject<InferTable<TableByName<TTableName>>>>(
-      value,
-    );
+    return deserialize<
+      DeepReadonlyObject<InferFromTable<TableByName<TTableName>>>
+    >(value);
   }
 
   export const scan = async <TTableName extends SyncedTableName>(
@@ -106,7 +106,9 @@ export namespace Replicache {
       tx.scan({ prefix: `${name}/` }).toArray() as Promise<Array<Serialized>>
     ).then(
       R.map(
-        deserialize<DeepReadonlyObject<InferTable<TableByName<TTableName>>>>,
+        deserialize<
+          DeepReadonlyObject<InferFromTable<TableByName<TTableName>>>
+        >,
       ),
     );
 
@@ -114,7 +116,7 @@ export namespace Replicache {
     tx: WriteTransaction,
     name: TTableName,
     id: string,
-    value: DeepReadonlyObject<InferTable<TableByName<TTableName>>>,
+    value: DeepReadonlyObject<InferFromTable<TableByName<TTableName>>>,
   ) => tx.set(`${name}/${id}`, serialize(value) as Serialized);
 
   export async function del(

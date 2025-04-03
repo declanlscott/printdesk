@@ -5,7 +5,7 @@ import { customEnum, customJsonb, id } from "../drizzle/columns";
 import { tenantTable } from "../drizzle/tables";
 import { invoicesTableName, invoiceStatuses, lineItemSchema } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 
 export const invoiceStatus = (name: string) =>
   customEnum(name, invoiceStatuses);
@@ -23,4 +23,4 @@ export const invoicesTable = tenantTable(
 
 export type InvoicesTable = typeof invoicesTable;
 
-export type Invoice = InferTable<InvoicesTable>;
+export type Invoice = InferFromTable<InvoicesTable>;

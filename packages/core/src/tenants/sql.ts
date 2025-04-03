@@ -24,7 +24,7 @@ import {
   tenantStatuses,
 } from "./shared";
 
-import type { InferTable } from "../drizzle/tables";
+import type { InferFromTable } from "../drizzle/tables";
 
 export const licenseStatus = (name: string) =>
   customEnum(name, licenseStatuses);
@@ -35,7 +35,7 @@ export const licensesTable = pgTable(licensesTableName, {
   status: licenseStatus("status").notNull().default("active"),
 });
 export type LicensesTable = typeof licensesTable;
-export type License = InferTable<LicensesTable>;
+export type License = InferFromTable<LicensesTable>;
 
 export const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
 
@@ -52,7 +52,7 @@ export const tenantsTable = pgTable(
   (table) => [uniqueIndex().on(table.slug)],
 );
 export type TenantsTable = typeof tenantsTable;
-export type Tenant = InferTable<TenantsTable>;
+export type Tenant = InferFromTable<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   tenantId: id("tenant_id").primaryKey(),
@@ -65,4 +65,4 @@ export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;
-export type TenantMetadata = InferTable<TenantMetadataTable>;
+export type TenantMetadata = InferFromTable<TenantMetadataTable>;

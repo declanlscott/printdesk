@@ -20,7 +20,6 @@ export function InitializingStatusItem() {
     case "dispatchInfra":
     case "waitForInfra":
     case "healthcheck":
-    case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
     case "testPapercutConnection":
@@ -36,7 +35,6 @@ export function InitializingStatusItem() {
         case "dispatchInfra":
         case "waitForInfra":
         case "healthcheck":
-        case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
         case "testPapercutConnection":

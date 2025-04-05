@@ -4,7 +4,7 @@ import { createActorContext } from "@xstate/react";
 import * as v from "valibot";
 
 import { useSetupState } from "~/lib/hooks/setup";
-import { getSetupMachine } from "~/lib/machines/setup";
+import { setupMachine } from "~/lib/machines/setup";
 import { SetupStatus } from "~/routes/setup/-components/status";
 import { SetupWizard } from "~/routes/setup/-components/wizard";
 
@@ -32,14 +32,17 @@ export const Route = createFileRoute("/setup/")({
     if (!slug) throw new Error("Missing slug");
 
     const isAvailable = await context.trpcClient.tenants.isSlugAvailable.query({
-      value: slug,
+      slug,
     });
     if (!isAvailable) throw new Error(`"${slug}" is unavailable to register.`);
 
-    const SetupMachineContext = createActorContext(
-      getSetupMachine(context.api.client, context.resource),
-      { input: { tenantSlug: slug } },
-    );
+    const SetupMachineContext = createActorContext(setupMachine, {
+      input: {
+        tenantSlug: slug,
+        resource: context.resource,
+        trpcClient: context.trpcClient,
+      },
+    });
 
     return { SetupMachineContext };
   },

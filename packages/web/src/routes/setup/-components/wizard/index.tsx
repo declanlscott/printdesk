@@ -22,7 +22,8 @@ export function SetupWizard() {
   const progress = useMemo(() => {
     const step = state.split("step").slice(-1).at(0);
     if (!step) return NaN;
-    if (step.toLowerCase() === "review") return 100;
+    if (step === "isLicenseKeyAvailable") return 20;
+    if (step === "review") return 100;
 
     return (parseInt(step) / 5) * 100;
   }, [state]);
@@ -76,6 +77,7 @@ function SetupWizardStep() {
 
   switch (state) {
     case "step1":
+    case "isLicenseKeyAvailable":
       return <SetupWizardStep1 />;
     case "step2":
       return <SetupWizardStep2 />;

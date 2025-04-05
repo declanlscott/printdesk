@@ -67,7 +67,5 @@ export const setupRouter = t.router({
       }),
     })
     .use(executeApiSigner)
-    .mutation(async () => {
-      await Papercut.testConnection();
-    }),
+    .query(async () => Papercut.testConnection()),
 });

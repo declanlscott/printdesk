@@ -1,12 +1,10 @@
 import { setupWizardStep1Schema } from "@printworks/core/tenants/shared";
 import { ArrowRight } from "lucide-react";
 import * as R from "remeda";
-import { toast } from "sonner";
 
-import { useTRPCClient } from "~/lib/contexts/trpc";
 import { useAppForm } from "~/lib/hooks/form";
 import { useResource } from "~/lib/hooks/resource";
-import { useSetupMachine } from "~/lib/hooks/setup";
+import { useSetupMachine, useSetupWizardState } from "~/lib/hooks/setup";
 import { Card, CardContent } from "~/ui/primitives/card";
 import { Link } from "~/ui/primitives/link";
 
@@ -21,21 +19,15 @@ export function SetupWizardStep1() {
     tenantSlug: context.tenantSlug,
   }));
 
-  const trpcClient = useTRPCClient();
-
   const form = useAppForm({
     validators: { onSubmit: setupWizardStep1Schema },
     defaultValues,
-    onSubmit: async ({ value }) => {
-      const isAvailable = await trpcClient.tenants.isLicenseKeyAvailable.query({
-        value: value.licenseKey,
-      });
-
-      if (!isAvailable) return toast.error("License key is not available.");
-
-      actorRef.send({ type: "wizard.step1.next", ...value });
-    },
+    onSubmit: async ({ value }) =>
+      actorRef.send({ type: "wizard.step1.next", ...value }),
   });
+
+  const isValidatingLicenseKey =
+    useSetupWizardState() === "isLicenseKeyAvailable";
 
   const { AppData } = useResource();
 
@@ -126,7 +118,10 @@ export function SetupWizardStep1() {
 
       <div className="flex justify-end">
         <form.AppForm>
-          <form.SubmitButton>
+          <form.SubmitButton
+            isDisabled={isValidatingLicenseKey}
+            isLoading={isValidatingLicenseKey}
+          >
             Next
             <ArrowRight className="size-5" />
           </form.SubmitButton>

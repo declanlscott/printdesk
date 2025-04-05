@@ -21,7 +21,6 @@ export function RegisteringStatusItem() {
     case "dispatchInfra":
     case "waitForInfra":
     case "healthcheck":
-    case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
     case "testPapercutConnection":
@@ -37,7 +36,6 @@ export function RegisteringStatusItem() {
         case "dispatchInfra":
         case "waitForInfra":
         case "healthcheck":
-        case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
         case "testPapercutConnection":

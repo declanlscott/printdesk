@@ -18,10 +18,10 @@ export function SubmitButton(props: SubmitButtonProps) {
       {({ canSubmit, isSubmitting }) => (
         <Button
           type="submit"
-          isDisabled={!canSubmit}
-          isLoading={isSubmitting}
           className="gap-2"
           {...props}
+          isDisabled={!canSubmit || props.isDisabled}
+          isLoading={isSubmitting || props.isLoading}
         />
       )}
     </form.Subscribe>

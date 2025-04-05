@@ -20,7 +20,6 @@ export function DeployingStatusItem() {
     case "waitForInfra":
       return <PendingItem name={name} />;
     case "healthcheck":
-    case "determineHealth":
     case "waitForGoodHealth":
       return <PendingItem name={name} isActive />;
     case "configure":
@@ -36,7 +35,6 @@ export function DeployingStatusItem() {
         case "waitForInfra":
           return <PendingItem name={name} />;
         case "healthcheck":
-        case "determineHealth":
         case "waitForGoodHealth":
           return <FailureItem name={name} isActive />;
         case "configure":

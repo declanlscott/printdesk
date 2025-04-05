@@ -1,7 +1,5 @@
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
-import { Constants } from "@printworks/core/utils/constants";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { AlertCircle, ArrowLeft, CircleCheckBig, LogIn } from "lucide-react";
 
 import logo from "~/assets/logo.svg";
@@ -19,8 +17,6 @@ import { buttonStyles } from "~/styles/components/primitives/button";
 import { Alert, AlertDescription, AlertTitle } from "~/ui/primitives/alert";
 import { Button } from "~/ui/primitives/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/ui/primitives/card";
-
-import type { Router } from "@printworks/functions/api/trpc/routers";
 
 export function SetupStatus() {
   const state = useSetupStatusState();
@@ -129,33 +125,9 @@ export function SetupStatus() {
 }
 
 function PostInitializedStatusItems() {
-  const { apiKey, tenantId } = useSetupMachine().useSelector(({ context }) => ({
-    apiKey: context.apiKey,
-    tenantId: context.tenantId,
+  const { trpcClient } = useSetupMachine().useSelector(({ context }) => ({
+    trpcClient: context.trpcClient,
   }));
-
-  const resource = useResource();
-
-  const trpcClient = useMemo(
-    () =>
-      createTRPCClient<Router>({
-        links: [
-          httpBatchLink({
-            url: new URL("/trpc", resource.ApiReverseProxy.url),
-            headers: () => {
-              if (!apiKey || !tenantId)
-                throw new Error("Missing API key and/or tenant ID");
-
-              return {
-                Authorization: `Bearer ${apiKey}`,
-                [Constants.HEADER_NAMES.TENANT_ID]: tenantId,
-              };
-            },
-          }),
-        ],
-      }),
-    [resource.ApiReverseProxy.url, apiKey, tenantId],
-  );
 
   const webSocketUrlProvider = useCallback(
     async () => trpcClient.realtime.getPublicUrl.query(),

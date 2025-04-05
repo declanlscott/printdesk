@@ -32,7 +32,6 @@ export function ProvisioningStatusItem() {
         <PendingItem name={name} isActive />
       );
     case "healthcheck":
-    case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
     case "testPapercutConnection":
@@ -48,7 +47,6 @@ export function ProvisioningStatusItem() {
         case "waitForInfra":
           return <FailureItem name={name} isActive />;
         case "healthcheck":
-        case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
         case "testPapercutConnection":

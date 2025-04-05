@@ -19,7 +19,6 @@ export function TestingPapercutConnectionStatusItem() {
     case "dispatchInfra":
     case "waitForInfra":
     case "healthcheck":
-    case "determineHealth":
     case "waitForGoodHealth":
     case "configure":
       return <PendingItem name={name} />;
@@ -35,7 +34,6 @@ export function TestingPapercutConnectionStatusItem() {
         case "dispatchInfra":
         case "waitForInfra":
         case "healthcheck":
-        case "determineHealth":
         case "waitForGoodHealth":
         case "configure":
           return <PendingItem name={name} />;

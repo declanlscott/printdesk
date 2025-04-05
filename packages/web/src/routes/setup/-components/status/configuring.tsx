@@ -19,7 +19,6 @@ export function ConfiguringStatusItem() {
     case "dispatchInfra":
     case "waitForInfra":
     case "healthcheck":
-    case "determineHealth":
     case "waitForGoodHealth":
       return <PendingItem name={name} />;
     case "configure":
@@ -35,7 +34,6 @@ export function ConfiguringStatusItem() {
         case "dispatchInfra":
         case "waitForInfra":
         case "healthcheck":
-        case "determineHealth":
         case "waitForGoodHealth":
           return <PendingItem name={name} />;
         case "configure":

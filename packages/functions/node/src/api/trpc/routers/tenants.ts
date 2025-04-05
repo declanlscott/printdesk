@@ -9,11 +9,13 @@ import { publicProcedure } from "~/api/trpc/procedures/public";
 
 export const tenantsRouter = t.router({
   isSlugAvailable: publicProcedure
-    .input(v.object({ value: tenantSlugSchema }))
-    .query(async ({ input }) => Tenants.isSlugAvailable(input.value)),
+    .input(v.object({ slug: tenantSlugSchema }))
+    .query(async ({ input }) => Tenants.isSlugAvailable(input.slug)),
   isLicenseKeyAvailable: publicProcedure
-    .input(v.object({ value: v.pipe(v.string(), v.trim(), v.uuid()) }))
-    .query(async ({ input }) => Tenants.isLicenseKeyAvailable(input.value)),
+    .input(v.object({ licenseKey: v.pipe(v.string(), v.trim(), v.uuid()) }))
+    .query(async ({ input }) =>
+      Tenants.isLicenseKeyAvailable(input.licenseKey),
+    ),
   getOauthProviders: publicProcedure
     .input(v.object({ slug: tenantSlugSchema }))
     .query(async ({ input }) =>

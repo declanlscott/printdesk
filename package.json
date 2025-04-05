@@ -12,10 +12,10 @@
     "format:write": "prettier --write ."
   },
   "dependencies": {
-    "@aws-sdk/client-appsync": "^3.777.0",
-    "@aws-sdk/client-dsql": "^3.777.0",
-    "@aws-sdk/credential-providers": "^3.778.0",
-    "@aws-sdk/dsql-signer": "^3.778.0",
+    "@aws-sdk/client-appsync": "^3.782.0",
+    "@aws-sdk/client-dsql": "^3.782.0",
+    "@aws-sdk/credential-providers": "^3.782.0",
+    "@aws-sdk/dsql-signer": "^3.782.0",
     "@openauthjs/openauth": "^0.4.3",
     "@printworks/core": "workspace:*",
     "date-fns": "^4.1.0",
@@ -23,15 +23,15 @@
     "hono": "^4.7.5",
     "remeda": "^2.21.2",
     "replicache": "^15.0.1",
-    "sst": "^3.11.21",
+    "sst": "^3.12.3",
     "superjson": "^2.2.2",
     "valibot": "^1.0.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-sts": "^3.777.0",
+    "@aws-sdk/client-sts": "^3.782.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@smithy/util-waiter": "^4.0.3",
-    "@tanstack/eslint-plugin-query": "^5.68.0",
+    "@tanstack/eslint-plugin-query": "^5.71.5",
     "@tanstack/eslint-plugin-router": "^1.114.29",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/node22": "^22.0.1",
@@ -47,7 +47,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "^0.14.1",
     "prettier-plugin-tailwindcss": "^0.6.11",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "pnpm": {
     "patchedDependencies": {

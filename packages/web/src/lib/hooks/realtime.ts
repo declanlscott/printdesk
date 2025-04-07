@@ -6,8 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 
-import { RealtimeContext } from "~/lib/contexts/realtime";
-import { useTRPC } from "~/lib/contexts/trpc";
+import { RealtimeContext } from "~/lib/contexts/stores/realtime";
+import { useTrpc } from "~/lib/hooks/trpc";
 
 import type { StartsWith } from "@printworks/core/utils/types";
 
@@ -42,7 +42,7 @@ export function useRealtimeChannel<TChannel extends string>(
     useShallow(({ isConnected }) => isConnected),
   );
 
-  const trpc = useTRPC();
+  const trpc = useTrpc();
 
   const { data: authorization } = useQuery(
     trpc.realtime.getAuth.queryOptions(

@@ -5,11 +5,11 @@ import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { createStore } from "zustand/vanilla";
 
-import { RealtimeContext } from "~/lib/contexts/realtime";
+import { RealtimeContext } from "~/lib/contexts/stores/realtime";
 
 import type { PropsWithChildren } from "react";
 import type { UrlProvider } from "partysocket/ws";
-import type { RealtimeStore } from "~/lib/stores/realtime";
+import type { RealtimeStore } from "~/lib/contexts/stores/realtime";
 
 export type WebSocketProviderProps = PropsWithChildren<{
   urlProvider: UrlProvider;

@@ -5,9 +5,8 @@ import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
-import { useAuth } from "~/lib/hooks/auth";
+import { useAuth, useAuthActions } from "~/lib/hooks/auth";
 import { useResource } from "~/lib/hooks/resource";
-import { AuthStoreApi } from "~/lib/stores/auth";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { PropsWithChildren } from "react";
@@ -20,11 +19,10 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user ? { status: "initializing" } : { status: "uninitialized" },
   );
 
-  const { AppData, ReplicacheLicenseKey } = useResource();
+  const { ApiReverseProxy, AppData, ReplicacheLicenseKey } = useResource();
+  const apiBaseUrl = ApiReverseProxy.url;
 
-  const baseUrl = useResource().ApiReverseProxy.url;
-
-  const { getAuth, refresh } = AuthStoreApi.useActions();
+  const { getAuth, refresh } = useAuthActions();
 
   useEffect(() => {
     if (!user) return setReplicache(() => ({ status: "uninitialized" }));
@@ -35,12 +33,12 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       logLevel: AppData.isDev ? "info" : "error",
       mutators: createMutators(user.id),
       auth: getAuth(),
-      pullURL: new URL("/replicache/pull", baseUrl).toString(),
+      pullURL: new URL("/replicache/pull", apiBaseUrl).toString(),
       pusher: async (req) => {
         if (req.pushVersion !== 1)
           throw new Error(`Unsupported push version: ${req.pushVersion}`);
 
-        const res = await fetch(new URL("/replicache/push", baseUrl), {
+        const res = await fetch(new URL("/replicache/push", apiBaseUrl), {
           method: "POST",
           headers: {
             Authorization: getAuth(),
@@ -84,7 +82,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       void client.close();
     };
   }, [
-    baseUrl,
+    apiBaseUrl,
     AppData.isDev,
     getAuth,
     refresh,

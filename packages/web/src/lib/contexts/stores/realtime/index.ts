@@ -1,4 +1,8 @@
+import { createContext } from "react";
+
+import type { useWebSocket } from "partysocket/react";
 import type ReconnectingWebSocket from "partysocket/ws";
+import type { StoreApi } from "zustand/vanilla";
 
 export type RealtimeStore = {
   isConnected: boolean;
@@ -13,3 +17,10 @@ export type RealtimeStore = {
     cancelTimer: () => void;
   };
 };
+
+export type RealtimeContext = {
+  storeApi: StoreApi<RealtimeStore>;
+  webSocket: ReturnType<typeof useWebSocket>;
+};
+
+export const RealtimeContext = createContext<RealtimeContext | null>(null);

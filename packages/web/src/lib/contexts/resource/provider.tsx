@@ -1,19 +1,22 @@
 import { useRef } from "react";
+import { Constants } from "@printworks/core/utils/constants";
+import { parseResource } from "@printworks/core/utils/shared";
 
 import { ResourceContext } from "~/lib/contexts/resource";
 
 import type { PropsWithChildren } from "react";
 import type { ViteResource } from "~/types";
 
-type ResourceProviderProps = PropsWithChildren<{
-  resource: ViteResource;
-}>;
+const resource = parseResource<ViteResource>(
+  Constants.VITE_RESOURCE_PREFIX,
+  import.meta.env,
+);
 
-export function ResourceProvider(props: ResourceProviderProps) {
-  const resource = useRef(props.resource).current;
+export function ResourceProvider(props: PropsWithChildren) {
+  const value = useRef(resource).current;
 
   return (
-    <ResourceContext.Provider value={resource}>
+    <ResourceContext.Provider value={value}>
       {props.children}
     </ResourceContext.Provider>
   );

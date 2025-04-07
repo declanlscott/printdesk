@@ -13,12 +13,12 @@ import type {
   SetupWizardStep4,
 } from "@printworks/core/tenants/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
-import type { Router } from "@printworks/functions/api/trpc/routers";
+import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
 import type { ViteResource } from "~/types";
 
 interface SetupMachineInput extends Pick<SetupWizard, "tenantSlug"> {
   resource: ViteResource;
-  trpcClient: ReturnType<typeof createTRPCClient<Router>>;
+  trpcClient: ReturnType<typeof createTRPCClient<TrpcRouter>>;
 }
 
 interface SetupMachineContext extends SetupWizard {
@@ -283,7 +283,7 @@ export const setupMachine = setup({
               actions: assign({
                 tenantId: ({ event }) => event.output.tenantId,
                 trpcClient: ({ context, event }) =>
-                  createTRPCClient<Router>({
+                  createTRPCClient<TrpcRouter>({
                     links: [
                       httpBatchLink({
                         url: new URL(
@@ -401,7 +401,7 @@ export const setupMachine = setup({
               target: "#setup.wizard.review",
               actions: assign({
                 trpcClient: ({ context }) =>
-                  createTRPCClient<Router>({
+                  createTRPCClient<TrpcRouter>({
                     links: [
                       httpBatchLink({
                         url: new URL(

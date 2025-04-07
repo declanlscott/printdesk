@@ -8,13 +8,13 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 
-import type { Router } from "@printworks/functions/api/trpc/routers";
+import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
 import type { QueryClient } from "@tanstack/react-query";
 import type { TRPCClient } from "@trpc/client";
 import type { StoreApi } from "zustand";
 import type { ReplicacheContext } from "~/lib/contexts/replicache";
 import type { ResourceContext } from "~/lib/contexts/resource";
-import type { AuthStore } from "~/lib/stores/auth";
+import type { AuthStore } from "~/lib/contexts/stores/auth";
 
 const TanStackRouterDevtools = import.meta.env.DEV
   ? lazy(() =>
@@ -30,7 +30,7 @@ type RouterContext = {
   queryClient: QueryClient;
   authStoreApi: StoreApi<AuthStore>;
   replicache: ReplicacheContext;
-  trpcClient: TRPCClient<Router>;
+  trpcClient: TRPCClient<TrpcRouter>;
 };
 
 export const Route = createRootRouteWithContext<RouterContext>()({

@@ -9,11 +9,11 @@ import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
 import * as R from "remeda";
 
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
+import { useAuthActions } from "~/lib/hooks/auth";
 import { useCommandBar, useCommandBarActions } from "~/lib/hooks/command-bar";
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 import { links } from "~/lib/links";
-import { AuthStoreApi } from "~/lib/stores/auth";
 import { EnforceAbac, EnforceRouteAbac } from "~/ui/access-control";
 import { Avatar, AvatarImage } from "~/ui/primitives/avatar";
 import {
@@ -101,7 +101,7 @@ function HomeCommand(_props: HomeCommandProps) {
   const rooms = useSubscribe(Rooms.all(), { defaultData: [] });
   const users = useSubscribe(Users.all(), { defaultData: [] });
 
-  const { logout } = AuthStoreApi.useActions();
+  const { logout } = useAuthActions();
 
   const handleNavigation = async (to: ToOptions) =>
     navigate(to).then(() => state?.close());

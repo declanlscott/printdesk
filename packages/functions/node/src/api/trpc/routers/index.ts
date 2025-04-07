@@ -15,4 +15,4 @@ export const router = t.router({
   users: usersRouter,
 });
 
-export type Router = typeof router;
+export type TrpcRouter = typeof router;

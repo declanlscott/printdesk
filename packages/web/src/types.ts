@@ -28,7 +28,7 @@ export type ViteResource = {
 
 declare module "@tanstack/react-router" {
   interface Register {
-    router: AppRouter;
+    router: ReactRouter;
   }
 }
 
@@ -48,7 +48,7 @@ declare module "@tanstack/react-table" {
   }
 }
 
-export type AppRouter = ReturnType<
+export type ReactRouter = ReturnType<
   typeof createRouter<typeof routeTree, "never", true>
 >;
 

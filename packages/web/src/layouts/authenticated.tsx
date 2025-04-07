@@ -2,16 +2,16 @@ import { useCallback } from "react";
 import { Constants } from "@printworks/core/utils/constants";
 import { Outlet } from "@tanstack/react-router";
 
-import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
-import { useTRPCClient } from "~/lib/contexts/trpc";
+import { CommandBarStoreApiProvider } from "~/lib/contexts/stores/command-bar/provider";
+import { RealtimeProvider } from "~/lib/contexts/stores/realtime/provider";
 import { useRealtimeChannel } from "~/lib/hooks/realtime";
 import { useReplicache } from "~/lib/hooks/replicache";
+import { useTrpcClient } from "~/lib/hooks/trpc";
 import { useUser } from "~/lib/hooks/user";
-import { CommandBarStoreApi } from "~/lib/stores/command-bar";
 import { MainNav } from "~/ui/nav/main";
 
 export function AuthenticatedLayout() {
-  const trpcClient = useTRPCClient();
+  const trpcClient = useTrpcClient();
 
   const webSocketUrlProvider = useCallback(
     async () => trpcClient.realtime.getUrl.query(),
@@ -49,14 +49,12 @@ function Realtime() {
   useRealtimeChannel(`/replicache/tenant`, pullOnPoke);
 
   return (
-    <CommandBarStoreApi.Provider
-      input={{ input: "", pages: [{ kind: "home" }] }}
-    >
+    <CommandBarStoreApiProvider>
       <MainNav />
 
       <main className="bg-muted/40 min-h-[calc(100vh_-_theme(spacing.16))]">
         <Outlet />
       </main>
-    </CommandBarStoreApi.Provider>
+    </CommandBarStoreApiProvider>
   );
 }

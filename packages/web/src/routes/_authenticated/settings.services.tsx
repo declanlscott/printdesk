@@ -10,8 +10,8 @@ import { KeySquare, Link } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
 
-import { useTRPC } from "~/lib/contexts/trpc";
 import { useAppForm } from "~/lib/hooks/form";
+import { useTrpc } from "~/lib/hooks/trpc";
 import { labelStyles } from "~/styles/components/primitives/field";
 import { Button } from "~/ui/primitives/button";
 import {
@@ -48,7 +48,7 @@ function RouteComponent() {
 }
 
 function TailscaleCard() {
-  const trpc = useTRPC();
+  const trpc = useTrpc();
 
   const isUpdatingOauthClient =
     useIsMutating({
@@ -90,7 +90,7 @@ function TailscaleCard() {
 }
 
 function UpdateTailscaleOauthClient() {
-  const trpc = useTRPC();
+  const trpc = useTrpc();
   const setOauthClient = useMutation(
     trpc.services.tailscale.setOauthClient.mutationOptions({
       onSuccess: () =>
@@ -177,7 +177,7 @@ function UpdateTailscaleOauthClient() {
 }
 
 function PapercutCard() {
-  const trpc = useTRPC();
+  const trpc = useTrpc();
 
   const isUpdatingTailnetUri =
     useIsMutating({
@@ -246,7 +246,7 @@ function PapercutCard() {
 }
 
 function UpdatePapercutServerTailnetUri() {
-  const trpc = useTRPC();
+  const trpc = useTrpc();
 
   const setServerTailnetUri = useMutation(
     trpc.services.papercut.setServerTailnetUri.mutationOptions({
@@ -321,7 +321,7 @@ function UpdatePapercutServerTailnetUri() {
 }
 
 function UpdatePapercutServerAuthToken() {
-  const trpc = useTRPC();
+  const trpc = useTrpc();
 
   const setServerAuthToken = useMutation(
     trpc.services.papercut.setServerAuthToken.mutationOptions({

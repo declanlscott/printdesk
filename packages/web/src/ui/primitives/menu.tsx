@@ -50,7 +50,12 @@ export const Menu = <TItem extends object>({
   className,
   ...props
 }: MenuProps<TItem>) => (
-  <AriaMenu className={menuStyles().root({ className })} {...props} />
+  <AriaMenu
+    className={composeRenderProps(className, (className, renderProps) =>
+      menuStyles().root({ ...renderProps, className }),
+    )}
+    {...props}
+  />
 );
 
 export interface MenuItemProps extends ComponentProps<typeof AriaMenuItem> {

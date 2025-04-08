@@ -8,7 +8,7 @@ export const www = new sst.aws.Astro("Www", {
     name: $interpolate`www.${fqdn}`,
     dns: sst.cloudflare.dns(),
   },
-  server: { edge: siteEdgeProtection },
+  edge: siteEdgeProtection,
 });
 
 export const outputs = {

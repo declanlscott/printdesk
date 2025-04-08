@@ -1,5 +1,5 @@
-aws-lambda-powertools[parser,tracer]~=3.9.0
-boto3~=1.37.28
+aws-lambda-powertools[parser,tracer]~=3.10.0
+boto3~=1.37.29
 pulumi~=3.160.0
 pulumi-aws~=6.75.0
 pulumi-cloudflare~=5.49.1

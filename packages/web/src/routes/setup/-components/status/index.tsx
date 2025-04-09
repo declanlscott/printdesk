@@ -4,7 +4,7 @@ import { AlertCircle, ArrowLeft, CircleCheckBig, LogIn } from "lucide-react";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
-import { RealtimeProvider } from "~/lib/contexts/realtime/provider";
+import { RealtimeProvider } from "~/lib/contexts/stores/realtime/provider";
 import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
 import { ConfiguringStatusItem } from "~/routes/setup/-components/status/configuring";

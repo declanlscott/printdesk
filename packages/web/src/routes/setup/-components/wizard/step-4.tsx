@@ -74,7 +74,7 @@ export function SetupWizardStep4() {
               <CardDescription>
                 Configure your PaperCut so that{" "}
                 <CopyText text="100.64.0.0/255.192.0.0" /> is included in the
-                list of approved addresses. Then, add a secret token to the{" "}
+                list of allowed addresses. Then, add a secret token to the{" "}
                 <CopyText text="auth.webservices.auth-token" /> config key.
               </CardDescription>
 

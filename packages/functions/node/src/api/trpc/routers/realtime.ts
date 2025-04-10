@@ -6,14 +6,12 @@ import * as v from "valibot";
 
 import { t } from "~/api/trpc";
 import { appsyncSigner, executeApiSigner } from "~/api/trpc/middleware/aws";
-import {
-  systemProcedure,
-  userProcedure,
-} from "~/api/trpc/procedures/protected";
+import { userProcedure } from "~/api/trpc/procedures/protected";
+import { publicProcedure } from "~/api/trpc/procedures/public";
 
 export const realtimeRouter = t.router({
-  getPublicUrl: systemProcedure.query(async () => Realtime.getUrl()),
-  getPublicAuth: systemProcedure
+  getPublicUrl: publicProcedure.query(async () => Realtime.getUrl()),
+  getPublicAuth: publicProcedure
     .input(
       v.object({ channel: v.optional(v.pipe(v.string(), v.startsWith("/"))) }),
     )

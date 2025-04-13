@@ -31,6 +31,7 @@ import * as v from "valibot";
 
 import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
+import { delimitToken, splitToken } from "../utils/shared";
 import { useAws } from "./context";
 
 import type {
@@ -104,7 +105,9 @@ export namespace DynamoDb {
   export const documentClient = () => useAws("dynamoDb").documentClient;
 
   export const delimitKey = (...segments: Array<string>) =>
-    segments.join(Constants.TOKEN_DELIMITER) + Constants.TOKEN_DELIMITER;
+    delimitToken(...segments) + Constants.TOKEN_DELIMITER;
+
+  export const splitKey = (key: string) => splitToken(key).slice(0, -1);
 }
 
 export namespace S3 {

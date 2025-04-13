@@ -125,3 +125,9 @@ export const buildUrl = <TPath extends string>({
   fqdn: string;
   path: StartsWith<"/", TPath>;
 }) => new URL(`${protocol}//${fqdn}${path}`);
+
+export const delimitToken = (...segments: Array<string>) =>
+  segments.join(Constants.TOKEN_DELIMITER);
+
+export const splitToken = (token: string) =>
+  token.split(Constants.TOKEN_DELIMITER);

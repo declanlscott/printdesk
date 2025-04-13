@@ -44,9 +44,8 @@ export const handler: DynamoDBStreamHandler = async (event) =>
                 v.string(),
                 v.regex(Constants.MONTH_TRUNCATED_ISO_DATE_REGEX),
               ),
-              v.literal(""),
             ]),
-            pk.split(Constants.TOKEN_DELIMITER),
+            DynamoDb.splitKey(pk),
           );
 
           await withActor(

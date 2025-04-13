@@ -7,7 +7,7 @@ import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
-import { Constants } from "../utils/constants";
+import { delimitToken, splitToken } from "../utils/shared";
 import { oauth2ProvidersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -29,14 +29,11 @@ export namespace Auth {
 
     const derivedKey = await deriveKeyFromSecret(secret, salt);
 
-    const tokens = [salt, derivedKey];
-    const hash = tokens.join(Constants.TOKEN_DELIMITER);
-
-    return hash;
+    return delimitToken(salt, derivedKey);
   }
 
   export async function verifySecret(secret: string, hash: string) {
-    const tokens = hash.split(Constants.TOKEN_DELIMITER);
+    const tokens = splitToken(hash);
     if (tokens.length !== 2) return false;
     const [salt, storedKey] = tokens;
 

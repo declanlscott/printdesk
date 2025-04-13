@@ -3,6 +3,7 @@ import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printworks/core/auth/subjects";
 import { Constants } from "@printworks/core/utils/constants";
+import { delimitToken } from "@printworks/core/utils/shared";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
@@ -44,17 +45,17 @@ export const rateLimiter = createMiddleware(
             };
           };
         }>(async (c, next) => {
-          const { tenantId, id: userId } = c.var.subject.properties;
-          const key = [tenantId, userId].join(Constants.TOKEN_DELIMITER);
+          const key = delimitToken(
+            c.var.subject.properties.tenantId,
+            c.var.subject.properties.id,
+          );
 
           console.log("Rate limiting by user:", key);
           c.set(
             "rateLimitOutcome",
             await c.env[
               Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS
-            ].byUser({
-              key,
-            }),
+            ].byUser({ key }),
           );
 
           return next();

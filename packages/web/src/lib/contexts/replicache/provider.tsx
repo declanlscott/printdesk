@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createMutators } from "@printworks/core/data/client";
-import { Constants } from "@printworks/core/utils/constants";
+import { delimitToken } from "@printworks/core/utils/shared";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
@@ -28,7 +28,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     if (!user) return setReplicache(() => ({ status: "uninitialized" }));
 
     const client = new Replicache({
-      name: [user.tenantId, user.id].join(Constants.TOKEN_DELIMITER),
+      name: delimitToken(user.tenantId, user.id),
       licenseKey: ReplicacheLicenseKey.value,
       logLevel: AppData.isDev ? "info" : "error",
       mutators: createMutators(user.id),

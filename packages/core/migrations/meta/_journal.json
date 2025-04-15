@@ -8,6 +8,13 @@
       "when": 1743384406786,
       "tag": "0000_lame_scream",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1744746750283,
+      "tag": "0001_jazzy_miracleman",
+      "breakpoints": true
     }
   ]
 }

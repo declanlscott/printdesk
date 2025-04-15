@@ -36,10 +36,10 @@ export const entraIdApplicationApiAccess = new azuread.ApplicationApiAccess(
   {
     applicationId: entraIdApplication.id,
     apiClientId: graphAppId,
-    scopeIds: Constants.ENTRA_ID_SCOPES.map(
+    scopeIds: Constants.ENTRA_ID_OAUTH_SCOPES.map(
       (scope) => graphServicePrincipal.oauth2PermissionScopeIds[scope],
     ),
-    roleIds: ["User.ReadBasic.All"].map(
+    roleIds: Constants.ENTRA_ID_APP_ROLES.map(
       (role) => graphServicePrincipal.appRoleIds[role],
     ),
   },

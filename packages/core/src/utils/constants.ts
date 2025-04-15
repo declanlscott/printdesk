@@ -24,13 +24,18 @@ export namespace Constants {
     API_RATE_LIMITERS: "API_RATE_LIMITERS",
   };
 
-  export const ENTRA_ID_SCOPES = [
+  export const ENTRA_ID_OAUTH_SCOPES = [
     "openid",
     "profile",
     "email",
     "offline_access",
     "User.Read",
     "User.ReadBasic.All",
+  ] as const;
+
+  export const ENTRA_ID_APP_ROLES = [
+    "User.ReadBasic.All",
+    "GroupMember.Read.All",
   ] as const;
 
   export const VITE_RESOURCE_PREFIX = "VITE_RESOURCE_";

@@ -72,7 +72,11 @@ new sst.x.DevCommand("Studio", {
   environment: {
     DB_PASSWORD: $resolve([dsqlCluster.endpoint, aws_.properties.region]).apply(
       ([hostname, region]) =>
-        new DsqlSigner({ hostname, region }).getDbConnectAdminAuthToken(),
+        new DsqlSigner({
+          hostname,
+          region,
+          expiresIn: 43200, // 12 hours
+        }).getDbConnectAdminAuthToken(),
     ),
   },
 });

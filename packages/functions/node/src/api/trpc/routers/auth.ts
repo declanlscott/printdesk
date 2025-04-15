@@ -1,4 +1,8 @@
 import { Auth } from "@printworks/core/auth";
+import { EntraId } from "@printworks/core/auth/entra-id";
+import { oauth2ProviderUserGroupsSchema } from "@printworks/core/auth/shared";
+import { Graph } from "@printworks/core/graph";
+import { withGraph } from "@printworks/core/graph/context";
 import { tenantSlugSchema } from "@printworks/core/tenants/shared";
 import * as R from "remeda";
 import * as v from "valibot";
@@ -29,7 +33,7 @@ export const authRouter = t.router({
       action: "create",
     })
     .use(authz)
-    .input(v.object({ id: v.string(), oauth2ProviderId: v.string() }))
+    .input(v.pick(oauth2ProviderUserGroupsSchema, ["id", "oauth2ProviderId"]))
     .mutation(async ({ input }) => {
       await Auth.createOauth2ProviderUserGroup(
         input.id,
@@ -43,7 +47,7 @@ export const authRouter = t.router({
       action: "read",
     })
     .use(authz)
-    .input(v.object({ oauth2ProviderId: v.string() }))
+    .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
     .query(async ({ input }) =>
       Auth.readOauth2ProviderUserGroups(input.oauth2ProviderId),
     ),
@@ -54,11 +58,36 @@ export const authRouter = t.router({
       action: "delete",
     })
     .use(authz)
-    .input(v.object({ id: v.string(), oauth2ProviderId: v.string() }))
+    .input(v.pick(oauth2ProviderUserGroupsSchema, ["id", "oauth2ProviderId"]))
     .mutation(async ({ input }) => {
       await Auth.deleteOauth2ProviderUserGroup(
         input.id,
         input.oauth2ProviderId,
       );
     }),
+  entraId: t.router({
+    getGroups: userProcedure
+      .meta({
+        kind: "access-control",
+        resource: "oauth-providers",
+        action: "read",
+      })
+      .use(authz)
+      .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
+      .query(async ({ input }) =>
+        withGraph(
+          () =>
+            Graph.Client.initWithMiddleware({
+              authProvider: {
+                getAccessToken: async () =>
+                  EntraId.applicationAccessToken(input.oauth2ProviderId),
+              },
+            }),
+          Graph.groups,
+        ),
+      ),
+  }),
+  google: t.router({
+    // TODO
+  }),
 });

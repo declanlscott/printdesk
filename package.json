@@ -30,6 +30,7 @@
   "devDependencies": {
     "@aws-sdk/client-sts": "^3.787.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
+    "@microsoft/microsoft-graph-types": "^2.40.0",
     "@smithy/util-waiter": "^4.0.3",
     "@tanstack/eslint-plugin-query": "^5.72.2",
     "@tanstack/eslint-plugin-router": "^1.115.0",

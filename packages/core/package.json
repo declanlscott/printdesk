@@ -20,7 +20,6 @@
     "@aws-sdk/util-format-url": "^3.775.0",
     "@azure/msal-node": "^2.16.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
-    "@microsoft/microsoft-graph-types": "^2.40.0",
     "@msgpack/msgpack": "^3.1.1",
     "@smithy/protocol-http": "^5.1.0",
     "@smithy/signature-v4": "^5.0.2",

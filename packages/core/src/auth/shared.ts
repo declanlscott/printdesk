@@ -19,9 +19,14 @@ export const oauth2ProviderKinds = [
 export type Oauth2ProviderKind = (typeof oauth2ProviderKinds)[number];
 export const oauth2ProvidersSchema = v.object({
   id: v.string(),
-  tenantId: v.string(),
+  tenantId: nanoIdSchema,
   kind: v.picklist(oauth2ProviderKinds),
   ...timestampsSchema.entries,
 });
 
 export const oauth2ProviderUserGroupsTableName = "oauth2_provider_user_groups";
+export const oauth2ProviderUserGroupsSchema = v.object({
+  id: v.string(),
+  oauth2ProviderId: v.string(),
+  tenantId: nanoIdSchema,
+});

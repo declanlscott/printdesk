@@ -31,21 +31,20 @@ export const Route = createFileRoute("/login")({
           .at(0);
     if (!slug) throw new Error("Missing slug");
 
-    const providers = await context.trpcClient.tenants.getOauthProviders.query({
-      slug,
-    });
-    if (R.isEmpty(providers))
+    const oauthProviderKinds =
+      await context.trpcClient.auth.getOauthProviderKinds.query({ slug });
+    if (R.isEmpty(oauthProviderKinds))
       throw redirect({ to: "/setup", search: isDev ? { slug } : {} });
 
     // Start the OAuth flow
     const url = await context.authStoreApi
       .getState()
-      .actions.authorize(providers[0], deps.search.from);
+      .actions.authorize(oauthProviderKinds[0], deps.search.from);
 
     throw redirect({ href: url, reloadDocument: true });
   },
 });
 
-// TODO: If there are multiple providers, render a component that allows the user to choose
+// TODO: If there are multiple oauth providers, render a component that allows the user to choose
 
 // TODO: Error component

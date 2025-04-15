@@ -78,26 +78,27 @@ export namespace Sync {
                 },
               }),
             async () => {
-              const users = await Graph.users().then(
-                R.reduce(
-                  (users, { userPrincipalName, id, displayName, mail }) => {
+              const groups = await Auth.readOauth2ProviderUserGroups(
+                oauth2Provider.id,
+              );
+
+              const users: Array<
+                NonNullableProperties<
+                  Required<
+                    Pick<
+                      GraphUser,
+                      "userPrincipalName" | "id" | "displayName" | "mail"
+                    >
+                  >
+                >
+              > = [];
+              for (const group of groups)
+                await Graph.users(group.id).then(
+                  R.forEach(({ userPrincipalName, id, displayName, mail }) => {
                     if (userPrincipalName && id && displayName && mail)
                       users.push({ userPrincipalName, id, displayName, mail });
-
-                    return users;
-                  },
-                  [] as Array<
-                    NonNullableProperties<
-                      Required<
-                        Pick<
-                          GraphUser,
-                          "userPrincipalName" | "id" | "displayName" | "mail"
-                        >
-                      >
-                    >
-                  >,
-                ),
-              );
+                  }),
+                );
 
               for (const user of users)
                 if (usernames.has(user.userPrincipalName))

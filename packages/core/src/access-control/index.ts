@@ -777,13 +777,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["documents-mime-types"]: {
+      "documents-mime-types": {
         create: false,
         read: true,
         update: true,
         delete: false,
       },
-      ["documents-size-limit"]: {
+      "documents-size-limit": {
         create: false,
         read: true,
         update: true,
@@ -795,11 +795,17 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["monthly-active-users"]: {
+      "monthly-active-users": {
         create: false,
         read: true,
         update: false,
         delete: false,
+      },
+      "oauth-providers": {
+        create: true,
+        read: true,
+        update: false,
+        delete: true,
       },
       [getTableName(ordersTable)]: {
         create: true,
@@ -913,13 +919,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["documents-mime-types"]: {
+      "documents-mime-types": {
         create: false,
         read: true,
         update: false,
         delete: false,
       },
-      ["documents-size-limit"]: {
+      "documents-size-limit": {
         create: false,
         read: true,
         update: false,
@@ -931,7 +937,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["monthly-active-users"]: {
+      "monthly-active-users": {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      "oauth-providers": {
         create: false,
         read: false,
         update: false,
@@ -1125,13 +1137,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["documents-mime-types"]: {
+      "documents-mime-types": {
         create: false,
         read: true,
         update: false,
         delete: false,
       },
-      ["documents-size-limit"]: {
+      "documents-size-limit": {
         create: false,
         read: true,
         update: false,
@@ -1143,7 +1155,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["monthly-active-users"]: {
+      "monthly-active-users": {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      "oauth-providers": {
         create: false,
         read: false,
         update: false,
@@ -1408,13 +1426,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["documents-mime-types"]: {
+      "documents-mime-types": {
         create: false,
         read: true,
         update: false,
         delete: false,
       },
-      ["documents-size-limit"]: {
+      "documents-size-limit": {
         create: false,
         read: true,
         update: false,
@@ -1426,7 +1444,13 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      ["monthly-active-users"]: {
+      "monthly-active-users": {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      "oauth-providers": {
         create: false,
         read: false,
         update: false,

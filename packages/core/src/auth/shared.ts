@@ -12,16 +12,16 @@ export type UserSubjectProperties = v.InferOutput<
 >;
 
 export const oauth2ProvidersTableName = "oauth2_providers";
-
 export const oauth2ProviderKinds = [
   Constants.ENTRA_ID,
   Constants.GOOGLE,
 ] as const;
 export type Oauth2ProviderKind = (typeof oauth2ProviderKinds)[number];
-
 export const oauth2ProvidersSchema = v.object({
   id: v.string(),
   tenantId: v.string(),
   kind: v.picklist(oauth2ProviderKinds),
   ...timestampsSchema.entries,
 });
+
+export const oauth2ProviderUserGroupsTableName = "oauth2_provider_user_groups";

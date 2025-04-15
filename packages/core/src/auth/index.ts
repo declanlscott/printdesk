@@ -8,11 +8,15 @@ import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
 import { delimitToken, splitToken } from "../utils/shared";
-import { oauth2ProvidersTable } from "./sql";
+import { oauth2ProvidersTable, oauth2ProviderUserGroupsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { Tenant } from "../tenants/sql";
-import type { Oauth2Provider, Oauth2ProvidersTable } from "./sql";
+import type {
+  Oauth2Provider,
+  Oauth2ProvidersTable,
+  Oauth2ProviderUserGroup,
+} from "./sql";
 
 export namespace Auth {
   export const generateToken = (size = 32) => randomBytes(size).toString("hex");
@@ -99,5 +103,52 @@ export namespace Auth {
         )
         .where(eq(tenantsTable.slug, slug))
         .then(R.map(R.prop("oauth2Provider"))),
+    );
+
+  export const createOauth2ProviderUserGroup = async (
+    id: Oauth2ProviderUserGroup["id"],
+    oauth2ProviderId: Oauth2ProviderUserGroup["oauth2ProviderId"],
+  ) =>
+    useTransaction((tx) =>
+      tx
+        .insert(oauth2ProviderUserGroupsTable)
+        .values({ id, oauth2ProviderId, tenantId: useTenant().id }),
+    );
+
+  export const readOauth2ProviderUserGroups = async (
+    oauth2ProviderId: Oauth2Provider["id"],
+  ) =>
+    useTransaction((tx) =>
+      tx
+        .select()
+        .from(oauth2ProviderUserGroupsTable)
+        .where(
+          and(
+            eq(
+              oauth2ProviderUserGroupsTable.oauth2ProviderId,
+              oauth2ProviderId,
+            ),
+            eq(oauth2ProviderUserGroupsTable.tenantId, useTenant().id),
+          ),
+        ),
+    );
+
+  export const deleteOauth2ProviderUserGroup = async (
+    id: Oauth2ProviderUserGroup["id"],
+    oauth2ProviderId: Oauth2ProviderUserGroup["oauth2ProviderId"],
+  ) =>
+    useTransaction((tx) =>
+      tx
+        .delete(oauth2ProviderUserGroupsTable)
+        .where(
+          and(
+            eq(oauth2ProviderUserGroupsTable.id, id),
+            eq(
+              oauth2ProviderUserGroupsTable.oauth2ProviderId,
+              oauth2ProviderId,
+            ),
+            eq(oauth2ProviderUserGroupsTable.tenantId, useTenant().id),
+          ),
+        ),
     );
 }

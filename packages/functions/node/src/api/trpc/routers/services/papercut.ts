@@ -54,7 +54,7 @@ export const papercutRouter = t.router({
     .mutation(async ({ input }) => {
       await Papercut.setServerAuthToken(input.authToken);
     }),
-  sync: userProcedure
+  dispatchSync: userProcedure
     .meta({
       kind: "access-control",
       resource: "papercut-sync",
@@ -69,7 +69,7 @@ export const papercutRouter = t.router({
           Resource.Aws.tenant.roles.apiAccess.nameTemplate,
           useTenant().id,
         ),
-        RoleSessionName: "ApiPapercutSync",
+        RoleSessionName: "ApiDispatchPapercutSync",
       }),
     })
     .use(executeApiSigner)

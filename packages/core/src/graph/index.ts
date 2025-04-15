@@ -5,7 +5,7 @@ import {
 
 import { useGraph } from "./context";
 
-import type { User } from "@microsoft/microsoft-graph-types";
+import type { Group, User } from "@microsoft/microsoft-graph-types";
 
 export namespace Graph {
   export const Client = GraphClient;
@@ -13,20 +13,28 @@ export namespace Graph {
 
   export const me = async () => useGraph().api("/me").get() as Promise<User>;
 
-  export const users = async () =>
-    useGraph().api("/users").responseType(ResponseType.JSON).get() as Promise<
-      Array<User>
+  export const groups = async () =>
+    useGraph().api("/groups").responseType(ResponseType.JSON).get() as Promise<
+      Array<Group>
     >;
 
-  export const user = async (idOrEmail: string) =>
+  export const users = async (groupId: string, transitive = true) =>
     useGraph()
-      .api(`/users/${idOrEmail}`)
+      .api(
+        `/groups/${groupId}/${transitive ? "transitiveMembers" : "members"}/microsoft.graph.user`,
+      )
+      .responseType(ResponseType.JSON)
+      .get() as Promise<Array<User>>;
+
+  export const user = async (userId: string) =>
+    useGraph()
+      .api(`/users/${userId}`)
       .responseType(ResponseType.JSON)
       .get() as Promise<User>;
 
-  export const userPhotoBlob = async (id: string) =>
+  export const userPhotoBlob = async (userId: string) =>
     useGraph()
-      .api(`/users/${id}/photo/$value`)
+      .api(`/users/${userId}/photo/$value`)
       .responseType(ResponseType.BLOB)
       .get() as Promise<Blob>;
 }

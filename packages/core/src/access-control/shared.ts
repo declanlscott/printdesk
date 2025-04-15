@@ -6,6 +6,7 @@ export type Resource =
   | "documents-size-limit"
   | "papercut-sync"
   | "services"
-  | "monthly-active-users";
+  | "monthly-active-users"
+  | "oauth-providers";
 
 export type Action = "create" | "read" | "update" | "delete";

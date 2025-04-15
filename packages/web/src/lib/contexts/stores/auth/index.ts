@@ -21,7 +21,10 @@ export type AuthStore = {
   tokens: Tokens | null;
   user: UserSubjectProperties | null;
   actions: {
-    authorize: (provider: Oauth2ProviderKind, from?: string) => Promise<string>;
+    authorize: (
+      oauthProviderKind: Oauth2ProviderKind,
+      from?: string,
+    ) => Promise<string>;
     exchange: (code: string, state: string) => Promise<void>;
     verify: () => Promise<void>;
     refresh: () => Promise<void>;

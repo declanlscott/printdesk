@@ -9,6 +9,8 @@ import { appsyncSigner, executeApiSigner } from "~/api/trpc/middleware/aws";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 import { publicProcedure } from "~/api/trpc/procedures/public";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const realtimeRouter = t.router({
   getPublicUrl: publicProcedure.query(async () => Realtime.getUrl()),
   getPublicAuth: publicProcedure
@@ -60,3 +62,8 @@ export const realtimeRouter = t.router({
       Realtime.getAuth((await Realtime.getDns()).http, JSON.stringify(input)),
     ),
 });
+
+export type RealtimeRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof realtimeRouter
+>;

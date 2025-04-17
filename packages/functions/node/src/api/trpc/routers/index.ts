@@ -7,6 +7,8 @@ import { setupRouter } from "~/api/trpc/routers/setup";
 import { tenantsRouter } from "~/api/trpc/routers/tenants";
 import { usersRouter } from "~/api/trpc/routers/users";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const router = t.router({
   auth: authRouter,
   files: filesRouter,
@@ -18,3 +20,5 @@ export const router = t.router({
 });
 
 export type TrpcRouter = typeof router;
+
+export type TrpcRouterIO<TIO extends IO> = InferRouterIO<TIO, TrpcRouter>;

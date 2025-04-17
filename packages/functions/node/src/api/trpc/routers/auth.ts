@@ -12,6 +12,8 @@ import { authz } from "~/api/trpc/middleware/auth";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 import { publicProcedure } from "~/api/trpc/procedures/public";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const authRouter = t.router({
   getOauthProviderKinds: publicProcedure
     .input(v.object({ slug: tenantSlugSchema }))
@@ -91,3 +93,8 @@ export const authRouter = t.router({
     // TODO
   }),
 });
+
+export type AuthRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof authRouter
+>;

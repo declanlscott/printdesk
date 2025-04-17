@@ -9,6 +9,8 @@ import { authz } from "~/api/trpc/middleware/auth";
 import { ssmClient } from "~/api/trpc/middleware/aws";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const tailscaleRouter = t.router({
   setOauthClient: userProcedure
     .meta({ kind: "access-control", resource: "services", action: "update" })
@@ -30,3 +32,8 @@ export const tailscaleRouter = t.router({
       await Tailscale.setOauthClient(input.id, input.secret);
     }),
 });
+
+export type TailscaleRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof tailscaleRouter
+>;

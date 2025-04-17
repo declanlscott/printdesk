@@ -5,6 +5,8 @@ import * as v from "valibot";
 import { t } from "~/api/trpc";
 import { publicProcedure } from "~/api/trpc/procedures/public";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const tenantsRouter = t.router({
   isSlugAvailable: publicProcedure
     .input(v.object({ slug: tenantSlugSchema }))
@@ -15,3 +17,8 @@ export const tenantsRouter = t.router({
       Tenants.isLicenseKeyAvailable(input.licenseKey),
     ),
 });
+
+export type TenantsRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof tenantsRouter
+>;

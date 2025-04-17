@@ -13,6 +13,8 @@ import {
 } from "~/api/trpc/middleware/aws";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const documentsRouter = t.router({
   setMimeTypes: userProcedure
     .meta({
@@ -189,3 +191,8 @@ export const documentsRouter = t.router({
     .use(executeApiSigner)
     .query(async () => Documents.getSizeLimit()),
 });
+
+export type DocumentsRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof documentsRouter
+>;

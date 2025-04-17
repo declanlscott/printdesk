@@ -14,6 +14,8 @@ import type {
 } from "@printworks/core/tenants/shared";
 import type { Tenant } from "@printworks/core/tenants/sql";
 import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
+import type { SetupRouterIO } from "@printworks/functions/api/trpc/routers/setup";
+import type { TenantsRouterIO } from "@printworks/functions/api/trpc/routers/tenants";
 import type { ViteResource } from "~/types";
 
 interface SetupMachineInput extends Pick<SetupWizard, "tenantSlug"> {
@@ -39,51 +41,29 @@ interface SetupMachineContext extends SetupWizard {
 }
 
 const isLicenseKeyAvailable = fromPromise<
-  Awaited<
-    ReturnType<
-      SetupMachineContext["trpcClient"]["tenants"]["isLicenseKeyAvailable"]["query"]
-    >
-  >,
+  TenantsRouterIO<"output">["isLicenseKeyAvailable"],
   Pick<SetupMachineContext, "trpcClient"> &
-    Parameters<
-      SetupMachineContext["trpcClient"]["tenants"]["isLicenseKeyAvailable"]["query"]
-    >[0]
+    TenantsRouterIO<"input">["isLicenseKeyAvailable"]
 >(async ({ input: { trpcClient, ...input } }) =>
   trpcClient.tenants.isLicenseKeyAvailable.query(input),
 );
 
 const initialize = fromPromise<
-  Awaited<
-    ReturnType<
-      SetupMachineContext["trpcClient"]["setup"]["initialize"]["mutate"]
-    >
-  >,
-  Pick<SetupMachineContext, "trpcClient"> &
-    Parameters<
-      SetupMachineContext["trpcClient"]["setup"]["initialize"]["mutate"]
-    >[0]
+  SetupRouterIO<"output">["initialize"],
+  Pick<SetupMachineContext, "trpcClient"> & SetupRouterIO<"input">["initialize"]
 >(async ({ input: { trpcClient, ...input } }) =>
   trpcClient.setup.initialize.mutate(input),
 );
 
 const register = fromPromise<
-  Awaited<
-    ReturnType<SetupMachineContext["trpcClient"]["setup"]["register"]["mutate"]>
-  >,
-  Pick<SetupMachineContext, "trpcClient"> &
-    Parameters<
-      SetupMachineContext["trpcClient"]["setup"]["register"]["mutate"]
-    >[0]
+  SetupRouterIO<"output">["register"],
+  Pick<SetupMachineContext, "trpcClient"> & SetupRouterIO<"input">["register"]
 >(async ({ input: { trpcClient, ...input } }) =>
   trpcClient.setup.register.mutate(input),
 );
 
 const dispatchInfra = fromPromise<
-  Awaited<
-    ReturnType<
-      SetupMachineContext["trpcClient"]["setup"]["dispatchInfra"]["mutate"]
-    >
-  >,
+  SetupRouterIO<"output">["dispatchInfra"],
   Pick<SetupMachineContext, "trpcClient">
 >(async ({ input }) => input.trpcClient.setup.dispatchInfra.mutate());
 
@@ -108,21 +88,14 @@ const healthcheck = fromPromise<
 });
 
 const configure = fromPromise<
-  Awaited<
-    ReturnType<
-      SetupMachineContext["trpcClient"]["setup"]["configure"]["mutate"]
-    >
-  >,
-  Pick<SetupMachineContext, "trpcClient"> &
-    Parameters<
-      SetupMachineContext["trpcClient"]["setup"]["configure"]["mutate"]
-    >[0]
+  SetupRouterIO<"output">["configure"],
+  Pick<SetupMachineContext, "trpcClient"> & SetupRouterIO<"input">["configure"]
 >(async ({ input: { trpcClient, ...input } }) =>
   trpcClient.setup.configure.mutate(input),
 );
 
 const testPapercutConnection = fromPromise<
-  void,
+  SetupRouterIO<"output">["testPapercutConnection"],
   Pick<SetupMachineContext, "trpcClient">
 >(async ({ input }) => input.trpcClient.setup.testPapercutConnection.query());
 

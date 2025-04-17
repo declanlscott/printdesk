@@ -15,6 +15,8 @@ import { authz } from "~/api/trpc/middleware/auth";
 import { executeApiSigner, ssmClient } from "~/api/trpc/middleware/aws";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const papercutRouter = t.router({
   setServerTailnetUri: userProcedure
     .meta({ kind: "access-control", resource: "services", action: "update" })
@@ -95,3 +97,8 @@ export const papercutRouter = t.router({
       return { at };
     }),
 });
+
+export type PapercutRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof papercutRouter
+>;

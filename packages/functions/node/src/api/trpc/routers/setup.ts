@@ -19,6 +19,8 @@ import {
 import { systemProcedure } from "~/api/trpc/procedures/protected";
 import { publicProcedure } from "~/api/trpc/procedures/public";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const setupRouter = t.router({
   initialize: publicProcedure
     .input(initializeDataSchema)
@@ -69,3 +71,8 @@ export const setupRouter = t.router({
     .use(executeApiSigner)
     .query(async () => Papercut.testConnection()),
 });
+
+export type SetupRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof setupRouter
+>;

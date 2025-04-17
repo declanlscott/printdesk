@@ -15,6 +15,8 @@ import { authz } from "~/api/trpc/middleware/auth";
 import { dynamoDbDocumentClient } from "~/api/trpc/middleware/aws";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 
+import type { InferRouterIO, IO } from "~/api/trpc/types";
+
 export const usersRouter = t.router({
   getPhotoBlob: userProcedure
     .input(v.object({ userId: nanoIdSchema }))
@@ -96,3 +98,8 @@ export const usersRouter = t.router({
     .use(dynamoDbDocumentClient)
     .query(async ({ input }) => Users.countMonthlyActive(input.month)),
 });
+
+export type UsersRouterIO<TIO extends IO> = InferRouterIO<
+  TIO,
+  typeof usersRouter
+>;

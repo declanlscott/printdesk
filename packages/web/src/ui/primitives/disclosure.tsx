@@ -17,7 +17,7 @@ import {
   disclosureStyles,
 } from "~/styles/components/primitives/disclosure";
 
-import type { PropsWithChildren } from "react";
+import type { ComponentProps } from "react";
 import type {
   ButtonProps as AriaButtonProps,
   DisclosureGroupProps as AriaDisclosureGroupProps,
@@ -29,7 +29,10 @@ import type {
   DisclosureStyles,
 } from "~/styles/components/primitives/disclosure";
 
-export type DisclosureProps = AriaDisclosureProps & DisclosureStyles;
+export interface DisclosureProps
+  extends AriaDisclosureProps,
+    ComponentProps<typeof AriaDisclosure>,
+    DisclosureStyles {}
 export function Disclosure({ children, className, ...props }: DisclosureProps) {
   const isInGroup = useContext(DisclosureGroupStateContext) !== null;
 
@@ -45,8 +48,9 @@ export function Disclosure({ children, className, ...props }: DisclosureProps) {
   );
 }
 
-export type DisclosureHeaderProps = PropsWithChildren<AriaButtonProps> &
-  DisclosureHeaderStyles;
+export interface DisclosureHeaderProps
+  extends AriaButtonProps,
+    DisclosureHeaderStyles {}
 export const DisclosureHeader = ({
   children,
   className,
@@ -58,17 +62,23 @@ export const DisclosureHeader = ({
         disclosureHeaderStyles({ className, ...renderProps }),
       )}
     >
-      {children}
+      {composeRenderProps(children, (children) => (
+        <>
+          {children}
 
-      <ChevronDownIcon
-        aria-hidden
-        className="size-4 shrink-0 transition-transform duration-200 group-data-[expanded]:rotate-180 group-data-[disabled]:opacity-50"
-      />
+          <ChevronDownIcon
+            aria-hidden
+            className="size-4 shrink-0 transition-transform duration-200 group-data-[expanded]:rotate-180 group-data-[disabled]:opacity-50"
+          />
+        </>
+      ))}
     </AriaButton>
   </AriaHeading>
 );
 
-export type DisclosurePanelProps = AriaDisclosurePanelProps;
+export interface DisclosurePanelProps
+  extends AriaDisclosurePanelProps,
+    ComponentProps<typeof AriaDisclosurePanel> {}
 export const DisclosurePanel = ({
   children,
   className,
@@ -84,7 +94,9 @@ export const DisclosurePanel = ({
   </AriaDisclosurePanel>
 );
 
-export type DisclosureGroupProps = AriaDisclosureGroupProps;
+export interface DisclosureGroupProps
+  extends AriaDisclosureGroupProps,
+    ComponentProps<typeof AriaDisclosureGroup> {}
 export const DisclosureGroup = ({
   children,
   className,

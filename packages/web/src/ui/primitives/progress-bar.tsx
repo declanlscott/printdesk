@@ -5,9 +5,12 @@ import {
 
 import { progressStyles } from "~/styles/components/primitives/progress-bar";
 
+import type { ComponentProps } from "react";
 import type { ProgressBarProps as AriaProgressBarProps } from "react-aria-components";
 
-interface ProgressProps extends AriaProgressBarProps {
+interface ProgressProps
+  extends AriaProgressBarProps,
+    ComponentProps<typeof AriaProgressBar> {
   barClassName?: string;
   fillClassName?: string;
 }

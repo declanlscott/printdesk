@@ -22,22 +22,41 @@ import { Popover } from "~/ui/primitives/popover";
 
 import type { ComponentProps } from "react";
 import type {
+  ButtonProps as AriaButtonProps,
   ListBoxProps as AriaListBoxProps,
+  SelectProps as AriaSelectProps,
   SelectValueProps as AriaSelectValueProps,
 } from "react-aria-components";
+import type {
+  ListBoxCollectionProps,
+  ListBoxHeaderProps,
+  ListBoxItemProps,
+  ListBoxSectionProps,
+} from "~/ui/primitives/list-box";
+import type { PopoverProps } from "~/ui/primitives/popover";
 
+export interface SelectProps
+  extends AriaSelectProps,
+    ComponentProps<typeof AriaSelect> {}
 export const Select = AriaSelect;
 
+export type SelectItemProps<TValue extends object> = ListBoxItemProps<TValue>;
 export const SelectItem = ListBoxItem;
 
+export type SelectHeaderProps = ListBoxHeaderProps;
 export const SelectHeader = ListBoxHeader;
 
+export type SelectSectionProps<TValue extends object> =
+  ListBoxSectionProps<TValue>;
 export const SelectSection = ListBoxSection;
 
+export type SelectCollectionProps<TItem extends object> =
+  ListBoxCollectionProps<TItem>;
 export const SelectCollection = ListBoxCollection;
 
-export type SelectValueProps<TValue extends object> =
-  AriaSelectValueProps<TValue> & ComponentProps<typeof AriaSelectValue>;
+export interface SelectValueProps<TValue extends object>
+  extends AriaSelectValueProps<TValue>,
+    ComponentProps<typeof AriaSelectValue<TValue>> {}
 export const SelectValue = <TValue extends object>({
   className,
   ...props
@@ -50,7 +69,9 @@ export const SelectValue = <TValue extends object>({
   />
 );
 
-export type SelectTriggerProps = ComponentProps<typeof AriaButton>;
+export interface SelectTriggerProps
+  extends AriaButtonProps,
+    ComponentProps<typeof AriaButton> {}
 export const SelectTrigger = ({
   className,
   children,
@@ -71,7 +92,7 @@ export const SelectTrigger = ({
   </AriaButton>
 );
 
-export type SelectPopoverProps = ComponentProps<typeof Popover>;
+export type SelectPopoverProps = PopoverProps;
 export const SelectPopover = ({ className, ...props }: SelectPopoverProps) => (
   <Popover
     className={composeRenderProps(
@@ -87,8 +108,9 @@ export const SelectPopover = ({ className, ...props }: SelectPopoverProps) => (
   />
 );
 
-export type SelectListBoxProps<TItem extends object> = AriaListBoxProps<TItem> &
-  ComponentProps<typeof AriaListBox>;
+export interface SelectListBoxItemProps<TItem extends object>
+  extends AriaListBoxProps<TItem>,
+    ComponentProps<typeof AriaListBox<TItem>> {}
 export const SelectListBox = <TItem extends object>({
   className,
   ...props

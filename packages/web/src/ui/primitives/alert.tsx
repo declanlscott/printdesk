@@ -7,7 +7,7 @@ import {
 import type { ComponentProps } from "react";
 import type { AlertStyles } from "~/styles/components/primitives/alert";
 
-type AlertProps = ComponentProps<"div"> & AlertStyles;
+export interface AlertProps extends ComponentProps<"div">, AlertStyles {}
 export const Alert = ({ className, variant, ...props }: AlertProps) => (
   <div
     role="alert"
@@ -16,12 +16,12 @@ export const Alert = ({ className, variant, ...props }: AlertProps) => (
   />
 );
 
-type AlertTitleProps = ComponentProps<"h5">;
+export type AlertTitleProps = ComponentProps<"h5">;
 export const AlertTitle = ({ className, ...props }: AlertTitleProps) => (
   <h5 className={alertTitleStyles({ className })} {...props} />
 );
 
-type AlertDescriptionProps = ComponentProps<"div">;
+export type AlertDescriptionProps = ComponentProps<"div">;
 export const AlertDescription = ({
   className,
   ...props

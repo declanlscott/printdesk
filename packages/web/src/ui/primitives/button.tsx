@@ -7,10 +7,12 @@ import { buttonStyles } from "~/styles/components/primitives/button";
 import { Spinner } from "~/ui/primitives/spinner";
 
 import type { ComponentProps } from "react";
+import type { ButtonProps as AriaButtonProps } from "react-aria-components";
 import type { ButtonStyles } from "~/styles/components/primitives/button";
 
 export interface ButtonProps
-  extends ComponentProps<typeof AriaButton>,
+  extends AriaButtonProps,
+    ComponentProps<typeof AriaButton>,
     ButtonStyles {
   isLoading?: boolean;
 }
@@ -35,12 +37,12 @@ export const Button = ({
       }),
     )}
   >
-    {(values) => (
+    {composeRenderProps(children, (children) => (
       <>
         {isLoading ? <Spinner className="mr-2 size-4" /> : null}
 
-        {typeof children === "function" ? children(values) : children}
+        {children}
       </>
-    )}
+    ))}
   </AriaButton>
 );

@@ -14,14 +14,22 @@ import type { ComponentProps } from "react";
 import type {
   ListBoxItemProps as AriaListBoxItemProps,
   ListBoxProps as AriaListBoxProps,
+  ListBoxSectionProps as AriaListBoxSectionProps,
 } from "react-aria-components";
 
+export interface ListBoxSectionProps<TValue extends object>
+  extends AriaListBoxSectionProps<TValue>,
+    ComponentProps<typeof AriaListBoxSection<TValue>> {}
 export const ListBoxSection = AriaListBoxSection;
 
+export type ListBoxCollectionProps<TItem extends object> = ComponentProps<
+  typeof AriaCollection<TItem>
+>;
 export const ListBoxCollection = AriaCollection;
 
-export type ListBoxProps<TItem extends object> = AriaListBoxProps<TItem> &
-  ComponentProps<typeof AriaListBox>;
+export interface ListBoxProps<TItem extends object>
+  extends AriaListBoxProps<TItem>,
+    ComponentProps<typeof AriaListBox<TItem>> {}
 export const ListBox = <TItem extends object>({
   className,
   ...props
@@ -34,8 +42,9 @@ export const ListBox = <TItem extends object>({
   />
 );
 
-export type ListBoxItemProps<T extends object> = AriaListBoxItemProps<T> &
-  ComponentProps<typeof AriaListBoxItem>;
+export interface ListBoxItemProps<TValue extends object>
+  extends AriaListBoxItemProps<TValue>,
+    ComponentProps<typeof AriaListBoxItem<TValue>> {}
 export const ListBoxItem = <T extends object>({
   className,
   children,

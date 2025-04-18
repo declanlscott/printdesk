@@ -12,6 +12,7 @@ import {
 import { Dialog, DialogContent } from "~/ui/primitives/dialog";
 
 import type { ComponentProps, DetailedHTMLProps, HTMLAttributes } from "react";
+import type { DialogContentProps, DialogProps } from "~/ui/primitives/dialog";
 
 export type CommandProps = ComponentProps<typeof CommandPrimitive>;
 export const Command = ({ className, ...props }: CommandProps) => (
@@ -21,9 +22,9 @@ export const Command = ({ className, ...props }: CommandProps) => (
   />
 );
 
-export interface CommandDialogProps extends ComponentProps<typeof Dialog> {
+export interface CommandDialogProps extends DialogProps {
   commandProps?: CommandProps;
-  dialogContentProps?: ComponentProps<typeof DialogContent>;
+  dialogContentProps?: DialogContentProps;
 }
 export const CommandDialog = ({
   children,
@@ -38,16 +39,16 @@ export const CommandDialog = ({
         position="top"
         {...dialogContentProps}
       >
-        {(values) => (
+        {composeRenderProps(children, (children) => (
           <Command
             {...commandProps}
             className={commandStyles().dialogContent({
               className: commandProps?.className,
             })}
           >
-            {typeof children === "function" ? children(values) : children}
+            {children}
           </Command>
-        )}
+        ))}
       </DialogContent>
     </Dialog>
   );

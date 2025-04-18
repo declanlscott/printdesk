@@ -15,15 +15,34 @@ import { Check, Circle } from "lucide-react";
 import { menuStyles } from "~/styles/components/primitives/menu";
 
 import type { ComponentProps } from "react";
-import type { MenuProps as AriaMenuProps } from "react-aria-components";
+import type {
+  MenuItemProps as AriaMenuItemProps,
+  MenuProps as AriaMenuProps,
+  MenuSectionProps as AriaMenuSectionProps,
+  MenuTriggerProps as AriaMenuTriggerProps,
+  PopoverProps as AriaPopoverProps,
+  SeparatorProps as AriaSeparatorProps,
+  SubmenuTriggerProps as AriaSubmenuTriggerProps,
+} from "react-aria-components";
 
+export interface MenuTriggerProps
+  extends AriaMenuTriggerProps,
+    ComponentProps<typeof AriaMenuTrigger> {}
 export const MenuTrigger = AriaMenuTrigger;
 
+export interface SubmenuTriggerProps
+  extends AriaSubmenuTriggerProps,
+    ComponentProps<typeof AriaSubmenuTrigger> {}
 export const SubmenuTrigger = AriaSubmenuTrigger;
 
+export interface MenuSectionProps<TValue extends object>
+  extends AriaMenuSectionProps<TValue>,
+    ComponentProps<typeof AriaMenuSection<TValue>> {}
 export const MenuSection = AriaMenuSection;
 
-export type MenuPopoverProps = ComponentProps<typeof AriaPopover>;
+export interface MenuPopoverProps
+  extends AriaPopoverProps,
+    ComponentProps<typeof AriaPopover> {}
 export const MenuPopover = ({
   className,
   offset = 4,
@@ -44,8 +63,9 @@ export const MenuPopover = ({
   />
 );
 
-export type MenuProps<TItem> = AriaMenuProps<TItem> &
-  ComponentProps<typeof AriaMenu>;
+export interface MenuProps<TItem extends object>
+  extends AriaMenuProps<TItem>,
+    ComponentProps<typeof AriaMenu<TItem>> {}
 export const Menu = <TItem extends object>({
   className,
   ...props
@@ -58,10 +78,16 @@ export const Menu = <TItem extends object>({
   />
 );
 
-export interface MenuItemProps extends ComponentProps<typeof AriaMenuItem> {
+export interface MenuItemProps<TValue extends object>
+  extends AriaMenuItemProps<TValue>,
+    ComponentProps<typeof AriaMenuItem<TValue>> {
   isInset?: boolean;
 }
-export const MenuItem = ({ className, isInset, ...props }: MenuItemProps) => (
+export const MenuItem = <TValue extends object>({
+  className,
+  isInset,
+  ...props
+}: MenuItemProps<TValue>) => (
   <AriaMenuItem
     className={composeRenderProps(className, (className, renderProps) =>
       menuStyles().item({ ...renderProps, isInset, className }),
@@ -86,7 +112,9 @@ export const MenuHeader = ({
   />
 );
 
-export type MenuSeparatorProps = ComponentProps<typeof AriaSeparator>;
+export interface MenuSeparatorProps
+  extends AriaSeparatorProps,
+    ComponentProps<typeof AriaSeparator> {}
 export const MenuSeparator = ({ className, ...props }: MenuSeparatorProps) => (
   <AriaSeparator className={menuStyles().separator({ className })} {...props} />
 );
@@ -96,7 +124,9 @@ export const MenuKeyboard = ({ className, ...props }: MenuKeyboardProps) => (
   <AriaKeyboard className={menuStyles().keyboard({ className })} {...props} />
 );
 
-export type MenuCheckboxItemProps = ComponentProps<typeof AriaMenuItem>;
+export interface MenuCheckboxItemProps
+  extends AriaMenuItemProps,
+    ComponentProps<typeof AriaMenuItem> {}
 export const MenuCheckboxItem = ({
   className,
   children,
@@ -108,19 +138,21 @@ export const MenuCheckboxItem = ({
     )}
     {...props}
   >
-    {(values) => (
+    {composeRenderProps(children, (children, { isSelected }) => (
       <>
         <span className="absolute left-2 flex size-4 items-center justify-center">
-          {values.isSelected && <Check className="size-4" />}
+          {isSelected && <Check className="size-4" />}
         </span>
 
-        {typeof children === "function" ? children(values) : children}
+        {children}
       </>
-    )}
+    ))}
   </AriaMenuItem>
 );
 
-export type MenuRadioItemProps = ComponentProps<typeof AriaMenuItem>;
+export interface MenuRadioItemProps
+  extends AriaMenuItemProps,
+    ComponentProps<typeof AriaMenuItem> {}
 export const MenuRadioItem = ({
   className,
   children,
@@ -132,13 +164,14 @@ export const MenuRadioItem = ({
     )}
     {...props}
   >
-    {(values) => (
+    {composeRenderProps(children, (children, { isSelected }) => (
       <>
         <span className="absolute left-2 flex size-3.5 items-center justify-center">
-          {values.isSelected && <Circle className="size-2 fill-current" />}
+          {isSelected && <Circle className="size-2 fill-current" />}
         </span>
-        {typeof children === "function" ? children(values) : children}
+
+        {children}
       </>
-    )}
+    ))}
   </AriaMenuItem>
 );

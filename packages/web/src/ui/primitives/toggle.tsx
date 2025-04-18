@@ -6,10 +6,12 @@ import {
 import { toggleStyles } from "~/styles/components/primitives/toggle";
 
 import type { ComponentProps } from "react";
+import type { ToggleButtonProps as AriaToggleButtonProps } from "react-aria-components";
 import type { ToggleStyles } from "~/styles/components/primitives/toggle";
 
 export interface ToggleProps
-  extends ComponentProps<typeof AriaToggleButton>,
+  extends AriaToggleButtonProps,
+    ComponentProps<typeof AriaToggleButton>,
     ToggleStyles {}
 
 export const Toggle = ({ className, ...props }: ToggleProps) => (

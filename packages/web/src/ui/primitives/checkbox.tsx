@@ -13,15 +13,18 @@ import {
 import { composeTwRenderProps } from "~/styles/utils";
 import { Description, FieldError, Label } from "~/ui/primitives/field";
 
-import type { ComponentProps, ReactNode } from "react";
-import type { ValidationResult } from "react-aria-components";
+import type { ComponentProps } from "react";
+import type {
+  CheckboxGroupProps as AriaCheckboxGroupProps,
+  CheckboxProps as AriaCheckboxProps,
+  ValidationResult,
+} from "react-aria-components";
 import type { CheckboxStyles } from "~/styles/components/primitives/checkbox";
 
 export interface CheckboxProps
-  extends Omit<ComponentProps<typeof AriaCheckbox>, "children">,
-    CheckboxStyles {
-  children: ReactNode;
-}
+  extends AriaCheckboxProps,
+    ComponentProps<typeof AriaCheckbox>,
+    CheckboxStyles {}
 export const Checkbox = (props: CheckboxProps) => (
   <AriaCheckbox
     {...props}
@@ -51,23 +54,34 @@ export const Checkbox = (props: CheckboxProps) => (
 );
 
 export interface CheckboxGroupProps
-  extends Omit<ComponentProps<typeof AriaCheckboxGroup>, "children"> {
-  children?: ReactNode;
+  extends AriaCheckboxGroupProps,
+    ComponentProps<typeof AriaCheckboxGroup> {
   label?: string;
   description?: string;
   errorMessage?: string | ((validation: ValidationResult) => string);
 }
-export const CheckboxGroup = ({ className, ...props }: CheckboxGroupProps) => (
+export const CheckboxGroup = ({
+  label,
+  description,
+  errorMessage,
+  className,
+  children,
+  ...props
+}: CheckboxGroupProps) => (
   <AriaCheckboxGroup
     className={composeTwRenderProps(className, "flex flex-col gap-2")}
     {...props}
   >
-    <Label>{props.label}</Label>
+    {composeRenderProps(children, (children) => (
+      <>
+        <Label>{label}</Label>
 
-    {props.children}
+        {children}
 
-    {props.description && <Description>{props.description}</Description>}
+        {description && <Description>{description}</Description>}
 
-    <FieldError>{props.errorMessage}</FieldError>
+        {errorMessage && <FieldError>{errorMessage}</FieldError>}
+      </>
+    ))}
   </AriaCheckboxGroup>
 );

@@ -11,11 +11,21 @@ import {
 } from "~/styles/components/primitives/popover";
 
 import type { ComponentProps } from "react";
+import type {
+  DialogProps as AriaDialogProps,
+  PopoverProps as AriaPopoverProps,
+} from "react-aria-components";
 
 export const PopoverTrigger = AriaDialogTrigger;
 
-export type PopoverProps = ComponentProps<typeof AriaPopover>;
-export const Popover = ({ className, offset = 4, ...props }: PopoverProps) => (
+export interface PopoverProps
+  extends AriaPopoverProps,
+    ComponentProps<typeof AriaPopover> {}
+export const Popover = ({
+  className,
+  offset = 4,
+  ...props
+}: AriaPopoverProps) => (
   <AriaPopover
     offset={offset}
     className={composeRenderProps(
@@ -31,7 +41,9 @@ export const Popover = ({ className, offset = 4, ...props }: PopoverProps) => (
   />
 );
 
-export type PopoverDialogProps = ComponentProps<typeof AriaDialog>;
+export interface PopoverDialogProps
+  extends AriaDialogProps,
+    ComponentProps<typeof AriaDialog> {}
 export const PopoverDialog = ({ className, ...props }: PopoverDialogProps) => (
   <AriaDialog className={popoverDialogStyles({ className })} {...props} />
 );

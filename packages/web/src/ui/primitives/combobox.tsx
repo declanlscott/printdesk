@@ -23,22 +23,41 @@ import { Popover } from "~/ui/primitives/popover";
 
 import type { ComponentProps } from "react";
 import type {
+  ComboBoxProps as AriaComboboxProps,
   ListBoxProps as AriaListBoxProps,
+  InputProps,
+  ListBoxSectionProps,
   ValidationResult,
 } from "react-aria-components";
+import type {
+  ListBoxCollectionProps,
+  ListBoxHeaderProps,
+  ListBoxItemProps,
+} from "~/ui/primitives/list-box";
 import type { PopoverProps } from "~/ui/primitives/popover";
 
+export interface BaseComboboxProps<TItem extends object>
+  extends AriaComboboxProps<TItem>,
+    ComponentProps<typeof AriaCombobox<TItem>> {}
 export const BaseCombobox = AriaCombobox;
 
+export type ComboboxItemProps<TValue extends object> = ListBoxItemProps<TValue>;
 export const ComboboxItem = ListBoxItem;
 
+export type ComboboxHeaderProps = ListBoxHeaderProps;
 export const ComboboxHeader = ListBoxHeader;
 
+export type ComboboxSectionProps<TValue extends object> =
+  ListBoxSectionProps<TValue>;
 export const ComboboxSection = ListBoxSection;
 
+export type ComboboxCollectionProps<TItem extends object> =
+  ListBoxCollectionProps<TItem>;
 export const ComboboxCollection = ListBoxCollection;
 
-export type ComboboxInputProps = ComponentProps<typeof AriaInput>;
+export interface ComboboxInputProps
+  extends InputProps,
+    ComponentProps<typeof AriaInput> {}
 export const ComboboxInput = ({ className, ...props }: ComboboxInputProps) => (
   <AriaInput
     className={composeRenderProps(className, (className, renderProps) =>
@@ -67,8 +86,9 @@ export const ComboboxPopover = ({
   />
 );
 
-export type ComboboxListBoxProps<TItem extends object> =
-  AriaListBoxProps<TItem> & ComponentProps<typeof AriaListBox>;
+export interface ComboboxListBoxProps<TItem extends object>
+  extends AriaListBoxProps<TItem>,
+    ComponentProps<typeof AriaListBox<TItem>> {}
 export const ComboboxListBox = <TItem extends object>({
   className,
   ...props
@@ -82,7 +102,7 @@ export const ComboboxListBox = <TItem extends object>({
 );
 
 export interface ComboboxProps<TItem extends object>
-  extends Omit<ComponentProps<typeof BaseCombobox>, "children"> {
+  extends Omit<BaseComboboxProps<TItem>, "children"> {
   label?: string;
   description?: string | null;
   errorMessage?: string | ((validation: ValidationResult) => string);

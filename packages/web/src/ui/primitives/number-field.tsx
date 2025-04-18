@@ -9,11 +9,14 @@ import { numberFieldStyles } from "~/styles/components/primitives/number-field";
 import { Button } from "~/ui/primitives/button";
 
 import type { ComponentProps } from "react";
+import type { InputProps as AriaInputProps } from "react-aria-components";
 import type { ButtonProps } from "~/ui/primitives/button";
 
 export const NumberField = AriaNumberField;
 
-export type NumberFieldInputProps = ComponentProps<typeof AriaInput>;
+export interface NumberFieldInputProps
+  extends AriaInputProps,
+    ComponentProps<typeof AriaInput> {}
 export const NumberFieldInput = ({
   className,
   ...props

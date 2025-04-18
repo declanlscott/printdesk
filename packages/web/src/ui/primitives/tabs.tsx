@@ -9,9 +9,16 @@ import {
 import { tabsStyles } from "~/styles/components/primitives/tabs";
 
 import type { ComponentProps } from "react";
-import type { TabListProps as AriaTabListProps } from "react-aria-components";
+import type {
+  TabListProps as AriaTabListProps,
+  TabPanelProps as AriaTabPanelProps,
+  TabProps as AriaTabProps,
+  TabsProps as AriaTabsProps,
+} from "react-aria-components";
 
-export type TabsProps = ComponentProps<typeof AriaTabs>;
+export interface TabsProps
+  extends AriaTabsProps,
+    ComponentProps<typeof AriaTabs> {}
 export const Tabs = ({ className, ...props }: TabsProps) => (
   <AriaTabs
     className={composeRenderProps(className, (className, renderProps) =>
@@ -21,8 +28,9 @@ export const Tabs = ({ className, ...props }: TabsProps) => (
   />
 );
 
-export type TabListProps<TItem extends object> = AriaTabListProps<TItem> &
-  ComponentProps<typeof AriaTabList>;
+export interface TabListProps<TItem extends object>
+  extends AriaTabListProps<TItem>,
+    ComponentProps<typeof AriaTabList<TItem>> {}
 export const TabList = <TItem extends object>({
   className,
   ...props
@@ -35,7 +43,9 @@ export const TabList = <TItem extends object>({
   />
 );
 
-export type TabProps = ComponentProps<typeof AriaTab>;
+export interface TabProps
+  extends AriaTabProps,
+    ComponentProps<typeof AriaTab> {}
 export const Tab = ({ className, ...props }: TabProps) => (
   <AriaTab
     className={composeRenderProps(className, (className, renderProps) =>
@@ -45,7 +55,9 @@ export const Tab = ({ className, ...props }: TabProps) => (
   />
 );
 
-export type TabPanelProps = ComponentProps<typeof AriaTabPanel>;
+export interface TabPanelProps
+  extends AriaTabPanelProps,
+    ComponentProps<typeof AriaTabPanel> {}
 export const TabPanel = ({ className, ...props }: TabPanelProps) => (
   <AriaTabPanel
     className={composeRenderProps(className, (className, renderProps) =>

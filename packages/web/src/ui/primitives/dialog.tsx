@@ -12,14 +12,27 @@ import { dialogStyles } from "~/styles/components/primitives/dialog";
 import { IconButton } from "~/ui/primitives/icon-button";
 
 import type { ComponentProps } from "react";
-import type { DialogProps as AriaDialogProps } from "react-aria-components";
+import type {
+  DialogProps as AriaDialogProps,
+  DialogTriggerProps as AriaDialogTriggerProps,
+  HeadingProps as AriaHeadingProps,
+  ModalOverlayProps as AriaModalOverlayProps,
+} from "react-aria-components";
 import type { DialogStyles } from "~/styles/components/primitives/dialog";
 
+export interface DialogTriggerProps
+  extends AriaDialogTriggerProps,
+    ComponentProps<typeof AriaDialogTrigger> {}
 export const DialogTrigger = AriaDialogTrigger;
 
+export interface DialogProps
+  extends AriaDialogProps,
+    ComponentProps<typeof Dialog> {}
 export const Dialog = AriaDialog;
 
-export type DialogOverlayProps = ComponentProps<typeof AriaModalOverlay>;
+export interface DialogOverlayProps
+  extends AriaModalOverlayProps,
+    ComponentProps<typeof AriaModalOverlay> {}
 export const DialogOverlay = ({
   className,
   isDismissable = true,
@@ -37,17 +50,17 @@ export const DialogOverlay = ({
 export interface DialogContentProps
   extends Omit<ComponentProps<typeof AriaModal>, "children">,
     DialogStyles {
-  children?: AriaDialogProps["children"];
+  children?: DialogProps["children"];
+  dialogProps?: Omit<DialogProps, "children">;
   closeButton?: boolean;
-  dialogProps?: ComponentProps<typeof Dialog>;
 }
 export const DialogContent = ({
   className,
-  children,
   side,
+  children,
+  dialogProps,
   closeButton = true,
   position = "center",
-  dialogProps,
   ...props
 }: DialogContentProps) => (
   <AriaModal
@@ -65,13 +78,13 @@ export const DialogContent = ({
         className: dialogProps?.className,
       })}
     >
-      {(values) => (
+      {composeRenderProps(children, (children, { close }) => (
         <>
-          {typeof children === "function" ? children(values) : children}
+          {children}
 
           {closeButton && (
             <IconButton
-              onPress={values.close}
+              onPress={close}
               aria-label="Close"
               className="absolute right-3.5 top-3.5"
             >
@@ -79,7 +92,7 @@ export const DialogContent = ({
             </IconButton>
           )}
         </>
-      )}
+      ))}
     </Dialog>
   </AriaModal>
 );
@@ -94,7 +107,9 @@ export const DialogFooter = ({ className, ...props }: DialogFooterProps) => (
   <div className={dialogStyles().footer({ className })} {...props} />
 );
 
-export type DialogTitleProps = ComponentProps<typeof AriaHeading>;
+export interface DialogTitleProps
+  extends AriaHeadingProps,
+    ComponentProps<typeof AriaHeading> {}
 export const DialogTitle = ({ className, ...props }: DialogTitleProps) => (
   <AriaHeading
     slot="title"

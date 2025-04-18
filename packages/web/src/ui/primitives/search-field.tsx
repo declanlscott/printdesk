@@ -1,8 +1,12 @@
-import { SearchField as AriaSearchField } from "react-aria-components";
+import {
+  SearchField as AriaSearchField,
+  composeRenderProps,
+} from "react-aria-components";
 
 import { FieldGroup, Label } from "~/ui/primitives/field";
 import { Input } from "~/ui/primitives/input";
 
+import type { ComponentProps } from "react";
 import type { SearchFieldProps as AriaSearchFieldProps } from "react-aria-components";
 import type {
   DescriptionProps,
@@ -11,7 +15,9 @@ import type {
 } from "~/ui/primitives/field";
 import type { InputProps } from "~/ui/primitives/input";
 
-export interface SearchFieldProps extends AriaSearchFieldProps {
+export interface SearchFieldProps
+  extends AriaSearchFieldProps,
+    ComponentProps<typeof AriaSearchField> {
   labelProps?: LabelProps;
   descriptionProps?: DescriptionProps;
   inputProps?: InputProps;
@@ -28,15 +34,13 @@ export const SearchField = ({
     {labelProps ? <Label {...labelProps} /> : null}
 
     <FieldGroup {...groupProps}>
-      {(values) => (
+      {composeRenderProps(groupProps.children, (children) => (
         <>
           <Input {...inputProps} />
 
-          {typeof groupProps.children === "function"
-            ? groupProps.children(values)
-            : groupProps.children}
+          {children}
         </>
-      )}
+      ))}
     </FieldGroup>
   </AriaSearchField>
 );

@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.58.2
 	github.com/awslabs/aws-lambda-go-api-proxy v0.16.2
 	github.com/tailscale/tailscale-client-go/v2 v2.0.0-20250129222324-74c8fc3cb4d7
-	tailscale.com v1.82.2
+	tailscale.com v1.82.5
 )
 
 require (

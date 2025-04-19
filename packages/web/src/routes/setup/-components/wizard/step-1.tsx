@@ -100,7 +100,7 @@ export function SetupWizardStep1() {
                   children: (
                     <>
                       A unique identifier for your organization, used for
-                      accessing the application:
+                      accessing the application:{" "}
                       <Link href={{ to: "/" }} target="_blank">
                         {defaultValues.tenantSlug.toLowerCase()}.
                         {AppData.domainName.fullyQualified}

@@ -82,7 +82,7 @@ export function SetupWizardStep4() {
                 For more detailed instructions on how to do the above, please
                 refer to the{" "}
                 <a
-                  href="https://www.papercut.com/help/manuals/ng-mf/common/tools-web-services/#security"
+                  href="https://www.papercut.com/help/manuals/ng-mf/common/tools-web-services/#web-services-api-security"
                   className={linkStyles({ className: "hover:underline" })}
                   target="_blank"
                 >

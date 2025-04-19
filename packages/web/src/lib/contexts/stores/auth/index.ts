@@ -11,9 +11,11 @@ import type {
   Oauth2ProviderKind,
   UserSubjectProperties,
 } from "@printworks/core/auth/shared";
+import type { Tenant } from "@printworks/core/tenants/sql";
 
 export type AuthStore = {
   client: Client;
+  slug: Tenant["slug"] | null;
   flow: {
     challenge: Challenge;
     redirectUri: URL;
@@ -22,11 +24,16 @@ export type AuthStore = {
   user: UserSubjectProperties | null;
   actions: {
     authorize: (
+      slug: Tenant["slug"],
       oauthProviderKind: Oauth2ProviderKind,
       from?: string,
     ) => Promise<string>;
-    exchange: (code: string, state: string) => Promise<void>;
-    verify: () => Promise<void>;
+    exchange: (
+      slug: Tenant["slug"],
+      code: string,
+      state: string,
+    ) => Promise<void>;
+    verify: (slug: Tenant["slug"]) => Promise<void>;
     refresh: () => Promise<void>;
     getAuth: () => string;
     logout: () => void;
@@ -44,11 +51,12 @@ export const AuthStoreApi = createStoreApiContext<
           clientID: "web",
           issuer,
         }),
+        slug: null,
         flow: null,
         tokens: null,
         user: null,
         actions: {
-          authorize: async (provider, from) => {
+          authorize: async (slug, provider, from) => {
             const redirectUri = new URL("/callback", window.location.origin);
             if (from) redirectUri.searchParams.set("from", from);
 
@@ -59,6 +67,7 @@ export const AuthStoreApi = createStoreApiContext<
             );
 
             set(() => ({
+              slug,
               flow: {
                 challenge: result.challenge,
                 redirectUri,
@@ -67,31 +76,32 @@ export const AuthStoreApi = createStoreApiContext<
 
             return result.url;
           },
-          exchange: async (code, state) => {
-            const { flow, client } = get();
-
+          exchange: async (slug, code, state) => {
+            const flow = get().flow;
             if (flow?.challenge.state !== state)
               throw new Error("Invalid state");
 
-            const result = await client.exchange(
+            const result = await get().client.exchange(
               code,
               flow.redirectUri.toString(),
               flow.challenge.verifier,
             );
-
             if (result.err) throw result.err;
+
+            if (get().slug !== slug) throw new Error("Slug mismatch");
 
             set(() => ({ flow: null, tokens: result.tokens }));
           },
-          verify: async () => {
-            const { client, tokens } = get();
+          verify: async (slug) => {
+            const tokens = get().tokens;
             if (!tokens) throw new Error("Missing tokens");
 
-            const result = await client.verify(subjects, tokens.access, {
+            const result = await get().client.verify(subjects, tokens.access, {
               refresh: tokens.refresh,
             });
-
             if (result.err) throw result.err;
+
+            if (get().slug !== slug) throw new Error("Slug mismatch");
 
             set(() => ({
               tokens: result.tokens,
@@ -99,22 +109,22 @@ export const AuthStoreApi = createStoreApiContext<
             }));
           },
           refresh: async () => {
-            const { client, tokens } = get();
+            const tokens = get().tokens;
             if (!tokens) throw new Error("Missing tokens");
 
-            const result = await client.refresh(tokens.refresh);
+            const result = await get().client.refresh(tokens.refresh);
             if (result.err) throw result.err;
 
             set(() => ({ tokens: result.tokens }));
           },
           getAuth: () => {
-            const accessToken = get().tokens?.access;
-            if (!accessToken) throw new Error("Missing access token");
+            const tokens = get().tokens;
+            if (!tokens) throw new Error("Missing tokens");
 
-            return `Bearer ${accessToken}`;
+            return `Bearer ${tokens.access}`;
           },
           logout: () => {
-            set(() => ({ flow: null, tokens: null, user: null }));
+            set(() => ({ slug: null, flow: null, tokens: null, user: null }));
 
             throw redirect({ to: "/login" });
           },

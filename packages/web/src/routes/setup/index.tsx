@@ -1,7 +1,6 @@
 import { SharedErrors } from "@printworks/core/errors/shared";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createActorContext } from "@xstate/react";
-import * as v from "valibot";
 
 import { useSetupState } from "~/lib/hooks/setup";
 import { setupMachine } from "~/lib/machines/setup";
@@ -9,36 +8,34 @@ import { SetupStatus } from "~/routes/setup/-components/status";
 import { SetupWizard } from "~/routes/setup/-components/wizard";
 
 export const Route = createFileRoute("/setup/")({
-  validateSearch: v.object({ slug: v.optional(v.string()) }),
-  loaderDeps: ({ search }) => ({ search }),
   beforeLoad: async ({ context }) => {
     try {
-      await context.authStoreApi.getState().actions.verify();
+      await context.authStoreApi.getState().actions.verify(context.slug);
     } catch {
-      // Continue loading the register route if the user is unauthenticated
+      // Continue loading the setup route if the user is unauthenticated
       return;
     }
 
     // Otherwise, redirect to the dashboard
-    throw redirect({ to: "/" });
-  },
-  loader: async ({ context, deps }) => {
-    const slug =
-      context.resource.AppData.isDev || window.location.hostname === "localhost"
-        ? deps.search.slug
-        : window.location.hostname
-            .split(`.${context.resource.AppData.domainName.fullyQualified}`)
-            .at(0);
-    if (!slug) throw new Error("Missing slug");
-
-    const isAvailable = await context.trpcClient.tenants.isSlugAvailable.query({
-      slug,
+    throw redirect({
+      to: "/",
+      search:
+        context.resource.AppData.isDev ||
+        window.location.hostname === "localhost"
+          ? { slug: context.slug }
+          : {},
     });
-    if (!isAvailable) throw new Error(`"${slug}" is unavailable to register.`);
+  },
+  loader: async ({ context }) => {
+    const isAvailable = await context.trpcClient.tenants.isSlugAvailable.query({
+      slug: context.slug,
+    });
+    if (!isAvailable)
+      throw new Error(`"${context.slug}" is unavailable to register.`);
 
     const SetupMachineContext = createActorContext(setupMachine, {
       input: {
-        tenantSlug: slug,
+        tenantSlug: context.slug,
         resource: context.resource,
         trpcClient: context.trpcClient,
       },

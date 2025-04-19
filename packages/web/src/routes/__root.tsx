@@ -5,8 +5,10 @@ import {
   createRootRouteWithContext,
   notFound,
   Outlet,
+  retainSearchParams,
   useRouter,
 } from "@tanstack/react-router";
+import * as v from "valibot";
 
 import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
 import type { QueryClient } from "@tanstack/react-query";
@@ -34,6 +36,19 @@ type RouterContext = {
 };
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  validateSearch: v.object({ slug: v.optional(v.string()) }),
+  search: { middlewares: [retainSearchParams(["slug"])] },
+  beforeLoad: async ({ context, search }) => {
+    const slug =
+      context.resource.AppData.isDev || window.location.hostname === "localhost"
+        ? search.slug
+        : window.location.hostname
+            .split(`.${context.resource.AppData.domainName.fullyQualified}`)
+            .at(0);
+    if (!slug) throw new Error("Missing slug");
+
+    return { slug };
+  },
   component: RouteComponent,
   onError: (error) => {
     if (error instanceof SharedErrors.NotFound) throw notFound();

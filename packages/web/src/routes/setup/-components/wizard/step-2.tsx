@@ -98,7 +98,7 @@ export function SetupWizardStep2() {
                         isDisabled
                         className="flex flex-col items-start justify-center"
                       >
-                        <Text slot="label">Google</Text>
+                        <Text slot="label">Google Workspace</Text>
 
                         <Text
                           className="text-muted-foreground text-sm"

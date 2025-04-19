@@ -1,7 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { Link as AriaLink } from "react-aria-components";
 import type { Room } from "@printworks/core/rooms/sql";
-import type { UserRole } from "@printworks/core/users/shared";
 import type { Constants } from "@printworks/core/utils/constants";
 import type { EndsWith, StartsWith } from "@printworks/core/utils/types";
 import type { RankingInfo } from "@tanstack/match-sorter-utils";
@@ -96,9 +95,3 @@ export type AppLink =
   | ResolvedAppLink
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   | ((...args: Array<any>) => ResolvedAppLink);
-
-export type AppLinks = Record<
-  string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (...args: Array<any>) => Record<UserRole, Array<AppLink>>
->;

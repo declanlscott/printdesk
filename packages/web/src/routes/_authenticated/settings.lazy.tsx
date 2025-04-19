@@ -1,8 +1,8 @@
 import { createLazyFileRoute } from "@tanstack/react-router";
 
 import { SettingsLayout } from "~/layouts/settings";
+import { useNavLinks } from "~/lib/hooks/links";
 import { useUser } from "~/lib/hooks/user";
-import { links } from "~/lib/links";
 
 export const Route = createLazyFileRoute("/_authenticated/settings")({
   component: RouteComponent,
@@ -11,5 +11,7 @@ export const Route = createLazyFileRoute("/_authenticated/settings")({
 function RouteComponent() {
   const user = useUser();
 
-  return <SettingsLayout links={links.settings()[user.role]} />;
+  const { settingsNav } = useNavLinks();
+
+  return <SettingsLayout links={settingsNav[user.role]} />;
 }

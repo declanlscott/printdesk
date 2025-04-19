@@ -11,9 +11,9 @@ import * as R from "remeda";
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
 import { useAuthActions } from "~/lib/hooks/auth";
 import { useCommandBar, useCommandBarActions } from "~/lib/hooks/command-bar";
+import { useNavLinks } from "~/lib/hooks/links";
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
-import { links } from "~/lib/links";
 import { EnforceAbac, EnforceRouteAbac } from "~/ui/access-control";
 import { Avatar, AvatarImage } from "~/ui/primitives/avatar";
 import {
@@ -108,6 +108,9 @@ function HomeCommand(_props: HomeCommandProps) {
 
   const navigationKeywords = ["navigation", "navigate"];
 
+  const { mainNav, settingsNav, roomSettingsNav, productSettingsNav } =
+    useNavLinks();
+
   return (
     <>
       <CommandInput
@@ -121,7 +124,7 @@ function HomeCommand(_props: HomeCommandProps) {
         <CommandEmpty>No results found.</CommandEmpty>
 
         <CommandGroup heading="Navigation">
-          {links.mainNav()[user.role].map((link) => (
+          {mainNav[user.role].map((link) => (
             <CommandItem
               key={link.name}
               onSelect={() => handleNavigation(link.props.href)}
@@ -209,7 +212,7 @@ function HomeCommand(_props: HomeCommandProps) {
         <CommandSeparator />
 
         <CommandGroup heading="Scope">
-          {links.settings()[user.role].map((link) => (
+          {settingsNav[user.role].map((link) => (
             <CommandItem
               key={`settings-${link.name}`}
               onSelect={() => handleNavigation(link.props.href)}
@@ -224,7 +227,7 @@ function HomeCommand(_props: HomeCommandProps) {
             </CommandItem>
           ))}
 
-          {links.roomSettings("")[user.role].map((link) => (
+          {roomSettingsNav("")[user.role].map((link) => (
             <CommandItem
               key={`room-settings-${link.name}`}
               onSelect={() =>
@@ -244,7 +247,7 @@ function HomeCommand(_props: HomeCommandProps) {
             </CommandItem>
           ))}
 
-          {links.productSettings("", "")[user.role].map((link) => (
+          {productSettingsNav("", "")[user.role].map((link) => (
             <CommandItem
               key={`product-settings-${link.name}`}
               onSelect={() =>

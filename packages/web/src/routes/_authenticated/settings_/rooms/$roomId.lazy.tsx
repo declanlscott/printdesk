@@ -4,9 +4,9 @@ import { createLazyFileRoute } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 
 import { SettingsLayout } from "~/layouts/settings";
+import { useNavLinks } from "~/lib/hooks/links";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
-import { links } from "~/lib/links";
 import { buttonStyles } from "~/styles/components/primitives/button";
 import {
   BreadcrumbItem,
@@ -25,6 +25,8 @@ function RouteComponent() {
   const room = useSubscribe(Rooms.byId(roomId));
 
   const user = useUser();
+
+  const { roomSettingsNav } = useNavLinks();
 
   return (
     <SettingsLayout
@@ -63,7 +65,7 @@ function RouteComponent() {
           </Breadcrumbs>
         </>
       }
-      links={links.roomSettings(roomId)[user.role]}
+      links={roomSettingsNav(roomId)[user.role]}
     />
   );
 }

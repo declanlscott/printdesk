@@ -13,10 +13,10 @@ import {
 import logo from "~/assets/logo.svg";
 import { selectedRoomIdAtom } from "~/lib/atoms/selected-room-id";
 import { useCommandBarActions } from "~/lib/hooks/command-bar";
+import { useNavLinks } from "~/lib/hooks/links";
 import { useIsSyncing, useSubscribe } from "~/lib/hooks/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { useUser } from "~/lib/hooks/user";
-import { links } from "~/lib/links";
 import { linkStyles, logoStyles } from "~/styles/components/main-nav";
 import { CommandBar } from "~/ui/command-bar";
 import { UserMenu } from "~/ui/menus/user";
@@ -128,9 +128,11 @@ function RoomSelector() {
 function NavList() {
   const user = useUser();
 
+  const { mainNav } = useNavLinks();
+
   return (
     <ul className="flex items-center">
-      {links.mainNav()[user.role].map((link) => (
+      {mainNav[user.role].map((link) => (
         <li key={link.name}>
           <TooltipTrigger>
             <NavLink href={link.props.href} className="flex items-center gap-2">

@@ -113,6 +113,12 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
+      "oauth-providers": {
+        create: true,
+        read: true,
+        update: false,
+        delete: true,
+      },
       [ordersTableName]: {
         create: true,
         read: true,
@@ -242,6 +248,12 @@ export namespace AccessControl {
         delete: false,
       },
       ["monthly-active-users"]: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      "oauth-providers": {
         create: false,
         read: false,
         update: false,
@@ -426,6 +438,12 @@ export namespace AccessControl {
         delete: false,
       },
       ["monthly-active-users"]: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      "oauth-providers": {
         create: false,
         read: false,
         update: false,
@@ -653,6 +671,12 @@ export namespace AccessControl {
         delete: false,
       },
       ["monthly-active-users"]: {
+        create: false,
+        read: false,
+        update: false,
+        delete: false,
+      },
+      "oauth-providers": {
         create: false,
         read: false,
         update: false,

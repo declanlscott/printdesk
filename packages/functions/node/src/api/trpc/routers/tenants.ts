@@ -1,5 +1,5 @@
-import { Tenants } from "@printworks/core/tenants";
-import { tenantSlugSchema } from "@printworks/core/tenants/shared";
+import { Tenants } from "@printdesk/core/tenants";
+import { tenantSlugSchema } from "@printdesk/core/tenants/shared";
 import * as v from "valibot";
 
 import { t } from "~/api/trpc";

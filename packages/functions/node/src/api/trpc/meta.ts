@@ -1,6 +1,6 @@
 import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
-import type { Action, Resource } from "@printworks/core/access-control/shared";
-import type { Actor } from "@printworks/core/actors/shared";
+import type { Action, Resource } from "@printdesk/core/access-control/shared";
+import type { Actor } from "@printdesk/core/actors/shared";
 
 export type Meta =
   | { kind: "actor"; actor: Actor["kind"] }

@@ -18,7 +18,7 @@ class PapercutSecureReverseProxy(pulumi.ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__(
-            t="pw:resource:PapercutSecureReverseProxy",
+            t="pd:resource:PapercutSecureReverseProxy",
             name="PapercutSecureReverseProxy",
             props=vars(args),
             opts=opts,

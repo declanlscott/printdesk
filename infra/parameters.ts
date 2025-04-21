@@ -1,4 +1,4 @@
-import { Constants } from "@printworks/core/utils/constants";
+import { Constants } from "@printdesk/core/utils/constants";
 
 export const tenantParameters = {
   documentsMimeTypes: {

@@ -1,4 +1,4 @@
-import { db } from "@printworks/core/drizzle";
+import { db } from "@printdesk/core/drizzle";
 import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import * as R from "remeda";

@@ -1,5 +1,5 @@
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
-import { Rooms } from "@printworks/core/rooms/client";
+import { Rooms } from "@printdesk/core/rooms/client";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 

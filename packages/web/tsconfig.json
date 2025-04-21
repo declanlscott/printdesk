@@ -8,8 +8,8 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@printworks/core/*": ["../core/src/*"],
-      "@printworks/functions/*": ["../functions/node/src/*"],
+      "@printdesk/core/*": ["../core/src/*"],
+      "@printdesk/functions/*": ["../functions/node/src/*"],
       "~/*": ["src/*"]
     }
   },

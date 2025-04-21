@@ -1,12 +1,12 @@
 {
-  "name": "@printworks/scripts",
+  "name": "@printdesk/scripts",
   "scripts": {
     "seed": "tsx ./src/seed.ts",
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0",
     "tsx": "tsx"
   },
   "dependencies": {
-    "@printworks/core": "workspace:*"
+    "@printdesk/core": "workspace:*"
   },
   "devDependencies": {
     "tsx": "^4.19.3"

@@ -1,4 +1,4 @@
-import { SharedErrors } from "@printworks/core/errors/shared";
+import { SharedErrors } from "@printdesk/core/errors/shared";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createActorContext } from "@xstate/react";
 
@@ -43,6 +43,7 @@ export const Route = createFileRoute("/setup/")({
 
     return { SetupMachineContext };
   },
+  head: () => ({ meta: [{ title: "Setup | Printdesk" }] }),
   component: RouteComponent,
 });
 

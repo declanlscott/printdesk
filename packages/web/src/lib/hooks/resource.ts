@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { ClientErrors } from "@printworks/core/errors/client";
+import { ClientErrors } from "@printdesk/core/errors/client";
 
 import { ResourceContext } from "~/lib/contexts/resource";
 

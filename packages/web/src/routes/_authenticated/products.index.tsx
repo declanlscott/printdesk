@@ -4,6 +4,7 @@ const routeId = "/_authenticated/products/";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
+  head: () => ({ meta: [{ title: "Products | Printdesk" }] }),
   component: RouteComponent,
 });
 

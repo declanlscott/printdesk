@@ -27,7 +27,7 @@ class EventsArgs:
 class Events(pulumi.ComponentResource):
     def __init__(self, args: EventsArgs, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(
-            t="pw:resource:Events", name="Events", props=vars(args), opts=opts
+            t="pd:resource:Events", name="Events", props=vars(args), opts=opts
         )
 
         self.__event_bus = aws.cloudwatch.EventBus(

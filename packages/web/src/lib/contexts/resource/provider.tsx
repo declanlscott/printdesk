@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { Constants } from "@printworks/core/utils/constants";
-import { parseResource } from "@printworks/core/utils/shared";
+import { Constants } from "@printdesk/core/utils/constants";
+import { parseResource } from "@printdesk/core/utils/shared";
 
 import { ResourceContext } from "~/lib/contexts/resource";
 

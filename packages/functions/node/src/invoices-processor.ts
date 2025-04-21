@@ -1,4 +1,4 @@
-import { nanoIdSchema } from "@printworks/core/utils/shared";
+import { nanoIdSchema } from "@printdesk/core/utils/shared";
 import * as v from "valibot";
 
 import type { SQSBatchItemFailure, SQSHandler, SQSRecord } from "aws-lambda";

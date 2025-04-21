@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { ClientErrors } from "@printworks/core/errors/client";
+import { ClientErrors } from "@printdesk/core/errors/client";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";

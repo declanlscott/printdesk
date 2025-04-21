@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { tenantStatuses } from "@printworks/core/tenants/shared";
+import { tenantStatuses } from "@printdesk/core/tenants/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock, LockOpen, Pencil, UserRoundX } from "lucide-react";
 
@@ -35,12 +35,13 @@ import {
 import { TextField } from "~/ui/primitives/text-field";
 import { Toggle } from "~/ui/primitives/toggle";
 
-import type { TenantStatus } from "@printworks/core/tenants/shared";
+import type { TenantStatus } from "@printdesk/core/tenants/shared";
 
 const routeId = "/_authenticated/settings/";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
+  head: () => ({ meta: [{ title: "Settings | Printdesk" }] }),
   component: RouteComponent,
 });
 

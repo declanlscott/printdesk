@@ -1,5 +1,5 @@
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
-import { Constants } from "@printworks/core/utils/constants";
+import { Constants } from "@printdesk/core/utils/constants";
 import * as v from "valibot";
 
 import * as custom from "./custom";

@@ -19,6 +19,7 @@ export const Route = createFileRoute("/login")({
 
     throw redirect({ href: url, reloadDocument: true });
   },
+  head: () => ({ meta: [{ title: "Login | Printdesk" }] }),
 });
 
 // TODO: If there are multiple oauth providers, render a component that allows the user to choose

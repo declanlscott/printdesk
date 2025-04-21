@@ -1,8 +1,8 @@
 import { useContext, useEffect } from "react";
 import { OverlayTriggerStateContext } from "react-aria-components";
-import { Products } from "@printworks/core/products/client";
-import { Rooms } from "@printworks/core/rooms/client";
-import { Users } from "@printworks/core/users/client";
+import { Products } from "@printdesk/core/products/client";
+import { Rooms } from "@printdesk/core/rooms/client";
+import { Users } from "@printdesk/core/users/client";
 import { useNavigate } from "@tanstack/react-router";
 import { useAtom } from "jotai";
 import { Check, CircleCheck, CircleDashed, Home, LogOut } from "lucide-react";
@@ -27,7 +27,7 @@ import {
 } from "~/ui/primitives/command";
 import { DialogOverlay } from "~/ui/primitives/dialog";
 
-import type { Room } from "@printworks/core/rooms/sql";
+import type { Room } from "@printdesk/core/rooms/sql";
 import type { ToOptions } from "@tanstack/react-router";
 import type { CommandBarPage } from "~/types";
 

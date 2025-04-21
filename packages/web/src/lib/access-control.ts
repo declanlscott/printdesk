@@ -1,8 +1,8 @@
-import { BillingAccounts } from "@printworks/core/billing-accounts/client";
+import { BillingAccounts } from "@printdesk/core/billing-accounts/client";
 import * as R from "remeda";
 
-import type { UserRole } from "@printworks/core/users/shared";
-import type { User } from "@printworks/core/users/sql";
+import type { UserRole } from "@printdesk/core/users/shared";
+import type { User } from "@printdesk/core/users/sql";
 import type { DeepReadonlyObject, ReadTransaction } from "replicache";
 import type { AuthenticatedEagerRouteId } from "~/types";
 

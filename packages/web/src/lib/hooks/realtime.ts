@@ -1,7 +1,7 @@
 import { useContext, useEffect, useRef } from "react";
-import { ClientErrors } from "@printworks/core/errors/client";
-import { Realtime } from "@printworks/core/realtime/client";
-import { generateId } from "@printworks/core/utils/shared";
+import { ClientErrors } from "@printdesk/core/errors/client";
+import { Realtime } from "@printdesk/core/realtime/client";
+import { generateId } from "@printdesk/core/utils/shared";
 import { useQuery } from "@tanstack/react-query";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -9,7 +9,7 @@ import { useShallow } from "zustand/react/shallow";
 import { RealtimeContext } from "~/lib/contexts/stores/realtime";
 import { useTrpc } from "~/lib/hooks/trpc";
 
-import type { StartsWith } from "@printworks/core/utils/types";
+import type { StartsWith } from "@printdesk/core/utils/types";
 
 export function useRealtime() {
   const context = useContext(RealtimeContext);

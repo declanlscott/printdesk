@@ -2,15 +2,15 @@ import { pipeline } from "node:stream";
 import { promisify } from "node:util";
 
 import { vValidator } from "@hono/valibot-validator";
-import { Credentials, S3, SignatureV4 } from "@printworks/core/aws";
-import { withAws } from "@printworks/core/aws/context";
-import { Replicache } from "@printworks/core/replicache";
+import { Credentials, S3, SignatureV4 } from "@printdesk/core/aws";
+import { withAws } from "@printdesk/core/aws/context";
+import { Replicache } from "@printdesk/core/replicache";
 import {
   pullRequestSchema,
   pushRequestSchema,
-} from "@printworks/core/replicache/shared";
-import { useTenant } from "@printworks/core/tenants/context";
-import { withUser } from "@printworks/core/users/context";
+} from "@printdesk/core/replicache/shared";
+import { useTenant } from "@printdesk/core/tenants/context";
+import { withUser } from "@printdesk/core/users/context";
 import { Hono } from "hono";
 import { compress } from "hono/compress";
 import { Resource } from "sst";

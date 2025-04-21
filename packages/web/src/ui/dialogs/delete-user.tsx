@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users } from "@printworks/core/users/client";
+import { Users } from "@printdesk/core/users/client";
 
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
@@ -13,7 +13,7 @@ import {
 } from "~/ui/primitives/dialog";
 import { TextField } from "~/ui/primitives/text-field";
 
-import type { User } from "@printworks/core/users/sql";
+import type { User } from "@printdesk/core/users/sql";
 import type { DialogOverlayProps } from "~/ui/primitives/dialog";
 
 export interface DeleteUserDialogProps {

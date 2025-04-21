@@ -1,12 +1,12 @@
 {
-  "name": "@printworks/workers",
+  "name": "@printdesk/workers",
   "type": "module",
   "scripts": {
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@mjackson/fetch-proxy": "^0.2.0",
-    "@printworks/core": "workspace:*"
+    "@printdesk/core": "workspace:*"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250418.0"

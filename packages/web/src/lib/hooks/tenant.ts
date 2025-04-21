@@ -1,4 +1,4 @@
-import { Tenants } from "@printworks/core/tenants/client";
+import { Tenants } from "@printdesk/core/tenants/client";
 
 import { useUserSubject } from "~/lib/hooks/auth";
 import { useSubscribe } from "~/lib/hooks/replicache";

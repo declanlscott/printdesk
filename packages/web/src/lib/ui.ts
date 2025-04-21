@@ -1,4 +1,4 @@
-import { fn } from "@printworks/core/utils/shared";
+import { fn } from "@printdesk/core/utils/shared";
 import * as v from "valibot";
 
 export const collectionItem = (name: string) => ({ name });

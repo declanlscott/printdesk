@@ -7,7 +7,7 @@
     "types": ["@cloudflare/workers-types"],
     "baseUrl": ".",
     "paths": {
-      "@printworks/core/*": ["../core/src/*"]
+      "@printdesk/core/*": ["../core/src/*"]
     }
   }
 }

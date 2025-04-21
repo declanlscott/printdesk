@@ -1,4 +1,4 @@
-import { SharedErrors } from "@printworks/core/errors/shared";
+import { SharedErrors } from "@printdesk/core/errors/shared";
 
 import { useSetupContext, useSetupStatusState } from "~/lib/hooks/setup";
 import {

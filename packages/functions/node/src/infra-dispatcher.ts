@@ -1,10 +1,7 @@
-import { Sqs } from "@printworks/core/aws";
-import { withAws } from "@printworks/core/aws/context";
-import { useTransaction } from "@printworks/core/drizzle/context";
-import {
-  tenantMetadataTable,
-  tenantsTable,
-} from "@printworks/core/tenants/sql";
+import { Sqs } from "@printdesk/core/aws";
+import { withAws } from "@printdesk/core/aws/context";
+import { useTransaction } from "@printdesk/core/drizzle/context";
+import { tenantMetadataTable, tenantsTable } from "@printdesk/core/tenants/sql";
 import { eq } from "drizzle-orm";
 import * as R from "remeda";
 import { Resource } from "sst";

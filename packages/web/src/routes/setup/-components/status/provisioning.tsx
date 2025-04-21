@@ -1,5 +1,5 @@
-import { SharedErrors } from "@printworks/core/errors/shared";
-import { Realtime } from "@printworks/core/realtime/client";
+import { SharedErrors } from "@printdesk/core/errors/shared";
+import { Realtime } from "@printdesk/core/realtime/client";
 
 import { useRealtimeChannel } from "~/lib/hooks/realtime";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";

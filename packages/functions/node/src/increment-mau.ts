@@ -1,9 +1,9 @@
-import { withActor } from "@printworks/core/actors/context";
-import { DynamoDb } from "@printworks/core/aws";
-import { withAws } from "@printworks/core/aws/context";
-import { Users } from "@printworks/core/users";
-import { Constants } from "@printworks/core/utils/constants";
-import { nanoIdSchema } from "@printworks/core/utils/shared";
+import { withActor } from "@printdesk/core/actors/context";
+import { DynamoDb } from "@printdesk/core/aws";
+import { withAws } from "@printdesk/core/aws/context";
+import { Users } from "@printdesk/core/users";
+import { Constants } from "@printdesk/core/utils/constants";
+import { nanoIdSchema } from "@printdesk/core/utils/shared";
 import * as v from "valibot";
 
 import type {

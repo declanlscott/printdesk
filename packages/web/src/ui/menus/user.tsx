@@ -2,7 +2,7 @@ import {
   Button as AriaButton,
   composeRenderProps,
 } from "react-aria-components";
-import { Utils } from "@printworks/core/utils/client";
+import { Utils } from "@printdesk/core/utils/client";
 import { Building2, LogOut } from "lucide-react";
 
 import { useAuthActions } from "~/lib/hooks/auth";

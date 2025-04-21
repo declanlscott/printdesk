@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { ClientErrors } from "@printworks/core/errors/client";
+import { ClientErrors } from "@printdesk/core/errors/client";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 

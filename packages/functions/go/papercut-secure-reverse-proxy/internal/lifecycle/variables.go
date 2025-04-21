@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	hostname       = "printworks"
+	hostname       = "printdesk"
 	tsDir          = "/tmp/tailscale"
 	cleanupTimeout = 1800 * time.Millisecond // Lambda shutdown phase is capped at 2 seconds
 )

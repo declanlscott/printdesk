@@ -1,11 +1,11 @@
 import { issuer } from "@openauthjs/openauth";
 import { decodeJWT } from "@oslojs/jwt";
-import { EntraId } from "@printworks/core/auth/entra-id";
-import { subjects } from "@printworks/core/auth/subjects";
-import { SharedErrors } from "@printworks/core/errors/shared";
-import { Graph } from "@printworks/core/graph";
-import { withGraph } from "@printworks/core/graph/context";
-import { Constants } from "@printworks/core/utils/constants";
+import { EntraId } from "@printdesk/core/auth/entra-id";
+import { subjects } from "@printdesk/core/auth/subjects";
+import { SharedErrors } from "@printdesk/core/errors/shared";
+import { Graph } from "@printdesk/core/graph";
+import { withGraph } from "@printdesk/core/graph/context";
+import { Constants } from "@printdesk/core/utils/constants";
 import { handle } from "hono/aws-lambda";
 import { Resource } from "sst";
 

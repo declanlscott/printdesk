@@ -1,41 +1,19 @@
-import { lazy, Suspense } from "react";
 import { RouterProvider } from "react-aria-components";
-import { SharedErrors } from "@printworks/core/errors/shared";
+import { SharedErrors } from "@printdesk/core/errors/shared";
 import {
   createRootRouteWithContext,
+  HeadContent,
   notFound,
   Outlet,
   retainSearchParams,
   useRouter,
 } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import * as v from "valibot";
 
-import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
-import type { QueryClient } from "@tanstack/react-query";
-import type { TRPCClient } from "@trpc/client";
-import type { StoreApi } from "zustand";
-import type { ReplicacheContext } from "~/lib/contexts/replicache";
-import type { ResourceContext } from "~/lib/contexts/resource";
-import type { AuthStore } from "~/lib/contexts/stores/auth";
+import type { InitialRouterContext } from "~/types";
 
-const TanStackRouterDevtools = import.meta.env.DEV
-  ? lazy(() =>
-      // Lazy load in development
-      import("@tanstack/router-devtools").then((module) => ({
-        default: module.TanStackRouterDevtools,
-      })),
-    )
-  : () => null;
-
-type RouterContext = {
-  resource: ResourceContext;
-  queryClient: QueryClient;
-  authStoreApi: StoreApi<AuthStore>;
-  replicache: ReplicacheContext;
-  trpcClient: TRPCClient<TrpcRouter>;
-};
-
-export const Route = createRootRouteWithContext<RouterContext>()({
+export const Route = createRootRouteWithContext<InitialRouterContext>()({
   validateSearch: v.object({ slug: v.optional(v.string()) }),
   search: { middlewares: [retainSearchParams(["slug"])] },
   beforeLoad: async ({ context, search }) => {
@@ -49,6 +27,10 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 
     return { slug };
   },
+  head: () => ({
+    meta: [{ title: "Printdesk" }],
+    links: [{ rel: "icon", href: "/favicon.svg" }],
+  }),
   component: RouteComponent,
   onError: (error) => {
     if (error instanceof SharedErrors.NotFound) throw notFound();
@@ -65,11 +47,11 @@ function RouteComponent() {
       navigate={(to, options) => navigate({ ...to, ...options })}
       useHref={(to) => buildLocation(to).href}
     >
+      <HeadContent />
+
       <Outlet />
 
-      <Suspense>
-        <TanStackRouterDevtools position="bottom-right" />
-      </Suspense>
+      <TanStackRouterDevtools position="bottom-right" />
     </RouterProvider>
   );
 }

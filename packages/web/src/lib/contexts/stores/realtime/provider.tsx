@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Realtime } from "@printworks/core/realtime/client";
+import { Realtime } from "@printdesk/core/realtime/client";
 import { useWebSocket } from "partysocket/react";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";

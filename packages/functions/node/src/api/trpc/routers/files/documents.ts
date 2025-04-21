@@ -1,6 +1,6 @@
-import { Credentials, S3 } from "@printworks/core/aws";
-import { Documents } from "@printworks/core/backend/documents";
-import { useTenant } from "@printworks/core/tenants/context";
+import { Credentials, S3 } from "@printdesk/core/aws";
+import { Documents } from "@printdesk/core/backend/documents";
+import { useTenant } from "@printdesk/core/tenants/context";
 import { Resource } from "sst";
 import * as v from "valibot";
 

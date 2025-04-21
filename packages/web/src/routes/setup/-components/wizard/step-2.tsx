@@ -1,6 +1,6 @@
 import { Text } from "react-aria-components";
-import { setupWizardStep2Schema } from "@printworks/core/tenants/shared";
-import { Constants } from "@printworks/core/utils/constants";
+import { setupWizardStep2Schema } from "@printdesk/core/tenants/shared";
+import { Constants } from "@printdesk/core/utils/constants";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import * as R from "remeda";
 
@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "~/ui/primitives/select";
 
-import type { SetupWizardStep2 } from "@printworks/core/tenants/shared";
+import type { SetupWizardStep2 } from "@printdesk/core/tenants/shared";
 
 export function SetupWizardStep2() {
   const setupMachine = useSetupMachine();

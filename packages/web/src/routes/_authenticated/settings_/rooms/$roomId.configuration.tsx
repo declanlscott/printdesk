@@ -1,11 +1,11 @@
 import { FileTrigger } from "react-aria-components";
-import { Rooms } from "@printworks/core/rooms/client";
+import { Rooms } from "@printdesk/core/rooms/client";
 import {
   deliveryOptionsSchema,
   workflowSchema,
   workflowStatusTypes,
-} from "@printworks/core/rooms/shared";
-import { formatPascalCase } from "@printworks/core/utils/shared";
+} from "@printdesk/core/rooms/shared";
+import { formatPascalCase } from "@printdesk/core/utils/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { ChevronDown, ChevronUp, Import, Plus, Save, X } from "lucide-react";
 import * as R from "remeda";
@@ -54,7 +54,7 @@ import {
   SelectTrigger,
 } from "~/ui/primitives/select";
 
-import type { PostReviewWorkflowStatusType } from "@printworks/core/rooms/shared";
+import type { PostReviewWorkflowStatusType } from "@printdesk/core/rooms/shared";
 
 const routeId = "/_authenticated/settings_/rooms/$roomId/configuration";
 
@@ -68,6 +68,7 @@ export const Route = createFileRoute(routeId)({
 
     return { initialDeliveryOptions, initialWorkflow };
   },
+  head: () => ({ meta: [{ title: "Configuration | Printdesk" }] }),
   component: RouteComponent,
 });
 

@@ -1,13 +1,13 @@
-import { AccessControl } from "@printworks/core/access-control/client";
+import { AccessControl } from "@printdesk/core/access-control/client";
 
 import { checkRoutePermission } from "~/lib/access-control";
 import { useSubscribe } from "~/lib/hooks/replicache";
 import { useUser } from "~/lib/hooks/user";
 
 import type { PropsWithChildren, ReactNode } from "react";
-import type { Action, Resource } from "@printworks/core/access-control/shared";
-import type { UserRole } from "@printworks/core/users/shared";
-import type { User } from "@printworks/core/users/sql";
+import type { Action, Resource } from "@printdesk/core/access-control/shared";
+import type { UserRole } from "@printdesk/core/users/shared";
+import type { User } from "@printdesk/core/users/sql";
 import type {
   DeepReadonlyObject,
   ReadTransaction,

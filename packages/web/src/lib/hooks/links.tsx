@@ -15,9 +15,9 @@ import {
 import { useResource } from "~/lib/hooks/resource";
 import { useSlug } from "~/lib/hooks/tenant";
 
-import type { Product } from "@printworks/core/products/sql";
-import type { Room } from "@printworks/core/rooms/sql";
-import type { UserRole } from "@printworks/core/users/shared";
+import type { Product } from "@printdesk/core/products/sql";
+import type { Room } from "@printdesk/core/rooms/sql";
+import type { UserRole } from "@printdesk/core/users/shared";
 import type { AppLink } from "~/types";
 
 export function useNavLinks() {

@@ -24,6 +24,7 @@ export const Route = createFileRoute("/callback")({
           : {},
     });
   },
+  head: () => ({ meta: [{ title: "Login | Printdesk" }] }),
 });
 
 // TODO: Error component

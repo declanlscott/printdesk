@@ -2,8 +2,8 @@ import { SiTailscale } from "@icons-pack/react-simple-icons";
 import {
   updateServerAuthTokenSchema,
   updateServerTailnetUriSchema,
-} from "@printworks/core/papercut/shared";
-import { tailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
+} from "@printdesk/core/papercut/shared";
+import { tailscaleOauthClientSchema } from "@printdesk/core/tailscale/shared";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { KeySquare, Link } from "lucide-react";
@@ -34,6 +34,7 @@ const routeId = "/_authenticated/settings/services";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
+  head: () => ({ meta: [{ title: "Services | Printdesk" }] }),
   component: RouteComponent,
 });
 

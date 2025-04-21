@@ -1,13 +1,13 @@
-import { Credentials } from "@printworks/core/aws";
-import { Papercut } from "@printworks/core/papercut";
-import { Tenants } from "@printworks/core/tenants";
-import { useTenant } from "@printworks/core/tenants/context";
+import { Credentials } from "@printdesk/core/aws";
+import { Papercut } from "@printdesk/core/papercut";
+import { Tenants } from "@printdesk/core/tenants";
+import { useTenant } from "@printdesk/core/tenants/context";
 import {
   configureDataSchema,
   initializeDataSchema,
   registerDataSchema,
-} from "@printworks/core/tenants/shared";
-import { Constants } from "@printworks/core/utils/constants";
+} from "@printdesk/core/tenants/shared";
+import { Constants } from "@printdesk/core/utils/constants";
 import { Resource } from "sst";
 
 import { t } from "~/api/trpc";

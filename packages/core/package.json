@@ -1,5 +1,5 @@
 {
-  "name": "@printworks/core",
+  "name": "@printdesk/core",
   "type": "module",
   "scripts": {
     "drizzle:generate": "drizzle-kit generate",

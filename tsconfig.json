@@ -7,7 +7,7 @@
     "baseUrl": ".",
     "paths": {
       "~/.sst/*": [".sst/*"],
-      "@printworks/core/*": ["./packages/core/src/*"]
+      "@printdesk/core/*": ["./packages/core/src/*"]
     }
   },
   "exclude": [".eslintrc.cjs", "./packages/web/dist"]

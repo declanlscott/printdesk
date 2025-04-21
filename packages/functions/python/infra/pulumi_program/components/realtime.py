@@ -22,7 +22,7 @@ class Realtime(pulumi.ComponentResource):
         self, args: RealtimeArgs, opts: Optional[pulumi.ResourceOptions] = None
     ):
         super().__init__(
-            t="pw:resource:Realtime",
+            t="pd:resource:Realtime",
             name="Realtime",
             props=vars(args),
             opts=opts,

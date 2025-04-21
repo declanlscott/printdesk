@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { BillingAccounts } from "@printworks/core/billing-accounts/client";
-import { SharedErrors } from "@printworks/core/errors/shared";
-import { Users } from "@printworks/core/users/client";
+import { BillingAccounts } from "@printdesk/core/billing-accounts/client";
+import { SharedErrors } from "@printdesk/core/errors/shared";
+import { Users } from "@printdesk/core/users/client";
 import * as R from "remeda";
 
 import { useUserSubject } from "~/lib/hooks/auth";

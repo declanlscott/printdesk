@@ -1,9 +1,9 @@
 /* eslint-disable drizzle/enforce-delete-with-where */
 import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
-import { subjects } from "@printworks/core/auth/subjects";
-import { Constants } from "@printworks/core/utils/constants";
-import { delimitToken } from "@printworks/core/utils/shared";
+import { subjects } from "@printdesk/core/auth/subjects";
+import { Constants } from "@printdesk/core/utils/constants";
+import { delimitToken } from "@printdesk/core/utils/shared";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";

@@ -28,7 +28,7 @@ class RouterArgs:
 class Router(pulumi.ComponentResource):
     def __init__(self, args: RouterArgs, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(
-            t="pw:resource:Router", name="Router", props=vars(args), opts=opts
+            t="pd:resource:Router", name="Router", props=vars(args), opts=opts
         )
 
         custom_origin_config = aws.cloudfront.DistributionOriginCustomOriginConfigArgs(

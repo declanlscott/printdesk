@@ -1,6 +1,6 @@
-import { getBackendFqdn } from "@printworks/core/backend/shared";
-import { Constants } from "@printworks/core/utils/constants";
-import { buildUrl } from "@printworks/core/utils/shared";
+import { getBackendFqdn } from "@printdesk/core/backend/shared";
+import { Constants } from "@printdesk/core/utils/constants";
+import { buildUrl } from "@printdesk/core/utils/shared";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { toast } from "sonner";
 import { assign, fromPromise, setup } from "xstate";
@@ -11,11 +11,11 @@ import type {
   SetupWizardStep2,
   SetupWizardStep3,
   SetupWizardStep4,
-} from "@printworks/core/tenants/shared";
-import type { Tenant } from "@printworks/core/tenants/sql";
-import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
-import type { SetupRouterIO } from "@printworks/functions/api/trpc/routers/setup";
-import type { TenantsRouterIO } from "@printworks/functions/api/trpc/routers/tenants";
+} from "@printdesk/core/tenants/shared";
+import type { Tenant } from "@printdesk/core/tenants/sql";
+import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
+import type { SetupRouterIO } from "@printdesk/functions/api/trpc/routers/setup";
+import type { TenantsRouterIO } from "@printdesk/functions/api/trpc/routers/tenants";
 import type { ViteResource } from "~/types";
 
 interface SetupMachineInput extends Pick<SetupWizard, "tenantSlug"> {

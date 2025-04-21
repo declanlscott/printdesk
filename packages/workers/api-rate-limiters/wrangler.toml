@@ -1,5 +1,5 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "printworks-api-rate-limiters"
+name = "printdesk-api-rate-limiters"
 main = "src/index.ts"
 compatibility_date = "2024-09-03"
 

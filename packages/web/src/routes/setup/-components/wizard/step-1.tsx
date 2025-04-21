@@ -1,4 +1,4 @@
-import { setupWizardStep1Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep1Schema } from "@printdesk/core/tenants/shared";
 import { ArrowRight } from "lucide-react";
 import * as R from "remeda";
 

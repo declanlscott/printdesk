@@ -1,6 +1,6 @@
-import { AccessControl } from "@printworks/core/access-control";
-import { assertActor } from "@printworks/core/actors/context";
-import { ServerErrors } from "@printworks/core/errors";
+import { AccessControl } from "@printdesk/core/access-control";
+import { assertActor } from "@printdesk/core/actors/context";
+import { ServerErrors } from "@printdesk/core/errors";
 import { TRPCError } from "@trpc/server";
 
 import { t } from "~/api/trpc";

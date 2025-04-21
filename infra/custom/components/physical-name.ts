@@ -19,7 +19,7 @@ export class PhysicalName extends $util.ComponentResource {
     args: PhysicalNameArgs,
     opts?: $util.ComponentResourceOptions,
   ) {
-    super("pw:resource:PhysicalName", name, args, opts);
+    super("pd:resource:PhysicalName", name, args, opts);
 
     const { max, suffix = "" } = args;
 

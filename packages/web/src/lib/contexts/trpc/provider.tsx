@@ -7,7 +7,7 @@ import { useAuthToken } from "~/lib/hooks/auth";
 import { useResource } from "~/lib/hooks/resource";
 
 import type { PropsWithChildren } from "react";
-import type { TrpcRouter } from "@printworks/functions/api/trpc/routers";
+import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
 
 export function TrpcProvider(props: PropsWithChildren) {
   const queryClient = useQueryClient();

@@ -1,5 +1,5 @@
-import { ServerErrors } from "@printworks/core/errors";
-import { SharedErrors } from "@printworks/core/errors/shared";
+import { ServerErrors } from "@printdesk/core/errors";
+import { SharedErrors } from "@printdesk/core/errors/shared";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 

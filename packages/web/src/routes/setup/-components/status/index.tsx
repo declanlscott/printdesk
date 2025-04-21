@@ -41,7 +41,7 @@ export function SetupStatus() {
       <div className="py-12">
         <div className="mx-auto grid max-w-sm gap-6">
           <div className="flex justify-center">
-            <img src={logo} alt="Printworks" className="size-24" />
+            <img src={logo} alt="Printdesk" className="size-24" />
           </div>
 
           <div className="grid gap-2 text-center">

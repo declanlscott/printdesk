@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Constants } from "@printworks/core/utils/constants";
+import { Constants } from "@printdesk/core/utils/constants";
 import { ArrowLeft, Eye, EyeOff, Send } from "lucide-react";
 
 import { useSetupMachine } from "~/lib/hooks/setup";

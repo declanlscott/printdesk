@@ -5,7 +5,7 @@ import { logger } from "hono/logger";
 import { proxy, rateLimiter } from "./middleware";
 
 import type { FetchProxy } from "@mjackson/fetch-proxy";
-import type { UserSubject } from "@printworks/core/auth/subjects";
+import type { UserSubject } from "@printdesk/core/auth/subjects";
 
 declare module "hono" {
   interface ContextVariableMap {

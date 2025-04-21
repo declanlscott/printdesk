@@ -1,12 +1,12 @@
-import { Credentials } from "@printworks/core/aws";
-import { Api } from "@printworks/core/backend/api";
-import { Papercut } from "@printworks/core/papercut";
+import { Credentials } from "@printdesk/core/aws";
+import { Api } from "@printdesk/core/backend/api";
+import { Papercut } from "@printdesk/core/papercut";
 import {
   updateServerAuthTokenSchema,
   updateServerTailnetUriSchema,
-} from "@printworks/core/papercut/shared";
-import { Tenants } from "@printworks/core/tenants";
-import { useTenant } from "@printworks/core/tenants/context";
+} from "@printdesk/core/papercut/shared";
+import { Tenants } from "@printdesk/core/tenants";
+import { useTenant } from "@printdesk/core/tenants/context";
 import { TRPCError } from "@trpc/server";
 import { Resource } from "sst";
 

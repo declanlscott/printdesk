@@ -10,7 +10,7 @@ export class Value<TValue> extends $util.ComponentResource {
     args: ValueArgs<TValue>,
     opts?: $util.ComponentResourceOptions,
   ) {
-    super("pw:resource:Value", name, args, opts);
+    super("pd:resource:Value", name, args, opts);
 
     this.value = args.value;
   }

@@ -1,17 +1,17 @@
 import { createClient } from "@openauthjs/openauth/client";
-import { withActor } from "@printworks/core/actors/context";
-import { Auth } from "@printworks/core/auth";
-import { subjects } from "@printworks/core/auth/subjects";
-import { useTransaction } from "@printworks/core/drizzle/context";
-import { tenantMetadataTable } from "@printworks/core/tenants/sql";
-import { Constants } from "@printworks/core/utils/constants";
+import { withActor } from "@printdesk/core/actors/context";
+import { Auth } from "@printdesk/core/auth";
+import { subjects } from "@printdesk/core/auth/subjects";
+import { useTransaction } from "@printdesk/core/drizzle/context";
+import { tenantMetadataTable } from "@printdesk/core/tenants/sql";
+import { Constants } from "@printdesk/core/utils/constants";
 import { and, eq, isNotNull } from "drizzle-orm";
 import { bearerAuth } from "hono/bearer-auth";
 import { every, some } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import * as R from "remeda";
 
-import type { PrivateActor } from "@printworks/core/actors/context";
+import type { PrivateActor } from "@printdesk/core/actors/context";
 import type { Context } from "hono";
 
 type Env = { Variables: { privateActor: PrivateActor } };

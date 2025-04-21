@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Rooms } from "@printworks/core/rooms/client";
-import { roomStatuses } from "@printworks/core/rooms/shared";
+import { Rooms } from "@printdesk/core/rooms/client";
+import { roomStatuses } from "@printdesk/core/rooms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import { Delete, HousePlus, Lock, LockOpen, Pencil, Save } from "lucide-react";
 
@@ -29,7 +29,7 @@ import { TextArea } from "~/ui/primitives/text-area";
 import { TextField } from "~/ui/primitives/text-field";
 import { Toggle } from "~/ui/primitives/toggle";
 
-import type { RoomStatus } from "@printworks/core/rooms/shared";
+import type { RoomStatus } from "@printdesk/core/rooms/shared";
 
 const routeId = "/_authenticated/settings_/rooms/$roomId/";
 
@@ -42,6 +42,13 @@ export const Route = createFileRoute(routeId)({
 
     return { initialRoom };
   },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: `${loaderData.initialRoom.name} | Printdesk`,
+      },
+    ],
+  }),
   component: RouteComponent,
 });
 

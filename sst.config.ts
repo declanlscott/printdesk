@@ -7,8 +7,9 @@ if (!AWS_REGION) throw new Error("AWS_REGION is not set");
 export default $config({
   app(input) {
     return {
-      name: "printworks",
+      name: "printdesk",
       removal: input?.stage === "production" ? "retain" : "remove",
+      protect: input?.stage === "production",
       home: "aws",
       providers: {
         aws: {

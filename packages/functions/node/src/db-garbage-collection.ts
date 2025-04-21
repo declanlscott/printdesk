@@ -1,4 +1,4 @@
-import { Replicache } from "@printworks/core/replicache";
+import { Replicache } from "@printdesk/core/replicache";
 
 import type { EventBridgeHandler } from "aws-lambda";
 

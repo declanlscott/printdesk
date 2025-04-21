@@ -1,6 +1,6 @@
-import { db } from "@printworks/core/drizzle";
-import { replicacheMetaTable } from "@printworks/core/replicache/sql";
-import { Constants } from "@printworks/core/utils/constants";
+import { db } from "@printdesk/core/drizzle";
+import { replicacheMetaTable } from "@printdesk/core/replicache/sql";
+import { Constants } from "@printdesk/core/utils/constants";
 
 async function seed() {
   await db.insert(replicacheMetaTable).values({

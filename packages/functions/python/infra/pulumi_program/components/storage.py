@@ -16,7 +16,7 @@ class _StorageBucket(pulumi.ComponentResource):
         self, name: str, args: _StorageBucketArgs, opts: pulumi.ResourceOptions
     ):
         super().__init__(
-            t="pw:resource:StorageBucket", name=name, props=vars(args), opts=opts
+            t="pd:resource:StorageBucket", name=name, props=vars(args), opts=opts
         )
 
         self.__bucket = aws.s3.BucketV2(
@@ -145,7 +145,7 @@ class _StorageQueue(pulumi.ComponentResource):
         self, name: str, args: _StorageQueueArgs, opts: pulumi.ResourceOptions
     ):
         super().__init__(
-            t="pw:resource:StorageQueue",
+            t="pd:resource:StorageQueue",
             name=f"{name}Queue",
             props=vars(args),
             opts=opts,
@@ -220,7 +220,7 @@ class Storage(pulumi.ComponentResource):
         self, args: StorageArgs, opts: Optional[pulumi.ResourceOptions] = None
     ):
         super().__init__(
-            t="pw:resource:Storage", name="Storage", props=vars(args), opts=opts
+            t="pd:resource:Storage", name="Storage", props=vars(args), opts=opts
         )
 
         self.__buckets: Buckets = {

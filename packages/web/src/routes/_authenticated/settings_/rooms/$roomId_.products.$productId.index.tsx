@@ -1,6 +1,8 @@
-import { Products } from "@printworks/core/products/client";
-import { Rooms } from "@printworks/core/rooms/client";
+import { Products } from "@printdesk/core/products/client";
+import { Rooms } from "@printdesk/core/rooms/client";
 import { createFileRoute } from "@tanstack/react-router";
+
+import { useSubscribe } from "~/lib/hooks/replicache";
 
 const routeId = "/_authenticated/settings_/rooms/$roomId_/products/$productId/";
 
@@ -17,9 +19,17 @@ export const Route = createFileRoute(routeId)({
       initialProduct,
     };
   },
+  head: ({ loaderData }) => ({
+    meta: [{ title: `${loaderData.initialProduct.name} | Printdesk` }],
+  }),
   component: RouteComponent,
 });
 
 function RouteComponent() {
+  const { initialProduct } = Route.useLoaderData();
+  const product = useSubscribe(Products.byId(initialProduct.id), {
+    defaultData: initialProduct,
+  });
+
   return "TODO";
 }

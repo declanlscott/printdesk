@@ -1,4 +1,4 @@
-import { Constants } from "@printworks/core/utils/constants";
+import { Constants } from "@printdesk/core/utils/constants";
 
 import { auth } from "./auth";
 import { temporaryBucket } from "./buckets";
@@ -46,7 +46,7 @@ export const apiReverseProxy = new sst.cloudflare.Worker("ApiReverseProxy", {
       serviceBindings: [
         {
           name: Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS,
-          service: "printworks-api-rate-limiters",
+          service: "printdesk-api-rate-limiters",
         },
       ],
     },

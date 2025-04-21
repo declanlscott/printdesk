@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Constants } from "@printworks/core/utils/constants";
+import { Constants } from "@printdesk/core/utils/constants";
 import { Outlet } from "@tanstack/react-router";
 
 import { CommandBarStoreApiProvider } from "~/lib/contexts/stores/command-bar/provider";

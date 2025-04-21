@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button as AriaButton } from "react-aria-components";
-import { setupWizardStep4Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep4Schema } from "@printdesk/core/tenants/shared";
 import { ArrowLeft, ArrowRight, Check, Copy, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 import { toast } from "sonner";
@@ -179,7 +179,7 @@ export function SetupWizardStep4() {
                       children: (
                         <>
                           The auth token you configured on your server.
-                          Printworks encrypts this and it will{" "}
+                          Printdesk encrypts this and it will{" "}
                           <strong>not</strong> be accessible to you after
                           completing setup.
                         </>

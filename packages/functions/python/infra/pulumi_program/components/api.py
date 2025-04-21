@@ -80,7 +80,7 @@ class ApiArgs:
 
 class Api(pulumi.ComponentResource):
     def __init__(self, args: ApiArgs, opts: Optional[pulumi.ResourceOptions] = None):
-        super().__init__(t="pw:resource:Api", name="Api", props=vars(args), opts=opts)
+        super().__init__(t="pd:resource:Api", name="Api", props=vars(args), opts=opts)
 
         self.__api_gateway_account = setup_api_gateway_account()
 
@@ -911,7 +911,7 @@ class WellKnownAppSpecificRoute(pulumi.ComponentResource):
         opts: pulumi.ResourceOptions,
     ):
         super().__init__(
-            t="pw:resource:WellKnownAppSpecificRoute",
+            t="pd:resource:WellKnownAppSpecificRoute",
             name=f"{name}WellKnownAppSpecificRoute",
             props=vars(args),
             opts=opts,
@@ -1018,7 +1018,7 @@ class EventRouteArgs:
 class EventRoute(pulumi.ComponentResource):
     def __init__(self, name: str, args: EventRouteArgs, opts: pulumi.ResourceOptions):
         super().__init__(
-            t="pw:resource:EventRoute",
+            t="pd:resource:EventRoute",
             name=f"{name}EventRoute",
             props=vars(args),
             opts=opts,
@@ -1118,7 +1118,7 @@ class ResponsesArgs:
 class Responses(pulumi.ComponentResource):
     def __init__(self, name: str, args: ResponsesArgs, opts: pulumi.ResourceOptions):
         super().__init__(
-            t="pw:resource:Responses",
+            t="pd:resource:Responses",
             name=f"{name}Responses",
             props=vars(args),
             opts=opts,
@@ -1196,7 +1196,7 @@ class CorsRouteArgs:
 class CorsRoute(pulumi.ComponentResource):
     def __init__(self, name: str, args: CorsRouteArgs, opts: pulumi.ResourceOptions):
         super().__init__(
-            t="pw:resource:CorsRoute",
+            t="pd:resource:CorsRoute",
             name=f"{name}CorsRoute",
             props=vars(args),
             opts=opts,
@@ -1286,7 +1286,7 @@ class ApiDeployment(pulumi.ComponentResource):
         opts: Optional[pulumi.ResourceOptions] = None,
     ):
         super().__init__(
-            t="pw:resource:ApiDeployment",
+            t="pd:resource:ApiDeployment",
             name="ApiDeployment",
             props=vars(args),
             opts=opts,

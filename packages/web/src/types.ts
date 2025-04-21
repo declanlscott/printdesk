@@ -1,9 +1,11 @@
 import type { ComponentProps, ReactNode } from "react";
 import type { Link as AriaLink } from "react-aria-components";
-import type { Room } from "@printworks/core/rooms/sql";
-import type { Constants } from "@printworks/core/utils/constants";
-import type { EndsWith, StartsWith } from "@printworks/core/utils/types";
+import type { Room } from "@printdesk/core/rooms/sql";
+import type { Constants } from "@printdesk/core/utils/constants";
+import type { EndsWith, StartsWith } from "@printdesk/core/utils/types";
+import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
 import type { RankingInfo } from "@tanstack/match-sorter-utils";
+import type { QueryClient } from "@tanstack/react-query";
 import type {
   createRouter,
   NavigateOptions,
@@ -11,7 +13,12 @@ import type {
 } from "@tanstack/react-router";
 import type { FilterFn } from "@tanstack/react-table";
 import type { RoutesById } from "@tanstack/router-core";
+import type { TRPCClient } from "@trpc/client";
 import type { Resource } from "sst";
+import type { StoreApi } from "zustand";
+import type { ReplicacheContext } from "~/lib/contexts/replicache";
+import type { ResourceContext } from "~/lib/contexts/resource";
+import type { AuthStore } from "~/lib/contexts/stores/auth";
 import type { routeTree } from "~/routeTree.gen";
 
 type ViteResourceKey<TKey extends keyof ImportMetaEnv> =
@@ -23,6 +30,18 @@ export type ViteResource = {
   [TKey in keyof ImportMetaEnv as ViteResourceKey<TKey>]: ViteResourceKey<TKey> extends keyof Resource
     ? Omit<Resource[ViteResourceKey<TKey>], "type">
     : never;
+};
+
+export type ReactRouter = ReturnType<
+  typeof createRouter<typeof routeTree, "never", true>
+>;
+
+export type InitialRouterContext = {
+  resource: ResourceContext;
+  queryClient: QueryClient;
+  authStoreApi: StoreApi<AuthStore>;
+  replicache: ReplicacheContext;
+  trpcClient: TRPCClient<TrpcRouter>;
 };
 
 declare module "@tanstack/react-router" {
@@ -46,10 +65,6 @@ declare module "@tanstack/react-table" {
     itemRank: RankingInfo;
   }
 }
-
-export type ReactRouter = ReturnType<
-  typeof createRouter<typeof routeTree, "never", true>
->;
 
 /** Deduplicate route ids, filtering out lazy routes from the union */
 export type EagerRouteId<

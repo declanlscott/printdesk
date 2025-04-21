@@ -14,7 +14,7 @@ class SslArgs:
 
 class Ssl(pulumi.ComponentResource):
     def __init__(self, args: SslArgs, opts: Optional[pulumi.ResourceOptions] = None):
-        super().__init__(t="pw:resource:Ssl", name="Ssl", props=vars(args), opts=opts)
+        super().__init__(t="pd:resource:Ssl", name="Ssl", props=vars(args), opts=opts)
 
         domain_name = f"{args.tenant_id}.backend.{resource["AppData"]["domainName"]["fullyQualified"]}"
 

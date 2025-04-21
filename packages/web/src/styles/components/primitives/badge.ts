@@ -1,6 +1,6 @@
 import { tv } from "tailwind-variants";
 
-import type { UserRole } from "@printworks/core/users/shared";
+import type { UserRole } from "@printdesk/core/users/shared";
 import type { VariantProps } from "tailwind-variants";
 
 export const badgeStyles = tv({

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Products } from "@printworks/core/products/client";
-import { Rooms } from "@printworks/core/rooms/client";
-import { roomStatuses } from "@printworks/core/rooms/shared";
+import { Products } from "@printdesk/core/products/client";
+import { Rooms } from "@printdesk/core/rooms/client";
+import { roomStatuses } from "@printdesk/core/rooms/shared";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   flexRender,
@@ -60,8 +60,8 @@ import {
   TableRow,
 } from "~/ui/primitives/table";
 
-import type { Product } from "@printworks/core/products/sql";
-import type { Room } from "@printworks/core/rooms/sql";
+import type { Product } from "@printdesk/core/products/sql";
+import type { Room } from "@printdesk/core/rooms/sql";
 import type {
   ColumnDef,
   SortingState,
@@ -78,6 +78,7 @@ export const Route = createFileRoute(routeId)({
 
     return { initialProducts };
   },
+  head: () => ({ meta: [{ title: "Rooms | Printdesk" }] }),
   component: RouteComponent,
 });
 

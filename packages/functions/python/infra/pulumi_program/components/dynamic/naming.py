@@ -23,7 +23,7 @@ def physical_name(max_length: int, name: str, tenant_id: str, suffix: str = "") 
 
     def get_prefixed_name() -> str:
         l = max_length - len(suffix)
-        project = f"pw-{stage}"
+        project = f"pd-{stage}"
         stack = tenant_id
         project_len = len(project)
         stack_len = len(stack)

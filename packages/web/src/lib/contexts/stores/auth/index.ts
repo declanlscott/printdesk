@@ -1,5 +1,5 @@
 import { createClient } from "@openauthjs/openauth/client";
-import { subjects } from "@printworks/core/auth/subjects";
+import { subjects } from "@printdesk/core/auth/subjects";
 import { redirect } from "@tanstack/react-router";
 import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
@@ -10,8 +10,8 @@ import type { Challenge, Client, Tokens } from "@openauthjs/openauth/client";
 import type {
   Oauth2ProviderKind,
   UserSubjectProperties,
-} from "@printworks/core/auth/shared";
-import type { Tenant } from "@printworks/core/tenants/sql";
+} from "@printdesk/core/auth/shared";
+import type { Tenant } from "@printdesk/core/tenants/sql";
 
 export type AuthStore = {
   client: Client;

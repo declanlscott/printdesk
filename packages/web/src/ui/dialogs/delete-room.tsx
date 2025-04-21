@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Rooms } from "@printworks/core/rooms/client";
+import { Rooms } from "@printdesk/core/rooms/client";
 
 import { useMutators, useSubscribe } from "~/lib/hooks/replicache";
 import { Button } from "~/ui/primitives/button";
@@ -12,7 +12,7 @@ import {
 } from "~/ui/primitives/dialog";
 import { TextField } from "~/ui/primitives/text-field";
 
-import type { Room } from "@printworks/core/rooms/sql";
+import type { Room } from "@printdesk/core/rooms/sql";
 import type { DialogOverlayProps } from "~/ui/primitives/dialog";
 
 export interface DeleteRoomDialogProps {

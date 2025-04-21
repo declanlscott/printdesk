@@ -1,5 +1,5 @@
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
-import { Rooms } from "@printworks/core/rooms/client";
+import { Rooms } from "@printdesk/core/rooms/client";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useAtom } from "jotai/react";
 import {
@@ -47,7 +47,7 @@ export function MainNav() {
           href={{ to: "/" }}
           className={logoStyles({ isAnimating: isSyncing })}
         >
-          <img src={logo} alt="Printworks" />
+          <img src={logo} alt="printdesk" />
         </AriaLink>
 
         <Separator orientation="vertical" className="h-8" />

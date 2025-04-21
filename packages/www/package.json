@@ -1,5 +1,5 @@
 {
-  "name": "@printworks/www",
+  "name": "@printdesk/www",
   "type": "module",
   "scripts": {
     "dev": "sst dev astro dev",

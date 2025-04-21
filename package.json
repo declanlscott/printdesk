@@ -1,15 +1,15 @@
 {
-  "name": "printworks",
+  "name": "printdesk",
   "type": "module",
   "version": "0.0.0",
   "scripts": {
+    "dev": "sst dev",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint": "eslint ./infra/ --ext ts --report-unused-disable-directives --max-warnings 0",
     "sso": "aws sso login --profile dev",
     "sso:prod": "aws sso login --profile prod",
-    "dev": "sst dev",
-    "sst": "sst",
-    "lint": "eslint ./infra/ --ext ts --report-unused-disable-directives --max-warnings 0",
-    "format:check": "prettier --check .",
-    "format:write": "prettier --write ."
+    "sst": "sst"
   },
   "dependencies": {
     "@aws-sdk/client-appsync": "^3.787.0",
@@ -17,13 +17,13 @@
     "@aws-sdk/credential-providers": "^3.787.0",
     "@aws-sdk/dsql-signer": "^3.787.0",
     "@openauthjs/openauth": "^0.4.3",
-    "@printworks/core": "workspace:*",
+    "@printdesk/core": "workspace:*",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.42.0",
     "hono": "^4.7.7",
     "remeda": "^2.21.3",
     "replicache": "^15.0.1",
-    "sst": "^3.13.14",
+    "sst": "3.13.14",
     "superjson": "^2.2.2",
     "valibot": "^1.0.0"
   },
@@ -36,7 +36,7 @@
     "@tanstack/eslint-plugin-router": "^1.115.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/node22": "^22.0.1",
-    "@types/aws-lambda": "8.10.147",
+    "@types/aws-lambda": "8.10.149",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
     "eslint": "^8.57.1",

@@ -1,9 +1,9 @@
-import { Auth } from "@printworks/core/auth";
-import { EntraId } from "@printworks/core/auth/entra-id";
-import { oauth2ProviderUserGroupsSchema } from "@printworks/core/auth/shared";
-import { Graph } from "@printworks/core/graph";
-import { withGraph } from "@printworks/core/graph/context";
-import { tenantSlugSchema } from "@printworks/core/tenants/shared";
+import { Auth } from "@printdesk/core/auth";
+import { EntraId } from "@printdesk/core/auth/entra-id";
+import { oauth2ProviderUserGroupsSchema } from "@printdesk/core/auth/shared";
+import { Graph } from "@printdesk/core/graph";
+import { withGraph } from "@printdesk/core/graph/context";
+import { tenantSlugSchema } from "@printdesk/core/tenants/shared";
 import * as R from "remeda";
 import * as v from "valibot";
 

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Constants } from "@printworks/core/utils/constants";
+import { Constants } from "@printdesk/core/utils/constants";
 import { createFileRoute } from "@tanstack/react-router";
 
 import { Dropzone } from "~/ui/primitives/dropzone";
@@ -8,6 +8,7 @@ const routeId = "/_authenticated/settings/images";
 
 export const Route = createFileRoute(routeId)({
   beforeLoad: ({ context }) => context.authorizeRoute(routeId),
+  head: () => ({ meta: [{ title: "Images | Printdesk" }] }),
   component: RouteComponent,
 });
 

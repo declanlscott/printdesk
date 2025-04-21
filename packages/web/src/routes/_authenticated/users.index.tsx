@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Users } from "@printworks/core/users/client";
-import { userRoles } from "@printworks/core/users/shared";
-import { Utils } from "@printworks/core/utils/client";
+import { Users } from "@printdesk/core/users/client";
+import { userRoles } from "@printdesk/core/users/shared";
+import { Utils } from "@printdesk/core/utils/client";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   flexRender,
@@ -63,8 +63,8 @@ import {
   TableRow,
 } from "~/ui/primitives/table";
 
-import type { UserRole } from "@printworks/core/users/shared";
-import type { User } from "@printworks/core/users/sql";
+import type { UserRole } from "@printdesk/core/users/shared";
+import type { User } from "@printdesk/core/users/sql";
 import type {
   ColumnDef,
   SortingState,
@@ -81,6 +81,7 @@ export const Route = createFileRoute(routeId)({
 
     return { initialUsers };
   },
+  head: () => ({ meta: [{ title: "Users | Printdesk" }] }),
   component: RouteComponent,
 });
 

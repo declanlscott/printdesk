@@ -1,7 +1,7 @@
-import { Credentials } from "@printworks/core/aws";
-import { Tailscale } from "@printworks/core/tailscale";
-import { tailscaleOauthClientSchema } from "@printworks/core/tailscale/shared";
-import { useTenant } from "@printworks/core/tenants/context";
+import { Credentials } from "@printdesk/core/aws";
+import { Tailscale } from "@printdesk/core/tailscale";
+import { tailscaleOauthClientSchema } from "@printdesk/core/tailscale/shared";
+import { useTenant } from "@printdesk/core/tenants/context";
 import { Resource } from "sst";
 
 import { t } from "~/api/trpc";

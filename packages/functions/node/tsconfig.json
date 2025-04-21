@@ -7,7 +7,7 @@
     "composite": true,
     "baseUrl": ".",
     "paths": {
-      "@printworks/core/*": ["../../core/src/*"],
+      "@printdesk/core/*": ["../../core/src/*"],
       "~/api/*": ["./src/api/*"]
     }
   },

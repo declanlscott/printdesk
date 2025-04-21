@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { createMutators } from "@printworks/core/data/client";
-import { delimitToken } from "@printworks/core/utils/shared";
+import { createMutators } from "@printdesk/core/data/client";
+import { delimitToken } from "@printdesk/core/utils/shared";
 import { Replicache } from "replicache";
 import { serialize } from "superjson";
 

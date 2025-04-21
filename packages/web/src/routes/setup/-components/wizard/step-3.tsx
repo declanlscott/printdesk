@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { setupWizardStep3Schema } from "@printworks/core/tenants/shared";
+import { setupWizardStep3Schema } from "@printdesk/core/tenants/shared";
 import { ArrowLeft, ArrowRight, Eye, EyeOff } from "lucide-react";
 import * as R from "remeda";
 
@@ -72,7 +72,7 @@ export function SetupWizardStep3() {
                 >
                   Tailscale
                 </a>{" "}
-                facilitates the secure network connection between Printworks and
+                facilitates the secure network connection between Printdesk and
                 your PaperCut server.
               </CardDescription>
 
@@ -85,15 +85,15 @@ export function SetupWizardStep3() {
                 >
                   Access Controls
                 </a>{" "}
-                in your Tailscale admin console and add a tag called
-                "printworks" to the tagOwners block, for example:
+                in your Tailscale admin console and add a tag called "printdesk"
+                to the tagOwners block, for example:
               </CardDescription>
 
               <Markdown>
                 {[
                   "```json",
                   '"tagOwners": {',
-                  '  "tag:printworks": ["autogroup:admin"],',
+                  '  "tag:printdesk": ["autogroup:admin"],',
                   "}",
                 ].join("\n")}
               </Markdown>
@@ -108,7 +108,7 @@ export function SetupWizardStep3() {
                   generate an OAuth client
                 </a>{" "}
                 with write scopes for core devices and auth keys. Don't forget
-                to add the "printworks" tag you just created on both scopes.
+                to add the "printdesk" tag you just created on both scopes.
               </CardDescription>
 
               <CardDescription>
@@ -123,7 +123,7 @@ export function SetupWizardStep3() {
           <Card>
             <CardContent className="grid gap-4 pt-6">
               <CardDescription>
-                Printworks encrypts the OAuth client data and it will{" "}
+                Printdesk encrypts the OAuth client data and it will{" "}
                 <strong>not</strong> be accessible to you after completing
                 setup.
               </CardDescription>

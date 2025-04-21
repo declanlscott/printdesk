@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Link as AriaLink } from "react-aria-components";
-import { SharedErrors } from "@printworks/core/errors/shared";
+import { SharedErrors } from "@printdesk/core/errors/shared";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
@@ -34,7 +34,7 @@ export function SetupWizard() {
         <div className="mx-auto grid max-w-md gap-6">
           <div className="flex justify-center">
             <AriaLink href={{ to: "/", search: { slug } }}>
-              <img src={logo} alt="Printworks" className="size-24" />
+              <img src={logo} alt="Printdesk" className="size-24" />
             </AriaLink>
           </div>
 

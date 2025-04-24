@@ -55,7 +55,7 @@ export namespace BillingAccounts {
               "updatedAt",
               "deletedAt",
             ]),
-            version: sql`version + 1`,
+            version: sql`${billingAccountsTable.version} + 1`,
           },
         })
         .returning(),
@@ -236,7 +236,7 @@ export namespace BillingAccounts {
                 "deletedAt",
               ],
             ),
-            version: sql`version + 1`,
+            version: sql`${billingAccountCustomerAuthorizationsTable.version} + 1`,
           },
         })
         .returning(),

@@ -206,7 +206,7 @@ export namespace Rooms {
               "roomId",
               "tenantId",
             ]),
-            version: sql`version + 1`,
+            version: sql`${workflowStatusesTable.version} + 1`,
           },
         })
         .returning();
@@ -283,7 +283,7 @@ export namespace Rooms {
                 "roomId",
                 "tenantId",
               ]),
-              version: sql`version + 1`,
+              version: sql`${deliveryOptionsTable.version} + 1`,
             },
           })
           .returning();

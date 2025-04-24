@@ -60,7 +60,7 @@ export namespace Users {
               "updatedAt",
               "deletedAt",
             ]),
-            version: sql`version + 1`,
+            version: sql`${usersTable.version} + 1`,
           },
         })
         .returning(),

@@ -39,7 +39,7 @@ export namespace Tenants {
               "slug",
               "status",
             ]),
-            version: sql`version + 1`,
+            version: sql`${tenantsTable.version} + 1`,
             updatedAt: new Date(),
           },
           setWhere: eq(tenantsTable.status, "setup"),

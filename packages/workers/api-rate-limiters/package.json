@@ -7,7 +7,7 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250421.0",
-    "wrangler": "^3.114.6"
+    "@cloudflare/workers-types": "^4.20250425.0",
+    "wrangler": "^3.114.7"
   }
 }

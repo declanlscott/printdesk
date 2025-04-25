@@ -1,9 +1,9 @@
-aws-lambda-powertools[parser,tracer]~=3.10.0
-boto3~=1.37.38
+aws-lambda-powertools[parser,tracer]~=3.11.0
+boto3~=1.38.2
 pulumi~=3.163.0
-pulumi-aws~=6.77.1
+pulumi-aws~=6.78.0
 pulumi-cloudflare~=5.49.1
 requests~=2.32.3
-types-boto3-appsync~=1.37.15
-types-boto3-ssm~=1.37.19
-types-boto3-sts~=1.37.0
+types-boto3-appsync~=1.38.2
+types-boto3-ssm~=1.38.0
+types-boto3-sts~=1.38.0

@@ -27,8 +27,10 @@ import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
+import { Resource } from "sst";
 import * as v from "valibot";
 
+import { useTenant } from "../tenants/context";
 import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
 import { delimitToken, splitToken } from "../utils/shared";
@@ -61,24 +63,24 @@ export namespace Cloudfront {
 
 export namespace Credentials {
   export const buildRoleArn = (
-    accountId: string,
     roleNameTemplate: string,
-    tenantId: string,
+    accountId = Resource.Aws.account.id,
+    tenantId = useTenant().id,
   ) =>
     `arn:aws:iam::${accountId}:role/${Utils.buildName(roleNameTemplate, tenantId)}`;
 
   export function fromRoleChain(
-    roleChainInputs: Array<AssumeRoleCommandInput>,
+    ...chain: Array<AssumeRoleCommandInput>
   ): AwsCredentialIdentityProvider {
-    switch (roleChainInputs.length) {
+    switch (chain.length) {
       case 0:
         throw new Error("Empty role chain");
       case 1: // base case
-        return fromTemporaryCredentials({ params: roleChainInputs[0] });
+        return fromTemporaryCredentials({ params: chain[0] });
       default: // recursive case
         return fromTemporaryCredentials({
-          masterCredentials: fromRoleChain(roleChainInputs.slice(1)),
-          params: roleChainInputs[0],
+          masterCredentials: fromRoleChain(...chain.slice(1)),
+          params: chain[0],
         });
     }
   }

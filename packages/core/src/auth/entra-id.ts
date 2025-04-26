@@ -11,7 +11,6 @@ import { useTransaction } from "../drizzle/context";
 import { SharedErrors } from "../errors/shared";
 import { Graph } from "../graph";
 import { Tenants } from "../tenants";
-import { useTenant } from "../tenants/context";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
 import { fn } from "../utils/shared";
@@ -64,17 +63,13 @@ export namespace EntraId {
                   appsync: SignatureV4.buildSigner({
                     region: Resource.Aws.region,
                     service: "appsync",
-                    credentials: Credentials.fromRoleChain([
-                      {
-                        RoleArn: Credentials.buildRoleArn(
-                          Resource.Aws.account.id,
-                          Resource.Aws.tenant.roles.realtimePublisher
-                            .nameTemplate,
-                          useTenant().id,
-                        ),
-                        RoleSessionName: "EntraIdUserHandler",
-                      },
-                    ]),
+                    credentials: Credentials.fromRoleChain({
+                      RoleArn: Credentials.buildRoleArn(
+                        Resource.Aws.tenant.roles.realtimePublisher
+                          .nameTemplate,
+                      ),
+                      RoleSessionName: "EntraIdUserHandler",
+                    }),
                   }),
                 },
               },

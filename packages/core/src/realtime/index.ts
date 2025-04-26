@@ -29,7 +29,7 @@ export namespace Realtime {
     );
   }
 
-  export const getUrl = async (
+  export const getUrl = (
     realtimeDomainName = Resource.AppsyncEventApi.dns.realtime,
   ) =>
     Util.formatUrl(
@@ -41,8 +41,8 @@ export namespace Realtime {
     );
 
   export const getAuth = async (
-    httpDomainName = Resource.AppsyncEventApi.dns.http,
     body = "{}",
+    httpDomainName = Resource.AppsyncEventApi.dns.http,
   ) =>
     SignatureV4.sign(
       "appsync",

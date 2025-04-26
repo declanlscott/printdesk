@@ -12,7 +12,7 @@ import { publicProcedure } from "~/api/trpc/procedures/public";
 import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const realtimeRouter = t.router({
-  getPublicUrl: publicProcedure.query(async () => Realtime.getUrl()),
+  getPublicUrl: publicProcedure.query(() => Realtime.getUrl()),
   getPublicAuth: publicProcedure
     .input(
       v.object({ channel: v.optional(v.pipe(v.string(), v.startsWith("/"))) }),
@@ -59,7 +59,7 @@ export const realtimeRouter = t.router({
     })
     .use(appsyncSigner)
     .query(async ({ input }) =>
-      Realtime.getAuth((await Realtime.getDns()).http, JSON.stringify(input)),
+      Realtime.getAuth((JSON.stringify(input), await Realtime.getDns()).http),
     ),
 });
 

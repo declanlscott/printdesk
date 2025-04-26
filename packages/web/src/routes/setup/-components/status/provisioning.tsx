@@ -13,12 +13,12 @@ const name = "Provisioning";
 
 export function ProvisioningStatusItem() {
   const state = useSetupStatusState();
-  const { dispatchId, failureStatus } = useSetupMachine().useSelector(
-    ({ context }) => ({
+  const { dispatchId, realtimeAuth, failureStatus } =
+    useSetupMachine().useSelector(({ context }) => ({
       dispatchId: context.dispatchId,
+      realtimeAuth: context.realtimeAuth,
       failureStatus: context.failureStatus,
-    }),
-  );
+    }));
 
   switch (state) {
     case "initialize":
@@ -26,8 +26,8 @@ export function ProvisioningStatusItem() {
       return <PendingItem name={name} />;
     case "dispatchInfra":
     case "waitForInfra":
-      return dispatchId ? (
-        <WaitForInfra dispatchId={dispatchId} />
+      return dispatchId && realtimeAuth ? (
+        <WaitForInfra dispatchId={dispatchId} realtimeAuth={realtimeAuth} />
       ) : (
         <PendingItem name={name} isActive />
       );
@@ -59,13 +59,18 @@ export function ProvisioningStatusItem() {
   }
 }
 
-function WaitForInfra({ dispatchId }: { dispatchId: string }) {
+type WaitForInfraProps = {
+  dispatchId: string;
+  realtimeAuth: Record<string, string>;
+};
+
+function WaitForInfra(props: WaitForInfraProps) {
   const actor = useSetupMachine().useActorRef();
 
   useRealtimeChannel(
-    `/events/${dispatchId}`,
+    `/events/${props.dispatchId}`,
     Realtime.handleEvent((event) => {
-      if (event.kind === "infra" && event.dispatchId === dispatchId) {
+      if (event.kind === "infra" && event.dispatchId === props.dispatchId) {
         if (event.success) return actor.send({ type: "status.healthcheck" });
 
         if (!event.success)
@@ -74,6 +79,7 @@ function WaitForInfra({ dispatchId }: { dispatchId: string }) {
             : actor.send({ type: "status.fail" });
       }
     }),
+    props.realtimeAuth,
   );
 
   return <PendingItem name={name} isActive />;

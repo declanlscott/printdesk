@@ -13,7 +13,9 @@ import type {
   SetupWizardStep4,
 } from "@printdesk/core/tenants/shared";
 import type { Tenant } from "@printdesk/core/tenants/sql";
+import type { NonNullableProperties } from "@printdesk/core/utils/types";
 import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
+import type { RealtimeRouterIO } from "@printdesk/functions/api/trpc/routers/realtime";
 import type { SetupRouterIO } from "@printdesk/functions/api/trpc/routers/setup";
 import type { TenantsRouterIO } from "@printdesk/functions/api/trpc/routers/tenants";
 import type { ViteResource } from "~/types";
@@ -28,6 +30,7 @@ interface SetupMachineContext extends SetupWizard {
   trpcClient: SetupMachineInput["trpcClient"];
   tenantId: Tenant["id"] | null;
   dispatchId: string | null;
+  realtimeAuth: RealtimeRouterIO<"output">["getPublicAuth"] | null;
   failureStatus:
     | "initialize"
     | "register"
@@ -63,9 +66,19 @@ const register = fromPromise<
 );
 
 const dispatchInfra = fromPromise<
-  SetupRouterIO<"output">["dispatchInfra"],
+  NonNullableProperties<
+    Pick<SetupMachineContext, "dispatchId" | "realtimeAuth">
+  >,
   Pick<SetupMachineContext, "trpcClient">
->(async ({ input }) => input.trpcClient.setup.dispatchInfra.mutate());
+>(async ({ input }) => {
+  const { dispatchId } = await input.trpcClient.setup.dispatchInfra.mutate();
+
+  const realtimeAuth = await input.trpcClient.realtime.getPublicAuth.query({
+    channel: `/events/${dispatchId}`,
+  });
+
+  return { dispatchId, realtimeAuth };
+});
 
 const healthcheck = fromPromise<
   { isHealthy: boolean },
@@ -149,6 +162,7 @@ export const setupMachine = setup({
 
     tenantId: null,
     dispatchId: null,
+    realtimeAuth: null,
     failureStatus: null,
   }),
   initial: "wizard",
@@ -302,7 +316,10 @@ export const setupMachine = setup({
             input: ({ context }) => ({ trpcClient: context.trpcClient }),
             onDone: {
               target: "waitForInfra",
-              actions: ({ event }) => assign(event.output),
+              actions: assign({
+                dispatchId: ({ event }) => event.output.dispatchId,
+                realtimeAuth: ({ event }) => event.output.realtimeAuth,
+              }),
             },
             onError: {
               target: "failure",
@@ -386,6 +403,7 @@ export const setupMachine = setup({
                   }),
                 tenantId: null,
                 dispatchId: null,
+                realtimeAuth: null,
                 failureStatus: null,
               }),
             },

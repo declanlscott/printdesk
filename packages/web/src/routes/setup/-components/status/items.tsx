@@ -1,4 +1,4 @@
-import { CircleCheckBig, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 
 import { Spinner } from "~/ui/primitives/spinner";
 
@@ -25,7 +25,7 @@ export function SuccessItem({ name }: ItemProps) {
   return (
     <li>
       <div className="flex items-center gap-2">
-        <CircleCheckBig className="size-5 text-green-500" />
+        <Check className="size-5 text-green-500" />
 
         <p className="text-muted-foreground">{name}</p>
       </div>

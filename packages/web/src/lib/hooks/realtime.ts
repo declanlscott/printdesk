@@ -30,6 +30,7 @@ export const useRealtimeActions = () =>
 export function useRealtimeChannel<TChannel extends string>(
   channel: StartsWith<"/", TChannel>,
   onData?: (event: unknown) => void,
+  auth?: Record<string, string>,
 ) {
   const onDataRef = useRef(onData);
 
@@ -47,7 +48,11 @@ export function useRealtimeChannel<TChannel extends string>(
   const { data: authorization } = useQuery(
     trpc.realtime.getAuth.queryOptions(
       { channel },
-      { staleTime: Infinity, enabled: isConnected },
+      {
+        initialData: auth,
+        enabled: isConnected && !auth,
+        staleTime: Infinity,
+      },
     ),
   );
 

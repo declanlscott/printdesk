@@ -5,7 +5,6 @@ import { AlertCircle, ArrowLeft, CircleCheckBig, LogIn } from "lucide-react";
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
 import { RealtimeProvider } from "~/lib/contexts/stores/realtime/provider";
-import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
 import { ConfiguringStatusItem } from "~/routes/setup/-components/status/configuring";
 import { DeployingStatusItem } from "~/routes/setup/-components/status/deploying";
@@ -21,12 +20,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/ui/primitives/card";
 export function SetupStatus() {
   const state = useSetupStatusState();
   const actor = useSetupMachine().useActorRef();
-  const slug = useSetupMachine().useSelector(
-    ({ context }) => context.tenantSlug,
-  );
-
-  const isDev =
-    useResource().AppData.isDev || window.location.hostname === "localhost";
 
   return (
     <div className="w-full lg:grid lg:min-h-[600px] lg:grid-cols-2 xl:min-h-[800px]">
@@ -70,7 +63,7 @@ export function SetupStatus() {
                   className="gap-2"
                   onPress={() => actor.send({ type: "status.back" })}
                 >
-                  <ArrowLeft className="size-5" />
+                  <ArrowLeft className="size-4" />
                   Go Back
                 </Button>
               </div>
@@ -78,8 +71,8 @@ export function SetupStatus() {
           ) : null}
 
           {state === "complete" ? (
-            <Alert>
-              <CircleCheckBig className="size-4 text-green-500" />
+            <Alert className="[&>svg]:text-green-500">
+              <CircleCheckBig className="size-4" />
 
               <AlertTitle>Setup Complete</AlertTitle>
 
@@ -89,10 +82,7 @@ export function SetupStatus() {
 
               <div className="flex justify-end">
                 <AriaLink
-                  href={{
-                    to: "/login",
-                    search: isDev ? { slug } : {},
-                  }}
+                  href={{ to: "/login" }}
                   className={composeRenderProps(
                     "gap-2",
                     (className, renderProps) =>
@@ -125,9 +115,9 @@ export function SetupStatus() {
 }
 
 function PostInitializedStatusItems() {
-  const { trpcClient } = useSetupMachine().useSelector(({ context }) => ({
-    trpcClient: context.trpcClient,
-  }));
+  const trpcClient = useSetupMachine().useSelector(
+    ({ context }) => context.trpcClient,
+  );
 
   const webSocketUrlProvider = useCallback(
     async () => trpcClient.realtime.getPublicUrl.query(),

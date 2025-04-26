@@ -1,6 +1,5 @@
 import { Credentials } from "@printdesk/core/aws";
 import { Realtime } from "@printdesk/core/realtime";
-import { useTenant } from "@printdesk/core/tenants/context";
 import { Resource } from "sst";
 import * as v from "valibot";
 
@@ -17,28 +16,26 @@ export const realtimeRouter = t.router({
     .input(
       v.object({ channel: v.optional(v.pipe(v.string(), v.startsWith("/"))) }),
     )
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
-        RoleSessionName: "PublicRealtimeSubscriber",
-      }),
-    })
-    .use(appsyncSigner)
+    .use(
+      appsyncSigner(() => [
+        {
+          RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
+          RoleSessionName: "PublicRealtimeSubscriber",
+        },
+      ]),
+    )
     .query(async ({ input }) => Realtime.getAuth(JSON.stringify(input))),
   getUrl: userProcedure
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiGetRealtimeUrl",
-      }),
-    })
-    .use(executeApiSigner)
+    .use(
+      executeApiSigner(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+          ),
+          RoleSessionName: "ApiGetRealtimeUrl",
+        },
+      ]),
+    )
     .query(async () => Realtime.getUrl((await Realtime.getDns()).realtime)),
   getAuth: userProcedure
     .input(
@@ -46,18 +43,16 @@ export const realtimeRouter = t.router({
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
       }),
     )
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.realtimeSubscriber.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "TenantRealtimeSubscriber",
-      }),
-    })
-    .use(appsyncSigner)
+    .use(
+      appsyncSigner(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.realtimeSubscriber.nameTemplate,
+          ),
+          RoleSessionName: "TenantRealtimeSubscriber",
+        },
+      ]),
+    )
     .query(async ({ input }) =>
       Realtime.getAuth((JSON.stringify(input), await Realtime.getDns()).http),
     ),

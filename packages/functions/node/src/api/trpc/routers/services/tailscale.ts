@@ -1,7 +1,6 @@
 import { Credentials } from "@printdesk/core/aws";
 import { Tailscale } from "@printdesk/core/tailscale";
 import { tailscaleOauthClientSchema } from "@printdesk/core/tailscale/shared";
-import { useTenant } from "@printdesk/core/tenants/context";
 import { Resource } from "sst";
 
 import { t } from "~/api/trpc";
@@ -13,21 +12,18 @@ import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const tailscaleRouter = t.router({
   setOauthClient: userProcedure
-    .meta({ kind: "access-control", resource: "services", action: "update" })
-    .use(authz)
+    .use(authz("services", "update"))
     .input(tailscaleOauthClientSchema)
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.putParameters.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiSetTailscaleOauthClient",
-      }),
-    })
-    .use(ssmClient)
+    .use(
+      ssmClient(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+          ),
+          RoleSessionName: "ApiSetTailscaleOauthClient",
+        },
+      ]),
+    )
     .mutation(async ({ input }) => {
       await Tailscale.setOauthClient(input.id, input.secret);
     }),

@@ -4,15 +4,15 @@ import { ServerErrors } from "@printdesk/core/errors";
 import { TRPCError } from "@trpc/server";
 
 import { t } from "~/api/trpc";
-import { isOfKind } from "~/api/trpc/meta";
-import { user } from "~/api/trpc/middleware/user";
+
+import type { Action, Resource } from "@printdesk/core/access-control/shared";
 
 export const authn = t.middleware(async (opts) => {
   const meta = opts.meta;
-  const isActorMeta = isOfKind(meta, "actor");
-  if (!isActorMeta || meta.actor === "public")
+
+  if (!meta || meta.actor === "public")
     throw new TRPCError(
-      isActorMeta
+      meta
         ? { code: "UNAUTHORIZED", message: "Expected private actor." }
         : { code: "INTERNAL_SERVER_ERROR", message: "Missing actor metadata." },
     );
@@ -34,23 +34,17 @@ export const authn = t.middleware(async (opts) => {
   return opts.next(opts);
 });
 
-export const authz = user.unstable_pipe(async (opts) => {
-  const meta = opts.meta;
-  if (!isOfKind(meta, "access-control"))
-    throw new TRPCError({
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Missing access control metadata.",
+export const authz = (resource: Resource, action: Action) =>
+  t.middleware(async (opts) => {
+    await AccessControl.enforce([resource, action], {
+      Error: TRPCError,
+      args: [
+        {
+          code: "FORBIDDEN",
+          message: `Access denied for action "${action}" on resource "${resource}".`,
+        },
+      ],
     });
 
-  await AccessControl.enforce([meta.resource, meta.action], {
-    Error: TRPCError,
-    args: [
-      {
-        code: "FORBIDDEN",
-        message: `Access denied for action "${meta.action}" on resource "${meta.resource}".`,
-      },
-    ],
+    return opts.next(opts);
   });
-
-  return opts.next(opts);
-});

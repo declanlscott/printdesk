@@ -1,7 +1,6 @@
 import { Credentials } from "@printdesk/core/aws";
 import { Papercut } from "@printdesk/core/papercut";
 import { Tenants } from "@printdesk/core/tenants";
-import { useTenant } from "@printdesk/core/tenants/context";
 import {
   configureDataSchema,
   initializeDataSchema,
@@ -36,39 +35,35 @@ export const setupRouter = t.router({
     .mutation(async ({ input }) => {
       await Tenants.register(input);
     }),
-  dispatchInfra: systemProcedure.use(sqsClient).mutation(async () => ({
+  dispatchInfra: systemProcedure.use(sqsClient()).mutation(async () => ({
     dispatchId: await Tenants.dispatchInfra(),
   })),
   configure: systemProcedure
     .input(configureDataSchema)
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.putParameters.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiSetupConfigure",
-      }),
-    })
-    .use(ssmClient)
+    .use(
+      ssmClient(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+          ),
+          RoleSessionName: "ApiSetupConfigure",
+        },
+      ]),
+    )
     .mutation(async ({ input }) => {
       await Tenants.config(input);
     }),
   testPapercutConnection: systemProcedure
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiSetupTestPapercutConnection",
-      }),
-    })
-    .use(executeApiSigner)
+    .use(
+      executeApiSigner(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+          ),
+          RoleSessionName: "ApiSetupTestPapercutConnection",
+        },
+      ]),
+    )
     .query(async () => Papercut.testConnection()),
 });
 

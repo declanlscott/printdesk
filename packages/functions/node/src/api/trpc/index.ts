@@ -1,9 +1,9 @@
 import { initTRPC } from "@trpc/server";
 
+import type { Actor } from "@printdesk/core/actors/shared";
 import type { Context } from "hono";
-import type { Meta } from "~/api/trpc/meta";
 
 export const t = initTRPC
   .context<Pick<Context, "req" | "res">>()
-  .meta<Meta>()
+  .meta<{ actor: Actor["kind"] }>()
   .create();

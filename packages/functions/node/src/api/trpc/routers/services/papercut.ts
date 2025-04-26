@@ -6,7 +6,6 @@ import {
   updateServerTailnetUriSchema,
 } from "@printdesk/core/papercut/shared";
 import { Tenants } from "@printdesk/core/tenants";
-import { useTenant } from "@printdesk/core/tenants/context";
 import { TRPCError } from "@trpc/server";
 import { Resource } from "sst";
 
@@ -19,66 +18,52 @@ import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const papercutRouter = t.router({
   setServerTailnetUri: userProcedure
-    .meta({ kind: "access-control", resource: "services", action: "update" })
-    .use(authz)
+    .use(authz("services", "update"))
     .input(updateServerTailnetUriSchema)
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.putParameters.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiSetTailnetPapercutServerUri",
-      }),
-    })
-    .use(ssmClient)
+    .use(
+      ssmClient(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+          ),
+          RoleSessionName: "ApiSetTailnetPapercutServerUri",
+        },
+      ]),
+    )
     .mutation(async ({ input }) => {
       await Papercut.setTailnetServerUri(input.tailnetUri);
     }),
   setServerAuthToken: userProcedure
-    .meta({ kind: "access-control", resource: "services", action: "update" })
-    .use(authz)
+    .use(authz("services", "update"))
     .input(updateServerAuthTokenSchema)
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.putParameters.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiSetPapercutServerAuthToken",
-      }),
-    })
-    .use(ssmClient)
+    .use(
+      ssmClient(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+          ),
+          RoleSessionName: "ApiSetPapercutServerAuthToken",
+        },
+      ]),
+    )
     .mutation(async ({ input }) => {
       await Papercut.setServerAuthToken(input.authToken);
     }),
   dispatchSync: userProcedure
-    .meta({
-      kind: "access-control",
-      resource: "papercut-sync",
-      action: "create",
-    })
-    .use(authz)
-    .meta({
-      kind: "aws-assume-role",
-      getInput: () => ({
-        RoleArn: Credentials.buildRoleArn(
-          Resource.Aws.account.id,
-          Resource.Aws.tenant.roles.apiAccess.nameTemplate,
-          useTenant().id,
-        ),
-        RoleSessionName: "ApiDispatchPapercutSync",
-      }),
-    })
-    .use(executeApiSigner)
+    .use(authz("papercut-sync", "create"))
+    .use(
+      executeApiSigner(() => [
+        {
+          RoleArn: Credentials.buildRoleArn(
+            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+          ),
+          RoleSessionName: "ApiDispatchPapercutSync",
+        },
+      ]),
+    )
     .mutation(async () => Api.dispatchPapercutSync()),
   getLastSync: userProcedure
-    .meta({ kind: "access-control", resource: "papercut-sync", action: "read" })
-    .use(authz)
+    .use(authz("papercut-sync", "read"))
     .query(async () => {
       const metadata = await Tenants.readMetadata();
       if (!metadata)

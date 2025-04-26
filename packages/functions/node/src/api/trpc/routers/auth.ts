@@ -21,20 +21,10 @@ export const authRouter = t.router({
       Auth.readOauth2ProvidersBySlug(input.slug).then(R.map(R.prop("kind"))),
     ),
   getOauthProviders: userProcedure
-    .meta({
-      kind: "access-control",
-      resource: "oauth-providers",
-      action: "read",
-    })
-    .use(authz)
+    .use(authz("oauth-providers", "read"))
     .query(async () => Auth.readOauth2Providers()),
   createOauthProviderGroup: userProcedure
-    .meta({
-      kind: "access-control",
-      resource: "oauth-providers",
-      action: "create",
-    })
-    .use(authz)
+    .use(authz("oauth-providers", "create"))
     .input(v.pick(oauth2ProviderUserGroupsSchema, ["id", "oauth2ProviderId"]))
     .mutation(async ({ input }) => {
       await Auth.createOauth2ProviderUserGroup(
@@ -43,23 +33,13 @@ export const authRouter = t.router({
       );
     }),
   getOauthProviderGroups: userProcedure
-    .meta({
-      kind: "access-control",
-      resource: "oauth-providers",
-      action: "read",
-    })
-    .use(authz)
+    .use(authz("oauth-providers", "read"))
     .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
     .query(async ({ input }) =>
       Auth.readOauth2ProviderUserGroups(input.oauth2ProviderId),
     ),
   deleteOauthProviderGroup: userProcedure
-    .meta({
-      kind: "access-control",
-      resource: "oauth-providers",
-      action: "delete",
-    })
-    .use(authz)
+    .use(authz("oauth-providers", "delete"))
     .input(v.pick(oauth2ProviderUserGroupsSchema, ["id", "oauth2ProviderId"]))
     .mutation(async ({ input }) => {
       await Auth.deleteOauth2ProviderUserGroup(
@@ -69,12 +49,7 @@ export const authRouter = t.router({
     }),
   entraId: t.router({
     getGroups: userProcedure
-      .meta({
-        kind: "access-control",
-        resource: "oauth-providers",
-        action: "read",
-      })
-      .use(authz)
+      .use(authz("oauth-providers", "read"))
       .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
       .query(async ({ input }) =>
         withGraph(

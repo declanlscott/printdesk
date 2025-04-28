@@ -4,21 +4,25 @@ import { ServerErrors } from "@printdesk/core/errors";
 import { TRPCError } from "@trpc/server";
 
 import { t } from "~/api/trpc";
+import { user } from "~/api/trpc/middleware/user";
 
 import type { Action, Resource } from "@printdesk/core/access-control/shared";
 
 export const authn = t.middleware(async (opts) => {
-  const meta = opts.meta;
+  if (!opts.meta)
+    throw new TRPCError({
+      code: "UNAUTHORIZED",
+      message: "Missing actor metadata.",
+    });
 
-  if (!meta || meta.actor === "public")
-    throw new TRPCError(
-      meta
-        ? { code: "UNAUTHORIZED", message: "Expected private actor." }
-        : { code: "INTERNAL_SERVER_ERROR", message: "Missing actor metadata." },
-    );
+  if (opts.meta.actor === "public")
+    throw new TRPCError({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "Expected private actor.",
+    });
 
   try {
-    assertActor(meta.actor);
+    assertActor(opts.meta.actor);
   } catch (e) {
     throw new TRPCError(
       e instanceof ServerErrors.InvalidActor
@@ -35,7 +39,7 @@ export const authn = t.middleware(async (opts) => {
 });
 
 export const authz = (resource: Resource, action: Action) =>
-  t.middleware(async (opts) => {
+  user.unstable_pipe(async (opts) => {
     await AccessControl.enforce([resource, action], {
       Error: TRPCError,
       args: [

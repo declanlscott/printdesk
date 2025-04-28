@@ -51,18 +51,19 @@ export const authRouter = t.router({
     getGroups: userProcedure
       .use(authz("oauth-providers", "read"))
       .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
-      .query(async ({ input }) =>
+      .use(async (opts) =>
         withGraph(
           () =>
             Graph.Client.initWithMiddleware({
               authProvider: {
                 getAccessToken: async () =>
-                  EntraId.applicationAccessToken(input.oauth2ProviderId),
+                  EntraId.applicationAccessToken(opts.input.oauth2ProviderId),
               },
             }),
-          Graph.groups,
+          () => opts.next(opts),
         ),
-      ),
+      )
+      .query(async () => Graph.groups()),
   }),
   google: t.router({
     // TODO

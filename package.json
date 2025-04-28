@@ -12,14 +12,14 @@
     "sst": "sst"
   },
   "dependencies": {
-    "@aws-sdk/client-appsync": "^3.796.0",
-    "@aws-sdk/client-dsql": "^3.796.0",
-    "@aws-sdk/credential-providers": "^3.796.0",
-    "@aws-sdk/dsql-signer": "^3.796.0",
+    "@aws-sdk/client-appsync": "^3.797.0",
+    "@aws-sdk/client-dsql": "^3.797.0",
+    "@aws-sdk/credential-providers": "^3.797.0",
+    "@aws-sdk/dsql-signer": "^3.797.0",
     "@openauthjs/openauth": "^0.4.3",
     "@printdesk/core": "workspace:*",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^0.43.0",
+    "drizzle-orm": "^0.43.1",
     "hono": "^4.7.7",
     "remeda": "^2.21.3",
     "replicache": "^15.0.1",
@@ -28,11 +28,11 @@
     "valibot": "^1.0.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-sts": "^3.796.0",
+    "@aws-sdk/client-sts": "^3.797.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.4.1",
     "@microsoft/microsoft-graph-types": "^2.40.0",
     "@smithy/util-waiter": "^4.0.3",
-    "@tanstack/eslint-plugin-query": "^5.73.3",
+    "@tanstack/eslint-plugin-query": "^5.74.7",
     "@tanstack/eslint-plugin-router": "^1.115.0",
     "@total-typescript/ts-reset": "^0.6.1",
     "@tsconfig/node22": "^22.0.1",

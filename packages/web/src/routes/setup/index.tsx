@@ -27,9 +27,10 @@ export const Route = createFileRoute("/setup/")({
     });
   },
   loader: async ({ context }) => {
-    const isAvailable = await context.trpcClient.tenants.isSlugAvailable.query({
-      slug: context.slug,
-    });
+    const isAvailable =
+      await context.trpcClient.tenants.public.isSlugAvailable.query({
+        slug: context.slug,
+      });
     if (!isAvailable)
       throw new Error(`"${context.slug}" is unavailable to register.`);
 

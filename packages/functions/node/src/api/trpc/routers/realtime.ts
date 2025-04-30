@@ -11,22 +11,26 @@ import { publicProcedure } from "~/api/trpc/procedures/public";
 import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const realtimeRouter = t.router({
-  getPublicUrl: publicProcedure.query(() => Realtime.getUrl()),
-  getPublicAuth: publicProcedure
-    .input(
-      v.object({ channel: v.optional(v.pipe(v.string(), v.startsWith("/"))) }),
-    )
-    .use(
-      appsyncSigner(() => [
-        {
-          RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
-          RoleSessionName: "PublicRealtimeSubscriber",
-        },
-      ]),
-    )
+  public: t.router({
+    getUrl: publicProcedure.query(() => Realtime.getUrl()),
+    getAuth: publicProcedure
+      .input(
+        v.object({
+          channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
+        }),
+      )
+      .use(
+        appsyncSigner(() => [
+          {
+            RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
+            RoleSessionName: "PublicRealtimeSubscriber",
+          },
+        ]),
+      )
       .query(async ({ input }) =>
         Realtime.getAuth(3600, JSON.stringify(input)),
       ),
+  }),
   getUrl: userProcedure
     .use(
       executeApiSigner(() => [

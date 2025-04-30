@@ -4,6 +4,7 @@ import { oauth2ProviderUserGroupsSchema } from "@printdesk/core/auth/shared";
 import { Graph } from "@printdesk/core/graph";
 import { withGraph } from "@printdesk/core/graph/context";
 import { tenantSlugSchema } from "@printdesk/core/tenants/shared";
+import { Constants } from "@printdesk/core/utils/constants";
 import * as R from "remeda";
 import * as v from "valibot";
 
@@ -15,11 +16,13 @@ import { publicProcedure } from "~/api/trpc/procedures/public";
 import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const authRouter = t.router({
-  getOauthProviderKinds: publicProcedure
-    .input(v.object({ slug: tenantSlugSchema }))
-    .query(async ({ input }) =>
-      Auth.readOauth2ProvidersBySlug(input.slug).then(R.map(R.prop("kind"))),
-    ),
+  public: t.router({
+    getOauthProviderKinds: publicProcedure
+      .input(v.object({ slug: tenantSlugSchema }))
+      .query(async ({ input }) =>
+        Auth.readOauth2ProvidersBySlug(input.slug).then(R.map(R.prop("kind"))),
+      ),
+  }),
   getOauthProviders: userProcedure
     .use(authz("oauth-providers", "read"))
     .query(async () => Auth.readOauth2Providers()),
@@ -47,7 +50,7 @@ export const authRouter = t.router({
         input.oauth2ProviderId,
       );
     }),
-  entraId: t.router({
+  [Constants.ENTRA_ID]: t.router({
     getGroups: userProcedure
       .use(authz("oauth-providers", "read"))
       .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
@@ -65,7 +68,7 @@ export const authRouter = t.router({
       )
       .query(async () => Graph.groups()),
   }),
-  google: t.router({
+  [Constants.GOOGLE]: t.router({
     // TODO
   }),
 });

@@ -21,15 +21,17 @@ import { publicProcedure } from "~/api/trpc/procedures/public";
 import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const setupRouter = t.router({
-  initialize: publicProcedure
-    .input(initializeDataSchema)
-    .mutation(async ({ input }) =>
-      Tenants.initialize(input.licenseKey, {
-        papercutSyncCronExpression:
-          Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION,
-        timezone: input.timezone,
-      }),
-    ),
+  public: t.router({
+    initialize: publicProcedure
+      .input(initializeDataSchema)
+      .mutation(async ({ input }) =>
+        Tenants.initialize(input.licenseKey, {
+          papercutSyncCronExpression:
+            Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION,
+          timezone: input.timezone,
+        }),
+      ),
+  }),
   register: systemProcedure
     .input(registerDataSchema)
     .mutation(async ({ input }) => {

@@ -30,7 +30,7 @@ interface SetupMachineContext extends SetupWizard {
   trpcClient: SetupMachineInput["trpcClient"];
   tenantId: Tenant["id"] | null;
   dispatchId: string | null;
-  realtimeAuth: RealtimeRouterIO<"output">["getPublicAuth"] | null;
+  realtimeAuth: RealtimeRouterIO<"output">["public"]["getAuth"] | null;
   failureStatus:
     | "initialize"
     | "register"
@@ -44,18 +44,19 @@ interface SetupMachineContext extends SetupWizard {
 }
 
 const isLicenseKeyAvailable = fromPromise<
-  TenantsRouterIO<"output">["isLicenseKeyAvailable"],
+  TenantsRouterIO<"output">["public"]["isLicenseKeyAvailable"],
   Pick<SetupMachineContext, "trpcClient"> &
-    TenantsRouterIO<"input">["isLicenseKeyAvailable"]
+    TenantsRouterIO<"input">["public"]["isLicenseKeyAvailable"]
 >(async ({ input: { trpcClient, ...input } }) =>
-  trpcClient.tenants.isLicenseKeyAvailable.query(input),
+  trpcClient.tenants.public.isLicenseKeyAvailable.query(input),
 );
 
 const initialize = fromPromise<
-  SetupRouterIO<"output">["initialize"],
-  Pick<SetupMachineContext, "trpcClient"> & SetupRouterIO<"input">["initialize"]
+  SetupRouterIO<"output">["public"]["initialize"],
+  Pick<SetupMachineContext, "trpcClient"> &
+    SetupRouterIO<"input">["public"]["initialize"]
 >(async ({ input: { trpcClient, ...input } }) =>
-  trpcClient.setup.initialize.mutate(input),
+  trpcClient.setup.public.initialize.mutate(input),
 );
 
 const register = fromPromise<
@@ -73,9 +74,9 @@ const dispatchInfra = fromPromise<
 >(async ({ input }) => {
   const { dispatchId } = await input.trpcClient.setup.dispatchInfra.mutate();
 
-  const realtimeAuth = await input.trpcClient.realtime.getPublicAuth.query({
-    channel: `/events/${dispatchId}`,
-  });
+  const realtimeAuth = await input.trpcClient.realtime.public.getAuth.query(
+    { channel: `/events/${dispatchId}` },
+  );
 
   return { dispatchId, realtimeAuth };
 });

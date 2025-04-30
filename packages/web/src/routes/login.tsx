@@ -7,7 +7,7 @@ export const Route = createFileRoute("/login")({
   loaderDeps: ({ search }) => ({ search }),
   loader: async ({ context, deps }) => {
     const oauthProviderKinds =
-      await context.trpcClient.auth.getOauthProviderKinds.query({
+      await context.trpcClient.auth.public.getOauthProviderKinds.query({
         slug: context.slug,
       });
     if (R.isEmpty(oauthProviderKinds)) throw redirect({ to: "/setup" });

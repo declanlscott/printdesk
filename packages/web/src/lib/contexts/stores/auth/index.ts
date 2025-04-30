@@ -12,6 +12,7 @@ import type {
   UserSubjectProperties,
 } from "@printdesk/core/auth/shared";
 import type { Tenant } from "@printdesk/core/tenants/sql";
+import type { ViteResource } from "~/types";
 
 export type AuthStore = {
   client: Client;
@@ -42,14 +43,14 @@ export type AuthStore = {
 
 export const AuthStoreApi = createStoreApiContext<
   AuthStore,
-  { issuer: string }
->(({ issuer }) =>
+  { resource: ViteResource }
+>(({ resource }) =>
   createStore(
     persist(
       (set, get) => ({
         client: createClient({
           clientID: "web",
-          issuer,
+          issuer: resource.Auth.url,
         }),
         subdomain: null,
         flow: null,
@@ -58,6 +59,11 @@ export const AuthStoreApi = createStoreApiContext<
         actions: {
           authorize: async (subdomain, provider, from) => {
             const redirectUri = new URL("/callback", window.location.origin);
+            if (
+              resource.AppData.isDev ||
+              window.location.hostname === "localhost"
+            )
+              redirectUri.searchParams.set("subdomain", subdomain);
             if (from) redirectUri.searchParams.set("from", from);
 
             const result = await get().client.authorize(

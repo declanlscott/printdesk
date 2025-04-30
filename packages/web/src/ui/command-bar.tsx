@@ -1,4 +1,4 @@
-import { useContext, useEffect } from "react";
+import { use, useEffect } from "react";
 import { OverlayTriggerStateContext } from "react-aria-components";
 import { Products } from "@printdesk/core/products/client";
 import { Rooms } from "@printdesk/core/rooms/client";
@@ -32,7 +32,7 @@ import type { ToOptions } from "@tanstack/react-router";
 import type { CommandBarPage } from "~/types";
 
 export function CommandBar() {
-  const state = useContext(OverlayTriggerStateContext);
+  const state = use(OverlayTriggerStateContext);
 
   const { input } = useCommandBar();
   const { getActivePage, popPage } = useCommandBarActions();
@@ -91,7 +91,7 @@ type HomeCommandProps = Extract<CommandBarPage, { kind: "home" }>;
 function HomeCommand(_props: HomeCommandProps) {
   const user = useUser();
 
-  const state = useContext(OverlayTriggerStateContext);
+  const state = use(OverlayTriggerStateContext);
 
   const { input } = useCommandBar();
   const { setInput, pushPage } = useCommandBarActions();
@@ -274,7 +274,7 @@ function HomeCommand(_props: HomeCommandProps) {
 
 type RoomCommandProps = Extract<CommandBarPage, { kind: "room" }>;
 function RoomCommand(props: RoomCommandProps) {
-  const state = useContext(OverlayTriggerStateContext);
+  const state = use(OverlayTriggerStateContext);
 
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();
@@ -359,7 +359,7 @@ type RoomSettingsSelectRoomCommandProps = Extract<
 function RoomSettingsSelectRoomCommand(
   props: RoomSettingsSelectRoomCommandProps,
 ) {
-  const state = useContext(OverlayTriggerStateContext);
+  const state = use(OverlayTriggerStateContext);
 
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();
@@ -454,7 +454,7 @@ type ProductSettingsSelectProductCommandProps = Extract<
 function ProductSettingsSelectProductCommand(
   props: ProductSettingsSelectProductCommandProps,
 ) {
-  const state = useContext(OverlayTriggerStateContext);
+  const state = use(OverlayTriggerStateContext);
 
   const { input } = useCommandBar();
   const { setInput, popPage } = useCommandBarActions();

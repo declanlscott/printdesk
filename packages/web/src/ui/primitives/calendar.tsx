@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { use } from "react";
 import {
   Button as AriaButton,
   Calendar as AriaCalendar,
@@ -129,7 +129,7 @@ export interface CalendarCellProps
   extends AriaCalendarCellProps,
     ComponentProps<typeof AriaCalendarCell> {}
 export function CalendarCell({ className, ...props }: CalendarCellProps) {
-  const isRange = Boolean(useContext(AriaRangeCalendarStateContext));
+  const isRange = Boolean(use(AriaRangeCalendarStateContext));
 
   return (
     <AriaCalendarCell

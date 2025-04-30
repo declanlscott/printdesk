@@ -3,7 +3,7 @@ import { useShallow } from "zustand/react/shallow";
 
 import { AuthStoreApi } from "~/lib/contexts/stores/auth";
 
-export const useAuthStoreApi = AuthStoreApi.use;
+export const useAuthStoreApi = AuthStoreApi.useStoreApi;
 
 export const useAuth = () =>
   useStore(

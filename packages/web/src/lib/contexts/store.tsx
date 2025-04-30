@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, use, useState } from "react";
 import { ClientErrors } from "@printdesk/core/errors/client";
 import { useStore } from "zustand";
 import { useShallow } from "zustand/react/shallow";
@@ -21,9 +21,8 @@ export function createStoreApiContext<
     );
   }
 
-  function use() {
-    const storeApi = useContext(Context);
-
+  function useStoreApi() {
+    const storeApi = use(Context);
     if (!storeApi) throw new ClientErrors.MissingContextProvider();
 
     return storeApi;
@@ -33,7 +32,7 @@ export function createStoreApiContext<
     TSelector extends (store: TStore) => ReturnType<TSelector>,
   >(
     selector: TSelector,
-  ) => useStore(use(), useShallow(selector));
+  ) => useStore(useStoreApi(), useShallow(selector));
 
   const useActions = () =>
     useSelector(({ actions }) => actions as TStore["actions"]);
@@ -41,7 +40,7 @@ export function createStoreApiContext<
   return {
     Context,
     Provider,
-    use,
+    useStoreApi,
     useSelector,
     useActions,
   };

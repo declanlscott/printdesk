@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { use } from "react";
 import {
   Button as AriaButton,
   Disclosure as AriaDisclosure,
@@ -34,7 +34,7 @@ export interface DisclosureProps
     ComponentProps<typeof AriaDisclosure>,
     DisclosureStyles {}
 export function Disclosure({ children, className, ...props }: DisclosureProps) {
-  const isInGroup = useContext(DisclosureGroupStateContext) !== null;
+  const isInGroup = use(DisclosureGroupStateContext) !== null;
 
   return (
     <AriaDisclosure

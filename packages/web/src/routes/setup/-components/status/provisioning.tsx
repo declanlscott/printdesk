@@ -70,7 +70,10 @@ function WaitForInfra(props: WaitForInfraProps) {
   useRealtimeChannel(
     `/events/${props.dispatchId}`,
     Realtime.handleEvent((event) => {
-      if (event.kind === "infra" && event.dispatchId === props.dispatchId) {
+      if (
+        event.kind === "infra_provision_result" &&
+        event.dispatchId === props.dispatchId
+      ) {
         if (event.success) return actor.send({ type: "status.healthcheck" });
 
         if (!event.success)

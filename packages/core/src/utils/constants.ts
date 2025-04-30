@@ -86,8 +86,6 @@ export namespace Constants {
 
   export const TENANT_SLUG_PATTERN = new RegExp(/^[a-z0-9-]+$/);
 
-  export const REPLICACHE_POKE = "replicache_poke";
-
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 
   export const REPLICACHE_LIFETIME = {

@@ -55,17 +55,35 @@ export const messageSchema = v.variant("type", [
 ]);
 export type Message = v.InferOutput<typeof messageSchema>;
 
+export const infraProvisionResultEventSchema = v.object({
+  kind: v.literal("infra_provision_result"),
+  success: v.boolean(),
+  dispatchId: v.string(),
+  retrying: v.boolean(),
+});
+export type InfraProvisionResultEvent = v.InferOutput<
+  typeof infraProvisionResultEventSchema
+>;
+
+export const papercutSyncResultEventSchema = v.object({
+  kind: v.literal("papercut_sync_result"),
+  success: v.boolean(),
+  dispatchId: v.string(),
+});
+export type PapercutSyncResultEvent = v.InferOutput<
+  typeof papercutSyncResultEventSchema
+>;
+
+export const replicachePokeEventSchema = v.object({
+  kind: v.literal("replicache_poke"),
+});
+export type ReplicachePokeEvent = v.InferOutput<
+  typeof replicachePokeEventSchema
+>;
+
 export const eventSchema = v.variant("kind", [
-  v.object({
-    kind: v.literal("infra"),
-    success: v.boolean(),
-    dispatchId: v.string(),
-    retrying: v.boolean(),
-  }),
-  v.object({
-    kind: v.literal("papercut-sync"),
-    success: v.boolean(),
-    dispatchId: v.string(),
-  }),
+  infraProvisionResultEventSchema,
+  papercutSyncResultEventSchema,
+  replicachePokeEventSchema,
 ]);
 export type Event = v.InferOutput<typeof eventSchema>;

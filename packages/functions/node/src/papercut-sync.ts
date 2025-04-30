@@ -70,11 +70,11 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
               (await Realtime.getDns()).http,
               `/events/${event.id}`,
               [
-                JSON.stringify({
-                  kind: "papercut-sync",
+                {
+                  kind: "papercut_sync_result",
                   success: !!error,
                   dispatchId: event.id,
-                }),
+                },
               ],
             );
 

@@ -1,7 +1,6 @@
 import * as R from "remeda";
 
 import { Realtime } from "../realtime";
-import { Constants } from "../utils/constants";
 
 import type { StartsWith } from "../utils/types";
 
@@ -16,7 +15,7 @@ export async function poke<TChannel extends string>(
   const results = await Promise.allSettled(
     uniqueChannels.map((channel) =>
       Realtime.publish(httpDomainName, `/replicache${channel}`, [
-        Constants.REPLICACHE_POKE,
+        { kind: "replicache_poke" },
       ]),
     ),
   );

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Constants } from "@printdesk/core/utils/constants";
+import { Realtime } from "@printdesk/core/realtime/client";
 import { Outlet } from "@tanstack/react-router";
 
 import { CommandBarStoreApiProvider } from "~/lib/contexts/stores/command-bar/provider";
@@ -28,25 +28,29 @@ export function AuthenticatedLayout() {
       urlProvider={webSocketUrlProvider}
       getAuth={getWebSocketAuth}
     >
-      <Realtime />
+      <InnerLayout />
     </RealtimeProvider>
   );
 }
 
-function Realtime() {
+function InnerLayout() {
   const user = useUser();
 
   const replicache = useReplicache();
 
-  const pullOnPoke = useCallback(
+  const handlePull = useCallback(
     (event: unknown) => {
-      if (event === Constants.REPLICACHE_POKE) void replicache.pull();
+      const puller = Realtime.handleEvent((event) => {
+        if (event.kind === "replicache_poke") void replicache.pull();
+      });
+
+      return puller(event);
     },
     [replicache],
   );
 
-  useRealtimeChannel(`/replicache/users/${user.id}`, pullOnPoke);
-  useRealtimeChannel(`/replicache/tenant`, pullOnPoke);
+  useRealtimeChannel(`/replicache/users/${user.id}`, handlePull);
+  useRealtimeChannel(`/replicache/tenant`, handlePull);
 
   return (
     <CommandBarStoreApiProvider>

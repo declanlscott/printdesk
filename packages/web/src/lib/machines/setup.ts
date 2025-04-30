@@ -20,7 +20,7 @@ import type { SetupRouterIO } from "@printdesk/functions/api/trpc/routers/setup"
 import type { TenantsRouterIO } from "@printdesk/functions/api/trpc/routers/tenants";
 import type { ViteResource } from "~/types";
 
-interface SetupMachineInput extends Pick<SetupWizard, "tenantSlug"> {
+interface SetupMachineInput extends Pick<SetupWizard, "tenantSubdomain"> {
   resource: ViteResource;
   trpcClient: ReturnType<typeof createTRPCClient<TrpcRouter>>;
 }
@@ -119,7 +119,10 @@ export const setupMachine = setup({
     context: {} as SetupMachineContext,
     events: {} as
       | { type: "wizard.back" }
-      | ({ type: "wizard.step1.next" } & Omit<SetupWizardStep1, "tenantSlug">)
+      | ({ type: "wizard.step1.next" } & Omit<
+          SetupWizardStep1,
+          "tenantSubdomain"
+        >)
       | ({ type: "wizard.step2.next" } & SetupWizardStep2)
       | ({ type: "wizard.step3.next" } & SetupWizardStep3)
       | ({ type: "wizard.step4.next" } & SetupWizardStep4)
@@ -147,7 +150,7 @@ export const setupMachine = setup({
     // Step 1
     licenseKey: "",
     tenantName: "",
-    tenantSlug: input.tenantSlug,
+    tenantSubdomain: input.tenantSubdomain,
 
     // Step 2
     userOauthProviderKind: Constants.ENTRA_ID,
@@ -300,7 +303,7 @@ export const setupMachine = setup({
             input: ({ context }) => ({
               trpcClient: context.trpcClient,
               tenantName: context.tenantName,
-              tenantSlug: context.tenantSlug,
+              tenantSubdomain: context.tenantSubdomain,
               userOauthProviderKind: context.userOauthProviderKind,
               userOauthProviderId: context.userOauthProviderId,
             }),

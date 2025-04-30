@@ -54,7 +54,7 @@ export function UserMenu() {
                   </span>
 
                   <span className="text-muted-foreground text-xs leading-none">
-                    {tenant.slug}
+                    {tenant.subdomain}
 
                     {user.role === "administrator" ? (
                       <> ({tenant.status})</>

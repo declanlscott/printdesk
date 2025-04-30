@@ -15,8 +15,8 @@ import { ProgressBar } from "~/ui/primitives/progress-bar";
 
 export function SetupWizard() {
   const state = useSetupWizardState();
-  const slug = useSetupMachine().useSelector(
-    ({ context }) => context.tenantSlug,
+  const subdomain = useSetupMachine().useSelector(
+    ({ context }) => context.tenantSubdomain,
   );
 
   const progress = useMemo(() => {
@@ -33,7 +33,7 @@ export function SetupWizard() {
       <div className="py-12">
         <div className="mx-auto grid max-w-md gap-6">
           <div className="flex justify-center">
-            <AriaLink href={{ to: "/", search: { slug } }}>
+            <AriaLink href={{ to: "/", search: { subdomain } }}>
               <img src={logo} alt="Printdesk" className="size-24" />
             </AriaLink>
           </div>

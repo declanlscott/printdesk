@@ -36,7 +36,7 @@ export namespace Tenants {
             ...buildConflictUpdateColumns(tenantsTable, [
               "id",
               "name",
-              "slug",
+              "subdomain",
               "status",
             ]),
             version: sql`${tenantsTable.version} + 1`,
@@ -88,14 +88,14 @@ export namespace Tenants {
     });
   });
 
-  export async function isSlugAvailable(slug: Tenant["slug"]) {
-    if (["api", "auth", "backend"].includes(slug)) return false;
+  export async function isSubdomainAvailable(subdomain: Tenant["subdomain"]) {
+    if (["api", "auth", "backend"].includes(subdomain)) return false;
 
     const tenant = await useTransaction((tx) =>
       tx
         .select({ status: tenantsTable.status })
         .from(tenantsTable)
-        .where(eq(tenantsTable.slug, slug))
+        .where(eq(tenantsTable.subdomain, subdomain))
         .then(R.first()),
     );
     if (!tenant || tenant.status === "setup") return true;
@@ -193,7 +193,7 @@ export namespace Tenants {
         put({
           id: useTenant().id,
           name: data.tenantName,
-          slug: data.tenantSlug,
+          subdomain: data.tenantSubdomain,
         }),
         Auth.putOauth2Provider({
           id: data.userOauthProviderId,

@@ -11,7 +11,7 @@ export const Route = createFileRoute("/callback")({
   loader: async ({ context, deps }) => {
     await context.authStoreApi
       .getState()
-      .actions.exchange(context.slug, deps.code, deps.state);
+      .actions.exchange(context.subdomain, deps.code, deps.state);
 
     if (deps.from) throw redirect({ href: deps.from });
 
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/callback")({
       search:
         context.resource.AppData.isDev ||
         window.location.hostname === "localhost"
-          ? { slug: context.slug }
+          ? { subdomain: context.subdomain }
           : {},
     });
   },

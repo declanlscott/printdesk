@@ -62,29 +62,29 @@ function OrganizationCard() {
 
   const [isLocked, setIsLocked] = useState(() => true);
 
-  const [fullName, setFullName] = useState(() => tenant.name);
-  const [shortName, setShortName] = useState(() => tenant.slug);
+  const [name, setName] = useState(() => tenant.name);
+  const [subdomain, setSubdomain] = useState(() => tenant.subdomain);
 
   const { updateTenant } = useMutators();
 
   async function mutateName() {
-    const name = fullName.trim();
-    if (name === tenant.name) return;
+    const trimmed = name.trim();
+    if (trimmed === tenant.name) return;
 
     await updateTenant({
       id: tenant.id,
-      name: fullName,
+      name: trimmed,
       updatedAt: new Date(),
     });
   }
 
-  async function mutateSlug() {
-    const slug = shortName.trim();
-    if (slug === tenant.slug) return;
+  async function mutateSubdomain() {
+    const trimmed = subdomain?.trim();
+    if (trimmed === tenant.subdomain) return;
 
     await updateTenant({
       id: tenant.id,
-      slug,
+      subdomain: trimmed,
       updatedAt: new Date(),
     });
   }
@@ -120,22 +120,22 @@ function OrganizationCard() {
 
       <CardContent className="space-y-4">
         <TextField
-          labelProps={{ children: "Full Name" }}
+          labelProps={{ children: "Name" }}
           inputProps={{
             disabled: isLocked,
-            value: fullName ?? "",
-            onChange: (e) => setFullName(e.target.value),
+            value: name ?? "",
+            onChange: (e) => setName(e.target.value),
             onBlur: void mutateName,
           }}
         />
 
         <TextField
-          labelProps={{ children: "Short Name" }}
+          labelProps={{ children: "Subdomain" }}
           inputProps={{
             disabled: isLocked,
-            value: shortName ?? "",
-            onChange: (e) => setShortName(e.target.value),
-            onBlur: void mutateSlug,
+            value: subdomain ?? "",
+            onChange: (e) => setSubdomain(e.target.value),
+            onBlur: void mutateSubdomain,
           }}
         />
       </CardContent>

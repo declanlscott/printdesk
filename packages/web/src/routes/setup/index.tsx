@@ -10,7 +10,7 @@ import { SetupWizard } from "~/routes/setup/-components/wizard";
 export const Route = createFileRoute("/setup/")({
   beforeLoad: async ({ context }) => {
     try {
-      await context.authStoreApi.getState().actions.verify(context.slug);
+      await context.authStoreApi.getState().actions.verify(context.subdomain);
     } catch {
       // Continue loading the setup route if the user is unauthenticated
       return;
@@ -22,21 +22,21 @@ export const Route = createFileRoute("/setup/")({
       search:
         context.resource.AppData.isDev ||
         window.location.hostname === "localhost"
-          ? { slug: context.slug }
+          ? { subdomain: context.subdomain }
           : {},
     });
   },
   loader: async ({ context }) => {
     const isAvailable =
-      await context.trpcClient.tenants.public.isSlugAvailable.query({
-        slug: context.slug,
+      await context.trpcClient.tenants.public.isSubdomainAvailable.query({
+        subdomain: context.subdomain,
       });
     if (!isAvailable)
-      throw new Error(`"${context.slug}" is unavailable to register.`);
+      throw new Error(`"${context.subdomain}" is unavailable to register.`);
 
     const SetupMachineContext = createActorContext(setupMachine, {
       input: {
-        tenantSlug: context.slug,
+        tenantSubdomain: context.subdomain,
         resource: context.resource,
         trpcClient: context.trpcClient,
       },

@@ -3,7 +3,7 @@ import { EntraId } from "@printdesk/core/auth/entra-id";
 import { oauth2ProviderUserGroupsSchema } from "@printdesk/core/auth/shared";
 import { Graph } from "@printdesk/core/graph";
 import { withGraph } from "@printdesk/core/graph/context";
-import { tenantSlugSchema } from "@printdesk/core/tenants/shared";
+import { tenantSubdomainSchema } from "@printdesk/core/tenants/shared";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as R from "remeda";
 import * as v from "valibot";
@@ -18,9 +18,11 @@ import type { InferRouterIO, IO } from "~/api/trpc/types";
 export const authRouter = t.router({
   public: t.router({
     getOauthProviderKinds: publicProcedure
-      .input(v.object({ slug: tenantSlugSchema }))
+      .input(v.object({ subdomain: tenantSubdomainSchema }))
       .query(async ({ input }) =>
-        Auth.readOauth2ProvidersBySlug(input.slug).then(R.map(R.prop("kind"))),
+        Auth.readOauth2ProvidersBySubdomain(input.subdomain).then(
+          R.map(R.prop("kind")),
+        ),
       ),
   }),
   getOauthProviders: userProcedure

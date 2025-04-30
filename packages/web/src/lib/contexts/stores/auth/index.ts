@@ -15,7 +15,7 @@ import type { Tenant } from "@printdesk/core/tenants/sql";
 
 export type AuthStore = {
   client: Client;
-  slug: Tenant["slug"] | null;
+  subdomain: Tenant["subdomain"] | null;
   flow: {
     challenge: Challenge;
     redirectUri: URL;
@@ -24,16 +24,16 @@ export type AuthStore = {
   user: UserSubjectProperties | null;
   actions: {
     authorize: (
-      slug: Tenant["slug"],
+      subdomain: Tenant["subdomain"],
       oauthProviderKind: Oauth2ProviderKind,
       from?: string,
     ) => Promise<string>;
     exchange: (
-      slug: Tenant["slug"],
+      subdomain: Tenant["subdomain"],
       code: string,
       state: string,
     ) => Promise<void>;
-    verify: (slug: Tenant["slug"]) => Promise<void>;
+    verify: (subdomain: Tenant["subdomain"]) => Promise<void>;
     refresh: () => Promise<void>;
     getAuth: () => string;
     logout: () => void;
@@ -51,12 +51,12 @@ export const AuthStoreApi = createStoreApiContext<
           clientID: "web",
           issuer,
         }),
-        slug: null,
+        subdomain: null,
         flow: null,
         tokens: null,
         user: null,
         actions: {
-          authorize: async (slug, provider, from) => {
+          authorize: async (subdomain, provider, from) => {
             const redirectUri = new URL("/callback", window.location.origin);
             if (from) redirectUri.searchParams.set("from", from);
 
@@ -67,7 +67,7 @@ export const AuthStoreApi = createStoreApiContext<
             );
 
             set(() => ({
-              slug,
+              subdomain,
               flow: {
                 challenge: result.challenge,
                 redirectUri,
@@ -76,7 +76,7 @@ export const AuthStoreApi = createStoreApiContext<
 
             return result.url;
           },
-          exchange: async (slug, code, state) => {
+          exchange: async (subdomain, code, state) => {
             const flow = get().flow;
             if (flow?.challenge.state !== state)
               throw new Error("Invalid state");
@@ -88,11 +88,12 @@ export const AuthStoreApi = createStoreApiContext<
             );
             if (result.err) throw result.err;
 
-            if (get().slug !== slug) throw new Error("Slug mismatch");
+            if (get().subdomain !== subdomain)
+              throw new Error("Subdomain mismatch");
 
             set(() => ({ flow: null, tokens: result.tokens }));
           },
-          verify: async (slug) => {
+          verify: async (subdomain) => {
             const tokens = get().tokens;
             if (!tokens) throw new Error("Missing tokens");
 
@@ -101,7 +102,8 @@ export const AuthStoreApi = createStoreApiContext<
             });
             if (result.err) throw result.err;
 
-            if (get().slug !== slug) throw new Error("Slug mismatch");
+            if (get().subdomain !== subdomain)
+              throw new Error("Subdomain mismatch");
 
             set(() => ({
               tokens: result.tokens,
@@ -124,7 +126,12 @@ export const AuthStoreApi = createStoreApiContext<
             return `Bearer ${tokens.access}`;
           },
           logout: () => {
-            set(() => ({ slug: null, flow: null, tokens: null, user: null }));
+            set(() => ({
+              subdomain: null,
+              flow: null,
+              tokens: null,
+              user: null,
+            }));
 
             throw redirect({ to: "/login" });
           },
@@ -133,6 +140,7 @@ export const AuthStoreApi = createStoreApiContext<
       {
         name: "auth",
         partialize: (store) => ({
+          subdomain: store.subdomain,
           flow: store.flow,
           tokens: store.tokens,
           user: store.user,

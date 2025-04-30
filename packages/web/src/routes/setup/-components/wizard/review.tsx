@@ -59,13 +59,12 @@ export function SetupWizardReview() {
 }
 
 function Step1() {
-  const { licenseKey, tenantName, tenantSlug } = useSetupMachine().useSelector(
-    ({ context }) => ({
+  const { licenseKey, tenantName, tenantSubdomain } =
+    useSetupMachine().useSelector(({ context }) => ({
       licenseKey: context.licenseKey,
       tenantName: context.tenantName,
-      tenantSlug: context.tenantSlug,
-    }),
-  );
+      tenantSubdomain: context.tenantSubdomain,
+    }));
 
   return (
     <Disclosure id={1}>
@@ -90,8 +89,8 @@ function Step1() {
 
         <div className="grid gap-2">
           <TextField
-            labelProps={{ children: "Slug" }}
-            inputProps={{ disabled: true, value: tenantSlug }}
+            labelProps={{ children: "Subdomain" }}
+            inputProps={{ disabled: true, value: tenantSubdomain }}
             className="grid gap-2"
           />
         </div>

@@ -8,14 +8,18 @@ export const Route = createFileRoute("/login")({
   loader: async ({ context, deps }) => {
     const oauthProviderKinds =
       await context.trpcClient.auth.public.getOauthProviderKinds.query({
-        slug: context.slug,
+        subdomain: context.subdomain,
       });
     if (R.isEmpty(oauthProviderKinds)) throw redirect({ to: "/setup" });
 
     // Start the OAuth flow
     const url = await context.authStoreApi
       .getState()
-      .actions.authorize(context.slug, oauthProviderKinds[0], deps.search.from);
+      .actions.authorize(
+        context.subdomain,
+        oauthProviderKinds[0],
+        deps.search.from,
+      );
 
     throw redirect({ href: url, reloadDocument: true });
   },

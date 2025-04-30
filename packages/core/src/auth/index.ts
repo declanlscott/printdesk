@@ -92,7 +92,9 @@ export namespace Auth {
         .then(R.first()),
     );
 
-  export const readOauth2ProvidersBySlug = async (slug: Tenant["slug"]) =>
+  export const readOauth2ProvidersBySubdomain = async (
+    subdomain: Tenant["subdomain"],
+  ) =>
     useTransaction((tx) =>
       tx
         .select({ oauth2Provider: oauth2ProvidersTable })
@@ -101,7 +103,7 @@ export namespace Auth {
           oauth2ProvidersTable,
           eq(tenantsTable.id, oauth2ProvidersTable.tenantId),
         )
-        .where(eq(tenantsTable.slug, slug))
+        .where(eq(tenantsTable.subdomain, subdomain))
         .then(R.map(R.prop("oauth2Provider"))),
     );
 

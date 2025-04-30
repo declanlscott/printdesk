@@ -31,10 +31,10 @@ export type InfraProgramInput = v.InferOutput<typeof infraProgramInputSchema>;
 
 export const tenantsTableName = "tenants";
 
-export const tenantSlugSchema = v.pipe(
+export const tenantSubdomainSchema = v.pipe(
   v.string(),
   v.regex(
-    Constants.TENANT_SLUG_PATTERN,
+    Constants.TENANT_SUBDOMAIN_PATTERN,
     "Invalid format, only alphanumeric characters and hyphens are allowed",
   ),
 );
@@ -44,7 +44,7 @@ export type TenantStatus = (typeof tenantStatuses)[number];
 
 export const tenantSchema = v.object({
   id: nanoIdSchema,
-  slug: tenantSlugSchema,
+  subdomain: tenantSubdomainSchema,
   name: v.string(),
   status: v.picklist(tenantStatuses),
   ...timestampsSchema.entries,
@@ -64,7 +64,7 @@ export type UpdateTenantMutationArgs = v.InferOutput<
 export const setupWizardStep1Schema = v.object({
   licenseKey: licenseSchema.entries.key,
   tenantName: tenantSchema.entries.name,
-  tenantSlug: tenantSchema.entries.slug,
+  tenantSubdomain: v.nonNullable(tenantSchema.entries.subdomain),
 });
 export type SetupWizardStep1 = v.InferOutput<typeof setupWizardStep1Schema>;
 

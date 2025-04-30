@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     const user = await (async () => {
       try {
-        await authStore.actions.verify(context.slug);
+        await authStore.actions.verify(context.subdomain);
 
         const user = authStore.user;
         if (!user) throw new Error("User not authenticated");

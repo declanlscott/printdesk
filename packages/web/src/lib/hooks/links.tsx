@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { useResource } from "~/lib/hooks/resource";
-import { useSlug } from "~/lib/hooks/tenant";
+import { useSubdomain } from "~/lib/hooks/tenant";
 
 import type { Product } from "@printdesk/core/products/sql";
 import type { Room } from "@printdesk/core/rooms/sql";
@@ -21,7 +21,7 @@ import type { UserRole } from "@printdesk/core/users/shared";
 import type { AppLink } from "~/types";
 
 export function useNavLinks() {
-  const slug = useSlug();
+  const subdomain = useSubdomain();
   const resource = useResource();
 
   const dashboard = useMemo(
@@ -33,13 +33,13 @@ export function useNavLinks() {
             to: "/",
             search:
               resource.AppData.isDev || window.location.hostname === "localhost"
-                ? { slug }
+                ? { subdomain }
                 : {},
           }),
         },
         icon: <LayoutDashboard />,
       }) satisfies AppLink,
-    [resource.AppData.isDev, slug],
+    [resource.AppData.isDev, subdomain],
   );
 
   const products = useMemo(

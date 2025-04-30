@@ -43,13 +43,15 @@ export const tenantsTable = pgTable(
   tenantsTableName,
   {
     ...idPrimaryKey,
-    slug: varchar("slug", { length: Constants.VARCHAR_LENGTH }).notNull(),
+    subdomain: varchar("subdomain", {
+      length: Constants.VARCHAR_LENGTH,
+    }).notNull(),
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     status: tenantStatus("status").notNull().default("setup"),
     ...timestamps,
     ...version,
   },
-  (table) => [uniqueIndex().on(table.slug)],
+  (table) => [uniqueIndex().on(table.subdomain)],
 );
 export type TenantsTable = typeof tenantsTable;
 export type Tenant = InferFromTable<TenantsTable>;

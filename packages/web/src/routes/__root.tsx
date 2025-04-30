@@ -1,5 +1,6 @@
 import { RouterProvider } from "react-aria-components";
 import { SharedErrors } from "@printdesk/core/errors/shared";
+import { tenantSubdomainSchema } from "@printdesk/core/tenants/shared";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -14,18 +15,18 @@ import * as v from "valibot";
 import type { InitialRouterContext } from "~/types";
 
 export const Route = createRootRouteWithContext<InitialRouterContext>()({
-  validateSearch: v.object({ slug: v.optional(v.string()) }),
-  search: { middlewares: [retainSearchParams(["slug"])] },
+  validateSearch: v.object({ subdomain: v.optional(tenantSubdomainSchema) }),
+  search: { middlewares: [retainSearchParams(["subdomain"])] },
   beforeLoad: async ({ context, search }) => {
-    const slug =
+    const subdomain =
       context.resource.AppData.isDev || window.location.hostname === "localhost"
-        ? search.slug
+        ? search.subdomain
         : window.location.hostname
             .split(`.${context.resource.AppData.domainName.fullyQualified}`)
             .at(0);
-    if (!slug) throw new Error("Missing slug");
+    if (!subdomain) throw new Error("Missing subdomain");
 
-    return { slug };
+    return { subdomain };
   },
   head: () => ({
     meta: [{ title: "Printdesk" }],

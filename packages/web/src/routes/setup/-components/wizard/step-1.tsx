@@ -16,7 +16,7 @@ export function SetupWizardStep1() {
   const defaultValues = setupMachine.useSelector(({ context }) => ({
     licenseKey: context.licenseKey,
     tenantName: context.tenantName,
-    tenantSlug: context.tenantSlug,
+    tenantSubdomain: context.tenantSubdomain,
   }));
 
   const form = useAppForm({
@@ -92,17 +92,17 @@ export function SetupWizardStep1() {
             )}
           </form.AppField>
 
-          <form.AppField name="tenantSlug">
+          <form.AppField name="tenantSubdomain">
             {(field) => (
               <field.TextField
-                labelProps={{ children: "Slug" }}
+                labelProps={{ children: "Subdomain" }}
                 descriptionProps={{
                   children: (
                     <>
                       A unique identifier for your organization, used for
                       accessing the application:{" "}
                       <Link href={{ to: "/" }} target="_blank">
-                        {defaultValues.tenantSlug.toLowerCase()}.
+                        {defaultValues.tenantSubdomain.toLowerCase()}.
                         {AppData.domainName.fullyQualified}
                       </Link>
                     </>

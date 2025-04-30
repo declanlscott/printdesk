@@ -113,19 +113,17 @@ export namespace DynamoDb {
 }
 
 export namespace S3 {
-  type RequestPresigningArguments = Parameters<typeof getSignedUrl>[2];
-
   export const Client = S3Client;
   export type Client = S3Client;
 
-  export const getSignedPutUrl = (
+  export const getPresignedPutUrl = (
     input: NonNullableProperties<PutObjectCommandInput>,
-    args?: RequestPresigningArguments,
+    args?: Parameters<typeof getSignedUrl>[2],
   ) => getSignedUrl(useAws("s3").client, new PutObjectCommand(input), args);
 
-  export const getSignedGetUrl = (
+  export const getPresignedGetUrl = (
     input: NonNullableProperties<GetObjectCommandInput>,
-    args?: RequestPresigningArguments,
+    args?: Parameters<typeof getSignedUrl>[2],
   ) => getSignedUrl(useAws("s3").client, new GetObjectCommand(input), args);
 
   export const putObject = async (
@@ -150,6 +148,11 @@ export namespace SignatureV4 {
     service: string,
     ...args: Parameters<_SignatureV4["sign"]>
   ) => useAws("sigv4").signers[service].sign(...args);
+
+  export const presign = (
+    service: string,
+    ...args: Parameters<_SignatureV4["presign"]>
+  ) => useAws("sigv4").signers[service].presign(...args);
 }
 
 export namespace Sqs {

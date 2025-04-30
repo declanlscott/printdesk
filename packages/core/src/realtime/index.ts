@@ -9,6 +9,7 @@ import { Api } from "../backend/api";
 import { ServerErrors } from "../errors";
 
 import type { StartsWith } from "../utils/types";
+import type { Event } from "./shared";
 
 export namespace Realtime {
   export async function getDns() {
@@ -40,11 +41,12 @@ export namespace Realtime {
       }),
     );
 
-  export const getAuth = async (
+  export async function getAuth(
+    expiresIn?: number,
     body = "{}",
     httpDomainName = Resource.AppsyncEventApi.dns.http,
-  ) =>
-    SignatureV4.sign(
+  ) {
+    const args = [
       "appsync",
       new HttpRequest({
         method: "POST",
@@ -59,35 +61,40 @@ export namespace Realtime {
         },
         body,
       }),
-    ).then((req) => req.headers);
+    ] as const;
+
+    return (
+      expiresIn
+        ? SignatureV4.presign(...args, { expiresIn })
+        : SignatureV4.sign(...args)
+    ).then(R.prop("headers"));
+  }
 
   export async function publish<TChannel extends string>(
     httpDomainName: string,
     channel: StartsWith<"/", TChannel>,
-    events: Array<string>,
+    events: Array<Event>,
   ) {
-    for (const batch of R.chunk(events, 5)) {
-      const req = await SignatureV4.sign(
-        "appsync",
-        new HttpRequest({
-          method: "POST",
-          protocol: "https:",
-          hostname: httpDomainName,
-          path: "/event",
-          headers: { "Content-Type": "application/json", host: httpDomainName },
-          body: JSON.stringify({
-            channel,
-            events: batch,
-          }),
+    const req = await SignatureV4.sign(
+      "appsync",
+      new HttpRequest({
+        method: "POST",
+        protocol: "https:",
+        hostname: httpDomainName,
+        path: "/event",
+        headers: { "Content-Type": "application/json", host: httpDomainName },
+        body: JSON.stringify({
+          channel,
+          events: JSON.stringify(events),
         }),
-      );
+      }),
+    );
 
-      await fetch(Util.formatUrl(req), {
-        method: req.method,
-        headers: req.headers,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        body: req.body,
-      });
-    }
+    await fetch(Util.formatUrl(req), {
+      method: req.method,
+      headers: req.headers,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      body: req.body,
+    });
   }
 }

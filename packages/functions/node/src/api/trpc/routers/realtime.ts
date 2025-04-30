@@ -24,7 +24,9 @@ export const realtimeRouter = t.router({
         },
       ]),
     )
-    .query(async ({ input }) => Realtime.getAuth(JSON.stringify(input))),
+      .query(async ({ input }) =>
+        Realtime.getAuth(3600, JSON.stringify(input)),
+      ),
   getUrl: userProcedure
     .use(
       executeApiSigner(() => [
@@ -54,7 +56,11 @@ export const realtimeRouter = t.router({
       ]),
     )
     .query(async ({ input }) =>
-      Realtime.getAuth((JSON.stringify(input), await Realtime.getDns()).http),
+      Realtime.getAuth(
+        undefined,
+        JSON.stringify(input),
+        (await Realtime.getDns()).http,
+      ),
     ),
 });
 

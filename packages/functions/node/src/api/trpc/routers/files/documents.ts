@@ -53,7 +53,7 @@ export const documentsRouter = t.router({
       ]),
     )
     .query(async () => Documents.getMimeTypes()),
-  getSignedGetUrl: userProcedure
+  getPresignedGetUrl: userProcedure
     .input(
       v.object({
         // TODO
@@ -80,12 +80,12 @@ export const documentsRouter = t.router({
       ]),
     )
     .query(async () =>
-      S3.getSignedGetUrl({
+      S3.getPresignedGetUrl({
         Bucket: await Documents.getBucket(),
         Key: "TODO",
       }),
     ),
-  getSignedPutUrl: userProcedure
+  getPresignedPutUrl: userProcedure
     .input(
       v.object({
         // TODO
@@ -112,7 +112,7 @@ export const documentsRouter = t.router({
       ]),
     )
     .query(async () =>
-      S3.getSignedPutUrl({
+      S3.getPresignedPutUrl({
         Bucket: await Documents.getBucket(),
         Key: "TODO",
       }),

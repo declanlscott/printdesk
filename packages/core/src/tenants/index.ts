@@ -98,9 +98,8 @@ export namespace Tenants {
         .where(eq(tenantsTable.subdomain, subdomain))
         .then(R.first()),
     );
-    if (!tenant || tenant.status === "setup") return true;
 
-    return false;
+    return !tenant || tenant.status === "setup";
   }
 
   export const isLicenseKeyAvailable = async (licenseKey: License["key"]) =>

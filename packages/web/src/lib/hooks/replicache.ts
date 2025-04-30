@@ -1,14 +1,15 @@
-import { useContext, useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { ClientErrors } from "@printdesk/core/errors/client";
+import * as R from "remeda";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
+import { useStableCallback } from "~/lib/hooks/utils";
 
 import type { ReadTransaction, SubscribeOptions } from "replicache";
 
 export function useReplicacheContext() {
-  const replicache = useContext(ReplicacheContext);
-
+  const replicache = use(ReplicacheContext);
   if (!replicache) throw new ClientErrors.MissingContextProvider("Replicache");
 
   return replicache;
@@ -24,24 +25,24 @@ export interface UseSubscribeOptions<TData, TDefaultData>
 
 export function useSubscribe<TData, TDefaultData = undefined>(
   query: (tx: ReadTransaction) => Promise<TData>,
-  {
-    onData,
-    onError,
-    onDone,
-    isEqual,
-    defaultData,
-  }: UseSubscribeOptions<TData, TDefaultData> = {},
+  options: UseSubscribeOptions<TData, TDefaultData> = {},
 ): TData | TDefaultData {
+  const queryHandler = useStableCallback(query);
+  const onData = useStableCallback(options.onData ?? (() => undefined));
+  const onError = useStableCallback(options.onError ?? (() => undefined));
+  const onDone = useStableCallback(options.onDone ?? (() => undefined));
+  const isEqual = useStableCallback(options.isEqual ?? R.isDeepEqual);
+
   const replicache = useReplicache();
 
   const [data, setData] = useState<TData>();
 
   useEffect(() => {
-    const unsubscribe = replicache.subscribe(query, {
+    const unsubscribe = replicache.subscribe(queryHandler, {
       onData: (data) => {
         setData(() => data);
 
-        onData?.(data);
+        onData(data);
       },
       onError,
       onDone,
@@ -50,12 +51,11 @@ export function useSubscribe<TData, TDefaultData = undefined>(
 
     return () => {
       unsubscribe();
-      setData(undefined);
+      setData(() => undefined);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [replicache]);
+  }, [replicache, queryHandler, onData, onError, onDone, isEqual]);
 
-  if (!data) return defaultData as TDefaultData;
+  if (data === undefined) return options.defaultData as TDefaultData;
 
   return data;
 }

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef } from "react";
+import { use, useEffect } from "react";
 import { ClientErrors } from "@printdesk/core/errors/client";
 import { Realtime } from "@printdesk/core/realtime/client";
 import { generateId } from "@printdesk/core/utils/shared";
@@ -8,12 +8,12 @@ import { useShallow } from "zustand/react/shallow";
 
 import { RealtimeContext } from "~/lib/contexts/stores/realtime";
 import { useTrpc } from "~/lib/hooks/trpc";
+import { useStableCallback } from "~/lib/hooks/utils";
 
 import type { StartsWith } from "@printdesk/core/utils/types";
 
 export function useRealtime() {
-  const context = useContext(RealtimeContext);
-
+  const context = use(RealtimeContext);
   if (!context) throw new ClientErrors.MissingContextProvider("WebSocket");
 
   return context;
@@ -29,15 +29,9 @@ export const useRealtimeActions = () =>
 
 export function useRealtimeChannel<TChannel extends string>(
   channel: StartsWith<"/", TChannel>,
-  onData?: (event: unknown) => void,
+  onEvent?: (event: unknown) => void,
   auth?: Record<string, string>,
 ) {
-  const onDataRef = useRef(onData);
-
-  useEffect(() => {
-    onDataRef.current = onData;
-  }, [onData]);
-
   const isConnected = useStore(
     useRealtime().storeApi,
     useShallow(({ isConnected }) => isConnected),
@@ -45,7 +39,7 @@ export function useRealtimeChannel<TChannel extends string>(
 
   const trpc = useTrpc();
 
-  const { data: authorization } = useQuery(
+  const authorization = useQuery(
     trpc.realtime.getAuth.queryOptions(
       { channel },
       {
@@ -54,9 +48,11 @@ export function useRealtimeChannel<TChannel extends string>(
         staleTime: Infinity,
       },
     ),
-  );
+  ).data;
 
   const webSocket = useRealtimeWebSocket();
+
+  const handleEvent = useStableCallback(onEvent ?? (() => undefined));
 
   useEffect(() => {
     if (!isConnected || !authorization) return;
@@ -68,7 +64,7 @@ export function useRealtimeChannel<TChannel extends string>(
     );
     const onMessage = Realtime.handleMessage((message) => {
       if (message.type === "data" && message.id === id)
-        onDataRef.current?.(message.event);
+        handleEvent(message.event);
     });
     webSocket.addEventListener("message", onMessage);
 
@@ -76,5 +72,5 @@ export function useRealtimeChannel<TChannel extends string>(
       webSocket.send(JSON.stringify({ type: "unsubscribe", id }));
       webSocket.removeEventListener("message", onMessage);
     };
-  }, [isConnected, channel, webSocket, authorization]);
+  }, [isConnected, channel, webSocket, authorization, handleEvent]);
 }

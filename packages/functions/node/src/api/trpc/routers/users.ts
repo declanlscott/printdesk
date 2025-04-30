@@ -13,6 +13,7 @@ import * as v from "valibot";
 import { t } from "~/api/trpc";
 import { authz } from "~/api/trpc/middleware/auth";
 import { dynamoDbDocumentClient } from "~/api/trpc/middleware/aws";
+import { user } from "~/api/trpc/middleware/user";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 
 import type { InferRouterIO, IO } from "~/api/trpc/types";
@@ -20,6 +21,7 @@ import type { InferRouterIO, IO } from "~/api/trpc/types";
 export const usersRouter = t.router({
   getPhotoBlob: userProcedure
     .input(v.object({ userId: nanoIdSchema }))
+    .use(user)
     .query(async ({ ctx, input }) => {
       const currentUser = useUser();
       const isSelf = input.userId === currentUser.id;
@@ -69,12 +71,7 @@ export const usersRouter = t.router({
                   },
                 },
               }),
-            async () => {
-              const blob = await Graph.userPhotoBlob(user.oauth2UserId);
-              ctx.res.headers.set("Cache-Control", "max-age=2592000");
-
-              return blob;
-            },
+            async () => Graph.userPhotoBlob(user.oauth2UserId),
           );
         default:
           throw new TRPCError({ code: "NOT_IMPLEMENTED" });

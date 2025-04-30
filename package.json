@@ -51,9 +51,6 @@
     "typescript": "^5.8.3"
   },
   "pnpm": {
-    "patchedDependencies": {
-      "@react-aria/utils": "patches/@react-aria__utils.patch"
-    },
     "onlyBuiltDependencies": [
       "aws-sdk",
       "esbuild",

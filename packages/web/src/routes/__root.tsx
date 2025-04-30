@@ -45,7 +45,7 @@ function RouteComponent() {
   return (
     <RouterProvider
       navigate={(to, options) => navigate({ ...to, ...options })}
-      useHref={(to) => buildLocation(to).href}
+      useHref={(to) => buildLocation(to || {}).href}
     >
       <HeadContent />
 

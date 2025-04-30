@@ -22,6 +22,13 @@
       "when": 1745989490403,
       "tag": "0002_warm_nomad",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1746040540025,
+      "tag": "0003_bouncy_nico_minoru",
+      "breakpoints": true
     }
   ]
 }

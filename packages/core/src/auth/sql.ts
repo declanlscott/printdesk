@@ -1,4 +1,4 @@
-import { pgTable, primaryKey, text } from "drizzle-orm/pg-core";
+import { pgTable, primaryKey, text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { customEnum, id, timestamps } from "../drizzle/columns";
 import {
@@ -19,7 +19,10 @@ export const oauth2ProvidersTable = pgTable(
     kind: oauth2ProviderKind("kind").notNull(),
     ...timestamps,
   },
-  (table) => [primaryKey({ columns: [table.id, table.tenantId] })],
+  (table) => [
+    primaryKey({ columns: [table.id, table.tenantId] }),
+    uniqueIndex().on(table.id),
+  ],
 );
 export type Oauth2ProvidersTable = typeof oauth2ProvidersTable;
 export type Oauth2Provider = InferFromTable<Oauth2ProvidersTable>;

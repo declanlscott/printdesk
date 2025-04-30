@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX ASYNC "oauth2_providers_id_index" ON "oauth2_providers" ("id");

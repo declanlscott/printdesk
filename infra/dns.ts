@@ -9,3 +9,5 @@ export const fqdn =
 export const apiFqdn = $interpolate`api.${fqdn}`;
 
 export const authFqdn = $interpolate`auth.${fqdn}`;
+
+export const zone = cloudflare.getZoneOutput({ name: domainName.value });

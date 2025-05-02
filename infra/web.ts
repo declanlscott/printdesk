@@ -1,6 +1,6 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { apiReverseProxy } from "./api";
+import { api } from "./api";
 import { auth, siteEdgeProtection } from "./auth";
 import { fqdn } from "./dns";
 import { appData, replicacheLicenseKey } from "./misc";
@@ -21,7 +21,7 @@ export const web = new sst.aws.StaticSite("Web", {
   environment: injectLinkables(
     {
       AppData: appData,
-      ApiReverseProxy: apiReverseProxy,
+      Api: api,
       Auth: auth,
       ReplicacheLicenseKey: replicacheLicenseKey,
       Www: www,

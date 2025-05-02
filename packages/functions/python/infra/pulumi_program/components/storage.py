@@ -257,7 +257,7 @@ class Storage(pulumi.ComponentResource):
                     principals=[
                         aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                             type="AWS",
-                            identifiers=[resource["Api"]["roleArn"]],
+                            identifiers=[resource["ApiFunction"]["roleArn"]],
                         )
                     ],
                     actions=["sts:AssumeRole"],

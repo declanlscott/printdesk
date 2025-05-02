@@ -19,8 +19,8 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user ? { status: "initializing" } : { status: "uninitialized" },
   );
 
-  const { ApiReverseProxy, AppData, ReplicacheLicenseKey } = useResource();
-  const apiBaseUrl = ApiReverseProxy.url;
+  const { Api, AppData, ReplicacheLicenseKey } = useResource();
+  const apiBaseUrl = Api.url;
 
   const { getAuth, refresh } = useAuthActions();
 

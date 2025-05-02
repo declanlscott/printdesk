@@ -77,7 +77,7 @@ class Realtime(pulumi.ComponentResource):
                             principals=[
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                                     type="AWS",
-                                    identifiers=[resource["Api"]["roleArn"]],
+                                    identifiers=[resource["ApiFunction"]["roleArn"]],
                                 )
                             ],
                             actions=["sts:AssumeRole"],
@@ -128,7 +128,7 @@ class Realtime(pulumi.ComponentResource):
                             principals=[
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                                     type="AWS",
-                                    identifiers=[resource["Api"]["roleArn"]],
+                                    identifiers=[resource["ApiFunction"]["roleArn"]],
                                 ),
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                                     type="AWS",

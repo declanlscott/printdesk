@@ -797,7 +797,7 @@ class Api(pulumi.ComponentResource):
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                                     type="AWS",
                                     identifiers=[
-                                        resource["Api"]["roleArn"],
+                                        resource["ApiFunction"]["roleArn"],
                                         resource["PapercutSync"]["roleArn"],
                                     ],
                                 )

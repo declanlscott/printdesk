@@ -1,4 +1,4 @@
-import { api } from "./api";
+import { apiFunction } from "./api";
 import { codeBucket, pulumiBucket } from "./buckets";
 import * as custom from "./custom";
 import { dbMigratorInvocationSuccessResult, dsqlCluster } from "./db";
@@ -95,7 +95,7 @@ const infraFunctionDir = normalizePath("packages/functions/python/infra");
 const infraFunctionResourceData = $util.jsonStringify(
   injectLinkables({
     AppData: appData,
-    Api: api,
+    ApiFunction: apiFunction,
     AppsyncEventApi: appsyncEventApi,
     Aws: aws_,
     Code: code,

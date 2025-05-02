@@ -28,9 +28,10 @@ export const Route = createFileRoute("/setup/")({
   },
   loader: async ({ context }) => {
     const isAvailable =
-      await context.trpcClient.tenants.public.isSubdomainAvailable.query({
-        subdomain: context.subdomain,
-      });
+      await context.trpcClient.tenants.public.isSubdomainAvailable.query(
+        { subdomain: context.subdomain },
+        { context: { skipBatch: true } },
+      );
     if (!isAvailable)
       throw new Error(`"${context.subdomain}" is unavailable to register.`);
 

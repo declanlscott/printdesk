@@ -7,13 +7,14 @@ export const Route = createFileRoute("/login")({
   loaderDeps: ({ search }) => ({ search }),
   loader: async ({ context, deps }) => {
     const oauthProviderKinds =
-      await context.trpcClient.auth.public.getOauthProviderKinds.query({
-        subdomain: context.subdomain,
-      });
+      await context.trpcClient.auth.public.getOauthProviderKinds.query(
+        { subdomain: context.subdomain },
+        { context: { skipBatch: true } },
+      );
     if (R.isEmpty(oauthProviderKinds)) throw redirect({ to: "/setup" });
 
     // Start the OAuth flow
-    const url = await context.authStoreApi
+    const href = await context.authStoreApi
       .getState()
       .actions.authorize(
         context.subdomain,
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/login")({
         deps.search.from,
       );
 
-    throw redirect({ href: url, reloadDocument: true });
+    throw redirect({ href });
   },
   head: () => ({ meta: [{ title: "Login | Printdesk" }] }),
 });

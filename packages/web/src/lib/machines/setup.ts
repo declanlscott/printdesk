@@ -48,7 +48,9 @@ const isLicenseKeyAvailable = fromPromise<
   Pick<SetupMachineContext, "trpcClient"> &
     TenantsRouterIO<"input">["public"]["isLicenseKeyAvailable"]
 >(async ({ input: { trpcClient, ...input } }) =>
-  trpcClient.tenants.public.isLicenseKeyAvailable.query(input),
+  trpcClient.tenants.public.isLicenseKeyAvailable.query(input, {
+    context: { skipBatch: true },
+  }),
 );
 
 const initialize = fromPromise<

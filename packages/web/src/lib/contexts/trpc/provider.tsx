@@ -1,30 +1,21 @@
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
 
 import { TrpcContext } from "~/lib/contexts/trpc";
 import { useAuthToken } from "~/lib/hooks/auth";
 import { useResource } from "~/lib/hooks/resource";
+import { createTrpcClient } from "~/lib/trpc";
 
 import type { PropsWithChildren } from "react";
-import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
 
 export function TrpcProvider(props: PropsWithChildren) {
   const queryClient = useQueryClient();
 
   const apiBaseUrl = useResource().ApiReverseProxy.url;
   const authToken = useAuthToken();
+
   const trpcClient = useMemo(
-    () =>
-      createTRPCClient<TrpcRouter>({
-        links: [
-          httpBatchLink({
-            url: new URL("/trpc", apiBaseUrl),
-            headers: () =>
-              authToken ? { Authorization: `Bearer ${authToken}` } : {},
-          }),
-        ],
-      }),
+    () => createTrpcClient(new URL("/trpc", apiBaseUrl), `Bearer ${authToken}`),
     [apiBaseUrl, authToken],
   );
 

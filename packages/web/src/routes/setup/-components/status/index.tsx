@@ -119,21 +119,27 @@ function PostInitializedStatusItems() {
     ({ context }) => context.trpcClient,
   );
 
-  const webSocketUrlProvider = useCallback(
-    async () => trpcClient.realtime.getPublicUrl.query(),
+  const realtimeUrlProvider = useCallback(
+    async () =>
+      trpcClient.realtime.public.getUrl.query(undefined, {
+        context: { skipBatch: true },
+      }),
     [trpcClient],
   );
 
-  const getWebSocketAuth = useCallback(
-    async (channel?: string) =>
-      trpcClient.realtime.getPublicAuth.query({ channel }),
+  const getRealtimeAuthorization = useCallback(
+    async () =>
+      trpcClient.realtime.public.getAuthorization.query(
+        {},
+        { context: { skipBatch: true } },
+      ),
     [trpcClient],
   );
 
   return (
     <RealtimeProvider
-      urlProvider={webSocketUrlProvider}
-      getAuth={getWebSocketAuth}
+      urlProvider={realtimeUrlProvider}
+      getAuthorization={getRealtimeAuthorization}
     >
       <RegisteringStatusItem />
       <ProvisioningStatusItem />

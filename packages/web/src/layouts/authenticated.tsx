@@ -13,20 +13,20 @@ import { MainNav } from "~/ui/nav/main";
 export function AuthenticatedLayout() {
   const trpcClient = useTrpcClient();
 
-  const webSocketUrlProvider = useCallback(
+  const realtimeUrlProvider = useCallback(
     async () => trpcClient.realtime.getUrl.query(),
     [trpcClient],
   );
 
-  const getWebSocketAuth = useCallback(
-    (channel?: string) => trpcClient.realtime.getAuth.query({ channel }),
+  const getRealtimeAuthorization = useCallback(
+    () => trpcClient.realtime.getAuthorization.query({}),
     [trpcClient],
   );
 
   return (
     <RealtimeProvider
-      urlProvider={webSocketUrlProvider}
-      getAuth={getWebSocketAuth}
+      urlProvider={realtimeUrlProvider}
+      getAuthorization={getRealtimeAuthorization}
     >
       <InnerLayout />
     </RealtimeProvider>

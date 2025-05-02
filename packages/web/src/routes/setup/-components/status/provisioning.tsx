@@ -13,12 +13,12 @@ const name = "Provisioning";
 
 export function ProvisioningStatusItem() {
   const state = useSetupStatusState();
-  const { dispatchId, realtimeAuth, failureStatus } =
-    useSetupMachine().useSelector(({ context }) => ({
+  const { dispatchId, failureStatus } = useSetupMachine().useSelector(
+    ({ context }) => ({
       dispatchId: context.dispatchId,
-      realtimeAuth: context.realtimeAuth,
       failureStatus: context.failureStatus,
-    }));
+    }),
+  );
 
   switch (state) {
     case "initialize":
@@ -26,8 +26,8 @@ export function ProvisioningStatusItem() {
       return <PendingItem name={name} />;
     case "dispatchInfra":
     case "waitForInfra":
-      return dispatchId && realtimeAuth ? (
-        <WaitForInfra dispatchId={dispatchId} realtimeAuth={realtimeAuth} />
+      return dispatchId ? (
+        <WaitForInfra dispatchId={dispatchId} />
       ) : (
         <PendingItem name={name} isActive />
       );
@@ -61,7 +61,6 @@ export function ProvisioningStatusItem() {
 
 type WaitForInfraProps = {
   dispatchId: string;
-  realtimeAuth: Record<string, string>;
 };
 
 function WaitForInfra(props: WaitForInfraProps) {
@@ -82,7 +81,7 @@ function WaitForInfra(props: WaitForInfraProps) {
             : actor.send({ type: "status.fail" });
       }
     }),
-    props.realtimeAuth,
+    true,
   );
 
   return <PendingItem name={name} isActive />;

@@ -30,7 +30,7 @@ export const useRealtimeActions = () =>
 export function useRealtimeChannel<TChannel extends string>(
   channel: StartsWith<"/", TChannel>,
   onEvent?: (event: unknown) => void,
-  auth?: Record<string, string>,
+  isPublic = false,
 ) {
   const isConnected = useStore(
     useRealtime().storeApi,
@@ -40,14 +40,15 @@ export function useRealtimeChannel<TChannel extends string>(
   const trpc = useTrpc();
 
   const authorization = useQuery(
-    trpc.realtime.getAuth.queryOptions(
-      { channel },
-      {
-        initialData: auth,
-        enabled: isConnected && !auth,
-        staleTime: Infinity,
-      },
-    ),
+    isPublic
+      ? trpc.realtime.public.getAuthorization.queryOptions(
+          { channel },
+          { staleTime: Infinity, trpc: { context: { skipBatch: true } } },
+        )
+      : trpc.realtime.getAuthorization.queryOptions(
+          { channel },
+          { staleTime: Infinity },
+        ),
   ).data;
 
   const webSocket = useRealtimeWebSocket();

@@ -13,7 +13,7 @@ import type { InferRouterIO, IO } from "~/api/trpc/types";
 export const realtimeRouter = t.router({
   public: t.router({
     getUrl: publicProcedure.query(() => Realtime.getUrl()),
-    getAuth: publicProcedure
+    getAuthorization: publicProcedure
       .input(
         v.object({
           channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),
@@ -43,7 +43,7 @@ export const realtimeRouter = t.router({
       ]),
     )
     .query(async () => Realtime.getUrl((await Realtime.getDns()).realtime)),
-  getAuth: userProcedure
+  getAuthorization: userProcedure
     .input(
       v.object({
         channel: v.optional(v.pipe(v.string(), v.startsWith("/"))),

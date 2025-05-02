@@ -1,9 +1,10 @@
 import { getBackendFqdn } from "@printdesk/core/backend/shared";
 import { Constants } from "@printdesk/core/utils/constants";
 import { buildUrl } from "@printdesk/core/utils/shared";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { toast } from "sonner";
 import { assign, fromPromise, setup } from "xstate";
+
+import { createTrpcClient } from "~/lib/trpc";
 
 import type {
   SetupWizard,
@@ -13,16 +14,13 @@ import type {
   SetupWizardStep4,
 } from "@printdesk/core/tenants/shared";
 import type { Tenant } from "@printdesk/core/tenants/sql";
-import type { NonNullableProperties } from "@printdesk/core/utils/types";
-import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
-import type { RealtimeRouterIO } from "@printdesk/functions/api/trpc/routers/realtime";
 import type { SetupRouterIO } from "@printdesk/functions/api/trpc/routers/setup";
 import type { TenantsRouterIO } from "@printdesk/functions/api/trpc/routers/tenants";
 import type { ViteResource } from "~/types";
 
 interface SetupMachineInput extends Pick<SetupWizard, "tenantSubdomain"> {
   resource: ViteResource;
-  trpcClient: ReturnType<typeof createTRPCClient<TrpcRouter>>;
+  trpcClient: ReturnType<typeof createTrpcClient>;
 }
 
 interface SetupMachineContext extends SetupWizard {
@@ -30,7 +28,6 @@ interface SetupMachineContext extends SetupWizard {
   trpcClient: SetupMachineInput["trpcClient"];
   tenantId: Tenant["id"] | null;
   dispatchId: string | null;
-  realtimeAuth: RealtimeRouterIO<"output">["public"]["getAuth"] | null;
   failureStatus:
     | "initialize"
     | "register"
@@ -69,19 +66,9 @@ const register = fromPromise<
 );
 
 const dispatchInfra = fromPromise<
-  NonNullableProperties<
-    Pick<SetupMachineContext, "dispatchId" | "realtimeAuth">
-  >,
+  SetupRouterIO<"output">["dispatchInfra"],
   Pick<SetupMachineContext, "trpcClient">
->(async ({ input }) => {
-  const { dispatchId } = await input.trpcClient.setup.dispatchInfra.mutate();
-
-  const realtimeAuth = await input.trpcClient.realtime.public.getAuth.query(
-    { channel: `/events/${dispatchId}` },
-  );
-
-  return { dispatchId, realtimeAuth };
-});
+>(async ({ input }) => input.trpcClient.setup.dispatchInfra.mutate());
 
 const healthcheck = fromPromise<
   { isHealthy: boolean },
@@ -168,7 +155,6 @@ export const setupMachine = setup({
 
     tenantId: null,
     dispatchId: null,
-    realtimeAuth: null,
     failureStatus: null,
   }),
   initial: "wizard",
@@ -276,21 +262,11 @@ export const setupMachine = setup({
               actions: assign({
                 tenantId: ({ event }) => event.output.tenantId,
                 trpcClient: ({ context, event }) =>
-                  createTRPCClient<TrpcRouter>({
-                    links: [
-                      httpBatchLink({
-                        url: new URL(
-                          "/trpc",
-                          context.resource.ApiReverseProxy.url,
-                        ),
-                        headers: {
-                          Authorization: `Bearer ${event.output.apiKey}`,
-                          [Constants.HEADER_NAMES.TENANT_ID]:
-                            event.output.tenantId,
-                        },
-                      }),
-                    ],
-                  }),
+                  createTrpcClient(
+                    new URL("/trpc", context.resource.ApiReverseProxy.url),
+                    `Bearer ${event.output.apiKey}`,
+                    event.output.tenantId,
+                  ),
               }),
             },
             onError: {
@@ -324,7 +300,6 @@ export const setupMachine = setup({
               target: "waitForInfra",
               actions: assign({
                 dispatchId: ({ event }) => event.output.dispatchId,
-                realtimeAuth: ({ event }) => event.output.realtimeAuth,
               }),
             },
             onError: {
@@ -397,19 +372,11 @@ export const setupMachine = setup({
               target: "#setup.wizard.review",
               actions: assign({
                 trpcClient: ({ context }) =>
-                  createTRPCClient<TrpcRouter>({
-                    links: [
-                      httpBatchLink({
-                        url: new URL(
-                          "/trpc",
-                          context.resource.ApiReverseProxy.url,
-                        ),
-                      }),
-                    ],
-                  }),
+                  createTrpcClient(
+                    new URL("/trpc", context.resource.ApiReverseProxy.url),
+                  ),
                 tenantId: null,
                 dispatchId: null,
-                realtimeAuth: null,
                 failureStatus: null,
               }),
             },

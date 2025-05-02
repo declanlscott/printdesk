@@ -13,12 +13,12 @@ import type { RealtimeStore } from "~/lib/contexts/stores/realtime";
 
 export type WebSocketProviderProps = PropsWithChildren<{
   urlProvider: UrlProvider;
-  getAuth: (channel?: string) => Promise<Record<string, string>>;
+  getAuthorization: () => Promise<Record<string, string>>;
 }>;
 
 export function RealtimeProvider({
   urlProvider,
-  getAuth,
+  getAuthorization,
   children,
 }: WebSocketProviderProps) {
   const [storeApi] = useState(() =>
@@ -26,7 +26,6 @@ export function RealtimeProvider({
       isConnected: false,
       timer: null,
       actions: {
-        authenticate: getAuth,
         onConnection: (reconnect, timeoutMs) => {
           set(() => ({
             isConnected: true,
@@ -48,21 +47,21 @@ export function RealtimeProvider({
     })),
   );
 
-  const { authenticate, onConnection, onClose, cancelTimer } = useStore(
+  const { onConnection, onClose, cancelTimer } = useStore(
     storeApi,
     useShallow(({ actions }) => actions),
   );
 
   const protocolsProvider = useCallback(async () => {
-    const auth = await authenticate();
+    const authorization = await getAuthorization();
 
-    const header = btoa(JSON.stringify(auth))
+    const header = btoa(JSON.stringify(authorization))
       .replace(/\+/g, "-")
       .replace(/\//g, "_")
       .replace(/=+$/, "");
 
     return ["aws-appsync-event-ws", `header-${header}`];
-  }, [authenticate]);
+  }, [getAuthorization]);
 
   const webSocket = useWebSocket(urlProvider, protocolsProvider, {
     onOpen: () => webSocket.send(JSON.stringify({ type: "connection_init" })),

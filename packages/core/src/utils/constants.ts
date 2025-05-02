@@ -22,7 +22,7 @@ export namespace Constants {
 
   export const SERVICE_BINDING_NAMES = {
     API_RATE_LIMITERS: "API_RATE_LIMITERS",
-  };
+  } as const;
 
   export const ENTRA_ID_OAUTH_SCOPES = [
     "openid",

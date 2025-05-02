@@ -20,7 +20,7 @@ export const rateLimiter = createMiddleware(
         bearerAuth({
           async verifyToken(token, c) {
             const verified = await createClient({
-              clientID: "api-rate-limiter",
+              clientID: "api-reverse-proxy",
               issuer: Resource.Auth.url,
             }).verify(subjects, token);
 

@@ -19,8 +19,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user ? { status: "initializing" } : { status: "uninitialized" },
   );
 
-  const { Api, AppData, ReplicacheLicenseKey } = useResource();
-  const apiBaseUrl = Api.url;
+  const { AppData, ReplicacheLicenseKey, Router } = useResource();
 
   const { getAuth, refresh } = useAuthActions();
 
@@ -30,15 +29,15 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     const client = new Replicache({
       name: delimitToken(user.tenantId, user.id),
       licenseKey: ReplicacheLicenseKey.value,
-      logLevel: AppData.isDev ? "info" : "error",
+      logLevel: AppData.isDevMode ? "info" : "error",
       mutators: createMutators(user.id),
       auth: getAuth(),
-      pullURL: new URL("/replicache/pull", apiBaseUrl).toString(),
+      pullURL: new URL("/api/replicache/pull", Router.url).toString(),
       pusher: async (req) => {
         if (req.pushVersion !== 1)
           throw new Error(`Unsupported push version: ${req.pushVersion}`);
 
-        const res = await fetch(new URL("/replicache/push", apiBaseUrl), {
+        const res = await fetch(new URL("/api/replicache/push", Router.url), {
           method: "POST",
           headers: {
             Authorization: getAuth(),
@@ -82,11 +81,11 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       void client.close();
     };
   }, [
-    apiBaseUrl,
-    AppData.isDev,
+    AppData.isDevMode,
     getAuth,
     refresh,
     ReplicacheLicenseKey.value,
+    Router.url,
     user,
   ]);
 

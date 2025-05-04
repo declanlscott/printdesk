@@ -1,3 +1,5 @@
+import { isProdStage } from "./misc";
+
 export const infraDeadLetterQueue = new sst.aws.Queue(
   "InfraDeadLetterQueue",
   {
@@ -7,7 +9,7 @@ export const infraDeadLetterQueue = new sst.aws.Queue(
       },
     },
   },
-  { retainOnDelete: $app.stage === "production" },
+  { retainOnDelete: isProdStage },
 );
 
 export const infraQueue = new sst.aws.Queue(
@@ -16,5 +18,5 @@ export const infraQueue = new sst.aws.Queue(
     dlq: infraDeadLetterQueue.arn,
     visibilityTimeout: "15 minutes",
   },
-  { retainOnDelete: $app.stage === "production" },
+  { retainOnDelete: isProdStage },
 );

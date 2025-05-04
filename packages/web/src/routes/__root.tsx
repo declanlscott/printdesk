@@ -19,7 +19,8 @@ export const Route = createRootRouteWithContext<InitialRouterContext>()({
   search: { middlewares: [retainSearchParams(["subdomain"])] },
   beforeLoad: async ({ context, search }) => {
     const subdomain =
-      context.resource.AppData.isDev || window.location.hostname === "localhost"
+      context.resource.AppData.isDevMode ||
+      !context.resource.AppData.isProdStage
         ? search.subdomain
         : window.location.hostname
             .split(`.${context.resource.AppData.domainName.fullyQualified}`)

@@ -18,8 +18,8 @@ export const Route = createFileRoute("/callback")({
     throw redirect({
       to: "/",
       search:
-        context.resource.AppData.isDev ||
-        window.location.hostname === "localhost"
+        context.resource.AppData.isDevMode ||
+        !context.resource.AppData.isProdStage
           ? { subdomain: context.subdomain }
           : {},
     });

@@ -50,7 +50,7 @@ export const AuthStoreApi = createStoreApiContext<
       (set, get) => ({
         client: createClient({
           clientID: "web",
-          issuer: resource.Auth.url,
+          issuer: `${resource.Router.url}/auth`,
         }),
         subdomain: null,
         flow: null,
@@ -59,10 +59,7 @@ export const AuthStoreApi = createStoreApiContext<
         actions: {
           authorize: async (subdomain, provider, from) => {
             const redirectUri = new URL("/callback", window.location.origin);
-            if (
-              resource.AppData.isDev ||
-              window.location.hostname === "localhost"
-            )
+            if (resource.AppData.isDevMode || !resource.AppData.isProdStage)
               redirectUri.searchParams.set("subdomain", subdomain);
             if (from) redirectUri.searchParams.set("from", from);
 

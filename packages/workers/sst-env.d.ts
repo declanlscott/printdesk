@@ -7,10 +7,6 @@ import "sst"
 declare module "sst" {
   export interface Resource {
     "Api": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
-    "ApiFunction": {
       "arn": string
       "invokeArn": string
       "name": string
@@ -23,7 +19,8 @@ declare module "sst" {
         "fullyQualified": string
         "value": string
       }
-      "isDev": boolean
+      "isDevMode": boolean
+      "isProdStage": boolean
       "name": string
       "stage": string
       "type": "sst.sst.Linkable"
@@ -201,13 +198,9 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
-    "SitePassword": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "SiteUsername": {
-      "type": "sst.sst.Secret"
-      "value": string
+    "Router": {
+      "type": "sst.aws.Router"
+      "url": string
     }
     "TemporaryBucket": {
       "name": string
@@ -220,6 +213,14 @@ declare module "sst" {
     "Web": {
       "type": "sst.aws.StaticSite"
       "url": string
+    }
+    "WebPassword": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "WebUsername": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
     "Www": {
       "type": "sst.aws.Astro"

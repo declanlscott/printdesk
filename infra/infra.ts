@@ -1,4 +1,4 @@
-import { apiFunction } from "./api";
+import { api } from "./api";
 import { codeBucket, pulumiBucket } from "./buckets";
 import * as custom from "./custom";
 import { dbMigratorInvocationSuccessResult, dsqlCluster } from "./db";
@@ -7,6 +7,7 @@ import {
   aws_,
   cloudflareApiTokenParameter,
   cloudfrontPrivateKey,
+  isProdStage,
 } from "./misc";
 import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
@@ -16,7 +17,7 @@ import { injectLinkables, normalizePath } from "./utils";
 export const repository = new awsx.ecr.Repository(
   "Repository",
   { forceDelete: true },
-  { retainOnDelete: $app.stage === "production" },
+  { retainOnDelete: isProdStage },
 );
 
 export const papercutSync = new custom.aws.Function("PapercutSync", {
@@ -95,7 +96,7 @@ const infraFunctionDir = normalizePath("packages/functions/python/infra");
 const infraFunctionResourceData = $util.jsonStringify(
   injectLinkables({
     AppData: appData,
-    ApiFunction: apiFunction,
+    Api: api,
     AppsyncEventApi: appsyncEventApi,
     Aws: aws_,
     Code: code,

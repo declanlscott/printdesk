@@ -7,7 +7,8 @@ import {
   tenantRoles,
 } from "./roles";
 
-export const isDev = $dev;
+export const isDevMode = $dev;
+export const isProdStage = $app.stage === "production";
 
 export const cloudflareAccountId = new sst.Secret("CloudflareAccountId");
 
@@ -17,7 +18,8 @@ export const appData = new sst.Linkable("AppData", {
   properties: {
     name: $app.name,
     stage: $app.stage,
-    isDev,
+    isDevMode,
+    isProdStage,
     domainName: {
       value: domainName.value,
       fullyQualified: fqdn,

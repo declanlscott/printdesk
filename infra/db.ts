@@ -3,13 +3,13 @@ import { Constants } from "@printdesk/core/utils/constants";
 import * as v from "valibot";
 
 import * as custom from "./custom";
-import { aws_ } from "./misc";
+import { aws_, isProdStage } from "./misc";
 import { calculateHash, normalizePath } from "./utils";
 
 export const dsqlCluster = new custom.aws.Dsql.Cluster(
   "DsqlCluster",
-  { deletionProtectionEnabled: $app.stage === "production" },
-  { retainOnDelete: $app.stage === "production" },
+  { deletionProtectionEnabled: isProdStage },
+  { retainOnDelete: isProdStage },
 );
 
 const migrationsFolderPath = "packages/core/migrations";

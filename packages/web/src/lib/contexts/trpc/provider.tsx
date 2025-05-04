@@ -11,16 +11,16 @@ import type { PropsWithChildren } from "react";
 export function TrpcProvider(props: PropsWithChildren) {
   const queryClient = useQueryClient();
 
-  const apiBaseUrl = useResource().Api.url;
+  const routerUrl = useResource().Router.url;
   const authToken = useAuthToken();
 
   const trpcClient = useMemo(
     () =>
       createTrpcClient(
-        new URL("/trpc", apiBaseUrl),
+        new URL("/api/trpc", routerUrl),
         authToken ? `Bearer ${authToken}` : undefined,
       ),
-    [apiBaseUrl, authToken],
+    [routerUrl, authToken],
   );
 
   return (

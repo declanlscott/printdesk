@@ -1,11 +1,9 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { api } from "./api";
-import { auth, siteEdgeProtection } from "./auth";
 import { fqdn } from "./dns";
-import { appData, replicacheLicenseKey } from "./misc";
+import { appData, isProdStage, replicacheLicenseKey } from "./misc";
+import { router } from "./router";
 import { injectLinkables } from "./utils";
-import { www } from "./www";
 
 export const web = new sst.aws.StaticSite("Web", {
   path: "packages/web",
@@ -13,18 +11,15 @@ export const web = new sst.aws.StaticSite("Web", {
     command: "pnpm build",
     output: "dist",
   },
-  domain: {
-    name: $interpolate`*.${fqdn}`,
-    dns: sst.cloudflare.dns(),
+  router: {
+    instance: router,
+    domain: isProdStage ? $interpolate`*.${fqdn}` : undefined,
   },
-  edge: siteEdgeProtection,
   environment: injectLinkables(
     {
       AppData: appData,
-      Api: api,
-      Auth: auth,
       ReplicacheLicenseKey: replicacheLicenseKey,
-      Www: www,
+      Router: router,
     },
     Constants.VITE_RESOURCE_PREFIX,
   ),

@@ -1,13 +1,13 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { dsqlCluster } from "./db";
-import { authFqdn, fqdn } from "./dns";
-import { aws_ } from "./misc";
+import { fqdn } from "./dns";
+import { aws_, isProdStage } from "./misc";
+import { router } from "./router";
 
-const oauthAppName =
-  $app.stage === "production"
-    ? $app.name.charAt(0).toUpperCase() + $app.name.slice(1)
-    : `${$app.name}-${$app.stage}`;
+const oauthAppName = isProdStage
+  ? $app.name.charAt(0).toUpperCase() + $app.name.slice(1)
+  : `${$app.name}-${$app.stage}`;
 
 export const entraIdApplication = new azuread.ApplicationRegistration(
   "EntraIdApplicationRegistration",
@@ -78,10 +78,13 @@ export const auth = new sst.aws.Auth("Auth", {
     link: [aws_, dsqlCluster, oauth2],
     architecture: "arm64",
     runtime: "nodejs22.x",
+    url: true,
   },
-  domain: {
-    name: authFqdn,
-    dns: sst.cloudflare.dns(),
+});
+router.route("/auth", auth.url, {
+  rewrite: {
+    regex: "^/auth/(.*)$",
+    to: "/$1",
   },
 });
 
@@ -89,35 +92,21 @@ export const entraIdApplicationRedirectUris =
   new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
     applicationId: entraIdApplication.id,
     type: "Web",
-    redirectUris: [$interpolate`${auth.url}/entra-id/callback`],
+    redirectUris: [
+      $interpolate`https://${fqdn}/auth/${Constants.ENTRA_ID}/callback`,
+    ],
   });
 
-export const siteUsername = new sst.Secret("SiteUsername");
-export const sitePassword = new sst.Secret("SitePassword");
+export const webUsername = new sst.Secret("WebUsername");
+export const webPassword = new sst.Secret("WebPassword");
 
-export const siteBasicAuth = $output([
-  siteUsername.value,
-  sitePassword.value,
+export const webBasicAuth = $output([
+  webUsername.value,
+  webPassword.value,
 ]).apply(([username, password]) =>
   Buffer.from(`${username}:${password}`).toString("base64"),
 );
 
-export const siteEdgeProtection =
-  $app.stage !== "production"
-    ? {
-        viewerRequest: {
-          injection: $interpolate`
-if (
-  !event.request.headers.authorization ||
-  event.request.headers.authorization.value !== "Basic ${siteBasicAuth}"
-) {
-  return {
-    statusCode: 401,
-    headers: {
-      "www-authenticate": { value: "Basic" }
-    }
-  };
-}`,
-        },
-      }
-    : undefined;
+export const outputs = {
+  auth: $interpolate`https://${fqdn}/auth`,
+};

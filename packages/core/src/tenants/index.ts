@@ -89,7 +89,7 @@ export namespace Tenants {
   });
 
   export async function isSubdomainAvailable(subdomain: Tenant["subdomain"]) {
-    if (["api", "auth", "backend"].includes(subdomain)) return false;
+    if (["api", "auth", "backend", "www"].includes(subdomain)) return false;
 
     const tenant = await useTransaction((tx) =>
       tx

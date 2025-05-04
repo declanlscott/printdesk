@@ -22,7 +22,7 @@ import type { AppLink } from "~/types";
 
 export function useNavLinks() {
   const subdomain = useSubdomain();
-  const resource = useResource();
+  const { AppData } = useResource();
 
   const dashboard = useMemo(
     () =>
@@ -31,15 +31,16 @@ export function useNavLinks() {
         props: {
           href: linkOptions({
             to: "/",
-            search:
-              resource.AppData.isDev || window.location.hostname === "localhost"
+            search: {
+              ...(AppData.isDevMode || !AppData.isProdStage
                 ? { subdomain }
-                : {},
+                : {}),
+            },
           }),
         },
         icon: <LayoutDashboard />,
       }) satisfies AppLink,
-    [resource.AppData.isDev, subdomain],
+    [AppData.isDevMode, AppData.isProdStage, subdomain],
   );
 
   const products = useMemo(

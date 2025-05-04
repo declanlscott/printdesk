@@ -21,7 +21,7 @@ export const rateLimiter = createMiddleware(
           async verifyToken(token, c) {
             const verified = await createClient({
               clientID: "api-reverse-proxy",
-              issuer: Resource.Auth.url,
+              issuer: `${Resource.Router.url}/auth`,
             }).verify(subjects, token);
 
             if (verified.err) {
@@ -102,7 +102,7 @@ const hopByHopHeaders = [
 ];
 
 export const proxy = createMiddleware((c, next) => {
-  const fetchProxy = createFetchProxy(Resource.Api.url);
+  const fetchProxy = createFetchProxy(Resource.Router.url);
 
   c.set("proxy", async (...args: Parameters<FetchProxy>) => {
     const res = await fetchProxy(...args);

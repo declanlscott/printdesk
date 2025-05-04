@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { setupWizardStep1Schema } from "@printdesk/core/tenants/shared";
 import { ArrowRight } from "lucide-react";
 import * as R from "remeda";
@@ -30,6 +31,23 @@ export function SetupWizardStep1() {
     useSetupWizardState() === "isLicenseKeyAvailable";
 
   const { AppData } = useResource();
+
+  const url = useMemo(() => {
+    const subdomain = defaultValues.tenantSubdomain.toLowerCase();
+
+    if (AppData.isDevMode)
+      return `${window.location.host}/?subdomain=${subdomain}`;
+
+    if (!AppData.isProdStage)
+      return `${AppData.domainName.fullyQualified}/?subdomain=${subdomain}`;
+
+    return `${subdomain}.${AppData.domainName.fullyQualified}`;
+  }, [
+    defaultValues.tenantSubdomain,
+    AppData.isDevMode,
+    AppData.isProdStage,
+    AppData.domainName.fullyQualified,
+  ]);
 
   return (
     <form
@@ -102,8 +120,7 @@ export function SetupWizardStep1() {
                       A unique identifier for your organization, used for
                       accessing the application:{" "}
                       <Link href={{ to: "/" }} target="_blank">
-                        {defaultValues.tenantSubdomain.toLowerCase()}.
-                        {AppData.domainName.fullyQualified}
+                        {url}
                       </Link>
                     </>
                   ),

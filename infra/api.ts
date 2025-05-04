@@ -4,12 +4,13 @@ import { auth } from "./auth";
 import { temporaryBucket } from "./buckets";
 import * as custom from "./custom";
 import { dsqlCluster, userActivityTable } from "./db";
-import { apiFqdn, zone } from "./dns";
+import { fqdn, zone } from "./dns";
 import { appData, aws_, cloudfrontPrivateKey } from "./misc";
 import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
+import { router } from "./router";
 
-export const apiFunction = new custom.aws.Function("ApiFunction", {
+export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
   url: true,
   link: [
@@ -32,31 +33,18 @@ export const apiFunction = new custom.aws.Function("ApiFunction", {
     },
   ],
 });
-
-export const api = new sst.aws.Router("Api", {
-  domain: {
-    name: apiFqdn,
-    dns: sst.cloudflare.dns({
-      proxy: true,
-    }),
-  },
-  transform: {
-    cdn: {
-      transform: {
-        distribution: {
-          priceClass: "PriceClass_100",
-        },
-      },
-    },
+router.route("/api", api.url, {
+  rewrite: {
+    regex: "^/api/(.*)$",
+    to: "/$1",
   },
 });
-api.route("/", apiFunction.url);
 
 export const apiReverseProxyWorker = new sst.cloudflare.Worker(
   "ApiReverseProxyWorker",
   {
     handler: "packages/workers/src/api-reverse-proxy/index.ts",
-    link: [auth, api],
+    link: [auth, router],
     url: false,
     // NOTE: In the future when the cloudflare rate limiting api is generally available and
     // pulumi/sst supports the binding, we can remove this transform and bind directly to
@@ -78,11 +66,11 @@ export const apiReverseProxyRoute = new cloudflare.WorkersRoute(
   "ApiReverseProxyRoute",
   {
     zoneId: zone.id,
-    pattern: $interpolate`${apiFqdn}/*`,
+    pattern: $interpolate`${fqdn}/api/*`,
     scriptName: apiReverseProxyWorker.nodes.worker.name,
   },
 );
 
 export const outputs = {
-  api: api.url,
+  api: $interpolate`https://${fqdn}/api`,
 };

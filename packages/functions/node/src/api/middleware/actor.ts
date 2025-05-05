@@ -56,10 +56,9 @@ export const actor = createMiddleware(
             return true;
           }
 
-          const verified = await createClient({ clientID: "api" }).verify(
-            subjects,
-            token,
-          );
+          const verified = await createClient({
+            clientID: Constants.OPENAUTH_CLIENT_IDS.API,
+          }).verify(subjects, token);
 
           if (verified.err) {
             console.error("JWT verification failed:", verified.err);

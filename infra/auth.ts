@@ -4,7 +4,7 @@ import { env } from "~/.sst/platform/src/components";
 import { dsqlCluster } from "./db";
 import { fqdn } from "./dns";
 import { aws_, isProdStage } from "./misc";
-import { router } from "./router";
+import { router, routerSecret } from "./router";
 
 const oauthAppName = isProdStage
   ? $app.name.charAt(0).toUpperCase() + $app.name.slice(1)
@@ -85,7 +85,7 @@ sst.Linkable.wrap(sst.aws.Auth, () => {
 export const auth = new sst.aws.Auth("Auth", {
   issuer: {
     handler: "packages/functions/node/src/issuer.handler",
-    link: [aws_, dsqlCluster, oauth2],
+    link: [aws_, dsqlCluster, oauth2, routerSecret],
     architecture: "arm64",
     runtime: "nodejs22.x",
     url: true,

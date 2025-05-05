@@ -21,7 +21,7 @@ export namespace Constants {
   export const METADATA = "METADATA";
 
   export const SERVICE_BINDING_NAMES = {
-    API_RATE_LIMITERS: "API_RATE_LIMITERS",
+    RATE_LIMITERS: "RATE_LIMITERS",
   } as const;
 
   export const ENTRA_ID_OAUTH_SCOPES = [
@@ -42,6 +42,12 @@ export namespace Constants {
 
   export const SUBJECT_KINDS = {
     USER: "user",
+  } as const;
+
+  export const OPENAUTH_CLIENT_IDS = {
+    API: "api",
+    REVERSE_PROXY: "reverse-proxy",
+    WEB: "web",
   } as const;
 
   export const ACTOR_KINDS = {

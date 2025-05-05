@@ -1,4 +1,5 @@
 import { issuer } from "@openauthjs/openauth";
+import { isDomainMatch } from "@openauthjs/openauth/util";
 import { decodeJWT } from "@oslojs/jwt";
 import { EntraId } from "@printdesk/core/auth/entra-id";
 import { subjects } from "@printdesk/core/auth/subjects";
@@ -13,6 +14,31 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 const app = issuer({
+  allow: async (input, req) => {
+    const forwardedHost = req.headers.get("x-forwarded-host");
+
+    if (
+      forwardedHost !== Resource.AppData.domainName.fullyQualified ||
+      req.headers.get(Constants.HEADER_NAMES.ROUTER_SECRET) !==
+        Resource.RouterSecret.value
+    )
+      return false;
+
+    if (
+      !(Object.values(Constants.OPENAUTH_CLIENT_IDS) as Array<string>).includes(
+        input.clientID,
+      )
+    )
+      return false;
+
+    const redirectHost = new URL(input.redirectURI).hostname;
+    if (["localhost", "127.0.0.1"].includes(redirectHost)) return true;
+
+    return isDomainMatch(
+      redirectHost,
+      new URL(`https://${forwardedHost}`).hostname,
+    );
+  },
   subjects,
   providers: {
     [Constants.ENTRA_ID]: EntraId.provider({

@@ -1,7 +1,7 @@
 #:schema node_modules/wrangler/config-schema.json
-name = "printdesk-api-rate-limiters"
+name = "printdesk-rate-limiters"
 main = "src/index.ts"
-compatibility_date = "2024-09-03"
+compatibility_date = "2025-05-05"
 
 [[unsafe.bindings]]
 name = "USER_RATE_LIMITER"

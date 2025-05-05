@@ -1,7 +1,7 @@
 packages:
   - packages/*
   - packages/functions/node
-  - packages/workers/api-rate-limiters
+  - packages/workers/rate-limiters
 onlyBuiltDependencies:
   - aws-sdk
   - esbuild

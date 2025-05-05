@@ -20,8 +20,7 @@ export const rateLimiter = createMiddleware(
         bearerAuth({
           async verifyToken(token, c) {
             const verified = await createClient({
-              clientID: "api-reverse-proxy",
-              issuer: `${Resource.Router.url}/auth`,
+              clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
             }).verify(subjects, token);
 
             if (verified.err) {
@@ -40,7 +39,7 @@ export const rateLimiter = createMiddleware(
         }),
         createMiddleware<{
           Bindings: {
-            [Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS]: {
+            [Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS]: {
               byUser: RateLimit["limit"];
             };
           };
@@ -53,9 +52,9 @@ export const rateLimiter = createMiddleware(
           console.log("Rate limiting by user:", key);
           c.set(
             "rateLimitOutcome",
-            await c.env[
-              Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS
-            ].byUser({ key }),
+            await c.env[Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS].byUser({
+              key,
+            }),
           );
 
           return next();
@@ -63,7 +62,7 @@ export const rateLimiter = createMiddleware(
       ),
       createMiddleware<{
         Bindings: {
-          [Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS]: {
+          [Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS]: {
             byIp: RateLimit["limit"];
           };
         };
@@ -74,7 +73,7 @@ export const rateLimiter = createMiddleware(
         console.log("Rate limiting by IP:", ip);
         c.set(
           "rateLimitOutcome",
-          await c.env[Constants.SERVICE_BINDING_NAMES.API_RATE_LIMITERS].byIp({
+          await c.env[Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS].byIp({
             key: ip,
           }),
         );

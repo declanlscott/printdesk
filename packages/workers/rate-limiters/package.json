@@ -1,5 +1,5 @@
 {
-  "name": "@printdesk/api-rate-limiters",
+  "name": "@printdesk/rate-limiters",
   "scripts": {
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",

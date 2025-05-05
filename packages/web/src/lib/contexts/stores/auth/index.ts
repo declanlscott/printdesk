@@ -1,5 +1,6 @@
 import { createClient } from "@openauthjs/openauth/client";
 import { subjects } from "@printdesk/core/auth/subjects";
+import { Constants } from "@printdesk/core/utils/constants";
 import { redirect } from "@tanstack/react-router";
 import { persist } from "zustand/middleware";
 import { createStore } from "zustand/vanilla";
@@ -49,7 +50,7 @@ export const AuthStoreApi = createStoreApiContext<
     persist(
       (set, get) => ({
         client: createClient({
-          clientID: "web",
+          clientID: Constants.OPENAUTH_CLIENT_IDS.WEB,
           issuer: resource.Auth.url,
         }),
         subdomain: null,

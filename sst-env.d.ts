@@ -13,9 +13,6 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "ApiReverseProxyWorker": {
-      "type": "sst.cloudflare.Worker"
-    }
     "AppData": {
       "domainName": {
         "fullyQualified": string
@@ -203,6 +200,9 @@ declare module "sst" {
     "ReplicacheLicenseKey": {
       "type": "sst.sst.Secret"
       "value": string
+    }
+    "ReverseProxyWorker": {
+      "type": "sst.cloudflare.Worker"
     }
     "Router": {
       "type": "sst.aws.Router"

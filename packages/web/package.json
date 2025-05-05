@@ -16,7 +16,7 @@
     "@radix-ui/react-avatar": "^1.1.7",
     "@tanstack/match-sorter-utils": "^8.19.4",
     "@tanstack/react-form": "^1.9.0",
-    "@tanstack/react-query": "^5.75.0",
+    "@tanstack/react-query": "^5.75.2",
     "@tanstack/react-router": "^1.119.0",
     "@tanstack/react-router-devtools": "^1.119.1",
     "@tanstack/react-table": "^8.21.3",
@@ -26,7 +26,7 @@
     "@xstate/react": "^5.0.3",
     "cmdk": "^1.1.1",
     "jotai": "^2.12.3",
-    "lucide-react": "^0.503.0",
+    "lucide-react": "^0.507.0",
     "partysocket": "^1.1.3",
     "react": "^19.1.0",
     "react-aria-components": "^1.8.0",
@@ -37,7 +37,7 @@
     "tailwind-merge": "^2.6.0",
     "tailwind-variants": "^1.0.0",
     "xstate": "^5.19.2",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.4"
   },
   "devDependencies": {
     "@react-types/shared": "^3.29.0",

@@ -11,12 +11,12 @@
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/client-dynamodb": "^3.799.0",
     "@aws-sdk/client-eventbridge": "^3.800.0",
-    "@aws-sdk/client-s3": "^3.800.0",
+    "@aws-sdk/client-s3": "^3.802.0",
     "@aws-sdk/client-sqs": "^3.799.0",
     "@aws-sdk/client-ssm": "^3.799.0",
     "@aws-sdk/cloudfront-signer": "^3.775.0",
     "@aws-sdk/lib-dynamodb": "^3.799.0",
-    "@aws-sdk/s3-request-presigner": "^3.800.0",
+    "@aws-sdk/s3-request-presigner": "^3.802.0",
     "@aws-sdk/util-format-url": "^3.775.0",
     "@azure/msal-node": "^2.16.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -30,6 +30,6 @@
   "devDependencies": {
     "@smithy/types": "^4.2.0",
     "@types/pg": "^8.11.14",
-    "drizzle-kit": "^0.31.0"
+    "drizzle-kit": "^0.31.1"
   }
 }

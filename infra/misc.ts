@@ -7,6 +7,18 @@ import {
   tenantRoles,
 } from "./roles";
 
+sst.Linkable.wrap(tls.PrivateKey, (privateKey) => ({
+  properties: {
+    pem: privateKey.privateKeyPem,
+  },
+}));
+
+sst.Linkable.wrap(random.RandomPassword, (password) => ({
+  properties: {
+    value: password.result,
+  },
+}));
+
 export const isDevMode = $dev;
 export const isProdStage = $app.stage === "production";
 
@@ -26,12 +38,6 @@ export const appData = new sst.Linkable("AppData", {
     },
   },
 });
-
-sst.Linkable.wrap(tls.PrivateKey, (privateKey) => ({
-  properties: {
-    pem: privateKey.privateKeyPem,
-  },
-}));
 
 export const cloudfrontPrivateKey = new tls.PrivateKey("CloudfrontPrivateKey", {
   algorithm: "RSA",

@@ -1,5 +1,6 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
+import { env } from "~/.sst/platform/src/components";
 import { dsqlCluster } from "./db";
 import { fqdn } from "./dns";
 import { aws_, isProdStage } from "./misc";
@@ -72,6 +73,15 @@ export const oauth2 = new sst.Linkable("Oauth2", {
   },
 });
 
+sst.Linkable.wrap(sst.aws.Auth, () => {
+  const url = $interpolate`https://${fqdn}/auth`;
+
+  return {
+    properties: { url },
+    include: [env({ OPENAUTH_ISSUER: url })],
+  };
+});
+
 export const auth = new sst.aws.Auth("Auth", {
   issuer: {
     handler: "packages/functions/node/src/issuer.handler",
@@ -108,5 +118,5 @@ export const webBasicAuth = $output([
 );
 
 export const outputs = {
-  auth: $interpolate`https://${fqdn}/auth`,
+  auth: auth.getSSTLink().properties.url,
 };

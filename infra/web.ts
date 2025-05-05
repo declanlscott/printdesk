@@ -1,5 +1,6 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
+import { auth } from "./auth";
 import { fqdn } from "./dns";
 import { appData, isProdStage, replicacheLicenseKey } from "./misc";
 import { router } from "./router";
@@ -18,6 +19,7 @@ export const web = new sst.aws.StaticSite("Web", {
   environment: injectLinkables(
     {
       AppData: appData,
+      Auth: auth,
       ReplicacheLicenseKey: replicacheLicenseKey,
       Router: router,
     },

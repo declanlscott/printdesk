@@ -194,6 +194,10 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "PulumiPassphrase": {
+      "type": "random.index/randomPassword.RandomPassword"
+      "value": string
+    }
     "ReplicacheLicenseKey": {
       "type": "sst.sst.Secret"
       "value": string
@@ -201,6 +205,10 @@ declare module "sst" {
     "Router": {
       "type": "sst.aws.Router"
       "url": string
+    }
+    "RouterSecret": {
+      "type": "random.index/randomPassword.RandomPassword"
+      "value": string
     }
     "TemporaryBucket": {
       "name": string

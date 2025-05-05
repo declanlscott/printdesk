@@ -50,7 +50,7 @@ export const AuthStoreApi = createStoreApiContext<
       (set, get) => ({
         client: createClient({
           clientID: "web",
-          issuer: `${resource.Router.url}/auth`,
+          issuer: resource.Auth.url,
         }),
         subdomain: null,
         flow: null,

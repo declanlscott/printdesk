@@ -51,7 +51,8 @@ export namespace Constants {
   } as const;
 
   export const HEADER_NAMES = {
-    TENANT_ID: "X-Tenant-Id",
+    TENANT_ID: "x-tenant-id",
+    ROUTER_SECRET: "x-router-secret",
   } as const;
 
   export const ENTRA_ID = "entra-id";

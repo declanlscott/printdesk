@@ -8,7 +8,7 @@ import { fqdn, zone } from "./dns";
 import { appData, aws_, cloudfrontPrivateKey } from "./misc";
 import { infraQueue } from "./queues";
 import { appsyncEventApi } from "./realtime";
-import { router } from "./router";
+import { router, routerSecret } from "./router";
 
 export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
@@ -21,6 +21,8 @@ export const api = new custom.aws.Function("Api", {
     cloudfrontPrivateKey,
     dsqlCluster,
     infraQueue,
+    router,
+    routerSecret,
     temporaryBucket,
     userActivityTable,
   ],

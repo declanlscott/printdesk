@@ -107,16 +107,6 @@ export const entraIdApplicationRedirectUris =
     ],
   });
 
-export const webUsername = new sst.Secret("WebUsername");
-export const webPassword = new sst.Secret("WebPassword");
-
-export const webBasicAuth = $output([
-  webUsername.value,
-  webPassword.value,
-]).apply(([username, password]) =>
-  Buffer.from(`${username}:${password}`).toString("base64"),
-);
-
 export const outputs = {
   auth: auth.getSSTLink().properties.url,
 };

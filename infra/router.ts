@@ -15,6 +15,13 @@ export const routerSecret = new random.RandomPassword("RouterSecret", {
   },
 });
 
+export const webBasicAuth = $output([
+  new sst.Secret("WebUsername").value,
+  new sst.Secret("WebPassword").value,
+]).apply(([username, password]) =>
+  Buffer.from(`${username}:${password}`).toString("base64"),
+);
+
 export const router = new sst.aws.Router("Router", {
   domain: {
     name: fqdn,
@@ -28,7 +35,35 @@ export const router = new sst.aws.Router("Router", {
   },
   edge: {
     viewerRequest: {
-      injection: $interpolate`event.request.headers["${Constants.HEADER_NAMES.ROUTER_SECRET}"] = { value: "${routerSecret.result}" };`,
+      injection: $interpolate`
+switch (event.request.uri.split("/")[1]) {
+  case "api":
+  case "auth": {
+    event.request.headers["${Constants.HEADER_NAMES.ROUTER_SECRET}"] = {
+      value: "${routerSecret.result}",
+    };
+    break;
+  }
+  default: {
+    ${
+      $app.stage !== "production"
+        ? $interpolate`
+    if (
+      !event.request.headers.authorization ||
+      event.request.headers.authorization.value !== "Basic ${webBasicAuth}"
+    ) {
+      return {
+        statusCode: 401,
+        headers: {
+          "www-authenticate": { value: "Basic" },
+        },
+      };
+    }`
+        : `
+    break;`
+    }
+  }
+}`,
     },
   },
   transform: {

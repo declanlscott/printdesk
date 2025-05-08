@@ -25,5 +25,5 @@ export default new Hono()
 
     if (e instanceof HTTPException) return e.getResponse();
 
-    return c.json("Internal server error", 500);
+    return c.newResponse(e.message, 500);
   });

@@ -3,6 +3,7 @@ import { DynamoDb } from "@printdesk/core/aws";
 import { withAws } from "@printdesk/core/aws/context";
 import { ServerErrors } from "@printdesk/core/errors";
 import { SharedErrors } from "@printdesk/core/errors/shared";
+import { Middleware } from "@printdesk/core/hono";
 import { Users } from "@printdesk/core/users";
 import { Constants } from "@printdesk/core/utils/constants";
 import { Hono } from "hono";
@@ -22,6 +23,7 @@ import type {
 
 const app = new Hono()
   .use(logger())
+  .use(Middleware.sourceValidator)
   .use(actor)
   .use(
     some(

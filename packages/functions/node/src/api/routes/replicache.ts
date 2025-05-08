@@ -47,7 +47,7 @@ export default new Hono()
               Body: buffer,
             });
 
-            const url = await S3.getSignedGetUrl({
+            const url = await S3.getPresignedGetUrl({
               Bucket: Resource.TemporaryBucket.name,
               Key: objectKey,
             });

@@ -1,6 +1,8 @@
 import { useActor } from "@printdesk/core/actors/context";
 import { DynamoDb } from "@printdesk/core/aws";
 import { withAws } from "@printdesk/core/aws/context";
+import { ServerErrors } from "@printdesk/core/errors";
+import { SharedErrors } from "@printdesk/core/errors/shared";
 import { Users } from "@printdesk/core/users";
 import { Constants } from "@printdesk/core/utils/constants";
 import { Hono } from "hono";
@@ -10,13 +12,16 @@ import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
 
 import { actor } from "~/api/middleware/actor";
-import { errorHandler } from "~/api/middleware/error";
 import replicacheRoute from "~/api/routes/replicache";
 import trpcRoute from "~/api/routes/trpc";
 
+import type {
+  ClientStateNotFoundResponse,
+  VersionNotSupportedResponse,
+} from "replicache";
+
 const app = new Hono()
   .use(logger())
-  .use(errorHandler)
   .use(actor)
   .use(
     some(
@@ -48,7 +53,32 @@ const app = new Hono()
 
     if (e instanceof HTTPException) return e.getResponse();
 
-    return c.text("Internal server error", 500);
+    if (e instanceof ServerErrors.BadRequest)
+      return c.newResponse(e.message, 400);
+    if (
+      e instanceof SharedErrors.AccessDenied ||
+      e instanceof ServerErrors.InvalidActor
+    )
+      return c.newResponse(e.message, 403);
+    if (e instanceof SharedErrors.NotFound)
+      return c.newResponse(e.message, 404);
+    if (e instanceof ServerErrors.MutationConflict)
+      return c.newResponse(e.message, 409);
+    if (e instanceof ServerErrors.ReplicacheClientStateNotFound)
+      return c.json(
+        { error: "ClientStateNotFound" } satisfies ClientStateNotFoundResponse,
+        200,
+      );
+    if (e instanceof ServerErrors.ReplicacheVersionNotSupported)
+      return c.json(
+        {
+          error: "VersionNotSupported",
+          versionType: e.versionType,
+        } satisfies VersionNotSupportedResponse,
+        200,
+      );
+
+    return c.newResponse(e.message, 500);
   });
 
 export const handler = handle(app);

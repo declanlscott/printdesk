@@ -1,12 +1,11 @@
 import * as R from "remeda";
 
 import { DEFAULT_ACCOUNT_ID as CLOUDFLARE_ACCOUNT_ID } from "~/.sst/platform/src/components/cloudflare";
+import { cfFetch } from "~/.sst/platform/src/components/cloudflare/helpers/fetch";
 
-const CLOUDFLARE_API_BASE_URL = "https://api.cloudflare.com/client/v4";
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const CLOUDFLARE_API_TOKEN: string =
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-  $app.providers?.cloudflare?.apiToken ?? process.env.CLOUDFLARE_API_TOKEN;
+const scriptsResource = `/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts`;
+const settingsResource = (scriptName: string) =>
+  `/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${scriptName}/settings`;
 
 export type Settings = {
   bindings?: Array<
@@ -208,94 +207,60 @@ export type Settings = {
   usage_model?: "standard";
 };
 
-type ApiResponse<TResult> =
-  | {
-      errors: Array<{
-        code: number;
-        message: string;
-        documentation_url?: string;
-        source?: {
-          pointer?: string;
-        };
-      }>;
-      messages: Array<{
-        code: number;
-        message: string;
-        documentation_url?: string;
-        source?: {
-          pointer?: string;
-        };
-      }>;
-      success: false;
-      result: undefined;
-    }
-  | {
-      errors: Array<{
-        code: number;
-        message: string;
-        documentation_url?: string;
-        source?: {
-          pointer?: string;
-        };
-      }>;
-      messages: Array<{
-        code: number;
-        message: string;
-        documentation_url?: string;
-        source?: {
-          pointer?: string;
-        };
-      }>;
-      success: true;
-      result: TResult;
-    };
+export type Script = {
+  id?: string;
+  created_on?: string;
+  etag?: string;
+  has_assets?: boolean;
+  has_modules?: boolean;
+  logpush?: boolean;
+  modified_on?: string;
+  placement?: {
+    last_analyzed_at?: string;
+    mode?: "smart";
+    status?: "SUCCESS" | "UNSUPPORTED_APPLICATION" | "INSUFFICIENT_INVOCATIONS";
+  };
+  placement_mode?: "smart";
+  placement_status?:
+    | "SUCCESS"
+    | "UNSUPPORTED_APPLICATION"
+    | "INSUFFICIENT_INVOCATIONS";
+  tail_consumers?: Array<{
+    service: string;
+    environment?: string;
+    namespace?: string;
+  }>;
+  usage_model: "standard";
+};
 
 export interface SettingsProviderInputs extends Settings {
   scriptName: string;
 }
 
-export type SettingsProviderOutputs = SettingsProviderInputs;
+export interface SettingsProviderOutputs extends SettingsProviderInputs {
+  created_on?: string;
+  modified_on?: string;
+}
 
 export class SettingsProvider implements $util.dynamic.ResourceProvider {
-  private static async _send<TResult>(
-    scriptName: string,
-    init: RequestInit = {},
-  ) {
-    const resource = `/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts/${scriptName}/settings`;
-
-    const res = await fetch(`${CLOUDFLARE_API_BASE_URL}${resource}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}`,
-        ...init.headers,
-      },
-    });
-    if (!res.ok)
-      throw new Error(
-        `Cloudflare API request to "${resource}" failed with ${res.status}, ${res.statusText}.`,
-      );
-
-    const json = (await res.json()) as ApiResponse<TResult>;
-    if (!json.success)
-      throw new Error(`Cloudflare API request to "${resource}" failed.`, {
-        cause: {
-          errors: json.errors,
-          messages: json.messages,
-        },
-      });
-
-    return json;
-  }
-
   async create({
     scriptName,
     ...settings
   }: SettingsProviderInputs): Promise<
     $util.dynamic.CreateResult<SettingsProviderOutputs>
   > {
-    const initial = await SettingsProvider._send<Settings>(scriptName, {
+    const initial = await cfFetch<Settings>(settingsResource(scriptName), {
       method: "GET",
     });
+
+    const mergeArray = <
+      TElement,
+      TData extends ReadonlyArray<TElement>,
+      TOther extends ReadonlyArray<TElement>,
+    >(
+      data: TData,
+      other: TOther,
+    ) => R.pipe(other, R.concat(data), R.uniqueWith(R.isDeepEqual));
 
     const formData = new FormData();
     formData.set(
@@ -303,16 +268,16 @@ export class SettingsProvider implements $util.dynamic.ResourceProvider {
       JSON.stringify(
         R.mergeDeep(initial.result, {
           ...settings,
-          compatibility_flags: R.concat(
+          compatibility_flags: mergeArray(
             initial.result.compatibility_flags ?? [],
             settings.compatibility_flags ?? [],
           ),
-          bindings: R.concat(
+          bindings: mergeArray(
             initial.result.bindings ?? [],
             settings.bindings ?? [],
           ),
-          tags: R.concat(initial.result.tags ?? [], settings.tags ?? []),
-          tail_consumers: R.concat(
+          tags: mergeArray(initial.result.tags ?? [], settings.tags ?? []),
+          tail_consumers: mergeArray(
             initial.result.tail_consumers ?? [],
             settings.tail_consumers ?? [],
           ),
@@ -320,17 +285,52 @@ export class SettingsProvider implements $util.dynamic.ResourceProvider {
       ),
     );
 
-    const { result } = await SettingsProvider._send<Settings>(scriptName, {
+    const { result } = await cfFetch<Settings>(settingsResource(scriptName), {
       method: "PATCH",
       body: formData,
     });
 
+    const script = await cfFetch<Array<Script>>(scriptsResource, {
+      method: "GET",
+    }).then(({ result }) => result.find((script) => script.id === scriptName));
+    if (!script) throw new Error(`Script "${scriptName}" not found.`);
+
     return {
       id: scriptName,
       outs: {
-        scriptName: scriptName,
+        scriptName,
         ...result,
+        created_on: script.created_on,
+        modified_on: script.modified_on,
       },
+    };
+  }
+
+  async diff(
+    id: string,
+    olds: SettingsProviderOutputs,
+    news: SettingsProviderInputs,
+  ): Promise<$util.dynamic.DiffResult> {
+    const replaces: NonNullable<$util.dynamic.DiffResult["replaces"]> = [];
+
+    const script = await cfFetch<Array<Script>>(scriptsResource, {
+      method: "GET",
+    }).then(({ result }) => result.find((script) => script.id === id));
+    if (!script) throw new Error(`Script "${id}" not found.`);
+
+    if (olds.created_on !== script.created_on) replaces.push("created_on");
+    if (olds.modified_on !== script.modified_on) replaces.push("modified_on");
+
+    const keys = new Set<keyof SettingsProviderInputs>([
+      ...R.keys(R.omit(olds, ["created_on", "modified_on"])),
+      ...R.keys(news),
+    ]);
+    for (const key of keys)
+      if (!R.isDeepEqual(olds[key], news[key])) replaces.push(key);
+
+    return {
+      changes: !!replaces.length,
+      replaces,
     };
   }
 }

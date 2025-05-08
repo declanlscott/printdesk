@@ -27,7 +27,16 @@ export namespace Workers {
       props: SettingsInputs,
       opts?: $util.CustomResourceOptions,
     ) {
-      super(new SettingsProvider(), name, props, opts);
+      super(
+        new SettingsProvider(),
+        name,
+        {
+          ...props,
+          created_on: undefined,
+          modified_on: undefined,
+        },
+        opts,
+      );
     }
   }
 }

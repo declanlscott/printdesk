@@ -12,6 +12,7 @@ import { HTTPException } from "hono/http-exception";
 import { Resource } from "sst";
 
 import type { FetchProxy } from "@mjackson/fetch-proxy";
+import type { Bindings } from "./types";
 
 export const rateLimiter = createMiddleware(
   every(
@@ -38,21 +39,19 @@ export const rateLimiter = createMiddleware(
           },
         }),
         createMiddleware<{
-          Bindings: {
-            [Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS]: {
-              byUser: RateLimit["limit"];
-            };
-          };
+          Bindings: Bindings;
         }>(async (c, next) => {
           const key = delimitToken(
+            "tenant",
             c.var.subject.properties.tenantId,
+            "user",
             c.var.subject.properties.id,
           );
 
           console.log("Rate limiting by user:", key);
           c.set(
             "rateLimitOutcome",
-            await c.env[Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS].byUser({
+            await c.env[Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER].limit({
               key,
             }),
           );
@@ -61,20 +60,18 @@ export const rateLimiter = createMiddleware(
         }),
       ),
       createMiddleware<{
-        Bindings: {
-          [Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS]: {
-            byIp: RateLimit["limit"];
-          };
-        };
+        Bindings: Bindings;
       }>(async (c, next) => {
         const ip = getConnInfo(c).remote.address;
         if (!ip) throw new Error("Missing remote address");
 
-        console.log("Rate limiting by IP:", ip);
+        const key = delimitToken("ip", ip);
+
+        console.log("Rate limiting by IP:", key);
         c.set(
           "rateLimitOutcome",
-          await c.env[Constants.SERVICE_BINDING_NAMES.RATE_LIMITERS].byIp({
-            key: ip,
+          await c.env[Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER].limit({
+            key,
           }),
         );
 

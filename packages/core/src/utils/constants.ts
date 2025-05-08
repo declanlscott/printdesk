@@ -20,8 +20,8 @@ export namespace Constants {
   export const USER = "USER";
   export const METADATA = "METADATA";
 
-  export const SERVICE_BINDING_NAMES = {
-    RATE_LIMITERS: "RATE_LIMITERS",
+  export const CLOUDFLARE_BINDING_NAMES = {
+    RATE_LIMITER: "RATE_LIMITER",
   } as const;
 
   export const ENTRA_ID_OAUTH_SCOPES = [

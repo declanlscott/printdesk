@@ -6,5 +6,7 @@ import type { ComponentProps } from "react";
 export type MarkdownProps = ComponentProps<typeof ReactMarkdown>;
 
 export const Markdown = (props: MarkdownProps) => (
-  <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose" {...props} />
+  <div className="prose">
+    <ReactMarkdown remarkPlugins={[remarkGfm]} {...props} />
+  </div>
 );

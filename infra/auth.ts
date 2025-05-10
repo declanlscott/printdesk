@@ -3,7 +3,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 import { env } from "~/.sst/platform/src/components";
 import { dsqlCluster } from "./db";
 import { fqdn } from "./dns";
-import { aws_, isProdStage } from "./misc";
+import { appData, aws_, isProdStage } from "./misc";
 import { router, routerSecret } from "./router";
 
 const oauthAppName = isProdStage
@@ -21,8 +21,9 @@ export const entraIdApplication = new azuread.ApplicationRegistration(
   },
 );
 
-const wellKnown = azuread.getApplicationPublishedAppIds();
-const graphAppId = await wellKnown.then(({ result }) => result?.MicrosoftGraph);
+const graphAppId = azuread
+  .getApplicationPublishedAppIdsOutput()
+  .result.apply((result) => result.MicrosoftGraph);
 
 const graphServicePrincipal = new azuread.ServicePrincipal(
   "GraphServicePrincipal",
@@ -62,6 +63,15 @@ export const entraIdClientSecret = new azuread.ApplicationPassword(
   },
 );
 
+export const entraIdApplicationRedirectUris =
+  new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
+    applicationId: entraIdApplication.id,
+    type: "Web",
+    redirectUris: [
+      $interpolate`https://${fqdn}/auth/${Constants.ENTRA_ID}/callback`,
+    ],
+  });
+
 // TODO: Google oauth
 
 export const oauth2 = new sst.Linkable("Oauth2", {
@@ -85,7 +95,7 @@ sst.Linkable.wrap(sst.aws.Auth, () => {
 export const auth = new sst.aws.Auth("Auth", {
   issuer: {
     handler: "packages/functions/node/src/issuer.handler",
-    link: [aws_, dsqlCluster, oauth2, routerSecret],
+    link: [aws_, appData, dsqlCluster, oauth2, routerSecret],
     architecture: "arm64",
     runtime: "nodejs22.x",
     url: true,
@@ -97,15 +107,6 @@ router.route("/auth", auth.url, {
     to: "/$1",
   },
 });
-
-export const entraIdApplicationRedirectUris =
-  new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
-    applicationId: entraIdApplication.id,
-    type: "Web",
-    redirectUris: [
-      $interpolate`https://${fqdn}/auth/${Constants.ENTRA_ID}/callback`,
-    ],
-  });
 
 export const outputs = {
   auth: auth.getSSTLink().properties.url,

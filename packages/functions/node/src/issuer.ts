@@ -18,7 +18,7 @@ import * as v from "valibot";
 const app = new Hono()
   .use(Middleware.sourceValidator)
   .route(
-    "*",
+    "/",
     issuer({
       subjects,
       providers: {

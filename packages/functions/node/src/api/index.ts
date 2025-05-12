@@ -1,16 +1,11 @@
-import { useActor } from "@printdesk/core/actors/context";
-import { DynamoDb } from "@printdesk/core/aws";
-import { withAws } from "@printdesk/core/aws/context";
 import { ServerErrors } from "@printdesk/core/errors";
 import { SharedErrors } from "@printdesk/core/errors/shared";
 import { Middleware } from "@printdesk/core/hono";
-import { Users } from "@printdesk/core/users";
-import { Constants } from "@printdesk/core/utils/constants";
 import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
-import { every, some } from "hono/combine";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "hono/logger";
+import { Resource } from "sst";
 
 import { actor } from "~/api/middleware/actor";
 import replicacheRoute from "~/api/routes/replicache";
@@ -23,31 +18,10 @@ import type {
 
 const app = new Hono()
   .use(logger())
-  .use(Middleware.sourceValidator)
-  .use(actor)
   .use(
-    some(
-      () => useActor().kind !== Constants.ACTOR_KINDS.USER,
-      every(
-        async (_, next) =>
-          withAws(
-            () => ({
-              dynamoDb: {
-                documentClient: DynamoDb.DocumentClient.from(
-                  new DynamoDb.Client(),
-                ),
-              },
-            }),
-            next,
-          ),
-        async (_, next) => {
-          await Users.recordActivity();
-
-          return next();
-        },
-      ),
-    ),
+    Middleware.sourceValidator(Resource.AppData.domainName.fullyQualified.api),
   )
+  .use(actor)
   .route("/replicache", replicacheRoute)
   .route("/trpc", trpcRoute)
   .onError((e, c) => {

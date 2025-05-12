@@ -61,17 +61,3 @@ export const tenantParameters = new sst.Linkable("TenantParameters", {
     },
   },
 });
-
-export const userActivityTable = new sst.aws.Dynamo("UserActivityTable", {
-  fields: {
-    [Constants.PK]: "string",
-    [Constants.SK]: "string",
-    [Constants.GSI.ONE.PK]: "string",
-    [Constants.GSI.ONE.SK]: "string",
-  },
-  primaryIndex: { hashKey: Constants.PK, rangeKey: Constants.SK },
-  globalIndexes: {
-    gsi1: { hashKey: Constants.GSI.ONE.PK, rangeKey: Constants.GSI.ONE.SK },
-  },
-  stream: "new-image",
-});

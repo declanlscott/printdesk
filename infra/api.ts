@@ -1,5 +1,3 @@
-import { Constants } from "@printdesk/core/utils/constants";
-
 import { issuer } from "./auth";
 import {
   cloudfrontPrivateKey,
@@ -18,29 +16,7 @@ import {
 } from "./iam";
 import { appData, temporaryBucket } from "./misc";
 import { appsyncEventApi } from "./realtime";
-import { infraQueue, userActivityTable } from "./storage";
-
-userActivityTable.subscribe(
-  "IncrementMonthlyActiveUsers",
-  "packages/functions/node/src/increment-mau.handler",
-  {
-    filters: [
-      {
-        eventName: ["INSERT"],
-        dynamodb: {
-          NewImage: {
-            [Constants.GSI.ONE.PK]: {
-              S: [{ prefix: Constants.MONTH + Constants.TOKEN_DELIMITER }],
-            },
-            [Constants.GSI.ONE.SK]: {
-              S: [{ prefix: Constants.USER + Constants.TOKEN_DELIMITER }],
-            },
-          },
-        },
-      },
-    ],
-  },
-);
+import { infraQueue } from "./storage";
 
 export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
@@ -64,7 +40,6 @@ export const api = new custom.aws.Function("Api", {
     realtimeSubscriberRoleExternalId,
     routerSecret,
     temporaryBucket,
-    userActivityTable,
   ],
   permissions: [
     {

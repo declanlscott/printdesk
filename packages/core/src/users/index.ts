@@ -1,17 +1,7 @@
-import {
-  ConditionalCheckFailedException,
-  DynamoDBServiceException,
-  ResourceNotFoundException,
-} from "@aws-sdk/client-dynamodb";
-import { format } from "date-fns";
 import { and, eq, getTableName, inArray, sql } from "drizzle-orm";
 import * as R from "remeda";
-import { Resource } from "sst";
-import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
-import { assertActor } from "../actors/context";
-import { DynamoDb } from "../aws";
 import {
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
@@ -23,7 +13,6 @@ import { SharedErrors } from "../errors/shared";
 import { ordersTable } from "../orders/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
-import { Constants } from "../utils/constants";
 import { fn } from "../utils/shared";
 import {
   deleteUserMutationArgsSchema,
@@ -339,145 +328,4 @@ export namespace Users {
         )
         .then(R.isNot(R.isEmpty)),
     );
-
-  export async function recordActivity() {
-    const month = format(new Date(), "yyyy-MM");
-    const userId = assertActor("user").properties.id;
-
-    const pk = DynamoDb.delimitKey(
-      Constants.TENANT,
-      useTenant().id,
-      Constants.MONTH,
-      month,
-    );
-    const sk = DynamoDb.delimitKey(Constants.USER, userId);
-
-    const gsi1pk = DynamoDb.delimitKey(Constants.MONTH, month);
-    const gsi1sk = DynamoDb.delimitKey(Constants.USER, userId);
-
-    try {
-      await DynamoDb.documentClient().put({
-        TableName: Resource.UserActivityTable.name,
-        Item: {
-          [Constants.PK]: pk,
-          [Constants.SK]: sk,
-          [Constants.GSI.ONE.PK]: gsi1pk,
-          [Constants.GSI.ONE.SK]: gsi1sk,
-          [Constants.CREATED_AT]: new Date().toISOString(),
-        },
-        ConditionExpression: "attribute_not_exists(#sk)",
-        ExpressionAttributeNames: {
-          "#sk": Constants.SK,
-        },
-      });
-    } catch (e) {
-      if (
-        e instanceof DynamoDBServiceException &&
-        e.name === ConditionalCheckFailedException.name
-      )
-        return console.log("Monthly user activity already recorded");
-
-      console.error("Failed to record monthly user activity", e);
-      throw e;
-    }
-  }
-
-  export async function incrementMonthlyActive(month: string) {
-    const pk = DynamoDb.delimitKey(
-      Constants.TENANT,
-      useTenant().id,
-      Constants.MONTH,
-      month,
-    );
-    const sk = DynamoDb.delimitKey(Constants.METADATA);
-
-    const updatedAt = new Date().toISOString();
-
-    try {
-      await DynamoDb.documentClient().update({
-        TableName: Resource.UserActivityTable.name,
-        Key: { pk, sk },
-        UpdateExpression: "ADD #user_count :inc SET #updated_at = :updated_at",
-        ExpressionAttributeNames: {
-          "#user_count": Constants.USER_COUNT,
-          "#updated_at": Constants.UPDATED_AT,
-        },
-        ExpressionAttributeValues: {
-          ":inc": 1,
-          ":updated_at": updatedAt,
-        },
-      });
-    } catch (e) {
-      if (
-        e instanceof DynamoDBServiceException &&
-        e.name === ConditionalCheckFailedException.name
-      ) {
-        console.log("First monthly active user for this month:", month);
-        await DynamoDb.documentClient().put({
-          TableName: Resource.UserActivityTable.name,
-          Item: {
-            [Constants.PK]: pk,
-            [Constants.SK]: sk,
-            [Constants.USER_COUNT]: 1,
-            [Constants.UPDATED_AT]: updatedAt,
-          },
-        });
-        return;
-      }
-
-      console.error("Failed to increment monthly active users", e);
-      throw e;
-    }
-  }
-
-  export async function countMonthlyActive(month: string) {
-    const pk = DynamoDb.delimitKey(
-      Constants.TENANT,
-      useTenant().id,
-      Constants.MONTH,
-      month,
-    );
-    const sk = DynamoDb.delimitKey(Constants.METADATA);
-
-    try {
-      const output = await DynamoDb.documentClient().get({
-        TableName: Resource.UserActivityTable.name,
-        Key: { pk, sk },
-      });
-
-      const result = v.parse(
-        v.pipe(
-          v.looseObject({
-            [Constants.USER_COUNT]: v.pipe(
-              v.number(),
-              v.integer(),
-              v.minValue(1),
-            ),
-            [Constants.UPDATED_AT]: v.pipe(v.string(), v.isoTimestamp()),
-          }),
-          v.transform((input) => ({
-            userCount: input[Constants.USER_COUNT],
-            updatedAt: input[Constants.UPDATED_AT],
-          })),
-        ),
-        output.Item,
-      );
-
-      return result;
-    } catch (e) {
-      if (
-        e instanceof DynamoDBServiceException &&
-        e.name === ResourceNotFoundException.name
-      ) {
-        console.log("No monthly active users for this month:", month);
-        return {
-          userCount: 0 as const,
-          updatedAt: null,
-        };
-      }
-
-      console.error("Failed to count monthly active users", e);
-      throw e;
-    }
-  }
 }

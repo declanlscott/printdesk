@@ -1,9 +1,9 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { auth } from "./auth";
-import { fqdn } from "./dns";
+import { issuer } from "./auth";
+import { router } from "./cdn";
+import { domains } from "./dns";
 import { appData, isProdStage, replicacheLicenseKey } from "./misc";
-import { router } from "./router";
 import { injectLinkables } from "./utils";
 
 export const web = new sst.aws.StaticSite("Web", {
@@ -14,16 +14,14 @@ export const web = new sst.aws.StaticSite("Web", {
   },
   router: {
     instance: router,
-    domain: isProdStage ? $interpolate`*.${fqdn}` : undefined,
+    domain: isProdStage ? $interpolate`*.${domains.properties.web}` : undefined,
   },
   environment: injectLinkables(
-    {
-      AppData: appData,
-      Auth: auth,
-      ReplicacheLicenseKey: replicacheLicenseKey,
-      Router: router,
-    },
     Constants.VITE_RESOURCE_PREFIX,
+    appData,
+    issuer,
+    replicacheLicenseKey,
+    router,
   ),
 });
 

@@ -1,14 +1,14 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { env } from "~/.sst/platform/src/components";
+import { router, routerSecret } from "./cdn";
 import { dsqlCluster } from "./db";
-import { fqdn } from "./dns";
-import { appData, aws_, isProdStage } from "./misc";
-import { router, routerSecret } from "./router";
+import { domains } from "./dns";
 
-const oauthAppName = isProdStage
-  ? $app.name.charAt(0).toUpperCase() + $app.name.slice(1)
-  : `${$app.name}-${$app.stage}`;
+const oauthAppName =
+  {
+    production: $output($app.name.charAt(0).toUpperCase() + $app.name.slice(1)),
+    dev: $interpolate`${$app.name}-${$app.stage}`,
+  }[$app.stage] ?? $interpolate`${$app.name}-dev-${$app.stage}`;
 
 export const entraIdApplication = new azuread.ApplicationRegistration(
   "EntraIdApplicationRegistration",
@@ -17,9 +17,18 @@ export const entraIdApplication = new azuread.ApplicationRegistration(
     signInAudience: "AzureADMultipleOrgs",
     implicitAccessTokenIssuanceEnabled: true,
     implicitIdTokenIssuanceEnabled: true,
-    homepageUrl: $interpolate`https://${fqdn}`,
+    homepageUrl: $interpolate`https://${domains.properties.web}`,
   },
 );
+
+export const entraIdApplicationRedirectUris =
+  new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
+    applicationId: entraIdApplication.id,
+    type: "Web",
+    redirectUris: [
+      $interpolate`https://${domains.properties.auth}/${Constants.ENTRA_ID}/callback`,
+    ],
+  });
 
 const graphAppId = azuread
   .getApplicationPublishedAppIdsOutput()
@@ -48,9 +57,10 @@ export const entraIdApplicationApiAccess = new azuread.ApplicationApiAccess(
 );
 
 export const rotationHours = 24 * 7 * 26; // 6 months
-export const clientSecretRotation = new time.Rotating("ClientSecretRotation", {
-  rotationHours,
-});
+export const entraIdClientSecretRotation = new time.Rotating(
+  "EntraIdClientSecretRotation",
+  { rotationHours },
+);
 
 export const entraIdClientSecret = new azuread.ApplicationPassword(
   "EntraIdClientSecret",
@@ -58,56 +68,47 @@ export const entraIdClientSecret = new azuread.ApplicationPassword(
     applicationId: entraIdApplication.id,
     endDateRelative: `${rotationHours.toString()}h`,
     rotateWhenChanged: {
-      rotation: clientSecretRotation.id,
+      rotation: entraIdClientSecretRotation.id,
     },
   },
 );
 
-export const entraIdApplicationRedirectUris =
-  new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
-    applicationId: entraIdApplication.id,
-    type: "Web",
-    redirectUris: [
-      $interpolate`https://${fqdn}/auth/${Constants.ENTRA_ID}/callback`,
-    ],
-  });
-
-// TODO: Google oauth
-
-export const oauth2 = new sst.Linkable("Oauth2", {
+export const identityProviders = new sst.Linkable("IdentityProviders", {
   properties: {
-    entraId: {
+    [Constants.ENTRA_ID]: {
       clientId: entraIdApplication.clientId,
       clientSecret: entraIdClientSecret.value,
+    },
+    [Constants.GOOGLE]: {
+      // TODO: Google oauth
     },
   },
 });
 
-sst.Linkable.wrap(sst.aws.Auth, () => {
-  const url = $interpolate`https://${fqdn}/auth`;
-
-  return {
-    properties: { url },
-    include: [env({ OPENAUTH_ISSUER: url })],
-  };
+export const authTable = new sst.aws.Dynamo("AuthTable", {
+  fields: { pk: "string", sk: "string" },
+  primaryIndex: { hashKey: "pk", rangeKey: "sk" },
+  ttl: "expiry",
 });
 
-export const auth = new sst.aws.Auth("Auth", {
-  issuer: {
-    handler: "packages/functions/node/src/issuer.handler",
-    link: [aws_, appData, dsqlCluster, oauth2, routerSecret],
-    architecture: "arm64",
-    runtime: "nodejs22.x",
-    url: true,
+export const issuer = new sst.aws.Function("Issuer", {
+  handler: "packages/functions/node/src/issuer.handler",
+  link: [authTable, dsqlCluster, identityProviders, routerSecret],
+  environment: {
+    OPENAUTH_STORAGE: $jsonStringify({
+      type: "dynamo",
+      options: { table: authTable.name },
+    }),
   },
-});
-router.route("/auth", auth.url, {
-  rewrite: {
-    regex: "^/auth/(.*)$",
-    to: "/$1",
+  url: {
+    router: {
+      instance: router,
+      domain: domains.properties.auth,
+    },
+    cors: false,
   },
 });
 
 export const outputs = {
-  auth: auth.getSSTLink().properties.url,
+  issuer: issuer.url,
 };

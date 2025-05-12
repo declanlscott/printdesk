@@ -1,15 +1,15 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { auth } from "./auth";
+import { issuer } from "./auth";
+import { router } from "./cdn";
 import * as custom from "./custom";
-import { fqdn, zone } from "./dns";
-import { router } from "./router";
+import { domains, zone } from "./dns";
 
 export const reverseProxyWorker = new sst.cloudflare.Worker(
   "ReverseProxyWorker",
   {
     handler: "packages/workers/src/reverse-proxy/index.ts",
-    link: [auth, router],
+    link: [issuer, router],
     url: false,
   },
 );
@@ -34,7 +34,7 @@ export const reverseProxyApiRoute = new cloudflare.WorkersRoute(
   "ReverseProxyApiRoute",
   {
     zoneId: zone.id,
-    pattern: $interpolate`${fqdn}/api/*`,
+    pattern: $interpolate`${domains.properties.api}/*`,
     scriptName: reverseProxyWorker.nodes.worker.name,
   },
 );
@@ -43,7 +43,7 @@ export const reverseProxyAuthRoute = new cloudflare.WorkersRoute(
   "ReverseProxyAuthRoute",
   {
     zoneId: zone.id,
-    pattern: $interpolate`${fqdn}/auth/*`,
+    pattern: $interpolate`${domains.properties.auth}/*`,
     scriptName: reverseProxyWorker.nodes.worker.name,
   },
 );

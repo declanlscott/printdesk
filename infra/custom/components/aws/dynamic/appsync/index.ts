@@ -52,12 +52,7 @@ export namespace Appsync {
       );
     }
 
-    getSSTLink(): Link.Definition<{
-      dns: {
-        http: $util.Output<string>;
-        realtime: $util.Output<string>;
-      };
-    }> {
+    getSSTLink() {
       return {
         properties: {
           dns: {

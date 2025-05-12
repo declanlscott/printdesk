@@ -1,24 +1,67 @@
-import { auth } from "./auth";
-import { temporaryBucket } from "./buckets";
+import { Constants } from "@printdesk/core/utils/constants";
+
+import { issuer } from "./auth";
+import {
+  cloudfrontPrivateKey,
+  cloudfrontPublicKey,
+  router,
+  routerSecret,
+} from "./cdn";
 import * as custom from "./custom";
-import { dsqlCluster, userActivityTable } from "./db";
-import { fqdn } from "./dns";
-import { appData, aws_, cloudfrontPrivateKey } from "./misc";
-import { infraQueue } from "./queues";
+import { dsqlCluster } from "./db";
+import { domains } from "./dns";
+import {
+  realtimePublisherRole,
+  realtimePublisherRoleExternalId,
+  realtimeSubscriberRole,
+  realtimeSubscriberRoleExternalId,
+} from "./iam";
+import { appData, temporaryBucket } from "./misc";
 import { appsyncEventApi } from "./realtime";
-import { router, routerSecret } from "./router";
+import { infraQueue, userActivityTable } from "./storage";
+
+userActivityTable.subscribe(
+  "IncrementMonthlyActiveUsers",
+  "packages/functions/node/src/increment-mau.handler",
+  {
+    filters: [
+      {
+        eventName: ["INSERT"],
+        dynamodb: {
+          NewImage: {
+            [Constants.GSI.ONE.PK]: {
+              S: [{ prefix: Constants.MONTH + Constants.TOKEN_DELIMITER }],
+            },
+            [Constants.GSI.ONE.SK]: {
+              S: [{ prefix: Constants.USER + Constants.TOKEN_DELIMITER }],
+            },
+          },
+        },
+      },
+    ],
+  },
+);
 
 export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
-  url: true,
+  url: {
+    router: {
+      instance: router,
+      domain: domains.properties.api,
+    },
+  },
   link: [
     appData,
-    auth,
-    aws_,
     appsyncEventApi,
+    cloudfrontPublicKey,
     cloudfrontPrivateKey,
     dsqlCluster,
     infraQueue,
+    issuer,
+    realtimePublisherRole,
+    realtimePublisherRoleExternalId,
+    realtimeSubscriberRole,
+    realtimeSubscriberRoleExternalId,
     routerSecret,
     temporaryBucket,
     userActivityTable,
@@ -27,18 +70,12 @@ export const api = new custom.aws.Function("Api", {
     {
       actions: ["sts:AssumeRole"],
       resources: [
-        $interpolate`arn:aws:iam::${aws_.properties.account.id}:role/*`,
+        $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/*`,
       ],
     },
   ],
 });
-router.route("/api", api.url, {
-  rewrite: {
-    regex: "^/api/(.*)$",
-    to: "/$1",
-  },
-});
 
 export const outputs = {
-  api: $interpolate`https://${fqdn}/api`,
+  api: api.url,
 };

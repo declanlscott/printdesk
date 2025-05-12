@@ -237,21 +237,24 @@ export interface SettingsProviderInputs extends Settings {
   scriptName: string;
 }
 
-export interface SettingsProviderOutputs extends SettingsProviderInputs {
-  created_on?: string;
-  modified_on?: string;
+export interface SettingsProviderOutputs {
+  scriptName: string;
+  patch: Settings;
+  createdOn: string;
+  modifiedOn: string;
 }
 
 export class SettingsProvider implements $util.dynamic.ResourceProvider {
   async create({
     scriptName,
-    ...settings
+    ...patch
   }: SettingsProviderInputs): Promise<
     $util.dynamic.CreateResult<SettingsProviderOutputs>
   > {
-    const initial = await cfFetch<Settings>(settingsResource(scriptName), {
-      method: "GET",
-    });
+    const { result: settings } = await cfFetch<Settings>(
+      settingsResource(scriptName),
+      { method: "GET" },
+    );
 
     const mergeArray = <
       TElement,
@@ -265,27 +268,33 @@ export class SettingsProvider implements $util.dynamic.ResourceProvider {
     const formData = new FormData();
     formData.set(
       "settings",
-      JSON.stringify(
-        R.mergeDeep(initial.result, {
-          ...settings,
-          compatibility_flags: mergeArray(
-            initial.result.compatibility_flags ?? [],
-            settings.compatibility_flags ?? [],
-          ),
-          bindings: mergeArray(
-            initial.result.bindings ?? [],
-            settings.bindings ?? [],
-          ),
-          tags: mergeArray(initial.result.tags ?? [], settings.tags ?? []),
-          tail_consumers: mergeArray(
-            initial.result.tail_consumers ?? [],
-            settings.tail_consumers ?? [],
-          ),
-        }),
-      ),
+      JSON.stringify({
+        bindings: patch.bindings
+          ? mergeArray(settings.bindings ?? [], patch.bindings)
+          : undefined,
+        compatibility_date: patch.compatibility_date,
+        compatibility_flags: patch.compatibility_flags
+          ? mergeArray(
+              settings.compatibility_flags ?? [],
+              patch.compatibility_flags,
+            )
+          : undefined,
+        limits: patch.limits,
+        logpush: patch.logpush,
+        migrations: patch.migrations,
+        observability: patch.observability,
+        placement: patch.placement,
+        tags: patch.tags
+          ? mergeArray(settings.tags ?? [], patch.tags)
+          : undefined,
+        tail_consumers: patch.tail_consumers
+          ? mergeArray(settings.tail_consumers ?? [], patch.tail_consumers)
+          : undefined,
+        usage_model: patch.usage_model,
+      } satisfies Settings),
     );
 
-    const { result } = await cfFetch<Settings>(settingsResource(scriptName), {
+    await cfFetch<Settings>(settingsResource(scriptName), {
       method: "PATCH",
       body: formData,
     });
@@ -293,15 +302,16 @@ export class SettingsProvider implements $util.dynamic.ResourceProvider {
     const script = await cfFetch<Array<Script>>(scriptsResource, {
       method: "GET",
     }).then(({ result }) => result.find((script) => script.id === scriptName));
-    if (!script) throw new Error(`Script "${scriptName}" not found.`);
+    if (!script?.created_on || !script.modified_on)
+      throw new Error(`Script "${scriptName}" not found.`);
 
     return {
       id: scriptName,
       outs: {
         scriptName,
-        ...result,
-        created_on: script.created_on,
-        modified_on: script.modified_on,
+        patch,
+        createdOn: script.created_on,
+        modifiedOn: script.modified_on,
       },
     };
   }
@@ -318,15 +328,13 @@ export class SettingsProvider implements $util.dynamic.ResourceProvider {
     }).then(({ result }) => result.find((script) => script.id === id));
     if (!script) throw new Error(`Script "${id}" not found.`);
 
-    if (olds.created_on !== script.created_on) replaces.push("created_on");
-    if (olds.modified_on !== script.modified_on) replaces.push("modified_on");
+    if (olds.scriptName !== news.scriptName) replaces.push("scriptName");
+    if (olds.createdOn !== script.created_on) replaces.push("createdOn");
+    if (olds.modifiedOn !== script.modified_on) replaces.push("modifiedOn");
 
-    const keys = new Set<keyof SettingsProviderInputs>([
-      ...R.keys(R.omit(olds, ["created_on", "modified_on"])),
-      ...R.keys(news),
-    ]);
+    const keys = R.keys(olds.patch);
     for (const key of keys)
-      if (!R.isDeepEqual(olds[key], news[key])) replaces.push(key);
+      if (!R.isDeepEqual(olds.patch[key], news[key])) replaces.push(key);
 
     return {
       changes: !!replaces.length,

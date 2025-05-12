@@ -32,8 +32,8 @@ export namespace Workers {
         name,
         {
           ...props,
-          created_on: undefined,
-          modified_on: undefined,
+          createdOn: undefined,
+          modifiedOn: undefined,
         },
         opts,
       );

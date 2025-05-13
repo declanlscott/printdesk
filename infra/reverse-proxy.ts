@@ -14,21 +14,24 @@ export const reverseProxyWorker = new sst.cloudflare.Worker(
   },
 );
 
-export const reverseProxyWorkerSettings =
-  new custom.cloudflare.Workers.Settings("ReverseProxyWorkerSettings", {
-    scriptName: reverseProxyWorker.nodes.worker.name,
-    bindings: [
-      {
-        name: Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER,
-        type: "ratelimit",
-        namespace_id: "1001",
-        simple: {
-          limit: 100,
-          period: 60,
+export const reverseProxyWorkerAuxiliaryBindings =
+  new custom.cloudflare.Workers.AuxiliaryBindings(
+    "ReverseProxyWorkerAuxiliaryBindings",
+    {
+      scriptName: reverseProxyWorker.nodes.worker.name,
+      bindings: [
+        {
+          name: Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER,
+          type: "ratelimit",
+          namespace_id: "1001",
+          simple: {
+            limit: 100,
+            period: 60,
+          },
         },
-      },
-    ],
-  });
+      ],
+    },
+  );
 
 export const reverseProxyApiRoute = new cloudflare.WorkersRoute(
   "ReverseProxyApiRoute",

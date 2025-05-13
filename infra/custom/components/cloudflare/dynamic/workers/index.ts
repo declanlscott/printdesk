@@ -1,34 +1,34 @@
 /* eslint-disable @typescript-eslint/no-unsafe-declaration-merging */
 /* eslint-disable @typescript-eslint/no-empty-object-type */
-import { SettingsProvider } from "./providers/settings";
+import { AuxiliaryBindingsProvider } from "./providers/auxiliary-bindings";
 
 import type {
-  SettingsProviderInputs,
-  SettingsProviderOutputs,
-} from "./providers/settings";
+  AuxiliaryBindingsProviderInputs,
+  AuxiliaryBindingsProviderOutputs,
+} from "./providers/auxiliary-bindings";
 
 export namespace Workers {
-  export type SettingsInputs = {
-    [TKey in keyof SettingsProviderInputs]: $util.Input<
-      SettingsProviderInputs[TKey]
+  export type AuxiliaryBindingsInputs = {
+    [TKey in keyof AuxiliaryBindingsProviderInputs]: $util.Input<
+      AuxiliaryBindingsProviderInputs[TKey]
     >;
   };
 
-  export type SettingsOutputs = {
-    [TKey in keyof SettingsProviderOutputs]: $util.Output<
-      SettingsProviderOutputs[TKey]
+  export type AuxiliaryBindingsOutputs = {
+    [TKey in keyof AuxiliaryBindingsProviderOutputs]: $util.Output<
+      AuxiliaryBindingsProviderOutputs[TKey]
     >;
   };
 
-  export interface Settings extends SettingsOutputs {}
-  export class Settings extends $util.dynamic.Resource {
+  export interface AuxiliaryBindings extends AuxiliaryBindingsOutputs {}
+  export class AuxiliaryBindings extends $util.dynamic.Resource {
     constructor(
       name: string,
-      props: SettingsInputs,
+      props: AuxiliaryBindingsInputs,
       opts?: $util.CustomResourceOptions,
     ) {
       super(
-        new SettingsProvider(),
+        new AuxiliaryBindingsProvider(),
         name,
         {
           ...props,

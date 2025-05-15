@@ -10,14 +10,21 @@ CREATE TABLE "announcements" (
 	CONSTRAINT "announcements_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
 );
 --> statement-breakpoint
-CREATE TABLE "oauth2_providers" (
+CREATE TABLE "identity_provider_user_groups" (
+	"group_id" text NOT NULL,
+	"identity_provider_id" text NOT NULL,
+	"tenant_id" char(20) NOT NULL,
+	CONSTRAINT "identity_provider_user_groups_group_id_identity_provider_id_tenant_id_pk" PRIMARY KEY("group_id","identity_provider_id","tenant_id")
+);
+--> statement-breakpoint
+CREATE TABLE "identity_providers" (
 	"id" text NOT NULL,
 	"tenant_id" char(20) NOT NULL,
 	"kind" varchar(50) NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
-	CONSTRAINT "oauth2_providers_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
+	CONSTRAINT "identity_providers_id_tenant_id_pk" PRIMARY KEY("id","tenant_id")
 );
 --> statement-breakpoint
 CREATE TABLE "billing_account_customer_authorizations" (
@@ -216,7 +223,7 @@ CREATE TABLE "tenant_metadata" (
 --> statement-breakpoint
 CREATE TABLE "tenants" (
 	"id" char(20) PRIMARY KEY NOT NULL,
-	"slug" varchar(40) NOT NULL,
+	"subdomain" varchar(40) NOT NULL,
 	"name" varchar(40) NOT NULL,
 	"status" varchar(50) DEFAULT 'setup' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
@@ -234,16 +241,17 @@ CREATE TABLE "users" (
 	"version" integer DEFAULT 1 NOT NULL,
 	"origin" varchar(50) DEFAULT 'internal' NOT NULL,
 	"username" text NOT NULL,
-	"oauth2_user_id" text NOT NULL,
-	"oauth2_provider_id" text NOT NULL,
+	"subject_id" text NOT NULL,
+	"identity_provider_id" text NOT NULL,
 	"role" varchar(50) DEFAULT 'customer' NOT NULL,
 	"name" text NOT NULL,
 	"email" text NOT NULL,
 	CONSTRAINT "users_id_tenant_id_pk" PRIMARY KEY("id","tenant_id"),
-	CONSTRAINT "users_oauth2_user_id_tenant_id_unique" UNIQUE("oauth2_user_id","tenant_id"),
+	CONSTRAINT "users_subject_id_tenant_id_unique" UNIQUE("subject_id","tenant_id"),
 	CONSTRAINT "users_email_tenant_id_unique" UNIQUE("email","tenant_id")
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX ASYNC "identity_providers_id_index" ON "identity_providers" ("id");--> statement-breakpoint
 CREATE UNIQUE INDEX ASYNC "billing_account_customer_authorizations_customer_id_billing_account_id_tenant_id_index" ON "billing_account_customer_authorizations" ("customer_id","billing_account_id","tenant_id");--> statement-breakpoint
 CREATE INDEX ASYNC "billing_account_customer_authorizations_customer_id_index" ON "billing_account_customer_authorizations" ("customer_id");--> statement-breakpoint
 CREATE UNIQUE INDEX ASYNC "billing_account_manager_authorizations_billing_account_id_manager_id_tenant_id_index" ON "billing_account_manager_authorizations" ("billing_account_id","manager_id","tenant_id");--> statement-breakpoint
@@ -261,8 +269,8 @@ CREATE INDEX ASYNC "replicache_client_views_updated_at_index" ON "replicache_cli
 CREATE INDEX ASYNC "replicache_clients_client_group_id_index" ON "replicache_clients" ("client_group_id");--> statement-breakpoint
 CREATE INDEX ASYNC "replicache_clients_updated_at_index" ON "replicache_clients" ("updated_at");--> statement-breakpoint
 CREATE INDEX ASYNC "rooms_status_index" ON "rooms" ("status");--> statement-breakpoint
-CREATE UNIQUE INDEX ASYNC "tenants_slug_index" ON "tenants" ("slug");--> statement-breakpoint
+CREATE UNIQUE INDEX ASYNC "tenants_subdomain_index" ON "tenants" ("subdomain");--> statement-breakpoint
 CREATE UNIQUE INDEX ASYNC "users_origin_username_tenant_id_index" ON "users" ("origin","username","tenant_id");--> statement-breakpoint
-CREATE INDEX ASYNC "users_oauth2_user_id_index" ON "users" ("oauth2_user_id");--> statement-breakpoint
-CREATE INDEX ASYNC "users_oauth2_provider_id_index" ON "users" ("oauth2_provider_id");--> statement-breakpoint
+CREATE INDEX ASYNC "users_subject_id_index" ON "users" ("subject_id");--> statement-breakpoint
+CREATE INDEX ASYNC "users_identity_provider_id_index" ON "users" ("identity_provider_id");--> statement-breakpoint
 CREATE INDEX ASYNC "users_role_index" ON "users" ("role");

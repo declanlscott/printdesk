@@ -1,6 +1,8 @@
 import { api } from "./api";
+import { identityProviders } from "./auth";
 import {
   cloudfrontApiCachePolicy,
+  cloudfrontKeyGroup,
   cloudfrontPrivateKey,
   cloudfrontPublicKey,
   cloudfrontRewriteUriFunction,
@@ -8,6 +10,7 @@ import {
 } from "./cdn";
 import * as custom from "./custom";
 import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
+import { domains } from "./dns";
 import {
   cloudflareApiToken,
   pulumiRole,
@@ -29,13 +32,20 @@ import { normalizePath } from "./utils";
 export const papercutSync = new custom.aws.Function("PapercutSync", {
   handler: "packages/functions/node/src/papercut-sync.handler",
   timeout: "20 seconds",
-  link: [aws_, cloudfrontPrivateKey, dsqlCluster],
+  link: [
+    aws_,
+    cloudfrontPublicKey,
+    cloudfrontPrivateKey,
+    domains,
+    dsqlCluster,
+    identityProviders,
+  ],
 });
 
 export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
   handler: "packages/functions/node/src/invoices-processor.handler",
   timeout: "20 seconds",
-  link: [aws_, cloudfrontPrivateKey, dsqlCluster],
+  link: [aws_, cloudfrontPublicKey, cloudfrontPrivateKey, domains, dsqlCluster],
   permissions: [
     sst.aws.permission({
       actions: [
@@ -115,10 +125,12 @@ const infraSubscription = infraQueue.subscribe({
     appsyncEventApi,
     cloudflareApiToken,
     cloudfrontApiCachePolicy,
+    cloudfrontKeyGroup,
     cloudfrontPublicKey,
     cloudfrontRewriteUriFunction,
     cloudfrontS3OriginAccessControl,
     code,
+    domains,
     invoicesProcessor,
     papercutSync,
     pulumiBucket,

@@ -95,7 +95,14 @@ export const authTable = new sst.aws.Dynamo("AuthTable", {
 
 export const issuer = new sst.aws.Function("Issuer", {
   handler: "packages/functions/node/src/issuer.handler",
-  link: [authTable, aws_, dsqlCluster, identityProviders, routerSecret],
+  link: [
+    authTable,
+    aws_,
+    dsqlCluster,
+    domains,
+    identityProviders,
+    routerSecret,
+  ],
   environment: {
     OPENAUTH_STORAGE: $jsonStringify({
       type: "dynamo",

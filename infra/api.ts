@@ -1,4 +1,4 @@
-import { issuer } from "./auth";
+import { identityProviders, issuer } from "./auth";
 import {
   cloudfrontPrivateKey,
   cloudfrontPublicKey,
@@ -13,10 +13,11 @@ import {
   realtimePublisherRoleExternalId,
   realtimeSubscriberRole,
   realtimeSubscriberRoleExternalId,
+  tenantRoles,
 } from "./iam";
 import { appData, aws_ } from "./misc";
 import { appsyncEventApi } from "./realtime";
-import { infraQueue, temporaryBucket } from "./storage";
+import { infraQueue, temporaryBucket, tenantParameters } from "./storage";
 
 export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
@@ -32,7 +33,9 @@ export const api = new custom.aws.Function("Api", {
     aws_,
     cloudfrontPublicKey,
     cloudfrontPrivateKey,
+    domains,
     dsqlCluster,
+    identityProviders,
     infraQueue,
     issuer,
     realtimePublisherRole,
@@ -41,6 +44,8 @@ export const api = new custom.aws.Function("Api", {
     realtimeSubscriberRoleExternalId,
     routerSecret,
     temporaryBucket,
+    tenantParameters,
+    tenantRoles,
   ],
   permissions: [
     {

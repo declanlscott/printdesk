@@ -4,7 +4,7 @@ import { Resource } from "sst";
 
 import { AccessControl } from "../access-control";
 import { Auth } from "../auth";
-import { oauth2ProvidersTable } from "../auth/sql";
+import { identityProvidersTable } from "../auth/sql";
 import { Sqs } from "../aws";
 import { Documents } from "../backend/documents";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
@@ -20,7 +20,7 @@ import { updateTenantMutationArgsSchema } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { Oauth2Provider } from "../auth/sql";
+import type { IdentityProvider } from "../auth/sql";
 import type { ConfigureData, InfraProgramInput, RegisterData } from "./shared";
 import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
@@ -51,22 +51,22 @@ export namespace Tenants {
       tx.select().from(tenantsTable).where(eq(tenantsTable.id, useTenant().id)),
     );
 
-  export const byOauth2Provider = async (
-    kind: Oauth2Provider["kind"],
-    id: Oauth2Provider["id"],
+  export const byIdentityProvider = async (
+    kind: IdentityProvider["kind"],
+    id: IdentityProvider["id"],
   ) =>
     useTransaction((tx) =>
       tx
         .select({ tenant: tenantsTable })
         .from(tenantsTable)
         .innerJoin(
-          oauth2ProvidersTable,
-          eq(oauth2ProvidersTable.tenantId, tenantsTable.id),
+          identityProvidersTable,
+          eq(identityProvidersTable.tenantId, tenantsTable.id),
         )
         .where(
           and(
-            eq(oauth2ProvidersTable.kind, kind),
-            eq(oauth2ProvidersTable.id, id),
+            eq(identityProvidersTable.kind, kind),
+            eq(identityProvidersTable.id, id),
           ),
         )
         .then((rows) => R.pipe(rows, R.map(R.prop("tenant")), R.first())),
@@ -194,9 +194,9 @@ export namespace Tenants {
           name: data.tenantName,
           subdomain: data.tenantSubdomain,
         }),
-        Auth.putOauth2Provider({
-          id: data.userOauthProviderId,
-          kind: data.userOauthProviderKind,
+        Auth.putIdentityProvider({
+          id: data.identityProviderId,
+          kind: data.identityProviderKind,
           tenantId: useTenant().id,
         }),
       ]),

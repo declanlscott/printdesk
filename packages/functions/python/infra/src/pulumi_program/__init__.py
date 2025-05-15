@@ -16,7 +16,7 @@ from .components import (
     Events,
     EventsArgs,
 )
-from models import sqs_record
+from src.models import sqs_record
 
 
 def inline(payload: sqs_record.Payload):

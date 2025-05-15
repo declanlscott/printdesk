@@ -11,22 +11,23 @@ export type UserSubjectProperties = v.InferOutput<
   typeof userSubjectPropertiesSchema
 >;
 
-export const oauth2ProvidersTableName = "oauth2_providers";
-export const oauth2ProviderKinds = [
+export const identityProvidersTableName = "identity_providers";
+export const identityProviderKinds = [
   Constants.ENTRA_ID,
   Constants.GOOGLE,
 ] as const;
-export type Oauth2ProviderKind = (typeof oauth2ProviderKinds)[number];
-export const oauth2ProvidersSchema = v.object({
+export type IdentityProviderKind = (typeof identityProviderKinds)[number];
+export const identityProvidersSchema = v.object({
   id: v.string(),
   tenantId: nanoIdSchema,
-  kind: v.picklist(oauth2ProviderKinds),
+  kind: v.picklist(identityProviderKinds),
   ...timestampsSchema.entries,
 });
 
-export const oauth2ProviderUserGroupsTableName = "oauth2_provider_user_groups";
-export const oauth2ProviderUserGroupsSchema = v.object({
+export const identityProviderUserGroupsTableName =
+  "identity_provider_user_groups";
+export const identityProviderUserGroupsSchema = v.object({
   id: v.string(),
-  oauth2ProviderId: v.string(),
+  identityProviderId: v.string(),
   tenantId: nanoIdSchema,
 });

@@ -18,9 +18,7 @@ import type {
 
 const app = new Hono()
   .use(logger())
-  .use(
-    Middleware.sourceValidator(Resource.AppData.domainName.fullyQualified.api),
-  )
+  .use(Middleware.sourceValidator(Resource.Domains.api))
   .use(actor)
   .route("/replicache", replicacheRoute)
   .route("/trpc", trpcRoute)

@@ -11,8 +11,6 @@ import * as R from "remeda";
 import * as v from "valibot";
 
 import { t } from "~/api/trpc";
-import { authz } from "~/api/trpc/middleware/auth";
-import { dynamoDbDocumentClient } from "~/api/trpc/middleware/aws";
 import { user } from "~/api/trpc/middleware/user";
 import { userProcedure } from "~/api/trpc/procedures/protected";
 
@@ -26,13 +24,13 @@ export const usersRouter = t.router({
       const currentUser = useUser();
       const isSelf = input.userId === currentUser.id;
 
-      const currentUserOauth2Provider = await Auth.readOauth2ProviderById(
-        currentUser.oauth2ProviderId,
+      const currentUserIdentityProvider = await Auth.readIdentityProviderById(
+        currentUser.identityProviderId,
       );
-      if (!currentUserOauth2Provider)
+      if (!currentUserIdentityProvider)
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Missing current user oauth2 provider",
+          message: "Missing current user's identity provider",
         });
 
       const user = isSelf
@@ -41,16 +39,16 @@ export const usersRouter = t.router({
       if (!user)
         throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
 
-      const userOauth2Provider = isSelf
-        ? currentUserOauth2Provider
-        : await Auth.readOauth2ProviderById(user.oauth2ProviderId);
-      if (!userOauth2Provider)
+      const identityProvider = isSelf
+        ? currentUserIdentityProvider
+        : await Auth.readIdentityProviderById(user.identityProviderId);
+      if (!identityProvider)
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Missing user oauth2 provider",
+          message: "Missing identity provider",
         });
 
-      switch (userOauth2Provider?.kind) {
+      switch (identityProvider.kind) {
         case Constants.ENTRA_ID:
           return withGraph(
             () =>
@@ -59,36 +57,24 @@ export const usersRouter = t.router({
                   async getAccessToken() {
                     // If the current user was authenticated with entra id,
                     // then use the access token from the request header
-                    if (currentUserOauth2Provider.kind === Constants.ENTRA_ID)
+                    if (currentUserIdentityProvider.kind === Constants.ENTRA_ID)
                       return ctx.req
                         .header("Authorization")!
                         .replace("Bearer ", "");
 
                     // Otherwise use the application access token
                     return EntraId.applicationAccessToken(
-                      user.oauth2ProviderId,
+                      user.identityProviderId,
                     );
                   },
                 },
               }),
-            async () => Graph.userPhotoBlob(user.oauth2UserId),
+            async () => Graph.userPhotoBlob(user.subjectId),
           );
         default:
           throw new TRPCError({ code: "NOT_IMPLEMENTED" });
       }
     }),
-  countMonthlyActive: userProcedure
-    .use(authz("monthly-active-users", "read"))
-    .input(
-      v.object({
-        month: v.pipe(
-          v.string(),
-          v.regex(Constants.MONTH_TRUNCATED_ISO_DATE_REGEX),
-        ),
-      }),
-    )
-    .use(dynamoDbDocumentClient())
-    .query(async ({ input }) => Users.countMonthlyActive(input.month)),
 });
 
 export type UsersRouterIO<TIO extends IO> = InferRouterIO<

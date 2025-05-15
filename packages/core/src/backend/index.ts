@@ -6,7 +6,7 @@ import { getBackendFqdn } from "./shared";
 
 export namespace Backend {
   export const getFqdn = () =>
-    getBackendFqdn(useTenant().id, Resource.AppData.domainName.fullyQualified);
+    getBackendFqdn(useTenant().id, Resource.Domains.web);
 
   export const getReverseDns = () => Utils.reverseDns(getFqdn());
 }

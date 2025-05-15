@@ -1,6 +1,6 @@
 import { Auth } from "@printdesk/core/auth";
 import { EntraId } from "@printdesk/core/auth/entra-id";
-import { oauth2ProviderUserGroupsSchema } from "@printdesk/core/auth/shared";
+import { identityProviderUserGroupsSchema } from "@printdesk/core/auth/shared";
 import { Graph } from "@printdesk/core/graph";
 import { withGraph } from "@printdesk/core/graph/context";
 import { tenantSubdomainSchema } from "@printdesk/core/tenants/shared";
@@ -17,52 +17,56 @@ import type { InferRouterIO, IO } from "~/api/trpc/types";
 
 export const authRouter = t.router({
   public: t.router({
-    getOauthProviderKinds: publicProcedure
+    getIdentityProviderKinds: publicProcedure
       .input(v.object({ subdomain: tenantSubdomainSchema }))
       .query(async ({ input }) =>
-        Auth.readOauth2ProvidersBySubdomain(input.subdomain).then(
+        Auth.readIdentityProvidersBySubdomain(input.subdomain).then(
           R.map(R.prop("kind")),
         ),
       ),
   }),
-  getOauthProviders: userProcedure
-    .use(authz("oauth-providers", "read"))
-    .query(async () => Auth.readOauth2Providers()),
-  createOauthProviderGroup: userProcedure
-    .use(authz("oauth-providers", "create"))
-    .input(v.pick(oauth2ProviderUserGroupsSchema, ["id", "oauth2ProviderId"]))
+  getIdentityProviders: userProcedure
+    .use(authz("identity-providers", "read"))
+    .query(async () => Auth.readIdentityProviders()),
+  createIdentityProviderUserGroup: userProcedure
+    .use(authz("identity-providers", "create"))
+    .input(
+      v.pick(identityProviderUserGroupsSchema, ["id", "identityProviderId"]),
+    )
     .mutation(async ({ input }) => {
-      await Auth.createOauth2ProviderUserGroup(
+      await Auth.createIdentityProviderUserGroup(
         input.id,
-        input.oauth2ProviderId,
+        input.identityProviderId,
       );
     }),
-  getOauthProviderGroups: userProcedure
-    .use(authz("oauth-providers", "read"))
-    .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
+  getIdentityProviderUserGroups: userProcedure
+    .use(authz("identity-providers", "read"))
+    .input(v.pick(identityProviderUserGroupsSchema, ["identityProviderId"]))
     .query(async ({ input }) =>
-      Auth.readOauth2ProviderUserGroups(input.oauth2ProviderId),
+      Auth.readIdentityProviderUserGroups(input.identityProviderId),
     ),
-  deleteOauthProviderGroup: userProcedure
-    .use(authz("oauth-providers", "delete"))
-    .input(v.pick(oauth2ProviderUserGroupsSchema, ["id", "oauth2ProviderId"]))
+  deleteIdentityProviderUserGroup: userProcedure
+    .use(authz("identity-providers", "delete"))
+    .input(
+      v.pick(identityProviderUserGroupsSchema, ["id", "identityProviderId"]),
+    )
     .mutation(async ({ input }) => {
-      await Auth.deleteOauth2ProviderUserGroup(
+      await Auth.deleteIdentityProviderUserGroup(
         input.id,
-        input.oauth2ProviderId,
+        input.identityProviderId,
       );
     }),
   [Constants.ENTRA_ID]: t.router({
-    getGroups: userProcedure
-      .use(authz("oauth-providers", "read"))
-      .input(v.pick(oauth2ProviderUserGroupsSchema, ["oauth2ProviderId"]))
+    getUserGroups: userProcedure
+      .use(authz("identity-providers", "read"))
+      .input(v.pick(identityProviderUserGroupsSchema, ["identityProviderId"]))
       .use(async (opts) =>
         withGraph(
           () =>
             Graph.Client.initWithMiddleware({
               authProvider: {
                 getAccessToken: async () =>
-                  EntraId.applicationAccessToken(opts.input.oauth2ProviderId),
+                  EntraId.applicationAccessToken(opts.input.identityProviderId),
               },
             }),
           () => opts.next(opts),

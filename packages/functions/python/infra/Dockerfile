@@ -1,25 +1,26 @@
-ARG PYTHON_VERSION=3.13
+ARG PYTHON_VERSION=3.12
 ARG PULUMI_VERSION=3.169.0
 
 FROM public.ecr.aws/lambda/python:${PYTHON_VERSION}
 
-# Setup and install dependencies
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
-RUN pip install -r requirements.txt
+# Install system dependencies
+RUN dnf update -y && \
+    dnf install -y git gcc tar gzip && \
+    dnf clean all
 
-# Install pulumi
-RUN dnf install -y tar gzip
+# Install uv to manage the python runtime
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+
+# Install python dependencies
+COPY requirements.txt ${LAMBDA_TASK_ROOT}/requirements.txt
+RUN uv pip install -r requirements.txt --target ${LAMBDA_TASK_ROOT} --system
+
+# Install and setup pulumi
 RUN curl -fsSL https://get.pulumi.com | sh -s -- --version ${PULUMI_VERSION}
 RUN mv /root/.pulumi /opt/pulumi
-
-# Add to PATH
 ENV PATH="/opt/pulumi/bin:${PATH}"
-
-# Create a pulumi home directory
 RUN mkdir /tmp/pulumi_home
 ENV PULUMI_HOME=/tmp/pulumi_home
 
-# Set up Lambda function
+# Copy function code
 COPY . ${LAMBDA_TASK_ROOT}
-
-CMD [ "main.handler" ]

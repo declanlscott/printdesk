@@ -1,7 +1,6 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { issuer } from "./auth";
-import { router } from "./cdn";
 import * as custom from "./custom";
 import { domains, zone } from "./dns";
 
@@ -9,7 +8,7 @@ export const reverseProxyWorker = new sst.cloudflare.Worker(
   "ReverseProxyWorker",
   {
     handler: "packages/workers/src/reverse-proxy/index.ts",
-    link: [issuer, router],
+    link: [issuer],
     url: false,
   },
 );

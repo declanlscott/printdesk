@@ -15,18 +15,18 @@ export const usersTable = tenantTable(
   {
     origin: userOrigin("origin").default("internal").notNull(),
     username: text("username").notNull(),
-    oauth2UserId: text("oauth2_user_id").notNull(),
-    oauth2ProviderId: text("oauth2_provider_id").notNull(),
+    subjectId: text("subject_id").notNull(),
+    identityProviderId: text("identity_provider_id").notNull(),
     role: userRole("role").notNull().default("customer"),
     name: text("name").notNull(),
     email: text("email").notNull(),
   },
   (table) => [
     uniqueIndex().on(table.origin, table.username, table.tenantId),
-    unique().on(table.oauth2UserId, table.tenantId),
+    unique().on(table.subjectId, table.tenantId),
     unique().on(table.email, table.tenantId),
-    index().on(table.oauth2UserId),
-    index().on(table.oauth2ProviderId),
+    index().on(table.subjectId),
+    index().on(table.identityProviderId),
     index().on(table.role),
   ],
 );

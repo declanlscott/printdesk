@@ -29,6 +29,13 @@
       "when": 1746040540025,
       "tag": "0003_bouncy_nico_minoru",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1747282419423,
+      "tag": "0004_milky_crystal",
+      "breakpoints": true
     }
   ]
 }

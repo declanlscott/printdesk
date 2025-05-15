@@ -14,9 +14,9 @@ import {
   realtimeSubscriberRole,
   realtimeSubscriberRoleExternalId,
 } from "./iam";
-import { appData, temporaryBucket } from "./misc";
+import { appData, aws_ } from "./misc";
 import { appsyncEventApi } from "./realtime";
-import { infraQueue } from "./storage";
+import { infraQueue, temporaryBucket } from "./storage";
 
 export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
@@ -29,6 +29,7 @@ export const api = new custom.aws.Function("Api", {
   link: [
     appData,
     appsyncEventApi,
+    aws_,
     cloudfrontPublicKey,
     cloudfrontPrivateKey,
     dsqlCluster,

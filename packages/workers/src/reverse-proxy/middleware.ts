@@ -9,7 +9,6 @@ import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { Resource } from "sst";
 
 import type { FetchProxy } from "@mjackson/fetch-proxy";
 import type { Bindings } from "./types";
@@ -98,7 +97,7 @@ const hopByHopHeaders = [
 ];
 
 export const proxy = createMiddleware((c, next) => {
-  const fetchProxy = createFetchProxy(Resource.Router.url);
+  const fetchProxy = createFetchProxy(`https://${new URL(c.req.url).host}`);
 
   c.set("proxy", async (...args: Parameters<FetchProxy>) => {
     const res = await fetchProxy(...args);

@@ -16,7 +16,7 @@ import { Resource } from "sst";
 import * as v from "valibot";
 
 const app = new Hono()
-  .use(Middleware.sourceValidator)
+  .use(Middleware.sourceValidator(Resource.Domains.auth))
   .route(
     "/",
     issuer({
@@ -24,8 +24,9 @@ const app = new Hono()
       providers: {
         [Constants.ENTRA_ID]: EntraId.provider({
           tenant: "organizations",
-          clientID: Resource.Oauth2.entraId.clientId,
-          clientSecret: Resource.Oauth2.entraId.clientSecret,
+          clientID: Resource.IdentityProviders[Constants.ENTRA_ID].clientId,
+          clientSecret:
+            Resource.IdentityProviders[Constants.ENTRA_ID].clientSecret,
           scopes: [...Constants.ENTRA_ID_OAUTH_SCOPES],
         }),
       },
@@ -43,7 +44,7 @@ const app = new Hono()
                   service: "appsync",
                   credentials: Credentials.fromRoleChain({
                     RoleArn: Credentials.buildRoleArn(
-                      Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+                      Resource.TenantRoles.realtimePublisher.nameTemplate,
                     ),
                     RoleSessionName: "Issuer",
                   }),

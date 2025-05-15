@@ -19,9 +19,9 @@ export const web = new sst.aws.StaticSite("Web", {
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
     appData,
+    domains,
     issuer,
     replicacheLicenseKey,
-    router,
   ),
 });
 

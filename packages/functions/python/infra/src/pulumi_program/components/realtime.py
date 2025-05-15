@@ -1,8 +1,9 @@
 import pulumi
 import pulumi_aws as aws
+from sst import Resource
 
 from . import dynamic
-from utilities import resource, tags, build_name
+from src.utilities import tags, build_name
 
 from typing import TypedDict, Optional
 
@@ -66,9 +67,7 @@ class Realtime(pulumi.ComponentResource):
             resource_name="SubscriberRole",
             args=aws.iam.RoleArgs(
                 name=build_name(
-                    name_template=resource["Aws"]["tenant"]["roles"][
-                        "realtimeSubscriber"
-                    ]["nameTemplate"],
+                    name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
                 assume_role_policy=aws.iam.get_policy_document_output(
@@ -76,8 +75,7 @@ class Realtime(pulumi.ComponentResource):
                         aws.iam.GetPolicyDocumentStatementArgs(
                             principals=[
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                    type="AWS",
-                                    identifiers=[resource["Api"]["roleArn"]],
+                                    type="AWS", identifiers=[Resource.Api.roleArn]
                                 )
                             ],
                             actions=["sts:AssumeRole"],
@@ -117,9 +115,7 @@ class Realtime(pulumi.ComponentResource):
             resource_name="PublisherRole",
             args=aws.iam.RoleArgs(
                 name=build_name(
-                    name_template=resource["Aws"]["tenant"]["roles"][
-                        "realtimePublisher"
-                    ]["nameTemplate"],
+                    name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
                 assume_role_policy=aws.iam.get_policy_document_output(
@@ -127,12 +123,11 @@ class Realtime(pulumi.ComponentResource):
                         aws.iam.GetPolicyDocumentStatementArgs(
                             principals=[
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                    type="AWS",
-                                    identifiers=[resource["Api"]["roleArn"]],
+                                    type="AWS", identifiers=[Resource.Api.roleArn]
                                 ),
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                                     type="AWS",
-                                    identifiers=[resource["PapercutSync"]["roleArn"]],
+                                    identifiers=[Resource.PapercutSync.roleArn],
                                 ),
                             ],
                             actions=["sts:AssumeRole"],

@@ -100,20 +100,20 @@ function Step1() {
 }
 
 function Step2() {
-  const { userOauthProviderKind, userOauthProviderId } =
+  const { identityProviderKind, identityProviderId } =
     useSetupMachine().useSelector(({ context }) => ({
-      userOauthProviderKind: context.userOauthProviderKind,
-      userOauthProviderId: context.userOauthProviderId,
+      identityProviderKind: context.identityProviderKind,
+      identityProviderId: context.identityProviderId,
     }));
 
-  const userOauthProviderNames = {
+  const identityProviderNames = {
     [Constants.ENTRA_ID]: "Microsoft Entra ID",
     [Constants.GOOGLE]: "Google",
   };
 
   return (
     <Disclosure id={2}>
-      <DisclosureHeader>2. User Login</DisclosureHeader>
+      <DisclosureHeader>2. Identity Provider</DisclosureHeader>
 
       <DisclosurePanel>
         <DisclosurePanel className="grid gap-4">
@@ -122,7 +122,7 @@ function Step2() {
               labelProps={{ children: "Type" }}
               inputProps={{
                 disabled: true,
-                value: userOauthProviderNames[userOauthProviderKind],
+                value: identityProviderNames[identityProviderKind],
               }}
               className="grid gap-2"
             />
@@ -131,7 +131,7 @@ function Step2() {
           <div className="grid gap-2">
             <TextField
               labelProps={{ children: "Tenant ID" }}
-              inputProps={{ disabled: true, value: userOauthProviderId }}
+              inputProps={{ disabled: true, value: identityProviderId }}
               className="grid gap-2"
             />
           </div>

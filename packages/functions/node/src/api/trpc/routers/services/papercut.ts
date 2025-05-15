@@ -24,7 +24,7 @@ export const papercutRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiSetTailnetPapercutServerUri",
         },
@@ -40,7 +40,7 @@ export const papercutRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiSetPapercutServerAuthToken",
         },
@@ -55,7 +55,7 @@ export const papercutRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiDispatchPapercutSync",
         },

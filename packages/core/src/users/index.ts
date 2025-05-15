@@ -40,8 +40,8 @@ export namespace Users {
             ...buildConflictUpdateColumns(usersTable, [
               "origin",
               "username",
-              "oauth2UserId",
-              "oauth2ProviderId",
+              "subjectId",
+              "identityProviderId",
               "name",
               "email",
               "role",
@@ -104,9 +104,9 @@ export namespace Users {
           ) as unknown as Promise<Array<UserByOrigin<TUserOrigin>>>,
     );
 
-  export const byOauth2 = async (
-    userId: User["oauth2UserId"],
-    providerId: User["oauth2ProviderId"],
+  export const byIdentityProvider = async (
+    subjectId: User["subjectId"],
+    identityProviderId: User["identityProviderId"],
   ) =>
     useTransaction((tx) =>
       tx
@@ -114,8 +114,8 @@ export namespace Users {
         .from(usersTable)
         .where(
           and(
-            eq(usersTable.oauth2UserId, userId),
-            eq(usersTable.oauth2ProviderId, providerId),
+            eq(usersTable.subjectId, subjectId),
+            eq(usersTable.identityProviderId, identityProviderId),
             eq(usersTable.tenantId, useTenant().id),
           ),
         ),

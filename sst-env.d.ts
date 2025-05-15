@@ -14,10 +14,6 @@ declare module "sst" {
       "url": string
     }
     "AppData": {
-      "domainName": {
-        "fullyQualified": string
-        "value": string
-      }
       "isDevMode": boolean
       "isProdStage": boolean
       "name": string
@@ -31,79 +27,15 @@ declare module "sst" {
       }
       "type": "pulumi-nodejs.dynamic.Resource"
     }
-    "Auth": {
-      "type": "sst.aws.Auth"
-      "url": string
+    "AuthTable": {
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
     "Aws": {
       "account": {
         "id": string
       }
-      "cloudfront": {
-        "apiCachePolicy": {
-          "id": string
-        }
-        "keyGroup": {
-          "id": string
-        }
-        "keyPair": {
-          "id": string
-        }
-        "rewriteUriFunction": {
-          "arn": string
-        }
-        "s3OriginAccessControl": {
-          "id": string
-        }
-      }
       "region": string
-      "roles": {
-        "pulumi": {
-          "arn": string
-        }
-        "realtimePublisher": {
-          "arn": string
-        }
-        "realtimeSubscriber": {
-          "arn": string
-        }
-      }
-      "tenant": {
-        "parameters": {
-          "documentsMimeTypes": {
-            "nameTemplate": string
-          }
-          "documentsSizeLimit": {
-            "nameTemplate": string
-          }
-          "papercutServerAuthToken": {
-            "nameTemplate": string
-          }
-          "tailnetPapercutServerUri": {
-            "nameTemplate": string
-          }
-          "tailscaleOauthClient": {
-            "nameTemplate": string
-          }
-        }
-        "roles": {
-          "apiAccess": {
-            "nameTemplate": string
-          }
-          "bucketsAccess": {
-            "nameTemplate": string
-          }
-          "putParameters": {
-            "nameTemplate": string
-          }
-          "realtimePublisher": {
-            "nameTemplate": string
-          }
-          "realtimeSubscriber": {
-            "nameTemplate": string
-          }
-        }
-      }
       "type": "sst.sst.Linkable"
     }
     "BudgetEmail": {
@@ -120,9 +52,33 @@ declare module "sst" {
       "type": "sst.sst.Secret"
       "value": string
     }
+    "CloudflareApiToken": {
+      "type": "sst.sst.Linkable"
+      "value": string
+    }
+    "CloudfrontApiCachePolicy": {
+      "id": string
+      "type": "aws.cloudfront/cachePolicy.CachePolicy"
+    }
+    "CloudfrontKeyGroup": {
+      "id": string
+      "type": "aws.cloudfront/keyGroup.KeyGroup"
+    }
     "CloudfrontPrivateKey": {
       "pem": string
       "type": "tls.index/privateKey.PrivateKey"
+    }
+    "CloudfrontPublicKey": {
+      "id": string
+      "type": "aws.cloudfront/publicKey.PublicKey"
+    }
+    "CloudfrontRewriteUriFunction": {
+      "arn": string
+      "type": "aws.cloudfront/function.Function"
+    }
+    "CloudfrontS3OriginAccessControl": {
+      "id": string
+      "type": "aws.cloudfront/originAccessControl.OriginAccessControl"
     }
     "Code": {
       "bucket": {
@@ -144,9 +100,13 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
-    "DomainName": {
-      "type": "sst.sst.Secret"
-      "value": string
+    "Domains": {
+      "api": string
+      "auth": string
+      "root": string
+      "type": "sst.sst.Linkable"
+      "web": string
+      "www": string
     }
     "DsqlCluster": {
       "database": string
@@ -155,6 +115,17 @@ declare module "sst" {
       "ssl": boolean
       "type": "pulumi-nodejs.dynamic.Resource"
       "user": string
+    }
+    "IdentityProviders": {
+      "entra_id": {
+        "clientId": string
+        "clientSecret": string
+      }
+      "google": {
+        "clientId": string
+        "clientSecret": string
+      }
+      "type": "sst.sst.Linkable"
     }
     "InfraDeadLetterQueue": {
       "type": "sst.aws.Queue"
@@ -175,12 +146,10 @@ declare module "sst" {
       "roleArn": string
       "type": "sst.aws.Function"
     }
-    "Oauth2": {
-      "entraId": {
-        "clientId": string
-        "clientSecret": string
-      }
-      "type": "sst.sst.Linkable"
+    "Issuer": {
+      "name": string
+      "type": "sst.aws.Function"
+      "url": string
     }
     "PapercutSync": {
       "arn": string
@@ -197,12 +166,43 @@ declare module "sst" {
       "type": "random.index/randomPassword.RandomPassword"
       "value": string
     }
+    "PulumiRole": {
+      "arn": string
+      "name": string
+      "type": "aws.iam/role.Role"
+    }
+    "PulumiRoleExternalId": {
+      "type": "random.index/randomPassword.RandomPassword"
+      "value": string
+    }
+    "RealtimePublisherRole": {
+      "arn": string
+      "name": string
+      "type": "aws.iam/role.Role"
+    }
+    "RealtimePublisherRoleExternalId": {
+      "type": "random.index/randomPassword.RandomPassword"
+      "value": string
+    }
+    "RealtimeSubscriberRole": {
+      "arn": string
+      "name": string
+      "type": "aws.iam/role.Role"
+    }
+    "RealtimeSubscriberRoleExternalId": {
+      "type": "random.index/randomPassword.RandomPassword"
+      "value": string
+    }
     "ReplicacheLicenseKey": {
       "type": "sst.sst.Secret"
       "value": string
     }
     "ReverseProxyWorker": {
       "type": "sst.cloudflare.Worker"
+    }
+    "RootDomain": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
     "Router": {
       "type": "sst.aws.Router"
@@ -216,9 +216,41 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
-    "UserActivityTable": {
-      "name": string
-      "type": "sst.aws.Dynamo"
+    "TenantParameters": {
+      "documentsMimeTypes": {
+        "nameTemplate": string
+      }
+      "documentsSizeLimit": {
+        "nameTemplate": string
+      }
+      "papercutServerAuthToken": {
+        "nameTemplate": string
+      }
+      "tailnetPapercutServerUri": {
+        "nameTemplate": string
+      }
+      "tailscaleOauthClient": {
+        "nameTemplate": string
+      }
+      "type": "sst.sst.Linkable"
+    }
+    "TenantRoles": {
+      "apiAccess": {
+        "nameTemplate": string
+      }
+      "bucketsAccess": {
+        "nameTemplate": string
+      }
+      "putParameters": {
+        "nameTemplate": string
+      }
+      "realtimePublisher": {
+        "nameTemplate": string
+      }
+      "realtimeSubscriber": {
+        "nameTemplate": string
+      }
+      "type": "sst.sst.Linkable"
     }
     "Web": {
       "type": "sst.aws.StaticSite"

@@ -6,19 +6,19 @@ export const Route = createFileRoute("/login")({
   validateSearch: v.object({ from: v.optional(v.string()) }),
   loaderDeps: ({ search }) => ({ search }),
   loader: async ({ context, deps }) => {
-    const oauthProviderKinds =
-      await context.trpcClient.auth.public.getOauthProviderKinds.query(
+    const identityProviderKinds =
+      await context.trpcClient.auth.public.getIdentityProviderKinds.query(
         { subdomain: context.subdomain },
         { context: { skipBatch: true } },
       );
-    if (R.isEmpty(oauthProviderKinds)) throw redirect({ to: "/setup" });
+    if (R.isEmpty(identityProviderKinds)) throw redirect({ to: "/setup" });
 
     // Start the OAuth flow
     const href = await context.authStoreApi
       .getState()
       .actions.authorize(
         context.subdomain,
-        oauthProviderKinds[0],
+        identityProviderKinds[0],
         deps.search.from,
       );
 

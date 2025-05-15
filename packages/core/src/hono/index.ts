@@ -7,17 +7,15 @@ import { Constants } from "../utils/constants";
 import type { LambdaBindings } from "./shared";
 
 export namespace Middleware {
-  export const sourceValidator = createMiddleware<{ Bindings: LambdaBindings }>(
-    async (c, next) => {
+  export const sourceValidator = (source: string) =>
+    createMiddleware<{ Bindings: LambdaBindings }>(async (c, next) => {
       if (
-        c.env.event.headers["x-forwarded-host"] !==
-          Resource.AppData.domainName.fullyQualified ||
+        c.env.event.headers["x-forwarded-host"] !== source ||
         c.env.event.headers[Constants.HEADER_NAMES.ROUTER_SECRET] !==
           Resource.RouterSecret.value
       )
         throw new HTTPException(403);
 
       await next();
-    },
-  );
+    });
 }

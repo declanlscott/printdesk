@@ -30,15 +30,15 @@ export namespace EntraId {
     });
 
   export async function handleUser(
-    providerId: string,
+    identityProviderId: string,
   ): Promise<UserSubjectProperties> {
     const { id, userPrincipalName, preferredName, mail } = await Graph.me();
     if (!id || !userPrincipalName || !preferredName || !mail)
       throw new Error("missing user info");
 
-    const tenant = await Tenants.byOauth2Provider(
+    const tenant = await Tenants.byIdentityProvider(
       Constants.ENTRA_ID,
-      providerId,
+      identityProviderId,
     );
     if (!tenant) throw new Error("tenant not found");
 
@@ -49,7 +49,10 @@ export namespace EntraId {
       }),
       async () =>
         useTransaction(async () => {
-          let user = await Users.byOauth2(id, providerId).then(R.first());
+          let user = await Users.byIdentityProvider(
+            id,
+            identityProviderId,
+          ).then(R.first());
 
           switch (tenant.status) {
             case "setup": {
@@ -58,8 +61,8 @@ export namespace EntraId {
                   {
                     origin: "internal",
                     username: userPrincipalName,
-                    oauth2UserId: id,
-                    oauth2ProviderId: providerId,
+                    subjectId: id,
+                    identityProviderId,
                     role: "administrator",
                     name: preferredName,
                     email: mail,
@@ -123,8 +126,9 @@ export namespace EntraId {
   export async function applicationAccessToken(providerId: string) {
     const cca = new ConfidentialClientApplication({
       auth: {
-        clientId: Resource.Oauth2.entraId.clientId,
-        clientSecret: Resource.Oauth2.entraId.clientSecret,
+        clientId: Resource.IdentityProviders[Constants.ENTRA_ID].clientId,
+        clientSecret:
+          Resource.IdentityProviders[Constants.ENTRA_ID].clientSecret,
         authority: `https://login.microsoftonline.com/${providerId}`,
       },
     });

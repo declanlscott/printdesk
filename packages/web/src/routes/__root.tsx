@@ -23,7 +23,7 @@ export const Route = createRootRouteWithContext<InitialRouterContext>()({
       !context.resource.AppData.isProdStage
         ? search.subdomain
         : window.location.hostname
-            .split(`.${context.resource.AppData.domainName.fullyQualified}`)
+            .split(`.${context.resource.Domains.root}`)
             .at(0);
     if (!subdomain) throw new Error("Missing subdomain");
 

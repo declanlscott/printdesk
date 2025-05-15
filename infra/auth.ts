@@ -3,6 +3,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 import { router, routerSecret } from "./cdn";
 import { dsqlCluster } from "./db";
 import { domains } from "./dns";
+import { aws_ } from "./misc";
 
 const oauthAppName =
   {
@@ -80,7 +81,8 @@ export const identityProviders = new sst.Linkable("IdentityProviders", {
       clientSecret: entraIdClientSecret.value,
     },
     [Constants.GOOGLE]: {
-      // TODO: Google oauth
+      clientId: "TODO",
+      clientSecret: "TODO",
     },
   },
 });
@@ -93,7 +95,7 @@ export const authTable = new sst.aws.Dynamo("AuthTable", {
 
 export const issuer = new sst.aws.Function("Issuer", {
   handler: "packages/functions/node/src/issuer.handler",
-  link: [authTable, dsqlCluster, identityProviders, routerSecret],
+  link: [authTable, aws_, dsqlCluster, identityProviders, routerSecret],
   environment: {
     OPENAUTH_STORAGE: $jsonStringify({
       type: "dynamo",

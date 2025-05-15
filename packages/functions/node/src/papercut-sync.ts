@@ -38,7 +38,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
                 service: "appsync",
                 credentials: Credentials.fromRoleChain({
                   RoleArn: Credentials.buildRoleArn(
-                    Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+                    Resource.TenantRoles.realtimePublisher.nameTemplate,
                   ),
                   RoleSessionName: "PapercutSync",
                 }),
@@ -48,7 +48,7 @@ export const handler: EventBridgeHandler<string, unknown, void> = async (
                 service: "execute-api",
                 credentials: Credentials.fromRoleChain({
                   RoleArn: Credentials.buildRoleArn(
-                    Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+                    Resource.TenantRoles.apiAccess.nameTemplate,
                   ),
                   RoleSessionName: "PapercutSync",
                 }),

@@ -1,8 +1,9 @@
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
+from sst import Resource
 
-from utilities import resource, tags, region, reverse_dns
+from src.utilities import tags, reverse_dns
 
 from typing import Sequence, Optional
 
@@ -16,14 +17,15 @@ class Ssl(pulumi.ComponentResource):
     def __init__(self, args: SslArgs, opts: Optional[pulumi.ResourceOptions] = None):
         super().__init__(t="pd:resource:Ssl", name="Ssl", props=vars(args), opts=opts)
 
-        domain_name = f"{args.tenant_id}.backend.{resource["AppData"]["domainName"]["fullyQualified"]}"
+        domain_name = f"{args.tenant_id}.backend.{Resource.Domains.web}"
 
         us_east_1_provider = aws.Provider(
             resource_name="UsEast1Provider",
             args=aws.ProviderArgs(
                 assume_role=aws.ProviderAssumeRoleArgs(
-                    role_arn=resource["Aws"]["roles"]["pulumi"]["arn"],
+                    role_arn=Resource.PulumiRole.arn,
                     session_name="InfraFunctionSslComponent",
+                    external_id=Resource.PulumiRoleExternalId.value,
                 ),
                 region="us-east-1",
             ),
@@ -51,12 +53,12 @@ class Ssl(pulumi.ComponentResource):
                 args=certificate_args,
                 opts=pulumi.ResourceOptions(parent=self),
             )
-            if region != "us-east-1"
+            if Resource.Aws.region != "us-east-1"
             else self.__us_east_1_certificate
         )
 
         zone_id = cloudflare.get_zone_output(
-            name=resource["AppData"]["domainName"]["value"]
+            name=Resource.Domains.root,
         ).id
 
         self.__caa_record = cloudflare.Record(

@@ -22,8 +22,9 @@ export const realtimeRouter = t.router({
       .use(
         appsyncSigner(() => [
           {
-            RoleArn: Resource.Aws.roles.realtimeSubscriber.arn,
+            RoleArn: Resource.RealtimeSubscriberRole.arn,
             RoleSessionName: "PublicRealtimeSubscriber",
+            ExternalId: Resource.RealtimeSubscriberRoleExternalId.value,
           },
         ]),
       )
@@ -36,7 +37,7 @@ export const realtimeRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiGetRealtimeUrl",
         },
@@ -53,7 +54,7 @@ export const realtimeRouter = t.router({
       appsyncSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.realtimeSubscriber.nameTemplate,
+            Resource.TenantRoles.realtimeSubscriber.nameTemplate,
           ),
           RoleSessionName: "TenantRealtimeSubscriber",
         },

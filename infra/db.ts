@@ -2,7 +2,7 @@ import { DsqlSigner } from "@aws-sdk/dsql-signer";
 import * as v from "valibot";
 
 import * as custom from "./custom";
-import { isProdStage } from "./misc";
+import { aws_, isProdStage } from "./misc";
 import { calculateHash, normalizePath } from "./utils";
 
 export const dsqlCluster = new custom.aws.Dsql.Cluster(
@@ -15,7 +15,7 @@ const migrationsFolderPath = "packages/core/migrations";
 
 export const dbMigrator = new sst.aws.Function("DbMigrator", {
   handler: "packages/functions/node/src/db-migrator.handler",
-  link: [dsqlCluster],
+  link: [aws_, dsqlCluster],
   copyFiles: [{ from: migrationsFolderPath, to: "migrations" }],
 });
 
@@ -45,7 +45,7 @@ export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
   job: {
     handler: "packages/functions/node/src/db-garbage-collection.handler",
     timeout: "10 seconds",
-    link: [dsqlCluster],
+    link: [aws_, dsqlCluster],
     architecture: "arm64",
     runtime: "nodejs22.x",
   },
@@ -54,7 +54,7 @@ export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
 });
 
 new sst.x.DevCommand("Studio", {
-  link: [dsqlCluster],
+  link: [aws_, dsqlCluster],
   dev: {
     command: "pnpm drizzle:studio",
     directory: "packages/core",

@@ -22,7 +22,7 @@ export const documentsRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiSetDocumentsMimeTypes",
         },
@@ -32,7 +32,7 @@ export const documentsRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiSetDocumentsMimeTypes",
         },
@@ -46,7 +46,7 @@ export const documentsRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiGetDocumentsMimeTypes",
         },
@@ -63,7 +63,7 @@ export const documentsRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiGetDocumentsSignedGetUrl",
         },
@@ -73,7 +73,7 @@ export const documentsRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiGetDocumentsSignedGetUrl",
         },
@@ -95,7 +95,7 @@ export const documentsRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiGetDocumentsSignedPutUrl",
         },
@@ -105,7 +105,7 @@ export const documentsRouter = t.router({
       s3Client(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.bucketsAccess.nameTemplate,
+            Resource.TenantRoles.bucketsAccess.nameTemplate,
           ),
           RoleSessionName: "ApiGetDocumentsSignedPutUrl",
         },
@@ -128,7 +128,7 @@ export const documentsRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiSetDocumentsSizeLimit",
         },
@@ -138,7 +138,7 @@ export const documentsRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiSetDocumentsSizeLimit",
         },
@@ -152,7 +152,7 @@ export const documentsRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiGetDocumentsSizeLimit",
         },

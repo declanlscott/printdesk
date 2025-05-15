@@ -9,7 +9,7 @@ import { createStoreApiContext } from "~/lib/contexts/store";
 
 import type { Challenge, Client, Tokens } from "@openauthjs/openauth/client";
 import type {
-  Oauth2ProviderKind,
+  IdentityProviderKind,
   UserSubjectProperties,
 } from "@printdesk/core/auth/shared";
 import type { Tenant } from "@printdesk/core/tenants/sql";
@@ -27,7 +27,7 @@ export type AuthStore = {
   actions: {
     authorize: (
       subdomain: Tenant["subdomain"],
-      oauthProviderKind: Oauth2ProviderKind,
+      identityProviderKind: IdentityProviderKind,
       from?: string,
     ) => Promise<string>;
     exchange: (
@@ -51,7 +51,7 @@ export const AuthStoreApi = createStoreApiContext<
       (set, get) => ({
         client: createClient({
           clientID: Constants.OPENAUTH_CLIENT_IDS.WEB,
-          issuer: resource.Auth.url,
+          issuer: resource.Issuer.url,
         }),
         subdomain: null,
         flow: null,

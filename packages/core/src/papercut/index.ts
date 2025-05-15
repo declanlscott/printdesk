@@ -23,7 +23,7 @@ export namespace Papercut {
   export const setTailnetServerUri = async (uri: string) =>
     Ssm.putParameter({
       Name: Ssm.buildName(
-        Resource.Aws.tenant.parameters.tailnetPapercutServerUri.nameTemplate,
+        Resource.TenantParameters.tailnetPapercutServerUri.nameTemplate,
         useTenant().id,
       ),
       Value: uri,
@@ -33,7 +33,7 @@ export namespace Papercut {
 
   export async function setServerAuthToken(token: string) {
     const name = Ssm.buildName(
-      Resource.Aws.tenant.parameters.papercutServerAuthToken.nameTemplate,
+      Resource.TenantParameters.papercutServerAuthToken.nameTemplate,
       useTenant().id,
     );
 
@@ -50,7 +50,7 @@ export namespace Papercut {
   export const getServerAuthToken = async () =>
     Api.getParameter(
       Ssm.buildName(
-        Resource.Aws.tenant.parameters.papercutServerAuthToken.nameTemplate,
+        Resource.TenantParameters.papercutServerAuthToken.nameTemplate,
         useTenant().id,
       ),
     );

@@ -15,12 +15,11 @@ from botocore.awsrequest import AWSRequest
 from botocore.auth import SigV4Auth
 from pulumi import automation
 import requests
+from sst import Resource
 
 from models import sqs_record
-from pulumi_program import program
-from utilities import resource, app, stage, region
+from pulumi_program import inline
 from utilities.aws import get_realtime_credentials
-from utilities.parameters import cloudflare_api_token
 
 processor = BatchProcessor(EventType.SQS)
 logger = Logger()
@@ -40,19 +39,19 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully parsed record body.")
 
     logger.info("Initializing stack ...")
-    project_name = f"{app}-{stage}-infra"
+    project_name = f"{Resource.App.name}-{Resource.App.stage}-infra"
     stack_name = payload.tenantId
     stack = automation.create_or_select_stack(
         project_name=project_name,
         stack_name=stack_name,
-        program=lambda: program.inline(payload),
+        program=lambda: inline(payload),
         opts=automation.LocalWorkspaceOptions(
             pulumi_home="/tmp/pulumi_home",
             project_settings=automation.ProjectSettings(
                 name=project_name,
                 runtime="python",
                 backend=automation.ProjectBackend(
-                    url=f"s3://{resource["PulumiBucket"]["name"]}/{project_name}"
+                    url=f"s3://{Resource.PulumiBucket.name}/{project_name}"
                 ),
             ),
         ),
@@ -60,20 +59,25 @@ def record_handler(record: SQSRecord):
     logger.info(f"Successfully initialized stack {stack.name}.")
 
     logger.info("Installing plugins ...")
-    stack.workspace.install_plugin("aws", f"v{version("pulumi-aws")}")
-    stack.workspace.install_plugin("cloudflare", f"v{version("pulumi-cloudflare")}")
+    stack.workspace.install_plugin("aws", f"v{version('pulumi-aws')}")
+    stack.workspace.install_plugin("cloudflare", f"v{version('pulumi-cloudflare')}")
     logger.info("Successfully installed plugins.")
 
     logger.info("Setting stack configuration ...")
-    stack.set_config("aws:region", automation.ConfigValue(region))
+    stack.set_config("aws:region", automation.ConfigValue(Resource.Aws.region))
     stack.set_config(
         "aws:assumeRole.roleArn",
-        automation.ConfigValue(resource["Aws"]["roles"]["pulumi"]["arn"]),
+        automation.ConfigValue(Resource.PulumiRole.arn),
+        path=True,
+    )
+    stack.set_config(
+        "aws:assumeRole.externalId",
+        automation.ConfigValue(Resource.PulumiRoleExternalId.value),
         path=True,
     )
     stack.set_config(
         "cloudflare:apiToken",
-        automation.ConfigValue(cloudflare_api_token, True),
+        automation.ConfigValue(Resource.CloudflareApiToken.value, True),
     )
     logger.info("Successfully set stack configuration.")
 
@@ -94,7 +98,7 @@ def record_handler(record: SQSRecord):
 
             aws_request = AWSRequest(
                 method="POST",
-                url=f"https://{resource["AppsyncEventApi"]["dns"]["http"]}/event",
+                url=f"https://{Resource.AppsyncEventApi.dns.http}/event",
                 headers={"Content-Type": "application/json"},
                 data=json.dumps(
                     {
@@ -125,7 +129,7 @@ def record_handler(record: SQSRecord):
                     aws_session_token=credentials["SessionToken"],
                 ).get_credentials(),
                 service_name="appsync",
-                region_name=region,
+                region_name=Resource.Aws.region,
             ).add_auth(aws_request)
 
             aws_prepared_request = aws_request.prepare()
@@ -150,5 +154,5 @@ def record_handler(record: SQSRecord):
             f"Destroy summary: \n{json.dumps(result.summary.resource_changes, indent=2)}"
         )
 
-        if stage != "production":
+        if Resource.App.stage != "production":
             stack.workspace.remove_stack(stack_name=stack_name)

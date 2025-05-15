@@ -46,7 +46,7 @@ export const setupRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiSetupConfigure",
         },
@@ -60,7 +60,7 @@ export const setupRouter = t.router({
       executeApiSigner(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+            Resource.TenantRoles.apiAccess.nameTemplate,
           ),
           RoleSessionName: "ApiSetupTestPapercutConnection",
         },

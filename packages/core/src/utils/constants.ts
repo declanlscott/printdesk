@@ -61,7 +61,7 @@ export namespace Constants {
     ROUTER_SECRET: "x-router-secret",
   } as const;
 
-  export const ENTRA_ID = "entra-id";
+  export const ENTRA_ID = "entra_id";
   export const GOOGLE = "google";
 
   export const DB_SCHEMA_VERSION = 1;

@@ -8,14 +8,14 @@ import { useTransaction } from "../drizzle/context";
 import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
 import { delimitToken, splitToken } from "../utils/shared";
-import { oauth2ProvidersTable, oauth2ProviderUserGroupsTable } from "./sql";
+import { identityProvidersTable, identityProviderUserGroupsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { Tenant } from "../tenants/sql";
 import type {
-  Oauth2Provider,
-  Oauth2ProvidersTable,
-  Oauth2ProviderUserGroup,
+  IdentityProvider,
+  IdentityProvidersTable,
+  IdentityProviderUserGroup,
 } from "./sql";
 
 export namespace Auth {
@@ -50,17 +50,17 @@ export namespace Auth {
     return timingSafeEqual(storedKeyBuffer, derivedKeyBuffer);
   }
 
-  export const putOauth2Provider = async (
-    values: InferInsertModel<Oauth2ProvidersTable>,
+  export const putIdentityProvider = async (
+    values: InferInsertModel<IdentityProvidersTable>,
   ) =>
     useTransaction((tx) =>
       tx
-        .insert(oauth2ProvidersTable)
+        .insert(identityProvidersTable)
         .values(values)
         .onConflictDoUpdate({
-          target: [oauth2ProvidersTable.id, oauth2ProvidersTable.tenantId],
+          target: [identityProvidersTable.id, identityProvidersTable.tenantId],
           set: {
-            ...buildConflictUpdateColumns(oauth2ProvidersTable, [
+            ...buildConflictUpdateColumns(identityProvidersTable, [
               "id",
               "tenantId",
               "kind",
@@ -70,86 +70,86 @@ export namespace Auth {
         }),
     );
 
-  export const readOauth2Providers = async () =>
+  export const readIdentityProviders = async () =>
     useTransaction((tx) =>
       tx
         .select()
-        .from(oauth2ProvidersTable)
-        .where(eq(oauth2ProvidersTable.tenantId, useTenant().id)),
+        .from(identityProvidersTable)
+        .where(eq(identityProvidersTable.tenantId, useTenant().id)),
     );
 
-  export const readOauth2ProviderById = async (id: Oauth2Provider["id"]) =>
+  export const readIdentityProviderById = async (id: IdentityProvider["id"]) =>
     useTransaction((tx) =>
       tx
         .select()
-        .from(oauth2ProvidersTable)
+        .from(identityProvidersTable)
         .where(
           and(
-            eq(oauth2ProvidersTable.id, id),
-            eq(oauth2ProvidersTable.tenantId, useTenant().id),
+            eq(identityProvidersTable.id, id),
+            eq(identityProvidersTable.tenantId, useTenant().id),
           ),
         )
         .then(R.first()),
     );
 
-  export const readOauth2ProvidersBySubdomain = async (
+  export const readIdentityProvidersBySubdomain = async (
     subdomain: Tenant["subdomain"],
   ) =>
     useTransaction((tx) =>
       tx
-        .select({ oauth2Provider: oauth2ProvidersTable })
+        .select({ identityProvider: identityProvidersTable })
         .from(tenantsTable)
         .innerJoin(
-          oauth2ProvidersTable,
-          eq(tenantsTable.id, oauth2ProvidersTable.tenantId),
+          identityProvidersTable,
+          eq(tenantsTable.id, identityProvidersTable.tenantId),
         )
         .where(eq(tenantsTable.subdomain, subdomain))
-        .then(R.map(R.prop("oauth2Provider"))),
+        .then(R.map(R.prop("identityProvider"))),
     );
 
-  export const createOauth2ProviderUserGroup = async (
-    id: Oauth2ProviderUserGroup["id"],
-    oauth2ProviderId: Oauth2ProviderUserGroup["oauth2ProviderId"],
+  export const createIdentityProviderUserGroup = async (
+    id: IdentityProviderUserGroup["id"],
+    identityProviderId: IdentityProviderUserGroup["identityProviderId"],
   ) =>
     useTransaction((tx) =>
       tx
-        .insert(oauth2ProviderUserGroupsTable)
-        .values({ id, oauth2ProviderId, tenantId: useTenant().id }),
+        .insert(identityProviderUserGroupsTable)
+        .values({ id, identityProviderId, tenantId: useTenant().id }),
     );
 
-  export const readOauth2ProviderUserGroups = async (
-    oauth2ProviderId: Oauth2Provider["id"],
+  export const readIdentityProviderUserGroups = async (
+    identityProviderId: IdentityProvider["id"],
   ) =>
     useTransaction((tx) =>
       tx
         .select()
-        .from(oauth2ProviderUserGroupsTable)
+        .from(identityProviderUserGroupsTable)
         .where(
           and(
             eq(
-              oauth2ProviderUserGroupsTable.oauth2ProviderId,
-              oauth2ProviderId,
+              identityProviderUserGroupsTable.identityProviderId,
+              identityProviderId,
             ),
-            eq(oauth2ProviderUserGroupsTable.tenantId, useTenant().id),
+            eq(identityProviderUserGroupsTable.tenantId, useTenant().id),
           ),
         ),
     );
 
-  export const deleteOauth2ProviderUserGroup = async (
-    id: Oauth2ProviderUserGroup["id"],
-    oauth2ProviderId: Oauth2ProviderUserGroup["oauth2ProviderId"],
+  export const deleteIdentityProviderUserGroup = async (
+    id: IdentityProviderUserGroup["id"],
+    identityProviderId: IdentityProviderUserGroup["identityProviderId"],
   ) =>
     useTransaction((tx) =>
       tx
-        .delete(oauth2ProviderUserGroupsTable)
+        .delete(identityProviderUserGroupsTable)
         .where(
           and(
-            eq(oauth2ProviderUserGroupsTable.id, id),
+            eq(identityProviderUserGroupsTable.id, id),
             eq(
-              oauth2ProviderUserGroupsTable.oauth2ProviderId,
-              oauth2ProviderId,
+              identityProviderUserGroupsTable.identityProviderId,
+              identityProviderId,
             ),
-            eq(oauth2ProviderUserGroupsTable.tenantId, useTenant().id),
+            eq(identityProviderUserGroupsTable.tenantId, useTenant().id),
           ),
         ),
     );

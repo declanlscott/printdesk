@@ -1,8 +1,9 @@
 import pulumi
 import boto3
+from sst import Resource
 
-from utilities import region, tags
-from utilities.aws import get_pulumi_credentials
+from src.utilities import tags
+from src.utilities.aws import get_pulumi_credentials
 from ...naming import logical_name, physical_name
 
 from typing import TypedDict, NotRequired, Dict, Any, Unpack
@@ -49,7 +50,7 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider):
             aws_access_key_id=credentials["AccessKeyId"],
             aws_secret_access_key=credentials["SecretAccessKey"],
             aws_session_token=credentials["SessionToken"],
-            region_name=region,
+            region_name=Resource.Aws.region,
         ).client("appsync")
 
     @staticmethod

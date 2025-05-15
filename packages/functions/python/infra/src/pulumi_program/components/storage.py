@@ -1,7 +1,12 @@
 import pulumi
 import pulumi_aws as aws
+from sst import Resource
 
-from utilities import account_id, region, resource, tags, retain_on_delete, build_name
+from src.utilities import (
+    tags,
+    build_name,
+    retain_on_delete,
+)
 
 from typing import TypedDict, Optional
 
@@ -257,7 +262,7 @@ class Storage(pulumi.ComponentResource):
                     principals=[
                         aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                             type="AWS",
-                            identifiers=[resource["Api"]["roleArn"]],
+                            identifiers=[Resource.Api.roleArn],
                         )
                     ],
                     actions=["sts:AssumeRole"],
@@ -269,9 +274,7 @@ class Storage(pulumi.ComponentResource):
             resource_name="BucketsAccessRole",
             args=aws.iam.RoleArgs(
                 name=build_name(
-                    name_template=resource["Aws"]["tenant"]["roles"]["bucketsAccess"][
-                        "nameTemplate"
-                    ],
+                    name_template=Resource.TenantRoles.bucketsAccess.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
                 assume_role_policy=assume_role_policy,
@@ -280,25 +283,25 @@ class Storage(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__buckets_access_role_policy: pulumi.Output[
-            aws.iam.RolePolicy
-        ] = pulumi.Output.all(
-            self.__buckets["assets"].arn, self.__buckets["documents"].arn
-        ).apply(
-            lambda arns: aws.iam.RolePolicy(
-                resource_name="BucketsAccessRolePolicy",
-                args=aws.iam.RolePolicyArgs(
-                    role=self.__buckets_access_role.name,
-                    policy=aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["s3:GetObject", "s3:PutObject"],
-                                resources=[f"{arns[0]}/*", f"{arns[1]}/*"],
-                            )
-                        ]
-                    ).minified_json,
-                ),
-                opts=pulumi.ResourceOptions(parent=self),
+        self.__buckets_access_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
+            pulumi.Output.all(
+                self.__buckets["assets"].arn, self.__buckets["documents"].arn
+            ).apply(
+                lambda arns: aws.iam.RolePolicy(
+                    resource_name="BucketsAccessRolePolicy",
+                    args=aws.iam.RolePolicyArgs(
+                        role=self.__buckets_access_role.name,
+                        policy=aws.iam.get_policy_document_output(
+                            statements=[
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["s3:GetObject", "s3:PutObject"],
+                                    resources=[f"{arns[0]}/*", f"{arns[1]}/*"],
+                                )
+                            ]
+                        ).minified_json,
+                    ),
+                    opts=pulumi.ResourceOptions(parent=self),
+                )
             )
         )
 
@@ -306,9 +309,7 @@ class Storage(pulumi.ComponentResource):
             resource_name="PutParametersRole",
             args=aws.iam.RoleArgs(
                 name=build_name(
-                    name_template=resource["Aws"]["tenant"]["roles"]["putParameters"][
-                        "nameTemplate"
-                    ],
+                    name_template=Resource.TenantRoles.putParameters.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
                 assume_role_policy=assume_role_policy,
@@ -326,36 +327,26 @@ class Storage(pulumi.ComponentResource):
                         aws.iam.GetPolicyDocumentStatementArgs(
                             actions=["ssm:PutParameter"],
                             resources=[
-                                f"arn:aws:ssm:{region}:{account_id}:parameter{name}"
+                                f"arn:aws:ssm:{Resource.Aws.region}:{Resource.Aws.account.id}:parameter{name}"
                                 for name in [
                                     build_name(
-                                        resource["Aws"]["tenant"]["parameters"][
-                                            "documentsMimeTypes"
-                                        ]["nameTemplate"],
+                                        Resource.TenantParameters.documentsMimeTypes.nameTemplate,
                                         args.tenant_id,
                                     ),
                                     build_name(
-                                        resource["Aws"]["tenant"]["parameters"][
-                                            "documentsSizeLimit"
-                                        ]["nameTemplate"],
+                                        Resource.TenantParameters.documentsSizeLimit.nameTemplate,
                                         args.tenant_id,
                                     ),
                                     build_name(
-                                        resource["Aws"]["tenant"]["parameters"][
-                                            "tailnetPapercutServerUri"
-                                        ]["nameTemplate"],
+                                        Resource.TenantParameters.tailnetPapercutServerUri.nameTemplate,
                                         args.tenant_id,
                                     ),
                                     build_name(
-                                        resource["Aws"]["tenant"]["parameters"][
-                                            "papercutServerAuthToken"
-                                        ]["nameTemplate"],
+                                        Resource.TenantParameters.papercutServerAuthToken.nameTemplate,
                                         args.tenant_id,
                                     ),
                                     build_name(
-                                        resource["Aws"]["tenant"]["parameters"][
-                                            "tailscaleOauthClient"
-                                        ]["nameTemplate"],
+                                        Resource.TenantParameters.tailscaleOauthClient.nameTemplate,
                                         args.tenant_id,
                                     ),
                                 ]

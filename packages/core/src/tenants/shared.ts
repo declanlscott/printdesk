@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import { oauth2ProvidersSchema } from "../auth/shared";
+import { identityProvidersSchema } from "../auth/shared";
 import { tailscaleOauthClientSchema } from "../tailscale/shared";
 import { Constants } from "../utils/constants";
 import { nanoIdSchema, timestampsSchema } from "../utils/shared";
@@ -69,8 +69,8 @@ export const setupWizardStep1Schema = v.object({
 export type SetupWizardStep1 = v.InferOutput<typeof setupWizardStep1Schema>;
 
 export const setupWizardStep2Schema = v.object({
-  userOauthProviderKind: oauth2ProvidersSchema.entries.kind,
-  userOauthProviderId: oauth2ProvidersSchema.entries.id,
+  identityProviderKind: identityProvidersSchema.entries.kind,
+  identityProviderId: identityProvidersSchema.entries.id,
 });
 export type SetupWizardStep2 = v.InferOutput<typeof setupWizardStep2Schema>;
 

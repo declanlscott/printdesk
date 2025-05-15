@@ -7,6 +7,6 @@ export type Resource =
   | "papercut-sync"
   | "services"
   | "monthly-active-users"
-  | "oauth-providers";
+  | "identity-providers";
 
 export type Action = "create" | "read" | "update" | "delete";

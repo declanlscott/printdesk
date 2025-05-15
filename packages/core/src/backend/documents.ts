@@ -14,7 +14,7 @@ export namespace Documents {
 
   export async function setMimeTypes(mimeTypes: Readonly<Array<string>>) {
     const name = Ssm.buildName(
-      Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate,
+      Resource.TenantParameters.documentsMimeTypes.nameTemplate,
       useTenant().id,
     );
 
@@ -34,7 +34,7 @@ export namespace Documents {
       JSON.parse(
         await Api.getParameter(
           Ssm.buildName(
-            Resource.Aws.tenant.parameters.documentsMimeTypes.nameTemplate,
+            Resource.TenantParameters.documentsMimeTypes.nameTemplate,
             useTenant().id,
           ),
         ),
@@ -43,7 +43,7 @@ export namespace Documents {
 
   export async function setSizeLimit(byteSize: number) {
     const name = Ssm.buildName(
-      Resource.Aws.tenant.parameters.documentsSizeLimit.nameTemplate,
+      Resource.TenantParameters.documentsMimeTypes.nameTemplate,
       useTenant().id,
     );
 
@@ -62,7 +62,7 @@ export namespace Documents {
       v.pipe(v.string(), v.transform(Number)),
       await Api.getParameter(
         Ssm.buildName(
-          Resource.Aws.tenant.parameters.documentsSizeLimit.nameTemplate,
+          Resource.TenantParameters.documentsSizeLimit.nameTemplate,
           useTenant().id,
         ),
       ),

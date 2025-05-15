@@ -78,10 +78,7 @@ const healthcheck = fromPromise<
 
   const res = await fetch(
     buildUrl({
-      fqdn: getBackendFqdn(
-        input.tenantId,
-        input.resource.AppData.domainName.fullyQualified,
-      ),
+      fqdn: getBackendFqdn(input.tenantId, input.resource.Domains.web),
       path: "/api/health",
     }),
     { method: "GET" },
@@ -142,8 +139,8 @@ export const setupMachine = setup({
     tenantSubdomain: input.tenantSubdomain,
 
     // Step 2
-    userOauthProviderKind: Constants.ENTRA_ID,
-    userOauthProviderId: "",
+    identityProviderKind: Constants.ENTRA_ID,
+    identityProviderId: "",
 
     // Step 3
     tailscaleOauthClientId: "",
@@ -203,9 +200,8 @@ export const setupMachine = setup({
             "wizard.step2.next": {
               target: "step3",
               actions: assign({
-                userOauthProviderKind: ({ event }) =>
-                  event.userOauthProviderKind,
-                userOauthProviderId: ({ event }) => event.userOauthProviderId,
+                identityProviderKind: ({ event }) => event.identityProviderKind,
+                identityProviderId: ({ event }) => event.identityProviderId,
               }),
             },
           },
@@ -263,7 +259,7 @@ export const setupMachine = setup({
                 tenantId: ({ event }) => event.output.tenantId,
                 trpcClient: ({ context, event }) =>
                   createTrpcClient(
-                    new URL("/api/trpc", context.resource.Router.url),
+                    new URL("/trpc", context.resource.Api.url),
                     `Bearer ${event.output.apiKey}`,
                     event.output.tenantId,
                   ),
@@ -282,8 +278,8 @@ export const setupMachine = setup({
               trpcClient: context.trpcClient,
               tenantName: context.tenantName,
               tenantSubdomain: context.tenantSubdomain,
-              userOauthProviderKind: context.userOauthProviderKind,
-              userOauthProviderId: context.userOauthProviderId,
+              identityProviderKind: context.identityProviderKind,
+              identityProviderId: context.identityProviderId,
             }),
             onDone: "dispatchInfra",
             onError: {
@@ -372,9 +368,7 @@ export const setupMachine = setup({
               target: "#setup.wizard.review",
               actions: assign({
                 trpcClient: ({ context }) =>
-                  createTrpcClient(
-                    new URL("/api/trpc", context.resource.Router.url),
-                  ),
+                  createTrpcClient(new URL("/trpc", context.resource.Api.url)),
                 tenantId: null,
                 dispatchId: null,
                 failureStatus: null,

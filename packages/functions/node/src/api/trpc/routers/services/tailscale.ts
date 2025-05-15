@@ -18,7 +18,7 @@ export const tailscaleRouter = t.router({
       ssmClient(() => [
         {
           RoleArn: Credentials.buildRoleArn(
-            Resource.Aws.tenant.roles.putParameters.nameTemplate,
+            Resource.TenantRoles.putParameters.nameTemplate,
           ),
           RoleSessionName: "ApiSetTailscaleOauthClient",
         },

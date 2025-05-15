@@ -2,8 +2,7 @@
 
 import hashlib
 import re
-
-from utilities import stage
+from sst import Resource
 
 PRETTY_CHARS = "abcdefhkmnorstuvwxz"
 
@@ -23,7 +22,7 @@ def physical_name(max_length: int, name: str, tenant_id: str, suffix: str = "") 
 
     def get_prefixed_name() -> str:
         l = max_length - len(suffix)
-        project = f"pd-{stage}"
+        project = f"pd-{Resource.App.stage}"
         stack = tenant_id
         project_len = len(project)
         stack_len = len(stack)

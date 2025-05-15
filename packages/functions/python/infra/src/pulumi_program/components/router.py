@@ -1,8 +1,9 @@
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
+from sst import Resource
 
-from utilities import resource, tags
+from src.utilities import tags
 
 from typing import Optional
 
@@ -39,12 +40,6 @@ class Router(pulumi.ComponentResource):
             origin_ssl_protocols=["TLSv1.2"],
         )
 
-        s3_origin_access_control_id = resource["Aws"]["cloudfront"][
-            "s3OriginAccessControl"
-        ]["id"]
-
-        api_cache_policy_id = resource["Aws"]["cloudfront"]["apiCachePolicy"]["id"]
-
         all_viewer_policy = aws.cloudfront.get_origin_request_policy_output(
             name="Managed-AllViewer"
         )
@@ -56,7 +51,7 @@ class Router(pulumi.ComponentResource):
         rewrite_uri_function_association = (
             aws.cloudfront.DistributionOrderedCacheBehaviorFunctionAssociationArgs(
                 event_type="viewer-request",
-                function_arn=resource["Aws"]["cloudfront"]["rewriteUriFunction"]["arn"],
+                function_arn=Resource.CloudfrontRewriteUriFunction.arn,
             )
         )
 
@@ -73,17 +68,17 @@ class Router(pulumi.ComponentResource):
                     ),
                     aws.cloudfront.DistributionOriginArgs(
                         origin_id="/assets/*",
-                        origin_access_control_id=s3_origin_access_control_id,
+                        origin_access_control_id=Resource.CloudfrontS3OriginAccessControl.id,
                         domain_name=args.assets_origin_domain_name,
                     ),
                     aws.cloudfront.DistributionOriginArgs(
                         origin_id="/documents/*",
-                        origin_access_control_id=s3_origin_access_control_id,
+                        origin_access_control_id=Resource.CloudfrontS3OriginAccessControl.id,
                         domain_name=args.documents_origin_domain_name,
                     ),
                     aws.cloudfront.DistributionOriginArgs(
                         origin_id="/*",
-                        domain_name=f"does-not-exist.{resource["AppData"]["domainName"]["value"]}",
+                        domain_name=f"does-not-exist.{Resource.Domains.root}",
                         custom_origin_config=custom_origin_config,
                     ),
                 ],
@@ -102,11 +97,9 @@ class Router(pulumi.ComponentResource):
                     cached_methods=["GET", "HEAD"],
                     default_ttl=0,
                     compress=True,
-                    cache_policy_id=api_cache_policy_id,
+                    cache_policy_id=Resource.CloudfrontApiCachePolicy.id,
                     origin_request_policy_id=all_viewer_policy.id,
-                    trusted_key_groups=[
-                        resource["Aws"]["cloudfront"]["keyGroup"]["id"]
-                    ],
+                    trusted_key_groups=[Resource.CloudfrontKeyGroup.id],
                 ),
                 ordered_cache_behaviors=[
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -116,11 +109,9 @@ class Router(pulumi.ComponentResource):
                         allowed_methods=["GET", "HEAD", "OPTIONS"],
                         cached_methods=["GET", "HEAD"],
                         compress=True,
-                        cache_policy_id=api_cache_policy_id,
+                        cache_policy_id=Resource.CloudfrontApiCachePolicy.id,
                         origin_request_policy_id=all_viewer_policy.id,
-                        trusted_key_groups=[
-                            resource["Aws"]["cloudfront"]["keyGroup"]["id"]
-                        ],
+                        trusted_key_groups=[Resource.CloudfrontKeyGroup.id],
                         function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -130,7 +121,7 @@ class Router(pulumi.ComponentResource):
                         allowed_methods=["GET", "HEAD", "OPTIONS"],
                         cached_methods=["GET", "HEAD"],
                         compress=True,
-                        cache_policy_id=api_cache_policy_id,
+                        cache_policy_id=Resource.CloudfrontApiCachePolicy.id,
                         origin_request_policy_id=all_viewer_policy.id,
                         function_associations=[rewrite_uri_function_association],
                     ),
@@ -141,11 +132,9 @@ class Router(pulumi.ComponentResource):
                         allowed_methods=["GET", "HEAD", "OPTIONS"],
                         cached_methods=["GET", "HEAD"],
                         compress=True,
-                        cache_policy_id=api_cache_policy_id,
+                        cache_policy_id=Resource.CloudfrontApiCachePolicy.id,
                         origin_request_policy_id=all_viewer_policy.id,
-                        trusted_key_groups=[
-                            resource["Aws"]["cloudfront"]["keyGroup"]["id"]
-                        ],
+                        trusted_key_groups=[Resource.CloudfrontKeyGroup.id],
                         function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -163,11 +152,9 @@ class Router(pulumi.ComponentResource):
                         ],
                         cached_methods=["GET", "HEAD"],
                         compress=True,
-                        cache_policy_id=api_cache_policy_id,
+                        cache_policy_id=Resource.CloudfrontApiCachePolicy.id,
                         origin_request_policy_id=all_viewer_policy.id,
-                        trusted_key_groups=[
-                            resource["Aws"]["cloudfront"]["keyGroup"]["id"]
-                        ],
+                        trusted_key_groups=[Resource.CloudfrontKeyGroup.id],
                         function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -178,9 +165,7 @@ class Router(pulumi.ComponentResource):
                         cached_methods=["GET", "HEAD"],
                         compress=True,
                         cache_policy_id=caching_optimized_policy.id,
-                        trusted_key_groups=[
-                            resource["Aws"]["cloudfront"]["keyGroup"]["id"]
-                        ],
+                        trusted_key_groups=[Resource.CloudfrontKeyGroup.id],
                         function_associations=[rewrite_uri_function_association],
                     ),
                     aws.cloudfront.DistributionOrderedCacheBehaviorArgs(
@@ -191,9 +176,7 @@ class Router(pulumi.ComponentResource):
                         cached_methods=["GET", "HEAD"],
                         compress=True,
                         cache_policy_id=caching_optimized_policy.id,
-                        trusted_key_groups=[
-                            resource["Aws"]["cloudfront"]["keyGroup"]["id"]
-                        ],
+                        trusted_key_groups=[Resource.CloudfrontKeyGroup.id],
                         function_associations=[rewrite_uri_function_association],
                     ),
                 ],
@@ -218,9 +201,7 @@ class Router(pulumi.ComponentResource):
         self.__cname = cloudflare.Record(
             resource_name="Cname",
             args=cloudflare.RecordArgs(
-                zone_id=cloudflare.get_zone_output(
-                    name=resource["AppData"]["domainName"]["value"]
-                ).id,
+                zone_id=cloudflare.get_zone_output(name=Resource.Domains.root).id,
                 name=args.alias,
                 type="CNAME",
                 content=self.__distribution.domain_name,

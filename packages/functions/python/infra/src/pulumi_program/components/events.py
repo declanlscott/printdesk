@@ -2,8 +2,9 @@ import json
 
 import pulumi
 import pulumi_aws as aws
+from sst import Resource
 
-from utilities import resource, tags
+from src.utilities import tags
 
 from typing import Optional
 
@@ -42,7 +43,7 @@ class Events(pulumi.ComponentResource):
             resource_name="InvoicesProcessorEventSourceMapping",
             args=aws.lambda_.EventSourceMappingArgs(
                 event_source_arn=args.invoices_processor_queue_arn,
-                function_name=resource["InvoicesProcessor"]["name"],
+                function_name=Resource.InvoicesProcessor.name,
                 function_response_types=["ReportBatchItemFailures"],
                 batch_size=10,
                 maximum_batching_window_in_seconds=0,
@@ -80,7 +81,7 @@ class Events(pulumi.ComponentResource):
             resource_name=f"PapercutSyncEventTarget",
             args=aws.cloudwatch.EventTargetArgs(
                 event_bus_name=self.__event_bus.name,
-                arn=resource["PapercutSync"]["arn"],
+                arn=Resource.PapercutSync.arn,
                 rule=self.__papercut_sync_event_rule.name,
                 dead_letter_config=aws.cloudwatch.EventTargetDeadLetterConfigArgs(
                     arn=self.__papercut_sync_dead_letter_queue.arn,
@@ -92,7 +93,7 @@ class Events(pulumi.ComponentResource):
         self.__papercut_sync_permission = aws.lambda_.Permission(
             resource_name=f"PapercutSyncPermission",
             args=aws.lambda_.PermissionArgs(
-                function=resource["PapercutSync"]["name"],
+                function=Resource.PapercutSync.name,
                 action="lambda:InvokeFunction",
                 principal="events.amazonaws.com",
                 source_arn=self.__papercut_sync_event_rule.arn,

@@ -60,32 +60,6 @@ export const cloudflareAccountId = new sst.Secret("CloudflareAccountId");
 
 export const replicacheLicenseKey = new sst.Secret("ReplicacheLicenseKey");
 
-export const temporaryBucket = new sst.aws.Bucket("TemporaryBucket");
-export const temporaryBucketLifecycle =
-  new aws.s3.BucketLifecycleConfigurationV2("TemporaryBucketLifecycle", {
-    bucket: temporaryBucket.name,
-    rules: [
-      {
-        id: "daily",
-        status: "Enabled",
-        filter: { prefix: "daily/" },
-        expiration: { days: 1 },
-      },
-      {
-        id: "weekly",
-        status: "Enabled",
-        filter: { prefix: "weekly/" },
-        expiration: { days: 7 },
-      },
-      {
-        id: "monthly",
-        status: "Enabled",
-        filter: { prefix: "monthly/" },
-        expiration: { days: 30 },
-      },
-    ],
-  });
-
 export const appData = new sst.Linkable("AppData", {
   properties: {
     name: $app.name,
@@ -95,15 +69,16 @@ export const appData = new sst.Linkable("AppData", {
   },
 });
 
-export const cloudData = new sst.Linkable("CloudData", {
+export const aws_ = new sst.Linkable("Aws", {
   properties: {
-    aws: {
-      account: { id: aws.getCallerIdentityOutput().accountId },
-      region: aws.getRegionOutput().name,
-    },
-    cloudflare: {
-      account: { id: cloudflareAccountId.value },
-    },
+    account: { id: aws.getCallerIdentityOutput().accountId },
+    region: aws.getRegionOutput().name,
+  },
+});
+
+export const cloudflare_ = new sst.Linkable("Cloudflare", {
+  properties: {
+    account: { id: cloudflareAccountId.value },
   },
 });
 

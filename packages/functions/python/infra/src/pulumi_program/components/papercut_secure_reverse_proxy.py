@@ -1,7 +1,8 @@
 import pulumi
 import pulumi_aws as aws
+from sst import Resource
 
-from utilities import tags, region, account_id, build_name, resource
+from src.utilities import tags, build_name
 
 from typing import Optional
 
@@ -48,56 +49,48 @@ class PapercutSecureReverseProxy(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__role_policy: pulumi.Output[
-            aws.iam.RolePolicy
-        ] = aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn.apply(
-            lambda key_arn: aws.iam.RolePolicy(
-                resource_name="PapercutSecureReverseProxyRolePolicy",
-                args=aws.iam.RolePolicyArgs(
-                    role=self.__role.name,
-                    policy=aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["ssm:GetParameter"],
-                                resources=[
-                                    f"arn:aws:ssm:{region}:{account_id}:parameter{name}"
-                                    for name in [
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "tailnetPapercutServerUri"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "tailscaleOauthClient"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                    ]
-                                ],
-                            ),
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["kms:Decrypt"],
-                                resources=[key_arn],
-                            ),
-                        ]
-                    ).minified_json,
-                ),
-                opts=pulumi.ResourceOptions(parent=self),
+        self.__role_policy: pulumi.Output[aws.iam.RolePolicy] = (
+            aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn.apply(
+                lambda key_arn: aws.iam.RolePolicy(
+                    resource_name="PapercutSecureReverseProxyRolePolicy",
+                    args=aws.iam.RolePolicyArgs(
+                        role=self.__role.name,
+                        policy=aws.iam.get_policy_document_output(
+                            statements=[
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["ssm:GetParameter"],
+                                    resources=[
+                                        f"arn:aws:ssm:{Resource.Aws.region}:{Resource.Aws.account.id}:parameter{name}"
+                                        for name in [
+                                            build_name(
+                                                Resource.TenantParameters.tailnetPapercutServerUri.nameTemplate,
+                                                args.tenant_id,
+                                            ),
+                                            build_name(
+                                                Resource.TenantParameters.tailscaleOauthClient.nameTemplate,
+                                                args.tenant_id,
+                                            ),
+                                        ]
+                                    ],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["kms:Decrypt"],
+                                    resources=[key_arn],
+                                ),
+                            ]
+                        ).minified_json,
+                    ),
+                    opts=pulumi.ResourceOptions(parent=self),
+                )
             )
         )
 
         self.__function = aws.lambda_.Function(
             resource_name="PapercutSecureReverseProxyFunction",
             args=aws.lambda_.FunctionArgs(
-                s3_bucket=resource["Code"]["bucket"]["name"],
-                s3_key=resource["Code"]["bucket"]["object"][
-                    "papercutSecureReverseProxy"
-                ]["key"],
-                s3_object_version=resource["Code"]["bucket"]["object"][
-                    "papercutSecureReverseProxy"
-                ]["versionId"],
+                s3_bucket=Resource.Code.bucket.name,
+                s3_key=Resource.Code.bucket.object.papercutSecureReverseProxy.key,
+                s3_object_version=Resource.Code.bucket.object.papercutSecureReverseProxy.versionId,
                 runtime=aws.lambda_.Runtime.CUSTOM_AL2023,
                 handler="bootstrap",
                 architectures=["arm64"],
@@ -106,15 +99,11 @@ class PapercutSecureReverseProxy(pulumi.ComponentResource):
                 environment=aws.lambda_.FunctionEnvironmentArgs(
                     variables={
                         "TARGET_PARAM_NAME": build_name(
-                            resource["Aws"]["tenant"]["parameters"][
-                                "tailnetPapercutServerUri"
-                            ]["nameTemplate"],
+                            Resource.TenantParameters.tailnetPapercutServerUri.nameTemplate,
                             args.tenant_id,
                         ),
                         "TS_OAUTH_CLIENT_PARAM_NAME": build_name(
-                            resource["Aws"]["tenant"]["parameters"][
-                                "tailscaleOauthClient"
-                            ]["nameTemplate"],
+                            Resource.TenantParameters.tailscaleOauthClient.nameTemplate,
                             args.tenant_id,
                         ),
                     }

@@ -3,8 +3,9 @@ from datetime import datetime
 
 import pulumi
 import pulumi_aws as aws
+from sst import Resource
 
-from utilities import tags, region, resource, account_id, build_name, stage
+from src.utilities import build_name, tags
 
 from typing import Optional, Mapping, List
 
@@ -121,66 +122,60 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__execution_role_policy: pulumi.Output[
-            aws.iam.RolePolicy
-        ] = pulumi.Output.all(
-            aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
-            aws.cloudwatch.get_event_bus_output(name=args.event_bus_name).arn,
-            aws.sqs.get_queue_output(name=args.invoices_processor_queue_name).arn,
-            aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
-        ).apply(
-            lambda arns: aws.iam.RolePolicy(
-                resource_name="ApiExecutionRolePolicy",
-                args=aws.iam.RolePolicyArgs(
-                    role=self.__execution_role.name,
-                    policy=aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["ssm:GetParameter"],
-                                resources=[
-                                    f"arn:aws:ssm:{region}:{account_id}:parameter{name}"
-                                    for name in [
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "documentsMimeTypes"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "documentsSizeLimit"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                        build_name(
-                                            resource["Aws"]["tenant"]["parameters"][
-                                                "papercutServerAuthToken"
-                                            ]["nameTemplate"],
-                                            args.tenant_id,
-                                        ),
-                                    ]
-                                ],
-                            ),
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["kms:Decrypt"],
-                                resources=[arns[0]],
-                            ),
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["events:PutEvents"],
-                                resources=[arns[1]],
-                            ),
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["sqs:SendMessage"],
-                                resources=[arns[2]],
-                            ),
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                actions=["cloudfront:CreateInvalidation"],
-                                resources=[arns[3]],
-                            ),
-                        ]
-                    ).minified_json,
-                ),
-                opts=pulumi.ResourceOptions(parent=self),
+        self.__execution_role_policy: pulumi.Output[aws.iam.RolePolicy] = (
+            pulumi.Output.all(
+                aws.kms.get_alias_output(name="alias/aws/ssm").target_key_arn,
+                aws.cloudwatch.get_event_bus_output(name=args.event_bus_name).arn,
+                aws.sqs.get_queue_output(name=args.invoices_processor_queue_name).arn,
+                aws.cloudfront.get_distribution_output(id=args.distribution_id).arn,
+            ).apply(
+                lambda arns: aws.iam.RolePolicy(
+                    resource_name="ApiExecutionRolePolicy",
+                    args=aws.iam.RolePolicyArgs(
+                        role=self.__execution_role.name,
+                        policy=aws.iam.get_policy_document_output(
+                            statements=[
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["ssm:GetParameter"],
+                                    resources=[
+                                        f"arn:aws:ssm:{Resource.Aws.region}:{Resource.Aws.account.id}:parameter{name}"
+                                        for name in [
+                                            build_name(
+                                                Resource.TenantParameters.documentsMimeTypes.nameTemplate,
+                                                args.tenant_id,
+                                            ),
+                                            build_name(
+                                                Resource.TenantParameters.documentsSizeLimit.nameTemplate,
+                                                args.tenant_id,
+                                            ),
+                                            build_name(
+                                                Resource.TenantParameters.papercutServerAuthToken.nameTemplate,
+                                                args.tenant_id,
+                                            ),
+                                        ]
+                                    ],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["kms:Decrypt"],
+                                    resources=[arns[0]],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["events:PutEvents"],
+                                    resources=[arns[1]],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["sqs:SendMessage"],
+                                    resources=[arns[2]],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementArgs(
+                                    actions=["cloudfront:CreateInvalidation"],
+                                    resources=[arns[3]],
+                                ),
+                            ]
+                        ).minified_json,
+                    ),
+                    opts=pulumi.ResourceOptions(parent=self),
+                )
             )
         )
 
@@ -361,7 +356,7 @@ class Api(pulumi.ComponentResource):
                     )
                 },
                 passthrough_behavior="NEVER",
-                uri=f"arn:aws:apigateway:{region}:ssm:path//",
+                uri=f"arn:aws:apigateway:{Resource.Aws.region}:ssm:path//",
                 credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -577,7 +572,7 @@ class Api(pulumi.ComponentResource):
                     )
                 },
                 passthrough_behavior="NEVER",
-                uri=f"arn:aws:apigateway:{region}:sqs:path//",
+                uri=f"arn:aws:apigateway:{Resource.Aws.region}:sqs:path//",
                 credentials=self.__execution_role.arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -718,7 +713,7 @@ class Api(pulumi.ComponentResource):
                 passthrough_behavior="NEVER",
                 uri=pulumi.Output.format(
                     "arn:aws:apigateway:{0}:cloudfront:path/2020-05-31/distribution/{1}/invalidation",
-                    region,
+                    Resource.Aws.region,
                     args.distribution_id,
                 ),
                 credentials=self.__execution_role.arn,
@@ -785,9 +780,7 @@ class Api(pulumi.ComponentResource):
             resource_name="ApiAccessRole",
             args=aws.iam.RoleArgs(
                 name=build_name(
-                    name_template=resource["Aws"]["tenant"]["roles"]["apiAccess"][
-                        "nameTemplate"
-                    ],
+                    name_template=Resource.TenantRoles.apiAccess.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
                 assume_role_policy=aws.iam.get_policy_document_output(
@@ -797,8 +790,8 @@ class Api(pulumi.ComponentResource):
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
                                     type="AWS",
                                     identifiers=[
-                                        resource["Api"]["roleArn"],
-                                        resource["PapercutSync"]["roleArn"],
+                                        Resource.Api.roleArn,
+                                        Resource.PapercutSync.roleArn,
                                     ],
                                 )
                             ],
@@ -821,7 +814,9 @@ class Api(pulumi.ComponentResource):
                             statements=[
                                 aws.iam.GetPolicyDocumentStatementArgs(
                                     actions=["execute-api:Invoke"],
-                                    resources=[f"{execution_arn}/{stage}/*"],
+                                    resources=[
+                                        f"{execution_arn}/{Resource.Aws.region}/*"
+                                    ],
                                 )
                             ]
                         ).minified_json,
@@ -1063,7 +1058,7 @@ class EventRoute(pulumi.ComponentResource):
                     else None
                 ),
                 passthrough_behavior="NEVER",
-                uri=f"arn:aws:apigateway:{region}:events:path//",
+                uri=f"arn:aws:apigateway:{Resource.Aws.region}:events:path//",
                 credentials=args.execution_role_arn,
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -1321,7 +1316,7 @@ class ApiDeployment(pulumi.ComponentResource):
             resource_name="ApiStage",
             args=aws.apigateway.StageArgs(
                 rest_api=args.api.rest_api.id,
-                stage_name=stage,
+                stage_name=Resource.App.stage,
                 deployment=self.__deployment.id,
                 access_log_settings=aws.apigateway.StageAccessLogSettingsArgs(
                     destination_arn=self.__log_group.arn,

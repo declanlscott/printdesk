@@ -76,7 +76,7 @@ export default new Hono()
                 service: "appsync",
                 credentials: Credentials.fromRoleChain({
                   RoleArn: Credentials.buildRoleArn(
-                    Resource.Aws.tenant.roles.realtimePublisher.nameTemplate,
+                    Resource.TenantRoles.realtimePublisher.nameTemplate,
                   ),
                   RoleSessionName: "ApiReplicachePush",
                 }),
@@ -86,7 +86,7 @@ export default new Hono()
                 service: "execute-api",
                 credentials: Credentials.fromRoleChain({
                   RoleArn: Credentials.buildRoleArn(
-                    Resource.Aws.tenant.roles.apiAccess.nameTemplate,
+                    Resource.TenantRoles.apiAccess.nameTemplate,
                   ),
                   RoleSessionName: "ApiReplicachePush",
                 }),

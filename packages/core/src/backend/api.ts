@@ -110,7 +110,7 @@ export namespace Api {
 
     return fetch(
       Cloudfront.getSignedUrl({
-        keyPairId: Resource.Aws.cloudfront.keyPair.id,
+        keyPairId: Resource.CloudfrontPublicKey.id,
         privateKey: Resource.CloudfrontPrivateKey.pem,
         url: url.toString(),
         dateLessThan: addMinutes(Date.now(), 1).toISOString(),

@@ -7,7 +7,7 @@ export namespace Tailscale {
   export const setOauthClient = async (id: string, secret: string) =>
     Ssm.putParameter({
       Name: Ssm.buildName(
-        Resource.Aws.tenant.parameters.tailscaleOauthClient.nameTemplate,
+        Resource.TenantParameters.tailscaleOauthClient.nameTemplate,
         useTenant().id,
       ),
       Value: JSON.stringify({ id, secret }),

@@ -42,6 +42,32 @@ export const infraQueue = new sst.aws.Queue(
   { retainOnDelete: isProdStage },
 );
 
+export const temporaryBucket = new sst.aws.Bucket("TemporaryBucket");
+export const temporaryBucketLifecycle =
+  new aws.s3.BucketLifecycleConfigurationV2("TemporaryBucketLifecycle", {
+    bucket: temporaryBucket.name,
+    rules: [
+      {
+        id: "daily",
+        status: "Enabled",
+        filter: { prefix: "daily/" },
+        expiration: { days: 1 },
+      },
+      {
+        id: "weekly",
+        status: "Enabled",
+        filter: { prefix: "weekly/" },
+        expiration: { days: 7 },
+      },
+      {
+        id: "monthly",
+        status: "Enabled",
+        filter: { prefix: "monthly/" },
+        expiration: { days: 30 },
+      },
+    ],
+  });
+
 export const tenantParameters = new sst.Linkable("TenantParameters", {
   properties: {
     documentsMimeTypes: {

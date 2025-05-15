@@ -801,7 +801,7 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      "oauth-providers": {
+      "identity-providers": {
         create: true,
         read: true,
         update: false,
@@ -943,7 +943,7 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      "oauth-providers": {
+      "identity-providers": {
         create: false,
         read: false,
         update: false,
@@ -1161,7 +1161,7 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      "oauth-providers": {
+      "identity-providers": {
         create: false,
         read: false,
         update: false,
@@ -1450,7 +1450,7 @@ export namespace AccessControl {
         update: false,
         delete: false,
       },
-      "oauth-providers": {
+      "identity-providers": {
         create: false,
         read: false,
         update: false,

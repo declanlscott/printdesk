@@ -26,8 +26,8 @@ export function SetupWizardStep2() {
   const actorRef = setupMachine.useActorRef();
 
   const defaultValues = setupMachine.useSelector(({ context }) => ({
-    userOauthProviderKind: context.userOauthProviderKind,
-    userOauthProviderId: context.userOauthProviderId,
+    identityProviderKind: context.identityProviderKind,
+    identityProviderId: context.identityProviderId,
   }));
 
   const form = useAppForm({
@@ -53,9 +53,9 @@ export function SetupWizardStep2() {
       <Card>
         <CardContent className="grid gap-4 pt-6">
           <form.AppField
-            name="userOauthProviderKind"
+            name="identityProviderKind"
             validators={{
-              onBlur: setupWizardStep2Schema.entries.userOauthProviderKind,
+              onBlur: setupWizardStep2Schema.entries.identityProviderKind,
             }}
           >
             {(field) => (
@@ -65,7 +65,7 @@ export function SetupWizardStep2() {
                   selectedKey={field.state.value}
                   onSelectionChange={(value) =>
                     field.handleChange(
-                      value as SetupWizardStep2["userOauthProviderKind"],
+                      value as SetupWizardStep2["identityProviderKind"],
                     )
                   }
                   onBlur={field.handleBlur}
@@ -115,9 +115,9 @@ export function SetupWizardStep2() {
           </form.AppField>
 
           <form.AppField
-            name="userOauthProviderId"
+            name="identityProviderId"
             validators={{
-              onBlur: setupWizardStep2Schema.entries.userOauthProviderId,
+              onBlur: setupWizardStep2Schema.entries.identityProviderId,
             }}
           >
             {(field) => (

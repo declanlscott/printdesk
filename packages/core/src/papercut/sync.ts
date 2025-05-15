@@ -60,26 +60,26 @@ export namespace Sync {
 
     const usernames = new Set(await Papercut.listUserAccounts());
 
-    const oauth2Providers = await Auth.readOauth2Providers();
+    const identityProviders = await Auth.readIdentityProviders();
 
     const next = new Map<
-      User["oauth2UserId"],
-      Pick<User, "oauth2ProviderId" | "username" | "name" | "email">
+      User["subjectId"],
+      Pick<User, "identityProviderId" | "username" | "name" | "email">
     >();
-    for (const oauth2Provider of oauth2Providers)
-      switch (oauth2Provider.kind) {
+    for (const identityProvider of identityProviders)
+      switch (identityProvider.kind) {
         case Constants.ENTRA_ID:
           await withGraph(
             () =>
               Graph.Client.initWithMiddleware({
                 authProvider: {
                   getAccessToken: async () =>
-                    EntraId.applicationAccessToken(oauth2Provider.id),
+                    EntraId.applicationAccessToken(identityProvider.id),
                 },
               }),
             async () => {
-              const groups = await Auth.readOauth2ProviderUserGroups(
-                oauth2Provider.id,
+              const groups = await Auth.readIdentityProviderUserGroups(
+                identityProvider.id,
               );
 
               const users: Array<
@@ -103,7 +103,7 @@ export namespace Sync {
               for (const user of users)
                 if (usernames.has(user.userPrincipalName))
                   next.set(user.id, {
-                    oauth2ProviderId: oauth2Provider.id,
+                    identityProviderId: identityProvider.id,
                     username: user.userPrincipalName,
                     name: user.displayName,
                     email: user.mail,
@@ -115,13 +115,13 @@ export namespace Sync {
         case Constants.GOOGLE:
           throw new Error("Google sync not implemented");
         default:
-          throw new SharedErrors.NonExhaustiveValue(oauth2Provider.kind);
+          throw new SharedErrors.NonExhaustiveValue(identityProvider.kind);
       }
 
     const prev = await Users.byOrigin("papercut").then(
       (users) =>
-        new Map<User["oauth2UserId"], User>(
-          users.map((user) => [user.oauth2UserId, user]),
+        new Map<User["subjectId"], User>(
+          users.map((user) => [user.subjectId, user]),
         ),
     );
 
@@ -130,13 +130,13 @@ export namespace Sync {
       [...prev.keys().toArray(), ...next.keys().toArray()],
       R.unique(),
       R.reduce(
-        (users, oauth2UserId) => {
-          const prevUser = prev.get(oauth2UserId);
-          const nextUser = next.get(oauth2UserId);
+        (users, subjectId) => {
+          const prevUser = prev.get(subjectId);
+          const nextUser = next.get(subjectId);
 
           const base = {
             origin: "papercut",
-            oauth2UserId,
+            subjectId,
             tenantId: useTenant().id,
           } as const;
 

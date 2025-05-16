@@ -48,7 +48,7 @@ export namespace Sync {
         .where(eq(tenantMetadataTable.tenantId, useTenant().id)),
     );
 
-    if (hasChanged) await poke(["/tenant"]);
+    if (hasChanged) await poke("/tenant");
   }
 
   export async function users() {

@@ -84,7 +84,7 @@ export namespace Tenants {
         .set(values)
         .where(eq(tenantsTable.id, useTenant().id));
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
   });
 

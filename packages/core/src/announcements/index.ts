@@ -30,7 +30,7 @@ export namespace Announcements {
       return useTransaction(async (tx) => {
         await tx.insert(announcementsTable).values(values);
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -70,7 +70,7 @@ export namespace Announcements {
             ),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -97,7 +97,7 @@ export namespace Announcements {
             ),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );

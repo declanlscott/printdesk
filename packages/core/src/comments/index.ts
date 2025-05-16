@@ -33,7 +33,7 @@ export namespace Comments {
       ]);
 
       await afterTransaction(() =>
-        poke(users.map((u) => `/users/${u.id}` as const)),
+        poke(...users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });
@@ -74,7 +74,7 @@ export namespace Comments {
         ]);
 
         await afterTransaction(() =>
-          poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(...users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },
@@ -103,7 +103,7 @@ export namespace Comments {
         ]);
 
         await afterTransaction(() =>
-          poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(...users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },

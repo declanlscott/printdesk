@@ -5,7 +5,7 @@ import { Realtime } from "../realtime";
 import type { StartsWith } from "../utils/types";
 
 export async function poke<TChannel extends string>(
-  channels: Array<StartsWith<"/", TChannel>>,
+  ...channels: Array<StartsWith<"/", TChannel>>
 ) {
   const uniqueChannels = R.unique(channels);
   if (R.isEmpty(uniqueChannels)) return;

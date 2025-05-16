@@ -252,7 +252,7 @@ export namespace Users {
           ),
         );
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
 
   export const updateRole = fn(
@@ -271,7 +271,7 @@ export namespace Users {
             and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -292,7 +292,7 @@ export namespace Users {
             and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -311,7 +311,7 @@ export namespace Users {
           and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
         );
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
   });
 

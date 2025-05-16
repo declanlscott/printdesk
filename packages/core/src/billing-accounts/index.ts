@@ -125,13 +125,13 @@ export namespace BillingAccounts {
         ]);
 
         await afterTransaction(() =>
-          poke([
+          poke(
             ...adminsOps.map((u) => `/users/${u.id}` as const),
             ...managers.map(({ managerId }) => `/users/${managerId}` as const),
             ...customers.map(
               ({ customerId }) => `/users/${customerId}` as const,
             ),
-          ]),
+          ),
         );
       });
     },
@@ -199,13 +199,13 @@ export namespace BillingAccounts {
         ]);
 
         await afterTransaction(() =>
-          poke([
+          poke(
             ...adminsOps.map((u) => `/users/${u.id}` as const),
             ...managers.map(({ managerId }) => `/users/${managerId}` as const),
             ...customers.map(
               ({ customerId }) => `/users/${customerId}` as const,
             ),
-          ]),
+          ),
         );
       });
     },
@@ -318,7 +318,7 @@ export namespace BillingAccounts {
           .values(values)
           .onConflictDoNothing();
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -371,7 +371,7 @@ export namespace BillingAccounts {
             ),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );

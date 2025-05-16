@@ -38,7 +38,7 @@ export namespace Orders {
       const users = await Users.withOrderAccess(order.id);
 
       await afterTransaction(() =>
-        poke(users.map((u) => `/users/${u.id}` as const)),
+        poke(...users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });
@@ -79,7 +79,7 @@ export namespace Orders {
         ]);
 
         await afterTransaction(() =>
-          poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(...users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },
@@ -108,7 +108,7 @@ export namespace Orders {
         ]);
 
         await afterTransaction(() =>
-          poke(users.map((u) => `/users/${u.id}` as const)),
+          poke(...users.map((u) => `/users/${u.id}` as const)),
         );
       });
     },

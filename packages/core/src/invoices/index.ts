@@ -36,7 +36,7 @@ export namespace Invoices {
       ]);
 
       await afterTransaction(() =>
-        poke(users.map((u) => `/users/${u.id}` as const)),
+        poke(...users.map((u) => `/users/${u.id}` as const)),
       );
     });
   });

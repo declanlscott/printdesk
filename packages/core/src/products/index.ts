@@ -25,7 +25,7 @@ export namespace Products {
     return useTransaction(async (tx) => {
       await tx.insert(productsTable).values(values);
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
   });
 
@@ -61,7 +61,7 @@ export namespace Products {
             ),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -85,7 +85,7 @@ export namespace Products {
             ),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );

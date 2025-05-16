@@ -60,7 +60,7 @@ export namespace Rooms {
         ]),
       ]);
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
   });
 
@@ -93,7 +93,7 @@ export namespace Rooms {
             and(eq(roomsTable.id, id), eq(roomsTable.tenantId, useTenant().id)),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -128,7 +128,7 @@ export namespace Rooms {
             ),
         ]);
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );
@@ -147,7 +147,7 @@ export namespace Rooms {
           and(eq(roomsTable.id, id), eq(roomsTable.tenantId, useTenant().id)),
         );
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
   });
 
@@ -222,7 +222,7 @@ export namespace Rooms {
           ),
         );
 
-      await afterTransaction(() => poke(["/tenant"]));
+      await afterTransaction(() => poke("/tenant"));
     });
   });
 
@@ -302,7 +302,7 @@ export namespace Rooms {
             ),
           );
 
-        await afterTransaction(() => poke(["/tenant"]));
+        await afterTransaction(() => poke("/tenant"));
       });
     },
   );

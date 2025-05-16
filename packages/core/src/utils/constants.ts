@@ -4,21 +4,6 @@ export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
 
   export const TOKEN_DELIMITER = "#";
-  export const PK = "pk";
-  export const SK = "sk";
-  export const GSI = {
-    ONE: {
-      PK: `gsi1${PK}`,
-      SK: `gsi1${SK}`,
-    },
-  } as const;
-  export const USER_COUNT = "user_count";
-  export const CREATED_AT = "created_at";
-  export const UPDATED_AT = "updated_at";
-  export const TENANT = "TENANT";
-  export const MONTH = "MONTH";
-  export const USER = "USER";
-  export const METADATA = "METADATA";
 
   export const CLOUDFLARE_BINDING_NAMES = {
     RATE_LIMITER: "RATE_LIMITER",

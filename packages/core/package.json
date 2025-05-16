@@ -9,14 +9,14 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
-    "@aws-sdk/client-dynamodb": "^3.808.0",
-    "@aws-sdk/client-eventbridge": "^3.808.0",
-    "@aws-sdk/client-s3": "^3.808.0",
-    "@aws-sdk/client-sqs": "^3.808.0",
-    "@aws-sdk/client-ssm": "^3.808.0",
+    "@aws-sdk/client-dynamodb": "^3.810.0",
+    "@aws-sdk/client-eventbridge": "^3.810.0",
+    "@aws-sdk/client-s3": "^3.810.0",
+    "@aws-sdk/client-sqs": "^3.810.0",
+    "@aws-sdk/client-ssm": "^3.810.0",
     "@aws-sdk/cloudfront-signer": "^3.804.0",
-    "@aws-sdk/lib-dynamodb": "^3.808.0",
-    "@aws-sdk/s3-request-presigner": "^3.808.0",
+    "@aws-sdk/lib-dynamodb": "^3.810.0",
+    "@aws-sdk/s3-request-presigner": "^3.810.0",
     "@aws-sdk/util-format-url": "^3.804.0",
     "@azure/msal-node": "^2.16.2",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -29,7 +29,7 @@
   },
   "devDependencies": {
     "@smithy/types": "^4.2.0",
-    "@types/pg": "^8.15.1",
+    "@types/pg": "^8.15.2",
     "drizzle-kit": "^0.31.1"
   }
 }

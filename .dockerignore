@@ -40,3 +40,4 @@ diagrams
 
 # python
 .venv
+.ruff_cache

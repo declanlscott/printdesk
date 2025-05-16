@@ -78,6 +78,9 @@ importers:
       '@types/aws-lambda':
         specifier: 8.10.149
         version: 8.10.149
+      '@types/node':
+        specifier: ^22.15.18
+        version: 22.15.18
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.32.1
         version: 8.32.1(@typescript-eslint/parser@8.32.1(eslint@8.57.1)(typescript@5.8.3))(eslint@8.57.1)(typescript@5.8.3)

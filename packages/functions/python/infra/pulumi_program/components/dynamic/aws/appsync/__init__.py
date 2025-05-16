@@ -1,10 +1,10 @@
-import pulumi
-
-from .event_api_provider import EventApiProvider
-from .channel_namespace_provider import ChannelNamespaceProvider
-
 from typing import Dict, Optional, Any, Sequence, List
+
+import pulumi
 from types_boto3_appsync.type_defs import EventConfigTypeDef, AuthModeTypeDef
+
+from .channel_namespace_provider import ChannelNamespaceProvider
+from .event_api_provider import EventApiProvider
 
 
 class EventApiInputs:

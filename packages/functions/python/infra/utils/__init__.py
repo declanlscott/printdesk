@@ -2,7 +2,27 @@ import boto3
 from types_boto3_ssm import SSMClient
 from types_boto3_sts import STSClient
 from types_boto3_sts.type_defs import CredentialsTypeDef
+
 from sst import Resource
+
+is_prod_stage = Resource.AppData.stage == "production"
+
+
+def tags(tenant_id: str):
+    return {
+        "sst:app": Resource.AppData.name,
+        "sst:stage": Resource.AppData.stage,
+        "tenant-id": tenant_id,
+    }
+
+
+def build_name(name_template: str, tenant_id: str) -> str:
+    return name_template.replace("{{tenant_id}}", tenant_id)
+
+
+def reverse_dns(domain_name: str) -> str:
+    return ".".join(domain_name.split(".")[::-1])
+
 
 ssm: SSMClient = boto3.client("ssm")
 sts: STSClient = boto3.client("sts")

@@ -1,14 +1,14 @@
+from typing import TypedDict, Optional
+
 import pulumi
 import pulumi_aws as aws
-from sst import Resource
 
-from src.utilities import (
+from sst import Resource
+from utils import (
     tags,
     build_name,
-    retain_on_delete,
+    is_prod_stage,
 )
-
-from typing import TypedDict, Optional
 
 
 class _StorageBucketArgs:
@@ -27,7 +27,7 @@ class _StorageBucket(pulumi.ComponentResource):
         self.__bucket = aws.s3.BucketV2(
             resource_name=f"{name}Bucket",
             args=aws.s3.BucketV2Args(force_destroy=True, tags=tags(args.tenant_id)),
-            opts=pulumi.ResourceOptions(parent=self, retain_on_delete=retain_on_delete),
+            opts=pulumi.ResourceOptions(parent=self, retain_on_delete=is_prod_stage),
         )
 
         self.__public_access_block = aws.s3.BucketPublicAccessBlock(
@@ -167,7 +167,7 @@ class _StorageQueue(pulumi.ComponentResource):
                     tags=tags(args.tenant_id),
                 ),
                 opts=pulumi.ResourceOptions(
-                    parent=self, retain_on_delete=retain_on_delete
+                    parent=self, retain_on_delete=is_prod_stage
                 ),
             )
 
@@ -188,7 +188,7 @@ class _StorageQueue(pulumi.ComponentResource):
                 ),
                 tags=tags(args.tenant_id),
             ),
-            opts=pulumi.ResourceOptions(parent=self, retain_on_delete=retain_on_delete),
+            opts=pulumi.ResourceOptions(parent=self, retain_on_delete=is_prod_stage),
         )
 
         self.register_outputs(

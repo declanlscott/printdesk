@@ -1,10 +1,3 @@
-import pulumi
-import boto3
-from sst import Resource
-
-from src.utilities import tags
-from src.utilities.aws import get_pulumi_credentials
-
 from typing import (
     TypedDict,
     NotRequired,
@@ -14,6 +7,9 @@ from typing import (
     Unpack,
     Sequence,
 )
+
+import boto3
+import pulumi
 from types_boto3_appsync.client import AppSyncClient
 from types_boto3_appsync.type_defs import (
     ChannelNamespaceTypeDef,
@@ -21,6 +17,9 @@ from types_boto3_appsync.type_defs import (
     UpdateChannelNamespaceRequestTypeDef,
     AuthModeTypeDef,
 )
+
+from sst import Resource
+from utils import tags, get_pulumi_credentials
 
 
 class ChannelNamespaceProviderInputs(TypedDict):

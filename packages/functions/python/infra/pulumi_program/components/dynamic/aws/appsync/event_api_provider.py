@@ -1,12 +1,7 @@
-import pulumi
-import boto3
-from sst import Resource
-
-from src.utilities import tags
-from src.utilities.aws import get_pulumi_credentials
-from ...naming import logical_name, physical_name
-
 from typing import TypedDict, NotRequired, Dict, Any, Unpack
+
+import boto3
+import pulumi
 from types_boto3_appsync import AppSyncClient
 from types_boto3_appsync.type_defs import (
     EventConfigTypeDef,
@@ -14,6 +9,10 @@ from types_boto3_appsync.type_defs import (
     CreateApiRequestTypeDef,
     UpdateApiRequestTypeDef,
 )
+
+from sst import Resource
+from utils import tags, get_pulumi_credentials
+from ...naming import logical_name, physical_name
 
 
 class EventApiProviderInputs(TypedDict):

@@ -9,7 +9,7 @@ export const normalizePath = (path: string, root = $cli.paths.root) =>
 
 export const injectLinkables = (
   prefix: string,
-  ...linkables: Array<Link.Linkable>
+  ...linkables: Array<$util.Input<unknown>>
 ) =>
   Link.getProperties(linkables).apply((properties) =>
     Object.fromEntries(

@@ -1,3 +1,4 @@
+from models import sqs_record
 from .components import (
     Ssl,
     SslArgs,
@@ -16,7 +17,6 @@ from .components import (
     Events,
     EventsArgs,
 )
-from src.models import sqs_record
 
 
 def inline(payload: sqs_record.Payload):

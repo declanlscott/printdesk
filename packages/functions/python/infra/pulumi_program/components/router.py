@@ -1,11 +1,11 @@
+from typing import Optional
+
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
+
 from sst import Resource
-
-from src.utilities import tags
-
-from typing import Optional
+from utils import tags
 
 
 class RouterArgs:

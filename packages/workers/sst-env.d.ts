@@ -136,6 +136,11 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Function"
     }
+    "InfraFunctionRole": {
+      "arn": string
+      "name": string
+      "type": "aws.iam/role.Role"
+    }
     "InfraQueue": {
       "type": "sst.aws.Queue"
       "url": string

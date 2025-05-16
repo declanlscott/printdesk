@@ -1,11 +1,11 @@
+from typing import Sequence, Optional
+
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
+
 from sst import Resource
-
-from src.utilities import tags, reverse_dns
-
-from typing import Sequence, Optional
+from utils import tags, reverse_dns
 
 
 class SslArgs:

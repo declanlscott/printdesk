@@ -2,6 +2,7 @@ import json
 from importlib.metadata import version
 
 import boto3
+import requests
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.batch import (
     BatchProcessor,
@@ -11,15 +12,14 @@ from aws_lambda_powertools.utilities.batch import (
 from aws_lambda_powertools.utilities.data_classes.sqs_event import SQSRecord
 from aws_lambda_powertools.utilities.parser import parse
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from botocore.awsrequest import AWSRequest
 from botocore.auth import SigV4Auth
+from botocore.awsrequest import AWSRequest
 from pulumi import automation
-import requests
-from sst import Resource
 
 from models import sqs_record
 from pulumi_program import inline
-from utilities.aws import get_realtime_credentials
+from sst import Resource
+from utils import is_prod_stage, get_realtime_credentials
 
 processor = BatchProcessor(EventType.SQS)
 logger = Logger()
@@ -39,7 +39,7 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully parsed record body.")
 
     logger.info("Initializing stack ...")
-    project_name = f"{Resource.App.name}-{Resource.App.stage}-infra"
+    project_name = f"{Resource.AppData.name}-{Resource.AppData.stage}-infra"
     stack_name = payload.tenantId
     stack = automation.create_or_select_stack(
         project_name=project_name,
@@ -154,5 +154,5 @@ def record_handler(record: SQSRecord):
             f"Destroy summary: \n{json.dumps(result.summary.resource_changes, indent=2)}"
         )
 
-        if Resource.App.stage != "production":
+        if not is_prod_stage:
             stack.workspace.remove_stack(stack_name=stack_name)

@@ -1,12 +1,11 @@
 import json
+from typing import Optional
 
 import pulumi
 import pulumi_aws as aws
+
 from sst import Resource
-
-from src.utilities import tags
-
-from typing import Optional
+from utils import tags
 
 
 class EventsArgs:

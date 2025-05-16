@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createMutators } from "@printdesk/core/data/client";
 import { delimitToken } from "@printdesk/core/utils/shared";
 import { Replicache } from "@rocicorp/replicache";
@@ -19,7 +19,9 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user ? { status: "initializing" } : { status: "uninitialized" },
   );
 
-  const { AppData, ReplicacheLicenseKey, Router } = useResource();
+  const { AppData, Domains, ReplicacheLicenseKey } = useResource();
+
+  const apiBaseUrl = useMemo(() => `https://${Domains.api}`, [Domains.api]);
 
   const { getAuth, refresh } = useAuthActions();
 
@@ -32,12 +34,12 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       logLevel: AppData.isDevMode ? "info" : "error",
       mutators: createMutators(user.id),
       auth: getAuth(),
-      pullURL: new URL("/api/replicache/pull", Router.url).toString(),
+      pullURL: new URL("/replicache/pull", apiBaseUrl).toString(),
       pusher: async (req) => {
         if (req.pushVersion !== 1)
           throw new Error(`Unsupported push version: ${req.pushVersion}`);
 
-        const res = await fetch(new URL("/api/replicache/push", Router.url), {
+        const res = await fetch(new URL("/replicache/push", apiBaseUrl), {
           method: "POST",
           headers: {
             Authorization: getAuth(),
@@ -81,11 +83,11 @@ export function ReplicacheProvider(props: PropsWithChildren) {
       void client.close();
     };
   }, [
+    apiBaseUrl,
     AppData.isDevMode,
     getAuth,
     refresh,
     ReplicacheLicenseKey.value,
-    Router.url,
     user,
   ]);
 

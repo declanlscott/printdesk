@@ -259,7 +259,7 @@ export const setupMachine = setup({
                 tenantId: ({ event }) => event.output.tenantId,
                 trpcClient: ({ context, event }) =>
                   createTrpcClient(
-                    new URL("/trpc", context.resource.Api.url),
+                    new URL("/trpc", `https://${context.resource.Domains.api}`),
                     `Bearer ${event.output.apiKey}`,
                     event.output.tenantId,
                   ),
@@ -368,7 +368,9 @@ export const setupMachine = setup({
               target: "#setup.wizard.review",
               actions: assign({
                 trpcClient: ({ context }) =>
-                  createTrpcClient(new URL("/trpc", context.resource.Api.url)),
+                  createTrpcClient(
+                    new URL("/trpc", `https://${context.resource.Domains.api}`),
+                  ),
                 tenantId: null,
                 dispatchId: null,
                 failureStatus: null,

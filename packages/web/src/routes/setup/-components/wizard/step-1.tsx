@@ -30,7 +30,7 @@ export function SetupWizardStep1() {
   const isValidatingLicenseKey =
     useSetupWizardState() === "isLicenseKeyAvailable";
 
-  const { AppData } = useResource();
+  const { AppData, Domains } = useResource();
 
   const url = useMemo(() => {
     const subdomain = defaultValues.tenantSubdomain.toLowerCase();
@@ -39,14 +39,14 @@ export function SetupWizardStep1() {
       return `${window.location.host}/?subdomain=${subdomain}`;
 
     if (!AppData.isProdStage)
-      return `${AppData.domainName.fullyQualified}/?subdomain=${subdomain}`;
+      return `https://${Domains.web}/?subdomain=${subdomain}`;
 
-    return `${subdomain}.${AppData.domainName.fullyQualified}`;
+    return `https://${subdomain}.${Domains.web}`;
   }, [
     defaultValues.tenantSubdomain,
     AppData.isDevMode,
     AppData.isProdStage,
-    AppData.domainName.fullyQualified,
+    Domains.web,
   ]);
 
   return (

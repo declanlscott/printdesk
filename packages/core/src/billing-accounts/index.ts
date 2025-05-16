@@ -22,6 +22,7 @@ import {
 } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { Prettify } from "../utils/types";
 import type {
   BillingAccount,
   BillingAccountByOrigin,
@@ -93,7 +94,7 @@ export namespace BillingAccounts {
               eq(billingAccountsTable.tenantId, useTenant().id),
             ),
           ) as unknown as Promise<
-          Array<BillingAccountByOrigin<TBillingAccountOrigin>>
+          Array<Prettify<BillingAccountByOrigin<TBillingAccountOrigin>>>
         >,
     );
 

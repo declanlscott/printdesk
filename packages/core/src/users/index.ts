@@ -24,7 +24,7 @@ import { usersTable } from "./sql";
 import type { InferInsertModel } from "drizzle-orm";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Order } from "../orders/sql";
-import type { PartialExcept } from "../utils/types";
+import type { PartialExcept, Prettify } from "../utils/types";
 import type { UserRole } from "./shared";
 import type { User, UserByOrigin, UsersTable } from "./sql";
 
@@ -101,7 +101,7 @@ export namespace Users {
               eq(usersTable.origin, origin),
               eq(usersTable.tenantId, useTenant().id),
             ),
-          ) as unknown as Promise<Array<UserByOrigin<TUserOrigin>>>,
+          ) as unknown as Promise<Array<Prettify<UserByOrigin<TUserOrigin>>>>,
     );
 
   export const byIdentityProvider = async (

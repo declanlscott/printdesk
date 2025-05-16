@@ -2,7 +2,11 @@ import type { ComponentProps, ReactNode } from "react";
 import type { Link as AriaLink } from "react-aria-components";
 import type { Room } from "@printdesk/core/rooms/sql";
 import type { Constants } from "@printdesk/core/utils/constants";
-import type { EndsWith, StartsWith } from "@printdesk/core/utils/types";
+import type {
+  EndsWith,
+  Prettify,
+  StartsWith,
+} from "@printdesk/core/utils/types";
 import type { TrpcRouter } from "@printdesk/functions/api/trpc/routers";
 import type { RankingInfo } from "@tanstack/match-sorter-utils";
 import type { QueryClient } from "@tanstack/react-query";
@@ -28,7 +32,7 @@ type ViteResourceKey<TKey extends keyof ImportMetaEnv> =
 
 export type ViteResource = {
   [TKey in keyof ImportMetaEnv as ViteResourceKey<TKey>]: ViteResourceKey<TKey> extends keyof Resource
-    ? Omit<Resource[ViteResourceKey<TKey>], "type">
+    ? Prettify<Omit<Resource[ViteResourceKey<TKey>], "type">>
     : never;
 };
 
@@ -53,7 +57,7 @@ declare module "@tanstack/react-router" {
 declare module "react-aria-components" {
   interface RouterConfig {
     href: ToOptions;
-    routerOptions: Omit<NavigateOptions, keyof ToOptions>;
+    routerOptions: Prettify<Omit<NavigateOptions, keyof ToOptions>>;
   }
 }
 

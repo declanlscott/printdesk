@@ -25,7 +25,7 @@ import type {
   BillingAccountsTable,
 } from "../billing-accounts/sql";
 import type { User, UsersTable } from "../users/sql";
-import type { NonNullableProperties } from "../utils/types";
+import type { NonNullableProperties, Prettify } from "../utils/types";
 
 export namespace Sync {
   export async function all() {
@@ -83,11 +83,13 @@ export namespace Sync {
               );
 
               const users: Array<
-                NonNullableProperties<
-                  Required<
-                    Pick<
-                      GraphUser,
-                      "userPrincipalName" | "id" | "displayName" | "mail"
+                Prettify<
+                  NonNullableProperties<
+                    Required<
+                      Pick<
+                        GraphUser,
+                        "userPrincipalName" | "id" | "displayName" | "mail"
+                      >
                     >
                   >
                 >

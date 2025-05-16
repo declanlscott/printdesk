@@ -1,3 +1,7 @@
+export type Prettify<TObject> = {
+  [TKey in keyof TObject]: TObject[TKey];
+} & {};
+
 export type StartsWith<
   TPrefix extends string,
   TValue extends string,

@@ -9,7 +9,7 @@ import type {
   DeepReadonlyObject,
   ReadTransaction,
   WriteTransaction,
-} from "replicache";
+} from "@rocicorp/replicache";
 import type { SyncedTableName, TableByName } from "../data";
 import type { InferFromTable } from "../drizzle/tables";
 import type { User } from "../users/sql";

@@ -24,7 +24,7 @@ import type {
   DeepReadonlyObject,
   ReadTransaction,
   WriteTransaction,
-} from "replicache";
+} from "@rocicorp/replicache";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
 import type { Order } from "../orders/sql";

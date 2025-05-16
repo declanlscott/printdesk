@@ -1,4 +1,4 @@
-import type { VersionNotSupportedResponse } from "replicache";
+import type { VersionNotSupportedResponse } from "@rocicorp/replicache";
 
 export namespace ServerErrors {
   export class BadRequest extends globalThis.Error {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createMutators } from "@printdesk/core/data/client";
 import { delimitToken } from "@printdesk/core/utils/shared";
-import { Replicache } from "replicache";
+import { Replicache } from "@rocicorp/replicache";
 import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
@@ -10,7 +10,7 @@ import { useResource } from "~/lib/hooks/resource";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { PropsWithChildren } from "react";
-import type { PushResponse } from "replicache";
+import type { PushResponse } from "@rocicorp/replicache";
 
 export function ReplicacheProvider(props: PropsWithChildren) {
   const { user } = useAuth();

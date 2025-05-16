@@ -3,7 +3,7 @@ import * as R from "remeda";
 
 import type { UserRole } from "@printdesk/core/users/shared";
 import type { User } from "@printdesk/core/users/sql";
-import type { DeepReadonlyObject, ReadTransaction } from "replicache";
+import type { DeepReadonlyObject, ReadTransaction } from "@rocicorp/replicache";
 import type { AuthenticatedEagerRouteId } from "~/types";
 
 export type RoutePermissions = Record<

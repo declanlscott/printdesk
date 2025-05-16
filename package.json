@@ -22,7 +22,7 @@
     "drizzle-orm": "^0.43.1",
     "hono": "^4.7.9",
     "remeda": "^2.21.6",
-    "replicache": "^15.0.1",
+    "@rocicorp/replicache": "^15.0.1",
     "sst": "^3.14.25",
     "superjson": "^2.2.2",
     "valibot": "^1.1.0"

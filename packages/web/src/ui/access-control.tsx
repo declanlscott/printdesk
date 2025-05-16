@@ -12,7 +12,7 @@ import type {
   DeepReadonlyObject,
   ReadTransaction,
   WriteTransaction,
-} from "replicache";
+} from "@rocicorp/replicache";
 import type { routePermissions } from "~/lib/access-control";
 import type { AuthenticatedEagerRouteId } from "~/types";
 

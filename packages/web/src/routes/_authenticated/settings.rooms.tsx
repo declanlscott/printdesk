@@ -62,12 +62,12 @@ import {
 
 import type { Product } from "@printdesk/core/products/sql";
 import type { Room } from "@printdesk/core/rooms/sql";
+import type { DeepReadonlyObject } from "@rocicorp/replicache";
 import type {
   ColumnDef,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
-import type { DeepReadonlyObject } from "replicache";
 
 const routeId = "/_authenticated/settings/rooms";
 

@@ -26,6 +26,9 @@ importers:
       '@printdesk/core':
         specifier: workspace:*
         version: link:packages/core
+      '@rocicorp/replicache':
+        specifier: ^15.0.1
+        version: 15.0.1
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -38,9 +41,6 @@ importers:
       remeda:
         specifier: ^2.21.6
         version: 2.21.6
-      replicache:
-        specifier: ^15.0.1
-        version: 15.0.1
       sst:
         specifier: ^3.14.25
         version: 3.14.25
@@ -2125,6 +2125,11 @@ packages:
 
   '@rocicorp/logger@5.4.0':
     resolution: {integrity: sha512-kmMR5iLrwRIsvPZ+UXnmyAM3Mlvz6rCHrYfMsrMPgFYKLfo7amUH1RwHo6tuuqJiAvUbeaCoDtc8e+V0Mr4PSA==}
+
+  '@rocicorp/replicache@15.0.1':
+    resolution: {integrity: sha512-NnZvVE5hrFy0pJW5mJ0fGcax7ekZAa/U3E5sselc+1ubE3cWGX95iu5lTlWjRnrM37sRBBaTZIzkdgQxRy5mLA==}
+    engines: {node: '>=14.8.0'}
+    hasBin: true
 
   '@rocicorp/resolver@1.0.2':
     resolution: {integrity: sha512-TfjMTQp9cNNqNtHFfa+XHEGdA7NnmDRu+ZJH4YF3dso0Xk/b9DMhg/sl+b6CR4ThFZArXXDsG1j8Mwl34wcOZQ==}
@@ -4811,11 +4816,6 @@ packages:
 
   remove-accents@0.5.0:
     resolution: {integrity: sha512-8g3/Otx1eJaVD12e31UbJj1YzdtVvzH85HV7t+9MJYk/u3XmkOUJ5Ys9wQrf9PCPK8+xn4ymzqYCiZl6QWKn+A==}
-
-  replicache@15.0.1:
-    resolution: {integrity: sha512-I7HK6h2eT2QNxO4mwQFDqbuxhvCQgSlU4QuwfN9dqA6EKnO73VYiKB676r36N3q5W7L+htLgAcrSsrX+JPsRlQ==}
-    engines: {node: '>=14.8.0'}
-    hasBin: true
 
   require-directory@2.1.1:
     resolution: {integrity: sha512-fGxEI7+wsG9xrvdjsrlmL22OMTTiHRwAMroiEeMgq8gzoLC/PQr7RsRDSTLUg/bZAZtF+TVIkHc6/4RIKrui+Q==}
@@ -8448,6 +8448,13 @@ snapshots:
 
   '@rocicorp/logger@5.4.0': {}
 
+  '@rocicorp/replicache@15.0.1':
+    dependencies:
+      '@badrap/valita': 0.3.16
+      '@rocicorp/lock': 1.0.4
+      '@rocicorp/logger': 5.4.0
+      '@rocicorp/resolver': 1.0.2
+
   '@rocicorp/resolver@1.0.2': {}
 
   '@rollup/pluginutils@5.1.4(rollup@4.40.2)':
@@ -11672,13 +11679,6 @@ snapshots:
       type-fest: 4.41.0
 
   remove-accents@0.5.0: {}
-
-  replicache@15.0.1:
-    dependencies:
-      '@badrap/valita': 0.3.16
-      '@rocicorp/lock': 1.0.4
-      '@rocicorp/logger': 5.4.0
-      '@rocicorp/resolver': 1.0.2
 
   require-directory@2.1.1: {}
 

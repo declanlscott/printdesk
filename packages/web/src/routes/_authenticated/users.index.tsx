@@ -65,12 +65,12 @@ import {
 
 import type { UserRole } from "@printdesk/core/users/shared";
 import type { User } from "@printdesk/core/users/sql";
+import type { DeepReadonlyObject } from "@rocicorp/replicache";
 import type {
   ColumnDef,
   SortingState,
   VisibilityState,
 } from "@tanstack/react-table";
-import type { DeepReadonlyObject } from "replicache";
 
 const routeId = "/_authenticated/users/";
 

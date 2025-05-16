@@ -14,7 +14,7 @@ import trpcRoute from "~/api/routes/trpc";
 import type {
   ClientStateNotFoundResponse,
   VersionNotSupportedResponse,
-} from "replicache";
+} from "@rocicorp/replicache";
 
 const app = new Hono()
   .use(logger())

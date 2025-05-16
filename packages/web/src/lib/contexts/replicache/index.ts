@@ -1,7 +1,7 @@
 import { createContext } from "react";
 
 import type { Mutators } from "@printdesk/core/data/client";
-import type { Replicache } from "replicache";
+import type { Replicache } from "@rocicorp/replicache";
 
 export type ReplicacheContext =
   | { status: "uninitialized" }

@@ -1,5 +1,4 @@
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
 import {
   billingAccountCustomerAuthorizationsTableName,
@@ -41,11 +40,10 @@ export namespace BillingAccounts {
     {
       authorizer: async (tx, user) =>
         AccessControl.enforce(
-          [tx, user, billingAccountManagerAuthorizationsTableName, "create"],
-          {
-            Error: SharedErrors.AccessDenied,
-            args: [{ name: billingAccountManagerAuthorizationsTableName }],
-          },
+          tx,
+          user,
+          billingAccountManagerAuthorizationsTableName,
+          "create",
         ),
       getMutator: () => async (tx, values) =>
         Replicache.set(
@@ -61,13 +59,7 @@ export namespace BillingAccounts {
     updateBillingAccountReviewThresholdMutationArgsSchema,
     {
       authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce(
-          [tx, user, billingAccountsTableName, "update", id],
-          {
-            Error: SharedErrors.AccessDenied,
-            args: [{ name: billingAccountsTableName, id }],
-          },
-        ),
+        AccessControl.enforce(tx, user, billingAccountsTableName, "update", id),
       getMutator:
         () =>
         async (tx, { id, ...values }) => {
@@ -84,11 +76,8 @@ export namespace BillingAccounts {
   export const delete_ = Replicache.createMutator(
     deleteBillingAccountMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, billingAccountsTableName, "delete"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: billingAccountsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, billingAccountsTableName, "delete"),
       getMutator:
         ({ user }) =>
         async (tx, { id, ...values }) => {
@@ -109,13 +98,12 @@ export namespace BillingAccounts {
   export const deleteManagerAuthorization = Replicache.createMutator(
     deleteBillingAccountManagerAuthorizationMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
+      authorizer: async (tx, user) =>
         AccessControl.enforce(
-          [tx, user, billingAccountManagerAuthorizationsTableName, "delete"],
-          {
-            Error: SharedErrors.AccessDenied,
-            args: [{ name: billingAccountManagerAuthorizationsTableName, id }],
-          },
+          tx,
+          user,
+          billingAccountManagerAuthorizationsTableName,
+          "delete",
         ),
       getMutator:
         ({ user }) =>

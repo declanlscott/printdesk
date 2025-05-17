@@ -40,15 +40,19 @@ export const authn = t.middleware(async (opts) => {
 
 export const authz = (resource: Resource, action: Action) =>
   user.unstable_pipe(async (opts) => {
-    await AccessControl.enforce([resource, action], {
-      Error: TRPCError,
-      args: [
-        {
-          code: "FORBIDDEN",
-          message: `Access denied for action "${action}" on resource "${resource}".`,
-        },
-      ],
-    });
+    await AccessControl.enforceWithCustomError(
+      {
+        Error: TRPCError,
+        args: [
+          {
+            code: "FORBIDDEN",
+            message: `Access denied for action "${action}" on resource "${resource}".`,
+          },
+        ],
+      },
+      resource,
+      action,
+    );
 
     return opts.next(opts);
   });

@@ -1,5 +1,4 @@
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
 import {
   commentsTableName,
@@ -15,13 +14,7 @@ export namespace Comments {
     createCommentMutationArgsSchema,
     {
       authorizer: async (tx, user, { orderId }) =>
-        AccessControl.enforce(
-          [tx, user, commentsTableName, "create", orderId],
-          {
-            Error: SharedErrors.AccessDenied,
-            args: [{ name: commentsTableName }],
-          },
-        ),
+        AccessControl.enforce(tx, user, commentsTableName, "create", orderId),
       getMutator: () => async (tx, values) =>
         Replicache.set(tx, commentsTableName, values.id, values),
     },
@@ -43,10 +36,7 @@ export namespace Comments {
     updateCommentMutationArgsSchema,
     {
       authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, commentsTableName, "update", id], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: commentsTableName, id }],
-        }),
+        AccessControl.enforce(tx, user, commentsTableName, "update", id),
       getMutator: () => async (tx, values) => {
         const prev = await Replicache.get(tx, commentsTableName, values.id);
 
@@ -62,10 +52,7 @@ export namespace Comments {
     deleteCommentMutationArgsSchema,
     {
       authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, commentsTableName, "delete", id], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: commentsTableName, id }],
-        }),
+        AccessControl.enforce(tx, user, commentsTableName, "delete", id),
       getMutator:
         ({ user }) =>
         async (tx, values) => {

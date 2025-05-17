@@ -9,7 +9,6 @@ import { Sqs } from "../aws";
 import { Documents } from "../backend/documents";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { SharedErrors } from "../errors/shared";
 import { Papercut } from "../papercut";
 import { poke } from "../replicache/poke";
 import { Tailscale } from "../tailscale";
@@ -73,10 +72,7 @@ export namespace Tenants {
     );
 
   export const update = fn(updateTenantMutationArgsSchema, async (values) => {
-    await AccessControl.enforce([getTableName(tenantsTable), "update"], {
-      Error: SharedErrors.AccessDenied,
-      args: [{ name: getTableName(tenantsTable), id: values.id }],
-    });
+    await AccessControl.enforce(getTableName(tenantsTable), "update");
 
     return useTransaction(async (tx) => {
       await tx

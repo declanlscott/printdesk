@@ -1,5 +1,4 @@
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
 import { createInvoiceMutationArgsSchema, invoicesTableName } from "./shared";
 
@@ -10,10 +9,7 @@ export namespace Invoices {
     createInvoiceMutationArgsSchema,
     {
       authorizer: async (tx, user) =>
-        AccessControl.enforce([tx, user, invoicesTableName, "create"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: invoicesTableName }],
-        }),
+        AccessControl.enforce(tx, user, invoicesTableName, "create"),
       getMutator: () => async (tx, values) =>
         Replicache.set(tx, invoicesTableName, values.id, values),
     },

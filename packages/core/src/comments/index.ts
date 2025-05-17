@@ -2,7 +2,6 @@ import { and, eq, getTableName, inArray } from "drizzle-orm";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
@@ -19,11 +18,9 @@ import type { Comment } from "./sql";
 export namespace Comments {
   export const create = fn(createCommentMutationArgsSchema, async (values) => {
     await AccessControl.enforce(
-      [getTableName(commentsTable), "create", values.orderId],
-      {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(commentsTable) }],
-      },
+      getTableName(commentsTable),
+      "create",
+      values.orderId,
     );
 
     return useTransaction(async (tx) => {
@@ -54,10 +51,7 @@ export namespace Comments {
   export const update = fn(
     updateCommentMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([getTableName(commentsTable), "update", id], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(commentsTable), id }],
-      });
+      await AccessControl.enforce(getTableName(commentsTable), "update", id);
 
       return useTransaction(async (tx) => {
         const [users] = await Promise.all([
@@ -83,10 +77,7 @@ export namespace Comments {
   export const delete_ = fn(
     deleteCommentMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([getTableName(commentsTable), "delete", id], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(commentsTable), id }],
-      });
+      await AccessControl.enforce(getTableName(commentsTable), "delete", id);
 
       return useTransaction(async (tx) => {
         const [users] = await Promise.all([

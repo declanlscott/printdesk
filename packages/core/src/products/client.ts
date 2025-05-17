@@ -1,5 +1,4 @@
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
 import {
   createProductMutationArgsSchema,
@@ -15,10 +14,7 @@ export namespace Products {
     createProductMutationArgsSchema,
     {
       authorizer: async (tx, user) =>
-        AccessControl.enforce([tx, user, productsTableName, "create"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: productsTableName }],
-        }),
+        AccessControl.enforce(tx, user, productsTableName, "create"),
       getMutator: () => async (tx, values) =>
         Replicache.set(tx, productsTableName, values.id, values),
     },
@@ -39,11 +35,8 @@ export namespace Products {
   export const update = Replicache.createMutator(
     updateProductMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, productsTableName, "update"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: productsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, productsTableName, "update"),
       getMutator:
         () =>
         async (tx, { id, ...values }) => {
@@ -60,11 +53,8 @@ export namespace Products {
   export const delete_ = Replicache.createMutator(
     deleteProductMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, productsTableName, "delete"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: productsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, productsTableName, "delete"),
       getMutator:
         ({ user }) =>
         async (tx, values) => {

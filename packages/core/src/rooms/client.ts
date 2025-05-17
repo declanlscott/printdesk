@@ -1,7 +1,6 @@
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { productsTableName } from "../products/shared";
 import { Replicache } from "../replicache/client";
 import { Constants } from "../utils/constants";
@@ -24,10 +23,7 @@ import type { Room } from "./sql";
 export namespace Rooms {
   export const create = Replicache.createMutator(createRoomMutationArgsSchema, {
     authorizer: async (tx, user) =>
-      AccessControl.enforce([tx, user, roomsTableName, "create"], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: roomsTableName }],
-      }),
+      AccessControl.enforce(tx, user, roomsTableName, "create"),
     getMutator: () => async (tx, values) => {
       await Promise.all([
         Replicache.set(tx, roomsTableName, values.id, values),
@@ -70,11 +66,8 @@ export namespace Rooms {
   });
 
   export const update = Replicache.createMutator(updateRoomMutationArgsSchema, {
-    authorizer: async (tx, user, { id }) =>
-      AccessControl.enforce([tx, user, roomsTableName, "update"], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: roomsTableName, id }],
-      }),
+    authorizer: async (tx, user) =>
+      AccessControl.enforce(tx, user, roomsTableName, "update"),
     getMutator:
       () =>
       async (tx, { id, ...values }) => {
@@ -90,11 +83,8 @@ export namespace Rooms {
   export const delete_ = Replicache.createMutator(
     deleteRoomMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, roomsTableName, "delete"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: roomsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, roomsTableName, "delete"),
       getMutator:
         ({ user }) =>
         async (tx, { id, ...values }) => {
@@ -130,11 +120,8 @@ export namespace Rooms {
   export const restore = Replicache.createMutator(
     restoreRoomMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, roomsTableName, "update"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: roomsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, roomsTableName, "update"),
       getMutator: () => async (tx, values) => {
         const prev = await Replicache.get(tx, roomsTableName, values.id);
 
@@ -175,10 +162,7 @@ export namespace Rooms {
     setWorkflowMutationArgsSchema,
     {
       authorizer: async (tx, user) =>
-        AccessControl.enforce([tx, user, roomsTableName, "create"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: roomsTableName }],
-        }),
+        AccessControl.enforce(tx, user, roomsTableName, "create"),
       getMutator:
         () =>
         async (tx, { workflow, roomId }) => {
@@ -238,10 +222,7 @@ export namespace Rooms {
     setDeliveryOptionsMutationArgsSchema,
     {
       authorizer: async (tx, user) =>
-        AccessControl.enforce([tx, user, deliveryOptionsTableName, "create"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: deliveryOptionsTableName }],
-        }),
+        AccessControl.enforce(tx, user, deliveryOptionsTableName, "create"),
       getMutator:
         () =>
         async (tx, { options, roomId }) => {

@@ -12,7 +12,6 @@ import * as R from "remeda";
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { SharedErrors } from "../errors/shared";
 import { productsTable } from "../products/sql";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
@@ -33,10 +32,7 @@ import type { DeliveryOption, Room, WorkflowStatus } from "./sql";
 
 export namespace Rooms {
   export const create = fn(createRoomMutationArgsSchema, async (values) => {
-    await AccessControl.enforce([getTableName(roomsTable), "create"], {
-      Error: SharedErrors.AccessDenied,
-      args: [{ name: getTableName(roomsTable) }],
-    });
+    await AccessControl.enforce(getTableName(roomsTable), "create");
 
     return useTransaction(async (tx) => {
       await Promise.all([
@@ -80,10 +76,7 @@ export namespace Rooms {
   export const update = fn(
     updateRoomMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([getTableName(roomsTable), "update"], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(roomsTable), id }],
-      });
+      await AccessControl.enforce(getTableName(roomsTable), "update");
 
       return useTransaction(async (tx) => {
         await tx
@@ -103,10 +96,7 @@ export namespace Rooms {
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce([getTableName(roomsTable), "delete"], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(roomsTable), id }],
-      });
+      await AccessControl.enforce(getTableName(roomsTable), "delete");
 
       return useTransaction(async (tx) => {
         await Promise.all([
@@ -134,10 +124,7 @@ export namespace Rooms {
   );
 
   export const restore = fn(restoreRoomMutationArgsSchema, async ({ id }) => {
-    await AccessControl.enforce([getTableName(roomsTable), "update"], {
-      Error: SharedErrors.AccessDenied,
-      args: [{ name: getTableName(roomsTable), id }],
-    });
+    await AccessControl.enforce(getTableName(roomsTable), "update");
 
     return useTransaction(async (tx) => {
       await tx
@@ -167,13 +154,7 @@ export namespace Rooms {
   export const setWorkflow = fn(setWorkflowMutationArgsSchema, async (args) => {
     const tenant = useTenant();
 
-    await AccessControl.enforce(
-      [getTableName(workflowStatusesTable), "create"],
-      {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(workflowStatusesTable) }],
-      },
-    );
+    await AccessControl.enforce(getTableName(workflowStatusesTable), "create");
 
     return useTransaction(async (tx) => {
       const workflow = await tx
@@ -244,13 +225,7 @@ export namespace Rooms {
     async (args) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce(
-        [getTableName(deliveryOptionsTable), "create"],
-        {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: getTableName(deliveryOptionsTable) }],
-        },
-      );
+      await AccessControl.enforce(getTableName(deliveryOptionsTable), "create");
 
       return useTransaction(async (tx) => {
         const deliveryOptions = await tx

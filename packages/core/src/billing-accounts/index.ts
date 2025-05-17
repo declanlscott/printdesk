@@ -4,7 +4,6 @@ import * as R from "remeda";
 import { AccessControl } from "../access-control";
 import { buildConflictUpdateColumns } from "../drizzle/columns";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
@@ -102,11 +101,9 @@ export namespace BillingAccounts {
     updateBillingAccountReviewThresholdMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce(
-        [getTableName(billingAccountsTable), "update", id],
-        {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: getTableName(billingAccountsTable), id }],
-        },
+        getTableName(billingAccountsTable),
+        "update",
+        id,
       );
 
       return useTransaction(async (tx) => {
@@ -143,13 +140,7 @@ export namespace BillingAccounts {
     async ({ id, ...values }) => {
       const tenant = useTenant();
 
-      await AccessControl.enforce(
-        [getTableName(billingAccountsTable), "delete"],
-        {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: getTableName(billingAccountsTable), id }],
-        },
-      );
+      await AccessControl.enforce(getTableName(billingAccountsTable), "delete");
 
       return useTransaction(async (tx) => {
         const [adminsOps, managers, customers] = await Promise.all([
@@ -304,13 +295,8 @@ export namespace BillingAccounts {
     createBillingAccountManagerAuthorizationMutationArgsSchema,
     async (values) => {
       await AccessControl.enforce(
-        [getTableName(billingAccountManagerAuthorizationsTable), "create"],
-        {
-          Error: SharedErrors.AccessDenied,
-          args: [
-            { name: getTableName(billingAccountManagerAuthorizationsTable) },
-          ],
-        },
+        getTableName(billingAccountManagerAuthorizationsTable),
+        "create",
       );
 
       return useTransaction(async (tx) => {
@@ -346,16 +332,8 @@ export namespace BillingAccounts {
     deleteBillingAccountManagerAuthorizationMutationArgsSchema,
     async ({ id, ...values }) => {
       await AccessControl.enforce(
-        [getTableName(billingAccountManagerAuthorizationsTable), "delete"],
-        {
-          Error: SharedErrors.AccessDenied,
-          args: [
-            {
-              name: getTableName(billingAccountManagerAuthorizationsTable),
-              id,
-            },
-          ],
-        },
+        getTableName(billingAccountManagerAuthorizationsTable),
+        "delete",
       );
 
       return useTransaction(async (tx) => {

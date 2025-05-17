@@ -1,5 +1,4 @@
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
 import { tenantsTableName, updateTenantMutationArgsSchema } from "./shared";
 
@@ -17,11 +16,8 @@ export namespace Tenants {
   export const update = Replicache.createMutator(
     updateTenantMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, tenantsTableName, "update"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: tenantsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, tenantsTableName, "update"),
       getMutator:
         () =>
         async (tx, { id, ...values }) => {

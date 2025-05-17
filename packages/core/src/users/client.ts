@@ -5,7 +5,6 @@ import {
   billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
 } from "../billing-accounts/shared";
-import { SharedErrors } from "../errors/shared";
 import { ordersTableName } from "../orders/shared";
 import { Replicache } from "../replicache/client";
 import {
@@ -113,11 +112,8 @@ export namespace Users {
   export const updateRole = Replicache.createMutator(
     updateUserRoleMutationArgsSchema,
     {
-      authorizer: (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, usersTableName, "update"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: usersTableName, id }],
-        }),
+      authorizer: (tx, user) =>
+        AccessControl.enforce(tx, user, usersTableName, "update"),
       getMutator:
         () =>
         async (tx, { id, ...values }) => {
@@ -134,11 +130,8 @@ export namespace Users {
   export const delete_ = Replicache.createMutator(
     deleteUserMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, usersTableName, "delete"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: usersTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, usersTableName, "delete"),
       getMutator:
         ({ user }) =>
         async (tx, { id, ...values }) => {
@@ -161,11 +154,8 @@ export namespace Users {
   export const restore = Replicache.createMutator(
     restoreUserMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, usersTableName, "update"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: usersTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, usersTableName, "update"),
       getMutator:
         () =>
         async (tx, { id }) => {

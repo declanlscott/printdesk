@@ -9,6 +9,7 @@ import {
 } from "../billing-accounts/sql";
 import { commentsTable } from "../comments/sql";
 import { useTransaction } from "../drizzle/context";
+import { SharedErrors } from "../errors/shared";
 import { invoicesTable } from "../invoices/sql";
 import { ordersTable } from "../orders/sql";
 import { productsTable } from "../products/sql";
@@ -1602,24 +1603,43 @@ export namespace AccessControl {
     TResource extends Resource,
     TAction extends Action,
     TPermission extends (typeof permissions)[UserRole][TResource][TAction],
-    TMaybeError extends AnyError | undefined,
   >(
-    args: Parameters<typeof check<TResource, TAction, TPermission>>,
-    customError?: TMaybeError extends AnyError
-      ? InferCustomError<CustomError<TMaybeError>>
-      : never,
+    ...[resource, action, ...input]: Parameters<
+      typeof check<TResource, TAction, TPermission>
+    >
   ) {
-    const access = await check(...args);
+    const access = await check(resource, action, ...input);
 
     if (!access) {
-      const message = `Access denied for action "${args[1]}" on resource "${args[0]} with input "${args[2]}".`;
+      console.error(
+        `Access denied for action "${action}" on resource "${resource} with input ${JSON.stringify(input)}.`,
+      );
 
-      console.log(message);
+      throw new SharedErrors.AccessDenied({ name: resource });
+    }
+  }
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      if (customError) throw new customError.Error(...customError.args);
+  export async function enforceWithCustomError<
+    TResource extends Resource,
+    TAction extends Action,
+    TPermission extends (typeof permissions)[UserRole][TResource][TAction],
+    TMaybeError extends AnyError | undefined,
+  >(
+    customError: TMaybeError extends AnyError
+      ? InferCustomError<CustomError<TMaybeError>>
+      : never,
+    ...args: Parameters<typeof enforce<TResource, TAction, TPermission>>
+  ) {
+    try {
+      await enforce(...args);
+    } catch (e) {
+      console.error(e);
 
-      throw new Error(message);
+      if (e instanceof SharedErrors.AccessDenied)
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        throw new customError.Error(...customError.args);
+
+      throw e;
     }
   }
 }

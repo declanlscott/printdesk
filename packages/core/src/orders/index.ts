@@ -3,7 +3,6 @@ import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
 import { afterTransaction, useTransaction } from "../drizzle/context";
-import { SharedErrors } from "../errors/shared";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";
@@ -20,11 +19,9 @@ import type { Order } from "./sql";
 export namespace Orders {
   export const create = fn(createOrderMutationArgsSchema, async (values) => {
     await AccessControl.enforce(
-      [getTableName(ordersTable), "create", values.billingAccountId],
-      {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(ordersTable) }],
-      },
+      getTableName(ordersTable),
+      "create",
+      values.billingAccountId,
     );
 
     return useTransaction(async (tx) => {
@@ -59,10 +56,7 @@ export namespace Orders {
   export const update = fn(
     updateOrderMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([getTableName(ordersTable), "update", id], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(ordersTable), id }],
-      });
+      await AccessControl.enforce(getTableName(ordersTable), "update", id);
 
       return useTransaction(async (tx) => {
         const [users] = await Promise.all([
@@ -88,10 +82,7 @@ export namespace Orders {
   export const delete_ = fn(
     deleteOrderMutationArgsSchema,
     async ({ id, ...values }) => {
-      await AccessControl.enforce([getTableName(ordersTable), "delete", id], {
-        Error: SharedErrors.AccessDenied,
-        args: [{ name: getTableName(ordersTable), id }],
-      });
+      await AccessControl.enforce(getTableName(ordersTable), "delete", id);
 
       return useTransaction(async (tx) => {
         const [users] = await Promise.all([

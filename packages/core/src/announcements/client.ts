@@ -1,5 +1,4 @@
 import { AccessControl } from "../access-control/client";
-import { SharedErrors } from "../errors/shared";
 import { Replicache } from "../replicache/client";
 import {
   announcementsTableName,
@@ -15,10 +14,7 @@ export namespace Announcements {
     createAnnouncementMutationArgsSchema,
     {
       authorizer: async (tx, user) =>
-        AccessControl.enforce([tx, user, announcementsTableName, "create"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: announcementsTableName }],
-        }),
+        AccessControl.enforce(tx, user, announcementsTableName, "create"),
       getMutator: () => async (tx, values) =>
         Replicache.set(tx, announcementsTableName, values.id, values),
     },
@@ -39,11 +35,8 @@ export namespace Announcements {
   export const update = Replicache.createMutator(
     updateAnnouncementMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, announcementsTableName, "update"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: announcementsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, announcementsTableName, "update"),
       getMutator: () => async (tx, values) => {
         const prev = await Replicache.get(
           tx,
@@ -62,11 +55,8 @@ export namespace Announcements {
   export const delete_ = Replicache.createMutator(
     deleteAnnouncementMutationArgsSchema,
     {
-      authorizer: async (tx, user, { id }) =>
-        AccessControl.enforce([tx, user, announcementsTableName, "delete"], {
-          Error: SharedErrors.AccessDenied,
-          args: [{ name: announcementsTableName, id }],
-        }),
+      authorizer: async (tx, user) =>
+        AccessControl.enforce(tx, user, announcementsTableName, "delete"),
       getMutator:
         ({ user }) =>
         async (tx, values) => {

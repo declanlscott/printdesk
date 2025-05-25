@@ -93,24 +93,19 @@ export const router = new sst.aws.Router("Router", {
   },
   edge: {
     viewerRequest: {
-      injection: $resolve([
-        subdomains.api,
-        subdomains.auth,
-        routerSecret.result,
-        webBasicAuth,
-      ] as const).apply(
-        ([apiSubdomain, authSubdomain, routerSecret, webBasicAuth]) =>
+      injection: $resolve([routerSecret.result, webBasicAuth] as const).apply(
+        ([routerSecret, webBasicAuth]) =>
           [
             `switch (event.request.headers.host.value.split(".")[0]) {`,
-            `  case "${apiSubdomain}":`,
-            `  case "${authSubdomain}": {`,
+            `  case "${subdomains.api}":`,
+            `  case "${subdomains.auth}": {`,
             `    event.request.headers["${Constants.HEADER_NAMES.ROUTER_SECRET}"] = {`,
             `      value: "${routerSecret}",`,
             `    };`,
             `    break;`,
             `  }`,
             `  default: {`,
-            ...(isProdStage
+            ...(!isProdStage
               ? [
                   `    if (`,
                   `      !event.request.headers.authorization ||`,
@@ -141,7 +136,3 @@ export const router = new sst.aws.Router("Router", {
     },
   },
 });
-
-export const outputs = {
-  router: router.url,
-};

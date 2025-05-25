@@ -2,7 +2,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 
 import { issuer } from "./auth";
 import * as custom from "./custom";
-import { domains, zone } from "./dns";
+import { domains, zoneId } from "./dns";
 
 export const reverseProxyWorker = new sst.cloudflare.Worker(
   "ReverseProxyWorker",
@@ -17,7 +17,7 @@ export const reverseProxyWorkerAuxiliaryBindings =
   new custom.cloudflare.Workers.AuxiliaryBindings(
     "ReverseProxyWorkerAuxiliaryBindings",
     {
-      scriptName: reverseProxyWorker.nodes.worker.name,
+      scriptName: reverseProxyWorker.nodes.worker.scriptName,
       bindings: [
         {
           name: Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER,
@@ -35,17 +35,17 @@ export const reverseProxyWorkerAuxiliaryBindings =
 export const reverseProxyApiRoute = new cloudflare.WorkersRoute(
   "ReverseProxyApiRoute",
   {
-    zoneId: zone.id,
+    zoneId,
     pattern: $interpolate`${domains.properties.api}/*`,
-    scriptName: reverseProxyWorker.nodes.worker.name,
+    script: reverseProxyWorker.nodes.worker.scriptName,
   },
 );
 
 export const reverseProxyAuthRoute = new cloudflare.WorkersRoute(
   "ReverseProxyAuthRoute",
   {
-    zoneId: zone.id,
+    zoneId,
     pattern: $interpolate`${domains.properties.auth}/*`,
-    scriptName: reverseProxyWorker.nodes.worker.name,
+    script: reverseProxyWorker.nodes.worker.scriptName,
   },
 );

@@ -176,7 +176,6 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
       arn: output.arn,
       status: output.status,
       creationTime: output.creationTime?.toISOString(),
-      deletionProtectionEnabled: output.deletionProtectionEnabled,
     };
 
     if (!ClusterProvider._isValidOutput(cluster, output.$metadata))
@@ -207,7 +206,6 @@ export class ClusterProvider implements $util.dynamic.ResourceProvider {
       arn: output.arn,
       status: output.status,
       creationTime: output.creationTime?.toISOString(),
-      deletionProtectionEnabled: output.deletionProtectionEnabled,
     };
 
     if (!ClusterProvider._isValidOutput(cluster, output.$metadata))

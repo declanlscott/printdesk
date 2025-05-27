@@ -1,3 +1,5 @@
+import { AppsyncBase } from "../base";
+
 import type {
   ChannelNamespace,
   CreateChannelNamespaceCommandInput,
@@ -14,13 +16,9 @@ type ChannelNamespaceOutputs = Required<ChannelNamespace>;
 export type ChannelNamespaceProviderOutputs = ChannelNamespaceOutputs;
 
 export class ChannelNamespaceProvider
+  extends AppsyncBase
   implements $util.dynamic.ResourceProvider
 {
-  private static _getSdk = async () => import("@aws-sdk/client-appsync");
-
-  private static _getClient = async () =>
-    ChannelNamespaceProvider._getSdk().then((sdk) => new sdk.AppSyncClient());
-
   async create(
     inputs: ChannelNamespaceProviderInputs,
   ): Promise<$util.dynamic.CreateResult<ChannelNamespaceOutputs>> {
@@ -38,6 +36,8 @@ export class ChannelNamespaceProvider
           }),
       ),
     );
+    if (!output.channelNamespace)
+      throw new Error("Failed creating channel namespace");
 
     const channelNamespace = output.channelNamespace as ChannelNamespaceOutputs;
 
@@ -62,7 +62,8 @@ export class ChannelNamespaceProvider
           }),
       ),
     );
-    if (!output.channelNamespace) throw new Error("Missing channel namespace");
+    if (!output.channelNamespace)
+      throw new Error(`Failed reading channel namespace "${id}"`);
 
     const channelNamespace = output.channelNamespace as ChannelNamespaceOutputs;
 

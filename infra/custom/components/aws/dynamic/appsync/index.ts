@@ -42,6 +42,7 @@ export namespace Appsync {
         {
           ...props,
           apiId: undefined,
+          tags: undefined,
           dns: undefined,
           apiArn: undefined,
           created: undefined,

@@ -33,6 +33,7 @@ export namespace Dsql {
         name,
         {
           ...props,
+          tags: undefined,
           identifier: undefined,
           arn: undefined,
           status: undefined,

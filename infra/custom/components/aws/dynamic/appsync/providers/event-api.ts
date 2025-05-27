@@ -2,6 +2,7 @@ import {
   logicalName,
   physicalName,
 } from "~/.sst/platform/src/components/naming";
+import { AppsyncBase } from "../base";
 
 import type { Api, CreateApiCommandInput } from "@aws-sdk/client-appsync";
 
@@ -10,24 +11,21 @@ type EventApiInputs = {
     CreateApiCommandInput[TKey]
   >;
 };
-export interface EventApiProviderInputs extends Omit<EventApiInputs, "name"> {
-  name?: string;
-}
+export type EventApiProviderInputs = Partial<EventApiInputs>;
 
 type EventApiOutputs = Required<Api>;
 export type EventApiProviderOutputs = EventApiOutputs;
 
-export class EventApiProvider implements $util.dynamic.ResourceProvider {
+export class EventApiProvider
+  extends AppsyncBase
+  implements $util.dynamic.ResourceProvider
+{
   private _logicalName: string;
 
   constructor(name: string) {
+    super();
     this._logicalName = logicalName(name);
   }
-
-  private static _getSdk = async () => import("@aws-sdk/client-appsync");
-
-  private static _getClient = async () =>
-    EventApiProvider._getSdk().then((sdk) => new sdk.AppSyncClient());
 
   async create(
     inputs: EventApiProviderInputs,

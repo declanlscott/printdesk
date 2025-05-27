@@ -4,6 +4,7 @@ import {
   logicalName,
   physicalName,
 } from "~/.sst/platform/src/components/naming";
+import { DsqlBase } from "../base";
 
 import type {
   CreateClusterCommandInput,
@@ -25,17 +26,16 @@ export interface ClusterProviderOutputs extends ClusterOutputs {
   tags: Record<string, string>;
 }
 
-export class ClusterProvider implements $util.dynamic.ResourceProvider {
+export class ClusterProvider
+  extends DsqlBase
+  implements $util.dynamic.ResourceProvider
+{
   private _logicalName: string;
 
   constructor(name: string) {
+    super();
     this._logicalName = logicalName(name);
   }
-
-  private static _getSdk = async () => import("@aws-sdk/client-dsql");
-
-  private static _getClient = async () =>
-    ClusterProvider._getSdk().then((sdk) => new sdk.DSQLClient());
 
   private static async _untilActive(
     client: DSQLClient | undefined,

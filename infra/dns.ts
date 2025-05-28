@@ -8,11 +8,17 @@ export const zoneId = cloudflare
 
 const buildSubdomain = <TMaybeIdentifier extends string | undefined>(
   identifier?: TMaybeIdentifier,
-): TMaybeIdentifier extends string ? string : string | undefined =>
-  ({
-    production: identifier,
-    dev: [identifier, "dev"].filter(Boolean).join("-"),
-  })[$app.stage] ?? [identifier, "dev", $app.stage].filter(Boolean).join("-");
+) =>
+  ((
+    ({
+      production: [identifier],
+      dev: [identifier, "dev"],
+    })[$app.stage] ?? [identifier, "dev", $app.stage]
+  )
+    .filter(Boolean)
+    .join("-") || undefined) as TMaybeIdentifier extends string
+    ? string
+    : string | undefined;
 
 export const subdomains = {
   api: buildSubdomain("api"),

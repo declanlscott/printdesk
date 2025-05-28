@@ -1,6 +1,6 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { domains, subdomains } from "./dns";
+import { domains } from "./dns";
 import { isProdStage } from "./misc";
 
 export const cloudfrontPrivateKey = new tls.PrivateKey("CloudfrontPrivateKey", {
@@ -93,36 +93,39 @@ export const router = new sst.aws.Router("Router", {
   },
   edge: {
     viewerRequest: {
-      injection: $resolve([routerSecret.result, webBasicAuth] as const).apply(
-        ([routerSecret, webBasicAuth]) =>
-          [
-            `switch (event.request.headers.host.value.split(".")[0]) {`,
-            `  case "${subdomains.api}":`,
-            `  case "${subdomains.auth}": {`,
-            `    event.request.headers["${Constants.HEADER_NAMES.ROUTER_SECRET}"] = {`,
-            `      value: "${routerSecret}",`,
-            `    };`,
-            `    break;`,
-            `  }`,
-            `  default: {`,
-            ...(!isProdStage
-              ? [
-                  `    if (`,
-                  `      !event.request.headers.authorization ||`,
-                  `      event.request.headers.authorization.value !== "Basic ${webBasicAuth}"`,
-                  `    ) {`,
-                  `      return {`,
-                  `        statusCode: 401,`,
-                  `        headers: {`,
-                  `          "www-authenticate": { value: "Basic" },`,
-                  `        },`,
-                  `      };`,
-                  `    }`,
-                ]
-              : [`    break;`]),
-            `  }`,
-            `}`,
-          ].join("\n"),
+      injection: $resolve([
+        domains.properties,
+        routerSecret.result,
+        webBasicAuth,
+      ] as const).apply(([domains, routerSecret, webBasicAuth]) =>
+        [
+          `switch (event.request.headers.host.value) {`,
+          `  case "${domains.api}":`,
+          `  case "${domains.auth}": {`,
+          `    event.request.headers["${Constants.HEADER_NAMES.ROUTER_SECRET}"] = {`,
+          `      value: "${routerSecret}",`,
+          `    };`,
+          `    break;`,
+          `  }`,
+          `  default: {`,
+          ...(!isProdStage
+            ? [
+                `    if (`,
+                `      !event.request.headers.authorization ||`,
+                `      event.request.headers.authorization.value !== "Basic ${webBasicAuth}"`,
+                `    ) {`,
+                `      return {`,
+                `        statusCode: 401,`,
+                `        headers: {`,
+                `          "www-authenticate": { value: "Basic" },`,
+                `        },`,
+                `      };`,
+                `    }`,
+              ]
+            : [`    break;`]),
+          `  }`,
+          `}`,
+        ].join("\n"),
       ),
     },
   },

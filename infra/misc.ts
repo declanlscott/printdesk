@@ -56,6 +56,9 @@ sst.Linkable.wrap(aws.cloudfront.Function, (fn) => ({
 export const isDevMode = $dev;
 export const isProdStage = $app.stage === "production";
 
+export const resourcePrefix = "SST_RESOURCE_";
+export const resourceFileName = "resource.enc";
+
 export const cloudflareAccountId = new sst.Secret("CloudflareAccountId");
 
 export const replicacheLicenseKey = new sst.Secret("ReplicacheLicenseKey");

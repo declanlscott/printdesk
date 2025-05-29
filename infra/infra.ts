@@ -19,7 +19,7 @@ import {
   realtimePublisherRoleExternalId,
   tenantRoles,
 } from "./iam";
-import { appData, aws_, isProdStage } from "./misc";
+import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
 import { appsyncEventApi } from "./realtime";
 import {
   codeBucket,
@@ -223,8 +223,8 @@ export const infraFunction = new aws.lambda.Function("InfraFunction", {
   },
   environment: {
     variables: {
-      CUSTOM_SST_KEY: infraFunctionResourceCiphertext.encryptionKey,
-      CUSTOM_SST_KEY_FILE: infraFunctionResourceFileName,
+      SST_KEY: infraFunctionResourceCiphertext.encryptionKey,
+      SST_KEY_FILE: resourceFileName,
       PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
     },
   },

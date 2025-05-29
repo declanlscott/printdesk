@@ -15,8 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/sst/sst/v3/sdk/golang/resource"
 
-	"papercut-secure-reverse-proxy/internal/resource"
 	"papercut-secure-reverse-proxy/internal/tailscale"
 )
 

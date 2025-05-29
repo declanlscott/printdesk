@@ -15,10 +15,10 @@ from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 from pulumi import automation
+from sst import Resource
 
 from models import sqs_record
 from pulumi_program import inline
-from sst import Resource
 from utils import is_prod_stage, get_realtime_credentials
 
 processor = BatchProcessor(EventType.SQS)

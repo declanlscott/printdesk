@@ -39,7 +39,7 @@ class Resource:
         type: str
     class CloudfrontS3OriginAccessControl:
         id: str
-        type:
+        type: str
     class Code:
         class bucket:
             name: str

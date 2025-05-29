@@ -5,6 +5,7 @@ pulumi~=3.170.0
 pulumi-aws~=6.80.0
 pulumi-cloudflare~=5.49.1
 requests~=2.32.3
+git+https://github.com/sst/sst.git@v3.16.5#subdirectory=sdk/python
 types-boto3-appsync~=1.38.2
 types-boto3-ssm~=1.38.5
 types-boto3-sts~=1.38.0

@@ -10,6 +10,10 @@ from typing import (
 
 import boto3
 import pulumi
+from sst import Resource
+
+from utils import tags, get_pulumi_credentials
+
 from types_boto3_appsync.client import AppSyncClient
 from types_boto3_appsync.type_defs import (
     ChannelNamespaceTypeDef,
@@ -17,9 +21,6 @@ from types_boto3_appsync.type_defs import (
     UpdateChannelNamespaceRequestTypeDef,
     AuthModeTypeDef,
 )
-
-from sst import Resource
-from utils import tags, get_pulumi_credentials
 
 
 class ChannelNamespaceProviderInputs(TypedDict):

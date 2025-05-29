@@ -1,9 +1,8 @@
 import boto3
+from sst import Resource
 from types_boto3_ssm import SSMClient
 from types_boto3_sts import STSClient
 from types_boto3_sts.type_defs import CredentialsTypeDef
-
-from sst import Resource
 
 is_prod_stage = Resource.AppData.stage == "production"
 

@@ -6,7 +6,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -o main cmd/main/main.go
 
 FROM alpine
-ARG CUSTOM_SST_KEY_FILE=resource.enc
+ARG SST_KEY_FILE=resource.enc
 WORKDIR /root/
-COPY --from=builder /app/main /app/${CUSTOM_SST_KEY_FILE} ./
+COPY --from=builder /app/main /app/${SST_KEY_FILE} ./
 CMD ["./main"]

@@ -2,8 +2,8 @@ from typing import TypedDict, Optional
 
 import pulumi
 import pulumi_aws as aws
-
 from sst import Resource
+
 from utils import tags, build_name
 from . import dynamic
 

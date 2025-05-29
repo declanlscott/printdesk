@@ -3,8 +3,8 @@ from datetime import datetime
 
 import pulumi
 import pulumi_aws as aws
-
 from sst import Resource
+
 from utils import build_name, tags
 
 from typing import Optional, Mapping, List

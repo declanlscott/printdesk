@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
+	"tailscale.com/tsnet"
+
 	"papercut-secure-reverse-proxy/internal/config"
 	"papercut-secure-reverse-proxy/internal/proxy"
 	"papercut-secure-reverse-proxy/internal/tailscale"
-
-	"tailscale.com/tsnet"
 )
 
 var (
@@ -53,7 +53,7 @@ func main() {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Proxy.Port),
-		Handler: proxy.Handler(proxy.New(cfg.Proxy.Target.URL, tss.Dial)),
+		Handler: http.StripPrefix("/papercut/server", proxy.New(cfg.Proxy.Target.URL, tss.Dial)),
 	}
 
 	if err := server.ListenAndServe(); err != nil {

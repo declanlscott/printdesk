@@ -2,11 +2,12 @@ package router
 
 import (
 	"net/http"
-	
+
 	"tenant-api/internal/handlers"
+	"tenant-api/internal/middleware"
 )
 
-func New() *http.ServeMux {
+func New() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
@@ -16,10 +17,16 @@ func New() *http.ServeMux {
 
 	mux.Handle("/config/", http.StripPrefix("/config", config()))
 
-	return mux
+	mw := middleware.Chain(
+		middleware.Recovery,
+		middleware.Logger,
+		middleware.ForwardedHostValidator,
+	)
+
+	return mw(mux)
 }
 
-func config() *http.ServeMux {
+func config() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("/app/settings/", http.StripPrefix("/app/settings", appSettings()))
@@ -29,7 +36,7 @@ func config() *http.ServeMux {
 	return mux
 }
 
-func appSettings() *http.ServeMux {
+func appSettings() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("PUT /documents/mime-types", handlers.SetDocumentsMimeTypes)
@@ -40,7 +47,7 @@ func appSettings() *http.ServeMux {
 	return mux
 }
 
-func papercut() *http.ServeMux {
+func papercut() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("PUT /server/tailnet-uri", handlers.SetPapercutServerTailnetUri)
@@ -50,7 +57,7 @@ func papercut() *http.ServeMux {
 	return mux
 }
 
-func tailscale() *http.ServeMux {
+func tailscale() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("PUT /oauth-client", handlers.SetTailscaleOAuthClient)

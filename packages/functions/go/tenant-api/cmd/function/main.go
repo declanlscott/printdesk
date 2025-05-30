@@ -1,21 +1,15 @@
 package function
 
 import (
-	"tenant-api/internal/middleware"
+	"github.com/aws/aws-lambda-go/lambda"
+
 	"tenant-api/internal/proxy"
 	"tenant-api/internal/router"
-
-	"github.com/aws/aws-lambda-go/lambda"
 )
 
 func main() {
 	mux := router.New()
-	mw := middleware.Chain(
-		middleware.Recovery,
-		middleware.Logger,
-	)
-	handler := mw(mux)
-	adapter := proxy.NewHandlerAdapter(handler)
+	adapter := proxy.NewHandlerAdapter(mux)
 
 	lambda.Start(adapter.ProxyWithContext)
 }

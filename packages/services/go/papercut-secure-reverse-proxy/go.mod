@@ -9,9 +9,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.14
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.19.0
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.43.1
-	github.com/sst/sst/v3 v3.16.5
+	github.com/sst/sst/v3 v3.17.1
 	github.com/tailscale/tailscale-client-go/v2 v2.0.0-20250129222324-74c8fc3cb4d7
-	tailscale.com v1.84.0
+	tailscale.com v1.84.1
 )
 
 require (

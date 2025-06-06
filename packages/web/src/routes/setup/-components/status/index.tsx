@@ -1,10 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Link as AriaLink, composeRenderProps } from "react-aria-components";
 import { AlertCircle, ArrowLeft, CircleCheckBig, LogIn } from "lucide-react";
 
 import logo from "~/assets/logo.svg";
 import topography from "~/assets/topography.svg";
 import { RealtimeProvider } from "~/lib/contexts/stores/realtime/provider";
+import { useResource } from "~/lib/hooks/resource";
 import { useSetupMachine, useSetupStatusState } from "~/lib/hooks/setup";
 import { ConfiguringStatusItem } from "~/routes/setup/-components/status/configuring";
 import { DeployingStatusItem } from "~/routes/setup/-components/status/deploying";
@@ -119,12 +120,11 @@ function PostInitializedStatusItems() {
     ({ context }) => context.trpcClient,
   );
 
-  const realtimeUrlProvider = useCallback(
-    async () =>
-      trpcClient.realtime.public.getUrl.query(undefined, {
-        context: { skipBatch: true },
-      }),
-    [trpcClient],
+  const realtimeDomain = useResource().Domains.realtime;
+
+  const realtimeUrl = useMemo(
+    () => new URL("/realtime", `https://${realtimeDomain}`).toString(),
+    [realtimeDomain],
   );
 
   const getRealtimeAuthorization = useCallback(
@@ -138,7 +138,7 @@ function PostInitializedStatusItems() {
 
   return (
     <RealtimeProvider
-      urlProvider={realtimeUrlProvider}
+      urlProvider={realtimeUrl}
       getAuthorization={getRealtimeAuthorization}
     >
       <RegisteringStatusItem />

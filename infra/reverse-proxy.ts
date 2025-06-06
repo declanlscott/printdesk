@@ -2,7 +2,11 @@ import { Constants } from "@printdesk/core/utils/constants";
 
 import { issuer } from "./auth";
 import * as custom from "./custom";
+import { configTable } from "./db";
 import { domains, zoneId } from "./dns";
+import { resourceFileName, resourcePrefix } from "./misc";
+import { repository } from "./storage";
+import { injectLinkables, normalizePath } from "./utils";
 
 export const reverseProxyWorker = new sst.cloudflare.Worker(
   "ReverseProxyWorker",
@@ -48,4 +52,25 @@ export const reverseProxyAuthRoute = new cloudflare.WorkersRoute(
     pattern: $interpolate`${domains.properties.auth}/*`,
     script: reverseProxyWorker.nodes.worker.scriptName,
   },
+);
+
+const papercutSecureReverseProxyDir = normalizePath(
+  "packages/go/services/papercut-secure-reverse-proxy",
+);
+
+export const papercutSecureReverseProxyResourceCiphertext =
+  new custom.Ciphertext("PapercutSecureReverseProxyResourceCiphertext", {
+    plaintext: $jsonStringify(injectLinkables(resourcePrefix, configTable)),
+    writeToFile: normalizePath(resourceFileName, papercutSecureReverseProxyDir),
+  });
+
+export const papercutSecureReverseProxyImage = new awsx.ecr.Image(
+  "PapercutSecureReverseProxyImage",
+  {
+    repositoryUrl: repository.url,
+    context: papercutSecureReverseProxyDir,
+    platform: "linux/arm64",
+    imageTag: "latest",
+  },
+  { dependsOn: [papercutSecureReverseProxyResourceCiphertext] },
 );

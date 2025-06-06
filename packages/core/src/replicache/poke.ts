@@ -10,13 +10,15 @@ export async function poke<TChannel extends string>(
   const uniqueChannels = R.unique(channels);
   if (R.isEmpty(uniqueChannels)) return;
 
-  const { http: httpDomainName } = await Realtime.getDns();
+  const { http: hostname } = await Realtime.getDns();
 
   const results = await Promise.allSettled(
     uniqueChannels.map((channel) =>
-      Realtime.publish(httpDomainName, `/replicache${channel}`, [
-        { kind: "replicache_poke" },
-      ]),
+      Realtime.publish(
+        `/replicache${channel}`,
+        [{ kind: "replicache_poke" }],
+        hostname,
+      ),
     ),
   );
 

@@ -68,22 +68,19 @@ export const temporaryBucketLifecycle =
     ],
   });
 
-export const tenantParameters = new sst.Linkable("TenantParameters", {
+export const repository = new awsx.ecr.Repository(
+  "Repository",
+  { forceDelete: true },
+  { retainOnDelete: isProdStage },
+);
+
+export const tenantBuckets = new sst.Linkable("TenantBuckets", {
   properties: {
-    documentsMimeTypes: {
-      nameTemplate: `/${$app.name}/${$app.stage}/tenant/${Constants.TENANT_ID_PLACEHOLDER}/app/settings/documents/mime-types`,
+    assets: {
+      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-assets`,
     },
-    documentsSizeLimit: {
-      nameTemplate: `/${$app.name}/${$app.stage}/tenant/${Constants.TENANT_ID_PLACEHOLDER}/app/settings/documents/size-limit`,
-    },
-    tailnetPapercutServerUri: {
-      nameTemplate: `/${$app.name}/${$app.stage}/tenant/${Constants.TENANT_ID_PLACEHOLDER}/papercut/server/tailnet-uri`,
-    },
-    papercutServerAuthToken: {
-      nameTemplate: `/${$app.name}/${$app.stage}/tenant/${Constants.TENANT_ID_PLACEHOLDER}/papercut/server/auth-token`,
-    },
-    tailscaleOauthClient: {
-      nameTemplate: `/${$app.name}/${$app.stage}/tenant/${Constants.TENANT_ID_PLACEHOLDER}/tailscale/oauth-client`,
+    documents: {
+      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-docs`,
     },
   },
 });

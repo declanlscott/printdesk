@@ -32,6 +32,11 @@ export type PartialExcept<
   TKey extends keyof TObject,
 > = Partial<Omit<TObject, TKey>> & Pick<TObject, TKey>;
 
+export type RequiredExcept<
+  TObject extends object,
+  TKey extends keyof TObject,
+> = Required<Omit<TObject, TKey>> & Partial<Pick<TObject, TKey>>;
+
 export type Discriminate<
   TEntity,
   TKey extends keyof TEntity,

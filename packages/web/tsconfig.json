@@ -9,9 +9,9 @@
     "baseUrl": ".",
     "paths": {
       "@printdesk/core/*": ["../core/src/*"],
-      "@printdesk/functions/*": ["../functions/node/src/*"],
+      "@printdesk/functions/*": ["../functions/src/*"],
       "~/*": ["src/*"]
     }
   },
-  "references": [{ "path": "../functions/node" }]
+  "references": [{ "path": "../functions" }]
 }

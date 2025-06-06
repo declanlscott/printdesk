@@ -1,12 +1,17 @@
 import { createCipheriv } from "node:crypto";
 import { writeFileSync } from "node:fs";
 
+import type { Link } from "~/.sst/platform/src/components/link";
+
 export interface CiphertextArgs {
   plaintext: $util.Input<string>;
   writeToFile: $util.Input<string>;
 }
 
-export class Ciphertext extends $util.ComponentResource {
+export class Ciphertext
+  extends $util.ComponentResource
+  implements Link.Linkable
+{
   private _encryptionKey: random.RandomBytes;
 
   constructor(
@@ -46,5 +51,13 @@ export class Ciphertext extends $util.ComponentResource {
 
   get encryptionKey() {
     return this._encryptionKey.base64;
+  }
+
+  getSSTLink() {
+    return {
+      properties: {
+        encryptionKey: this.encryptionKey,
+      },
+    };
   }
 }

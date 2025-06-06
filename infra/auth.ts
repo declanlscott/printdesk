@@ -1,7 +1,7 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { router, routerSecret } from "./cdn";
-import { dsqlCluster } from "./db";
+import { authTable, dsqlCluster } from "./db";
 import { domains } from "./dns";
 import { aws_ } from "./misc";
 
@@ -85,12 +85,6 @@ export const identityProviders = new sst.Linkable("IdentityProviders", {
       clientSecret: "TODO",
     },
   },
-});
-
-export const authTable = new sst.aws.Dynamo("AuthTable", {
-  fields: { pk: "string", sk: "string" },
-  primaryIndex: { hashKey: "pk", rangeKey: "sk" },
-  ttl: "expiry",
 });
 
 export const issuer = new sst.aws.Function("Issuer", {

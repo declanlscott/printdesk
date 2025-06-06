@@ -1,3 +1,4 @@
+import { Constants } from "@printdesk/core/utils/constants";
 import * as R from "remeda";
 
 export const rootDomain = new sst.Secret("RootDomain");
@@ -6,8 +7,12 @@ export const zoneId = cloudflare
   .getZoneOutput({ filter: { name: rootDomain.value } })
   .apply(({ zoneId }) => zoneId!);
 
-const buildSubdomain = <TMaybeIdentifier extends string | undefined>(
+const buildSubdomain = <
+  TMaybeIdentifier extends string | undefined,
+  TWithTenantId extends boolean,
+>(
   identifier?: TMaybeIdentifier,
+  withTenantId: TWithTenantId = false as TWithTenantId,
 ) =>
   ((
     ({
@@ -15,10 +20,18 @@ const buildSubdomain = <TMaybeIdentifier extends string | undefined>(
       dev: [identifier, "dev"],
     })[$app.stage] ?? [identifier, "dev", $app.stage]
   )
+    .toSpliced(1, 0, withTenantId ? Constants.TENANT_ID_PLACEHOLDER : undefined)
     .filter(Boolean)
     .join("-") || undefined) as TMaybeIdentifier extends string
     ? string
-    : string | undefined;
+    : TWithTenantId extends true
+      ? string
+      : string | undefined;
+
+const buildFqdn = (subdomain?: string) =>
+  rootDomain.value.apply((rootDomain) =>
+    [subdomain, rootDomain].filter(Boolean).join("."),
+  );
 
 export const subdomains = {
   api: buildSubdomain("api"),
@@ -34,12 +47,24 @@ export const domains = new sst.Linkable("Domains", {
     ...R.pipe(
       subdomains,
       R.entries(),
-      R.mapToObj(([name, subdomain]) => [
-        name,
-        rootDomain.value.apply((rootDomain) =>
-          [subdomain, rootDomain].filter(Boolean).join("."),
-        ),
-      ]),
+      R.mapToObj(([name, subdomain]) => [name, buildFqdn(subdomain)]),
     ),
   },
+});
+
+export const tenantSubdomainTemplates = {
+  api: buildSubdomain("api", true),
+  files: buildSubdomain("files", true),
+  realtime: buildSubdomain("realtime", true),
+};
+
+export const tenantDomainTemplates = new sst.Linkable("TenantDomainTemplates", {
+  properties: R.pipe(
+    tenantSubdomainTemplates,
+    R.entries(),
+    R.mapToObj(([name, subdomainTemplate]) => [
+      name,
+      buildFqdn(subdomainTemplate),
+    ]),
+  ),
 });

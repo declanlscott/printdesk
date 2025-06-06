@@ -9,7 +9,6 @@ import { ServerErrors } from "../errors";
 import { buildUrl } from "../utils/shared";
 
 import type { PutEventsResponse } from "@aws-sdk/client-eventbridge";
-import type { GetParameterResult } from "@aws-sdk/client-ssm";
 import type { StartsWith } from "../utils/types";
 
 export namespace Api {
@@ -53,19 +52,13 @@ export namespace Api {
     return { dispatchId };
   }
 
-  export async function getParameter<TName extends string>(
-    name: StartsWith<"/", TName>,
-  ) {
-    const res = await send(`/parameters${name}`);
+  export async function getPapercutServerAuthToken() {
+    const res = await send("/papercut/server/auth-token", { method: "GET" });
     if (!res.ok)
       throw new ServerErrors.InternalServerError(
-        `Failed to get parameter: ${name}`,
+        "Failed to get papercut server auth token",
         { cause: await res.text() },
       );
-
-    const result = (await res.json()) as Required<GetParameterResult>;
-
-    return result.Parameter.Value!;
   }
 
   export async function invalidateCache(paths: Array<string>) {

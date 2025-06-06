@@ -1,0 +1,15 @@
+{
+  "extends": "@tsconfig/node22/tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "composite": true,
+    "baseUrl": ".",
+    "paths": {
+      "@printdesk/core/*": ["../core/src/*"],
+      "~/api/*": ["./src/api/*"]
+    }
+  },
+  "references": [{ "path": "../core" }]
+}

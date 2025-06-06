@@ -1,12 +1,36 @@
-sst.Linkable.wrap(tls.PrivateKey, (privateKey) => ({
+sst.Linkable.wrap(aws.apigatewayv2.VpcLink, (vpcLink) => ({
   properties: {
-    pem: privateKey.privateKeyPem,
+    id: vpcLink.id,
   },
 }));
 
-sst.Linkable.wrap(random.RandomPassword, (password) => ({
+sst.Linkable.wrap(aws.cloudfront.CachePolicy, (cachePolicy) => ({
   properties: {
-    value: password.result,
+    id: cachePolicy.id,
+  },
+}));
+
+sst.Linkable.wrap(aws.cloudfront.Function, (fn) => ({
+  properties: {
+    arn: fn.arn,
+  },
+}));
+
+sst.Linkable.wrap(aws.cloudfront.KeyGroup, (keyGroup) => ({
+  properties: {
+    id: keyGroup.id,
+  },
+}));
+
+sst.Linkable.wrap(aws.cloudfront.OriginAccessControl, (oac) => ({
+  properties: {
+    id: oac.id,
+  },
+}));
+
+sst.Linkable.wrap(aws.cloudfront.PublicKey, (publicKey) => ({
+  properties: {
+    id: publicKey.id,
   },
 }));
 
@@ -23,33 +47,39 @@ sst.Linkable.wrap(aws.iam.Role, (role) => ({
   ],
 }));
 
-sst.Linkable.wrap(aws.cloudfront.PublicKey, (publicKey) => ({
+sst.Linkable.wrap(awsx.ecr.Image, (image) => ({
   properties: {
-    id: publicKey.id,
+    uri: image.imageUri,
   },
 }));
 
-sst.Linkable.wrap(aws.cloudfront.KeyGroup, (keyGroup) => ({
+sst.Linkable.wrap(random.RandomPassword, (password) => ({
   properties: {
-    id: keyGroup.id,
+    value: password.result,
   },
 }));
 
-sst.Linkable.wrap(aws.cloudfront.CachePolicy, (cachePolicy) => ({
+sst.Linkable.wrap(sst.aws.Dynamo, (table) => ({
   properties: {
-    id: cachePolicy.id,
+    name: table.name,
+    arn: table.arn,
   },
+  include: [
+    sst.aws.permission({
+      actions: ["dynamodb:*"],
+      resources: [table.arn, $interpolate`${table.arn}/*`],
+    }),
+  ],
 }));
 
-sst.Linkable.wrap(aws.cloudfront.OriginAccessControl, (oac) => ({
-  properties: {
-    id: oac.id,
-  },
-}));
+$transform(sst.aws.Function, (args) => {
+  args.architecture ??= "arm64";
+  args.runtime ??= "nodejs22.x";
+});
 
-sst.Linkable.wrap(aws.cloudfront.Function, (fn) => ({
+sst.Linkable.wrap(tls.PrivateKey, (privateKey) => ({
   properties: {
-    arn: fn.arn,
+    pem: privateKey.privateKeyPem,
   },
 }));
 

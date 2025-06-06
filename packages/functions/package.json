@@ -1,0 +1,17 @@
+{
+  "name": "@printdesk/functions",
+  "type": "module",
+  "scripts": {
+    "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
+  },
+  "dependencies": {
+    "@hono/trpc-server": "^0.3.4",
+    "@hono/valibot-validator": "^0.5.2",
+    "@oslojs/jwt": "^0.3.0",
+    "@printdesk/core": "workspace:*",
+    "@trpc/server": "^11.3.0"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.149"
+  }
+}

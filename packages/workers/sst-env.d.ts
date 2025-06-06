@@ -29,6 +29,7 @@ declare module "sst" {
       "type": "pulumi-nodejs.dynamic.Resource"
     }
     "AuthTable": {
+      "arn": string
       "name": string
       "type": "sst.aws.Dynamo"
     }
@@ -81,21 +82,14 @@ declare module "sst" {
       "id": string
       "type": "aws.cloudfront/originAccessControl.OriginAccessControl"
     }
-    "Code": {
-      "bucket": {
-        "name": string
-        "object": {
-          "papercutSecureReverseProxy": {
-            "key": string
-            "versionId": string
-          }
-        }
-      }
-      "type": "sst.sst.Linkable"
-    }
     "CodeBucket": {
       "name": string
       "type": "sst.aws.Bucket"
+    }
+    "ConfigTable": {
+      "arn": string
+      "name": string
+      "type": "sst.aws.Dynamo"
     }
     "DbMigrator": {
       "name": string
@@ -104,6 +98,7 @@ declare module "sst" {
     "Domains": {
       "api": string
       "auth": string
+      "realtime": string
       "root": string
       "type": "sst.sst.Linkable"
       "web": string
@@ -132,15 +127,6 @@ declare module "sst" {
       "type": "sst.aws.Queue"
       "url": string
     }
-    "InfraDispatcher": {
-      "name": string
-      "type": "sst.aws.Function"
-    }
-    "InfraFunctionRole": {
-      "arn": string
-      "name": string
-      "type": "aws.iam/role.Role"
-    }
     "InfraQueue": {
       "type": "sst.aws.Queue"
       "url": string
@@ -167,10 +153,6 @@ declare module "sst" {
     "PulumiBucket": {
       "name": string
       "type": "sst.aws.Bucket"
-    }
-    "PulumiPassphrase": {
-      "type": "random.index/randomPassword.RandomPassword"
-      "value": string
     }
     "PulumiRole": {
       "arn": string
@@ -219,32 +201,11 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
-    "TenantParameters": {
-      "documentsMimeTypes": {
-        "nameTemplate": string
-      }
-      "documentsSizeLimit": {
-        "nameTemplate": string
-      }
-      "papercutServerAuthToken": {
-        "nameTemplate": string
-      }
-      "tailnetPapercutServerUri": {
-        "nameTemplate": string
-      }
-      "tailscaleOauthClient": {
-        "nameTemplate": string
-      }
-      "type": "sst.sst.Linkable"
-    }
     "TenantRoles": {
       "apiAccess": {
         "nameTemplate": string
       }
       "bucketsAccess": {
-        "nameTemplate": string
-      }
-      "putParameters": {
         "nameTemplate": string
       }
       "realtimePublisher": {
@@ -254,6 +215,9 @@ declare module "sst" {
         "nameTemplate": string
       }
       "type": "sst.sst.Linkable"
+      "updateConfig": {
+        "nameTemplate": string
+      }
     }
     "Web": {
       "type": "sst.aws.StaticSite"

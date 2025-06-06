@@ -30,13 +30,11 @@ export namespace Realtime {
     );
   }
 
-  export const getUrl = (
-    realtimeDomainName = Resource.AppsyncEventApi.dns.realtime,
-  ) =>
+  export const getUrl = (hostname = Resource.AppsyncEventApi.dns.realtime) =>
     Util.formatUrl(
       new HttpRequest({
         protocol: "wss:",
-        hostname: realtimeDomainName,
+        hostname,
         path: "/event/realtime",
       }),
     );
@@ -44,20 +42,20 @@ export namespace Realtime {
   export async function getAuth(
     expiresIn?: number,
     body = "{}",
-    httpDomainName = Resource.AppsyncEventApi.dns.http,
+    hostname = Resource.AppsyncEventApi.dns.http,
   ) {
     const args = [
       "appsync",
       new HttpRequest({
         method: "POST",
         protocol: "https:",
-        hostname: httpDomainName,
+        hostname,
         path: "/event",
         headers: {
           accept: "application/json, text/javascript",
           "content-encoding": "amz-1.0",
           "content-type": "application/json; charset=UTF-8",
-          host: httpDomainName,
+          host: hostname,
         },
         body,
       }),
@@ -71,18 +69,18 @@ export namespace Realtime {
   }
 
   export async function publish<TChannel extends string>(
-    httpDomainName: string,
     channel: StartsWith<"/", TChannel>,
     events: Array<Event>,
+    hostname = Resource.AppsyncEventApi.dns.http,
   ) {
     const req = await SignatureV4.sign(
       "appsync",
       new HttpRequest({
         method: "POST",
         protocol: "https:",
-        hostname: httpDomainName,
+        hostname,
         path: "/event",
-        headers: { "Content-Type": "application/json", host: httpDomainName },
+        headers: { "Content-Type": "application/json", host: hostname },
         body: JSON.stringify({
           channel,
           events: JSON.stringify(events),

@@ -153,8 +153,5 @@ export const tenantRoles = new sst.Linkable("TenantRoles", {
     bucketsAccess: {
       nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-BucketsAccessRole`,
     },
-    putParameters: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-PutParametersRole`,
-    },
   },
 });

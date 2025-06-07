@@ -12,11 +12,6 @@ class Resource:
         roleArn: str
         type: str
         url: str
-    class AppsyncEventApi:
-        class dns:
-            http: str
-            realtime: str
-        type: str
     class Aws:
         class account:
             id: str
@@ -40,13 +35,8 @@ class Resource:
     class CloudfrontS3OriginAccessControl:
         id: str
         type: str
-    class Code:
-        class bucket:
-            name: str
-            class object:
-                class papercutSecureReverseProxy:
-                    key: str
-                    versionId: str
+    class ConfigTable:
+        name: str
         type: str
     class Domains:
         api: str
@@ -67,6 +57,12 @@ class Resource:
         name: str
         roleArn: str
         type: str
+    class PapercutTailgateImage:
+        uri: str
+        type: str
+    class PapercutTailgateResourceCiphertext:
+        encryptionKey: str
+        type: str
     class PulumiBucket:
         name: str
         type: str
@@ -84,6 +80,12 @@ class Resource:
     class RealtimePublisherRoleExternalId:
         type: str
         value: str
+    class TenantBuckets:
+        class assets:
+            nameTemplate: str
+        class documents:
+            nameTemplate: str
+        type: str
     class TenantDomains:
         class api:
             nameTemplate: str

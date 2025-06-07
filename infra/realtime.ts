@@ -42,7 +42,7 @@ export const domainNameApiAssociation =
     domainName: domainName.domainName,
   });
 
-export const realtimeAlias = sst.cloudflare.dns().createAlias(
+export const realtimeAlias = sst.cloudflare.dns({ proxy: true }).createAlias(
   "Realtime",
   {
     name: domainName.domainName,

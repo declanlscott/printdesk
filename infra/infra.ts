@@ -8,7 +8,7 @@ import {
 } from "./cdn";
 import * as custom from "./custom";
 import { configTable, dbMigratorInvocationSuccess, dsqlCluster } from "./db";
-import { domains, tenantDomainTemplates } from "./dns";
+import { domains, tenantDomains, zone } from "./dns";
 import {
   cloudflareApiToken,
   pulumiRole,
@@ -57,10 +57,11 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         realtimePublisherRole,
         realtimePublisherRoleExternalId,
         tenantBuckets,
-        tenantDomainTemplates,
+        tenantDomains,
         tenantRoles,
         vpc,
         vpcLink,
+        zone,
       ),
     ),
     writeToFile: normalizePath(resourceFileName, infraFunctionDir),

@@ -3,9 +3,14 @@ import * as R from "remeda";
 
 export const rootDomain = new sst.Secret("RootDomain");
 
-export const zoneId = cloudflare
-  .getZoneOutput({ filter: { name: rootDomain.value } })
-  .apply(({ zoneId }) => zoneId!);
+export const zone = new sst.Linkable("Zone", {
+  properties: {
+    id: cloudflare
+      .getZoneOutput({ filter: { name: rootDomain.value } })
+      .apply(({ zoneId }) => zoneId!),
+    name: rootDomain.value,
+  },
+});
 
 const buildSubdomain = <
   TMaybeIdentifier extends string | undefined,
@@ -58,13 +63,13 @@ export const tenantSubdomainTemplates = {
   realtime: buildSubdomain("realtime", true),
 };
 
-export const tenantDomainTemplates = new sst.Linkable("TenantDomainTemplates", {
+export const tenantDomains = new sst.Linkable("TenantDomains", {
   properties: R.pipe(
     tenantSubdomainTemplates,
     R.entries(),
     R.mapToObj(([name, subdomainTemplate]) => [
       name,
-      buildFqdn(subdomainTemplate),
+      { nameTemplate: buildFqdn(subdomainTemplate) },
     ]),
   ),
 });

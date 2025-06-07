@@ -3,7 +3,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 import { issuer } from "./auth";
 import * as custom from "./custom";
 import { configTable } from "./db";
-import { domains, zoneId } from "./dns";
+import { domains, zone } from "./dns";
 import { resourceFileName, resourcePrefix } from "./misc";
 import { repository } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
@@ -39,7 +39,7 @@ export const reverseProxyWorkerAuxiliaryBindings =
 export const reverseProxyApiRoute = new cloudflare.WorkersRoute(
   "ReverseProxyApiRoute",
   {
-    zoneId,
+    zoneId: zone.properties.id,
     pattern: $interpolate`${domains.properties.api}/*`,
     script: reverseProxyWorker.nodes.worker.scriptName,
   },
@@ -48,7 +48,7 @@ export const reverseProxyApiRoute = new cloudflare.WorkersRoute(
 export const reverseProxyAuthRoute = new cloudflare.WorkersRoute(
   "ReverseProxyAuthRoute",
   {
-    zoneId,
+    zoneId: zone.properties.id,
     pattern: $interpolate`${domains.properties.auth}/*`,
     script: reverseProxyWorker.nodes.worker.scriptName,
   },

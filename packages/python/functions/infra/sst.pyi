@@ -84,16 +84,12 @@ class Resource:
     class RealtimePublisherRoleExternalId:
         type: str
         value: str
-    class TenantParameters:
-        class documentsMimeTypes:
+    class TenantDomains:
+        class api:
             nameTemplate: str
-        class documentsSizeLimit:
+        class files:
             nameTemplate: str
-        class papercutServerAuthToken:
-            nameTemplate: str
-        class tailnetPapercutServerUri:
-            nameTemplate: str
-        class tailscaleOauthClient:
+        class realtime:
             nameTemplate: str
         type: str
     class TenantRoles:
@@ -112,4 +108,8 @@ class Resource:
         type: str
     class VpcLink:
         id: str
+        type: str
+    class Zone:
+        id: str
+        name: str
         type: str

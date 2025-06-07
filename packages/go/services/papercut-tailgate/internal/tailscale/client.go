@@ -36,7 +36,7 @@ func CreateAuthKey(ctx context.Context, client *tsclient.Client) (*tsclient.Key,
 
 	key, err := client.Keys().Create(ctx, tsclient.CreateKeyRequest{
 		Capabilities: capabilities,
-		Description:  "PaperCut Secure Reverse Proxy",
+		Description:  "PaperCut Tailscale Gateway",
 	})
 	if err != nil {
 		return nil, err

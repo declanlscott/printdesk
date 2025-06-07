@@ -1,4 +1,4 @@
-import { api, invoicesProcessor, papercutSync } from "./api";
+import { api } from "./api";
 import {
   cloudfrontApiCachePolicy,
   cloudfrontKeyGroup,
@@ -18,11 +18,12 @@ import {
   tenantRoles,
 } from "./iam";
 import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
-import { appsyncEventApi } from "./realtime";
 import {
-  papercutSecureReverseProxyImage,
-  papercutSecureReverseProxyResourceCiphertext,
-} from "./reverse-proxy";
+  invoicesProcessor,
+  papercutSync,
+  papercutTailgateImage,
+  papercutTailgateResourceCiphertext,
+} from "./papercut";
 import { infraQueue, pulumiBucket, repository, tenantBuckets } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 import { vpc, vpcLink } from "./vpc";
@@ -37,7 +38,6 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         resourcePrefix,
         api,
         appData,
-        appsyncEventApi,
         aws_,
         cloudflareApiToken,
         cloudfrontApiCachePolicy,
@@ -48,9 +48,9 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         configTable,
         domains,
         invoicesProcessor,
-        papercutSecureReverseProxyImage,
-        papercutSecureReverseProxyResourceCiphertext,
         papercutSync,
+        papercutTailgateImage,
+        papercutTailgateResourceCiphertext,
         pulumiBucket,
         pulumiRole,
         pulumiRoleExternalId,

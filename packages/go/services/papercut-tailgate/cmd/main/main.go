@@ -13,9 +13,9 @@ import (
 
 	"tailscale.com/tsnet"
 
-	"papercut-secure-reverse-proxy/internal/config"
-	"papercut-secure-reverse-proxy/internal/proxy"
-	"papercut-secure-reverse-proxy/internal/tailscale"
+	"papercut-tailgate/internal/config"
+	"papercut-tailgate/internal/proxy"
+	"papercut-tailgate/internal/tailscale"
 )
 
 var (

@@ -4,9 +4,9 @@ WORKDIR /app
 
 COPY ../../go.* ./
 COPY ../../core/ ./core
-COPY ./ ./papercut-secure-reverse-proxy
+COPY ./ ./papercut-tailgate
 
-WORKDIR /app/papercut-secure-reverse-proxy
+WORKDIR /app/papercut-tailgate
 
 RUN go mod download
 
@@ -16,4 +16,4 @@ FROM alpine
 
 ARG SST_KEY_FILE=resource.enc
 
-COPY --from=builder /app/papercut-secure-reverse-proxy/bin/main /app/papercut-secure-reverse-proxy/${SST_KEY_FILE} ./
+COPY --from=builder /app/papercut-tailgate/bin/main /app/papercut-tailgate/${SST_KEY_FILE} ./

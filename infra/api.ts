@@ -56,37 +56,6 @@ export const api = new custom.aws.Function("Api", {
   ],
 });
 
-export const papercutSync = new custom.aws.Function("PapercutSync", {
-  handler: "packages/functions/node/src/papercut-sync.handler",
-  timeout: "20 seconds",
-  link: [
-    aws_,
-    cloudfrontPublicKey,
-    cloudfrontPrivateKey,
-    domains,
-    dsqlCluster,
-    identityProviders,
-  ],
-});
-
-export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
-  handler: "packages/functions/node/src/invoices-processor.handler",
-  timeout: "20 seconds",
-  link: [aws_, cloudfrontPublicKey, cloudfrontPrivateKey, domains, dsqlCluster],
-  permissions: [
-    sst.aws.permission({
-      actions: [
-        "sqs:ChangeMessageVisibility",
-        "sqs:DeleteMessage",
-        "sqs:GetQueueAttributes",
-        "sqs:GetQueueUrl",
-        "sqs:ReceiveMessage",
-      ],
-      resources: ["*"],
-    }),
-  ],
-});
-
 export const outputs = {
   api: api.url,
 };

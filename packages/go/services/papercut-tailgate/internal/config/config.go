@@ -17,7 +17,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/sst/sst/v3/sdk/golang/resource"
 
-	"papercut-secure-reverse-proxy/internal/tailscale"
+	"papercut-tailgate/internal/tailscale"
 )
 
 type Config struct {

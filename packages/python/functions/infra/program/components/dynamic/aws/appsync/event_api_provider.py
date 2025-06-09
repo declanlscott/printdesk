@@ -9,10 +9,8 @@ from types_boto3_appsync.type_defs import (
     UpdateApiRequestTypeDef,
 )
 
-from utils import tags
+from utils import tags, naming
 from program.components.dynamic.aws.appsync.base import AppsyncBase
-from program.components.dynamic.naming import logical_name, physical_name
-
 
 
 class EventApiProviderInputs(TypedDict):
@@ -39,7 +37,7 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider, AppsyncBase):
     def __init__(self, name: str):
         super().__init__()
 
-        self.__logical_name = logical_name(name)
+        self.__logical_name = naming.logical(name)
 
     @staticmethod
     def __build_outs(
@@ -69,7 +67,7 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider, AppsyncBase):
 
     def create(self, props: EventApiProviderInputs) -> pulumi.dynamic.CreateResult:
         create_input: CreateApiRequestTypeDef = {
-            "name": physical_name(50, self.__logical_name, props["tenant_id"]),
+            "name": naming.physical(50, self.__logical_name, props["tenant_id"]),
             "tags": tags(props["tenant_id"]),
         }
 

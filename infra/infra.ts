@@ -1,4 +1,8 @@
-import { api } from "./api";
+import {
+  api,
+  tenantApiFunctionImage,
+  tenantApiFunctionResourceCiphertext,
+} from "./api";
 import {
   cloudfrontApiCachePolicy,
   cloudfrontKeyGroup,
@@ -56,6 +60,8 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         pulumiRoleExternalId,
         realtimePublisherRole,
         realtimePublisherRoleExternalId,
+        tenantApiFunctionImage,
+        tenantApiFunctionResourceCiphertext,
         tenantBuckets,
         tenantDomains,
         tenantRoles,

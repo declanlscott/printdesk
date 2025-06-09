@@ -6,8 +6,8 @@ import {
   routerSecret,
 } from "./cdn";
 import * as custom from "./custom";
-import { dsqlCluster } from "./db";
-import { domains } from "./dns";
+import { configTable, dsqlCluster } from "./db";
+import { domains, tenantDomains } from "./dns";
 import {
   realtimePublisherRole,
   realtimePublisherRoleExternalId,
@@ -15,9 +15,10 @@ import {
   realtimeSubscriberRoleExternalId,
   tenantRoles,
 } from "./iam";
-import { appData, aws_ } from "./misc";
+import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
 import { appsyncEventApi } from "./realtime";
-import { infraQueue, temporaryBucket } from "./storage";
+import { infraQueue, repository, temporaryBucket } from "./storage";
+import { injectLinkables, normalizePath } from "./utils";
 
 export const api = new custom.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
@@ -44,6 +45,7 @@ export const api = new custom.aws.Function("Api", {
     realtimeSubscriberRoleExternalId,
     routerSecret,
     temporaryBucket,
+    tenantDomains,
     tenantRoles,
   ],
   permissions: [
@@ -55,6 +57,35 @@ export const api = new custom.aws.Function("Api", {
     },
   ],
 });
+
+const tenantApiFunctionDir = normalizePath("packages/go/functions/tenant-api");
+
+export const tenantApiFunctionResourceCiphertext = new custom.Ciphertext(
+  "TenantApiFunctionResourceCiphertext",
+  {
+    plaintext: $jsonStringify(
+      injectLinkables(
+        resourcePrefix,
+        appData,
+        aws_,
+        configTable,
+        tenantDomains,
+      ),
+    ),
+    writeToFile: normalizePath(resourceFileName, tenantApiFunctionDir),
+  },
+);
+
+export const tenantApiFunctionImage = new awsx.ecr.Image(
+  "TenantApiFunctionImage",
+  {
+    repositoryUrl: repository.url,
+    context: tenantApiFunctionDir,
+    platform: "linux/arm64",
+    imageTag: "latest",
+  },
+  { dependsOn: [tenantApiFunctionResourceCiphertext] },
+);
 
 export const outputs = {
   api: api.url,

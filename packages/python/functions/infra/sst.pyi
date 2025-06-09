@@ -80,6 +80,12 @@ class Resource:
     class RealtimePublisherRoleExternalId:
         type: str
         value: str
+    class TenantApiFunctionImage:
+        uri: str
+        type: str
+    class TenantApiFunctionResourceCiphertext:
+        encryptionKey: str
+        type: str
     class TenantBuckets:
         class assets:
             nameTemplate: str
@@ -106,7 +112,7 @@ class Resource:
         type: str
     class Vpc:
         id: str
-        cloudmapNamespaceId: str
+        cloudMapNamespaceId: str
         type: str
     class VpcLink:
         id: str

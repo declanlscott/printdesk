@@ -35,7 +35,7 @@ func New() http.Handler {
 					return
 				}
 
-				apiDomainTemplate, err := resource.Get("TenantDomainTemplates", "api")
+				apiDomainTemplate, err := resource.Get("TenantDomains", "api", "nameTemplate")
 				if err != nil {
 					log.Printf("failed retrieving TenantDomainTemplates.api resource: %v", err)
 

@@ -15,7 +15,7 @@ export class Vpc extends sst.aws.Vpc {
       properties: {
         ...link.properties,
         id: this.id,
-        cloudmapNamespaceId: this.nodes.cloudmapNamespace.id,
+        cloudMapNamespaceId: this.nodes.cloudmapNamespace.id,
       },
     };
   }

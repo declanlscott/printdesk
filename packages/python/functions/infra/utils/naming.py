@@ -8,12 +8,12 @@ from sst import Resource
 PRETTY_CHARS = "abcdefhkmnorstuvwxz"
 
 
-def logical_name(name: str) -> str:
+def logical(name: str) -> str:
     name = re.sub(r"[^a-zA-Z0-9]", "", name)
     return name[0].upper() + name[1:]
 
 
-def physical_name(max_length: int, name: str, tenant_id: str, suffix: str = "") -> str:
+def physical(max_length: int, name: str, tenant_id: str, suffix: str = "") -> str:
     # This function does the following:
     # - Removes all non-alphanumeric characters
     # - Prefixes the name with the project and stack names

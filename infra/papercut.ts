@@ -2,8 +2,9 @@ import { identityProviders } from "./auth";
 import { cloudfrontPrivateKey, cloudfrontPublicKey } from "./cdn";
 import * as custom from "./custom";
 import { configTable, dsqlCluster } from "./db";
-import { domains } from "./dns";
-import { aws_, resourceFileName, resourcePrefix } from "./misc";
+import { domains, tenantDomains } from "./dns";
+import { tenantRoles } from "./iam";
+import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
 import { repository } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 
@@ -14,7 +15,15 @@ const papercutTailgatePath = normalizePath(
 export const papercutTailgateResourceCiphertext = new custom.Ciphertext(
   "PapercutTailgateResourceCiphertext",
   {
-    plaintext: $jsonStringify(injectLinkables(resourcePrefix, configTable)),
+    plaintext: $jsonStringify(
+      injectLinkables(
+        resourcePrefix,
+        appData,
+        aws_,
+        configTable,
+        tenantDomains,
+      ),
+    ),
     writeToFile: normalizePath(resourceFileName, papercutTailgatePath),
   },
 );
@@ -34,19 +43,31 @@ export const papercutSync = new custom.aws.Function("PapercutSync", {
   handler: "packages/functions/src/papercut-sync.handler",
   timeout: "20 seconds",
   link: [
+    appData,
     aws_,
     cloudfrontPublicKey,
     cloudfrontPrivateKey,
     domains,
     dsqlCluster,
     identityProviders,
+    tenantDomains,
+    tenantRoles,
   ],
 });
 
 export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
   handler: "packages/functions/src/invoices-processor.handler",
   timeout: "20 seconds",
-  link: [aws_, cloudfrontPublicKey, cloudfrontPrivateKey, domains, dsqlCluster],
+  link: [
+    appData,
+    aws_,
+    cloudfrontPublicKey,
+    cloudfrontPrivateKey,
+    domains,
+    dsqlCluster,
+    tenantDomains,
+    tenantRoles,
+  ],
   permissions: [
     sst.aws.permission({
       actions: [

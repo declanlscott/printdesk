@@ -5,6 +5,7 @@ import pulumi
 import pulumi_aws as aws
 from sst import Resource
 
+from .physical_name import PhysicalName, PhysicalNameArgs
 from utils import tags, naming
 
 
@@ -32,7 +33,7 @@ class Api(pulumi.ComponentResource):
         self.__api = aws.apigatewayv2.Api(
             resource_name="Api",
             args=aws.apigatewayv2.ApiArgs(
-                name=naming.physical(128, "Api", args.tenant_id),
+                name=naming.physical_name(128, "Api", args.tenant_id),
                 protocol_type="HTTP",
                 cors_configuration=aws.apigatewayv2.ApiCorsConfigurationArgs(
                     allow_headers=["*"],
@@ -85,6 +86,43 @@ class Api(pulumi.ComponentResource):
                         }
                     )
                 ),
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__api_function_name = PhysicalName(
+            name="ApiFunction",
+            args=PhysicalNameArgs(max_=64),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__api_function_role = aws.iam.Role(
+            resource_name="ApiFunctionRole",
+            args=aws.iam.RoleArgs(
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            actions=["sts:AssumeRole"],
+                            principals=[aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                type="Service",
+                                identifiers=["lambda.amazonaws.com"],
+                            )],
+                        )
+                    ]
+                ).minified_json,
+                managed_policy_arns=[aws.iam.ManagedPolicy.AWS_LAMBDA_BASIC_EXECUTION_ROLE],
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__api_function_log_group = aws.cloudwatch.LogGroup(
+            resource_name="ApiFunctionLogGroup",
+            args=aws.cloudwatch.LogGroupArgs(
+                name=pulumi.Output.format("/aws/lambda/{0}", self.__api_function_name.result),
+                retention_in_days=30,
+                tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
@@ -92,27 +130,147 @@ class Api(pulumi.ComponentResource):
         self.__api_function = aws.lambda_.Function(
             resource_name="ApiFunction",
             args=aws.lambda_.FunctionArgs(
+                name=self.__api_function_name.result,
                 package_type="Image",
                 image_uri=Resource.TenantApiFunctionImage.uri,
-                role="TODO",
+                role=self.__api_function_role.arn,
                 timeout=20,
                 architectures=["arm64"],
                 logging_config=aws.lambda_.FunctionLoggingConfigArgs(
                     log_format="Text",
-                    log_group="TODO",
+                    log_group=self.__api_function_log_group.name,
                 ),
                 environment=aws.lambda_.FunctionEnvironmentArgs(
                     variables={
                         "TENANT_ID": args.tenant_id,
                         "SST_KEY": Resource.TenantApiFunctionResourceCiphertext.encryptionKey,
-                        "SST_RESOURCE_RouterSecret": json.dumps(
+                        "SST_RESOURCE_RouterSecret": pulumi.Output.json_dumps(
                             {
                                 "value": args.router_secret,
                                 "type": "random.index/randomPassword.RandomPassword"
                             }
-                        ),
+                        )
                     }
-                )
+                ),
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__api_function_permission = aws.lambda_.Permission(
+            resource_name="ApiFunctionPermission",
+            args=aws.lambda_.PermissionArgs(
+                action="lambda:InvokeFunction",
+                function=self.__api_function.arn,
+                principal="apigateway.amazonaws.com",
+                source_arn=pulumi.Output.format("{0}/*", self.__api.execution_arn),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__api_function_integration = aws.apigatewayv2.Integration(
+            resource_name="ApiFunctionIntegration",
+            args=aws.apigatewayv2.IntegrationArgs(
+                api_id=self.__api.id,
+                integration_type="AWS_PROXY",
+                integration_uri=self.__api_function.arn,
+                payload_format_version="2.0",
+            ),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                depends_on=[self.__api_function_permission],
+            )
+        )
+
+        self.__api_function_route = aws.apigatewayv2.Route(
+            resrouce_name="ApiFunctionRoute",
+            args=aws.apigatewayv2.RouteArgs(
+                api_id=self.__api.id,
+                route_key="$default",
+                target=pulumi.Output.format(
+                    "integrations/{0}",
+                    self.__api_function_integration.id,
+                ),
+                authorization_type="AWS_IAM",
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__cluster = aws.ecs.Cluster(
+            resource_name="Cluster",
+            args=aws.ecs.ClusterArgs(
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__papercut_tailgate_task_definition = aws.ecs.TaskDefinition(
+            resource_name="PapercutTailgateTaskDefinition",
+            args=aws.ecs.TaskDefinitionArgs(
+                container_definitions=pulumi.Output.json_dumps({
+                    # TODO
+                }),
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__papercut_tailgate_cloud_map_service = aws.servicediscovery.Service(
+            resource_name="PapercutTailgateCloudMapService",
+            args=aws.servicediscovery.ServiceArgs(
+                name=f"{args.tenant_id}.papercut-tailgate.{Resource.AppData.stage}.{Resource.AppData.name}",
+                namespace_id=Resource.Vpc.cloudMapNamespaceId,
+                force_destroy=True,
+                dns_config=aws.servicediscovery.ServiceDnsConfigArgs(
+                    namespace_id=Resource.Vpc.cloudMapNamespaceId,
+                    dns_records=[
+                        aws.servicediscovery.ServiceDnsConfigDnsRecordArgs(
+                            type="SRV",
+                            ttl=60,
+                        ),
+                        aws.servicediscovery.ServiceDnsConfigDnsRecordArgs(
+                            type="A",
+                            ttl=60,
+                        )
+                    ]
+                ),
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__papercut_tailgate_service = aws.ecs.Service(
+            resource_name="PapercutTailgateService",
+            args=aws.ecs.ServiceArgs(
+                # TODO
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__papercut_server_integration = aws.apigatewayv2.Integration(
+            resource_name="PapercutServerIntegration",
+            args=aws.apigatewayv2.IntegrationArgs(
+                api_id=self.__api.id,
+                connection_id=Resource.VpcLink.id,
+                connection_type="VPC_LINK",
+                integration_type="HTTP_PROXY",
+                integration_uri="TODO",
+                integration_method="ANY"
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__papercut_server_route = aws.apigatewayv2.Route(
+            resource_name="PapercutServerRoute",
+            args=aws.apigatewayv2.RouteArgs(
+                api_id=self.__api.id,
+                route_key="/papercut/server/{proxy+}",
+                target=pulumi.Output.format(
+                    "integrations/{0}",
+                    self.__papercut_server_integration.id
+                ),
+                authorization_type="AWS_IAM",
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
@@ -122,6 +280,17 @@ class Api(pulumi.ComponentResource):
                 "api": self.__api.id,
                 "log_group": self.__log_group.id,
                 "stage": self.__stage.id,
+                "api_function_name": self.__api_function_name.result,
+                "api_function_role": self.__api_function_role.id,
+                "api_function_log_group": self.__api_function_log_group.id,
                 "api_function": self.__api_function.id,
+                "api_function_permission": self.__api_function_permission.id,
+                "api_function_integration": self.__api_function_integration.id,
+                "api_function_route": self.__api_function_route.id,
+                "cluster": self.__cluster.id,
+                "papercut_tailscale_task_definition": self.__papercut_tailgate_task_definition.id,
+                "papercut_tailgate_cloud_map_service": self.__papercut_tailgate_cloud_map_service.id,
+                "papercut_tailgate_service": self.__papercut_tailgate_service.id,
+                "papercut_tailgate_integration": self.__papercut_server_integration.id,
             }
         )

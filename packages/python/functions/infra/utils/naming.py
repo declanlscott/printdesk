@@ -1,70 +1,81 @@
-# Ported to python from https://github.com/sst/sst/blob/a3fd8fa92d559c91b89731faa6a9b843c60f95af/platform/src/components/naming.ts by SST
+# # Ported to python from https://github.com/sst/sst/blob/dev/platform/src/components/naming.ts by SST
 
-import hashlib
 import re
+import math
+import hashlib
+import os
 
 from sst import Resource
 
 PRETTY_CHARS = "abcdefhkmnorstuvwxz"
 
 
-def logical(name: str) -> str:
+def logical_name(name: str):
     name = re.sub(r"[^a-zA-Z0-9]", "", name)
-    return name[0].upper() + name[1:]
+    return name[0].upper() + name[1:] if name else ""
 
 
-def physical(max_length: int, name: str, tenant_id: str, suffix: str = "") -> str:
-    # This function does the following:
-    # - Removes all non-alphanumeric characters
-    # - Prefixes the name with the project and stack names
-    # - Truncates the name if it's too long
-
-    name = re.sub(r"[^a-zA-Z0-9]", "", name)
-
-    def get_prefixed_name() -> str:
-        l = max_length - len(suffix)
-        project = f"pd-{Resource.AppData.stage}"
-        stack = tenant_id
-        project_len = len(project)
-        stack_len = len(stack)
-        name_len = len(name)
-
-        if project_len + stack_len + name_len + 2 <= l:
-            return f"{project}-{stack}-{name}"
-
-        if stack_len + name_len + 1 <= l:
-            project_truncated = project[: l - stack_len - name_len - 2]
-            return (
-                f"{project_truncated}-{stack}-{name}"
-                if project_truncated
-                else f"{project}-{name}"
-            )
-
-        stack_truncated = stack[: max(8, l - name_len - 1)]
-        name_truncated = name[: l - len(stack_truncated) - 1]
-        return f"{stack_truncated}-{name_truncated}"
-
-    prefixed_name = get_prefixed_name()
-    return f"{prefixed_name}{suffix}"
-
-
-def hash_number_to_pretty_string(number: int, length: int) -> str:
+def hash_number_to_pretty_string(number: int, length: int):
     char_length = len(PRETTY_CHARS)
-    hash_str = ""
+    hash_ = ""
     while number > 0:
-        hash_str = PRETTY_CHARS[number % char_length] + hash_str
-        number = number // char_length
+        hash_ = PRETTY_CHARS[number % char_length] + hash_
+        number = math.floor(number / char_length)
 
     # Padding with 's'
-    hash_str = hash_str[:length]
-    while len(hash_str) < length:
-        hash_str = "s" + hash_str
+    hash_ = hash_[:length]
+    while len(hash_) < length:
+        hash_ = "s" + hash_
 
-    return hash_str
+    return hash_
 
 
-def hash_string_to_pretty_string(input_str: str, length: int) -> str:
-    hash_obj = hashlib.sha256(input_str.encode())
-    hex_digest = hash_obj.hexdigest()
-    num = int(hex_digest[:16], 16)
+def hash_string_to_pretty_string(s: str, length: int):
+    hash_ = hashlib.sha256()
+    hash_.update(s.encode('utf-8'))
+    num = int(hash_.hexdigest()[:16], 16)
     return hash_number_to_pretty_string(num, length)
+
+
+def prefix_name(max_: int, name: str):
+    """
+    This function does the following:
+    - Removes all non-alphanumeric characters
+    - Prefixes the name with the app name and stage
+    - Truncates the name if it's too long
+    i.e. foo => app-stage-foo
+    """
+    name = re.sub(r"[^a-zA-Z0-9]", "", name)
+
+    stage_len = len(Resource.AppData.stage)
+    name_len = len(name)
+    if name_len + 1 >= max_:
+        strategy = "name"
+    elif name_len + stage_len + 2 >= max_:
+        strategy = "stage+name"
+    else:
+        strategy = "app+stage+name"
+
+    if strategy == "name":
+        return name[:max_]
+    elif strategy == "stage+name":
+        return f"{Resource.AppData.stage[:max_ - name_len - 1]}-{name}"
+    else:
+        return (
+            f"{Resource.AppData.name[:max_ - stage_len - name_len - 2]}-"
+            f"{Resource.AppData.stage}-{name}"
+        )
+
+
+def physical_name(max_: int, name: str, suffix: str = ""):
+    """
+    This function does the following:
+    - Removes all non-alphanumeric characters
+    - Prefixes the name with the app name and stage
+    - Truncates the name if it's too long
+    - Adds a random suffix
+    - Adds a suffix if provided
+    """
+    main = prefix_name(max_ - 9 - len(suffix), name)
+    random_pretty = hash_string_to_pretty_string(os.urandom(8).hex(), 8)
+    return f"{main}-{random_pretty}{suffix}"

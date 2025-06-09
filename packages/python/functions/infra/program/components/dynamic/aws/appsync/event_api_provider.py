@@ -37,7 +37,7 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider, AppsyncBase):
     def __init__(self, name: str):
         super().__init__()
 
-        self.__logical_name = naming.logical(name)
+        self.__logical_name = naming.logical_name(name)
 
     @staticmethod
     def __build_outs(
@@ -67,7 +67,7 @@ class EventApiProvider(pulumi.dynamic.ResourceProvider, AppsyncBase):
 
     def create(self, props: EventApiProviderInputs) -> pulumi.dynamic.CreateResult:
         create_input: CreateApiRequestTypeDef = {
-            "name": naming.physical(50, self.__logical_name, props["tenant_id"]),
+            "name": naming.physical_name(50, self.__logical_name, props["tenant_id"]),
             "tags": tags(props["tenant_id"]),
         }
 

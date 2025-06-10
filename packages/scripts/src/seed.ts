@@ -1,9 +1,9 @@
-import { db } from "@printdesk/core/drizzle";
+import { Database } from "@printdesk/core/database";
 import { replicacheMetaTable } from "@printdesk/core/replicache/sql";
 import { Constants } from "@printdesk/core/utils/constants";
 
 async function seed() {
-  await db.insert(replicacheMetaTable).values({
+  await Database.initialize().insert(replicacheMetaTable).values({
     key: "schemaVersion",
     value: Constants.DB_SCHEMA_VERSION,
   });

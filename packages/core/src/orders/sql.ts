@@ -1,11 +1,11 @@
 import { index, timestamp, varchar } from "drizzle-orm/pg-core";
 
-import { customJsonb, id } from "../drizzle/columns";
-import { tenantTable } from "../drizzle/tables";
+import { customJsonb, id } from "../database/columns";
+import { tenantTable } from "../database/tables";
 import { Constants } from "../utils/constants";
 import { orderAttributesSchema, ordersTableName } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const ordersTable = tenantTable(
   ordersTableName,

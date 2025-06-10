@@ -3,8 +3,8 @@ import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import * as R from "remeda";
 
-import { buildConflictUpdateColumns } from "../drizzle/columns";
-import { useTransaction } from "../drizzle/context";
+import { buildConflictUpdateColumns } from "../database/columns";
+import { useTransaction } from "../database/context";
 import { useTenant } from "../tenants/context";
 import { tenantsTable } from "../tenants/sql";
 import { delimitToken, splitToken } from "../utils/shared";

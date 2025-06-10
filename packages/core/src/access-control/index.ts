@@ -8,7 +8,7 @@ import {
   billingAccountsTable,
 } from "../billing-accounts/sql";
 import { commentsTable } from "../comments/sql";
-import { useTransaction } from "../drizzle/context";
+import { useTransaction } from "../database/context";
 import { SharedErrors } from "../errors/shared";
 import { invoicesTable } from "../invoices/sql";
 import { ordersTable } from "../orders/sql";
@@ -27,7 +27,7 @@ import type { PgSelectBase } from "drizzle-orm/pg-core";
 import type { BillingAccount } from "../billing-accounts/sql";
 import type { Comment } from "../comments/sql";
 import type { Metadata, SyncedTableName, TableByName } from "../data";
-import type { Transaction } from "../drizzle/context";
+import type { Transaction } from "../database/context";
 import type { Order } from "../orders/sql";
 import type { UserRole } from "../users/shared";
 import type { User } from "../users/sql";

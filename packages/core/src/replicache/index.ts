@@ -6,7 +6,7 @@ import * as v from "valibot";
 
 import { AccessControl } from "../access-control";
 import { commandRepository, queryRepository, syncedTables } from "../data";
-import { useTransaction } from "../drizzle/context";
+import { useTransaction } from "../database/context";
 import { ServerErrors } from "../errors";
 import { SharedErrors } from "../errors/shared";
 import { useTenant } from "../tenants/context";
@@ -41,7 +41,7 @@ import type {
   TableMetadata,
   TablePatchData,
 } from "../data";
-import type { OmitTimestamps } from "../drizzle/columns";
+import type { OmitTimestamps } from "../database/columns";
 import type {
   ClientViewRecord,
   ClientViewRecordEntries,

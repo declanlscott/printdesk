@@ -1,11 +1,11 @@
 import { index, text } from "drizzle-orm/pg-core";
 
-import { customEnumArray, id } from "../drizzle/columns";
-import { tenantTable } from "../drizzle/tables";
+import { customEnumArray, id } from "../database/columns";
+import { tenantTable } from "../database/tables";
 import { userRoles } from "../users/shared";
 import { commentsTableName } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const commentsTable = tenantTable(
   commentsTableName,

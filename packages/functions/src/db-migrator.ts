@@ -1,10 +1,9 @@
-import { db } from "@printdesk/core/drizzle";
+import { Database } from "@printdesk/core/database";
 import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import * as R from "remeda";
 
 import type { MigrationConfig } from "drizzle-orm/migrator";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type { PgSession } from "drizzle-orm/pg-core";
 
 const drizzleSchema = sql.identifier("drizzle");
@@ -24,15 +23,12 @@ type DrizzleMigration = {
   created_at: string;
 };
 
-export async function migrate<TSchema extends Record<string, unknown>>(
-  db: NodePgDatabase<TSchema>,
-  config: MigrationConfig,
-) {
+export async function migrate(config: MigrationConfig) {
   const migrations = readMigrationFiles(config);
 
   // @ts-expect-error - session is not typed
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const session: PgSession = db.session;
+  const session: PgSession = Database.initialize().session;
 
   await session.execute(sql`
     CREATE SCHEMA IF NOT EXISTS ${drizzleSchema}
@@ -109,7 +105,7 @@ export const handler = async () => {
   console.log("Running database migrations ...");
 
   try {
-    await migrate(db, { migrationsFolder: "migrations" });
+    await migrate({ migrationsFolder: "migrations" });
 
     console.log("✅ Migration completed!");
 

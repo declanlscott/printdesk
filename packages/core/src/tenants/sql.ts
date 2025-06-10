@@ -13,7 +13,7 @@ import {
   idPrimaryKey,
   timestamps,
   version,
-} from "../drizzle/columns";
+} from "../database/columns";
 import { Constants } from "../utils/constants";
 import {
   infraProgramInputSchema,
@@ -24,7 +24,7 @@ import {
   tenantStatuses,
 } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const licenseStatus = (name: string) =>
   customEnum(name, licenseStatuses);

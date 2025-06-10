@@ -1,6 +1,6 @@
 import { DatabaseError } from "pg";
 
-import { db } from ".";
+import { Database } from ".";
 import { ServerErrors } from "../errors";
 import { Utils } from "../utils";
 import { Constants } from "../utils/constants";
@@ -57,7 +57,7 @@ async function createTransaction<
       const effects: TransactionContext["effects"] = [];
 
       const output = await Promise.resolve(
-        db.transaction(async (tx) =>
+        Database.initialize().transaction(async (tx) =>
           TransactionContext.with(
             () => ({ tx, effects }),
             () => callback(tx),

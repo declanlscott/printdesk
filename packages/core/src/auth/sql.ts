@@ -1,13 +1,13 @@
 import { pgTable, primaryKey, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { customEnum, id, timestamps } from "../drizzle/columns";
+import { customEnum, id, timestamps } from "../database/columns";
 import {
   identityProviderKinds,
   identityProvidersTableName,
   identityProviderUserGroupsTableName,
 } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const identityProviderKind = (name: string) =>
   customEnum(name, identityProviderKinds);

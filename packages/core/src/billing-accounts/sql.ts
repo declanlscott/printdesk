@@ -1,7 +1,7 @@
 import { bigint, index, numeric, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { customEnum, id } from "../drizzle/columns";
-import { tenantTable } from "../drizzle/tables";
+import { customEnum, id } from "../database/columns";
+import { tenantTable } from "../database/tables";
 import {
   billingAccountCustomerAuthorizationsTableName,
   billingAccountManagerAuthorizationsTableName,
@@ -9,7 +9,7 @@ import {
   billingAccountsTableName,
 } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 import type { Discriminate } from "../utils/types";
 
 export const billingAccountOrigin = (name: string) =>

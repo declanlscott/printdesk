@@ -1,7 +1,7 @@
 import { index, varchar } from "drizzle-orm/pg-core";
 
-import { customEnum, customJsonb, id } from "../drizzle/columns";
-import { tenantTable } from "../drizzle/tables";
+import { customEnum, customJsonb, id } from "../database/columns";
+import { tenantTable } from "../database/tables";
 import { Constants } from "../utils/constants";
 import {
   productConfigurationSchema,
@@ -9,7 +9,7 @@ import {
   productStatuses,
 } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const productStatus = (name: string) =>
   customEnum(name, productStatuses);

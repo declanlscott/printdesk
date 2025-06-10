@@ -10,8 +10,8 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { customEnum, id, version } from "../drizzle/columns";
-import { tenantTable } from "../drizzle/tables";
+import { customEnum, id, version } from "../database/columns";
+import { tenantTable } from "../database/tables";
 import { Constants } from "../utils/constants";
 import {
   deliveryOptionsTableName,
@@ -21,7 +21,7 @@ import {
   workflowStatusTypes,
 } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const roomStatus = (name: string) => customEnum(name, roomStatuses);
 

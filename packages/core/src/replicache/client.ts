@@ -11,7 +11,7 @@ import type {
   WriteTransaction,
 } from "@rocicorp/replicache";
 import type { SyncedTableName, TableByName } from "../data";
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 import type { User } from "../users/sql";
 import type { Prettify } from "../utils/types";
 import type { Serialized } from "./shared";

@@ -5,7 +5,7 @@ import { Papercut } from ".";
 import { Auth } from "../auth";
 import { EntraId } from "../auth/entra-id";
 import { BillingAccounts } from "../billing-accounts";
-import { useTransaction } from "../drizzle/context";
+import { useTransaction } from "../database/context";
 import { ServerErrors } from "../errors";
 import { SharedErrors } from "../errors/shared";
 import { Graph } from "../graph";

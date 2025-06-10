@@ -2,7 +2,7 @@ import { createClient } from "@openauthjs/openauth/client";
 import { withActor } from "@printdesk/core/actors/context";
 import { Auth } from "@printdesk/core/auth";
 import { subjects } from "@printdesk/core/auth/subjects";
-import { useTransaction } from "@printdesk/core/drizzle/context";
+import { useTransaction } from "@printdesk/core/database/context";
 import { tenantMetadataTable } from "@printdesk/core/tenants/sql";
 import { Constants } from "@printdesk/core/utils/constants";
 import { and, eq, isNotNull } from "drizzle-orm";

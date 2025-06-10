@@ -4,7 +4,7 @@ import * as R from "remeda";
 import { Resource } from "sst";
 
 import { withActor } from "../actors/context";
-import { useTransaction } from "../drizzle/context";
+import { useTransaction } from "../database/context";
 import { SharedErrors } from "../errors/shared";
 import { Graph } from "../graph";
 import { Tenants } from "../tenants";

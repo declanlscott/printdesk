@@ -2,7 +2,7 @@ import { and, eq, getTableName, inArray } from "drizzle-orm";
 import * as R from "remeda";
 
 import { AccessControl } from "../access-control";
-import { afterTransaction, useTransaction } from "../drizzle/context";
+import { afterTransaction, useTransaction } from "../database/context";
 import { poke } from "../replicache/poke";
 import { useTenant } from "../tenants/context";
 import { Users } from "../users";

@@ -8,8 +8,8 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
-import { customJsonb, id, timestamps } from "../drizzle/columns";
-import { tenantIdColumns } from "../drizzle/tables";
+import { customJsonb, id, timestamps } from "../database/columns";
+import { tenantIdColumns } from "../database/tables";
 import {
   replicacheClientGroupsTableName,
   replicacheClientsTableName,

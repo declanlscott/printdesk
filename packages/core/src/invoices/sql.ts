@@ -1,11 +1,11 @@
 import { index, timestamp } from "drizzle-orm/pg-core";
 import * as v from "valibot";
 
-import { customEnum, customJsonb, id } from "../drizzle/columns";
-import { tenantTable } from "../drizzle/tables";
+import { customEnum, customJsonb, id } from "../database/columns";
+import { tenantTable } from "../database/tables";
 import { invoicesTableName, invoiceStatuses, lineItemSchema } from "./shared";
 
-import type { InferFromTable } from "../drizzle/tables";
+import type { InferFromTable } from "../database/tables";
 
 export const invoiceStatus = (name: string) =>
   customEnum(name, invoiceStatuses);

@@ -3,32 +3,32 @@ module papercut-tailgate
 go 1.24.3
 
 require (
-	github.com/aws/aws-sdk-go-v2 v1.36.3
-	github.com/aws/aws-sdk-go-v2/config v1.29.15
-	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.19.1
-	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.43.2
+	github.com/aws/aws-sdk-go-v2 v1.36.4
+	github.com/aws/aws-sdk-go-v2/config v1.29.16
+	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.19.2
+	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.43.3
 	github.com/sst/sst/v3 v3.17.4
 	github.com/tailscale/tailscale-client-go/v2 v2.0.0-20250129222324-74c8fc3cb4d7
-	tailscale.com v1.84.1
+	tailscale.com v1.84.2
 )
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.68 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.30 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.34 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.69 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.31 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.35 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.35 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.25.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.25.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.10.15 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.15 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.10.16 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.16 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssm v1.49.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.25.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.33.20 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.25.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.30.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.21 // indirect
 	github.com/aws/smithy-go v1.22.2 // indirect
 	github.com/coder/websocket v1.8.12 // indirect
 	github.com/coreos/go-iptables v0.7.1-0.20240112124308-65c67c9f46e6 // indirect

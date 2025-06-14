@@ -86,11 +86,11 @@ class Realtime(pulumi.ComponentResource):
                                 statements=[
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventConnect"],
-                                        resource=["TODO"],
+                                        resource=[api_arn],
                                     ),
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventSubscribe"],
-                                        resource=[f"TODO/*"],
+                                        resource=[f"{api_arn}/*"],
                                     ),
                                 ]
                             ).minified_json

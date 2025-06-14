@@ -35,6 +35,10 @@ class Resource:
     class CloudfrontS3OriginAccessControl:
         id: str
         type: str
+    class Cluster:
+        name: str
+        arn: str
+        type: str
     class ConfigTable:
         name: str
         type: str
@@ -112,7 +116,9 @@ class Resource:
         type: str
     class Vpc:
         id: str
+        cidrBlock: str
         cloudMapNamespaceId: str
+        cloudMapNamespaceName: str
         type: str
     class VpcLink:
         id: str

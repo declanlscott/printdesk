@@ -24,3 +24,7 @@ export const dynamoVpcEndpoint = new aws.ec2.VpcEndpoint("DynamoVpcEndpoint", {
   serviceName: $interpolate`com.amazonaws.${aws.getRegionOutput().name}.dynamodb`,
   routeTableIds: vpc.nodes.privateRouteTables.apply(R.map(R.prop("id"))),
 });
+
+export const cluster = new sst.aws.Cluster("Cluster", {
+  vpc,
+});

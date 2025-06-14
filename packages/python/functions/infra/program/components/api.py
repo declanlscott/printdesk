@@ -196,9 +196,44 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__cluster = aws.ecs.Cluster(
-            resource_name="Cluster",
-            args=aws.ecs.ClusterArgs(
+        self.__papercut_tailgate_execution_role = aws.iam.Role(
+            resoruce_name="PapercutTailgateExecutionRole",
+            args=aws.iam.RoleArgs(
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="Service",
+                                    identifiers=["ecs-tasks.amazonaws.com"],
+                                )
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ]
+                ).minified_json,
+                managed_policy_arns=[aws.iam.ManagedPolicy.AMAZON_ECS_TASK_EXECUTION_ROLE_POLICY],
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__papercut_tailgate_task_role = aws.iam.Role(
+            resource_name="PapercutTailgateTaskRole",
+            args=aws.iam.RoleArgs(
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="Service",
+                                    identifiers=["ecs-tasks.amazonaws.com"],
+                                )
+                            ],
+                            actions=["sts:AssumeRole"],
+                        ),
+                    ]
+                ).minified_json,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self)
@@ -207,6 +242,18 @@ class Api(pulumi.ComponentResource):
         self.__papercut_tailgate_task_definition = aws.ecs.TaskDefinition(
             resource_name="PapercutTailgateTaskDefinition",
             args=aws.ecs.TaskDefinitionArgs(
+                family=f"{Resource.Cluster.name}-papercut-tailgate-{args.tenant_id}-{Resource.AppData.stage}",
+                track_latest=True,
+                cpu="256",
+                memory="512",
+                network_mode="awsvpc",
+                requires_compatibilities=["FARGATE"],
+                runtime_platform=aws.ecs.TaskDefinitionRuntimePlatformArgs(
+                    cpu_architecture="ARM64",
+                    operating_system_family="LINUX",
+                ),
+                execution_role_arn=self.__papercut_tailgate_execution_role.arn,
+                task_role_arn=self.__papercut_tailgate_task_role.arn,
                 container_definitions=pulumi.Output.json_dumps({
                     # TODO
                 }),
@@ -242,7 +289,86 @@ class Api(pulumi.ComponentResource):
         self.__papercut_tailgate_service = aws.ecs.Service(
             resource_name="PapercutTailgateService",
             args=aws.ecs.ServiceArgs(
-                # TODO
+                cluster=Resource.Cluster.arn,
+                task_definition=self.__papercut_tailgate_task_definition.arn,
+                desired_count=1,
+                force_new_deployment=True,
+                capacity_provider_strategies=[
+                    aws.ecs.ServiceCapacityProviderStrategyArgs(
+                        capacity_provider="FARGATE",
+                        weight=0,
+                    ),
+                    aws.ecs.ServiceCapacityProviderStrategyArgs(
+                        capacity_provider="FARGATE_SPOT",
+                        weight=1
+                    ),
+                ],
+                network_configuration=aws.ecs.ServiceNetworkConfigurationArgs(
+                    assign_public_ip=True,
+                    subnets=aws.ec2.get_subnets_output(
+                        filters=[
+                            aws.ec2.GetSubnetsFilterArgs(
+                                name="vpc-id",
+                                values=[Resource.Vpc.id],
+                            ),
+                            aws.ec2.GetSubnetsFilterArgs(
+                                name="map-public-ip-on-launch",
+                                values=["true"],
+                            ),
+                        ]
+                    ).ids,
+                    security_groups=aws.ec2.get_security_groups_output(
+                        filters=[
+                            aws.ec2.GetSecurityGroupsFilterArgs(
+                                name="vpc-id",
+                                values=[Resource.Vpc.id],
+                            ),
+                            aws.ec2.GetSecurityGroupsFilterArgs(
+                                name="ip-permission.protocol",
+                                values=["-1"],
+                            ),
+                            aws.ec2.GetSecurityGroupsFilterArgs(
+                                name="ip-permission.cidr",
+                                values=[Resource.Vpc.cidrBlock]
+                            ),
+                            aws.ec2.GetSecurityGroupsFilterArgs(
+                                name="egress.ip-permission.protocol",
+                                values=["-1"],
+                            ),
+                            aws.ec2.GetSecurityGroupsFilterArgs(
+                                name="egress.ip-permission.cidr",
+                                values=["0.0.0.0/0"]
+                            ),
+                        ]
+                    ).ids,
+                ),
+                deployment_circuit_breaker=aws.ecs.ServiceDeploymentCircuitBreakerArgs(
+                    enabled=True,
+                    rollback=True,
+                ),
+                enable_execute_command=True,
+                service_registries=aws.ecs.ServiceServiceRegistriesArgs(
+                    registry_arn=self.__papercut_tailgate_cloud_map_service.arn,
+                    port=80,
+                ),
+                wait_for_steady_state=False,
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__papercut_tailgate_auto_scaling_target = aws.appautoscaling.Target(
+            resource_name="PapercutTailgateAutoScalingTarget",
+            args=aws.appautoscaling.TargetArgs(
+                service_namespace="ecs",
+                scalable_dimension="ecs:service:DesiredCount",
+                resource_id=pulumi.Output.format(
+                    "service/{0}/{1}",
+                    Resource.Cluster.name,
+                    self.__papercut_tailgate_service.name,
+                ),
+                min_capacity=1,
+                max_capacity=1,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -255,8 +381,8 @@ class Api(pulumi.ComponentResource):
                 connection_id=Resource.VpcLink.id,
                 connection_type="VPC_LINK",
                 integration_type="HTTP_PROXY",
-                integration_uri="TODO",
-                integration_method="ANY"
+                integration_uri=self.__papercut_tailgate_cloud_map_service.arn,
+                integration_method="ANY",
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
@@ -287,10 +413,13 @@ class Api(pulumi.ComponentResource):
                 "api_function_permission": self.__api_function_permission.id,
                 "api_function_integration": self.__api_function_integration.id,
                 "api_function_route": self.__api_function_route.id,
-                "cluster": self.__cluster.id,
-                "papercut_tailscale_task_definition": self.__papercut_tailgate_task_definition.id,
+                "papercut_tailgate_execution_role": self.__papercut_tailgate_execution_role.id,
+                "papercut_tailgate_task_role": self.__papercut_tailgate_task_role.id,
+                "papercut_tailgate_task_definition": self.__papercut_tailgate_task_definition.id,
                 "papercut_tailgate_cloud_map_service": self.__papercut_tailgate_cloud_map_service.id,
                 "papercut_tailgate_service": self.__papercut_tailgate_service.id,
-                "papercut_tailgate_integration": self.__papercut_server_integration.id,
+                "papercut_tailgate_auto_scaling_target": self.__papercut_tailgate_auto_scaling_target.id,
+                "papercut_server_integration": self.__papercut_server_integration.id,
+                "papercut_server_route": self.__papercut_server_route.id,
             }
         )

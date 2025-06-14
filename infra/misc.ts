@@ -59,6 +59,13 @@ sst.Linkable.wrap(random.RandomPassword, (password) => ({
   },
 }));
 
+sst.Linkable.wrap(sst.aws.Cluster, (cluster) => ({
+  properties: {
+    name: cluster.nodes.cluster.name,
+    arn: cluster.nodes.cluster.arn,
+  },
+}));
+
 sst.Linkable.wrap(sst.aws.Dynamo, (table) => ({
   properties: {
     name: table.name,

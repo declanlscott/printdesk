@@ -14,12 +14,12 @@ from aws_lambda_powertools.utilities.parser import parse
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
-from pulumi import automation
+import pulumi
 from sst import Resource
 
 from models import sqs_record
 from program import inline
-from utils import is_prod_stage, get_realtime_credentials
+from utils import is_prod_stage, get_realtime_credentials, transform
 
 processor = BatchProcessor(EventType.SQS)
 logger = Logger()
@@ -41,16 +41,16 @@ def record_handler(record: SQSRecord):
     logger.info("Initializing stack ...")
     project_name = f"{Resource.AppData.name}-{Resource.AppData.stage}-infra"
     stack_name = payload.tenantId
-    stack = automation.create_or_select_stack(
+    stack = pulumi.automation.create_or_select_stack(
         project_name=project_name,
         stack_name=stack_name,
         program=lambda: inline(payload),
-        opts=automation.LocalWorkspaceOptions(
+        opts=pulumi.automation.LocalWorkspaceOptions(
             pulumi_home="/tmp/pulumi_home",
-            project_settings=automation.ProjectSettings(
+            project_settings=pulumi.automation.ProjectSettings(
                 name=project_name,
                 runtime="python",
-                backend=automation.ProjectBackend(
+                backend=pulumi.automation.ProjectBackend(
                     url=f"s3://{Resource.PulumiBucket.name}/{project_name}"
                 ),
             ),
@@ -64,24 +64,28 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully installed plugins.")
 
     logger.info("Setting stack configuration ...")
-    stack.set_config("aws:region", automation.ConfigValue(Resource.Aws.region))
+    stack.set_config("aws:region", pulumi.automation.ConfigValue(Resource.Aws.region))
     stack.set_config(
         "aws:assumeRole.roleArn",
-        automation.ConfigValue(Resource.PulumiRole.arn),
+        pulumi.automation.ConfigValue(Resource.PulumiRole.arn),
         path=True,
     )
     stack.set_config(
         "aws:assumeRole.externalId",
-        automation.ConfigValue(Resource.PulumiRoleExternalId.value),
+        pulumi.automation.ConfigValue(Resource.PulumiRoleExternalId.value),
         path=True,
     )
     stack.set_config(
         "cloudflare:apiToken",
-        automation.ConfigValue(Resource.CloudflareApiToken.value, True),
+        pulumi.automation.ConfigValue(Resource.CloudflareApiToken.value, True),
     )
     logger.info("Successfully set stack configuration.")
 
-    result: automation.UpResult | automation.DestroyResult
+    logger.info("Registering stack transformations ...")
+    pulumi.runtime.register_stack_transformation(transform.name(payload.tenantId))
+    logger.info("Successfully registered stack transformations.")
+
+    result: pulumi.automation.UpResult | pulumi.automation.DestroyResult
     if payload.destroy is False:
         exception: Exception | None = None
         try:
@@ -98,7 +102,7 @@ def record_handler(record: SQSRecord):
 
             aws_request = AWSRequest(
                 method="POST",
-                url=f"https://{Resource.AppsyncEventApi.dns.http}/event",
+                url=f"https://{Resource.Domains.realtime}/event",
                 headers={"Content-Type": "application/json"},
                 data=json.dumps(
                     {

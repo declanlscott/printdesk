@@ -5,7 +5,7 @@ import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
 
 from sst import Resource
-from utils import build_name
+from utils import build_name, tags
 
 
 class SslArgs:
@@ -38,6 +38,7 @@ class Ssl(pulumi.ComponentResource):
             props=aws.acm.CertificateArgs(
                 domain_name=build_name(args.domain_name_template, args.tenant_id),
                 validation_method="DNS",
+                tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self, provider=self.__us_east_1_provider)
         )

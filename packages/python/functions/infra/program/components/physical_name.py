@@ -21,7 +21,7 @@ class PhysicalName(pulumi.ComponentResource):
             opts=opts
         )
 
-        self.__main = pulumi.Output.from_input(naming.prefix_name(args.max - 9 - len(args.suffix), name))
+        self.__main = pulumi.Output.from_input(naming.prefix(args.max - 9 - len(args.suffix), name))
 
         self.__random_suffix: pulumi.Output[str] = random.RandomBytes(
             resource_name=f"{name}PhysicalNameRandomSuffix",

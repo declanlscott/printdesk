@@ -10,7 +10,7 @@ from sst import Resource
 PRETTY_CHARS = "abcdefhkmnorstuvwxz"
 
 
-def logical_name(name: str):
+def logical(name: str):
     name = re.sub(r"[^a-zA-Z0-9]", "", name)
     return name[0].upper() + name[1:] if name else ""
 
@@ -37,7 +37,7 @@ def hash_string_to_pretty_string(s: str, length: int):
     return hash_number_to_pretty_string(num, length)
 
 
-def prefix_name(max_: int, name: str):
+def prefix(max_: int, name: str):
     """
     This function does the following:
     - Removes all non-alphanumeric characters
@@ -67,7 +67,7 @@ def prefix_name(max_: int, name: str):
         )
 
 
-def physical_name(max_: int, name: str, suffix: str = ""):
+def physical(max_: int, name: str, suffix: str = ""):
     """
     This function does the following:
     - Removes all non-alphanumeric characters
@@ -76,6 +76,6 @@ def physical_name(max_: int, name: str, suffix: str = ""):
     - Adds a random suffix
     - Adds a suffix if provided
     """
-    main = prefix_name(max_ - 9 - len(suffix), name)
+    main = prefix(max_ - 9 - len(suffix), name)
     random_pretty = hash_string_to_pretty_string(os.urandom(8).hex(), 8)
     return f"{main}-{random_pretty}{suffix}"

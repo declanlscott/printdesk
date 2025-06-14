@@ -6,7 +6,7 @@ import pulumi_aws as aws
 from sst import Resource
 
 from .physical_name import PhysicalName, PhysicalNameArgs
-from utils import tags, naming
+from utils import tags
 
 
 class ApiArgs:
@@ -33,7 +33,6 @@ class Api(pulumi.ComponentResource):
         self.__api = aws.apigatewayv2.Api(
             resource_name="Api",
             args=aws.apigatewayv2.ApiArgs(
-                name=naming.physical_name(128, "Api", args.tenant_id),
                 protocol_type="HTTP",
                 cors_configuration=aws.apigatewayv2.ApiCorsConfigurationArgs(
                     allow_headers=["*"],
@@ -53,6 +52,7 @@ class Api(pulumi.ComponentResource):
                     self.__api.name,
                 ),
                 retention_in_days=30,
+                tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
@@ -242,7 +242,7 @@ class Api(pulumi.ComponentResource):
         self.__papercut_tailgate_task_definition = aws.ecs.TaskDefinition(
             resource_name="PapercutTailgateTaskDefinition",
             args=aws.ecs.TaskDefinitionArgs(
-                family=f"{Resource.Cluster.name}-papercut-tailgate-{args.tenant_id}-{Resource.AppData.stage}",
+                family=f"{Resource.Cluster.name}-{args.tenant_id}-papercut-tailgate",
                 track_latest=True,
                 cpu="256",
                 memory="512",

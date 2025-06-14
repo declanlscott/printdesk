@@ -13,5 +13,5 @@ def inline(payload: sqs_record.Payload):
         args=ApiArgs(
             tenant_id=payload.tenantId,
             router_secret=router.secret,
-        )
+        ),
     )

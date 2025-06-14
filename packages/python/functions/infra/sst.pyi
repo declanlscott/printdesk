@@ -45,10 +45,10 @@ class Resource:
     class Domains:
         api: str
         auth: str
-        root: str
-        type: str
+        realtime: str
         web: str
         www: str
+        type: str
     class InvoicesProcessor:
         arn: str
         invokeArn: str

@@ -24,6 +24,7 @@ def inline(payload: sqs_record.Payload):
         args=ApiArgs(
             tenant_id=payload.tenant_id,
             router_secret_sst_resource_parameter=config.router_secret_sst_resource_parameter,
+            config_agent_access_token_parameter=config.agent_access_token_parameter,
             config_application=config.application,
             config_environment=config.environment,
             config_profiles=config.profiles,

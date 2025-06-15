@@ -58,6 +58,25 @@ class Config(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self.__agent_access_token = random.RandomPassword(
+            resource_name="AgentAccessToken",
+            args=random.RandomPasswordArgs(
+                length=32,
+                special=True,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__agent_access_token_parameter = aws.ssm.Parameter(
+            resource_name="AgentAccessTokenParameter",
+            args=aws.ssm.ParameterArgs(
+                name=f"/{Resource.AppData.name}/{Resource.AppData.stage}/{args.tenant_id}/appconfig/agent-access-token",
+                type=aws.ssm.ParameterType.SECURE_STRING,
+                value=self.__agent_access_token.result,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         self.__application = aws.appconfig.Application(
             resource_name="Application",
             args=aws.appconfig.ApplicationArgs(
@@ -127,6 +146,8 @@ class Config(pulumi.ComponentResource):
             {
                 "router_secret": self.__router_secret.id,
                 "router_secret_sst_resource_parameter": self.__router_secret_sst_resource_parameter.id,
+                "agent_access_token": self.__agent_access_token.id,
+                "agent_access_token_parameter": self.__agent_access_token_parameter.id,
                 "application": self.__application.id,
                 "environment": self.__environment.id,
                 "papercut_server_tailnet_uri_profile": self.__papercut_server_tailnet_uri_profile.id,
@@ -142,6 +163,10 @@ class Config(pulumi.ComponentResource):
     @property
     def router_secret_sst_resource_parameter(self):
         return self.__router_secret_sst_resource_parameter
+
+    @property
+    def agent_access_token_parameter(self):
+        return self.__agent_access_token_parameter
 
     @property
     def application(self):

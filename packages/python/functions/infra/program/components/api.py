@@ -15,12 +15,14 @@ class ApiArgs:
             self,
             tenant_id: str,
             router_secret_sst_resource_parameter: pulumi.Input[aws.ssm.Parameter],
+            config_agent_access_token_parameter: pulumi.Input[aws.ssm.Parameter],
             config_application: pulumi.Input[aws.appconfig.Application],
             config_environment: pulumi.Input[aws.appconfig.Environment],
             config_profiles: pulumi.Input[ConfigProfiles],
         ):
         self.tenant_id = tenant_id
         self.router_secret_sst_resource_parameter = router_secret_sst_resource_parameter
+        self.config_agent_access_token_parameter = config_agent_access_token_parameter
         self.config_application = config_application
         self.config_environment = config_environment
         self.config_profiles = config_profiles
@@ -301,6 +303,12 @@ class Api(pulumi.ComponentResource):
                                     args.config_profiles.tailscale_oauth_client.name
                                 ),
                             }
+                        ],
+                        "secrets": [
+                            {
+                                "name": "ACCESS_TOKEN",
+                                "valueFrom": args.config_agent_access_token_parameter.arn,
+                            }
                         ]
                     },
                     {
@@ -356,6 +364,10 @@ class Api(pulumi.ComponentResource):
                             }
                         ],
                         "secrets": [
+                            {
+                                "name": "APPCONFIG_AGENT_ACCESS_TOKEN",
+                                "valueFrom": args.config_agent_access_token_parameter.arn,
+                            },
                             {
                                 "name": "SST_KEY",
                                 "valueFrom": Resource.PapercutTailgateSstKeyParameter.arn,

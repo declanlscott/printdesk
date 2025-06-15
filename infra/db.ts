@@ -80,11 +80,6 @@ export const authTable = new sst.aws.Dynamo("AuthTable", {
   ttl: "expiry",
 });
 
-export const configTable = new sst.aws.Dynamo("ConfigTable", {
-  fields: { pk: "string", sk: "string" },
-  primaryIndex: { hashKey: "pk", rangeKey: "sk" },
-});
-
 export const outputs = {
   dsql: dsqlCluster.endpoint,
 };

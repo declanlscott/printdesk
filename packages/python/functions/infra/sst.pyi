@@ -39,9 +39,6 @@ class Resource:
         name: str
         arn: str
         type: str
-    class ConfigTable:
-        name: str
-        type: str
     class Domains:
         api: str
         auth: str
@@ -61,11 +58,20 @@ class Resource:
         name: str
         roleArn: str
         type: str
+    class PapercutTailgateExecutionRole:
+        name: str
+        arn: str
+        type: str
     class PapercutTailgateImage:
         uri: str
         type: str
-    class PapercutTailgateResourceCiphertext:
-        encryptionKey: str
+    class PapercutTailgateSstKeyParameter:
+        name: str
+        arn: str
+        type: str
+    class PapercutTailgateTaskRole:
+        name: str
+        arn: str
         type: str
     class PulumiBucket:
         name: str

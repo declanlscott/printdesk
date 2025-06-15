@@ -139,6 +139,60 @@ export const realtimePublisherRole = new aws.iam.Role("RealtimePublisherRole", {
   ],
 });
 
+export const papercutTailgateExecutionRole = new aws.iam.Role(
+  "PapercutTailgateExecutionRole",
+  {
+    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+      Service: "ecs-tasks.amazonaws.com",
+    }),
+    managedPolicyArns: [aws.iam.ManagedPolicy.AmazonECSTaskExecutionRolePolicy],
+    inlinePolicies: [
+      {
+        policy: aws.iam.getPolicyDocumentOutput({
+          statements: [
+            {
+              actions: ["ssm:GetParameter"],
+              resources: ["*"],
+            },
+            {
+              actions: ["kms:Decrypt"],
+              resources: [
+                aws.kms.getAliasOutput({ name: "alias/aws/ssm" }).arn,
+              ],
+            },
+          ],
+        }).json,
+      },
+    ],
+  },
+);
+
+export const papercutTailgateTaskRole = new aws.iam.Role(
+  "PapercutTailgateTaskRole",
+  {
+    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+      Service: "ecs-tasks.amazonaws.com",
+    }),
+    inlinePolicies: [
+      {
+        policy: aws.iam.getPolicyDocumentOutput({
+          statements: [
+            {
+              actions: [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel",
+              ],
+              resources: ["*"],
+            },
+          ],
+        }).minifiedJson,
+      },
+    ],
+  },
+);
+
 export const tenantRoles = new sst.Linkable("TenantRoles", {
   properties: {
     apiAccess: {

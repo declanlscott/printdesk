@@ -1,7 +1,7 @@
 import { identityProviders } from "./auth";
 import { cloudfrontPrivateKey, cloudfrontPublicKey } from "./cdn";
 import * as custom from "./custom";
-import { configTable, dsqlCluster } from "./db";
+import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import { tenantRoles } from "./iam";
 import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
@@ -16,15 +16,18 @@ export const papercutTailgateResourceCiphertext = new custom.Ciphertext(
   "PapercutTailgateResourceCiphertext",
   {
     plaintext: $jsonStringify(
-      injectLinkables(
-        resourcePrefix,
-        appData,
-        aws_,
-        configTable,
-        tenantDomains,
-      ),
+      injectLinkables(resourcePrefix, appData, aws_, tenantDomains),
     ),
     writeToFile: normalizePath(resourceFileName, papercutTailgatePath),
+  },
+);
+
+export const papercutTailgateSstKeyParameter = new aws.ssm.Parameter(
+  "PapercutTailgateSstKey",
+  {
+    name: `/${$app.name}/${$app.stage}/papercut-tailgate/sst-key`,
+    type: aws.ssm.ParameterType.SecureString,
+    value: papercutTailgateResourceCiphertext.encryptionKey,
   },
 );
 

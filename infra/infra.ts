@@ -11,10 +11,12 @@ import {
   cloudfrontS3OriginAccessControl,
 } from "./cdn";
 import * as custom from "./custom";
-import { configTable, dbMigratorInvocationSuccess, dsqlCluster } from "./db";
+import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
 import { domains, tenantDomains, zone } from "./dns";
 import {
   cloudflareApiToken,
+  papercutTailgateExecutionRole,
+  papercutTailgateTaskRole,
   pulumiRole,
   pulumiRoleExternalId,
   realtimePublisherRole,
@@ -26,7 +28,7 @@ import {
   invoicesProcessor,
   papercutSync,
   papercutTailgateImage,
-  papercutTailgateResourceCiphertext,
+  papercutTailgateSstKeyParameter,
 } from "./papercut";
 import { infraQueue, pulumiBucket, repository, tenantBuckets } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
@@ -49,12 +51,13 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         cloudfrontPublicKey,
         cloudfrontRewriteUriFunction,
         cloudfrontS3OriginAccessControl,
-        configTable,
         domains,
         invoicesProcessor,
         papercutSync,
+        papercutTailgateExecutionRole,
         papercutTailgateImage,
-        papercutTailgateResourceCiphertext,
+        papercutTailgateSstKeyParameter,
+        papercutTailgateTaskRole,
         pulumiBucket,
         pulumiRole,
         pulumiRoleExternalId,

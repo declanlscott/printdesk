@@ -47,6 +47,13 @@ sst.Linkable.wrap(aws.iam.Role, (role) => ({
   ],
 }));
 
+sst.Linkable.wrap(aws.ssm.Parameter, (parameter) => ({
+  properties: {
+    name: parameter.name,
+    arn: parameter.arn,
+  },
+}));
+
 sst.Linkable.wrap(awsx.ecr.Image, (image) => ({
   properties: {
     uri: image.imageUri,

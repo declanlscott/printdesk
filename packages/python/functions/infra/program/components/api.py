@@ -14,13 +14,13 @@ class ApiArgs:
     def __init__(
             self,
             tenant_id: str,
-            sst_resource_router_secret_parameter: pulumi.Input[aws.ssm.Parameter],
+            router_secret_sst_resource_parameter: pulumi.Input[aws.ssm.Parameter],
             config_application: pulumi.Input[aws.appconfig.Application],
             config_environment: pulumi.Input[aws.appconfig.Environment],
             config_profiles: pulumi.Input[ConfigProfiles],
         ):
         self.tenant_id = tenant_id
-        self.sst_resource_router_secret_parameter = sst_resource_router_secret_parameter
+        self.router_secret_sst_resource_parameter = router_secret_sst_resource_parameter
         self.config_application = config_application
         self.config_environment = config_environment
         self.config_profiles = config_profiles
@@ -131,7 +131,7 @@ class Api(pulumi.ComponentResource):
                     variables={
                         "TENANT_ID": args.tenant_id,
                         "SST_KEY": Resource.TenantApiFunctionResourceCiphertext.encryptionKey,
-                        "SST_RESOURCE_RouterSecret": args.sst_resource_router_secret_parameter.value
+                        "SST_RESOURCE_RouterSecret": args.router_secret_sst_resource_parameter.value
                     }
                 ),
                 tags=tags(args.tenant_id),
@@ -302,7 +302,7 @@ class Api(pulumi.ComponentResource):
                             },
                             {
                                 "name": "SST_RESOURCE_RouterSecret",
-                                "valueFrom": args.sst_resource_router_secret_parameter.arn,
+                                "valueFrom": args.router_secret_sst_resource_parameter.arn,
                             }
                         ]
                     }

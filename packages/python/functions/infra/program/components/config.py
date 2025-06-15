@@ -43,10 +43,10 @@ class Config(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__sst_resource_router_secret_parameter = aws.ssm.Parameter(
-            resource_name="SstResourceRouterSecretParameter",
+        self.__router_secret_sst_resource_parameter = aws.ssm.Parameter(
+            resource_name="RouterSecretSstResourceParameter",
             args=aws.ssm.ParameterArgs(
-                name=f"/{Resource.AppData.name}/{Resource.AppData.stage}/{args.tenant_id}/router-secret",
+                name=f"/{Resource.AppData.name}/{Resource.AppData.stage}/{args.tenant_id}/sst/resource/router-secret",
                 type=aws.ssm.ParameterType.SECURE_STRING,
                 value=pulumi.Output.json_dumps(
                     {
@@ -126,7 +126,7 @@ class Config(pulumi.ComponentResource):
         self.register_outputs(
             {
                 "router_secret": self.__router_secret.id,
-                "sst_resource_router_secret_parameter": self.__sst_resource_router_secret_parameter.id,
+                "router_secret_sst_resource_parameter": self.__router_secret_sst_resource_parameter.id,
                 "application": self.__application.id,
                 "environment": self.__environment.id,
                 "papercut_server_tailnet_uri_profile": self.__papercut_server_tailnet_uri_profile.id,
@@ -140,8 +140,8 @@ class Config(pulumi.ComponentResource):
         return self.__router_secret.result
 
     @property
-    def sst_resource_router_secret_parameter(self):
-        return self.__sst_resource_router_secret_parameter
+    def router_secret_sst_resource_parameter(self):
+        return self.__router_secret_sst_resource_parameter
 
     @property
     def application(self):

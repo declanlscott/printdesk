@@ -2,15 +2,16 @@ from typing import Optional
 
 import pulumi
 import pulumi_cloudflare as cloudflare
-import pulumi_random as random
 from sst import Resource
 
 from . import ssl
+from utils import build_name
 
 
 class RouterArgs:
-    def __init__(self, tenant_id: str):
+    def __init__(self, tenant_id: str, secret: pulumi.Input[str]):
         self.tenant_id = tenant_id
+        self.secret = secret
 
 
 class Router(pulumi.ComponentResource):
@@ -37,7 +38,10 @@ class Router(pulumi.ComponentResource):
                 zone_id=Resource.Zone.id,
                 type="CNAME",
                 name=self.__api_ssl.certificate.domain_name,
-                content="TODO",
+                content=build_name(
+                    name_template=Resource.TenantDomains.api.nameTemplate,
+                    tenant_id=args.tenant_id,
+                ),
                 ttl=1,
                 proxied=True,
             ),
@@ -62,7 +66,10 @@ class Router(pulumi.ComponentResource):
                 zone_id=Resource.Zone.id,
                 type="CNAME",
                 name=self.__files_ssl.certificate.domain_name,
-                content="TODO",
+                content=build_name(
+                    name_template=Resource.TenantDomains.files.nameTemplate,
+                    tenant_id=args.tenant_id,
+                ),
                 ttl=1,
                 proxied=True,
             ),
@@ -71,22 +78,3 @@ class Router(pulumi.ComponentResource):
                 delete_before_replace=True,
             )
         )
-
-        self.__secret = random.RandomPassword(
-            resource_name="RouterSecret",
-            args=random.RandomPasswordArgs(
-                length=32,
-                special=True,
-            ),
-            opts=pulumi.ResourceOptions(parent=self)
-        )
-
-        self.register_outputs(
-            {
-                "secret": self.__secret.id,
-            }
-        )
-
-    @property
-    def secret(self):
-        return self.__secret.result

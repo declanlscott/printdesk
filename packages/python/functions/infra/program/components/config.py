@@ -63,7 +63,10 @@ class Config(pulumi.ComponentResource):
             args=aws.appconfig.ApplicationArgs(
                 tags=tags(args.tenant_id),
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                retain_on_delete=True,
+            ),
         )
 
         self.__environment = aws.appconfig.Environment(
@@ -72,7 +75,10 @@ class Config(pulumi.ComponentResource):
                 application=self.__application.id,
                 tags=tags(args.tenant_id),
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                retain_on_delete=True,
+            ),
         )
 
         self.__papercut_server_tailnet_uri_profile = aws.appconfig.ConfigurationProfile(
@@ -83,7 +89,10 @@ class Config(pulumi.ComponentResource):
                 type="AWS.Freeform",
                 tags=tags(args.tenant_id),
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                retain_on_delete=True,
+            ),
         )
 
         self.__papercut_server_auth_token_profile = aws.appconfig.ConfigurationProfile(
@@ -94,7 +103,10 @@ class Config(pulumi.ComponentResource):
                 type="AWS.Freeform",
                 tags=tags(args.tenant_id),
             ),
-            opts=pulumi.ResourceOptions(parent=self),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                retain_on_delete=True,
+            ),
         )
 
         self.__tailscale_oauth_client_profile = aws.appconfig.ConfigurationProfile(
@@ -104,6 +116,10 @@ class Config(pulumi.ComponentResource):
                 location_uri="hosted",
                 type="AWS.Freeform",
                 tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                retain_on_delete=True,
             ),
         )
 

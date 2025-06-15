@@ -8,6 +8,34 @@ export const cloudflareApiToken = new sst.Linkable("CloudflareApiToken", {
   },
 });
 
+export const papercutTailgateExecutionRole = new aws.iam.Role(
+  "PapercutTailgateExecutionRole",
+  {
+    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+      Service: "ecs-tasks.amazonaws.com",
+    }),
+    managedPolicyArns: [aws.iam.ManagedPolicy.AmazonECSTaskExecutionRolePolicy],
+    inlinePolicies: [
+      {
+        policy: aws.iam.getPolicyDocumentOutput({
+          statements: [
+            {
+              actions: ["ssm:GetParameter"],
+              resources: ["*"],
+            },
+            {
+              actions: ["kms:Decrypt"],
+              resources: [
+                aws.kms.getAliasOutput({ name: "alias/aws/ssm" }).arn,
+              ],
+            },
+          ],
+        }).json,
+      },
+    ],
+  },
+);
+
 export const pulumiRoleExternalId = new random.RandomPassword(
   "PulumiRoleExternalId",
   {
@@ -139,73 +167,26 @@ export const realtimePublisherRole = new aws.iam.Role("RealtimePublisherRole", {
   ],
 });
 
-export const papercutTailgateExecutionRole = new aws.iam.Role(
-  "PapercutTailgateExecutionRole",
-  {
-    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-      Service: "ecs-tasks.amazonaws.com",
-    }),
-    managedPolicyArns: [aws.iam.ManagedPolicy.AmazonECSTaskExecutionRolePolicy],
-    inlinePolicies: [
-      {
-        policy: aws.iam.getPolicyDocumentOutput({
-          statements: [
-            {
-              actions: ["ssm:GetParameter"],
-              resources: ["*"],
-            },
-            {
-              actions: ["kms:Decrypt"],
-              resources: [
-                aws.kms.getAliasOutput({ name: "alias/aws/ssm" }).arn,
-              ],
-            },
-          ],
-        }).json,
-      },
-    ],
-  },
-);
-
-export const papercutTailgateTaskRole = new aws.iam.Role(
-  "PapercutTailgateTaskRole",
-  {
-    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-      Service: "ecs-tasks.amazonaws.com",
-    }),
-    inlinePolicies: [
-      {
-        policy: aws.iam.getPolicyDocumentOutput({
-          statements: [
-            {
-              actions: [
-                "ssmmessages:CreateControlChannel",
-                "ssmmessages:CreateDataChannel",
-                "ssmmessages:OpenControlChannel",
-                "ssmmessages:OpenDataChannel",
-              ],
-              resources: ["*"],
-            },
-          ],
-        }).minifiedJson,
-      },
-    ],
-  },
-);
+export const tenantApiFunctionRole = new aws.iam.Role("TenantApiFunctionRole", {
+  assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
+    Service: "lambda.amazonaws.com",
+  }),
+  managedPolicyArns: [aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole],
+});
 
 export const tenantRoles = new sst.Linkable("TenantRoles", {
   properties: {
     apiAccess: {
       nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-ApiAccessRole`,
     },
-    realtimeSubscriber: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimeSubscriberRole`,
+    bucketsAccess: {
+      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-BucketsAccessRole`,
     },
     realtimePublisher: {
       nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimePublisherRole`,
     },
-    bucketsAccess: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-BucketsAccessRole`,
+    realtimeSubscriber: {
+      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimeSubscriberRole`,
     },
   },
 });

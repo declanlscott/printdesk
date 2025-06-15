@@ -16,11 +16,11 @@ import { domains, tenantDomains, zone } from "./dns";
 import {
   cloudflareApiToken,
   papercutTailgateExecutionRole,
-  papercutTailgateTaskRole,
   pulumiRole,
   pulumiRoleExternalId,
   realtimePublisherRole,
   realtimePublisherRoleExternalId,
+  tenantApiFunctionRole,
   tenantRoles,
 } from "./iam";
 import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
@@ -57,7 +57,6 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         papercutTailgateExecutionRole,
         papercutTailgateImage,
         papercutTailgateSstKeyParameter,
-        papercutTailgateTaskRole,
         pulumiBucket,
         pulumiRole,
         pulumiRoleExternalId,
@@ -65,6 +64,7 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         realtimePublisherRoleExternalId,
         tenantApiFunctionImage,
         tenantApiFunctionResourceCiphertext,
+        tenantApiFunctionRole,
         tenantBuckets,
         tenantDomains,
         tenantRoles,

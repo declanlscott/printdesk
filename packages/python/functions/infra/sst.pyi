@@ -69,10 +69,6 @@ class Resource:
         name: str
         arn: str
         type: str
-    class PapercutTailgateTaskRole:
-        name: str
-        arn: str
-        type: str
     class PulumiBucket:
         name: str
         type: str
@@ -95,6 +91,10 @@ class Resource:
         type: str
     class TenantApiFunctionResourceCiphertext:
         encryptionKey: str
+        type: str
+    class TenantApiFunctionRole:
+        arn: str
+        name: str
         type: str
     class TenantBuckets:
         class assets:

@@ -60,30 +60,30 @@ class Realtime(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__subscriber_role: pulumi.Output[aws.iam.Role] = self.__api.api_arn.apply(
-            lambda api_arn: aws.iam.Role(
-                resource_name="SubscriberRole",
-                args=aws.iam.RoleArgs(
-                    name=build_name(
-                        name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
-                        tenant_id=args.tenant_id,
-                    ),
-                    assume_role_policy=aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                principals=[
-                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                        type="AWS", identifiers=[Resource.Api.roleArn]
-                                    )
-                                ],
-                                actions=["sts:AssumeRole"],
-                            )
-                        ]
-                    ).minified_json,
-                    inline_policies=[
-                        aws.iam.RoleInlinePolicyArgs(
-                            policy=aws.iam.get_policy_document_output(
-                                statements=[
+        self.__subscriber_role = aws.iam.Role(
+            resource_name="SubscriberRole",
+            args=aws.iam.RoleArgs(
+                name=build_name(
+                    name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS", identifiers=[Resource.Api.roleArn]
+                                )
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ]
+                ).json,
+                inline_policies=[
+                    aws.iam.RoleInlinePolicyArgs(
+                        policy=aws.iam.get_policy_document_output(
+                            statements=self.__api.api_arn.apply(
+                                lambda api_arn: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventConnect"],
                                         resource=[api_arn],
@@ -93,55 +93,56 @@ class Realtime(pulumi.ComponentResource):
                                         resource=[f"{api_arn}/*"],
                                     ),
                                 ]
-                            ).minified_json
-                        )
-                    ],
-                    tags=tags(args.tenant_id),
-                ),
-                opts=pulumi.ResourceOptions(parent=self),
-            )
+                            )
+                        ).json
+                    )
+                ],
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__publisher_role: pulumi.Output[aws.iam.Role] = self.__api.api_arn.apply(
-            lambda api_arn: aws.iam.Role(
-                resource_name="PublisherRole",
-                args=aws.iam.RoleArgs(
-                    name=build_name(
-                        name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
-                        tenant_id=args.tenant_id,
-                    ),
-                    assume_role_policy=aws.iam.get_policy_document_output(
-                        statements=[
-                            aws.iam.GetPolicyDocumentStatementArgs(
-                                principals=[
-                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                        type="AWS", identifiers=[Resource.Api.roleArn]
-                                    ),
-                                    aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                        type="AWS",
-                                        identifiers=[Resource.PapercutSync.roleArn],
-                                    ),
-                                ],
-                                actions=["sts:AssumeRole"],
-                            )
-                        ]
-                    ).minified_json,
-                    inline_policies=[
-                        aws.iam.RoleInlinePolicyArgs(
-                            policy=aws.iam.get_policy_document_output(
-                                statements=[
+        self.__publisher_role = aws.iam.Role(
+            resource_name="PublisherRole",
+            args=aws.iam.RoleArgs(
+                name=build_name(
+                    name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[
+                        aws.iam.GetPolicyDocumentStatementArgs(
+                            principals=[
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS",
+                                    identifiers=[Resource.Api.roleArn],
+                                ),
+                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                                    type="AWS",
+                                    identifiers=[Resource.PapercutSync.roleArn],
+                                ),
+                            ],
+                            actions=["sts:AssumeRole"],
+                        )
+                    ]
+                ).json,
+                inline_policies=[
+                    aws.iam.RoleInlinePolicyArgs(
+                        policy=aws.iam.get_policy_document_output(
+                            statements=self.__api.api_arn.apply(
+                                lambda api_arn: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventPublish"],
-                                        resources=[f"{api_arn}/*"],
+                                        resource=[f"{api_arn}/*"],
                                     )
                                 ]
-                            ).minified_json
-                        )
-                    ],
-                    tags=tags(args.tenant_id),
-                ),
-                opts=pulumi.ResourceOptions(parent=self),
-            )
+                            )
+                        ).json
+                    )
+                ],
+                tags=tags(args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
         )
 
         self.__ssl = ssl.Ssl(
@@ -191,8 +192,8 @@ class Realtime(pulumi.ComponentResource):
             "api": self.__api.id,
             "events_channel_namespace": self.__events_channel_namespace.id,
             "replicache_channel_namespace": self.__replicache_channel_namespace.id,
-            "subscriber_role": self.__subscriber_role.apply(lambda role: role.id),
-            "publisher_role": self.__publisher_role.apply(lambda role: role.id),
+            "subscriber_role": self.__subscriber_role.id,
+            "publisher_role": self.__publisher_role.id,
             "domain_name": self.__domain_name.id,
             "domain_name_api_association": self.__domain_name_api_association.id,
             "alias_record": self.__alias_record.id

@@ -6,7 +6,7 @@ import {
   routerSecret,
 } from "./cdn";
 import * as custom from "./custom";
-import { configTable, dsqlCluster } from "./db";
+import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import {
   realtimePublisherRole,
@@ -64,13 +64,7 @@ export const tenantApiFunctionResourceCiphertext = new custom.Ciphertext(
   "TenantApiFunctionResourceCiphertext",
   {
     plaintext: $jsonStringify(
-      injectLinkables(
-        resourcePrefix,
-        appData,
-        aws_,
-        configTable,
-        tenantDomains,
-      ),
+      injectLinkables(resourcePrefix, appData, aws_, tenantDomains),
     ),
     writeToFile: normalizePath(resourceFileName, tenantApiFunctionDir),
   },

@@ -1,8 +1,8 @@
-import pulumi_random as random
-
 from .components import (
     Api,
     ApiArgs,
+    Config,
+    ConfigArgs,
     Router,
     RouterArgs,
     Realtime,
@@ -14,36 +14,37 @@ from models import sqs_record
 
 
 def inline(payload: sqs_record.Payload):
-    router_secret = random.RandomPassword(
-            resource_name="RouterSecret",
-            args=random.RandomPasswordArgs(
-                length=32,
-                special=True,
-            ),
+    config = Config(
+        args=ConfigArgs(
+            tenant_id=payload.tenant_id,
         )
+    )
 
     api = Api(
         args=ApiArgs(
-            tenant_id=payload.tenantId,
-            router_secret=router_secret.result,
+            tenant_id=payload.tenant_id,
+            sst_resource_router_secret_parameter=config.sst_resource_router_secret_parameter,
+            config_application=config.application,
+            config_environment=config.environment,
+            config_profiles=config.profiles,
         ),
     )
 
     storage = Storage(
         args=StorageArgs(
-            tenant_id=payload.tenantId,
+            tenant_id=payload.tenant_id,
         )
     )
 
     router = Router(
         args=RouterArgs(
-            tenant_id=payload.tenantId,
-            secret=router_secret.result
+            tenant_id=payload.tenant_id,
+            secret=config.router_secret,
         )
     )
 
     realtime = Realtime(
         args=RealtimeArgs(
-            tenant_id=payload.tenantId,
+            tenant_id=payload.tenant_id,
         ),
     )

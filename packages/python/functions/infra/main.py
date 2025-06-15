@@ -40,7 +40,7 @@ def record_handler(record: SQSRecord):
 
     logger.info("Initializing stack ...")
     project_name = f"{Resource.AppData.name}-{Resource.AppData.stage}-infra"
-    stack_name = payload.tenantId
+    stack_name = payload.tenant_id
     stack = pulumi.automation.create_or_select_stack(
         project_name=project_name,
         stack_name=stack_name,
@@ -61,6 +61,7 @@ def record_handler(record: SQSRecord):
     logger.info("Installing plugins ...")
     stack.workspace.install_plugin("aws", f"v{version('pulumi-aws')}")
     stack.workspace.install_plugin("cloudflare", f"v{version('pulumi-cloudflare')}")
+    stack.workspace.install_plugin("random", f"v{version("pulumi-random")}")
     logger.info("Successfully installed plugins.")
 
     logger.info("Setting stack configuration ...")
@@ -82,7 +83,7 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully set stack configuration.")
 
     logger.info("Registering stack transformations ...")
-    pulumi.runtime.register_stack_transformation(transform.name(payload.tenantId))
+    pulumi.runtime.register_stack_transformation(transform.name(payload.tenant_id))
     logger.info("Successfully registered stack transformations.")
 
     result: pulumi.automation.UpResult | pulumi.automation.DestroyResult

@@ -23,11 +23,8 @@ def inline(payload: sqs_record.Payload):
     api = Api(
         args=ApiArgs(
             tenant_id=payload.tenant_id,
-            router_secret_sst_resource_parameter=config.router_secret_sst_resource_parameter,
-            config_agent_access_token_parameter=config.agent_access_token_parameter,
-            config_application=config.application,
-            config_environment=config.environment,
-            config_profiles=config.profiles,
+            static_config=config.static,
+            dynamic_config=config.dynamic,
         ),
     )
 
@@ -40,7 +37,7 @@ def inline(payload: sqs_record.Payload):
     router = Router(
         args=RouterArgs(
             tenant_id=payload.tenant_id,
-            secret=config.router_secret,
+            secret=config.static.router_secret,
         )
     )
 

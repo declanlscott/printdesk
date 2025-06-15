@@ -5,7 +5,7 @@ import pulumi
 import pulumi_aws as aws
 from sst import Resource
 
-from .config import ConfigProfiles
+from .config import Static, Dynamic
 from .physical_name import PhysicalName, PhysicalNameArgs
 from utils import tags, naming
 
@@ -14,18 +14,12 @@ class ApiArgs:
     def __init__(
             self,
             tenant_id: str,
-            router_secret_sst_resource_parameter: pulumi.Input[aws.ssm.Parameter],
-            config_agent_access_token_parameter: pulumi.Input[aws.ssm.Parameter],
-            config_application: pulumi.Input[aws.appconfig.Application],
-            config_environment: pulumi.Input[aws.appconfig.Environment],
-            config_profiles: pulumi.Input[ConfigProfiles],
+            static_config: pulumi.Input[Static],
+            dynamic_config: pulumi.Input[Dynamic],
         ):
         self.tenant_id = tenant_id
-        self.router_secret_sst_resource_parameter = router_secret_sst_resource_parameter
-        self.config_agent_access_token_parameter = config_agent_access_token_parameter
-        self.config_application = config_application
-        self.config_environment = config_environment
-        self.config_profiles = config_profiles
+        self.static_config = static_config
+        self.dynamic_config = dynamic_config
 
 
 class Api(pulumi.ComponentResource):
@@ -133,7 +127,7 @@ class Api(pulumi.ComponentResource):
                     variables={
                         "TENANT_ID": args.tenant_id,
                         "SST_KEY": Resource.TenantApiFunctionResourceCiphertext.encryptionKey,
-                        "SST_RESOURCE_RouterSecret": args.router_secret_sst_resource_parameter.value
+                        "SST_RESOURCE_RouterSecret": args.static_config.parameters.router_secret_sst_resource.value,
                     }
                 ),
                 tags=tags(args.tenant_id),
@@ -208,11 +202,11 @@ class Api(pulumi.ComponentResource):
                     aws.iam.RoleInlinePolicyArgs(
                         policy=aws.iam.get_policy_document_output(
                             statements=pulumi.Output.all(
-                                pulumi.Output.from_input(args.config_application.arn),
-                                pulumi.Output.from_input(args.config_environment.arn),
-                                pulumi.Output.from_input(args.config_profiles.papercut_server_tailnet_uri.arn),
-                                pulumi.Output.from_input(args.config_profiles.papercut_server_auth_token.arn),
-                                pulumi.Output.from_input(args.config_profiles.tailscale_oauth_client.arn)
+                                pulumi.Output.from_input(args.dynamic_config.application.arn),
+                                pulumi.Output.from_input(args.dynamic_config.environment.arn),
+                                pulumi.Output.from_input(args.dynamic_config.profiles.papercut_server_tailnet_uri.arn),
+                                pulumi.Output.from_input(args.dynamic_config.profiles.papercut_server_auth_token.arn),
+                                pulumi.Output.from_input(args.dynamic_config.profiles.tailscale_oauth_client.arn),
                             ).apply(lambda appconfig_resources: [
                                 aws.iam.GetPolicyDocumentStatementArgs(
                                     actions=[
@@ -296,18 +290,18 @@ class Api(pulumi.ComponentResource):
                                 "name": "PREFETCH_LIST",
                                 "value": pulumi.Output.format(
                                     "{0}:{1}:{2},{0}:{1}:{3},{0}:{1}:{4}",
-                                    args.config_application.name,
-                                    args.config_environment.name,
-                                    args.config_profiles.papercut_server_tailnet_uri.name,
-                                    args.config_profiles.papercut_server_auth_token.name,
-                                    args.config_profiles.tailscale_oauth_client.name
+                                    args.dynamic_config.application.name,
+                                    args.dynamic_config.environment.name,
+                                    args.dynamic_config.profiles.papercut_server_tailnet_uri.name,
+                                    args.dynamic_config.profiles.papercut_server_auth_token.name,
+                                    args.dynamic_config.profiles.tailscale_oauth_client.name
                                 ),
                             }
                         ],
                         "secrets": [
                             {
                                 "name": "ACCESS_TOKEN",
-                                "valueFrom": args.config_agent_access_token_parameter.arn,
+                                "valueFrom": args.static_config.parameters.agent_access_token.arn,
                             }
                         ]
                     },
@@ -350,15 +344,15 @@ class Api(pulumi.ComponentResource):
                             {
                                 "name": "SST_RESOURCE_Config",
                                 "value": pulumi.Output.json_dumps({
-                                    "application": args.config_application.id,
-                                    "environment": args.config_environment.id,
+                                    "application": args.dynamic_config.application.id,
+                                    "environment": args.dynamic_config.environment.id,
                                     "profiles": {
                                         "papercut_server_tailnet_uri":
-                                            args.config_profiles.papercut_server_tailnet_uri.id,
+                                            args.dynamic_config.profiles.papercut_server_tailnet_uri.id,
                                         "papercut_server_auth_token":
-                                            args.config_profiles.papercut_server_auth_token.id,
+                                            args.dynamic_config.profiles.papercut_server_auth_token.id,
                                         "tailscale_oauth_client":
-                                            args.config_profiles.tailscale_oauth_client.id,
+                                            args.dynamic_config.profiles.tailscale_oauth_client.id,
                                     }
                                 })
                             }
@@ -366,7 +360,7 @@ class Api(pulumi.ComponentResource):
                         "secrets": [
                             {
                                 "name": "APPCONFIG_AGENT_ACCESS_TOKEN",
-                                "valueFrom": args.config_agent_access_token_parameter.arn,
+                                "valueFrom": args.static_config.parameters.agent_access_token.arn,
                             },
                             {
                                 "name": "SST_KEY",
@@ -374,7 +368,7 @@ class Api(pulumi.ComponentResource):
                             },
                             {
                                 "name": "SST_RESOURCE_RouterSecret",
-                                "valueFrom": args.router_secret_sst_resource_parameter.arn,
+                                "valueFrom": args.static_config.parameters.router_secret_sst_resource.arn,
                             }
                         ]
                     }

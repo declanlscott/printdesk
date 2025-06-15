@@ -8,12 +8,27 @@ from sst import Resource
 from utils import tags
 
 
-class ConfigArgs:
-    def __init__(self, tenant_id: str):
-        self.tenant_id = tenant_id
+class Parameters:
+    def __init__(
+        self,
+        router_secret_sst_resource: pulumi.Input[aws.ssm.Paramater],
+        agent_access_token: pulumi.Input[aws.ssm.Parameter],
+    ):
+        self.router_secret_sst_resource = router_secret_sst_resource
+        self.agent_access_token = agent_access_token
 
 
-class ConfigProfiles:
+class Static:
+    def __init__(
+        self,
+        router_secret: pulumi.Input[str],
+        parameters: Parameters,
+    ):
+        self.router_secret = router_secret
+        self.parameters = parameters
+
+
+class Profiles:
     def __init__(
         self,
         papercut_server_tailnet_uri: pulumi.Input[aws.appconfig.ConfigurationProfile],
@@ -23,6 +38,23 @@ class ConfigProfiles:
         self.papercut_server_tailnet_uri = papercut_server_tailnet_uri
         self.papercut_server_auth_token = papercut_server_auth_token
         self.tailscale_oauth_client = tailscale_oauth_client
+
+
+class Dynamic:
+    def __init__(
+        self,
+        application: aws.appconfig.Application,
+        environment: aws.appconfig.Environment,
+        profiles: Profiles
+    ):
+        self.application = application
+        self.environment = environment
+        self.profiles = profiles
+
+
+class ConfigArgs:
+    def __init__(self, tenant_id: str):
+        self.tenant_id = tenant_id
 
 
 class Config(pulumi.ComponentResource):
@@ -157,29 +189,23 @@ class Config(pulumi.ComponentResource):
         )
 
     @property
-    def router_secret(self):
-        return self.__router_secret.result
+    def static(self):
+        return Static(
+            router_secret=self.__router_secret.result,
+            parameters=Parameters(
+                router_secret_sst_resource=self.__router_secret_sst_resource_parameter,
+                agent_access_token=self.__agent_access_token_parameter,
+            )
+        )
 
     @property
-    def router_secret_sst_resource_parameter(self):
-        return self.__router_secret_sst_resource_parameter
-
-    @property
-    def agent_access_token_parameter(self):
-        return self.__agent_access_token_parameter
-
-    @property
-    def application(self):
-        return self.__application
-
-    @property
-    def environment(self):
-        return self.__environment
-
-    @property
-    def profiles(self):
-        return ConfigProfiles(
-            papercut_server_tailnet_uri=self.__papercut_server_tailnet_uri_profile,
-            papercut_server_auth_token=self.__papercut_server_auth_token_profile,
-            tailscale_oauth_client=self.__tailscale_oauth_client_profile
+    def dynamic(self):
+        return Dynamic(
+            application=self.__application,
+            environment=self.__environment,
+            profiles=Profiles(
+                papercut_server_tailnet_uri=self.__papercut_server_tailnet_uri_profile,
+                papercut_server_auth_token=self.__papercut_server_auth_token_profile,
+                tailscale_oauth_client=self.__tailscale_oauth_client_profile
+            )
         )

@@ -236,6 +236,7 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
+        appconfig_agent_port = 2772
         self.__papercut_tailgate_task_definition = aws.ecs.TaskDefinition(
             resource_name="PapercutTailgateTaskDefinition",
             args=aws.ecs.TaskDefinitionArgs(
@@ -253,18 +254,73 @@ class Api(pulumi.ComponentResource):
                 task_role_arn=self.__papercut_tailgate_task_role.arn,
                 container_definitions=pulumi.Output.json_dumps([
                     {
+                        "name": "appconfig-agent",
+                        "image": "public.ecr.aws/aws-appconfig/aws-appconfig-agent:2.x",
+                        "essential": True,
+                        "pseudoTerminal": True,
+                        "portMappings": [
+                            {
+                                "containerPort": appconfig_agent_port,
+                                "protocol": "tcp",
+                            }
+                        ],
+                        "healthCheck": {
+                            "command": [
+                                "CMD-SHELL",
+                                f"curl -fSs http://localhost:{appconfig_agent_port}/ping || exit 1"
+                            ],
+                            "interval": 30,
+                            "timeout": 5,
+                            "retries": 3,
+                            "startPeriod": 10,
+                        },
+                        "logConfiguration": {
+                            "logDriver": "awslogs",
+                            "options": {
+                                "awslogs-group": self.__papercut_tailgate_log_group.name,
+                                "awslogs-region": Resource.Aws.region,
+                                "awslogs-stream-prefix": "appconfig-agent",
+                            }
+                        },
+                        "linuxParameters": {
+                            "initProcessEnabled": True,
+                        },
+                        "environment": [
+                            {
+                                "name": "HTTP_PORT",
+                                "value": str(appconfig_agent_port)
+                            },
+                            {
+                                "name": "PREFETCH_LIST",
+                                "value": pulumi.Output.format(
+                                    "{0}:{1}:{2},{0}:{1}:{3},{0}:{1}:{4}",
+                                    args.config_application.name,
+                                    args.config_environment.name,
+                                    args.config_profiles.papercut_server_tailnet_uri.name,
+                                    args.config_profiles.papercut_server_auth_token.name,
+                                    args.config_profiles.tailscale_oauth_client.name
+                                ),
+                            }
+                        ]
+                    },
+                    {
                         "name": "papercut-tailgate",
                         "image": Resource.PapercutTailgateImage.uri,
-                        "cpu": 256,
-                        "memory": 512,
+                        "essential": True,
                         "pseudoTerminal": True,
+                        "dependsOn": [
+                            {
+                                "containerName": "appconfig-agent",
+                                "condition": "HEALTHY",
+                            }
+                        ],
                         "portMappings": [{"containerPortRage": "1-65535"}],
                         "logConfiguration": {
                             "logDriver": "awslogs",
                             "options": {
                                 "awslogs-group": self.__papercut_tailgate_log_group.name,
                                 "awslogs-region": Resource.Aws.region,
-                                "awslogs-stream-prefix": "/service",
+                                "awslogs-stream-prefix": "papercut-tailgate",
                             }
                         },
                         "linuxParameters": {
@@ -274,6 +330,10 @@ class Api(pulumi.ComponentResource):
                             {
                                 "name": "TENANT_ID",
                                 "value": args.tenant_id,
+                            },
+                            {
+                                "name": "APPCONFIG_AGENT_PORT",
+                                "value": str(appconfig_agent_port)
                             },
                             {
                                 "name": "PORT",
@@ -462,6 +522,7 @@ class Api(pulumi.ComponentResource):
                 "api_function_permission": self.__api_function_permission.id,
                 "api_function_integration": self.__api_function_integration.id,
                 "api_function_route": self.__api_function_route.id,
+                "papercut_tailgate_log_group": self.__papercut_tailgate_log_group.id,
                 "papercut_tailgate_task_role": self.__papercut_tailgate_task_role.id,
                 "papercut_tailgate_task_definition": self.__papercut_tailgate_task_definition.id,
                 "papercut_tailgate_cloud_map_service": self.__papercut_tailgate_cloud_map_service.id,

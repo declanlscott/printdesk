@@ -9,6 +9,6 @@
     "@printdesk/core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250613.0"
+    "@cloudflare/workers-types": "^4.20250618.0"
   }
 }

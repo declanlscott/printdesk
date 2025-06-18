@@ -12,6 +12,6 @@
     "@trpc/server": "^11.4.1"
   },
   "devDependencies": {
-    "@types/aws-lambda": "^8.10.149"
+    "@types/aws-lambda": "^8.10.150"
   }
 }

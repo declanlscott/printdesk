@@ -7,19 +7,10 @@ import (
 	tsclient "github.com/tailscale/tailscale-client-go/v2"
 )
 
-type OAuthClient struct {
-	Id     string
-	Secret string
-}
-
-func (oauthClient *OAuthClient) NewClient() *tsclient.Client {
+func NewClient(ocfg *tsclient.OAuthConfig) *tsclient.Client {
 	return &tsclient.Client{
 		Tailnet: "-",
-		HTTP: tsclient.OAuthConfig{
-			ClientID:     oauthClient.Id,
-			ClientSecret: oauthClient.Secret,
-			Scopes:       []string{"auth_keys"},
-		}.HTTPClient(),
+		HTTP:    ocfg.HTTPClient(),
 	}
 }
 

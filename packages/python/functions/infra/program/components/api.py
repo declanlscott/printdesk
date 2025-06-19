@@ -342,17 +342,17 @@ class Api(pulumi.ComponentResource):
                                 "value": "80",
                             },
                             {
-                                "name": "SST_RESOURCE_Config",
+                                "name": "SST_RESOURCE_AppConfig",
                                 "value": pulumi.Output.json_dumps({
-                                    "application": args.dynamic_config.application.id,
-                                    "environment": args.dynamic_config.environment.id,
+                                    "application": args.dynamic_config.application.name,
+                                    "environment": args.dynamic_config.environment.name,
                                     "profiles": {
                                         "papercut_server_tailnet_uri":
-                                            args.dynamic_config.profiles.papercut_server_tailnet_uri.id,
+                                            args.dynamic_config.profiles.papercut_server_tailnet_uri.name,
                                         "papercut_server_auth_token":
-                                            args.dynamic_config.profiles.papercut_server_auth_token.id,
+                                            args.dynamic_config.profiles.papercut_server_auth_token.name,
                                         "tailscale_oauth_client":
-                                            args.dynamic_config.profiles.tailscale_oauth_client.id,
+                                            args.dynamic_config.profiles.tailscale_oauth_client.name,
                                     }
                                 })
                             }

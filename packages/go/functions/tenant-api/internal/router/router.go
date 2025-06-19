@@ -1,15 +1,11 @@
 package router
 
 import (
-	"log"
 	"net/http"
-	"os"
-	"strings"
 
 	"core/pkg/middleware"
-	"tenant-api/internal/handlers"
 
-	"github.com/sst/sst/v3/sdk/golang/resource"
+	"tenant-api/internal/handlers"
 )
 
 func New() http.Handler {
@@ -25,44 +21,7 @@ func New() http.Handler {
 	mw := middleware.Chain(
 		middleware.Recovery,
 		middleware.Logger,
-		func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				tenantId, ok := os.LookupEnv("TENANT_ID")
-				if !ok {
-					log.Printf("missing TENANT_ID environment variable")
-
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-
-				apiDomainTemplate, err := resource.Get("TenantDomains", "api", "nameTemplate")
-				if err != nil {
-					log.Printf("failed retrieving TenantDomainTemplates.api resource: %v", err)
-
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-				apiDomain := strings.ReplaceAll(apiDomainTemplate.(string), "{{tenant_id}}", tenantId)
-
-				routerSecret, err := resource.Get("RouterSecret", "value")
-				if err != nil {
-					log.Printf("failed retrieving RouterSecret.value resource: %v", err)
-
-					http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-					return
-				}
-
-				forwardedHost := &middleware.ForwardedHost{
-					Name: apiDomain,
-					Secret: &middleware.ForwardedHostSecret{
-						Key:   "X-Router-Secret",
-						Value: routerSecret.(string),
-					},
-				}
-
-				forwardedHost.Validator(next).ServeHTTP(w, r)
-			})
-		},
+		middleware.Validator,
 	)
 
 	return mw(mux)

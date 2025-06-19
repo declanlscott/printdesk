@@ -22,7 +22,7 @@ func main() {
 	handler := proxy.NewHandler(proxy.New(cfg))
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", config.Static.Port),
+		Addr:    fmt.Sprintf(":%d", config.Global.Port),
 		Handler: handler,
 	}
 

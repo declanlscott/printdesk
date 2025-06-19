@@ -9,7 +9,7 @@ import (
 	"papercut-tailgate/internal/config"
 )
 
-func New(cfg *config.Dynamic) *httputil.ReverseProxy {
+func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 	rewrite := func(req *httputil.ProxyRequest) {
 		req.Out.URL.Scheme = cfg.Target.Scheme
 		req.Out.URL.Host = cfg.Target.Host

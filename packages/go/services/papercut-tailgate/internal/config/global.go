@@ -8,10 +8,10 @@ import (
 	"core/pkg/resource"
 )
 
-var Static struct {
+var Global struct {
 	Port               int
-	AppConfigAgentPort int
-	AppConfig          *appConfig
+	appConfigAgentPort int
+	appConfig          *appConfig
 }
 
 type appConfig struct {
@@ -31,7 +31,7 @@ func init() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	Static.Port, err = strconv.Atoi(*portStr)
+	Global.Port, err = strconv.Atoi(*portStr)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
@@ -40,12 +40,12 @@ func init() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	Static.AppConfigAgentPort, err = strconv.Atoi(*appCfgAgtPortStr)
+	Global.appConfigAgentPort, err = strconv.Atoi(*appCfgAgtPortStr)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 
-	Static.AppConfig, err = resource.Unmarshal[appConfig]("AppConfig")
+	Global.appConfig, err = resource.Unmarshal[appConfig]("AppConfig")
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

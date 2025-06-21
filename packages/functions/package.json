@@ -5,11 +5,11 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@hono/trpc-server": "^0.3.4",
+    "@hono/trpc-server": "^0.4.0",
     "@hono/valibot-validator": "^0.5.2",
     "@oslojs/jwt": "^0.3.0",
     "@printdesk/core": "workspace:*",
-    "@trpc/server": "^11.4.1"
+    "@trpc/server": "^11.4.2"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150"

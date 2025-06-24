@@ -34,7 +34,7 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		rawUri, err := loadConfig(ctx, Global.appConfig.Profiles.PapercutServerTailnetUri)
+		rawUri, err := load(ctx, Global.appConfig.Profiles.PapercutServerTailnetUri)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	})
 
 	g.Go(func() error {
-		authToken, err := loadConfig(ctx, Global.appConfig.Profiles.PapercutServerAuthToken)
+		authToken, err := load(ctx, Global.appConfig.Profiles.PapercutServerAuthToken)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	})
 
 	g.Go(func() error {
-		client, err := unmarshalConfig[struct {
+		client, err := unmarshal[struct {
 			Id     string `json:"id"`
 			Secret string `json:"secret"`
 		}](ctx, Global.appConfig.Profiles.TailscaleOAuthClient)
@@ -81,10 +81,6 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 			return err
 		}
 
-		if _, err = cfg.Tailscale.Server.Up(ctx); err != nil {
-			return err
-		}
-
 		return nil
 	})
 
@@ -95,8 +91,8 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	return &cfg, nil
 }
 
-func loadConfig(ctx context.Context, profile string) (*string, error) {
-	data, err := fetchConfig(ctx, profile)
+func load(ctx context.Context, profile string) (*string, error) {
+	data, err := fetch(ctx, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -106,8 +102,8 @@ func loadConfig(ctx context.Context, profile string) (*string, error) {
 	return &config, nil
 }
 
-func unmarshalConfig[TConfig any](ctx context.Context, profile string) (*TConfig, error) {
-	data, err := fetchConfig(ctx, profile)
+func unmarshal[TConfig any](ctx context.Context, profile string) (*TConfig, error) {
+	data, err := fetch(ctx, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +116,7 @@ func unmarshalConfig[TConfig any](ctx context.Context, profile string) (*TConfig
 	return &config, nil
 }
 
-func fetchConfig(ctx context.Context, profile string) ([]byte, error) {
+func fetch(ctx context.Context, profile string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
@@ -153,4 +149,21 @@ func fetchConfig(ctx context.Context, profile string) ([]byte, error) {
 	}
 
 	return data, nil
+}
+
+func (cfg *RuntimeConfig) HasChanged(newCfg *RuntimeConfig) bool {
+	if cfg.AuthToken != newCfg.AuthToken {
+		return true
+	}
+
+	if cfg.Tailscale.OAuth.ClientID != newCfg.Tailscale.OAuth.ClientID ||
+		cfg.Tailscale.OAuth.ClientSecret != newCfg.Tailscale.OAuth.ClientSecret {
+		return true
+	}
+
+	if cfg.Target.String() != newCfg.Target.String() {
+		return true
+	}
+
+	return false
 }

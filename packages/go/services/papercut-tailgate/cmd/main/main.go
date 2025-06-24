@@ -14,19 +14,21 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.Load(ctx)
+	initialCfg, err := config.Load(ctx)
 	if err != nil {
 		log.Fatalf("failed to load configuration: %v", err)
 	}
 
-	handler := proxy.NewHandler(proxy.New(cfg))
+	ph := proxy.NewHandler(initialCfg)
 
-	server := &http.Server{
+	go ph.StartConfigReloader(ctx, initialCfg)
+
+	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", config.Global.Port),
-		Handler: handler,
+		Handler: ph.NewHTTPHandler(),
 	}
 
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("http server error: %v", err)
 	}
 }

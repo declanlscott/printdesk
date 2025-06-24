@@ -23,7 +23,13 @@ import {
   tenantApiFunctionRole,
   tenantRoles,
 } from "./iam";
-import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
+import {
+  appData,
+  aws_,
+  headers,
+  resourceFileName,
+  resourcePrefix,
+} from "./misc";
 import {
   invoicesProcessor,
   papercutSync,
@@ -52,6 +58,7 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         cloudfrontRewriteUriFunction,
         cloudfrontS3OriginAccessControl,
         domains,
+        headers,
         invoicesProcessor,
         papercutSync,
         papercutTailgateExecutionRole,

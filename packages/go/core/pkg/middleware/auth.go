@@ -24,6 +24,12 @@ func Validator(next http.Handler) http.Handler {
 		}
 		apiDomain := strings.ReplaceAll(apiDomainTemplate.(string), "{{tenant_id}}", *tenantId)
 
+		xrsName, err := resource.Get("Headers", "names", "ROUTER_SECRET")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		routerSecret, err := resource.Get("RouterSecret", "value")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -31,9 +37,9 @@ func Validator(next http.Handler) http.Handler {
 		}
 
 		xfh := r.Header.Get("X-Forwarded-Host")
-		xs := r.Header.Get("X-Router-Secret")
-		if xfh != apiDomain || xs != routerSecret.(string) {
-			log.Printf("invalid forwarded host or secret: %s, %s", xfh, xs)
+		xrs := r.Header.Get(xrsName.(string))
+		if xfh != apiDomain || xrs != routerSecret.(string) {
+			log.Printf("invalid forwarded host or secret: %s, %s", xfh, xrs)
 
 			http.Error(w, "Forbidden", http.StatusForbidden)
 			return

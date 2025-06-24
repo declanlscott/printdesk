@@ -1,12 +1,14 @@
 package proxy
 
 import (
+	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 
 	"papercut-tailgate/internal/config"
+	"papercut-tailgate/internal/papercut"
 )
 
 func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
@@ -21,7 +23,12 @@ func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 			req.Out.URL.RawQuery = cfg.Target.RawQuery + "&" + req.Out.URL.RawQuery
 		}
 
-		// TODO: Inject papercut auth token into the request body if the header is set
+		switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(config.Global.SetPapercutAuthHeaderName))) {
+		case "1", "true", "yes", "on":
+			if err := papercut.InjectAuthToken(req, cfg.AuthToken); err != nil {
+				log.Printf("failed to inject papercut auth token: %v", err)
+			}
+		}
 	}
 
 	return &httputil.ReverseProxy{

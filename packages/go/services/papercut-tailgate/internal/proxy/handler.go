@@ -49,7 +49,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pxy.ServeHTTP(w, r)
 }
 
-func (h *Handler) StartConfigReloader(ctx context.Context, initialCfg *config.RuntimeConfig) {
+func (h *Handler) AutoReload(ctx context.Context, initialCfg *config.RuntimeConfig) {
 	cfg := *initialCfg
 	ticker := time.NewTicker(1 * time.Minute)
 	defer ticker.Stop()

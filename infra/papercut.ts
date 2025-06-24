@@ -4,7 +4,13 @@ import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import { tenantRoles } from "./iam";
-import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
+import {
+  appData,
+  aws_,
+  headers,
+  resourceFileName,
+  resourcePrefix,
+} from "./misc";
 import { repository } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 
@@ -16,7 +22,7 @@ export const papercutTailgateResourceCiphertext = new custom.Ciphertext(
   "PapercutTailgateResourceCiphertext",
   {
     plaintext: $jsonStringify(
-      injectLinkables(resourcePrefix, appData, aws_, tenantDomains),
+      injectLinkables(resourcePrefix, appData, aws_, headers, tenantDomains),
     ),
     writeToFile: normalizePath(resourceFileName, papercutTailgatePath),
   },

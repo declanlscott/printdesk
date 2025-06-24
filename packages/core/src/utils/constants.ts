@@ -44,6 +44,7 @@ export namespace Constants {
   export const HEADER_NAMES = {
     TENANT_ID: "x-tenant-id",
     ROUTER_SECRET: "x-router-secret",
+    SET_PAPERCUT_AUTH: "x-set-papercut-auth",
   } as const;
 
   export const ENTRA_ID = "entra_id";

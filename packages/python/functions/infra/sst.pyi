@@ -46,6 +46,12 @@ class Resource:
         web: str
         www: str
         type: str
+    class Headers:
+        class names:
+            TENANT_ID: str
+            ROUTER_SECRET: str
+            SET_PAPERCUT_AUTH: str
+        type: str
     class InvoicesProcessor:
         arn: str
         invokeArn: str

@@ -1,3 +1,5 @@
+import { Constants } from "@printdesk/core/utils/constants";
+
 sst.Linkable.wrap(aws.apigatewayv2.VpcLink, (vpcLink) => ({
   properties: {
     id: vpcLink.id,
@@ -126,6 +128,12 @@ export const aws_ = new sst.Linkable("Aws", {
 export const cloudflare_ = new sst.Linkable("Cloudflare", {
   properties: {
     account: { id: cloudflareAccountId.value },
+  },
+});
+
+export const headers = new sst.Linkable("Headers", {
+  properties: {
+    names: Constants.HEADER_NAMES,
   },
 });
 

@@ -9,9 +9,10 @@ import (
 )
 
 var Global struct {
-	Port               int
-	appConfigAgentPort int
-	appConfig          *appConfig
+	Port                      int
+	SetPapercutAuthHeaderName string
+	appConfigAgentPort        int
+	appConfig                 *appConfig
 }
 
 type appConfig struct {
@@ -35,6 +36,9 @@ func init() {
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
+
+	setPapercutAuthHeaderName, err := resource.Get("Headers", "names", "SET_PAPERCUT_AUTH")
+	Global.SetPapercutAuthHeaderName = setPapercutAuthHeaderName.(string)
 
 	appCfgAgtPortStr, err := env.Get("APPCONFIG_AGENT_PORT")
 	if err != nil {

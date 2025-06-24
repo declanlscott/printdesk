@@ -21,7 +21,7 @@ func main() {
 
 	ph := proxy.NewHandler(initialCfg)
 
-	go ph.StartConfigReloader(ctx, initialCfg)
+	go ph.AutoReload(ctx, initialCfg)
 
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", config.Global.Port),

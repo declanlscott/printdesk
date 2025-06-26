@@ -15,7 +15,7 @@ func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 	rewrite := func(req *httputil.ProxyRequest) {
 		req.Out.URL.Scheme = cfg.Target.Scheme
 		req.Out.URL.Host = cfg.Target.Host
-		req.Out.URL.Path, req.Out.URL.RawPath = joinURLPath(req.In.URL, cfg.Target)
+		req.Out.URL.Path, req.Out.URL.RawPath = joinURLPath(cfg.Target, req.In.URL)
 
 		if cfg.Target.RawQuery == "" || req.Out.URL.RawQuery == "" {
 			req.Out.URL.RawQuery = cfg.Target.RawQuery + req.Out.URL.RawQuery
@@ -23,10 +23,12 @@ func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 			req.Out.URL.RawQuery = cfg.Target.RawQuery + "&" + req.Out.URL.RawQuery
 		}
 
-		switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(config.Global.SetPapercutAuthHeaderName))) {
-		case "1", "true", "yes", "on":
-			if err := papercut.InjectAuthToken(req, cfg.AuthToken); err != nil {
-				log.Printf("failed to inject papercut auth token: %v", err)
+		if strings.ToLower(strings.TrimSuffix(req.Out.URL.Path, "/")) == "/rpc/api/xmlrpc" {
+			switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(config.Global.SetPapercutAuthHeaderName))) {
+			case "1", "true", "yes", "on":
+				if err := papercut.InjectAuthToken(req, cfg.AuthToken); err != nil {
+					log.Printf("failed to inject papercut auth token: %v", err)
+				}
 			}
 		}
 	}

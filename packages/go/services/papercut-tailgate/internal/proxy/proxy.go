@@ -24,7 +24,7 @@ func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 		}
 
 		if strings.ToLower(strings.TrimSuffix(req.Out.URL.Path, "/")) == "/rpc/api/xmlrpc" {
-			switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(config.Global.SetPapercutAuthHeaderName))) {
+			switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(config.Global.HeaderNames.SetPapercutAuth))) {
 			case "1", "true", "yes", "on":
 				if err := papercut.InjectAuthToken(req, cfg.AuthToken); err != nil {
 					log.Printf("failed to inject papercut auth token: %v", err)

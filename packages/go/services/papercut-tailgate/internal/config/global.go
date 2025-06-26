@@ -9,10 +9,9 @@ import (
 )
 
 var Global struct {
-	Port                      int
-	SetPapercutAuthHeaderName string
-	appConfigAgentPort        int
-	appConfig                 *appConfig
+	Port        int
+	HeaderNames *headerNames
+	appConfig   *appConfig
 }
 
 type appConfig struct {
@@ -23,6 +22,11 @@ type appConfig struct {
 		PapercutServerAuthToken  string `json:"papercut_server_auth_token"`
 		TailscaleOAuthClient     string `json:"tailscale_oauth_client"`
 	} `json:"profiles"`
+	agentPort int
+}
+
+type headerNames struct {
+	SetPapercutAuth string
 }
 
 func init() {
@@ -38,18 +42,23 @@ func init() {
 	}
 
 	setPapercutAuthHeaderName, err := resource.Get("Headers", "names", "SET_PAPERCUT_AUTH")
-	Global.SetPapercutAuthHeaderName = setPapercutAuthHeaderName.(string)
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	Global.HeaderNames = &headerNames{
+		SetPapercutAuth: setPapercutAuthHeaderName.(string),
+	}
+
+	Global.appConfig, err = resource.Unmarshal[appConfig]("AppConfig")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
 
 	appCfgAgtPortStr, err := env.Get("APPCONFIG_AGENT_PORT")
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	Global.appConfigAgentPort, err = strconv.Atoi(*appCfgAgtPortStr)
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-
-	Global.appConfig, err = resource.Unmarshal[appConfig]("AppConfig")
+	Global.appConfig.agentPort, err = strconv.Atoi(*appCfgAgtPortStr)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

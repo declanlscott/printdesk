@@ -122,7 +122,7 @@ func fetch(ctx context.Context, profile string) ([]byte, error) {
 		"GET",
 		fmt.Sprintf(
 			"http://localhost:%d/applications/%s/environments/%s/configurations/%s",
-			Global.appConfigAgentPort,
+			Global.appConfig.agentPort,
 			Global.appConfig.Application,
 			Global.appConfig.Environment,
 			profile,

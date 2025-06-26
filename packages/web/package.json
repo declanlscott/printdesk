@@ -37,12 +37,12 @@
     "tailwind-merge": "^2.6.0",
     "tailwind-variants": "^1.0.0",
     "xstate": "^5.20.0",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.6"
   },
   "devDependencies": {
     "@react-types/shared": "^3.30.0",
     "@tailwindcss/typography": "^0.5.16",
-    "@tanstack/router-plugin": "^1.121.34",
+    "@tanstack/router-plugin": "^1.121.37",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",

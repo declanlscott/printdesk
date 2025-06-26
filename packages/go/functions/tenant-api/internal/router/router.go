@@ -3,20 +3,21 @@ package router
 import (
 	"net/http"
 
+	_http "core/pkg/http"
 	"core/pkg/middleware"
 
 	"tenant-api/internal/handlers"
 )
 
 func New() http.Handler {
-	mux := http.NewServeMux()
+	mux := _http.NewServeMux()
 
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	mux.Handle("/config/", http.StripPrefix("/config", config()))
+	mux.HandlePrefix("/config", config())
 
 	mw := middleware.Chain(
 		middleware.Recovery,
@@ -28,11 +29,11 @@ func New() http.Handler {
 }
 
 func config() http.Handler {
-	mux := http.NewServeMux()
+	mux := _http.NewServeMux()
 
-	mux.Handle("/app/settings/", http.StripPrefix("/app/settings", appSettings()))
-	mux.Handle("/papercut/", http.StripPrefix("/papercut", papercut()))
-	mux.Handle("/tailscale/", http.StripPrefix("/tailscale", tailscale()))
+	mux.HandlePrefix("/app/settings", appSettings())
+	mux.HandlePrefix("/papercut", papercut())
+	mux.HandlePrefix("/tailscale", tailscale())
 
 	return mux
 }

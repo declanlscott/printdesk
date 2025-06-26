@@ -55,7 +55,7 @@ export namespace Papercut {
       ),
     );
 
-  const xmlRpcPath = "/papercut/server/rpc/api/xmlrpc";
+  const xmlRpcPath = `${Constants.PAPERCUT_SERVER_PATH_PREFIX}${Constants.PAPERCUT_WEB_SERVICES_API_PATH}`;
 
   export async function adjustSharedAccountAccountBalance(
     sharedAccountName: string,

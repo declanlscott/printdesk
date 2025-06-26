@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -18,33 +18,21 @@ func (e *PathError) Error() string {
 	return fmt.Sprintf("%s: %s", strings.Join(e.Path, "."), e.Err.Error())
 }
 
-func Get(path ...string) (any, error) {
-	resource, err := _resource.Get(path...)
+func Get[TValue any](path ...string) (TValue, error) {
+	var zero TValue
 
+	val, err := _resource.Get(path...)
 	if err != nil {
 		log.Printf("failed to get resource: %s", err.Error())
-
-		return nil, &PathError{Path: path, Err: err}
+		return zero, &PathError{Path: path, Err: err}
 	}
 
-	return resource, nil
-}
-
-func Unmarshal[TResource any](name string) (*TResource, error) {
-	mapData, err := Get(name)
-	if err != nil {
-		return nil, err
+	casted, ok := val.(TValue)
+	if !ok {
+		err := errors.New("resource type assertion failed")
+		log.Printf(err.Error())
+		return zero, &PathError{Path: path, Err: err}
 	}
 
-	jsonData, err := json.Marshal(mapData)
-	if err != nil {
-		return nil, err
-	}
-
-	var resource TResource
-	if err := json.Unmarshal(jsonData, &resource); err != nil {
-		return nil, err
-	}
-
-	return &resource, nil
+	return casted, nil
 }

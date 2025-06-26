@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"core/pkg/resource"
+
 	"papercut-tailgate/internal/config"
 	"papercut-tailgate/internal/papercut"
 )
@@ -23,8 +25,20 @@ func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 			req.Out.URL.RawQuery = cfg.Target.RawQuery + "&" + req.Out.URL.RawQuery
 		}
 
-		if strings.ToLower(strings.TrimSuffix(req.Out.URL.Path, "/")) == "/rpc/api/xmlrpc" {
-			switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(config.Global.HeaderNames.SetPapercutAuth))) {
+		apiPath, err := resource.Get[string]("PapercutServer", "paths", "webServicesApi")
+		if err != nil {
+			log.Printf(err.Error())
+			return
+		}
+
+		if strings.ToLower(strings.TrimSuffix(req.Out.URL.Path, "/")) == apiPath {
+			key, err := resource.Get[string]("HeaderKeys", "PAPERCUT_INJECT_AUTH")
+			if err != nil {
+				log.Printf(err.Error())
+				return
+			}
+
+			switch strings.ToLower(strings.TrimSpace(req.In.Header.Get(key))) {
 			case "1", "true", "yes", "on":
 				if err := papercut.InjectAuthToken(req, cfg.AuthToken); err != nil {
 					log.Printf("failed to inject papercut auth token: %v", err)

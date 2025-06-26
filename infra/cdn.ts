@@ -102,7 +102,7 @@ export const router = new sst.aws.Router("Router", {
           `switch (event.request.headers.host.value) {`,
           `  case "${domains.api}":`,
           `  case "${domains.auth}": {`,
-          `    event.request.headers["${Constants.HEADER_NAMES.ROUTER_SECRET}"] = {`,
+          `    event.request.headers["${Constants.HEADER_KEYS.ROUTER_SECRET}"] = {`,
           `      value: "${routerSecret}",`,
           `    };`,
           `    break;`,

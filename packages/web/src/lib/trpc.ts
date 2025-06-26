@@ -19,7 +19,7 @@ export function createTrpcClient<TBearerToken extends string>(
     url,
     headers: {
       ...(bearerToken ? { Authorization: bearerToken } : {}),
-      ...(tenantId ? { [Constants.HEADER_NAMES.TENANT_ID]: tenantId } : {}),
+      ...(tenantId ? { [Constants.HEADER_KEYS.TENANT_ID]: tenantId } : {}),
     },
   };
 

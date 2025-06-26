@@ -13,6 +13,8 @@ import (
 	"golang.org/x/sync/errgroup"
 	"tailscale.com/tsnet"
 
+	"core/pkg/resource"
+
 	"papercut-tailgate/internal/tailscale"
 )
 
@@ -34,14 +36,19 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		rawUri, err := load(ctx, Global.appConfig.Profiles.PapercutServerTailnetUri)
+		profile, err := resource.Get[string]("AppConfig", "profiles", "papercutServerTailnetUri")
+		if err != nil {
+			return err
+		}
+
+		rawUri, err := load(ctx, profile)
 		if err != nil {
 			return err
 		}
 
 		mu.Lock()
 		defer mu.Unlock()
-		if cfg.Target, err = url.Parse(*rawUri); err != nil {
+		if cfg.Target, err = url.Parse(rawUri); err != nil {
 			return err
 		}
 
@@ -49,23 +56,33 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	})
 
 	g.Go(func() error {
-		authToken, err := load(ctx, Global.appConfig.Profiles.PapercutServerAuthToken)
+		profile, err := resource.Get[string]("AppConfig", "profiles", "papercutServerAuthToken")
+		if err != nil {
+			return err
+		}
+
+		authToken, err := load(ctx, profile)
 		if err != nil {
 			return err
 		}
 
 		mu.Lock()
 		defer mu.Unlock()
-		cfg.AuthToken = *authToken
+		cfg.AuthToken = authToken
 
 		return nil
 	})
 
 	g.Go(func() error {
+		profile, err := resource.Get[string]("AppConfig", "profiles", "tailscaleOauthClient")
+		if err != nil {
+			return err
+		}
+
 		client, err := unmarshal[struct {
 			Id     string `json:"id"`
 			Secret string `json:"secret"`
-		}](ctx, Global.appConfig.Profiles.TailscaleOAuthClient)
+		}](ctx, profile)
 		if err != nil {
 			return err
 		}
@@ -91,15 +108,15 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 	return &cfg, nil
 }
 
-func load(ctx context.Context, profile string) (*string, error) {
+func load(ctx context.Context, profile string) (string, error) {
 	data, err := fetch(ctx, profile)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	config := string(data)
 
-	return &config, nil
+	return config, nil
 }
 
 func unmarshal[TConfig any](ctx context.Context, profile string) (*TConfig, error) {
@@ -117,14 +134,29 @@ func unmarshal[TConfig any](ctx context.Context, profile string) (*TConfig, erro
 }
 
 func fetch(ctx context.Context, profile string) ([]byte, error) {
+	port, err := resource.Get[int]("AppConfig", "agentPort")
+	if err != nil {
+		return nil, err
+	}
+
+	app, err := resource.Get[string]("AppConfig", "application")
+	if err != nil {
+		return nil, err
+	}
+
+	env, err := resource.Get[string]("AppConfig", "environment")
+	if err != nil {
+		return nil, err
+	}
+
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
 		fmt.Sprintf(
 			"http://localhost:%d/applications/%s/environments/%s/configurations/%s",
-			Global.appConfig.agentPort,
-			Global.appConfig.Application,
-			Global.appConfig.Environment,
+			port,
+			app,
+			env,
 			profile,
 		),
 		nil,

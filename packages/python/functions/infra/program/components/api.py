@@ -233,6 +233,7 @@ class Api(pulumi.ComponentResource):
         )
 
         appconfig_agent_port = 2772
+        papercut_tailgate_port = 8080
         self.__papercut_tailgate_task_definition = aws.ecs.TaskDefinition(
             resource_name="PapercutTailgateTaskDefinition",
             args=aws.ecs.TaskDefinitionArgs(
@@ -334,24 +335,21 @@ class Api(pulumi.ComponentResource):
                                 "value": args.tenant_id,
                             },
                             {
-                                "name": "APPCONFIG_AGENT_PORT",
-                                "value": str(appconfig_agent_port)
-                            },
-                            {
                                 "name": "PORT",
-                                "value": "80",
+                                "value": str(papercut_tailgate_port),
                             },
                             {
                                 "name": "SST_RESOURCE_AppConfig",
                                 "value": pulumi.Output.json_dumps({
+                                    "agentPort": appconfig_agent_port,
                                     "application": args.dynamic_config.application.name,
                                     "environment": args.dynamic_config.environment.name,
                                     "profiles": {
-                                        "papercut_server_tailnet_uri":
+                                        "papercutServerTailnetUri":
                                             args.dynamic_config.profiles.papercut_server_tailnet_uri.name,
-                                        "papercut_server_auth_token":
+                                        "papercutServerAuthToken":
                                             args.dynamic_config.profiles.papercut_server_auth_token.name,
-                                        "tailscale_oauth_client":
+                                        "tailscaleOauthClient":
                                             args.dynamic_config.profiles.tailscale_oauth_client.name,
                                     }
                                 })
@@ -465,7 +463,7 @@ class Api(pulumi.ComponentResource):
                 enable_execute_command=True,
                 service_registries=aws.ecs.ServiceServiceRegistriesArgs(
                     registry_arn=self.__papercut_tailgate_cloud_map_service.arn,
-                    port=80,
+                    port=papercut_tailgate_port,
                 ),
                 wait_for_steady_state=False,
                 tags=tags(args.tenant_id),
@@ -507,7 +505,7 @@ class Api(pulumi.ComponentResource):
             resource_name="PapercutServerRoute",
             args=aws.apigatewayv2.RouteArgs(
                 api_id=self.__api.id,
-                route_key="/papercut/server/{proxy+}",
+                route_key=f"{Resource.PapercutServer.paths.prefix}/{{proxy+}}",
                 target=pulumi.Output.format(
                     "integrations/{0}",
                     self.__papercut_server_integration.id

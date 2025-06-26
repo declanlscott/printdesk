@@ -11,7 +11,7 @@ export namespace Middleware {
     createMiddleware<{ Bindings: LambdaBindings }>(async (c, next) => {
       if (
         c.env.event.headers["x-forwarded-host"] !== source ||
-        c.env.event.headers[Constants.HEADER_NAMES.ROUTER_SECRET] !==
+        c.env.event.headers[Constants.HEADER_KEYS.ROUTER_SECRET] !==
           Resource.RouterSecret.value
       )
         throw new HTTPException(403);

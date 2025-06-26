@@ -26,12 +26,13 @@ import {
 import {
   appData,
   aws_,
-  headers,
+  headerKeys,
   resourceFileName,
   resourcePrefix,
 } from "./misc";
 import {
   invoicesProcessor,
+  papercutServer,
   papercutSync,
   papercutTailgateImage,
   papercutTailgateSstKeyParameter,
@@ -58,8 +59,9 @@ const infraFunctionResourceCiphertext = new custom.Ciphertext(
         cloudfrontRewriteUriFunction,
         cloudfrontS3OriginAccessControl,
         domains,
-        headers,
+        headerKeys,
         invoicesProcessor,
+        papercutServer,
         papercutSync,
         papercutTailgateExecutionRole,
         papercutTailgateImage,

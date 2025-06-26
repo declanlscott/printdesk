@@ -41,10 +41,10 @@ export namespace Constants {
     USER: SUBJECT_KINDS.USER,
   } as const;
 
-  export const HEADER_NAMES = {
+  export const HEADER_KEYS = {
     TENANT_ID: "x-tenant-id",
     ROUTER_SECRET: "x-router-secret",
-    SET_PAPERCUT_AUTH: "x-set-papercut-auth",
+    PAPERCUT_INJECT_AUTH: "x-papercut-inject-auth",
   } as const;
 
   export const ENTRA_ID = "entra_id";
@@ -56,6 +56,9 @@ export namespace Constants {
   export const POSTGRES_DEADLOCK_DETECTED_ERROR_CODE = "40P01";
 
   export const VARCHAR_LENGTH = 40;
+
+  export const PAPERCUT_SERVER_PATH_PREFIX = "/papercut/server";
+  export const PAPERCUT_WEB_SERVICES_API_PATH = "/rpc/api/xmlrpc";
 
   export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;

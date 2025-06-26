@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"papercut-tailgate/internal/config"
 	"sync"
 	"time"
 
+	_http "core/pkg/http"
 	"core/pkg/middleware"
+	"core/pkg/resource"
+
+	"papercut-tailgate/internal/config"
 )
 
 type Handler struct {
@@ -23,9 +26,14 @@ func NewHandler(cfg *config.RuntimeConfig) *Handler {
 	}
 }
 
-func (h *Handler) NewHTTPHandler() http.Handler {
-	mux := http.NewServeMux()
-	mux.Handle("/papercut/server/", http.StripPrefix("/papercut/server", h))
+func (h *Handler) NewHTTPHandler() (http.Handler, error) {
+	prefix, err := resource.Get[string]("PapercutServer", "paths", "prefix")
+	if err != nil {
+		return nil, err
+	}
+
+	mux := _http.NewServeMux()
+	mux.HandlePrefix(prefix, h)
 
 	mw := middleware.Chain(
 		middleware.Recovery,
@@ -33,7 +41,7 @@ func (h *Handler) NewHTTPHandler() http.Handler {
 		middleware.Validator,
 	)
 
-	return mw(mux)
+	return mw(mux), nil
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -57,7 +65,7 @@ func (h *Handler) AutoReload(ctx context.Context, initialCfg *config.RuntimeConf
 	for range ticker.C {
 		newCfg, err := config.Load(ctx)
 		if err != nil {
-			log.Printf("failed to reload configuration: %v", err)
+			log.Printf("failed to reload runtime configuration: %v", err)
 			continue
 		}
 

@@ -46,17 +46,21 @@ class Resource:
         web: str
         www: str
         type: str
-    class Headers:
-        class names:
-            TENANT_ID: str
-            ROUTER_SECRET: str
-            SET_PAPERCUT_AUTH: str
+    class HeaderKeys:
+        TENANT_ID: str
+        ROUTER_SECRET: str
+        PAPERCUT_INJECT_AUTH: str
         type: str
     class InvoicesProcessor:
         arn: str
         invokeArn: str
         name: str
         roleArn: str
+        type: str
+    class PapercutServer:
+        class paths:
+            prefix: str
+            webServicesApi: str
         type: str
     class PapercutSync:
         arn: str

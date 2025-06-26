@@ -1,3 +1,5 @@
+import { Constants } from "@printdesk/core/utils/constants";
+
 import { identityProviders } from "./auth";
 import { cloudfrontPrivateKey, cloudfrontPublicKey } from "./cdn";
 import * as custom from "./custom";
@@ -7,12 +9,21 @@ import { tenantRoles } from "./iam";
 import {
   appData,
   aws_,
-  headers,
+  headerKeys,
   resourceFileName,
   resourcePrefix,
 } from "./misc";
 import { repository } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
+
+export const papercutServer = new sst.Linkable("PapercutServer", {
+  properties: {
+    paths: {
+      prefix: Constants.PAPERCUT_SERVER_PATH_PREFIX,
+      webServicesApi: Constants.PAPERCUT_WEB_SERVICES_API_PATH,
+    },
+  },
+});
 
 const papercutTailgatePath = normalizePath(
   "packages/go/services/papercut-tailgate",
@@ -22,7 +33,14 @@ export const papercutTailgateResourceCiphertext = new custom.Ciphertext(
   "PapercutTailgateResourceCiphertext",
   {
     plaintext: $jsonStringify(
-      injectLinkables(resourcePrefix, appData, aws_, headers, tenantDomains),
+      injectLinkables(
+        resourcePrefix,
+        appData,
+        aws_,
+        headerKeys,
+        papercutServer,
+        tenantDomains,
+      ),
     ),
     writeToFile: normalizePath(resourceFileName, papercutTailgatePath),
   },

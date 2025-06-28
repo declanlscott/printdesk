@@ -9,28 +9,22 @@ import (
 	"net/url"
 	"sync"
 
-	tsclient "github.com/tailscale/tailscale-client-go/v2"
+	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/sync/errgroup"
-	"tailscale.com/tsnet"
 
 	"core/pkg/resource"
-
-	"papercut-tailgate/internal/tailscale"
 )
 
-type RuntimeConfig struct {
+type Config struct {
 	AuthToken string
-	Tailscale struct {
-		OAuth  *tsclient.OAuthConfig
-		Server *tsnet.Server
-	}
-	Target *url.URL
+	OAuth     *clientcredentials.Config
+	Target    *url.URL
 }
 
-func Load(ctx context.Context) (*RuntimeConfig, error) {
+func Load(ctx context.Context) (*Config, error) {
 	var (
 		mu  sync.Mutex
-		cfg RuntimeConfig
+		cfg Config
 	)
 
 	g, ctx := errgroup.WithContext(ctx)
@@ -89,13 +83,9 @@ func Load(ctx context.Context) (*RuntimeConfig, error) {
 
 		mu.Lock()
 		defer mu.Unlock()
-		cfg.Tailscale.OAuth = &tsclient.OAuthConfig{
+		cfg.OAuth = &clientcredentials.Config{
 			ClientID:     client.Id,
 			ClientSecret: client.Secret,
-		}
-
-		if cfg.Tailscale.Server, err = tailscale.NewServer(ctx, cfg.Tailscale.OAuth); err != nil {
-			return err
 		}
 
 		return nil
@@ -181,21 +171,4 @@ func fetch(ctx context.Context, profile string) ([]byte, error) {
 	}
 
 	return data, nil
-}
-
-func (cfg *RuntimeConfig) HasChanged(newCfg *RuntimeConfig) bool {
-	if cfg.AuthToken != newCfg.AuthToken {
-		return true
-	}
-
-	if cfg.Tailscale.OAuth.ClientID != newCfg.Tailscale.OAuth.ClientID ||
-		cfg.Tailscale.OAuth.ClientSecret != newCfg.Tailscale.OAuth.ClientSecret {
-		return true
-	}
-
-	if cfg.Target.String() != newCfg.Target.String() {
-		return true
-	}
-
-	return false
 }

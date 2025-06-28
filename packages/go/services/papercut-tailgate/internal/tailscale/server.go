@@ -2,16 +2,22 @@ package tailscale
 
 import (
 	"context"
+	"errors"
 	"os"
 
-	tsclient "github.com/tailscale/tailscale-client-go/v2"
 	"tailscale.com/tsnet"
 )
 
-func NewServer(ctx context.Context, ocfg *tsclient.OAuthConfig) (*tsnet.Server, error) {
-	tsc := NewClient(ocfg)
+type Server struct {
+	*tsnet.Server
+}
 
-	key, err := CreateAuthKey(ctx, tsc)
+func (c *Client) NewServer(ctx context.Context) (*Server, error) {
+	if c == nil {
+		return nil, errors.New("nil tailscale c")
+	}
+
+	key, err := c.CreateAuthKey(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -21,12 +27,14 @@ func NewServer(ctx context.Context, ocfg *tsclient.OAuthConfig) (*tsnet.Server, 
 		return nil, err
 	}
 
-	srv := &tsnet.Server{
-		Dir:       "/tmp/tailscale",
-		Hostname:  hostname,
-		AuthKey:   key.Key,
-		Ephemeral: true,
+	s := &Server{
+		&tsnet.Server{
+			Dir:       "/tmp/tailscale",
+			Hostname:  hostname,
+			AuthKey:   key.Key,
+			Ephemeral: true,
+		},
 	}
 
-	return srv, nil
+	return s, nil
 }

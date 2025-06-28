@@ -5,18 +5,29 @@ import (
 	"errors"
 
 	tsclient "github.com/tailscale/tailscale-client-go/v2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
-func NewClient(ocfg *tsclient.OAuthConfig) *tsclient.Client {
-	return &tsclient.Client{
-		Tailnet: "-",
-		HTTP:    ocfg.HTTPClient(),
+type Client struct {
+	*tsclient.Client
+}
+
+func NewClient(cfg *clientcredentials.Config) *Client {
+	return &Client{
+		&tsclient.Client{
+			Tailnet: "-",
+			HTTP: tsclient.OAuthConfig{
+				ClientID:     cfg.ClientID,
+				ClientSecret: cfg.ClientSecret,
+			}.HTTPClient(),
+			UserAgent: "papercut-tailgate",
+		},
 	}
 }
 
-func CreateAuthKey(ctx context.Context, client *tsclient.Client) (*tsclient.Key, error) {
-	if client == nil {
-		return nil, errors.New("missing tailscale client")
+func (c *Client) CreateAuthKey(ctx context.Context) (*tsclient.Key, error) {
+	if c == nil {
+		return nil, errors.New("nil tailscale c")
 	}
 
 	capabilities := tsclient.KeyCapabilities{}
@@ -25,7 +36,7 @@ func CreateAuthKey(ctx context.Context, client *tsclient.Client) (*tsclient.Key,
 	capabilities.Devices.Create.Preauthorized = true
 	capabilities.Devices.Create.Tags = []string{"tag:printdesk"}
 
-	key, err := client.Keys().Create(ctx, tsclient.CreateKeyRequest{
+	key, err := c.Keys().Create(ctx, tsclient.CreateKeyRequest{
 		Capabilities: capabilities,
 		Description:  "PaperCut Tailscale Gateway",
 	})

@@ -11,9 +11,10 @@ import (
 
 	"papercut-tailgate/internal/config"
 	"papercut-tailgate/internal/papercut"
+	"papercut-tailgate/internal/tailscale"
 )
 
-func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
+func New(cfg *config.Config, s *tailscale.Server) *httputil.ReverseProxy {
 	rewrite := func(req *httputil.ProxyRequest) {
 		req.Out.URL.Scheme = cfg.Target.Scheme
 		req.Out.URL.Host = cfg.Target.Host
@@ -50,7 +51,7 @@ func New(cfg *config.RuntimeConfig) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Rewrite: rewrite,
 		Transport: &http.Transport{
-			DialContext: cfg.Tailscale.Server.Dial,
+			DialContext: s.Dial,
 		},
 	}
 }

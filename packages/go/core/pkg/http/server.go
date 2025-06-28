@@ -16,5 +16,5 @@ func NewServeMux() *ServeMux {
 func (mux *ServeMux) HandlePrefix(prefix string, h http.Handler) {
 	trimmed := strings.TrimSuffix(prefix, "/")
 
-	mux.ServeMux.Handle(trimmed+"/", http.StripPrefix(trimmed, h))
+	mux.Handle(trimmed+"/", http.StripPrefix(trimmed, h))
 }

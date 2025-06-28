@@ -8,21 +8,19 @@ import (
 	"net/http"
 	"os"
 
-	"papercut-tailgate/internal/config"
 	"papercut-tailgate/internal/proxy"
 )
 
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.Load(ctx)
-	if err != nil {
-		log.Fatalf("failed to load runtime configuration: %v", err)
-	}
+	ph := proxy.NewHandler()
 
-	ph := proxy.NewHandler(cfg)
-
-	go ph.AutoReload(ctx, cfg)
+	go func() {
+		if err := ph.Start(ctx); err != nil {
+			log.Fatalf("failed to start proxy handler: %v", err)
+		}
+	}()
 
 	port, ok := os.LookupEnv("PORT")
 	if !ok {
@@ -34,12 +32,12 @@ func main() {
 		log.Fatalf("failed to initialize http handler: %v", err)
 	}
 
-	srv := &http.Server{
+	s := &http.Server{
 		Addr:    fmt.Sprintf(":%s", port),
 		Handler: h,
 	}
 
-	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("http server error: %v", err)
 	}
 }

@@ -2,7 +2,6 @@ package tailscale
 
 import (
 	"context"
-	"errors"
 	"os"
 
 	"tailscale.com/tsnet"
@@ -13,10 +12,6 @@ type Server struct {
 }
 
 func (c *Client) NewServer(ctx context.Context) (*Server, error) {
-	if c == nil {
-		return nil, errors.New("nil tailscale c")
-	}
-
 	key, err := c.CreateAuthKey(ctx)
 	if err != nil {
 		return nil, err

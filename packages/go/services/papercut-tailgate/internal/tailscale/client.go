@@ -2,7 +2,6 @@ package tailscale
 
 import (
 	"context"
-	"errors"
 
 	tsclient "github.com/tailscale/tailscale-client-go/v2"
 	"golang.org/x/oauth2/clientcredentials"
@@ -26,10 +25,6 @@ func NewClient(cfg *clientcredentials.Config) *Client {
 }
 
 func (c *Client) CreateAuthKey(ctx context.Context) (*tsclient.Key, error) {
-	if c == nil {
-		return nil, errors.New("nil tailscale c")
-	}
-
 	capabilities := tsclient.KeyCapabilities{}
 	capabilities.Devices.Create.Reusable = false
 	capabilities.Devices.Create.Ephemeral = true

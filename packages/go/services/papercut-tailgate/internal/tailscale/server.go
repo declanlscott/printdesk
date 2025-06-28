@@ -7,6 +7,12 @@ import (
 	"tailscale.com/tsnet"
 )
 
+func init() {
+	if err := os.Setenv("TSNET_FORCE_LOGIN", "1"); err != nil {
+		panic(err)
+	}
+}
+
 type Server struct {
 	*tsnet.Server
 }

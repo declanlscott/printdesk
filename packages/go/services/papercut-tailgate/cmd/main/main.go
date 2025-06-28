@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -22,22 +21,25 @@ func main() {
 		}
 	}()
 
-	port, ok := os.LookupEnv("PORT")
-	if !ok {
-		port = "8080"
-	}
-
 	h, err := ph.NewHTTPHandler()
 	if err != nil {
 		log.Fatalf("failed to initialize http handler: %v", err)
 	}
 
-	s := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
-		Handler: h,
+	port, ok := os.LookupEnv("PORT")
+	if !ok {
+		port = "8080"
 	}
 
-	if err := s.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	s := &proxy.Server{
+		ProxyHandler: ph,
+		Server: &http.Server{
+			Addr:    fmt.Sprintf(":%s", port),
+			Handler: h,
+		},
+	}
+
+	if err := s.Start(ctx); err != nil {
 		log.Fatalf("http server error: %v", err)
 	}
 }

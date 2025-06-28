@@ -49,7 +49,7 @@ func (h *Handler) Start(ctx context.Context) error {
 
 	h.started = true
 
-	go h.autoReload(ctx)
+	go h.tickerReload(ctx)
 
 	return nil
 }
@@ -75,7 +75,7 @@ func (h *Handler) initialize(ctx context.Context) error {
 	return nil
 }
 
-func (h *Handler) autoReload(ctx context.Context) {
+func (h *Handler) tickerReload(ctx context.Context) {
 	defer close(h.stoppedCh)
 
 	ticker := time.NewTicker(1 * time.Minute)
@@ -91,7 +91,7 @@ func (h *Handler) autoReload(ctx context.Context) {
 			cfgCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 
 			if err := h.hotReload(cfgCtx); err != nil {
-				log.Printf("failed to hotReload configuration: %v", err)
+				log.Printf("failed to hot reload configuration: %v", err)
 			}
 
 			cancel()
@@ -110,7 +110,7 @@ func (h *Handler) hotReload(ctx context.Context) error {
 
 	currentCfg := h.cfg
 	if currentCfg == nil {
-		return errors.New("nil current configuration")
+		return errors.New("missing current configuration")
 	}
 
 	var (

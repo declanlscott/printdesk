@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -40,7 +40,7 @@ func (h *Handler) Start(ctx context.Context, cfgAgtToken string) error {
 	defer h.mu.Unlock()
 
 	if h.started {
-		return errors.New("proxy handler already started")
+		return fmt.Errorf("proxy handler already started")
 	}
 
 	if err := h.initialize(ctx, cfgAgtToken); err != nil {
@@ -110,7 +110,7 @@ func (h *Handler) hotReload(ctx context.Context, cfgAgtToken string) error {
 
 	currentCfg := h.cfg
 	if currentCfg == nil {
-		return errors.New("missing current configuration")
+		return fmt.Errorf("missing current configuration")
 	}
 
 	var (
@@ -195,7 +195,7 @@ func (h *Handler) Stop() error {
 	defer h.mu.Unlock()
 
 	if !h.started {
-		return errors.New("proxy handler already stopped")
+		return fmt.Errorf("proxy handler already stopped")
 	}
 
 	select {

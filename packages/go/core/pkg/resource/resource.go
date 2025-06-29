@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -29,7 +28,7 @@ func Get[TValue any](path ...string) (TValue, error) {
 
 	casted, ok := val.(TValue)
 	if !ok {
-		err := errors.New("resource type assertion failed")
+		err := fmt.Errorf("resource type assertion failed")
 		log.Printf(err.Error())
 		return zero, &PathError{Path: path, Err: err}
 	}

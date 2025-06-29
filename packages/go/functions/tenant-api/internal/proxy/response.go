@@ -3,7 +3,7 @@ package proxy
 import (
 	"bytes"
 	"encoding/base64"
-	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"unicode/utf8"
@@ -89,7 +89,7 @@ func (r *ResponseWriter) GetProxyResponse() (events.APIGatewayV2HTTPResponse, er
 	r.notifyClosed()
 
 	if r.status == defaultStatusCode {
-		return events.APIGatewayV2HTTPResponse{}, errors.New("status code not set on response")
+		return events.APIGatewayV2HTTPResponse{}, fmt.Errorf("status code not set on response")
 	}
 
 	var output string

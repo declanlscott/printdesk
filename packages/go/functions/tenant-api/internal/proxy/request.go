@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -50,7 +49,7 @@ type RequestAccessor struct {
 // the request.
 func (r *RequestAccessor) GetAPIGatewayContext(req *http.Request) (events.APIGatewayV2HTTPRequestContext, error) {
 	if req.Header.Get(APIGwContextHeader) == "" {
-		return events.APIGatewayV2HTTPRequestContext{}, errors.New("no ctx header in request")
+		return events.APIGatewayV2HTTPRequestContext{}, fmt.Errorf("no ctx header in request")
 	}
 
 	ctx := events.APIGatewayV2HTTPRequestContext{}
@@ -73,7 +72,7 @@ func (r *RequestAccessor) GetAPIGatewayStageVars(req *http.Request) (map[string]
 	stageVars := make(map[string]string)
 
 	if req.Header.Get(APIGwStageVarsHeader) == "" {
-		return stageVars, errors.New("no stage vars header in request")
+		return stageVars, fmt.Errorf("no stage vars header in request")
 	}
 
 	if err := json.Unmarshal([]byte(req.Header.Get(APIGwStageVarsHeader)), &stageVars); err != nil {

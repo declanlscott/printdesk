@@ -15,8 +15,14 @@ func main() {
 
 	ph := proxy.NewHandler()
 
+	const cfgAgtTokenKey = "APPCONFIG_AGENT_ACCESS_TOKEN"
+	cfgAgtToken, ok := os.LookupEnv(cfgAgtTokenKey)
+	if !ok {
+		log.Fatalf("%s environment variable not set", cfgAgtTokenKey)
+	}
+
 	go func() {
-		if err := ph.Start(ctx); err != nil {
+		if err := ph.Start(ctx, cfgAgtToken); err != nil {
 			log.Fatalf("failed to start proxy handler: %v", err)
 		}
 	}()

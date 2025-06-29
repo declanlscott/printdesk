@@ -35,7 +35,7 @@ func NewHandler() *Handler {
 	}
 }
 
-func (h *Handler) Start(ctx context.Context) error {
+func (h *Handler) Start(ctx context.Context, cfgAgtToken string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -43,19 +43,19 @@ func (h *Handler) Start(ctx context.Context) error {
 		return errors.New("proxy handler already started")
 	}
 
-	if err := h.initialize(ctx); err != nil {
+	if err := h.initialize(ctx, cfgAgtToken); err != nil {
 		return err
 	}
 
 	h.started = true
 
-	go h.tickerReload(ctx)
+	go h.tickerReload(ctx, cfgAgtToken)
 
 	return nil
 }
 
-func (h *Handler) initialize(ctx context.Context) error {
-	cfg, err := config.Load(ctx)
+func (h *Handler) initialize(ctx context.Context, cfgAgtToken string) error {
+	cfg, err := config.Load(ctx, cfgAgtToken)
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func (h *Handler) initialize(ctx context.Context) error {
 	return nil
 }
 
-func (h *Handler) tickerReload(ctx context.Context) {
+func (h *Handler) tickerReload(ctx context.Context, cfgAgtToken string) {
 	defer close(h.stoppedCh)
 
 	ticker := time.NewTicker(1 * time.Minute)
@@ -90,7 +90,7 @@ func (h *Handler) tickerReload(ctx context.Context) {
 		case <-ticker.C:
 			cfgCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 
-			if err := h.hotReload(cfgCtx); err != nil {
+			if err := h.hotReload(cfgCtx, cfgAgtToken); err != nil {
 				log.Printf("failed to hot reload configuration: %v", err)
 			}
 
@@ -99,8 +99,8 @@ func (h *Handler) tickerReload(ctx context.Context) {
 	}
 }
 
-func (h *Handler) hotReload(ctx context.Context) error {
-	cfg, err := config.Load(ctx)
+func (h *Handler) hotReload(ctx context.Context, cfgAgtToken string) error {
+	cfg, err := config.Load(ctx, cfgAgtToken)
 	if err != nil {
 		return err
 	}

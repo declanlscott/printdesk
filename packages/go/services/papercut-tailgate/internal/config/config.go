@@ -21,13 +21,15 @@ type Config struct {
 	Target    *url.URL
 }
 
-func Load(ctx context.Context) (*Config, error) {
+const agtTokenKey = "agent-token"
+
+func Load(ctx context.Context, agtToken string) (*Config, error) {
 	var (
 		mu  sync.Mutex
 		cfg Config
 	)
 
-	g, ctx := errgroup.WithContext(ctx)
+	g, ctx := errgroup.WithContext(context.WithValue(ctx, agtTokenKey, agtToken))
 
 	g.Go(func() error {
 		profile, err := resource.Get[string]("AppConfig", "profiles", "papercutServerTailnetUri")
@@ -129,6 +131,11 @@ func fetch(ctx context.Context, profile string) ([]byte, error) {
 		return nil, err
 	}
 
+	token, ok := ctx.Value(agtTokenKey).(string)
+	if !ok || token == "" {
+		return nil, fmt.Errorf("agent access token missing from context")
+	}
+
 	app, err := resource.Get[string]("AppConfig", "application")
 	if err != nil {
 		return nil, err
@@ -154,6 +161,8 @@ func fetch(ctx context.Context, profile string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

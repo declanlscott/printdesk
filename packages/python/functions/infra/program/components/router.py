@@ -5,7 +5,7 @@ import pulumi_cloudflare as cloudflare
 from sst import Resource
 
 from . import ssl
-from utils import build_name
+from utils import naming
 
 
 class RouterArgs:
@@ -38,7 +38,7 @@ class Router(pulumi.ComponentResource):
                 zone_id=Resource.Zone.id,
                 type="CNAME",
                 name=self.__api_ssl.certificate.domain_name,
-                content=build_name(
+                content=naming.template(
                     name_template=Resource.TenantDomains.api.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
@@ -66,7 +66,7 @@ class Router(pulumi.ComponentResource):
                 zone_id=Resource.Zone.id,
                 type="CNAME",
                 name=self.__files_ssl.certificate.domain_name,
-                content=build_name(
+                content=naming.template(
                     name_template=Resource.TenantDomains.files.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),

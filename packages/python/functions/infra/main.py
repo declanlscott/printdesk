@@ -19,7 +19,7 @@ from sst import Resource
 
 from models import sqs_record
 from program import inline
-from utils import is_prod_stage, get_realtime_credentials, transform
+from utils import is_prod_stage, get_realtime_credentials, naming
 
 processor = BatchProcessor(EventType.SQS)
 logger = Logger()
@@ -83,7 +83,7 @@ def record_handler(record: SQSRecord):
     logger.info("Successfully set stack configuration.")
 
     logger.info("Registering stack transformations ...")
-    pulumi.runtime.register_stack_transformation(transform.name(payload.tenant_id))
+    pulumi.runtime.register_stack_transformation(naming.transform_resource(payload.tenant_id))
     logger.info("Successfully registered stack transformations.")
 
     result: pulumi.automation.UpResult | pulumi.automation.DestroyResult

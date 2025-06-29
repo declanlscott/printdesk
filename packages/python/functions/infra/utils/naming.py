@@ -1,12 +1,47 @@
-# # Ported to python from https://github.com/sst/sst/blob/dev/platform/src/components/naming.ts by SST
-
 import re
 import math
 import hashlib
 import os
+from typing import Dict, Tuple
 
+import pulumi
 from sst import Resource
 
+
+def template(name_template: str, tenant_id: str) -> str:
+    return name_template.replace("{{tenant_id}}", tenant_id)
+
+
+def reverse_dns(domain_name: str) -> str:
+    return ".".join(domain_name.split(".")[::-1])
+
+
+def transform_resource(tenant_id: str):
+    rules: Dict[str, Tuple[str, int]] = {
+        "aws:appconfig/application:Application": ("name", 64),
+        "aws:appconfig/configurationProfile:ConfigurationProfile": ("name", 128),
+        "aws:appconfig/environment:Environment": ("name", 64),
+        "aws:apigatewayv2/api:Api": ("name", 128),
+        "aws:iam/role:Role": ("name", 64),
+    }
+
+    def transform(args: pulumi.ResourceTransformationArgs):
+        rule = rules.get(args.resource.pulumi_resource_type)
+        if rule is None or rule[0] in args.props:
+            return None
+
+        return pulumi.ResourceTransformationResult(
+            props={
+                **args.props,
+                rule[0]: physical(rule[1], args.name, tenant_id)
+            },
+            opts=args.opts,
+        )
+
+    return transform
+
+
+# Ported to python from https://github.com/sst/sst/blob/dev/platform/src/components/naming.ts by SST
 PRETTY_CHARS = "abcdefhkmnorstuvwxz"
 
 

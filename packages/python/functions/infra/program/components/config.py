@@ -3,9 +3,9 @@ from typing import Optional
 import pulumi
 import pulumi_aws as aws
 import pulumi_random as random
-
 from sst import Resource
-from utils import tags
+
+from utils import tags, is_prod_stage
 
 
 class Parameters:
@@ -116,7 +116,7 @@ class Config(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                retain_on_delete=True,
+                retain_on_delete=is_prod_stage,
             ),
         )
 
@@ -128,7 +128,7 @@ class Config(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                retain_on_delete=True,
+                retain_on_delete=is_prod_stage,
             ),
         )
 
@@ -142,7 +142,7 @@ class Config(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                retain_on_delete=True,
+                retain_on_delete=is_prod_stage,
             ),
         )
 
@@ -156,7 +156,7 @@ class Config(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                retain_on_delete=True,
+                retain_on_delete=is_prod_stage,
             ),
         )
 
@@ -170,7 +170,7 @@ class Config(pulumi.ComponentResource):
             ),
             opts=pulumi.ResourceOptions(
                 parent=self,
-                retain_on_delete=True,
+                retain_on_delete=is_prod_stage,
             ),
         )
 

@@ -17,7 +17,7 @@ def inline(payload: sqs_record.Payload):
     config = Config(
         args=ConfigArgs(
             tenant_id=payload.tenant_id,
-        )
+        ),
     )
 
     api = Api(
@@ -31,14 +31,14 @@ def inline(payload: sqs_record.Payload):
     storage = Storage(
         args=StorageArgs(
             tenant_id=payload.tenant_id,
-        )
+        ),
     )
 
     router = Router(
         args=RouterArgs(
             tenant_id=payload.tenant_id,
             secret=config.static.router_secret,
-        )
+        ),
     )
 
     realtime = Realtime(

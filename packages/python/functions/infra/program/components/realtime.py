@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional
 
 import pulumi
 import pulumi_aws as aws
@@ -7,7 +7,7 @@ from sst import Resource
 from types_boto3_appsync.type_defs import EventConfigTypeDef, AuthProviderTypeDef
 
 from . import dynamic, ssl
-from utils import build_name, tags
+from utils import naming, tags
 
 
 class RealtimeArgs:
@@ -63,7 +63,7 @@ class Realtime(pulumi.ComponentResource):
         self.__subscriber_role = aws.iam.Role(
             resource_name="SubscriberRole",
             args=aws.iam.RoleArgs(
-                name=build_name(
+                name=naming.template(
                     name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
@@ -105,7 +105,7 @@ class Realtime(pulumi.ComponentResource):
         self.__publisher_role = aws.iam.Role(
             resource_name="PublisherRole",
             args=aws.iam.RoleArgs(
-                name=build_name(
+                name=naming.template(
                     name_template=Resource.TenantRoles.realtimePublisher.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),

@@ -4,6 +4,7 @@ go 1.24.4
 
 require (
 	github.com/tailscale/tailscale-client-go/v2 v2.0.0-20250129222324-74c8fc3cb4d7
+	golang.org/x/oauth2 v0.26.0
 	golang.org/x/sync v0.15.0
 	tailscale.com v1.84.3
 )
@@ -71,7 +72,6 @@ require (
 	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.36.0 // indirect
-	golang.org/x/oauth2 v0.26.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect

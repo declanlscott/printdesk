@@ -72,7 +72,8 @@ class Realtime(pulumi.ComponentResource):
                         aws.iam.GetPolicyDocumentStatementArgs(
                             principals=[
                                 aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                    type="AWS", identifiers=[Resource.Api.roleArn]
+                                    type="AWS",
+                                    identifiers=[Resource.Api.roleArn],
                                 )
                             ],
                             actions=["sts:AssumeRole"],
@@ -86,11 +87,11 @@ class Realtime(pulumi.ComponentResource):
                                 lambda api_arn: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventConnect"],
-                                        resource=[api_arn],
+                                        resources=[api_arn],
                                     ),
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventSubscribe"],
-                                        resource=[f"{api_arn}/*"],
+                                        resources=[f"{api_arn}/*"],
                                     ),
                                 ]
                             )
@@ -133,7 +134,7 @@ class Realtime(pulumi.ComponentResource):
                                 lambda api_arn: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventPublish"],
-                                        resource=[f"{api_arn}/*"],
+                                        resources=[f"{api_arn}/*"],
                                     )
                                 ]
                             )

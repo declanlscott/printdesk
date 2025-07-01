@@ -96,15 +96,11 @@ export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
     tenantRoles,
   ],
   permissions: [
-    sst.aws.permission({
-      actions: [
-        "sqs:ChangeMessageVisibility",
-        "sqs:DeleteMessage",
-        "sqs:GetQueueAttributes",
-        "sqs:GetQueueUrl",
-        "sqs:ReceiveMessage",
+    {
+      actions: ["sts:AssumeRole"],
+      resources: [
+        $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/*`,
       ],
-      resources: ["*"],
-    }),
+    },
   ],
 });

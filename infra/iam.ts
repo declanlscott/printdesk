@@ -182,6 +182,12 @@ export const tenantRoles = new sst.Linkable("TenantRoles", {
     bucketsAccess: {
       nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-BucketsAccessRole`,
     },
+    invoicesSender: {
+      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-InvoicesSenderRole`,
+    },
+    invoicesReceiver: {
+      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-InvoicesReceiverRole`,
+    },
     realtimePublisher: {
       nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimePublisherRole`,
     },

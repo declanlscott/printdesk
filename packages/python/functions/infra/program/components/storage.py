@@ -45,18 +45,19 @@ class Storage(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__invoices_processor_queue = _Queue(
-            resource_name="InvoicesProcessor",
-            args=_QueueArgs(
-                tenant_id=args.tenant_id,
-                with_dlq=True,
-                fifo=_FifoQueueArg(
-                    enabled=True,
-                    deduplication=True,
+        assume_role_policy = aws.iam.get_policy_document_output(
+            statements=[
+                aws.iam.GetPolicyDocumentStatementArgs(
+                    principals=[
+                        aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                            type="AWS",
+                            identifiers=[Resource.Api.roleArn],
+                        )
+                    ],
+                    actions=["sts:AssumeRole"],
                 )
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
+            ]
+        ).json
 
         self.__buckets_access_role = aws.iam.Role(
             resource_name="BucketsAccessRole",
@@ -65,19 +66,7 @@ class Storage(pulumi.ComponentResource):
                     name_template=Resource.TenantRoles.bucketsAccess.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
-                assume_role_policy=aws.iam.get_policy_document_output(
-                    statements=[
-                        aws.iam.GetPolicyDocumentStatementArgs(
-                            principals=[
-                                aws.iam.GetPolicyDocumentStatementPrincipalArgs(
-                                    type="AWS",
-                                    identifiers=[Resource.Api.roleArn],
-                                )
-                            ],
-                            actions=["sts:AssumeRole"],
-                        )
-                    ]
-                ).json,
+                assume_role_policy=assume_role_policy,
                 inline_policies=[
                     aws.iam.get_policy_document_output(
                         statements=pulumi.Output.all(
@@ -98,9 +87,82 @@ class Storage(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
+        self.__invoices_processor_queue = _Queue(
+            resource_name="InvoicesProcessor",
+            args=_QueueArgs(
+                tenant_id=args.tenant_id,
+                with_dlq=True,
+                fifo=_FifoQueueArg(
+                    enabled=True,
+                    deduplication=True,
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+
+        self.__invoices_sender_role = aws.iam.Role(
+            resource_name="InvoiceSenderRole",
+            args=aws.iam.RoleArgs(
+                name=naming.template(
+                    name_template=Resource.TenantRoles.invoicesSender.nameTemplate,
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=assume_role_policy,
+                inline_policies=[
+                    aws.iam.RoleInlinePolicyArgs(
+                        policy=aws.iam.get_policy_document_output(
+                            statements=self.__invoices_processor_queue.arn.apply(
+                                lambda arn: [
+                                    aws.iam.GetPolicyDocumentStatementArgs(
+                                        actions=["sqs:SendMessage", "sqs:SendMessageBatch"],
+                                        resources=[arn],
+                                    ),
+                                ],
+                            )
+                        ).json
+                    ),
+                ],
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__invoices_receiver_role = aws.iam.Role(
+            resource_name="InvoiceReceiverRole",
+            args=aws.iam.RoleArgs(
+                name=naming.template(
+                    name_template=Resource.TenantRoles.invoicesReceiver.nameTemplate,
+                    tenant_id=args.tenant_id,
+                ),
+                assume_role_policy=assume_role_policy,
+                inline_policies=[
+                    aws.iam.RoleInlinePolicyArgs(
+                        policy=aws.iam.get_policy_document_output(
+                            statements=self.__invoices_processor_queue.arn.apply(
+                                lambda arn: [
+                                    aws.iam.GetPolicyDocumentStatementArgs(
+                                        actions=[
+                                            "sqs:ChangeMessageVisibility",
+                                            "sqs:DeleteMessage",
+                                            "sqs:GetQueueAttributes",
+                                            "sqs:GetQueueUrl",
+                                            "sqs:ReceiveMessage",
+                                        ]
+                                    ),
+                                ],
+                            )
+                        ).json
+                    ),
+                ],
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         self.register_outputs(
             {
                 "buckets_access_role": self.__buckets_access_role.id,
+                "invoices_sender_role": self.__invoices_sender_role.id,
+                "invoices_receiver_role": self.__invoices_receiver_role.id
             }
         )
 

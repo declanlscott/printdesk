@@ -125,6 +125,10 @@ class Resource:
             nameTemplate: str
         class bucketsAccess:
             nameTemplate: str
+        class invoicesSender:
+            nameTemplate: str
+        class invoicesReceiver:
+            nameTemplate: str
         class realtimePublisher:
             nameTemplate: str
         class realtimeSubscriber:

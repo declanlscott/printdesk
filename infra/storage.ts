@@ -1,7 +1,6 @@
-import { Constants } from "@printdesk/core/utils/constants";
-
 import { pulumiRole } from "./iam";
 import { isProdStage } from "./misc";
+import { buildNameTemplate } from "./utils";
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
   versioning: true,
@@ -77,10 +76,10 @@ export const repository = new awsx.ecr.Repository(
 export const tenantBuckets = new sst.Linkable("TenantBuckets", {
   properties: {
     assets: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-assets`,
+      nameTemplate: buildNameTemplate("AssetsBucket"),
     },
     documents: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-docs`,
+      nameTemplate: buildNameTemplate("DocumentsBucket"),
     },
   },
 });

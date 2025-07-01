@@ -2,6 +2,8 @@ import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { Constants } from "@printdesk/core/utils/constants";
+
 import { Link } from "~/.sst/platform/src/components/link";
 
 export const normalizePath = (path: string, root = $cli.paths.root) =>
@@ -40,3 +42,8 @@ export function calculateHash(dirPath: string) {
 
   return createHash("sha256").update(hashes.sort().join("|")).digest("hex");
 }
+
+export const buildNameTemplate = <TIdentifier extends string>(
+  identifier: TIdentifier,
+) =>
+  `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-${identifier}` as const;

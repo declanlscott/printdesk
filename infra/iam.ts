@@ -1,6 +1,5 @@
-import { Constants } from "@printdesk/core/utils/constants";
-
 import { appsyncEventApi } from "./realtime";
+import { buildNameTemplate } from "./utils";
 
 export const cloudflareApiToken = new sst.Linkable("CloudflareApiToken", {
   properties: {
@@ -177,22 +176,22 @@ export const tenantApiFunctionRole = new aws.iam.Role("TenantApiFunctionRole", {
 export const tenantRoles = new sst.Linkable("TenantRoles", {
   properties: {
     apiAccess: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-ApiAccessRole`,
+      nameTemplate: buildNameTemplate("ApiAccessRole"),
     },
     bucketsAccess: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-BucketsAccessRole`,
+      nameTemplate: buildNameTemplate("BucketsAccessRole"),
     },
     invoicesSender: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-InvoicesSenderRole`,
+      nameTemplate: buildNameTemplate("InvoicesSenderRole"),
     },
     invoicesReceiver: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-InvoicesReceiverRole`,
+      nameTemplate: buildNameTemplate("InvoicesReceiverRole"),
     },
     realtimePublisher: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimePublisherRole`,
+      nameTemplate: buildNameTemplate("RealtimePublisherRole"),
     },
     realtimeSubscriber: {
-      nameTemplate: `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-RealtimeSubscriberRole`,
+      nameTemplate: buildNameTemplate("RealtimeSubscriberRole"),
     },
   },
 });

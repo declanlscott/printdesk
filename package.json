@@ -18,11 +18,11 @@
     "@aws-sdk/dsql-signer": "^3.835.0",
     "@openauthjs/openauth": "^0.4.3",
     "@printdesk/core": "workspace:*",
-    "@rocicorp/replicache": "^15.0.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.2",
     "hono": "^4.8.3",
     "remeda": "^2.23.1",
+    "replicache": "^15.0.3",
     "sst": "^3.17.8",
     "superjson": "^2.2.2",
     "valibot": "^1.1.0"

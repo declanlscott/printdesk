@@ -107,8 +107,6 @@ export const resourceFileName = "resource.enc";
 
 export const cloudflareAccountId = new sst.Secret("CloudflareAccountId");
 
-export const replicacheLicenseKey = new sst.Secret("ReplicacheLicenseKey");
-
 export const appData = new sst.Linkable("AppData", {
   properties: {
     name: $app.name,

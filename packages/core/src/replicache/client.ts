@@ -9,7 +9,7 @@ import type {
   DeepReadonlyObject,
   ReadTransaction,
   WriteTransaction,
-} from "@rocicorp/replicache";
+} from "replicache";
 import type { SyncedTableName, TableByName } from "../data";
 import type { InferFromTable } from "../database/tables";
 import type { User } from "../users/sql";

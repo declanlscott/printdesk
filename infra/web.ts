@@ -3,7 +3,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 import { issuer } from "./auth";
 import { router } from "./cdn";
 import { domains } from "./dns";
-import { appData, isProdStage, replicacheLicenseKey } from "./misc";
+import { appData, isProdStage } from "./misc";
 import { injectLinkables } from "./utils";
 
 export const web = new sst.aws.StaticSite("Web", {
@@ -21,7 +21,6 @@ export const web = new sst.aws.StaticSite("Web", {
     appData,
     domains,
     issuer,
-    replicacheLicenseKey,
   ),
 });
 

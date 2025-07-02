@@ -8,7 +8,7 @@ import { Rooms } from "../rooms/client";
 import { Tenants } from "../tenants/client";
 import { Users } from "../users/client";
 
-import type { WriteTransaction } from "@rocicorp/replicache";
+import type { WriteTransaction } from "replicache";
 import type * as v from "valibot";
 import type { Command, commandRepository, CommandRepository } from ".";
 import type { Replicache } from "../replicache/client";

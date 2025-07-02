@@ -6,7 +6,7 @@ import { ReplicacheContext } from "~/lib/contexts/replicache";
 import { useRouteApi } from "~/lib/hooks/route-api";
 import { useStableCallback } from "~/lib/hooks/utils";
 
-import type { ReadTransaction, SubscribeOptions } from "@rocicorp/replicache";
+import type { ReadTransaction, SubscribeOptions } from "replicache";
 
 export function useReplicacheContext() {
   const replicache = use(ReplicacheContext);

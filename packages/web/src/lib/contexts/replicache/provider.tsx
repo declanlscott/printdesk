@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createMutators } from "@printdesk/core/data/client";
 import { delimitToken } from "@printdesk/core/utils/shared";
-import { Replicache } from "@rocicorp/replicache";
+import { Replicache } from "replicache";
 import { serialize } from "superjson";
 
 import { ReplicacheContext } from "~/lib/contexts/replicache";
@@ -10,7 +10,7 @@ import { useResource } from "~/lib/hooks/resource";
 import { AppLoadingIndicator } from "~/ui/app-loading-indicator";
 
 import type { PropsWithChildren } from "react";
-import type { PushResponse } from "@rocicorp/replicache";
+import type { PushResponse } from "replicache";
 
 export function ReplicacheProvider(props: PropsWithChildren) {
   const { user } = useAuth();
@@ -19,7 +19,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
     user ? { status: "initializing" } : { status: "uninitialized" },
   );
 
-  const { AppData, Domains, ReplicacheLicenseKey } = useResource();
+  const { AppData, Domains } = useResource();
 
   const apiBaseUrl = useMemo(() => `https://${Domains.api}`, [Domains.api]);
 
@@ -30,7 +30,6 @@ export function ReplicacheProvider(props: PropsWithChildren) {
 
     const client = new Replicache({
       name: delimitToken(user.tenantId, user.id),
-      licenseKey: ReplicacheLicenseKey.value,
       logLevel: AppData.isDevMode ? "info" : "error",
       mutators: createMutators(user.id),
       auth: getAuth(),
@@ -82,14 +81,7 @@ export function ReplicacheProvider(props: PropsWithChildren) {
 
       void client.close();
     };
-  }, [
-    apiBaseUrl,
-    AppData.isDevMode,
-    getAuth,
-    refresh,
-    ReplicacheLicenseKey.value,
-    user,
-  ]);
+  }, [apiBaseUrl, AppData.isDevMode, getAuth, refresh, user]);
 
   if (replicache.status === "initializing") return <AppLoadingIndicator />;
 

@@ -11,7 +11,7 @@ import { checkRoutePermission } from "~/lib/access-control";
 
 import type { UserRole } from "@printdesk/core/users/shared";
 import type { User } from "@printdesk/core/users/sql";
-import type { DeepReadonlyObject, ReadTransaction } from "@rocicorp/replicache";
+import type { DeepReadonlyObject, ReadTransaction } from "replicache";
 import type { routePermissions } from "~/lib/access-control";
 import type { AuthenticatedEagerRouteId } from "~/types";
 

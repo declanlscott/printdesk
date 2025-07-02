@@ -32,7 +32,7 @@ import type {
   PatchOperation,
   PullResponseV1,
   PushResponse,
-} from "@rocicorp/replicache";
+} from "replicache";
 import type {
   NonSyncedTableMetadata,
   SyncedTable,

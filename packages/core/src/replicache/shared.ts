@@ -1,6 +1,6 @@
 import * as v from "valibot";
 
-import type { ReadonlyJSONObject } from "@rocicorp/replicache";
+import type { ReadonlyJSONObject } from "replicache";
 import type { SuperJSONResult } from "superjson";
 
 export const replicacheMetaTableName = "replicache_meta";

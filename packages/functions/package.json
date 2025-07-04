@@ -9,7 +9,7 @@
     "@hono/valibot-validator": "^0.5.2",
     "@oslojs/jwt": "^0.3.0",
     "@printdesk/core": "workspace:*",
-    "@trpc/server": "^11.4.2"
+    "@trpc/server": "^11.4.3"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.150"

@@ -26,8 +26,7 @@ import {
 
 import type { InferFromTable } from "../database/tables";
 
-export const licenseStatus = (name: string) =>
-  customEnum(name, licenseStatuses);
+const licenseStatus = (name: string) => customEnum(name, licenseStatuses);
 
 export const licensesTable = pgTable(licensesTableName, {
   key: uuid("key").defaultRandom().primaryKey(),
@@ -37,7 +36,7 @@ export const licensesTable = pgTable(licensesTableName, {
 export type LicensesTable = typeof licensesTable;
 export type License = InferFromTable<LicensesTable>;
 
-export const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
+const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
 
 export const tenantsTable = pgTable(
   tenantsTableName,

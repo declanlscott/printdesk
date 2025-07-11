@@ -11,8 +11,7 @@ import {
 
 import type { InferFromTable } from "../database/tables";
 
-export const productStatus = (name: string) =>
-  customEnum(name, productStatuses);
+const productStatus = (name: string) => customEnum(name, productStatuses);
 
 export const productsTable = tenantTable(
   productsTableName,

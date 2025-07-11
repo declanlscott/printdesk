@@ -12,7 +12,7 @@ import {
 import type { InferFromTable } from "../database/tables";
 import type { Discriminate } from "../utils/types";
 
-export const billingAccountOrigin = (name: string) =>
+const billingAccountOrigin = (name: string) =>
   customEnum(name, billingAccountOrigins);
 
 export const billingAccountsTable = tenantTable(

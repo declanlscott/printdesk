@@ -9,7 +9,7 @@ import {
 
 import type { InferFromTable } from "../database/tables";
 
-export const identityProviderKind = (name: string) =>
+const identityProviderKind = (name: string) =>
   customEnum(name, identityProviderKinds);
 export const identityProvidersTable = pgTable(
   identityProvidersTableName,

@@ -23,7 +23,7 @@ import {
 
 import type { InferFromTable } from "../database/tables";
 
-export const roomStatus = (name: string) => customEnum(name, roomStatuses);
+const roomStatus = (name: string) => customEnum(name, roomStatuses);
 
 export const roomsTable = tenantTable(
   roomsTableName,
@@ -40,7 +40,7 @@ export const roomsTable = tenantTable(
 export type RoomsTable = typeof roomsTable;
 export type Room = InferFromTable<RoomsTable>;
 
-export const workflowStatusType = (name: string) =>
+const workflowStatusType = (name: string) =>
   customEnum(name, workflowStatusTypes);
 
 export const workflowStatusesTable = pgTable(

@@ -7,8 +7,7 @@ import { invoicesTableName, invoiceStatuses, lineItemSchema } from "./shared";
 
 import type { InferFromTable } from "../database/tables";
 
-export const invoiceStatus = (name: string) =>
-  customEnum(name, invoiceStatuses);
+const invoiceStatus = (name: string) => customEnum(name, invoiceStatuses);
 
 export const invoicesTable = tenantTable(
   invoicesTableName,

@@ -7,8 +7,8 @@ import { userOrigins, userRoles, usersTableName } from "./shared";
 import type { InferFromTable } from "../database/tables";
 import type { Discriminate } from "../utils/types";
 
-export const userOrigin = (name: string) => customEnum(name, userOrigins);
-export const userRole = (name: string) => customEnum(name, userRoles);
+const userOrigin = (name: string) => customEnum(name, userOrigins);
+const userRole = (name: string) => customEnum(name, userRoles);
 
 export const usersTable = tenantTable(
   usersTableName,

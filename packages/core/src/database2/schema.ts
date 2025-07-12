@@ -5,6 +5,7 @@ export * from "../comments/sql";
 export * from "../invoices/sql";
 export * from "../orders/sql";
 export * from "../products/sql";
+export * from "../replicache/sql";
 export * from "../rooms/sql";
 export * from "../tenants/sql";
 export * from "../users/sql";

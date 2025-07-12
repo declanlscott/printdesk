@@ -60,7 +60,7 @@ export namespace Database {
 
   export class ClientLogger extends Effect.Tag(
     "@printdesk/core/database/ClientLogger",
-  )<Database.ClientLogger, ClientLoggerShape>() {
+  )<ClientLogger, ClientLoggerShape>() {
     static live = Layer.effect(this, makeClientLogger);
   }
 
@@ -96,17 +96,17 @@ export namespace Database {
 
   export class Transaction extends Context.Tag(
     "@printdesk/core/database/Transaction",
-  )<Database.Transaction, Database.TransactionShape>() {}
+  )<Transaction, TransactionShape>() {}
 
   const matchTxError = (error: unknown) => {
     if (
-      error instanceof Database.TransactionError &&
+      error instanceof TransactionError &&
       error.cause instanceof DatabaseError
     )
       return matchTxError(error.cause);
 
     if (error instanceof DatabaseError)
-      return new Database.TransactionError({
+      return new TransactionError({
         shouldRetry:
           error.code === Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
           error.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE,
@@ -116,7 +116,7 @@ export namespace Database {
     return null;
   };
 
-  const makeDrizzle = Effect.gen(function* () {
+  const makeDatabase = Effect.gen(function* () {
     const dsqlCluster = yield* Sst.Resource.DsqlCluster;
     const dsqlSigner = yield* Dsql.Signer;
 
@@ -138,7 +138,7 @@ export namespace Database {
     yield* Effect.tryPromise({
       try: () => pool.query("SELECT 1"),
       catch: (error) =>
-        new Database.PoolError({
+        new PoolError({
           cause:
             error instanceof globalThis.Error
               ? error
@@ -147,23 +147,23 @@ export namespace Database {
     }).pipe(
       Effect.timeoutFail({
         duration: Duration.seconds(5),
-        onTimeout: () => new Database.ConnectionTimeoutError(),
+        onTimeout: () => new ConnectionTimeoutError(),
       }),
       Effect.tap(() =>
-        Effect.logInfo("[Database.Drizzle]: Client connection established."),
+        Effect.logInfo("[Database]: Client connection established."),
       ),
     );
 
-    const setupPoolListeners = Effect.async<void, Database.PoolError>(
+    const setupPoolListeners = Effect.async<void, PoolError>(
       (resume, signal) => {
         pool.on("error", (error) =>
-          resume(Effect.fail(new Database.PoolError({ cause: error }))),
+          resume(Effect.fail(new PoolError({ cause: error }))),
         );
 
         const abortListener = () =>
           resume(
             Effect.fail(
-              new Database.PoolError({
+              new PoolError({
                 cause: new globalThis.Error("Connection interrupted"),
               }),
             ),
@@ -178,10 +178,10 @@ export namespace Database {
       },
     );
 
-    const logger = yield* Database.ClientLogger;
+    const logger = yield* ClientLogger;
     const client = drizzle(pool, { schema, logger });
 
-    const withTransaction = Effect.fn("Database.Drizzle.withTransaction")(
+    const withTransaction = Effect.fn("Database.Database.withTransaction")(
       <TSuccess, TError, TRequirements>(
         makeTransaction: (
           tx: TransactionShape["tx"],
@@ -193,16 +193,13 @@ export namespace Database {
 
           const transaction = Effect.async<
             TSuccess,
-            TError | Database.TransactionError,
+            TError | TransactionError,
             TRequirements
           >((resume, signal) => {
             client
               .transaction(async (tx) => {
                 const exit = await makeTransaction(tx).pipe(
-                  Effect.provideService(
-                    Database.Transaction,
-                    Database.Transaction.of({ tx }),
-                  ),
+                  Effect.provideService(Transaction, Transaction.of({ tx })),
                   Effect.scoped,
                   runPromiseExit,
                 );
@@ -228,7 +225,7 @@ export namespace Database {
             const abortListener = () =>
               resume(
                 Effect.fail(
-                  new Database.TransactionError({
+                  new TransactionError({
                     shouldRetry: false,
                     cause: new globalThis.Error("Transaction interrupted"),
                   }),
@@ -251,7 +248,7 @@ export namespace Database {
               Effect.succeed(delay).pipe(
                 Effect.tap(() =>
                   Effect.logInfo(
-                    `[Database.Drizzle]: Transaction attempt #${
+                    `[Database]: Transaction attempt #${
                       attempt + 1
                     } failed, retrying again in ${Duration.toMillis(
                       delay,
@@ -276,7 +273,7 @@ export namespace Database {
                 Effect.fail({ ...error, shouldRetry: false } as const).pipe(
                   Effect.tapError((error) =>
                     Effect.logError(
-                      `[Database.Drizzle]: Failed to execute transaction after maximum number of retries, giving up.`,
+                      `[Database]: Failed to execute transaction after maximum number of retries, giving up.`,
                       error,
                     ),
                   ),
@@ -286,48 +283,46 @@ export namespace Database {
         }),
     );
 
-    const useTransaction = Effect.fn("Database.Drizzle.useTransaction")(
+    const useTransaction = Effect.fn("Database.Database.useTransaction")(
       <TReturn>(callback: (tx: TransactionShape["tx"]) => Promise<TReturn>) =>
         Effect.gen(function* () {
           const execute = (...params: Parameters<typeof callback>) =>
-            Effect.async<TReturn, Database.TransactionError>(
-              (resume, signal) => {
-                const abortListener = () =>
-                  resume(
-                    Effect.fail(
-                      new Database.TransactionError({
-                        shouldRetry: false,
-                        cause: new TransactionRollbackError(),
-                      }),
-                    ),
-                  );
-
-                signal.addEventListener("abort", abortListener);
-
+            Effect.async<TReturn, TransactionError>((resume, signal) => {
+              const abortListener = () =>
                 resume(
-                  Effect.tryPromise({
-                    try: () => callback(...params),
-                    catch: (error) =>
-                      matchTxError(error) ??
-                      new Database.TransactionError({
-                        shouldRetry: false,
-                        cause:
-                          error instanceof globalThis.Error
-                            ? error
-                            : new globalThis.Error("Unknown error", {
-                                cause: error,
-                              }),
-                      }),
-                  }),
+                  Effect.fail(
+                    new TransactionError({
+                      shouldRetry: false,
+                      cause: new TransactionRollbackError(),
+                    }),
+                  ),
                 );
 
-                return Effect.sync(() =>
-                  signal.removeEventListener("abort", abortListener),
-                );
-              },
-            );
+              signal.addEventListener("abort", abortListener);
 
-          return yield* Effect.serviceOption(Database.Transaction).pipe(
+              resume(
+                Effect.tryPromise({
+                  try: () => callback(...params),
+                  catch: (error) =>
+                    matchTxError(error) ??
+                    new TransactionError({
+                      shouldRetry: false,
+                      cause:
+                        error instanceof globalThis.Error
+                          ? error
+                          : new globalThis.Error("Unknown error", {
+                              cause: error,
+                            }),
+                    }),
+                }),
+              );
+
+              return Effect.sync(() =>
+                signal.removeEventListener("abort", abortListener),
+              );
+            });
+
+          return yield* Effect.serviceOption(Transaction).pipe(
             Effect.flatMap(
               Option.match({
                 onSome: ({ tx }) => execute(tx),
@@ -338,7 +333,7 @@ export namespace Database {
         }),
     );
 
-    const afterTransaction = Effect.fn("Database.Drizzle.afterTransaction")(
+    const afterTransaction = Effect.fn("Database.Database.afterTransaction")(
       <TRequirements>(
         afterEffect: Effect.Effect<void, never, TRequirements>,
         { onSuccessOnly = true }: { onSuccessOnly?: boolean } = {},
@@ -363,7 +358,7 @@ export namespace Database {
         }),
     );
 
-    return Database.Drizzle.of({
+    return Database.of({
       setupPoolListeners,
       client,
       withTransaction,
@@ -372,8 +367,8 @@ export namespace Database {
     });
   });
 
-  export interface DrizzleShape {
-    setupPoolListeners: Effect.Effect<void, Database.PoolError>;
+  export interface DatabaseShape {
+    setupPoolListeners: Effect.Effect<void, PoolError>;
     client: NodePgDatabase<typeof schema> & {
       $client: Pool;
     };
@@ -381,14 +376,10 @@ export namespace Database {
       makeTransaction: (
         tx: TransactionShape["tx"],
       ) => Effect.Effect<TSuccess, TError, TRequirements>,
-    ) => Effect.Effect<
-      TSuccess,
-      TError | Database.TransactionError,
-      TRequirements
-    >;
+    ) => Effect.Effect<TSuccess, TError | TransactionError, TRequirements>;
     useTransaction: <TReturn>(
       callback: (tx: TransactionShape["tx"]) => Promise<TReturn>,
-    ) => Effect.Effect<TReturn, Database.TransactionError>;
+    ) => Effect.Effect<TReturn, TransactionError>;
     afterTransaction: <TRequirements>(
       afterEffect: Effect.Effect<void, never, TRequirements>,
       options?: {
@@ -397,12 +388,12 @@ export namespace Database {
     ) => Effect.Effect<void, never, TRequirements>;
   }
 
-  export class Drizzle extends Effect.Tag("@printdesk/core/database/Drizzle")<
-    Database.Drizzle,
-    Database.DrizzleShape
+  export class Database extends Effect.Tag("@printdesk/core/database/Database")<
+    Database,
+    DatabaseShape
   >() {
-    static live = Layer.effect(this, makeDrizzle).pipe(
-      Layer.provide(Database.ClientLogger.live),
+    static live = Layer.effect(this, makeDatabase).pipe(
+      Layer.provide(ClientLogger.live),
     );
   }
 }

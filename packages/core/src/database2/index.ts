@@ -7,6 +7,7 @@ import {
   Duration,
   Effect,
   Exit,
+  Layer,
   Option,
   Predicate,
   Runtime,
@@ -80,41 +81,25 @@ export namespace Database {
     readonly cause: globalThis.Error;
   }> {}
 
-  export interface TransactionShape {
-    tx: PgTransaction<
-      NodePgQueryResultHKT,
-      typeof schema,
-      ExtractTablesWithRelations<typeof schema>
-    >;
-  }
-
-  export class Transaction extends Context.Tag(
-    "@printdesk/core/database/Transaction",
-  )<Transaction, TransactionShape>() {}
-
-  const matchTxError = (error: unknown) => {
-    if (
-      error instanceof TransactionError &&
-      error.cause instanceof DatabaseError
-    )
-      return matchTxError(error.cause);
-
-    if (error instanceof DatabaseError)
-      return new TransactionError({
-        shouldRetry:
-          error.code === Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
-          error.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE,
-        cause: error,
-      });
-
-    return null;
-  };
-
   export class Database extends Effect.Service<Database>()(
     "@printdesk/core/database/Database",
     {
-      dependencies: [ClientLogger.Default],
-      effect: Effect.gen(function* () {
+      accessors: true,
+      dependencies: [
+        Layer.unwrapEffect(
+          Effect.gen(function* () {
+            const dsqlCluster = yield* Sst.Resource.DsqlCluster;
+            const aws = yield* Sst.Resource.Aws;
+
+            return Dsql.Signer.Default({
+              hostname: dsqlCluster.host,
+              region: aws.region,
+            });
+          }),
+        ).pipe(Layer.provideMerge(Sst.Resource.layer)),
+        ClientLogger.Default,
+      ],
+      scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster;
         const dsqlSigner = yield* Dsql.Signer;
 
@@ -179,7 +164,55 @@ export namespace Database {
         const logger = yield* ClientLogger;
         const client = drizzle(pool, { schema, logger });
 
-        const withTransaction = Effect.fn("Database.Database.withTransaction")(
+        return {
+          setupPoolListeners,
+          client,
+        } as const;
+      }),
+    },
+  ) {}
+
+  export interface TransactionShape {
+    tx: PgTransaction<
+      NodePgQueryResultHKT,
+      typeof schema,
+      ExtractTablesWithRelations<typeof schema>
+    >;
+  }
+
+  export class Transaction extends Context.Tag(
+    "@printdesk/core/database/Transaction",
+  )<Transaction, TransactionShape>() {}
+
+  export class TransactionManager extends Effect.Service<TransactionManager>()(
+    "@printdesk/core/database/TransactionManager",
+    {
+      dependencies: [Database.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.client;
+
+        const matchTxError = (error: unknown) => {
+          if (
+            error instanceof TransactionError &&
+            error.cause instanceof DatabaseError
+          )
+            return matchTxError(error.cause);
+
+          if (error instanceof DatabaseError)
+            return new TransactionError({
+              shouldRetry:
+                error.code ===
+                  Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
+                error.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE,
+              cause: error,
+            });
+
+          return null;
+        };
+
+        const withTransaction = Effect.fn(
+          "Database.TransactionManager.withTransaction",
+        )(
           <TSuccess, TError, TRequirements>(
             makeTransaction: (
               tx: TransactionShape["tx"],
@@ -194,34 +227,29 @@ export namespace Database {
                 TError | TransactionError,
                 TRequirements
               >((resume, signal) => {
-                client
-                  .transaction(async (tx) => {
-                    const exit = await makeTransaction(tx).pipe(
-                      Effect.provideService(
-                        Transaction,
-                        Transaction.of({ tx }),
-                      ),
-                      Effect.scoped,
-                      runPromiseExit,
-                    );
+                db.transaction(async (tx) => {
+                  const exit = await makeTransaction(tx).pipe(
+                    Effect.provideService(Transaction, Transaction.of({ tx })),
+                    Effect.scoped,
+                    runPromiseExit,
+                  );
 
-                    Exit.match(exit, {
-                      onSuccess: (success) => resume(Effect.succeed(success)),
-                      onFailure: (cause) => {
-                        if (cause.pipe(Cause.isFailure)) {
-                          const ogError = cause.pipe(Cause.originalError);
-                          const txError = ogError.pipe(matchTxError);
+                  Exit.match(exit, {
+                    onSuccess: (success) => resume(Effect.succeed(success)),
+                    onFailure: (cause) => {
+                      if (cause.pipe(Cause.isFailure)) {
+                        const ogError = cause.pipe(Cause.originalError);
+                        const txError = ogError.pipe(matchTxError);
 
-                          resume(Effect.fail(txError ?? (ogError as TError)));
-                        } else resume(Effect.die(cause));
-                      },
-                    });
-                  })
-                  .catch((error) => {
-                    const txError = matchTxError(error);
-
-                    resume(txError ? Effect.fail(txError) : Effect.die(error));
+                        resume(Effect.fail(txError ?? (ogError as TError)));
+                      } else resume(Effect.die(cause));
+                    },
                   });
+                }).catch((error) => {
+                  const txError = matchTxError(error);
+
+                  resume(txError ? Effect.fail(txError) : Effect.die(error));
+                });
 
                 const abortListener = () =>
                   resume(
@@ -284,7 +312,9 @@ export namespace Database {
             }),
         );
 
-        const useTransaction = Effect.fn("Database.Database.useTransaction")(
+        const useTransaction = Effect.fn(
+          "Database.TransactionManager.useTransaction",
+        )(
           <TReturn>(
             callback: (tx: TransactionShape["tx"]) => Promise<TReturn>,
           ) =>
@@ -337,7 +367,7 @@ export namespace Database {
         );
 
         const afterTransaction = Effect.fn(
-          "Database.Database.afterTransaction",
+          "Database.TransactionManager.afterTransaction",
         )(
           <TRequirements>(
             afterEffect: Effect.Effect<void, never, TRequirements>,
@@ -364,13 +394,7 @@ export namespace Database {
             }),
         );
 
-        return {
-          setupPoolListeners,
-          client,
-          withTransaction,
-          useTransaction,
-          afterTransaction,
-        } as const;
+        return { withTransaction, useTransaction, afterTransaction } as const;
       }),
     },
   ) {}

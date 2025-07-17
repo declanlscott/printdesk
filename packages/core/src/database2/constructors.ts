@@ -82,21 +82,30 @@ export const version = {
   },
 };
 
-export function buildConflictUpdateColumns<
-  TTable extends PgTable,
-  TColumnName extends keyof TTable["_"]["columns"],
->(table: TTable, columnNames: Array<TColumnName>) {
-  const tableColumns = getTableColumns(table);
+export function buildConflictSet<TTable extends PgTable>(table: TTable) {
+  const tableName = getTableName(table);
 
-  return columnNames.reduce(
-    (updateColumns, column) => {
-      const columnName = tableColumns[column].name;
+  return Object.values(getTableColumns(table)).reduce(
+    (set, column) => {
+      let statement: string;
+      switch (column.name) {
+        case "updated_at": {
+          statement = `COALESCE(EXCLUDED."${column.name}", NOW())`;
+          break;
+        }
+        case "version": {
+          statement = `"${tableName}"."version" + 1`;
+          break;
+        }
+        default:
+          statement = `COALESCE(EXCLUDED."${column.name}", "${tableName}"."${column.name}")`;
+      }
 
-      updateColumns[column] = sql.raw(`excluded.${columnName}`);
+      set[column.name] = sql.raw(statement);
 
-      return updateColumns;
+      return set;
     },
-    {} as Record<TColumnName, SQL>,
+    {} as Record<string, SQL>,
   );
 }
 

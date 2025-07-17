@@ -1,8 +1,9 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
+import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictUpdateColumns } from "../database2/constructors";
+import { buildConflictSet } from "../database2/constructors";
 import * as schema from "../database2/schema";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -26,16 +27,7 @@ export namespace Tenants {
                   .values(tenant)
                   .onConflictDoUpdate({
                     target: [table.id],
-                    set: {
-                      ...buildConflictUpdateColumns(table, [
-                        "id",
-                        "name",
-                        "subdomain",
-                        "status",
-                      ]),
-                      version: sql`${table.version} + 1`,
-                      updatedAt: new Date(),
-                    },
+                    set: buildConflictSet(table),
                   })
                   .returning(),
               )
@@ -80,6 +72,15 @@ export namespace Tenants {
               ),
         );
 
+        const findBySubdomain = Effect.fn("Tenants.Repository.findBySubdomain")(
+          (subdomain: schema.Tenant["subdomain"]) =>
+            db
+              .useTransaction((tx) =>
+                tx.select().from(table).where(eq(table.subdomain, subdomain)),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const update = Effect.fn("Tenants.Repository.update")(
           (tenant: PartialExcept<schema.Tenant, "id">) =>
             db
@@ -93,7 +94,155 @@ export namespace Tenants {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        return { upsert, findById, findByIdentityProvider, update } as const;
+        return {
+          upsert,
+          findById,
+          findByIdentityProvider,
+          findBySubdomain,
+          update,
+        } as const;
+      }),
+    },
+  ) {}
+
+  export class Policy extends Effect.Service<Policy>()(
+    "@printdesk/core/tenants/Policy",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const isSubdomainAvailable = Effect.fn(
+          "Tenants.Policy.isSubdomainAvailable",
+        )((subdomain: schema.Tenant["subdomain"]) =>
+          AccessControl.policy(() =>
+            Effect.gen(function* () {
+              if (["api", "auth", "backend", "www"].includes(subdomain))
+                return false;
+
+              return yield* repository.findBySubdomain(subdomain).pipe(
+                Effect.catchTag("NoSuchElementException", () =>
+                  Effect.succeed(null),
+                ),
+                Effect.map((tenant) => !tenant || tenant.status === "setup"),
+              );
+            }),
+          ),
+        );
+
+        return { isSubdomainAvailable } as const;
+      }),
+    },
+  ) {}
+
+  export class LicensesRepository extends Effect.Service<LicensesRepository>()(
+    "@printdesk/core/tenants/LicensesRepository",
+    {
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = schema.licensesTable.table;
+
+        const findByKeyWithTenant = Effect.fn(
+          "Tenants.LicensesRepository.findByKey",
+        )((key: schema.License["key"]) =>
+          db
+            .useTransaction((tx) =>
+              tx
+                .select({
+                  license: table,
+                  tenant: schema.tenantsTable.table,
+                })
+                .from(table)
+                .leftJoin(
+                  schema.tenantsTable.table,
+                  eq(schema.tenantsTable.table.id, table.tenantId),
+                )
+                .where(eq(table.key, key)),
+            )
+            .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const update = Effect.fn("Tenants.LicensesRepository.update")(
+          (license: PartialExcept<schema.License, "key">) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set(license)
+                  .where(eq(table.key, license.key))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        return { findByKeyWithTenant, update } as const;
+      }),
+    },
+  ) {}
+
+  export class LicensesPolicy extends Effect.Service<LicensesPolicy>()(
+    "@printdesk/core/tenants/LicensesPolicy",
+    {
+      dependencies: [LicensesRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* LicensesRepository;
+
+        const isAvailable = Effect.fn("Tenants.LicensesPolicy.isAvailable")(
+          (key: schema.License["key"]) =>
+            AccessControl.policy(() =>
+              repository
+                .findByKeyWithTenant(key)
+                .pipe(
+                  Effect.map(
+                    ({ license, tenant }) =>
+                      license.status === "active" &&
+                      (license.tenantId === null || tenant?.status === "setup"),
+                  ),
+                ),
+            ),
+        );
+
+        return { isAvailable } as const;
+      }),
+    },
+  ) {}
+
+  export class MetadataRepository extends Effect.Service<MetadataRepository>()(
+    "@printdesk/core/tenants/MetadataRepository",
+    {
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = schema.tenantMetadataTable.table;
+
+        const upsert = Effect.fn("Tenants.MetadataRepository.upsert")(
+          (metadata: InferInsertModel<schema.TenantMetadataTable>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(metadata)
+                  .onConflictDoUpdate({
+                    target: [table.tenantId],
+                    set: buildConflictSet(table),
+                  })
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const findByTenant = Effect.fn(
+          "Tenants.MetadataRepository.findByTenant",
+        )((tenantId: schema.Tenant["id"]) =>
+          db
+            .useTransaction((tx) =>
+              tx.select().from(table).where(eq(table.tenantId, tenantId)),
+            )
+            .pipe(Effect.flatMap(Array.head)),
+        );
+
+        return { upsert, findByTenant } as const;
       }),
     },
   ) {}

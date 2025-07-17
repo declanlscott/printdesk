@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
+import { buildConflictSet } from "../database2/constructors";
 import * as schema from "../database2/schema";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -19,7 +20,14 @@ export namespace IdentityProviders {
           (identityProvider: InferInsertModel<schema.IdentityProvidersTable>) =>
             db
               .useTransaction((tx) =>
-                tx.insert(table).values(identityProvider).returning(),
+                tx
+                  .insert(table)
+                  .values(identityProvider)
+                  .onConflictDoUpdate({
+                    target: [table.id, table.tenantId],
+                    set: buildConflictSet(table),
+                  })
+                  .returning(),
               )
               .pipe(Effect.flatMap(Array.head)),
         );

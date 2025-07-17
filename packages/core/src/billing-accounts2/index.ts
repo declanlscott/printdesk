@@ -1,9 +1,9 @@
-import { and, eq, inArray, isNull, not, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, not } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictUpdateColumns } from "../database2/constructors";
+import { buildConflictSet } from "../database2/constructors";
 import * as schema from "../database2/schema";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -30,18 +30,7 @@ export namespace BillingAccounts {
                       table.papercutAccountId,
                       table.tenantId,
                     ],
-                    set: {
-                      ...buildConflictUpdateColumns(table, [
-                        "origin",
-                        "name",
-                        "papercutAccountId",
-                        "tenantId",
-                        "createdAt",
-                        "updatedAt",
-                        "deletedAt",
-                      ]),
-                      version: sql`${table.version} + 1`,
-                    },
+                    set: buildConflictSet(table),
                   })
                   .returning(),
               )
@@ -300,17 +289,7 @@ export namespace BillingAccounts {
                     table.billingAccountId,
                     table.tenantId,
                   ],
-                  set: {
-                    ...buildConflictUpdateColumns(table, [
-                      "customerId",
-                      "billingAccountId",
-                      "tenantId",
-                      "createdAt",
-                      "updatedAt",
-                      "deletedAt",
-                    ]),
-                    version: sql`${table.version} + 1`,
-                  },
+                  set: buildConflictSet(table),
                 })
                 .returning(),
             ),

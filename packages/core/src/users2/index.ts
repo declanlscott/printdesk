@@ -1,9 +1,9 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictUpdateColumns } from "../database2/constructors";
+import { buildConflictSet } from "../database2/constructors";
 import * as schema from "../database2/schema";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -26,21 +26,7 @@ export namespace Users {
                 .values(users)
                 .onConflictDoUpdate({
                   target: [table.id, table.tenantId],
-                  set: {
-                    ...buildConflictUpdateColumns(table, [
-                      "origin",
-                      "username",
-                      "subjectId",
-                      "identityProviderId",
-                      "name",
-                      "email",
-                      "role",
-                      "createdAt",
-                      "updatedAt",
-                      "deletedAt",
-                    ]),
-                    version: sql`${table.version} + 1`,
-                  },
+                  set: buildConflictSet(table),
                 })
                 .returning(),
             ),

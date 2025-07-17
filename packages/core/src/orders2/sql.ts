@@ -1,5 +1,4 @@
 import { index, timestamp, varchar } from "drizzle-orm/pg-core";
-import { Schema } from "effect";
 
 import {
   customJsonb,
@@ -8,7 +7,7 @@ import {
   tenantTable,
 } from "../database2/constructors";
 import { Constants } from "../utils/constants";
-import { ordersTableName } from "./shared";
+import { OrderAttributes, ordersTableName } from "./shared";
 
 import type { InferFromTable } from "../database2/constructors";
 
@@ -21,8 +20,7 @@ export const ordersTable = SyncTable(
       operatorId: id("operator_id"),
       productId: id("product_id").notNull(),
       billingAccountId: id("billing_account_id").notNull(),
-      // TODO: Attributes schema
-      attributes: customJsonb("attributes", Schema.Struct({})).notNull(),
+      attributes: customJsonb("attributes", OrderAttributes).notNull(),
       workflowStatus: varchar("workflow_status", {
         length: Constants.VARCHAR_LENGTH,
       }).notNull(),

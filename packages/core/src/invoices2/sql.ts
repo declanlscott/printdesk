@@ -8,7 +8,7 @@ import {
   SyncTable,
   tenantTable,
 } from "../database2/constructors";
-import { invoicesTableName, invoiceStatuses } from "./shared";
+import { invoicesTableName, invoiceStatuses, LineItem } from "./shared";
 
 import type { InferFromTable } from "../database2/constructors";
 
@@ -18,11 +18,7 @@ export const invoicesTable = SyncTable(
   tenantTable(
     invoicesTableName,
     {
-      lineItems: customJsonb(
-        "line_items",
-        // TODO: Line item schema
-        Schema.Array(Schema.Struct({})),
-      ).notNull(),
+      lineItems: customJsonb("line_items", Schema.Array(LineItem)).notNull(),
       status: invoiceStatus("status").default("processing").notNull(),
       chargedAt: timestamp("charged_at", { mode: "string" }),
       orderId: id("order_id").notNull(),

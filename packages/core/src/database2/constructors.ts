@@ -12,6 +12,7 @@ import { Array, Data, ParseResult, Schema } from "effect";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";
+import { NanoId } from "../utils2/shared";
 
 import type {
   BuildColumns,
@@ -62,6 +63,12 @@ export const timestamps = {
   },
 };
 export type Timestamp = keyof typeof timestamps;
+
+export const Timestamps = Schema.Struct({
+  createdAt: Schema.Date,
+  updatedAt: Schema.Date,
+  deletedAt: Schema.NullOr(Schema.Date),
+});
 
 /**
  * Version column
@@ -133,7 +140,7 @@ export function customJsonb<TSchema extends Schema.Schema.AnyNoContext>(
   }>({
     dataType: () => "bytea",
     // @ts-expect-error TypeScript doesn't know that `Context<TSchema>` is `never`.
-    fromDriver: Schema.decodeUnknownSync(JsonbSchema),
+    fromDriver: Schema.decodeSync(JsonbSchema),
     // @ts-expect-error TypeScript doesn't know that `Context<TSchema>` is `never`.
     toDriver: Schema.encodeSync(JsonbSchema),
   })(name);
@@ -150,8 +157,8 @@ export function customEnum<const TValues extends ReadonlyArray<string>>(
     driverData: typeof EnumSchema.Encoded;
   }>({
     dataType: () => "varchar(50)",
+    fromDriver: Schema.decodeSync(EnumSchema),
     toDriver: Schema.encodeSync(EnumSchema),
-    fromDriver: Schema.decodeUnknownSync(EnumSchema),
   })(name);
 }
 
@@ -174,7 +181,7 @@ export function customEnumArray<const TValues extends ReadonlyArray<string>>(
     data: typeof EnumArraySchema.Type;
   }>({
     dataType: () => "text",
-    fromDriver: Schema.decodeUnknownSync(EnumArraySchema),
+    fromDriver: Schema.decodeSync(EnumArraySchema),
     toDriver: Schema.encodeSync(EnumArraySchema),
   })(name);
 }
@@ -229,6 +236,12 @@ export const tenantTable = <
       ...(extraConfig?.(table) ?? []),
     ],
   );
+
+export const TenantTable = Schema.Struct({
+  id: NanoId,
+  tenantId: NanoId,
+  ...Timestamps.fields,
+});
 
 export type InferTablePermissions<
   TTable extends PgTable,

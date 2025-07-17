@@ -80,7 +80,7 @@ export namespace Constants {
     `^[${NANOID_CUSTOM_ALPHABET}]{${NANOID_LENGTH}}$`,
   );
 
-  export const TENANT_SUBDOMAIN_PATTERN = new RegExp(/^[a-z0-9-]+$/);
+  export const TENANT_SUBDOMAIN_REGEX = new RegExp(/^[a-z0-9-]+$/);
 
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 
@@ -92,5 +92,17 @@ export namespace Constants {
 
   export const MONTH_TRUNCATED_ISO_DATE_REGEX = new RegExp(
     /^\d{4}-(?:0[1-9]|1[0-2])$/u,
+  );
+
+  export const ISO_TIMESTAMP_REGEX = new RegExp(
+    /^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])[T ](?:0\d|1\d|2[0-3])(?::[0-5]\d){2}(?:\.\d{1,9})?(?:Z|[+-](?:0\d|1\d|2[0-3])(?::?[0-5]\d)?)$/u,
+  );
+
+  export const ISO_DATE_REGEX = new RegExp(
+    /^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])$/u,
+  );
+
+  export const HEX_COLOR_REGEX = new RegExp(
+    /^#(?:[\da-fA-F]{3,4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/u,
   );
 }

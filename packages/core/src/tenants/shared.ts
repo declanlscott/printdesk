@@ -34,7 +34,7 @@ export const tenantsTableName = "tenants";
 export const tenantSubdomainSchema = v.pipe(
   v.string(),
   v.regex(
-    Constants.TENANT_SUBDOMAIN_PATTERN,
+    Constants.TENANT_SUBDOMAIN_REGEX,
     "Invalid format, only alphanumeric characters and hyphens are allowed",
   ),
 );

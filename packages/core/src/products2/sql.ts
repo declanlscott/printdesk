@@ -1,5 +1,4 @@
 import { index, varchar } from "drizzle-orm/pg-core";
-import { Schema } from "effect";
 
 import {
   customEnum,
@@ -9,7 +8,11 @@ import {
   tenantTable,
 } from "../database2/constructors";
 import { Constants } from "../utils/constants";
-import { productsTableName, productStatuses } from "./shared";
+import {
+  ProductConfiguration,
+  productsTableName,
+  productStatuses,
+} from "./shared";
 
 import type { InferFromTable } from "../database2/constructors";
 
@@ -22,8 +25,7 @@ export const productsTable = SyncTable(
       name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
       status: productStatus("status").notNull(),
       roomId: id("room_id").notNull(),
-      // TODO: Config schema
-      config: customJsonb("config", Schema.Struct({})).notNull(),
+      config: customJsonb("config", ProductConfiguration).notNull(),
     },
     (table) => [index().on(table.status), index().on(table.roomId)],
   ),

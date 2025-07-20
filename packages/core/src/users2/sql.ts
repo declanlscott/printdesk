@@ -1,6 +1,12 @@
-import { index, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { isNull } from "drizzle-orm";
+import { index, pgView, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { customEnum, SyncTable, tenantTable } from "../database2/constructors";
+import {
+  customEnum,
+  SyncTable,
+  tenantTable,
+  View,
+} from "../database2/constructors";
 import { userRoles } from "../users/shared";
 import { userOrigins, usersTableName } from "./shared";
 
@@ -42,3 +48,12 @@ export type UserByOrigin<TUserOrigin extends User["origin"]> = Discriminate<
   "origin",
   TUserOrigin
 >;
+
+export const activeUsersView = View(
+  pgView(`active_${usersTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(usersTable.table)
+      .where(isNull(usersTable.table.deletedAt)),
+  ),
+);

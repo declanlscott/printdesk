@@ -7,7 +7,6 @@ import { buildConflictSet } from "../database2/constructors";
 import * as schema from "../database2/schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { PartialExcept } from "../utils/types";
 
 export namespace Tenants {
   export class Repository extends Effect.Service<Repository>()(
@@ -32,6 +31,16 @@ export namespace Tenants {
                   .returning(),
               )
               .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const getMetadata = Effect.fn("Tenants.Repository.getMetadata")(
+          (tenantId: schema.Tenant["id"]) =>
+            db.useTransaction((tx) =>
+              tx
+                .select({ id: table.id, version: table.version })
+                .from(table)
+                .where(eq(table.id, tenantId)),
+            ),
         );
 
         const findById = Effect.fn("Tenants.Repository.findById")(
@@ -81,14 +90,17 @@ export namespace Tenants {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const update = Effect.fn("Tenants.Repository.update")(
-          (tenant: PartialExcept<schema.Tenant, "id">) =>
+        const updateById = Effect.fn("Tenants.Repository.updateById")(
+          (
+            id: schema.Tenant["id"],
+            tenant: Partial<Omit<schema.Tenant, "id">>,
+          ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
                   .set(tenant)
-                  .where(eq(table.id, tenant.id))
+                  .where(eq(table.id, id))
                   .returning(),
               )
               .pipe(Effect.flatMap(Array.head)),
@@ -96,10 +108,11 @@ export namespace Tenants {
 
         return {
           upsert,
+          getMetadata,
           findById,
           findByIdentityProvider,
           findBySubdomain,
-          update,
+          updateById,
         } as const;
       }),
     },
@@ -163,20 +176,23 @@ export namespace Tenants {
             .pipe(Effect.flatMap(Array.head)),
         );
 
-        const update = Effect.fn("Tenants.LicensesRepository.update")(
-          (license: PartialExcept<schema.License, "key">) =>
+        const updateByKey = Effect.fn("Tenants.LicensesRepository.updateByKey")(
+          (
+            key: schema.License["key"],
+            license: Partial<Omit<schema.License, "key">>,
+          ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
                   .set(license)
-                  .where(eq(table.key, license.key))
+                  .where(eq(table.key, key))
                   .returning(),
               )
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        return { findByKeyWithTenant, update } as const;
+        return { findByKeyWithTenant, updateByKey } as const;
       }),
     },
   ) {}

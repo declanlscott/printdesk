@@ -1,10 +1,12 @@
-import { index, timestamp, varchar } from "drizzle-orm/pg-core";
+import { isNull } from "drizzle-orm";
+import { index, pgView, timestamp, varchar } from "drizzle-orm/pg-core";
 
 import {
   customJsonb,
   id,
   SyncTable,
   tenantTable,
+  View,
 } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import { OrderAttributes, ordersTableName } from "./shared";
@@ -40,3 +42,12 @@ export const ordersTable = SyncTable(
 export type OrdersTable = (typeof ordersTable)["table"];
 
 export type Order = InferFromTable<OrdersTable>;
+
+export const activeOrdersView = View(
+  pgView(`active_${ordersTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(ordersTable.table)
+      .where(isNull(ordersTable.table.deletedAt)),
+  ),
+);

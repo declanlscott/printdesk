@@ -4,11 +4,21 @@ import * as schema from "../database2/schema";
 import { makePermissionsFromConfig } from "./shared";
 
 import type { NonEmptyReadonlyArray } from "effect/Array";
+import type { ReadonlyRecord } from "effect/Record";
+import type { UserRole } from "../users2/shared";
 
 export namespace AccessControl {
-  const tablePermissions = Object.values(schema).flatMap(
-    ({ permissions }) => permissions,
-  );
+  const syncTablePermissions = Object.values(schema)
+    .filter((data) => data._tag === "@printdesk/core/database/SyncTable")
+    .flatMap(({ permissions }) => permissions);
+
+  const nonSyncTablePermissions = Object.values(schema)
+    .filter((data) => data._tag === "@printdesk/core/database/NonSyncTable")
+    .flatMap(({ permissions }) => permissions);
+
+  const viewPermissions = Object.values(schema)
+    .filter((data) => data._tag === "@printdesk/core/database/View")
+    .flatMap(({ permission }) => permission);
 
   const externalPermissions = makePermissionsFromConfig({
     "document-constraints": ["read", "update"],
@@ -19,15 +29,121 @@ export namespace AccessControl {
   } as const);
 
   export const Permission = Schema.Literal(
-    ...tablePermissions,
+    ...syncTablePermissions,
+    ...nonSyncTablePermissions,
+    ...viewPermissions,
     ...externalPermissions,
   );
   export type Permission = Schema.Schema.Type<typeof Permission>;
 
+  export type RoleAcls = ReadonlyRecord<UserRole, ReadonlyArray<Permission>>;
+  export const roleAcls = {
+    administrator: [
+      "announcements:create",
+      "announcements:read",
+      "announcements:update",
+      "announcements:delete",
+      "billing_accounts:read",
+      "billing_accounts:update",
+      "billing_accounts:delete",
+      "billing_account_customer_authorizations:read",
+      "billing_account_manager_authorizations:create",
+      "billing_account_manager_authorizations:read",
+      "billing_account_manager_authorizations:delete",
+      "comments:create",
+      "comments:read",
+      "comments:update",
+      "comments:delete",
+      "delivery_options:create",
+      "delivery_options:read",
+      "document-constraints:read",
+      "document-constraints:update",
+      "invoices:create",
+      "invoices:read",
+      "identity_providers:create",
+      "identity_providers:read",
+      "identity_providers:delete",
+      "orders:create",
+      "orders:read",
+      "orders:update",
+      "orders:delete",
+      "papercut-sync:create",
+      "papercut-sync:read",
+      "products:create",
+      "products:read",
+      "products:update",
+      "products:delete",
+      "rooms:create",
+      "rooms:update",
+      "rooms:read",
+      "rooms:delete",
+      "tailscale-oauth-client:update",
+      "tenants:read",
+      "users:read",
+      "users:update",
+      "users:delete",
+      "workflow_statuses:create",
+      "workflow_statuses:read",
+    ] as const,
+    operator: [
+      "announcements:create",
+      "active_announcements:read",
+      "announcements:update",
+      "announcements:delete",
+      "active_billing_accounts:read",
+      "billing_accounts:update",
+      "active_billing_account_customer_authorizations:read",
+      "active_billing_account_manager_authorizations:read",
+      "comments:create",
+      "active_comments:read",
+      "delivery_options:create",
+      "delivery_options:read",
+      "document-constraints:read",
+      "document-constraints:update",
+      "orders:create",
+      "active_orders:read",
+      "orders:update",
+      "orders:delete",
+      "products:create",
+      "active_products:read",
+      "products:update",
+      "products:delete",
+      "active_rooms:read",
+      "rooms:update",
+      "tenants:read",
+      "active_users:read",
+      "workflow_statuses:create",
+      "workflow_statuses:read",
+    ] as const,
+    manager: [
+      "active_announcements:read",
+      "active_billing_accounts:read",
+      "active_billing_account_customer_authorizations:read",
+      "active_billing_account_manager_authorizations:read",
+      "published_room_delivery_options:read",
+      "document-constraints:read",
+      "active_published_products:read",
+      "active_published_rooms:read",
+      "tenants:read",
+      "active_users:read",
+      "published_room_workflow_statuses:read",
+    ] as const,
+    customer: [
+      "active_announcements:read",
+      "published_room_delivery_options:read",
+      "document-constraints:read",
+      "active_published_products:read",
+      "active_published_rooms:read",
+      "tenants:read",
+      "active_users:read",
+      "published_room_workflow_statuses:read",
+    ] as const,
+  } satisfies RoleAcls;
+
   export type PrincipalShape = {
     readonly userId: schema.User["id"];
     readonly tenantId: schema.Tenant["id"];
-    readonly acl: Set<Permission>;
+    readonly acl: ReadonlySet<Permission>;
   };
 
   export class Principal extends Context.Tag(

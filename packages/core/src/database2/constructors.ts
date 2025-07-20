@@ -1,5 +1,5 @@
 import { decode, encode } from "@msgpack/msgpack";
-import { getTableColumns, getTableName, sql } from "drizzle-orm";
+import { getTableColumns, getTableName, getViewName, sql } from "drizzle-orm";
 import {
   char,
   customType,
@@ -26,6 +26,7 @@ import type {
   PgTable,
   PgTableExtraConfigValue,
   PgTableWithColumns,
+  PgView,
 } from "drizzle-orm/pg-core";
 import type { PermissionAction } from "../access-control2/shared";
 
@@ -326,3 +327,14 @@ export const NonSyncTable = <
 export type InferFromTable<TTable extends Table> = Readonly<
   Omit<InferSelectModel<TTable>, "version">
 >;
+
+export interface View<TView extends PgView> {
+  readonly _tag: "@printdesk/core/database/View";
+  readonly view: TView;
+  readonly permission: `${TView["_"]["name"]}:read`;
+}
+export const View = <TView extends PgView>(view: TView) =>
+  Data.tagged<View<TView>>("@printdesk/core/database/View")({
+    view,
+    permission: `${getViewName(view)}:read` as const,
+  });

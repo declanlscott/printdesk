@@ -122,8 +122,8 @@ export namespace IdentityProviders {
             ),
         );
 
-        const delete_ = Effect.fn(
-          "IdentityProviders.UserGroupsRepository.delete",
+        const deleteById = Effect.fn(
+          "IdentityProviders.UserGroupsRepository.deleteById",
         )(
           (
             id: schema.IdentityProviderUserGroupsTable["id"],
@@ -143,7 +143,7 @@ export namespace IdentityProviders {
             ),
         );
 
-        return { create, findByIdentityProvider, delete: delete_ } as const;
+        return { create, findByIdentityProvider, deleteById } as const;
       }),
     },
   ) {}

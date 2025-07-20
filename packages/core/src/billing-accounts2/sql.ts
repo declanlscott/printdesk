@@ -1,10 +1,19 @@
-import { bigint, index, numeric, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { isNull } from "drizzle-orm";
+import {
+  bigint,
+  index,
+  numeric,
+  pgView,
+  text,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 import {
   customEnum,
   id,
   SyncTable,
   tenantTable,
+  View,
 } from "../database2/constructors";
 import {
   billingAccountCustomerAuthorizationsTableName,
@@ -45,6 +54,14 @@ export type BillingAccount = InferFromTable<BillingAccountsTable>;
 export type BillingAccountByOrigin<
   TBillingAccountOrigin extends BillingAccount["origin"],
 > = Discriminate<BillingAccount, "origin", TBillingAccountOrigin>;
+export const activeBillingAccountsView = View(
+  pgView(`active_${billingAccountsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(billingAccountsTable.table)
+      .where(isNull(billingAccountsTable.table.deletedAt)),
+  ),
+);
 
 export const billingAccountCustomerAuthorizationsTable = SyncTable(
   tenantTable(
@@ -68,6 +85,14 @@ export type BillingAccountCustomerAuthorizationsTable =
   (typeof billingAccountCustomerAuthorizationsTable)["table"];
 export type BillingAccountCustomerAuthorization =
   InferFromTable<BillingAccountCustomerAuthorizationsTable>;
+export const activeBillingAccountCustomerAuthorizationsView = View(
+  pgView(`active_${billingAccountCustomerAuthorizationsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(billingAccountCustomerAuthorizationsTable.table)
+      .where(isNull(billingAccountCustomerAuthorizationsTable.table.deletedAt)),
+  ),
+);
 
 export const billingAccountManagerAuthorizationsTable = SyncTable(
   tenantTable(
@@ -87,3 +112,11 @@ export type BillingAccountManagerAuthorizationsTable =
   (typeof billingAccountManagerAuthorizationsTable)["table"];
 export type BillingAccountManagerAuthorization =
   InferFromTable<BillingAccountManagerAuthorizationsTable>;
+export const activeBillingAccountManagerAuthorizationsView = View(
+  pgView(`active_${billingAccountManagerAuthorizationsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(billingAccountManagerAuthorizationsTable.table)
+      .where(isNull(billingAccountManagerAuthorizationsTable.table.deletedAt)),
+  ),
+);

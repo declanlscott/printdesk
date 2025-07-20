@@ -7,7 +7,7 @@ import { buildConflictSet } from "../database2/constructors";
 import * as schema from "../database2/schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { PartialExcept, Prettify } from "../utils/types";
+import type { Prettify } from "../utils/types";
 
 export namespace Users {
   export class Repository extends Effect.Service<Repository>()(
@@ -17,6 +17,7 @@ export namespace Users {
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = schema.usersTable.table;
+        const activeView = schema.activeUsersView.view;
 
         const upsertMany = Effect.fn("Users.Repository.upsert")(
           (users: Array<InferInsertModel<schema.UsersTable>>) =>
@@ -30,6 +31,27 @@ export namespace Users {
                 })
                 .returning(),
             ),
+        );
+
+        const getMetadata = Effect.fn("Users.Repository.getMetadata")(
+          (tenantId: schema.User["tenantId"]) =>
+            db.useTransaction((tx) =>
+              tx
+                .select({ id: table.id, version: table.version })
+                .from(table)
+                .where(eq(table.tenantId, tenantId)),
+            ),
+        );
+
+        const getActiveMetadata = Effect.fn(
+          "Users.Repository.getActiveMetadata",
+        )((tenantId: schema.User["tenantId"]) =>
+          db.useTransaction((tx) =>
+            tx
+              .select({ id: activeView.id, version: activeView.version })
+              .from(activeView)
+              .where(eq(activeView.tenantId, tenantId)),
+          ),
         );
 
         const findById = Effect.fn("Users.Repository.findById")(
@@ -132,28 +154,27 @@ export namespace Users {
             ),
         );
 
-        const update = Effect.fn("Users.Repository.update")(
-          (user: PartialExcept<schema.User, "id" | "tenantId">) =>
+        const updateById = Effect.fn("Users.Repository.updateById")(
+          (
+            id: schema.User["id"],
+            user: Partial<Omit<schema.User, "id" | "tenantId">>,
+            tenantId: schema.User["tenantId"],
+          ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
                   .set(user)
-                  .where(
-                    and(
-                      eq(table.id, user.id),
-                      eq(table.tenantId, user.tenantId),
-                    ),
-                  )
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
                   .returning(),
               )
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const delete_ = Effect.fn("Users.Repository.delete")(
+        const deleteById = Effect.fn("Users.Repository.deleteById")(
           (
             id: schema.User["id"],
-            deletedAt: schema.User["deletedAt"],
+            deletedAt: NonNullable<schema.User["deletedAt"]>,
             tenantId: schema.User["tenantId"],
           ) =>
             db
@@ -169,14 +190,16 @@ export namespace Users {
 
         return {
           upsertMany,
+          getMetadata,
+          getActiveMetadata,
           findById,
           findByIds,
           findByRoles,
           findByOrigin,
           findByIdentityProvider,
           findByUsernames,
-          update,
-          delete: delete_,
+          updateById,
+          deleteById,
         } as const;
       }),
     },

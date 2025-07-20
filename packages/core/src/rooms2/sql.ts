@@ -1,8 +1,10 @@
+import { and, eq, getTableColumns, isNull } from "drizzle-orm";
 import {
   boolean,
   index,
   numeric,
   pgTable,
+  pgView,
   primaryKey,
   smallint,
   text,
@@ -16,6 +18,7 @@ import {
   SyncTable,
   tenantTable,
   version,
+  View,
 } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
@@ -47,6 +50,22 @@ export const roomsTable = SyncTable(
 );
 export type RoomsTable = (typeof roomsTable)["table"];
 export type Room = InferFromTable<RoomsTable>;
+export const activeRoomsView = View(
+  pgView(`active_${roomsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(roomsTable.table)
+      .where(isNull(roomsTable.table.deletedAt)),
+  ),
+);
+export const activePublishedRoomsView = View(
+  pgView(`active_published_${roomsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(activeRoomsView.view)
+      .where(eq(activeRoomsView.view.status, "published")),
+  ),
+);
 
 const workflowStatusType = (name: string) =>
   customEnum(name, workflowStatusTypes);
@@ -75,6 +94,21 @@ export const workflowStatusesTable = SyncTable(
 );
 export type WorkflowStatusesTable = (typeof workflowStatusesTable)["table"];
 export type WorkflowStatus = InferFromTable<WorkflowStatusesTable>;
+export const publishedRoomWorkflowStatusesView = View(
+  pgView(`published_room_${workflowStatusesTableName}`).as((qb) =>
+    qb
+      .select(getTableColumns(workflowStatusesTable.table))
+      .from(workflowStatusesTable.table)
+      .innerJoin(
+        roomsTable.table,
+        and(
+          eq(workflowStatusesTable.table.roomId, roomsTable.table.id),
+          eq(workflowStatusesTable.table.tenantId, roomsTable.table.tenantId),
+        ),
+      )
+      .where(eq(roomsTable.table.status, "published")),
+  ),
+);
 
 export const deliveryOptionsTable = SyncTable(
   pgTable(
@@ -104,3 +138,18 @@ export const deliveryOptionsTable = SyncTable(
 );
 export type DeliveryOptionsTable = (typeof deliveryOptionsTable)["table"];
 export type DeliveryOption = InferFromTable<DeliveryOptionsTable>;
+export const publishedRoomDeliveryOptionsView = View(
+  pgView(`published_room_${deliveryOptionsTableName}`).as((qb) =>
+    qb
+      .select(getTableColumns(deliveryOptionsTable.table))
+      .from(deliveryOptionsTable.table)
+      .innerJoin(
+        roomsTable.table,
+        and(
+          eq(deliveryOptionsTable.table.roomId, roomsTable.table.id),
+          eq(deliveryOptionsTable.table.tenantId, roomsTable.table.tenantId),
+        ),
+      )
+      .where(eq(roomsTable.table.status, "published")),
+  ),
+);

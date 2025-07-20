@@ -1,4 +1,5 @@
-import { index, varchar } from "drizzle-orm/pg-core";
+import { eq, isNull } from "drizzle-orm";
+import { index, pgView, varchar } from "drizzle-orm/pg-core";
 
 import {
   customEnum,
@@ -6,6 +7,7 @@ import {
   id,
   SyncTable,
   tenantTable,
+  View,
 } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
@@ -35,3 +37,21 @@ export const productsTable = SyncTable(
 export type ProductsTable = (typeof productsTable)["table"];
 
 export type Product = InferFromTable<ProductsTable>;
+
+export const activeProductsView = View(
+  pgView(`active_${productsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(productsTable.table)
+      .where(isNull(productsTable.table.deletedAt)),
+  ),
+);
+
+export const activePublishedProductsView = View(
+  pgView(`active_published_${productsTableName}`).as((qb) =>
+    qb
+      .select()
+      .from(activeProductsView.view)
+      .where(eq(activeProductsView.view.status, "published")),
+  ),
+);

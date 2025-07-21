@@ -21,11 +21,11 @@ export namespace AccessControl {
     .flatMap(({ permission }) => permission);
 
   const externalPermissions = makePermissionsFromConfig({
-    "document-constraints": ["read", "update"],
-    "papercut-sync": ["create", "read"],
+    document_constraints: ["read", "update"],
+    papercut_sync: ["create", "read"],
     // NOTE: proxy structure: protocol (https/http), fqdn (*.tailnet-*.ts.net), port, path (other than root /)
-    "papercut-tailscale-proxy": ["read", "update"],
-    "tailscale-oauth-client": ["update"],
+    papercut_tailscale_proxy: ["read", "update"],
+    tailscale_oauth_client: ["update"],
   } as const);
 
   export const Permission = Schema.Literal(
@@ -36,8 +36,11 @@ export namespace AccessControl {
   );
   export type Permission = Schema.Schema.Type<typeof Permission>;
 
-  export type RoleAcls = ReadonlyRecord<UserRole, ReadonlyArray<Permission>>;
-  export const roleAcls = {
+  export type UserRoleAcls = ReadonlyRecord<
+    UserRole,
+    ReadonlyArray<Permission>
+  >;
+  export const userRoleAcls = {
     administrator: [
       "announcements:create",
       "announcements:read",
@@ -56,8 +59,8 @@ export namespace AccessControl {
       "comments:delete",
       "delivery_options:create",
       "delivery_options:read",
-      "document-constraints:read",
-      "document-constraints:update",
+      "document_constraints:read",
+      "document_constraints:update",
       "invoices:create",
       "invoices:read",
       "identity_providers:create",
@@ -67,8 +70,8 @@ export namespace AccessControl {
       "orders:read",
       "orders:update",
       "orders:delete",
-      "papercut-sync:create",
-      "papercut-sync:read",
+      "papercut_sync:create",
+      "papercut_sync:read",
       "products:create",
       "products:read",
       "products:update",
@@ -77,7 +80,7 @@ export namespace AccessControl {
       "rooms:update",
       "rooms:read",
       "rooms:delete",
-      "tailscale-oauth-client:update",
+      "tailscale_oauth_client:update",
       "tenants:read",
       "users:read",
       "users:update",
@@ -98,8 +101,8 @@ export namespace AccessControl {
       "active_comments:read",
       "delivery_options:create",
       "delivery_options:read",
-      "document-constraints:read",
-      "document-constraints:update",
+      "document_constraints:read",
+      "document_constraints:update",
       "orders:create",
       "active_orders:read",
       "orders:update",
@@ -121,7 +124,7 @@ export namespace AccessControl {
       "active_billing_account_customer_authorizations:read",
       "active_billing_account_manager_authorizations:read",
       "published_room_delivery_options:read",
-      "document-constraints:read",
+      "document_constraints:read",
       "active_published_products:read",
       "active_published_rooms:read",
       "tenants:read",
@@ -131,14 +134,14 @@ export namespace AccessControl {
     customer: [
       "active_announcements:read",
       "published_room_delivery_options:read",
-      "document-constraints:read",
+      "document_constraints:read",
       "active_published_products:read",
       "active_published_rooms:read",
       "tenants:read",
       "active_users:read",
       "published_room_workflow_statuses:read",
     ] as const,
-  } satisfies RoleAcls;
+  } satisfies UserRoleAcls;
 
   export type PrincipalShape = {
     readonly userId: schema.User["id"];

@@ -2,7 +2,7 @@ import { TransactionRollbackError } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import {
   Cause,
-  Context,
+  Chunk,
   Data,
   Duration,
   Effect,
@@ -10,9 +10,9 @@ import {
   Layer,
   Option,
   Predicate,
+  Ref,
   Runtime,
   Schedule,
-  Scope,
 } from "effect";
 import { DatabaseError, Pool } from "pg";
 
@@ -172,17 +172,49 @@ export namespace Database {
     },
   ) {}
 
-  export interface TransactionShape {
-    tx: PgTransaction<
-      NodePgQueryResultHKT,
-      typeof schema,
-      ExtractTablesWithRelations<typeof schema>
-    >;
+  export interface AfterEffect {
+    onSuccessOnly: boolean;
+    effect: Effect.Effect<void>;
   }
 
-  export class Transaction extends Context.Tag(
+  export class Transaction extends Effect.Service<Transaction>()(
     "@printdesk/core/database/Transaction",
-  )<Transaction, TransactionShape>() {}
+    {
+      scoped: (
+        tx: PgTransaction<
+          NodePgQueryResultHKT,
+          typeof schema,
+          ExtractTablesWithRelations<typeof schema>
+        >,
+      ) =>
+        Effect.gen(function* () {
+          const afterEffectsRef = yield* Ref.make(Chunk.empty<AfterEffect>());
+
+          yield* Effect.addFinalizer(
+            Effect.fn("Database.Transaction.finalizer")((exit) =>
+              afterEffectsRef.pipe(
+                Ref.get,
+                Effect.map(
+                  Chunk.filterMap(({ onSuccessOnly, effect }) =>
+                    onSuccessOnly && exit.pipe(Predicate.not(Exit.isSuccess))
+                      ? Option.none()
+                      : Option.some(effect),
+                  ),
+                ),
+                Effect.flatMap(
+                  Effect.allWith({ concurrency: "unbounded", discard: true }),
+                ),
+              ),
+            ),
+          );
+
+          const registerAfterEffect = (afterEffect: AfterEffect) =>
+            afterEffectsRef.pipe(Ref.update(Chunk.append(afterEffect)));
+
+          return { tx, registerAfterEffect } as const;
+        }),
+    },
+  ) {}
 
   export class TransactionManager extends Effect.Service<TransactionManager>()(
     "@printdesk/core/database/TransactionManager",
@@ -214,9 +246,10 @@ export namespace Database {
           "Database.TransactionManager.withTransaction",
         )(
           <TSuccess, TError, TRequirements>(
-            makeTransaction: (
-              tx: TransactionShape["tx"],
+            execute: (
+              tx: Transaction["tx"],
             ) => Effect.Effect<TSuccess, TError, TRequirements>,
+            { shouldRetry = false }: { shouldRetry?: boolean } = {},
           ) =>
             Effect.gen(function* () {
               const runtime = yield* Effect.runtime<TRequirements>();
@@ -228,9 +261,8 @@ export namespace Database {
                 TRequirements
               >((resume, signal) => {
                 db.transaction(async (tx) => {
-                  const exit = await makeTransaction(tx).pipe(
-                    Effect.provideService(Transaction, Transaction.of({ tx })),
-                    Effect.scoped,
+                  const exit = await execute(tx).pipe(
+                    Effect.provide(Transaction.Default(tx)),
                     runPromiseExit,
                   );
 
@@ -267,6 +299,14 @@ export namespace Database {
                   signal.removeEventListener("abort", abortListener),
                 );
               });
+
+              if (!shouldRetry)
+                return yield* transaction.pipe(
+                  Effect.catchTag(
+                    "@printdesk/core/database/TransactionError",
+                    (error) => Effect.fail({ ...error, shouldRetry }),
+                  ),
+                );
 
               const schedule = Schedule.recurs(
                 Constants.DB_TRANSACTION_MAX_RETRIES,
@@ -314,84 +354,74 @@ export namespace Database {
 
         const useTransaction = Effect.fn(
           "Database.TransactionManager.useTransaction",
-        )(
-          <TReturn>(
-            callback: (tx: TransactionShape["tx"]) => Promise<TReturn>,
-          ) =>
-            Effect.gen(function* () {
-              const execute = (...params: Parameters<typeof callback>) =>
-                Effect.async<TReturn, TransactionError>((resume, signal) => {
-                  const abortListener = () =>
-                    resume(
-                      Effect.fail(
-                        new TransactionError({
-                          shouldRetry: false,
-                          cause: new TransactionRollbackError(),
-                        }),
-                      ),
-                    );
-
-                  signal.addEventListener("abort", abortListener);
-
+        )(<TReturn>(callback: (tx: Transaction["tx"]) => Promise<TReturn>) =>
+          Effect.gen(function* () {
+            const execute = (...params: Parameters<typeof callback>) =>
+              Effect.async<TReturn, TransactionError>((resume, signal) => {
+                const abortListener = () =>
                   resume(
-                    Effect.tryPromise({
-                      try: () => callback(...params),
-                      catch: (error) =>
-                        matchTxError(error) ??
-                        new TransactionError({
-                          shouldRetry: false,
-                          cause:
-                            error instanceof globalThis.Error
-                              ? error
-                              : new globalThis.Error("Unknown error", {
-                                  cause: error,
-                                }),
-                        }),
-                    }),
+                    Effect.fail(
+                      new TransactionError({
+                        shouldRetry: false,
+                        cause: new TransactionRollbackError(),
+                      }),
+                    ),
                   );
 
-                  return Effect.sync(() =>
-                    signal.removeEventListener("abort", abortListener),
-                  );
-                });
+                signal.addEventListener("abort", abortListener);
 
-              return yield* Effect.serviceOption(Transaction).pipe(
-                Effect.flatMap(
-                  Option.match({
-                    onSome: ({ tx }) => execute(tx),
-                    onNone: () => withTransaction(execute),
+                resume(
+                  Effect.tryPromise({
+                    try: () => callback(...params),
+                    catch: (error) =>
+                      matchTxError(error) ??
+                      new TransactionError({
+                        shouldRetry: false,
+                        cause:
+                          error instanceof globalThis.Error
+                            ? error
+                            : new globalThis.Error("Unknown error", {
+                                cause: error,
+                              }),
+                      }),
                   }),
-                ),
-              );
-            }),
+                );
+
+                return Effect.sync(() =>
+                  signal.removeEventListener("abort", abortListener),
+                );
+              });
+
+            return yield* Effect.serviceOption(Transaction).pipe(
+              Effect.flatMap(
+                Option.match({
+                  onSome: ({ tx }) => execute(tx),
+                  onNone: () => withTransaction(execute),
+                }),
+              ),
+            );
+          }),
         );
 
         const afterTransaction = Effect.fn(
           "Database.TransactionManager.afterTransaction",
         )(
-          <TRequirements>(
-            afterEffect: Effect.Effect<void, never, TRequirements>,
+          (
+            effect: Effect.Effect<void>,
             { onSuccessOnly = true }: { onSuccessOnly?: boolean } = {},
           ) =>
-            Effect.gen(function* () {
-              const addFinalizer = Effect.addFinalizer((exit) =>
-                Effect.gen(function* () {
-                  if (onSuccessOnly && exit.pipe(Predicate.not(Exit.isSuccess)))
-                    return;
-
-                  yield* afterEffect;
+            Effect.serviceOption(Transaction).pipe(
+              Effect.flatMap(
+                Option.match({
+                  onSome: (transaction) =>
+                    transaction.registerAfterEffect({
+                      onSuccessOnly,
+                      effect,
+                    }),
+                  onNone: () => effect,
                 }),
-              );
-
-              yield* Effect.serviceOption(Scope.Scope).pipe(
-                Effect.flatMap(
-                  Option.match({
-                    onSome: (scope) => addFinalizer.pipe(Scope.extend(scope)),
-                    onNone: () => addFinalizer.pipe(Effect.scoped),
-                  }),
-                ),
-              );
-            }),
+              ),
+            ),
         );
 
         return { withTransaction, useTransaction, afterTransaction } as const;

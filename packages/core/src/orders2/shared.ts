@@ -1,10 +1,10 @@
-import { Either, Schema } from "effect";
+import { Either, Schema, Struct } from "effect";
 
-import { TenantTable } from "../database2/constructors";
+import { SyncTable, TenantTable, View } from "../database2/shared";
 import { Constants } from "../utils/constants";
 import { IsoDate, IsoTimestamp, NanoId } from "../utils2/shared";
 
-export const ordersTableName = "orders";
+import type { ActiveOrdersView, OrdersTable } from "./sql";
 
 export const OrderAttributesV1 = Schema.Struct({
   version: Schema.Literal(1).annotations({
@@ -184,33 +184,39 @@ export const OrderAttributesV1 = Schema.Struct({
     }),
   ),
 });
-
 export const OrderAttributes = Schema.Union(OrderAttributesV1);
 
-export const Order = Schema.Struct({
-  ...TenantTable.fields,
-  customerId: NanoId,
-  managerId: Schema.NullOr(NanoId),
-  operatorId: Schema.NullOr(NanoId),
-  productId: NanoId,
-  billingAccountId: NanoId,
-  attributes: OrderAttributes,
-  workflowStatus: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-  deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-  approvedAt: Schema.NullOr(Schema.Date),
-});
+export const ordersTableName = "orders";
+export const ordersTable = SyncTable<OrdersTable>()(
+  ordersTableName,
+  Schema.Struct({
+    ...TenantTable.fields,
+    customerId: NanoId,
+    managerId: Schema.NullOr(NanoId),
+    operatorId: Schema.NullOr(NanoId),
+    productId: NanoId,
+    billingAccountId: NanoId,
+    attributes: OrderAttributes,
+    workflowStatus: Schema.Trim.pipe(
+      Schema.maxLength(Constants.VARCHAR_LENGTH),
+    ),
+    deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    approvedAt: Schema.NullOr(Schema.Date),
+  }),
+  ["create", "read", "update", "delete"],
+);
 
-export const CreateOrder = Schema.Struct({
-  ...Order.omit("deletedAt").fields,
-  deletedAt: Schema.Null,
-});
+export const activeOrdersViewName = `active_${ordersTableName}`;
+export const activeOrdersView = View<ActiveOrdersView>()(
+  activeOrdersViewName,
+  ordersTable.Schema,
+);
+
+export const CreateOrder = ordersTable.Schema.omit("deletedAt", "tenantId");
 
 export const UpdateOrder = Schema.extend(
-  Schema.Struct({
-    id: NanoId,
-    updatedAt: Schema.Date,
-  }),
-  Order.omit("id", "tenantId", "createdAt", "updatedAt", "deletedAt").pipe(
+  ordersTable.Schema.pick("id", "updatedAt"),
+  ordersTable.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(
     Schema.partial,
   ),
 );

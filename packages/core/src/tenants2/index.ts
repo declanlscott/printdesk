@@ -3,10 +3,13 @@ import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
-import * as schema from "../database2/schema";
+import { buildConflictSet } from "../database2/columns";
+import { identityProvidersTable } from "../identity-providers2/sql";
+import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { IdentityProvider } from "../identity-providers2/sql";
+import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
 export namespace Tenants {
   export class Repository extends Effect.Service<Repository>()(
@@ -15,10 +18,10 @@ export namespace Tenants {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.tenantsTable.table;
+        const table = tenantsTable;
 
         const upsert = Effect.fn("Tenants.Repository.upsert")(
-          (tenant: InferInsertModel<schema.TenantsTable>) =>
+          (tenant: InferInsertModel<TenantsTable>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -34,17 +37,17 @@ export namespace Tenants {
         );
 
         const getMetadata = Effect.fn("Tenants.Repository.getMetadata")(
-          (tenantId: schema.Tenant["id"]) =>
+          (id: Tenant["id"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, version: table.version })
                 .from(table)
-                .where(eq(table.id, tenantId)),
+                .where(eq(table.id, id)),
             ),
         );
 
         const findById = Effect.fn("Tenants.Repository.findById")(
-          (id: schema.Tenant["id"]) =>
+          (id: Tenant["id"]) =>
             db
               .useTransaction((tx) =>
                 tx.select().from(table).where(eq(table.id, id)),
@@ -54,35 +57,31 @@ export namespace Tenants {
 
         const findByIdentityProvider = Effect.fn(
           "Tenants.Repository.findByIdentityProvider",
-        )(
-          (
-            kind: schema.IdentityProvider["kind"],
-            id: schema.IdentityProvider["id"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .select({ tenant: table })
-                  .from(table)
-                  .innerJoin(
-                    schema.identityProvidersTable.table,
-                    eq(schema.identityProvidersTable.table.tenantId, table.id),
-                  )
-                  .where(
-                    and(
-                      eq(schema.identityProvidersTable.table.kind, kind),
-                      eq(schema.identityProvidersTable.table.id, id),
-                    ),
+        )((kind: IdentityProvider["kind"], id: IdentityProvider["id"]) =>
+          db
+            .useTransaction((tx) =>
+              tx
+                .select({ tenant: table })
+                .from(table)
+                .innerJoin(
+                  identityProvidersTable,
+                  eq(identityProvidersTable.tenantId, table.id),
+                )
+                .where(
+                  and(
+                    eq(identityProvidersTable.kind, kind),
+                    eq(identityProvidersTable.id, id),
                   ),
-              )
-              .pipe(
-                Effect.map(Array.map(({ tenant }) => tenant)),
-                Effect.flatMap(Array.head),
-              ),
+                ),
+            )
+            .pipe(
+              Effect.map(Array.map(({ tenant }) => tenant)),
+              Effect.flatMap(Array.head),
+            ),
         );
 
         const findBySubdomain = Effect.fn("Tenants.Repository.findBySubdomain")(
-          (subdomain: schema.Tenant["subdomain"]) =>
+          (subdomain: Tenant["subdomain"]) =>
             db
               .useTransaction((tx) =>
                 tx.select().from(table).where(eq(table.subdomain, subdomain)),
@@ -91,10 +90,7 @@ export namespace Tenants {
         );
 
         const updateById = Effect.fn("Tenants.Repository.updateById")(
-          (
-            id: schema.Tenant["id"],
-            tenant: Partial<Omit<schema.Tenant, "id">>,
-          ) =>
+          (id: Tenant["id"], tenant: Partial<Omit<Tenant, "id">>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -127,7 +123,7 @@ export namespace Tenants {
 
         const isSubdomainAvailable = Effect.fn(
           "Tenants.Policy.isSubdomainAvailable",
-        )((subdomain: schema.Tenant["subdomain"]) =>
+        )((subdomain: Tenant["subdomain"]) =>
           AccessControl.policy(() =>
             Effect.gen(function* () {
               if (["api", "auth", "backend", "www"].includes(subdomain))
@@ -154,33 +150,27 @@ export namespace Tenants {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.licensesTable.table;
+        const table = licensesTable;
 
         const findByKeyWithTenant = Effect.fn(
           "Tenants.LicensesRepository.findByKey",
-        )((key: schema.License["key"]) =>
+        )((key: License["key"]) =>
           db
             .useTransaction((tx) =>
               tx
                 .select({
                   license: table,
-                  tenant: schema.tenantsTable.table,
+                  tenant: tenantsTable,
                 })
                 .from(table)
-                .leftJoin(
-                  schema.tenantsTable.table,
-                  eq(schema.tenantsTable.table.id, table.tenantId),
-                )
+                .leftJoin(tenantsTable, eq(tenantsTable.id, table.tenantId))
                 .where(eq(table.key, key)),
             )
             .pipe(Effect.flatMap(Array.head)),
         );
 
         const updateByKey = Effect.fn("Tenants.LicensesRepository.updateByKey")(
-          (
-            key: schema.License["key"],
-            license: Partial<Omit<schema.License, "key">>,
-          ) =>
+          (key: License["key"], license: Partial<Omit<License, "key">>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -205,7 +195,7 @@ export namespace Tenants {
         const repository = yield* LicensesRepository;
 
         const isAvailable = Effect.fn("Tenants.LicensesPolicy.isAvailable")(
-          (key: schema.License["key"]) =>
+          (key: License["key"]) =>
             AccessControl.policy(() =>
               repository
                 .findByKeyWithTenant(key)
@@ -230,10 +220,10 @@ export namespace Tenants {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.tenantMetadataTable.table;
+        const table = tenantMetadataTable;
 
         const upsert = Effect.fn("Tenants.MetadataRepository.upsert")(
-          (metadata: InferInsertModel<schema.TenantMetadataTable>) =>
+          (metadata: InferInsertModel<TenantMetadataTable>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -250,7 +240,7 @@ export namespace Tenants {
 
         const findByTenant = Effect.fn(
           "Tenants.MetadataRepository.findByTenant",
-        )((tenantId: schema.Tenant["id"]) =>
+        )((tenantId: Tenant["id"]) =>
           db
             .useTransaction((tx) =>
               tx.select().from(table).where(eq(table.tenantId, tenantId)),

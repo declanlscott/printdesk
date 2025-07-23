@@ -2,9 +2,10 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
-import * as schema from "../database2/schema";
+import { activeAnnouncementsView, announcementsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { Announcement, AnnouncementsTable } from "./sql";
 
 export namespace Announcements {
   export class Repository extends Effect.Service<Repository>()(
@@ -13,11 +14,11 @@ export namespace Announcements {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.announcementsTable.table;
-        const activeView = schema.activeAnnouncementsView.view;
+        const table = announcementsTable;
+        const activeView = activeAnnouncementsView;
 
         const create = Effect.fn("Announcements.Repository.create")(
-          (announcement: InferInsertModel<schema.AnnouncementsTable>) =>
+          (announcement: InferInsertModel<AnnouncementsTable>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(announcement).returning(),
@@ -29,7 +30,7 @@ export namespace Announcements {
         );
 
         const getMetadata = Effect.fn("Announcements.Repository.getMetadata")(
-          (tenantId: schema.Announcement["tenantId"]) =>
+          (tenantId: Announcement["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, version: table.version })
@@ -40,7 +41,7 @@ export namespace Announcements {
 
         const getActiveMetadata = Effect.fn(
           "Announcements.Repository.getActiveMetadata",
-        )((tenantId: schema.Announcement["tenantId"]) =>
+        )((tenantId: Announcement["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -51,8 +52,8 @@ export namespace Announcements {
 
         const findByIds = Effect.fn("Announcements.Repository.findByIds")(
           (
-            ids: ReadonlyArray<schema.Announcement["id"]>,
-            tenantId: schema.Announcement["tenantId"],
+            ids: ReadonlyArray<Announcement["id"]>,
+            tenantId: Announcement["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -66,9 +67,9 @@ export namespace Announcements {
 
         const updateById = Effect.fn("Announcements.Repository.updateById")(
           (
-            id: schema.Announcement["id"],
-            announcement: Partial<Omit<schema.Announcement, "id" | "tenantId">>,
-            tenantId: schema.Announcement["tenantId"],
+            id: Announcement["id"],
+            announcement: Partial<Omit<Announcement, "id" | "tenantId">>,
+            tenantId: Announcement["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -83,9 +84,9 @@ export namespace Announcements {
 
         const deleteById = Effect.fn("Announcements.Repository.deleteById")(
           (
-            id: schema.Announcement["id"],
-            deletedAt: NonNullable<schema.Announcement["deletedAt"]>,
-            tenantId: schema.Announcement["tenantId"],
+            id: Announcement["id"],
+            deletedAt: NonNullable<Announcement["deletedAt"]>,
+            tenantId: Announcement["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -102,9 +103,9 @@ export namespace Announcements {
           "Announcements.Repository.deleteByRoomId",
         )(
           (
-            roomId: schema.Announcement["roomId"],
-            deletedAt: NonNullable<schema.Announcement["deletedAt"]>,
-            tenantId: schema.Announcement["tenantId"],
+            roomId: Announcement["roomId"],
+            deletedAt: NonNullable<Announcement["deletedAt"]>,
+            tenantId: Announcement["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx

@@ -1,9 +1,68 @@
 import { Schema } from "effect";
 
+import { NonSyncTable, Timestamps } from "../database2/shared";
+import { NanoId } from "../utils2/shared";
+
+import type {
+  ReplicacheClientGroupsTable,
+  ReplicacheClientsTable,
+  ReplicacheClientViewsTable,
+  ReplicacheMetaTable,
+} from "./sql";
+
+// TODO: Client view record schema
+export const ReplicacheClientViewRecord = Schema.Struct({});
+
 export const replicacheMetaTableName = "replicache_meta";
+export const replicacheMetaTable = NonSyncTable<ReplicacheMetaTable>()(
+  replicacheMetaTableName,
+  Schema.Struct({
+    key: Schema.String,
+    value: Schema.Any,
+  }),
+  [],
+);
+
 export const replicacheClientGroupsTableName = "replicache_client_groups";
+export const replicacheClientGroupsTable =
+  NonSyncTable<ReplicacheClientGroupsTable>()(
+    replicacheClientGroupsTableName,
+    Schema.Struct({
+      id: Schema.UUID,
+      tenantId: NanoId,
+      userId: NanoId,
+      cvrVersion: Schema.Int,
+      ...Timestamps.fields,
+    }),
+    [],
+  );
+
 export const replicacheClientsTableName = "replicache_clients";
+export const replicacheClientsTable = NonSyncTable<ReplicacheClientsTable>()(
+  replicacheClientsTableName,
+  Schema.Struct({
+    id: Schema.UUID,
+    tenantId: NanoId,
+    clientGroupId: Schema.UUID,
+    lastMutationId: Schema.Int,
+    ...Timestamps.fields,
+  }),
+  [],
+);
+
 export const replicacheClientViewsTableName = "replicache_client_views";
+export const replicacheClientViewsTable =
+  NonSyncTable<ReplicacheClientViewsTable>()(
+    replicacheClientViewsTableName,
+    Schema.Struct({
+      tenantId: NanoId,
+      clientGroupId: Schema.UUID,
+      version: Schema.Int,
+      record: ReplicacheClientViewRecord,
+      ...Timestamps.fields,
+    }),
+    [],
+  );
 
 export const MutationV0 = Schema.Struct({
   name: Schema.String,

@@ -1,12 +1,28 @@
-import { and, eq, getTableColumns, inArray, isNull, not } from "drizzle-orm";
+import { and, eq, inArray, not } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
-import * as schema from "../database2/schema";
+import { buildConflictSet } from "../database2/columns";
+import { activeUsersView } from "../users2/sql";
+import {
+  activeBillingAccountCustomerAuthorizationsView,
+  activeBillingAccountManagerAuthorizationsView,
+  activeBillingAccountsView,
+  billingAccountCustomerAuthorizationsTable,
+  billingAccountManagerAuthorizationsTable,
+  billingAccountsTable,
+} from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type {
+  BillingAccount,
+  BillingAccountCustomerAuthorization,
+  BillingAccountCustomerAuthorizationsTable,
+  BillingAccountManagerAuthorization,
+  BillingAccountManagerAuthorizationsTable,
+  BillingAccountsTable,
+} from "./sql";
 
 export namespace BillingAccounts {
   export class Repository extends Effect.Service<Repository>()(
@@ -15,13 +31,15 @@ export namespace BillingAccounts {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.billingAccountsTable.table;
-        const activeView = schema.activeBillingAccountsView.view;
+        const table = billingAccountsTable;
+        const activeView = activeBillingAccountsView;
         const activeCustomerAuthorizationsView =
-          schema.activeBillingAccountCustomerAuthorizationsView.view;
+          activeBillingAccountCustomerAuthorizationsView;
+        const activeManagerAuthorizationsView =
+          activeBillingAccountManagerAuthorizationsView;
 
         const upsertMany = Effect.fn("BillingAccounts.Repository.upsertMany")(
-          (values: Array<InferInsertModel<schema.BillingAccountsTable>>) =>
+          (values: Array<InferInsertModel<BillingAccountsTable>>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -44,7 +62,7 @@ export namespace BillingAccounts {
         );
 
         const getMetadata = Effect.fn("BillingAccounts.Repository.getMetadata")(
-          (tenantId: schema.BillingAccount["tenantId"]) =>
+          (tenantId: BillingAccount["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, version: table.version })
@@ -55,7 +73,7 @@ export namespace BillingAccounts {
 
         const getActiveMetadata = Effect.fn(
           "BillingAccounts.Repository.getActiveMetadata",
-        )((tenantId: schema.BillingAccount["tenantId"]) =>
+        )((tenantId: BillingAccount["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -68,8 +86,8 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.getActiveMetadataByCustomerId",
         )(
           (
-            customerId: schema.BillingAccountCustomerAuthorization["customerId"],
-            tenantId: schema.BillingAccount["tenantId"],
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            tenantId: BillingAccount["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -99,8 +117,8 @@ export namespace BillingAccounts {
 
         const findByIds = Effect.fn("BillingAccounts.Repository.findByIds")(
           (
-            ids: ReadonlyArray<schema.BillingAccount["id"]>,
-            tenantId: schema.BillingAccount["tenantId"],
+            ids: ReadonlyArray<BillingAccount["id"]>,
+            tenantId: BillingAccount["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -115,9 +133,9 @@ export namespace BillingAccounts {
         const findByOrigin = Effect.fn(
           "BillingAccounts.Repository.findByOrigin",
         )(
-          <TBillingAccountOrigin extends schema.BillingAccount["origin"]>(
+          <TBillingAccountOrigin extends BillingAccount["origin"]>(
             origin: TBillingAccountOrigin,
-            tenantId: schema.BillingAccount["tenantId"],
+            tenantId: BillingAccount["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -137,121 +155,110 @@ export namespace BillingAccounts {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const findCustomers = Effect.fn(
-          "BillingAccounts.Repository.findCustomers",
-        )(
-          (
-            id: schema.BillingAccount["id"],
-            tenantId: schema.BillingAccount["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
+        const findActiveCustomerIds = Effect.fn(
+          "BillingAccounts.Repository.findActiveCustomerIds",
+        )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
+          db
+            .useTransaction((tx) =>
               tx
-                .select(getTableColumns(schema.usersTable.table))
-                .from(table)
+                .select({ id: activeUsersView.id })
+                .from(activeView)
                 .innerJoin(
-                  schema.billingAccountCustomerAuthorizationsTable.table,
+                  activeCustomerAuthorizationsView,
                   and(
                     eq(
-                      table.id,
-                      schema.billingAccountCustomerAuthorizationsTable.table
-                        .billingAccountId,
+                      activeView.id,
+                      activeCustomerAuthorizationsView.billingAccountId,
                     ),
                     eq(
-                      table.tenantId,
-                      schema.billingAccountCustomerAuthorizationsTable.table
-                        .tenantId,
+                      activeView.tenantId,
+                      activeCustomerAuthorizationsView.tenantId,
                     ),
                   ),
                 )
                 .innerJoin(
-                  schema.usersTable.table,
+                  activeUsersView,
                   and(
                     eq(
-                      schema.billingAccountCustomerAuthorizationsTable.table
-                        .customerId,
-                      schema.usersTable.table.id,
+                      activeCustomerAuthorizationsView.customerId,
+                      activeUsersView.id,
                     ),
                     eq(
-                      schema.billingAccountCustomerAuthorizationsTable.table
-                        .tenantId,
-                      schema.usersTable.table.tenantId,
+                      activeCustomerAuthorizationsView.tenantId,
+                      activeUsersView.tenantId,
                     ),
                   ),
                 )
                 .where(
-                  and(
-                    eq(table.id, id),
-                    eq(table.tenantId, tenantId),
-                    isNull(table.deletedAt),
-                    isNull(
-                      schema.billingAccountCustomerAuthorizationsTable.table
-                        .deletedAt,
-                    ),
-                  ),
+                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
                 ),
-            ),
+            )
+            .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
-        const findManagers = Effect.fn(
-          "BillingAccounts.Repository.findManagers",
-        )(
-          (
-            id: schema.BillingAccount["id"],
-            tenantId: schema.BillingAccount["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
+        const findActiveManagerIds = Effect.fn(
+          "BillingAccounts.Repository.findActiveManagerIds",
+        )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
+          db
+            .useTransaction((tx) =>
               tx
-                .select(getTableColumns(schema.usersTable.table))
-                .from(table)
+                .select({ id: activeUsersView.id })
+                .from(activeView)
                 .innerJoin(
-                  schema.billingAccountManagerAuthorizationsTable.table,
+                  activeManagerAuthorizationsView,
                   and(
                     eq(
-                      table.id,
-                      schema.billingAccountManagerAuthorizationsTable.table
-                        .billingAccountId,
+                      activeView.id,
+                      activeManagerAuthorizationsView.billingAccountId,
                     ),
                     eq(
-                      table.tenantId,
-                      schema.billingAccountManagerAuthorizationsTable.table
-                        .tenantId,
+                      activeView.tenantId,
+                      activeManagerAuthorizationsView.tenantId,
                     ),
                   ),
                 )
                 .innerJoin(
-                  schema.usersTable.table,
+                  activeUsersView,
                   and(
                     eq(
-                      schema.billingAccountManagerAuthorizationsTable.table
-                        .managerId,
-                      schema.usersTable.table.id,
+                      activeManagerAuthorizationsView.managerId,
+                      activeUsersView.id,
                     ),
                     eq(
-                      schema.billingAccountManagerAuthorizationsTable.table
-                        .tenantId,
-                      schema.usersTable.table.tenantId,
+                      activeManagerAuthorizationsView.tenantId,
+                      activeUsersView.tenantId,
                     ),
                   ),
                 )
                 .where(
-                  and(
-                    eq(table.id, id),
-                    eq(table.tenantId, tenantId),
-                    isNull(table.deletedAt),
-                    isNull(
-                      schema.billingAccountManagerAuthorizationsTable.table
-                        .deletedAt,
-                    ),
-                  ),
+                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
                 ),
-            ),
+            )
+            .pipe(Effect.map(Array.map(({ id }) => id))),
+        );
+
+        const updateById = Effect.fn("BillingAccounts.Repository.updateById")(
+          (
+            id: BillingAccount["id"],
+            billingAccount: Partial<Omit<BillingAccount, "id" | "tenantId">>,
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set(billingAccount)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
         );
 
         const deleteById = Effect.fn("BillingAccounts.Repository.deleteById")(
           (
-            id: schema.BillingAccount["id"],
-            deletedAt: NonNullable<schema.BillingAccount["deletedAt"]>,
-            tenantId: schema.BillingAccount["tenantId"],
+            id: BillingAccount["id"],
+            deletedAt: NonNullable<BillingAccount["deletedAt"]>,
+            tenantId: BillingAccount["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -271,8 +278,9 @@ export namespace BillingAccounts {
           getActiveMetadataByCustomerId,
           findByIds,
           findByOrigin,
-          findCustomers,
-          findManagers,
+          findActiveCustomerIds,
+          findActiveManagerIds,
+          updateById,
           deleteById,
         } as const;
       }),
@@ -286,35 +294,39 @@ export namespace BillingAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isCustomer = Effect.fn("BillingAccounts.Policy.isCustomer")(
-          (id: schema.BillingAccount["id"]) =>
-            AccessControl.policy((principal) =>
-              repository
-                .findCustomers(id, principal.tenantId)
-                .pipe(
-                  Effect.map((customers) =>
-                    customers.some(
-                      (customer) => customer.id === principal.userId,
-                    ),
+        const isActiveCustomer = Effect.fn(
+          "BillingAccounts.Policy.isActiveCustomer",
+        )((id: BillingAccount["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findActiveCustomerIds(id, principal.tenantId)
+              .pipe(
+                Effect.map((customerIds) =>
+                  customerIds.some(
+                    (customerId) => customerId === principal.userId,
                   ),
                 ),
-            ),
+              ),
+          ),
         );
 
-        const isManager = Effect.fn("BillingAccounts.Policy.isManager")(
-          (id: schema.BillingAccount["id"]) =>
-            AccessControl.policy((principal) =>
-              repository
-                .findManagers(id, principal.tenantId)
-                .pipe(
-                  Effect.map((managers) =>
-                    managers.some((manager) => manager.id === principal.userId),
+        const isActiveManager = Effect.fn(
+          "BillingAccounts.Policy.isActiveManager",
+        )((id: BillingAccount["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findActiveManagerIds(id, principal.tenantId)
+              .pipe(
+                Effect.map((managerIds) =>
+                  managerIds.some(
+                    (managerId) => managerId === principal.userId,
                   ),
                 ),
-            ),
+              ),
+          ),
         );
 
-        return { isCustomer, isManager } as const;
+        return { isActiveCustomer, isActiveManager } as const;
       }),
     },
   ) {}
@@ -325,16 +337,15 @@ export namespace BillingAccounts {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.billingAccountCustomerAuthorizationsTable.table;
-        const activeView =
-          schema.activeBillingAccountCustomerAuthorizationsView.view;
+        const table = billingAccountCustomerAuthorizationsTable;
+        const activeView = activeBillingAccountCustomerAuthorizationsView;
 
         const upsertMany = Effect.fn(
           "BillingAccounts.CustomerAuthorizationsRepository.upsertMany",
         )(
           (
             values: Array<
-              InferInsertModel<schema.BillingAccountCustomerAuthorizationsTable>
+              InferInsertModel<BillingAccountCustomerAuthorizationsTable>
             >,
           ) =>
             db.useTransaction((tx) =>
@@ -355,7 +366,7 @@ export namespace BillingAccounts {
 
         const getMetadata = Effect.fn(
           "BillingAccount.CustomerAuthorizationsRepository.getMetadata",
-        )((tenantId: schema.BillingAccountCustomerAuthorization["tenantId"]) =>
+        )((tenantId: BillingAccountCustomerAuthorization["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: table.id, version: table.version })
@@ -366,7 +377,7 @@ export namespace BillingAccounts {
 
         const getActiveMetadata = Effect.fn(
           "BillingAccount.CustomerAuthorizationsRepository.getActiveMetadata",
-        )((tenantId: schema.BillingAccountCustomerAuthorization["tenantId"]) =>
+        )((tenantId: BillingAccountCustomerAuthorization["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -379,8 +390,8 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.getActiveMetadataByCustomerId",
         )(
           (
-            customerId: schema.BillingAccountCustomerAuthorization["customerId"],
-            tenantId: schema.BillingAccountCustomerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -399,10 +410,8 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findByIds",
         )(
           (
-            ids: ReadonlyArray<
-              schema.BillingAccountCustomerAuthorization["id"]
-            >,
-            tenantId: schema.BillingAccountCustomerAuthorization["tenantId"],
+            ids: ReadonlyArray<BillingAccountCustomerAuthorization["id"]>,
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -417,9 +426,9 @@ export namespace BillingAccounts {
         const findByOrigin = Effect.fn(
           "BillingAccounts.CustomerAuthorizationsRepository.findByOrigin",
         )(
-          <TBillingAccountOrigin extends schema.BillingAccount["origin"]>(
+          <TBillingAccountOrigin extends BillingAccount["origin"]>(
             origin: TBillingAccountOrigin,
-            tenantId: schema.BillingAccountCustomerAuthorization["tenantId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -427,29 +436,17 @@ export namespace BillingAccounts {
                   .select({ customerAuthorization: table })
                   .from(table)
                   .innerJoin(
-                    schema.billingAccountsTable.table,
+                    billingAccountsTable,
                     and(
-                      eq(
-                        schema.billingAccountsTable.table.id,
-                        table.billingAccountId,
-                      ),
-                      eq(
-                        schema.billingAccountsTable.table.tenantId,
-                        table.tenantId,
-                      ),
+                      eq(billingAccountsTable.id, table.billingAccountId),
+                      eq(billingAccountsTable.tenantId, table.tenantId),
                     ),
                   )
                   .where(
                     and(
-                      eq(schema.billingAccountsTable.table.origin, origin),
+                      eq(billingAccountsTable.origin, origin),
                       origin === "papercut"
-                        ? not(
-                            eq(
-                              schema.billingAccountsTable.table
-                                .papercutAccountId,
-                              -1,
-                            ),
-                          )
+                        ? not(eq(billingAccountsTable.papercutAccountId, -1))
                         : undefined,
                       eq(table.tenantId, tenantId),
                     ),
@@ -482,17 +479,16 @@ export namespace BillingAccounts {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.billingAccountManagerAuthorizationsTable.table;
-        const activeView =
-          schema.activeBillingAccountManagerAuthorizationsView.view;
+        const table = billingAccountManagerAuthorizationsTable;
+        const activeView = activeBillingAccountManagerAuthorizationsView;
         const activeCustomerAuthorizationView =
-          schema.activeBillingAccountCustomerAuthorizationsView.view;
+          activeBillingAccountCustomerAuthorizationsView;
 
         const create = Effect.fn(
           "BillingAccounts.ManagerAuthorizationsRepository.create",
         )(
           (
-            authorization: InferInsertModel<schema.BillingAccountManagerAuthorizationsTable>,
+            authorization: InferInsertModel<BillingAccountManagerAuthorizationsTable>,
           ) =>
             db
               .useTransaction((tx) =>
@@ -506,7 +502,7 @@ export namespace BillingAccounts {
 
         const getMetadata = Effect.fn(
           "BillingAccounts.ManagerAuthorizationsRepository.getMetadata",
-        )((tenantId: schema.BillingAccountManagerAuthorization["tenantId"]) =>
+        )((tenantId: BillingAccountManagerAuthorization["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: table.id, version: table.version })
@@ -517,7 +513,7 @@ export namespace BillingAccounts {
 
         const getActiveMetadata = Effect.fn(
           "BillingAccounts.ManagerAuthorizationsRepository.getActiveMetadata",
-        )((tenantId: schema.BillingAccountManagerAuthorization["tenantId"]) =>
+        )((tenantId: BillingAccountManagerAuthorization["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -530,8 +526,8 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.getActiveMetadataByCustomerId",
         )(
           (
-            customerId: schema.BillingAccountCustomerAuthorization["customerId"],
-            tenantId: schema.BillingAccountManagerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -563,8 +559,8 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findByIds",
         )(
           (
-            ids: ReadonlyArray<schema.BillingAccountManagerAuthorization["id"]>,
-            tenantId: schema.BillingAccountManagerAuthorization["tenantId"],
+            ids: ReadonlyArray<BillingAccountManagerAuthorization["id"]>,
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -580,11 +576,11 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.deleteById",
         )(
           (
-            id: schema.BillingAccountManagerAuthorization["id"],
+            id: BillingAccountManagerAuthorization["id"],
             deletedAt: NonNullable<
-              schema.BillingAccountManagerAuthorization["deletedAt"]
+              BillingAccountManagerAuthorization["deletedAt"]
             >,
-            tenantId: schema.BillingAccountManagerAuthorization["tenantId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>

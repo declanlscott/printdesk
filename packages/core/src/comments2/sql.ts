@@ -1,34 +1,27 @@
 import { isNull } from "drizzle-orm";
 import { boolean, index, pgView, text } from "drizzle-orm/pg-core";
 
-import { id, SyncTable, tenantTable, View } from "../database2/constructors";
-import { commentsTableName } from "./shared";
+import { id } from "../database2/columns";
+import { tenantTable } from "../database2/tables";
+import { activeCommentsViewName, commentsTableName } from "./shared";
 
-import type { InferFromTable } from "../database2/constructors";
+import type { InferFromTable, InferFromView } from "../database2/shared";
 
-export const commentsTable = SyncTable(
-  tenantTable(
-    commentsTableName,
-    {
-      orderId: id("order_id").notNull(),
-      authorId: id("author_id").notNull(),
-      content: text("content").notNull(),
-      internal: boolean("internal").notNull().default(false),
-    },
-    (table) => [index().on(table.orderId)],
-  ),
-  ["create", "read", "update", "delete"],
+export const commentsTable = tenantTable(
+  commentsTableName,
+  {
+    orderId: id("order_id").notNull(),
+    authorId: id("author_id").notNull(),
+    content: text("content").notNull(),
+    internal: boolean("internal").notNull().default(false),
+  },
+  (table) => [index().on(table.orderId)],
 );
-
-export type CommentsTable = (typeof commentsTable)["table"];
-
+export type CommentsTable = typeof commentsTable;
 export type Comment = InferFromTable<CommentsTable>;
 
-export const activeCommentsView = View(
-  pgView(`active_${commentsTableName}`).as((qb) =>
-    qb
-      .select()
-      .from(commentsTable.table)
-      .where(isNull(commentsTable.table.deletedAt)),
-  ),
+export const activeCommentsView = pgView(activeCommentsViewName).as((qb) =>
+  qb.select().from(commentsTable).where(isNull(commentsTable.deletedAt)),
 );
+export type ActiveCommentsView = typeof activeCommentsView;
+export type ActiveComment = InferFromView<ActiveCommentsView>;

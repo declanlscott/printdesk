@@ -1,29 +1,46 @@
-import * as schema from "./schema";
+import { pgTable, primaryKey } from "drizzle-orm/pg-core";
 
-export const syncTables = Object.values(schema)
-  .filter((table) => table._tag === "@printdesk/core/database/SyncTable")
-  .map(({ table }) => table);
-export type SyncTable = (typeof syncTables)[number];
-export type SyncTableName = SyncTable["_"]["name"];
-export type SyncTableByName<TTableName extends SyncTableName> = Extract<
-  SyncTable,
-  { _: { name: TTableName } }
->;
+import { tenantIdColumns, timestamps, version } from "./columns";
 
-export const nonSyncTables = Object.values(schema)
-  .filter((table) => table._tag === "@printdesk/core/database/NonSyncTable")
-  .map(({ table }) => table);
-export type NonSyncTable = (typeof nonSyncTables)[number];
-export type NonSyncTableName = NonSyncTable["_"]["name"];
-export type NonSyncTableByName<TTableName extends NonSyncTableName> = Extract<
-  NonSyncTable,
-  { _: { name: TTableName } }
->;
+import type { BuildColumns, BuildExtraConfigColumns } from "drizzle-orm";
+import type {
+  PgColumnBuilderBase,
+  PgTableExtraConfigValue,
+  PgTableWithColumns,
+} from "drizzle-orm/pg-core";
+import type { DefaultTenantTableColumns } from "./columns";
 
-export const tables = [...syncTables, ...nonSyncTables] as const;
-export type Table = (typeof tables)[number];
-export type TableName = Table["_"]["name"];
-export type TableByName<TTableName extends TableName> = Extract<
-  Table,
-  { _: { name: TTableName } }
->;
+/**
+ * Wrapper for tenant owned tables with ids, timestamps, and sync version columns.
+ */
+export const tenantTable = <
+  TTableName extends string,
+  TColumnsMap extends Record<string, PgColumnBuilderBase>,
+>(
+  name: TTableName,
+  columns: TColumnsMap,
+  extraConfig?: (
+    self: BuildExtraConfigColumns<
+      TTableName,
+      TColumnsMap & DefaultTenantTableColumns,
+      "pg"
+    >,
+  ) => Array<PgTableExtraConfigValue>,
+): PgTableWithColumns<{
+  name: TTableName;
+  schema: undefined;
+  columns: BuildColumns<
+    TTableName,
+    TColumnsMap & DefaultTenantTableColumns,
+    "pg"
+  >;
+  dialect: "pg";
+}> =>
+  pgTable(
+    name,
+    { ...tenantIdColumns, ...timestamps, ...version, ...columns },
+    (table) => [
+      primaryKey({ columns: [table.id, table.tenantId] }),
+      ...(extraConfig?.(table) ?? []),
+    ],
+  );

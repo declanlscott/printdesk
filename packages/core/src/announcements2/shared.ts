@@ -1,27 +1,38 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
-import { TenantTable } from "../database2/constructors";
+import { SyncTable, TenantTable, View } from "../database2/shared";
 import { NanoId } from "../utils2/shared";
 
+import type { ActiveAnnouncementsView, AnnouncementsTable } from "./sql";
+
 export const announcementsTableName = "announcements";
+export const announcementsTable = SyncTable<AnnouncementsTable>()(
+  announcementsTableName,
+  Schema.Struct({
+    ...TenantTable.fields,
+    content: Schema.String,
+    roomId: NanoId,
+  }),
+  ["create", "read", "update", "delete"],
+);
 
-export const Announcement = Schema.Struct({
-  ...TenantTable.fields,
-  content: Schema.String,
-  roomId: NanoId,
-});
+export const activeAnnouncementsViewName = `active_${announcementsTableName}`;
+export const activeAnnouncementsView = View<ActiveAnnouncementsView>()(
+  activeAnnouncementsViewName,
+  announcementsTable.Schema,
+);
 
-export const CreateAnnouncement = Schema.Struct({
-  ...Announcement.omit("deletedAt").fields,
-  deletedAt: Schema.Null,
-});
+export const CreateAnnouncement = announcementsTable.Schema.omit(
+  "deletedAt",
+  "tenantId",
+);
 
 export const UpdateAnnouncement = Schema.extend(
-  Schema.Struct({
-    id: NanoId,
-    updatedAt: Schema.Date,
-  }),
-  Announcement.pick("content").pipe(Schema.partial),
+  announcementsTable.Schema.pick("id", "updatedAt"),
+  announcementsTable.Schema.omit(
+    ...Struct.keys(TenantTable.fields),
+    "roomId",
+  ).pipe(Schema.partial),
 );
 
 export const DeleteAnnouncement = Schema.Struct({

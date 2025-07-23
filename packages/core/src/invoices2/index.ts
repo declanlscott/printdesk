@@ -1,10 +1,18 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
+import {
+  activeBillingAccountManagerAuthorizationsView,
+  activeBillingAccountsView,
+} from "../billing-accounts2/sql";
 import { Database } from "../database2";
-import * as schema from "../database2/schema";
+import { activeOrdersView } from "../orders2/sql";
+import { activeInvoicesView, invoicesTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { BillingAccountManagerAuthorization } from "../billing-accounts2/sql";
+import type { Order } from "../orders2/sql";
+import type { Invoice, InvoicesTable } from "./sql";
 
 export namespace Invoices {
   export class Repository extends Effect.Service<Repository>()(
@@ -13,15 +21,11 @@ export namespace Invoices {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.invoicesTable.table;
-        const activeView = schema.activeInvoicesView.view;
-        const activeOrdersView = schema.activeOrdersView.view;
-        const activeBillingAccountsView = schema.activeBillingAccountsView.view;
-        const activeBillingAccountManagerAuthorizationsView =
-          schema.activeBillingAccountManagerAuthorizationsView.view;
+        const table = invoicesTable;
+        const activeView = activeInvoicesView;
 
         const create = Effect.fn("Invoices.Repository.create")(
-          (invoice: InferInsertModel<schema.InvoicesTable>) =>
+          (invoice: InferInsertModel<InvoicesTable>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(invoice).returning(),
@@ -30,7 +34,7 @@ export namespace Invoices {
         );
 
         const getMetadata = Effect.fn("Invoices.Repository.getMetadata")(
-          (tenantId: schema.Invoice["tenantId"]) =>
+          (tenantId: Invoice["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, version: table.version })
@@ -41,7 +45,7 @@ export namespace Invoices {
 
         const getActiveMetadata = Effect.fn(
           "Invoices.Repository.getActiveMetadata",
-        )((tenantId: schema.Invoice["tenantId"]) =>
+        )((tenantId: Invoice["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -54,8 +58,8 @@ export namespace Invoices {
           "Invoices.Repository.getActiveMetadataByOrderBillingAccountManagerId",
         )(
           (
-            managerId: schema.BillingAccountManagerAuthorization["managerId"],
-            tenantId: schema.Invoice["tenantId"],
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            tenantId: Invoice["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -108,36 +112,29 @@ export namespace Invoices {
 
         const getActiveMetadataByOrderCustomerId = Effect.fn(
           "Invoices.Repository.getActiveMetadataByOrderCustomerId",
-        )(
-          (
-            customerId: schema.Order["customerId"],
-            tenantId: schema.Invoice["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: activeView.id, version: activeView.version })
-                .from(activeView)
-                .innerJoin(
-                  activeOrdersView,
-                  and(
-                    eq(activeView.orderId, activeOrdersView.id),
-                    eq(activeView.tenantId, activeOrdersView.tenantId),
-                  ),
-                )
-                .where(
-                  and(
-                    eq(activeOrdersView.customerId, customerId),
-                    eq(activeView.tenantId, tenantId),
-                  ),
+        )((customerId: Order["customerId"], tenantId: Invoice["tenantId"]) =>
+          db.useTransaction((tx) =>
+            tx
+              .select({ id: activeView.id, version: activeView.version })
+              .from(activeView)
+              .innerJoin(
+                activeOrdersView,
+                and(
+                  eq(activeView.orderId, activeOrdersView.id),
+                  eq(activeView.tenantId, activeOrdersView.tenantId),
                 ),
-            ),
+              )
+              .where(
+                and(
+                  eq(activeOrdersView.customerId, customerId),
+                  eq(activeView.tenantId, tenantId),
+                ),
+              ),
+          ),
         );
 
         const findByIds = Effect.fn("Invoices.Repository.findByIds")(
-          (
-            ids: ReadonlyArray<schema.Invoice["id"]>,
-            tenantId: schema.Invoice["tenantId"],
-          ) =>
+          (ids: ReadonlyArray<Invoice["id"]>, tenantId: Invoice["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select()

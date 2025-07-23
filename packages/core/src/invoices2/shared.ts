@@ -1,10 +1,11 @@
 import { Either, Schema } from "effect";
 
-import { TenantTable } from "../database2/constructors";
+import { SyncTable, TenantTable, View } from "../database2/shared";
 import { NanoId } from "../utils2/shared";
 
-export const invoicesTableName = "invoices";
-export const invoiceStatuses = ["error", "processing", "charged"] as const;
+import type { ActiveInvoicesView, InvoicesTable } from "./sql";
+
+export const invoiceStatuses = ["processing", "charged", "error"] as const;
 
 export const LineItemV1 = Schema.Struct({
   version: Schema.Literal(1).annotations({
@@ -15,22 +16,33 @@ export const LineItemV1 = Schema.Struct({
   cost: Schema.Number,
   style: Schema.Literal("OPTION_1", "OPTION_2"),
 });
-
 export const LineItem = Schema.Union(LineItemV1);
 
-export const Invoice = Schema.Struct({
-  ...TenantTable.fields,
-  lineItems: Schema.Array(LineItem),
-  status: Schema.Literal(...invoiceStatuses),
-  chargedAt: Schema.optional(Schema.Date),
-  orderId: NanoId,
-});
+export const invoicesTableName = "invoices";
+export const invoicesTable = SyncTable<InvoicesTable>()(
+  invoicesTableName,
+  Schema.Struct({
+    ...TenantTable.fields,
+    lineItems: Schema.Array(LineItem),
+    status: Schema.Literal(...invoiceStatuses),
+    chargedAt: Schema.NullOr(Schema.Date),
+    orderId: NanoId,
+  }),
+  ["create", "read"],
+);
 
-export const CreateInvoice = Schema.Struct({
-  status: Schema.Literal("processing"),
-  chargedAt: Schema.Null,
-  deletedAt: Schema.Null,
-});
+export const activeInvoicesViewName = `active_${invoicesTableName}`;
+export const activeInvoicesView = View<ActiveInvoicesView>()(
+  activeInvoicesViewName,
+  invoicesTable.Schema,
+);
+
+export const CreateInvoice = Schema.extend(
+  Schema.Struct({
+    status: Schema.Literal("processing"),
+  }),
+  invoicesTable.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
+);
 
 export const Estimate = Schema.Struct({
   total: Schema.Number,

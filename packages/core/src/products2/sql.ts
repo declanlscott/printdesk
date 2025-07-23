@@ -1,57 +1,47 @@
 import { eq, isNull } from "drizzle-orm";
 import { index, pgView, varchar } from "drizzle-orm/pg-core";
 
-import {
-  customEnum,
-  customJsonb,
-  id,
-  SyncTable,
-  tenantTable,
-  View,
-} from "../database2/constructors";
+import { customEnum, customJsonb, id } from "../database2/columns";
+import { tenantTable } from "../database2/tables";
 import { Constants } from "../utils/constants";
 import {
+  activeProductsViewName,
+  activePublishedProductsViewName,
   ProductConfiguration,
   productsTableName,
   productStatuses,
 } from "./shared";
 
-import type { InferFromTable } from "../database2/constructors";
+import type { InferFromTable, InferFromView } from "../database2/shared";
 
 const productStatus = (name: string) => customEnum(name, productStatuses);
 
-export const productsTable = SyncTable(
-  tenantTable(
-    productsTableName,
-    {
-      name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-      status: productStatus("status").notNull(),
-      roomId: id("room_id").notNull(),
-      config: customJsonb("config", ProductConfiguration).notNull(),
-    },
-    (table) => [index().on(table.status), index().on(table.roomId)],
-  ),
-  ["create", "read", "update", "delete"],
+export const productsTable = tenantTable(
+  productsTableName,
+  {
+    name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
+    status: productStatus("status").notNull(),
+    roomId: id("room_id").notNull(),
+    config: customJsonb("config", ProductConfiguration).notNull(),
+  },
+  (table) => [index().on(table.status), index().on(table.roomId)],
 );
-
-export type ProductsTable = (typeof productsTable)["table"];
-
+export type ProductsTable = typeof productsTable;
 export type Product = InferFromTable<ProductsTable>;
 
-export const activeProductsView = View(
-  pgView(`active_${productsTableName}`).as((qb) =>
-    qb
-      .select()
-      .from(productsTable.table)
-      .where(isNull(productsTable.table.deletedAt)),
-  ),
+export const activeProductsView = pgView(activeProductsViewName).as((qb) =>
+  qb.select().from(productsTable).where(isNull(productsTable.deletedAt)),
 );
+export type ActiveProductsView = typeof activeProductsView;
+export type ActiveProduct = InferFromView<ActiveProductsView>;
 
-export const activePublishedProductsView = View(
-  pgView(`active_published_${productsTableName}`).as((qb) =>
-    qb
-      .select()
-      .from(activeProductsView.view)
-      .where(eq(activeProductsView.view.status, "published")),
-  ),
+export const activePublishedProductsView = pgView(
+  activePublishedProductsViewName,
+).as((qb) =>
+  qb
+    .select()
+    .from(activeProductsView)
+    .where(eq(activeProductsView.status, "published")),
 );
+export type ActivePublishedProductsView = typeof activePublishedProductsView;
+export type ActivePublishedProduct = InferFromView<ActivePublishedProductsView>;

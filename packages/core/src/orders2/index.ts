@@ -2,10 +2,16 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import {
+  activeBillingAccountManagerAuthorizationsView,
+  activeBillingAccountsView,
+} from "../billing-accounts2/sql";
 import { Database } from "../database2";
-import * as schema from "../database2/schema";
+import { activeOrdersView, ordersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { BillingAccountManagerAuthorization } from "../billing-accounts2/sql";
+import type { Order, OrdersTable } from "./sql";
 
 export namespace Orders {
   export class Repository extends Effect.Service<Repository>()(
@@ -14,14 +20,11 @@ export namespace Orders {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.ordersTable.table;
-        const activeView = schema.activeOrdersView.view;
-        const activeBillingAccountsView = schema.activeBillingAccountsView.view;
-        const activeBillingAccountManagerAuthorizationsView =
-          schema.activeBillingAccountManagerAuthorizationsView.view;
+        const table = ordersTable;
+        const activeView = activeOrdersView;
 
         const create = Effect.fn("Orders.Repository.create")(
-          (order: InferInsertModel<schema.OrdersTable>) =>
+          (order: InferInsertModel<OrdersTable>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(order).returning(),
@@ -33,7 +36,7 @@ export namespace Orders {
         );
 
         const getMetadata = Effect.fn("Orders.Repository.getMetadata")(
-          (tenantId: schema.Order["tenantId"]) =>
+          (tenantId: Order["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, version: table.version })
@@ -44,7 +47,7 @@ export namespace Orders {
 
         const getActiveMetadata = Effect.fn(
           "Orders.Repository.getActiveMetadata",
-        )((tenantId: schema.Order["tenantId"]) =>
+        )((tenantId: Order["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -57,8 +60,8 @@ export namespace Orders {
           "Orders.Repository.getActiveMetadataByBillingAccountManagerId",
         )(
           (
-            managerId: schema.BillingAccountManagerAuthorization["managerId"],
-            tenantId: schema.Order["tenantId"],
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            tenantId: Order["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -101,26 +104,22 @@ export namespace Orders {
 
         const getActiveMetadataByCustomerId = Effect.fn(
           "Orders.Repository.getActiveMetadataByCustomerId",
-        )(
-          (
-            customerId: schema.Order["customerId"],
-            tenantId: schema.Order["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: activeView.id, version: activeView.version })
-                .from(activeView)
-                .where(
-                  and(
-                    eq(activeView.customerId, customerId),
-                    eq(activeView.tenantId, tenantId),
-                  ),
+        )((customerId: Order["customerId"], tenantId: Order["tenantId"]) =>
+          db.useTransaction((tx) =>
+            tx
+              .select({ id: activeView.id, version: activeView.version })
+              .from(activeView)
+              .where(
+                and(
+                  eq(activeView.customerId, customerId),
+                  eq(activeView.tenantId, tenantId),
                 ),
-            ),
+              ),
+          ),
         );
 
         const findById = Effect.fn("Orders.Repository.findById")(
-          (id: schema.Order["id"], tenantId: schema.Order["tenantId"]) =>
+          (id: Order["id"], tenantId: Order["tenantId"]) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -132,10 +131,7 @@ export namespace Orders {
         );
 
         const findByIds = Effect.fn("Orders.Repository.findByIds")(
-          (
-            ids: ReadonlyArray<schema.Order["id"]>,
-            tenantId: schema.Order["tenantId"],
-          ) =>
+          (ids: ReadonlyArray<Order["id"]>, tenantId: Order["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select()
@@ -148,9 +144,9 @@ export namespace Orders {
 
         const updateById = Effect.fn("Orders.Repository.updateById")(
           (
-            id: schema.Order["id"],
-            order: Partial<Omit<schema.Order, "id" | "tenantId">>,
-            tenantId: schema.Order["tenantId"],
+            id: Order["id"],
+            order: Partial<Omit<Order, "id" | "tenantId">>,
+            tenantId: Order["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -165,9 +161,9 @@ export namespace Orders {
 
         const deleteById = Effect.fn("Orders.Repository.deleteById")(
           (
-            id: schema.Order["id"],
-            deletedAt: NonNullable<schema.Order["deletedAt"]>,
-            tenantId: schema.Order["tenantId"],
+            id: Order["id"],
+            deletedAt: NonNullable<Order["deletedAt"]>,
+            tenantId: Order["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -184,9 +180,9 @@ export namespace Orders {
           "Orders.Repository.deleteByProductId",
         )(
           (
-            productId: schema.Order["productId"],
-            deletedAt: NonNullable<schema.Order["deletedAt"]>,
-            tenantId: schema.Order["tenantId"],
+            productId: Order["productId"],
+            deletedAt: NonNullable<Order["deletedAt"]>,
+            tenantId: Order["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -226,7 +222,7 @@ export namespace Orders {
         const repository = yield* Repository;
 
         const isCustomer = Effect.fn("Orders.Policy.isCustomer")(
-          (id: schema.Order["id"]) =>
+          (id: Order["id"]) =>
             AccessControl.policy((principal) =>
               repository
                 .findById(id, principal.tenantId)
@@ -237,7 +233,7 @@ export namespace Orders {
         );
 
         const isManager = Effect.fn("Orders.Policy.isManager")(
-          (id: schema.Order["id"]) =>
+          (id: Order["id"]) =>
             AccessControl.policy((principal) =>
               repository
                 .findById(id, principal.tenantId)

@@ -3,11 +3,12 @@ import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
-import * as schema from "../database2/schema";
+import { buildConflictSet } from "../database2/columns";
+import { activeUsersView, usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { Prettify } from "../utils/types";
+import type { User, UserByOrigin, UsersTable } from "./sql";
 
 export namespace Users {
   export class Repository extends Effect.Service<Repository>()(
@@ -16,11 +17,11 @@ export namespace Users {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.usersTable.table;
-        const activeView = schema.activeUsersView.view;
+        const table = usersTable;
+        const activeView = activeUsersView;
 
         const upsertMany = Effect.fn("Users.Repository.upsert")(
-          (users: Array<InferInsertModel<schema.UsersTable>>) =>
+          (users: Array<InferInsertModel<UsersTable>>) =>
             db.useTransaction((tx) =>
               tx
                 .insert(table)
@@ -34,7 +35,7 @@ export namespace Users {
         );
 
         const getMetadata = Effect.fn("Users.Repository.getMetadata")(
-          (tenantId: schema.User["tenantId"]) =>
+          (tenantId: User["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, version: table.version })
@@ -45,7 +46,7 @@ export namespace Users {
 
         const getActiveMetadata = Effect.fn(
           "Users.Repository.getActiveMetadata",
-        )((tenantId: schema.User["tenantId"]) =>
+        )((tenantId: User["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, version: activeView.version })
@@ -55,7 +56,7 @@ export namespace Users {
         );
 
         const findById = Effect.fn("Users.Repository.findById")(
-          (id: schema.User["id"], tenantId: schema.User["tenantId"]) =>
+          (id: User["id"], tenantId: User["tenantId"]) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -67,10 +68,7 @@ export namespace Users {
         );
 
         const findByIds = Effect.fn("Users.Repository.findByIds")(
-          (
-            ids: ReadonlyArray<schema.User["id"]>,
-            tenantId: schema.User["tenantId"],
-          ) =>
+          (ids: ReadonlyArray<User["id"]>, tenantId: User["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select()
@@ -81,25 +79,28 @@ export namespace Users {
             ),
         );
 
-        const findByRoles = Effect.fn("Users.Repository.findByRoles")(
-          (
-            roles: ReadonlyArray<schema.User["role"]>,
-            tenantId: schema.User["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
+        const findActiveIdsByRoles = Effect.fn(
+          "Users.Repository.findActiveIdsByRoles",
+        )((roles: ReadonlyArray<User["role"]>, tenantId: User["tenantId"]) =>
+          db
+            .useTransaction((tx) =>
               tx
-                .select()
-                .from(table)
+                .select({ id: activeView.id })
+                .from(activeView)
                 .where(
-                  and(inArray(table.role, roles), eq(table.tenantId, tenantId)),
+                  and(
+                    inArray(activeView.role, roles),
+                    eq(activeView.tenantId, tenantId),
+                  ),
                 ),
-            ),
+            )
+            .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
         const findByOrigin = Effect.fn("Users.Repository.findByOrigin")(
-          <TUserOrigin extends schema.User["origin"]>(
+          <TUserOrigin extends User["origin"]>(
             origin: TUserOrigin,
-            tenantId: schema.User["tenantId"],
+            tenantId: User["tenantId"],
           ) =>
             db.useTransaction(
               (tx) =>
@@ -109,7 +110,7 @@ export namespace Users {
                   .where(
                     and(eq(table.origin, origin), eq(table.tenantId, tenantId)),
                   ) as unknown as Promise<
-                  Array<Prettify<schema.UserByOrigin<TUserOrigin>>>
+                  Array<Prettify<UserByOrigin<TUserOrigin>>>
                 >,
             ),
         );
@@ -118,9 +119,9 @@ export namespace Users {
           "Users.Repository.findByIdentityProvider",
         )(
           (
-            subjectId: schema.User["subjectId"],
-            identityProviderId: schema.User["identityProviderId"],
-            tenantId: schema.User["tenantId"],
+            subjectId: User["subjectId"],
+            identityProviderId: User["identityProviderId"],
+            tenantId: User["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -138,8 +139,8 @@ export namespace Users {
 
         const findByUsernames = Effect.fn("Users.Repository.findByUsernames")(
           (
-            usernames: ReadonlyArray<schema.User["username"]>,
-            tenantId: schema.User["tenantId"],
+            usernames: ReadonlyArray<User["username"]>,
+            tenantId: User["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -156,9 +157,9 @@ export namespace Users {
 
         const updateById = Effect.fn("Users.Repository.updateById")(
           (
-            id: schema.User["id"],
-            user: Partial<Omit<schema.User, "id" | "tenantId">>,
-            tenantId: schema.User["tenantId"],
+            id: User["id"],
+            user: Partial<Omit<User, "id" | "tenantId">>,
+            tenantId: User["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -173,9 +174,9 @@ export namespace Users {
 
         const deleteById = Effect.fn("Users.Repository.deleteById")(
           (
-            id: schema.User["id"],
-            deletedAt: NonNullable<schema.User["deletedAt"]>,
-            tenantId: schema.User["tenantId"],
+            id: User["id"],
+            deletedAt: NonNullable<User["deletedAt"]>,
+            tenantId: User["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -194,7 +195,7 @@ export namespace Users {
           getActiveMetadata,
           findById,
           findByIds,
-          findByRoles,
+          findActiveIdsByRoles,
           findByOrigin,
           findByIdentityProvider,
           findByUsernames,
@@ -209,7 +210,7 @@ export namespace Users {
     "@printdesk/core/users/Policy",
     {
       succeed: {
-        isSelf: (id: schema.User["id"]) =>
+        isSelf: (id: User["id"]) =>
           AccessControl.policy((principal) =>
             Effect.succeed(id === principal.userId),
           ),

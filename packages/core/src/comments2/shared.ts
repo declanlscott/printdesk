@@ -1,43 +1,41 @@
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
-import { TenantTable } from "../database2/constructors";
-import { userRoles } from "../users2/shared";
+import { SyncTable, TenantTable, View } from "../database2/shared";
 import { NanoId } from "../utils2/shared";
 
+import type { ActiveCommentsView, CommentsTable } from "./sql";
+
 export const commentsTableName = "comments";
+export const commentsTable = SyncTable<CommentsTable>()(
+  commentsTableName,
+  Schema.Struct({
+    ...TenantTable.fields,
+    orderId: NanoId,
+    authorId: NanoId,
+    content: Schema.String,
+    internal: Schema.Boolean,
+  }),
+  ["create", "read", "update", "delete"],
+);
 
-export const Comment = Schema.Struct({
-  ...TenantTable.fields,
-  orderId: NanoId,
-  authorId: NanoId,
-  content: Schema.String,
-  visibleTo: Schema.transform(
-    Schema.Array(Schema.Literal(...userRoles)),
-    Schema.Array(Schema.Literal(...userRoles)),
-    {
-      decode: (arr) => arr,
-      encode: (arr) => Array.from(new Set(arr)),
-      strict: true,
-    },
-  ),
-});
+export const activeCommentsViewName = `active_${commentsTableName}`;
+export const activeCommentsView = View<ActiveCommentsView>()(
+  activeCommentsViewName,
+  commentsTable.Schema,
+);
 
-export const CreateComment = Schema.Struct({
-  ...Comment.omit("deletedAt").fields,
-  deletedAt: Schema.Null,
-});
+export const CreateComment = commentsTable.Schema.omit("deletedAt", "tenantId");
 
 export const UpdateComment = Schema.extend(
-  Schema.Struct({
-    id: NanoId,
-    orderId: NanoId,
-    updatedAt: Schema.Date,
-  }),
-  Comment.pick("content", "visibleTo").pipe(Schema.partial),
+  commentsTable.Schema.pick("id", "orderId", "updatedAt"),
+  commentsTable.Schema.omit(
+    ...Struct.keys(TenantTable.fields),
+    "orderId",
+    "authorId",
+  ).pipe(Schema.partial),
 );
 
 export const DeleteComment = Schema.Struct({
-  id: NanoId,
-  orderId: NanoId,
+  ...commentsTable.Schema.pick("id", "orderId").fields,
   deletedAt: Schema.Date,
 });

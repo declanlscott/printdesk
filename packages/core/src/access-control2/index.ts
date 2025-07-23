@@ -5,7 +5,9 @@ import { makePermissionsFromConfig } from "./shared";
 
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
+import type { Tenant } from "../tenants2/sql";
 import type { UserRole } from "../users2/shared";
+import type { User } from "../users2/sql";
 
 export namespace AccessControl {
   const syncTablePermissions = Object.values(schema)
@@ -123,29 +125,29 @@ export namespace AccessControl {
       "active_billing_accounts:read",
       "active_billing_account_customer_authorizations:read",
       "active_billing_account_manager_authorizations:read",
-      "published_room_delivery_options:read",
+      "active_published_room_delivery_options:read",
       "document_constraints:read",
       "active_published_products:read",
       "active_published_rooms:read",
       "tenants:read",
       "active_users:read",
-      "published_room_workflow_statuses:read",
+      "active_published_room_workflow_statuses:read",
     ] as const,
     customer: [
       "active_announcements:read",
-      "published_room_delivery_options:read",
+      "active_published_room_delivery_options:read",
       "document_constraints:read",
       "active_published_products:read",
       "active_published_rooms:read",
       "tenants:read",
       "active_users:read",
-      "published_room_workflow_statuses:read",
+      "active_published_room_workflow_statuses:read",
     ] as const,
   } satisfies UserRoleAcls;
 
   export type PrincipalShape = {
-    readonly userId: schema.User["id"];
-    readonly tenantId: schema.Tenant["id"];
+    readonly userId: User["id"];
+    readonly tenantId: Tenant["id"];
     readonly acl: ReadonlySet<Permission>;
   };
 

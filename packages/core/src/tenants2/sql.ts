@@ -5,20 +5,18 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { Schema } from "effect";
 
 import {
   customEnum,
   customJsonb,
   id,
   idPrimaryKey,
-  NonSyncTable,
-  SyncTable,
   timestamps,
   version,
-} from "../database2/constructors";
+} from "../database2/columns";
 import { Constants } from "../utils/constants";
 import {
+  InfraProgramInput,
   licensesTableName,
   licenseStatuses,
   tenantMetadataTableName,
@@ -26,56 +24,45 @@ import {
   tenantStatuses,
 } from "./shared";
 
-import type { InferFromTable } from "../database2/constructors";
+import type { InferFromTable } from "../database2/shared";
 
 const licenseStatus = (name: string) => customEnum(name, licenseStatuses);
-
-export const licensesTable = NonSyncTable(
-  pgTable(licensesTableName, {
-    key: uuid("key").defaultRandom().primaryKey(),
-    tenantId: id("tenant_id").unique(),
-    status: licenseStatus("status").notNull().default("active"),
-  }),
-  [],
-);
-export type LicensesTable = (typeof licensesTable)["table"];
+export const licensesTable = pgTable(licensesTableName, {
+  key: uuid("key").defaultRandom().primaryKey(),
+  tenantId: id("tenant_id").unique(),
+  status: licenseStatus("status").notNull().default("active"),
+});
+export type LicensesTable = typeof licensesTable;
 export type License = InferFromTable<LicensesTable>;
 
 const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
 
-export const tenantsTable = SyncTable(
-  pgTable(
-    tenantsTableName,
-    {
-      ...idPrimaryKey,
-      subdomain: varchar("subdomain", {
-        length: Constants.VARCHAR_LENGTH,
-      }).notNull(),
-      name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-      status: tenantStatus("status").notNull().default("setup"),
-      ...timestamps,
-      ...version,
-    },
-    (table) => [uniqueIndex().on(table.subdomain)],
-  ),
-  ["read"],
+export const tenantsTable = pgTable(
+  tenantsTableName,
+  {
+    ...idPrimaryKey,
+    subdomain: varchar("subdomain", {
+      length: Constants.VARCHAR_LENGTH,
+    }).notNull(),
+    name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
+    status: tenantStatus("status").notNull().default("setup"),
+    ...timestamps,
+    ...version,
+  },
+  (table) => [uniqueIndex().on(table.subdomain)],
 );
-export type TenantsTable = (typeof tenantsTable)["table"];
+export type TenantsTable = typeof tenantsTable;
 export type Tenant = InferFromTable<TenantsTable>;
 
-export const tenantMetadataTable = NonSyncTable(
-  pgTable(tenantMetadataTableName, {
-    tenantId: id("tenant_id").primaryKey(),
-    infraProgramInput: customJsonb(
-      "infra_program_input",
-      // TODO: Infra program input schema
-      Schema.Struct({}),
-    ).notNull(),
-    apiKey: varchar("api_key"),
-    lastPapercutSyncAt: timestamp("last_papercut_sync_at"),
-    ...timestamps,
-  }),
-  [],
-);
-export type TenantMetadataTable = (typeof tenantMetadataTable)["table"];
+export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
+  tenantId: id("tenant_id").primaryKey(),
+  infraProgramInput: customJsonb(
+    "infra_program_input",
+    InfraProgramInput,
+  ).notNull(),
+  apiKey: varchar("api_key"),
+  lastPapercutSyncAt: timestamp("last_papercut_sync_at"),
+  ...timestamps,
+});
+export type TenantMetadataTable = typeof tenantMetadataTable;
 export type TenantMetadata = InferFromTable<TenantMetadataTable>;

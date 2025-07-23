@@ -1,34 +1,13 @@
 import { decode, encode } from "@msgpack/msgpack";
-import { getTableColumns, getTableName, getViewName, sql } from "drizzle-orm";
-import {
-  char,
-  customType,
-  integer,
-  pgTable,
-  primaryKey,
-  timestamp,
-} from "drizzle-orm/pg-core";
-import { Array, Data, ParseResult, Schema } from "effect";
+import { getTableColumns, getTableName, sql } from "drizzle-orm";
+import { char, customType, integer, timestamp } from "drizzle-orm/pg-core";
+import { ParseResult, Schema } from "effect";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";
-import { NanoId } from "../utils2/shared";
 
-import type {
-  BuildColumns,
-  BuildExtraConfigColumns,
-  InferSelectModel,
-  SQL,
-  Table,
-} from "drizzle-orm";
-import type {
-  PgColumnBuilderBase,
-  PgTable,
-  PgTableExtraConfigValue,
-  PgTableWithColumns,
-  PgView,
-} from "drizzle-orm/pg-core";
-import type { PermissionAction } from "../access-control2/shared";
+import type { SQL } from "drizzle-orm";
+import type { PgTable } from "drizzle-orm/pg-core";
 
 /**
  * NanoID column
@@ -64,12 +43,6 @@ export const timestamps = {
   },
 };
 export type Timestamp = keyof typeof timestamps;
-
-export const Timestamps = Schema.Struct({
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date,
-  deletedAt: Schema.NullOr(Schema.Date),
-});
 
 /**
  * Version column
@@ -109,8 +82,6 @@ export function buildConflictSet<TTable extends PgTable>(table: TTable) {
     {} as Record<string, SQL>,
   );
 }
-
-export type OmitTimestamps<TTable> = Omit<TTable, keyof typeof timestamps>;
 
 export function customJsonb<TSchema extends Schema.Schema.AnyNoContext>(
   name: string,
@@ -208,133 +179,6 @@ export const tenantIdColumns = {
   },
 };
 
-type DefaultTenantTableColumns = typeof tenantIdColumns &
+export type DefaultTenantTableColumns = typeof tenantIdColumns &
   typeof timestamps &
   typeof version;
-
-/**
- * Wrapper for tenant owned tables with ids, timestamps, and sync version columns.
- */
-export const tenantTable = <
-  TTableName extends string,
-  TColumnsMap extends Record<string, PgColumnBuilderBase>,
->(
-  name: TTableName,
-  columns: TColumnsMap,
-  extraConfig?: (
-    self: BuildExtraConfigColumns<
-      TTableName,
-      TColumnsMap & DefaultTenantTableColumns,
-      "pg"
-    >,
-  ) => Array<PgTableExtraConfigValue>,
-): PgTableWithColumns<{
-  name: TTableName;
-  schema: undefined;
-  columns: BuildColumns<
-    TTableName,
-    TColumnsMap & DefaultTenantTableColumns,
-    "pg"
-  >;
-  dialect: "pg";
-}> =>
-  pgTable(
-    name,
-    { ...tenantIdColumns, ...timestamps, ...version, ...columns },
-    (table) => [
-      primaryKey({ columns: [table.id, table.tenantId] }),
-      ...(extraConfig?.(table) ?? []),
-    ],
-  );
-
-export const TenantTable = Schema.Struct({
-  id: NanoId,
-  tenantId: NanoId,
-  ...Timestamps.fields,
-});
-
-export type InferTablePermissions<
-  TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
-> = {
-  [TIndex in keyof TActions]: TActions[TIndex] extends PermissionAction
-    ? `${TTable["_"]["name"]}:${TActions[TIndex]}`
-    : never;
-}[number];
-
-interface BaseTable<
-  TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
-> {
-  readonly table: TTable;
-  readonly permissions: Array<InferTablePermissions<TTable, TActions>>;
-}
-
-export interface SyncTable<
-  TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
-> extends BaseTable<TTable, TActions> {
-  readonly _tag: "@printdesk/core/database/SyncTable";
-}
-export const SyncTable = <
-  TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
->(
-  table: TTable,
-  actions: TActions,
-) =>
-  Data.tagged<SyncTable<TTable, TActions>>(
-    "@printdesk/core/database/SyncTable",
-  )({
-    table,
-    permissions: Array.map(
-      actions,
-      (action) =>
-        `${getTableName(table)}:${action}` as InferTablePermissions<
-          TTable,
-          TActions
-        >,
-    ),
-  });
-
-export interface NonSyncTable<
-  TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
-> extends BaseTable<TTable, TActions> {
-  readonly _tag: "@printdesk/core/database/NonSyncTable";
-}
-export const NonSyncTable = <
-  TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
->(
-  table: TTable,
-  actions: TActions,
-) =>
-  Data.tagged<NonSyncTable<TTable, TActions>>(
-    "@printdesk/core/database/NonSyncTable",
-  )({
-    table,
-    permissions: Array.map(
-      actions,
-      (action) =>
-        `${getTableName(table)}:${action}` as InferTablePermissions<
-          TTable,
-          TActions
-        >,
-    ),
-  });
-
-export type InferFromTable<TTable extends Table> = Readonly<
-  Omit<InferSelectModel<TTable>, "version">
->;
-
-export interface View<TView extends PgView> {
-  readonly _tag: "@printdesk/core/database/View";
-  readonly view: TView;
-  readonly permission: `${TView["_"]["name"]}:read`;
-}
-export const View = <TView extends PgView>(view: TView) =>
-  Data.tagged<View<TView>>("@printdesk/core/database/View")({
-    view,
-    permission: `${getViewName(view)}:read` as const,
-  });

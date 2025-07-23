@@ -2,9 +2,14 @@ import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
-import * as schema from "../database2/schema";
+import {
+  activeProductsView,
+  activePublishedProductsView,
+  productsTable,
+} from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { Product, ProductsTable } from "./sql";
 
 export namespace Products {
   export class Repository extends Effect.Service<Repository>()(
@@ -13,12 +18,12 @@ export namespace Products {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = schema.productsTable.table;
-        const activeView = schema.activeProductsView.view;
-        const activePublishedView = schema.activePublishedProductsView.view;
+        const table = productsTable;
+        const activeView = activeProductsView;
+        const activePublishedView = activePublishedProductsView;
 
         const create = Effect.fn("Products.Repository.create")(
-          (product: InferInsertModel<schema.ProductsTable>) =>
+          (product: InferInsertModel<ProductsTable>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(product).returning(),
@@ -30,7 +35,7 @@ export namespace Products {
         );
 
         const getMetadata = Effect.fn("Products.Repository.getMetadata")(
-          (tenantId: schema.Product["tenantId"]) =>
+          (tenantId: Product["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select({ id: table.id, name: table.name })
@@ -41,7 +46,7 @@ export namespace Products {
 
         const getActiveMetadata = Effect.fn(
           "Products.Repository.getActiveMetadata",
-        )((tenantId: schema.Product["tenantId"]) =>
+        )((tenantId: Product["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({ id: activeView.id, name: activeView.name })
@@ -52,7 +57,7 @@ export namespace Products {
 
         const getActivePublishedMetadata = Effect.fn(
           "Products.Repository.getActivePublishedMetadata",
-        )((tenantId: schema.Product["tenantId"]) =>
+        )((tenantId: Product["tenantId"]) =>
           db.useTransaction((tx) =>
             tx
               .select({
@@ -65,10 +70,7 @@ export namespace Products {
         );
 
         const findByIds = Effect.fn("Products.Repository.findByIds")(
-          (
-            ids: ReadonlyArray<schema.Product["id"]>,
-            tenantId: schema.Product["tenantId"],
-          ) =>
+          (ids: ReadonlyArray<Product["id"]>, tenantId: Product["tenantId"]) =>
             db.useTransaction((tx) =>
               tx
                 .select()
@@ -81,9 +83,9 @@ export namespace Products {
 
         const updateById = Effect.fn("Products.Repository.updateById")(
           (
-            id: schema.Product["id"],
-            product: Partial<Omit<schema.Product, "id" | "tenantId">>,
-            tenantId: schema.Product["tenantId"],
+            id: Product["id"],
+            product: Partial<Omit<Product, "id" | "tenantId">>,
+            tenantId: Product["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -98,9 +100,9 @@ export namespace Products {
 
         const deleteById = Effect.fn("Products.Repository.deleteById")(
           (
-            id: schema.Product["id"],
-            deletedAt: NonNullable<schema.Product["deletedAt"]>,
-            tenantId: schema.Product["tenantId"],
+            id: Product["id"],
+            deletedAt: NonNullable<Product["deletedAt"]>,
+            tenantId: Product["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -112,9 +114,9 @@ export namespace Products {
 
         const deleteByRoomId = Effect.fn("Products.Repository.deleteByRoomId")(
           (
-            roomId: schema.Product["roomId"],
-            deletedAt: NonNullable<schema.Product["deletedAt"]>,
-            tenantId: schema.Product["tenantId"],
+            roomId: Product["roomId"],
+            deletedAt: NonNullable<Product["deletedAt"]>,
+            tenantId: Product["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx

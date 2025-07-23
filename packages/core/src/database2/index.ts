@@ -19,7 +19,6 @@ import { DatabaseError, Pool } from "pg";
 import { Dsql } from "../aws2";
 import { Sst } from "../sst";
 import { Constants } from "../utils/constants";
-import * as schema from "./schema";
 
 import type { ExtractTablesWithRelations, Logger } from "drizzle-orm";
 import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
@@ -162,7 +161,7 @@ export namespace Database {
         );
 
         const logger = yield* ClientLogger;
-        const client = drizzle(pool, { schema, logger });
+        const client = drizzle(pool, { logger });
 
         return {
           setupPoolListeners,
@@ -183,8 +182,8 @@ export namespace Database {
       scoped: (
         tx: PgTransaction<
           NodePgQueryResultHKT,
-          typeof schema,
-          ExtractTablesWithRelations<typeof schema>
+          Record<string, never>,
+          ExtractTablesWithRelations<Record<string, never>>
         >,
       ) =>
         Effect.gen(function* () {

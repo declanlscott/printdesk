@@ -1,10 +1,14 @@
-import { Either, Schema } from "effect";
+import { Either, Schema, Struct } from "effect";
 
-import { TenantTable } from "../database2/constructors";
+import { SyncTable, TenantTable, View } from "../database2/shared";
 import { Constants } from "../utils/constants";
 import { Cost, HexColor, NanoId } from "../utils2/shared";
 
-export const productsTableName = "products";
+import type {
+  ActiveProductsView,
+  ActivePublishedProductsView,
+  ProductsTable,
+} from "./sql";
 
 export const productStatuses = ["draft", "published"] as const;
 export type ProductStatus = (typeof productStatuses)[number];
@@ -15,7 +19,6 @@ export const Option = Schema.Struct({
   description: Schema.optional(Schema.String),
   cost: Cost,
 });
-
 export const Field = Schema.Struct({
   name: Schema.Trim,
   required: Schema.Boolean,
@@ -27,14 +30,12 @@ export const Field = Schema.Struct({
     ),
   ),
 });
-
 const FallbackBoolean = (fallback = true) =>
   Schema.Boolean.pipe(
     Schema.annotations({
       decodingFallback: () => Either.right(fallback),
     }),
   );
-
 export const ProductAttributesV1 = Schema.Struct({
   copies: Schema.Struct({
     visible: FallbackBoolean(),
@@ -217,7 +218,6 @@ export const ProductAttributesV1 = Schema.Struct({
     ),
   }),
 });
-
 export const ProductConfigurationV1 = Schema.Struct({
   version: Schema.Literal(1),
   image: Schema.String,
@@ -229,28 +229,38 @@ export const ProductConfigurationV1 = Schema.Struct({
   ),
   attributes: ProductAttributesV1,
 });
-
 export const ProductConfiguration = Schema.Union(ProductConfigurationV1);
 
-export const Product = Schema.Struct({
-  ...TenantTable.fields,
-  name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-  status: Schema.Literal(...productStatuses),
-  roomId: NanoId,
-  config: ProductConfiguration,
-});
+export const productsTableName = "products";
+export const productsTable = SyncTable<ProductsTable>()(
+  productsTableName,
+  Schema.Struct({
+    ...TenantTable.fields,
+    name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    status: Schema.Literal(...productStatuses),
+    roomId: NanoId,
+    config: ProductConfiguration,
+  }),
+  ["create", "read", "update", "delete"],
+);
 
-export const CreateProduct = Schema.Struct({
-  ...Product.omit("deletedAt").fields,
-  deletedAt: Schema.Null,
-});
+export const activeProductsViewName = `active_${productsTableName}`;
+export const activeProductsView = View<ActiveProductsView>()(
+  activeProductsViewName,
+  productsTable.Schema,
+);
+
+export const activePublishedProductsViewName = `active_published_${productsTableName}`;
+export const activePublishedProductsView = View<ActivePublishedProductsView>()(
+  activePublishedProductsViewName,
+  activeProductsView.Schema,
+);
+
+export const CreateProduct = productsTable.Schema.omit("deletedAt", "tenantId");
 
 export const UpdateProduct = Schema.extend(
-  Schema.Struct({
-    id: NanoId,
-    updatedAt: Schema.Date,
-  }),
-  Product.omit("id", "tenantId", "createdAt", "updatedAt", "deletedAt").pipe(
+  productsTable.Schema.pick("id", "updatedAt"),
+  productsTable.Schema.omit(...Struct.keys(TenantTable.fields), "roomId").pipe(
     Schema.partial,
   ),
 );

@@ -1,7 +1,6 @@
-import { Context, Data, Effect, Schema } from "effect";
+import { Array, Context, Data, Effect, Schema, Struct } from "effect";
 
 import * as schema from "../database2/schema";
-import { makePermissionsFromConfig } from "./shared";
 
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
@@ -10,6 +9,30 @@ import type { UserRole } from "../users2/shared";
 import type { User } from "../users2/sql";
 
 export namespace AccessControl {
+  export type PermissionAction = "create" | "read" | "update" | "delete";
+
+  export type PermissionsConfig = Record<
+    string,
+    ReadonlyArray<PermissionAction>
+  >;
+
+  export type InferPermissionsFromConfig<TConfig extends PermissionsConfig> = {
+    [TResource in keyof TConfig]: TConfig[TResource][number] extends PermissionAction
+      ? `${TResource & string}:${TConfig[TResource][number]}`
+      : never;
+  }[keyof TConfig];
+
+  const makePermissionsFromConfig = <TConfig extends PermissionsConfig>(
+    config: TConfig,
+  ) =>
+    Array.flatMap(Struct.entries(config), ([resource, actions]) =>
+      Array.map(
+        actions,
+        (action) =>
+          `${resource}:${action}` as InferPermissionsFromConfig<TConfig>,
+      ),
+    );
+
   const syncTablePermissions = Object.values(schema)
     .filter((data) => data._tag === "@printdesk/core/database/SyncTable")
     .flatMap(({ permissions }) => permissions);
@@ -84,6 +107,7 @@ export namespace AccessControl {
       "rooms:delete",
       "tailscale_oauth_client:update",
       "tenants:read",
+      "tenants:update",
       "users:read",
       "users:update",
       "users:delete",

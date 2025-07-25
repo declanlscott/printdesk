@@ -12,6 +12,7 @@ export const announcementsTable = SyncTable<AnnouncementsTable>()(
     ...TenantTable.fields,
     content: Schema.String,
     roomId: NanoId,
+    authorId: NanoId,
   }),
   ["create", "read", "update", "delete"],
 );
@@ -23,6 +24,7 @@ export const activeAnnouncementsView = View<ActiveAnnouncementsView>()(
 );
 
 export const CreateAnnouncement = announcementsTable.Schema.omit(
+  "authorId",
   "deletedAt",
   "tenantId",
 );
@@ -32,6 +34,7 @@ export const UpdateAnnouncement = Schema.extend(
   announcementsTable.Schema.omit(
     ...Struct.keys(TenantTable.fields),
     "roomId",
+    "authorId",
   ).pipe(Schema.partial),
 );
 

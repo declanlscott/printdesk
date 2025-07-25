@@ -24,7 +24,11 @@ export const activeCommentsView = View<ActiveCommentsView>()(
   commentsTable.Schema,
 );
 
-export const CreateComment = commentsTable.Schema.omit("deletedAt", "tenantId");
+export const CreateComment = commentsTable.Schema.omit(
+  "authorId",
+  "deletedAt",
+  "tenantId",
+);
 
 export const UpdateComment = Schema.extend(
   commentsTable.Schema.pick("id", "orderId", "updatedAt"),

@@ -35,7 +35,7 @@ export const tenantsTable = SyncTable<TenantsTable>()(
     status: Schema.Literal(...tenantStatuses),
     ...Timestamps.fields,
   }),
-  ["read"],
+  ["read", "update"],
 );
 export const UpdateTenant = Schema.extend(
   tenantsTable.Schema.pick("id", "updatedAt"),

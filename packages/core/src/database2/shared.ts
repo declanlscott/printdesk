@@ -9,7 +9,7 @@ import type {
   View as View_,
 } from "drizzle-orm";
 import type { PgTable, PgView } from "drizzle-orm/pg-core";
-import type { PermissionAction } from "../access-control2/shared";
+import type { AccessControl } from "../access-control2";
 
 export const Timestamps = Schema.Struct({
   createdAt: Schema.Date,
@@ -33,9 +33,9 @@ export type InferFromView<TView extends View_> = Readonly<
 
 export type InferTablePermissions<
   TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
+  TActions extends ReadonlyArray<AccessControl.PermissionAction>,
 > = {
-  [TIndex in keyof TActions]: TActions[TIndex] extends PermissionAction
+  [TIndex in keyof TActions]: TActions[TIndex] extends AccessControl.PermissionAction
     ? `${TTable["_"]["name"]}:${TActions[TIndex]}`
     : never;
 }[number];
@@ -43,7 +43,7 @@ export type InferTablePermissions<
 interface BaseTable<
   TTable extends PgTable,
   TSchema extends Schema.Schema.Any,
-  TActions extends ReadonlyArray<PermissionAction>,
+  TActions extends ReadonlyArray<AccessControl.PermissionAction>,
 > {
   readonly name: TTable["_"]["name"];
   readonly Schema: TSchema;
@@ -53,7 +53,7 @@ interface BaseTable<
 export interface SyncTable<
   TTable extends PgTable,
   TSchema extends Schema.Schema.Any,
-  TActions extends ReadonlyArray<PermissionAction>,
+  TActions extends ReadonlyArray<AccessControl.PermissionAction>,
 > extends BaseTable<TTable, TSchema, TActions> {
   readonly _tag: "@printdesk/core/database/SyncTable";
 }
@@ -61,7 +61,7 @@ export const SyncTable =
   <TTable extends PgTable = never>() =>
   <
     TSchema extends Schema.Schema.Any,
-    TActions extends ReadonlyArray<PermissionAction>,
+    TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   >(
     name: TTable["_"]["name"],
     Schema: Schema.Schema.Type<TSchema> extends InferFromTable<TTable>
@@ -84,7 +84,7 @@ export const SyncTable =
 export interface NonSyncTable<
   TSchema extends Schema.Schema.Any,
   TTable extends PgTable,
-  TActions extends ReadonlyArray<PermissionAction>,
+  TActions extends ReadonlyArray<AccessControl.PermissionAction>,
 > extends BaseTable<TTable, TSchema, TActions> {
   readonly _tag: "@printdesk/core/database/NonSyncTable";
 }
@@ -92,7 +92,7 @@ export const NonSyncTable =
   <TTable extends PgTable = never>() =>
   <
     TSchema extends Schema.Schema.Any,
-    TActions extends ReadonlyArray<PermissionAction>,
+    TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   >(
     name: TTable["_"]["name"],
     Schema: Schema.Schema.Type<TSchema> extends InferFromTable<TTable>

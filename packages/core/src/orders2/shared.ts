@@ -6,11 +6,7 @@ import { IsoDate, IsoTimestamp, NanoId } from "../utils2/shared";
 
 import type { ActiveOrdersView, OrdersTable } from "./sql";
 
-export const OrderAttributesV1 = Schema.Struct({
-  version: Schema.Literal(1).annotations({
-    decodingFallback: () => Either.right(1 as const),
-  }),
-
+export const OrderAttributesV1 = Schema.TaggedStruct("OrderAttributesV1", {
   // Product name
   productName: Schema.String,
 
@@ -212,13 +208,36 @@ export const activeOrdersView = View<ActiveOrdersView>()(
   ordersTable.Schema,
 );
 
-export const CreateOrder = ordersTable.Schema.omit("deletedAt", "tenantId");
+export const CreateOrder = ordersTable.Schema.omit(
+  "approvedAt",
+  "deletedAt",
+  "tenantId",
+);
 
-export const UpdateOrder = Schema.extend(
+export const EditOrder = Schema.extend(
   ordersTable.Schema.pick("id", "updatedAt"),
-  ordersTable.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(
-    Schema.partial,
-  ),
+  ordersTable.Schema.omit(
+    ...Struct.keys(TenantTable.fields),
+    "customerId",
+    "managerId",
+    "operatorId",
+    "billingAccountId",
+    "workflowStatus",
+    "approvedAt",
+  ).pipe(Schema.partial),
+);
+
+export const ApproveOrder = Schema.extend(
+  ordersTable.Schema.pick("id", "updatedAt"),
+  Schema.Struct({
+    approvedAt: Schema.Date,
+  }),
+);
+
+export const TransitionOrder = ordersTable.Schema.pick(
+  "id",
+  "updatedAt",
+  "workflowStatus",
 );
 
 export const DeleteOrder = Schema.Struct({

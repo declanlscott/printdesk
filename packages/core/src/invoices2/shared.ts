@@ -1,4 +1,4 @@
-import { Either, Schema } from "effect";
+import { Schema } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
 import { NanoId } from "../utils2/shared";
@@ -7,10 +7,7 @@ import type { ActiveInvoicesView, InvoicesTable } from "./sql";
 
 export const invoiceStatuses = ["processing", "charged", "error"] as const;
 
-export const LineItemV1 = Schema.Struct({
-  version: Schema.Literal(1).annotations({
-    decodingFallback: () => Either.right(1 as const),
-  }),
+export const LineItemV1 = Schema.TaggedStruct("LineItemV1", {
   name: Schema.String,
   description: Schema.String,
   cost: Schema.Number,
@@ -37,11 +34,11 @@ export const activeInvoicesView = View<ActiveInvoicesView>()(
   invoicesTable.Schema,
 );
 
-export const CreateInvoice = Schema.extend(
-  Schema.Struct({
-    status: Schema.Literal("processing"),
-  }),
-  invoicesTable.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
+export const CreateInvoice = invoicesTable.Schema.omit(
+  "status",
+  "chargedAt",
+  "deletedAt",
+  "tenantId",
 );
 
 export const Estimate = Schema.Struct({

@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { customEnum, id, timestamps } from "../database2/columns";
+import { customEnum, id, timestamps } from "../database2/constructors";
 import {
   identityProviderKinds,
   identityProvidersTableName,

@@ -2,8 +2,12 @@ import { isNull } from "drizzle-orm";
 import { index, pgView, timestamp } from "drizzle-orm/pg-core";
 import { Schema } from "effect";
 
-import { customEnum, customJsonb, id } from "../database2/columns";
-import { tenantTable } from "../database2/tables";
+import {
+  customEnum,
+  customJsonb,
+  id,
+  tenantTable,
+} from "../database2/constructors";
 import {
   activeInvoicesViewName,
   invoicesTableName,

@@ -1,46 +1,28 @@
-import { pgTable, primaryKey } from "drizzle-orm/pg-core";
+import * as schema from "./schema";
 
-import { tenantIdColumns, timestamps, version } from "./columns";
+export const syncTables = Object.values(schema).filter(
+  (data) => data._tag === "@printdesk/core/database/SyncTable",
+);
+export type SyncTable = (typeof syncTables)[number];
+export type SyncTableName = SyncTable["name"];
+export type SyncTableByName<TName extends SyncTableName> = Extract<
+  SyncTable,
+  { name: TName }
+>;
 
-import type { BuildColumns, BuildExtraConfigColumns } from "drizzle-orm";
-import type {
-  PgColumnBuilderBase,
-  PgTableExtraConfigValue,
-  PgTableWithColumns,
-} from "drizzle-orm/pg-core";
-import type { DefaultTenantTableColumns } from "./columns";
+export const nonSyncTables = Object.values(schema).filter(
+  (data) => data._tag === "@printdesk/core/database/NonSyncTable",
+);
+export type NonSyncTable = (typeof nonSyncTables)[number];
+export type NonSyncTableName = NonSyncTable["name"];
+export type NonSyncTableByName<TName extends NonSyncTableName> = Extract<
+  NonSyncTable,
+  { name: TName }
+>;
 
-/**
- * Wrapper for tenant owned tables with ids, timestamps, and sync version columns.
- */
-export const tenantTable = <
-  TTableName extends string,
-  TColumnsMap extends Record<string, PgColumnBuilderBase>,
->(
-  name: TTableName,
-  columns: TColumnsMap,
-  extraConfig?: (
-    self: BuildExtraConfigColumns<
-      TTableName,
-      TColumnsMap & DefaultTenantTableColumns,
-      "pg"
-    >,
-  ) => Array<PgTableExtraConfigValue>,
-): PgTableWithColumns<{
-  name: TTableName;
-  schema: undefined;
-  columns: BuildColumns<
-    TTableName,
-    TColumnsMap & DefaultTenantTableColumns,
-    "pg"
-  >;
-  dialect: "pg";
-}> =>
-  pgTable(
-    name,
-    { ...tenantIdColumns, ...timestamps, ...version, ...columns },
-    (table) => [
-      primaryKey({ columns: [table.id, table.tenantId] }),
-      ...(extraConfig?.(table) ?? []),
-    ],
-  );
+export const views = Object.values(schema).filter(
+  (data) => data._tag === "@printdesk/core/database/View",
+);
+export type View = (typeof views)[number];
+export type ViewName = View["name"];
+export type ViewByName<TName extends ViewName> = Extract<View, { name: TName }>;

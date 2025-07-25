@@ -2,7 +2,7 @@ import { and, eq, gte, inArray, notInArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/columns";
+import { buildConflictSet } from "../database2/constructors";
 import {
   activePublishedRoomDeliveryOptionsView,
   activePublishedRoomsView,

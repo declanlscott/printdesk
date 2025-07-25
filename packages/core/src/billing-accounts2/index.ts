@@ -1,9 +1,9 @@
-import { and, eq, inArray, not } from "drizzle-orm";
+import { and, eq, inArray, not, or } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/columns";
+import { buildConflictSet } from "../database2/constructors";
 import { activeUsersView } from "../users2/sql";
 import {
   activeBillingAccountCustomerAuthorizationsView,
@@ -237,6 +237,72 @@ export namespace BillingAccounts {
             .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
+        const findActiveAuthorizedUserIds = Effect.fn(
+          "BillingAccounts.Repository.findActiveAuthorizedUserIds",
+        )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
+          db
+            .useTransaction((tx) =>
+              tx
+                .select({ id: activeUsersView.id })
+                .from(activeView)
+                .innerJoin(
+                  activeCustomerAuthorizationsView,
+                  and(
+                    eq(
+                      activeView.id,
+                      activeCustomerAuthorizationsView.billingAccountId,
+                    ),
+                    eq(
+                      activeView.tenantId,
+                      activeCustomerAuthorizationsView.tenantId,
+                    ),
+                  ),
+                )
+                .innerJoin(
+                  activeManagerAuthorizationsView,
+                  and(
+                    eq(
+                      activeView.id,
+                      activeManagerAuthorizationsView.billingAccountId,
+                    ),
+                    eq(
+                      activeView.tenantId,
+                      activeManagerAuthorizationsView.tenantId,
+                    ),
+                  ),
+                )
+                .innerJoin(
+                  activeUsersView,
+                  or(
+                    and(
+                      eq(
+                        activeCustomerAuthorizationsView.customerId,
+                        activeUsersView.id,
+                      ),
+                      eq(
+                        activeCustomerAuthorizationsView.tenantId,
+                        activeUsersView.tenantId,
+                      ),
+                    ),
+                    and(
+                      eq(
+                        activeManagerAuthorizationsView.managerId,
+                        activeUsersView.id,
+                      ),
+                      eq(
+                        activeManagerAuthorizationsView.tenantId,
+                        activeUsersView.tenantId,
+                      ),
+                    ),
+                  ),
+                )
+                .where(
+                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
+                ),
+            )
+            .pipe(Effect.map(Array.map(({ id }) => id))),
+        );
+
         const updateById = Effect.fn("BillingAccounts.Repository.updateById")(
           (
             id: BillingAccount["id"],
@@ -280,6 +346,7 @@ export namespace BillingAccounts {
           findByOrigin,
           findActiveCustomerIds,
           findActiveManagerIds,
+          findActiveAuthorizedUserIds,
           updateById,
           deleteById,
         } as const;
@@ -294,39 +361,51 @@ export namespace BillingAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isActiveCustomer = Effect.fn(
-          "BillingAccounts.Policy.isActiveCustomer",
+        const hasActiveManagerAuthorization = Effect.fn(
+          "BillingAccounts.Policy.hasActiveManagerAuthorization",
         )((id: BillingAccount["id"]) =>
           AccessControl.policy((principal) =>
             repository
               .findActiveCustomerIds(id, principal.tenantId)
               .pipe(
-                Effect.map((customerIds) =>
-                  customerIds.some(
-                    (customerId) => customerId === principal.userId,
-                  ),
+                Effect.map(
+                  Array.some((customerId) => customerId === principal.userId),
                 ),
               ),
           ),
         );
 
-        const isActiveManager = Effect.fn(
-          "BillingAccounts.Policy.isActiveManager",
+        const hasActiveCustomerAuthorization = Effect.fn(
+          "BillingAccounts.Policy.hasActiveCustomerAuthorization",
         )((id: BillingAccount["id"]) =>
           AccessControl.policy((principal) =>
             repository
               .findActiveManagerIds(id, principal.tenantId)
               .pipe(
-                Effect.map((managerIds) =>
-                  managerIds.some(
-                    (managerId) => managerId === principal.userId,
-                  ),
+                Effect.map(
+                  Array.some((managerId) => managerId === principal.userId),
                 ),
               ),
           ),
         );
 
-        return { isActiveCustomer, isActiveManager } as const;
+        const hasActiveAuthorization = Effect.fn(
+          "BillingAccounts.Policy.hasActiveAuthorization",
+        )((id: BillingAccount["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findActiveAuthorizedUserIds(id, principal.tenantId)
+              .pipe(
+                Effect.map(Array.some((userId) => userId === principal.userId)),
+              ),
+          ),
+        );
+
+        return {
+          hasActiveManagerAuthorization,
+          hasActiveCustomerAuthorization,
+          hasActiveAuthorization,
+        } as const;
       }),
     },
   ) {}

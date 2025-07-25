@@ -10,7 +10,7 @@ import {
 import { Schema } from "effect";
 
 import { tenantIdColumns } from "../database/tables";
-import { customJsonb, id, timestamps } from "../database2/columns";
+import { customJsonb, id, timestamps } from "../database2/constructors";
 import {
   replicacheClientGroupsTableName,
   replicacheClientsTableName,

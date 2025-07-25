@@ -12,8 +12,12 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import { customEnum, id, version } from "../database2/columns";
-import { tenantTable } from "../database2/tables";
+import {
+  customEnum,
+  id,
+  tenantTable,
+  version,
+} from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
   activePublishedRoomDeliveryOptionsViewName,

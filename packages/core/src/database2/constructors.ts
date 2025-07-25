@@ -1,13 +1,25 @@
 import { decode, encode } from "@msgpack/msgpack";
 import { getTableColumns, getTableName, sql } from "drizzle-orm";
-import { char, customType, integer, timestamp } from "drizzle-orm/pg-core";
+import {
+  char,
+  customType,
+  integer,
+  pgTable,
+  primaryKey,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { ParseResult, Schema } from "effect";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";
 
-import type { SQL } from "drizzle-orm";
-import type { PgTable } from "drizzle-orm/pg-core";
+import type { BuildColumns, BuildExtraConfigColumns, SQL } from "drizzle-orm";
+import type {
+  PgColumnBuilderBase,
+  PgTable,
+  PgTableExtraConfigValue,
+  PgTableWithColumns,
+} from "drizzle-orm/pg-core";
 
 /**
  * NanoID column
@@ -182,3 +194,38 @@ export const tenantIdColumns = {
 export type DefaultTenantTableColumns = typeof tenantIdColumns &
   typeof timestamps &
   typeof version;
+
+/**
+ * Wrapper for tenant owned tables with ids, timestamps, and sync version columns.
+ */
+export const tenantTable = <
+  TTableName extends string,
+  TColumnsMap extends Record<string, PgColumnBuilderBase>,
+>(
+  name: TTableName,
+  columns: TColumnsMap,
+  extraConfig?: (
+    self: BuildExtraConfigColumns<
+      TTableName,
+      TColumnsMap & DefaultTenantTableColumns,
+      "pg"
+    >,
+  ) => Array<PgTableExtraConfigValue>,
+): PgTableWithColumns<{
+  name: TTableName;
+  schema: undefined;
+  columns: BuildColumns<
+    TTableName,
+    TColumnsMap & DefaultTenantTableColumns,
+    "pg"
+  >;
+  dialect: "pg";
+}> =>
+  pgTable(
+    name,
+    { ...tenantIdColumns, ...timestamps, ...version, ...columns },
+    (table) => [
+      primaryKey({ columns: [table.id, table.tenantId] }),
+      ...(extraConfig?.(table) ?? []),
+    ],
+  );

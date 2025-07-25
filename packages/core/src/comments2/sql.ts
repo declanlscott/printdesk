@@ -1,8 +1,7 @@
 import { isNull } from "drizzle-orm";
 import { boolean, index, pgView, text } from "drizzle-orm/pg-core";
 
-import { id } from "../database2/columns";
-import { tenantTable } from "../database2/tables";
+import { id, tenantTable } from "../database2/constructors";
 import { activeCommentsViewName, commentsTableName } from "./shared";
 
 import type { InferFromTable, InferFromView } from "../database2/shared";

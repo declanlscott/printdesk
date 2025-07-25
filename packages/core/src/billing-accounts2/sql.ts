@@ -8,8 +8,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { customEnum, id } from "../database2/columns";
-import { tenantTable } from "../database2/tables";
+import { customEnum, id, tenantTable } from "../database2/constructors";
 import {
   activeBillingAccountCustomerAuthorizationsViewName,
   activeBillingAccountManagerAuthorizationsViewName,

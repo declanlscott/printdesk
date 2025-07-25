@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
@@ -7,6 +7,8 @@ import {
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
 import { Database } from "../database2";
+import { workflowStatusesTable } from "../rooms2/sql";
+import { activeUsersView } from "../users2/sql";
 import { activeOrdersView, ordersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -142,6 +144,71 @@ export namespace Orders {
             ),
         );
 
+        const findActiveManagerIds = Effect.fn(
+          "Orders.Repository.findActiveManagerIds",
+        )((id: Order["id"], tenantId: Order["tenantId"]) =>
+          db
+            .useTransaction((tx) =>
+              tx
+                .select({ id: activeUsersView.id })
+                .from(activeView)
+                .innerJoin(
+                  activeBillingAccountManagerAuthorizationsView,
+                  and(
+                    eq(
+                      activeView.billingAccountId,
+                      activeBillingAccountManagerAuthorizationsView.billingAccountId,
+                    ),
+                    eq(
+                      activeView.tenantId,
+                      activeBillingAccountManagerAuthorizationsView.tenantId,
+                    ),
+                  ),
+                )
+                .innerJoin(
+                  activeUsersView,
+                  and(
+                    eq(
+                      activeBillingAccountManagerAuthorizationsView.managerId,
+                      activeUsersView.id,
+                    ),
+                    eq(
+                      activeBillingAccountManagerAuthorizationsView.tenantId,
+                      activeUsersView.tenantId,
+                    ),
+                  ),
+                )
+                .where(
+                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
+                ),
+            )
+            .pipe(Effect.map(Array.map(({ id }) => id))),
+        );
+
+        const findStatus = Effect.fn("Orders.Repository.findStatus")(
+          (id: Order["id"], tenantId: Order["tenantId"]) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({
+                    status: getTableColumns(workflowStatusesTable),
+                  })
+                  .from(table)
+                  .leftJoin(
+                    workflowStatusesTable,
+                    and(
+                      eq(table.workflowStatus, workflowStatusesTable.id),
+                      eq(table.tenantId, workflowStatusesTable.tenantId),
+                    ),
+                  )
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.map(({ status }) => status),
+              ),
+        );
+
         const updateById = Effect.fn("Orders.Repository.updateById")(
           (
             id: Order["id"],
@@ -206,6 +273,8 @@ export namespace Orders {
           getActiveMetadataByCustomerId,
           findById,
           findByIds,
+          findActiveManagerIds,
+          findStatus,
           updateById,
           deleteById,
           deleteByProductId,
@@ -243,7 +312,75 @@ export namespace Orders {
             ),
         );
 
-        return { isCustomer, isManager } as const;
+        const isCustomerOrManager = Effect.fn(
+          "Orders.Policy.isCustomerOrManager",
+        )((id: Order["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findById(id, principal.tenantId)
+              .pipe(
+                Effect.map(
+                  (order) =>
+                    order.customerId === principal.userId ||
+                    order.managerId === principal.userId,
+                ),
+              ),
+          ),
+        );
+
+        const hasActiveManagerAuthorization = (id: Order["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findActiveManagerIds(id, principal.tenantId)
+              .pipe(
+                Effect.map(
+                  Array.some((managerId) => managerId === principal.userId),
+                ),
+              ),
+          );
+
+        const canEdit = (id: Order["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findStatus(id, principal.tenantId)
+              .pipe(
+                Effect.map((status) =>
+                  status !== null
+                    ? !(
+                        status.type === "InProgress" ||
+                        status.type === "Completed"
+                      )
+                    : false,
+                ),
+              ),
+          );
+
+        const canApprove = (id: Order["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findStatus(id, principal.tenantId)
+              .pipe(Effect.map((status) => status?.type === "Review")),
+          );
+
+        const canTransition = (id: Order["id"]) =>
+          AccessControl.policy((principal) =>
+            repository
+              .findStatus(id, principal.tenantId)
+              .pipe(Effect.map((status) => status?.type !== "Completed")),
+          );
+
+        const canDelete = canEdit;
+
+        return {
+          isCustomer,
+          isManager,
+          isCustomerOrManager,
+          hasActiveManagerAuthorization,
+          canEdit,
+          canApprove,
+          canTransition,
+          canDelete,
+        } as const;
       }),
     },
   ) {}

@@ -13,7 +13,7 @@ import {
   idPrimaryKey,
   timestamps,
   version,
-} from "../database2/columns";
+} from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
   InfraProgramInput,

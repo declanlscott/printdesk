@@ -1,8 +1,7 @@
 import { isNull } from "drizzle-orm";
 import { index, pgView, timestamp, varchar } from "drizzle-orm/pg-core";
 
-import { customJsonb, id } from "../database2/columns";
-import { tenantTable } from "../database2/tables";
+import { customJsonb, id, tenantTable } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
   activeOrdersViewName,

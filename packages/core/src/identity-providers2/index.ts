@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/columns";
+import { buildConflictSet } from "../database2/constructors";
 import { tenantsTable } from "../tenants2/sql";
 import { identityProvidersTable, identityProviderUserGroupsTable } from "./sql";
 

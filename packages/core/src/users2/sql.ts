@@ -1,8 +1,7 @@
 import { isNull } from "drizzle-orm";
 import { index, pgView, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { customEnum } from "../database2/columns";
-import { tenantTable } from "../database2/tables";
+import { customEnum, tenantTable } from "../database2/constructors";
 import { userRoles } from "../users/shared";
 import { activeUsersViewName, userOrigins, usersTableName } from "./shared";
 

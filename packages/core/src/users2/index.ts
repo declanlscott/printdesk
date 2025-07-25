@@ -3,7 +3,7 @@ import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/columns";
+import { buildConflictSet } from "../database2/constructors";
 import { activeUsersView, usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";

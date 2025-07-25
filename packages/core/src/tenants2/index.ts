@@ -3,7 +3,7 @@ import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/columns";
+import { buildConflictSet } from "../database2/constructors";
 import { identityProvidersTable } from "../identity-providers2/sql";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 

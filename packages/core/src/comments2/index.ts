@@ -206,15 +206,20 @@ export namespace Comments {
             deletedAt: NonNullable<Comment["deletedAt"]>,
             tenantId: Comment["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .update(table)
-                .set({ deletedAt })
-                .where(
-                  and(eq(table.orderId, orderId), eq(table.tenantId, tenantId)),
-                )
-                .returning(),
-            ),
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set({ deletedAt })
+                  .where(
+                    and(
+                      eq(table.orderId, orderId),
+                      eq(table.tenantId, tenantId),
+                    ),
+                  )
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
         );
 
         return {

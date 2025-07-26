@@ -107,12 +107,15 @@ export namespace Products {
             deletedAt: NonNullable<Product["deletedAt"]>,
             tenantId: Product["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .update(table)
-                .set({ deletedAt })
-                .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
-            ),
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set({ deletedAt })
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
         );
 
         const deleteByRoomId = Effect.fn("Products.Repository.deleteByRoomId")(
@@ -121,15 +124,17 @@ export namespace Products {
             deletedAt: NonNullable<Product["deletedAt"]>,
             tenantId: Product["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .update(table)
-                .set({ deletedAt })
-                .where(
-                  and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
-                )
-                .returning(),
-            ),
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set({ deletedAt })
+                  .where(
+                    and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
+                  )
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
         );
 
         return {

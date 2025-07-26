@@ -260,18 +260,20 @@ export namespace Orders {
             deletedAt: NonNullable<Order["deletedAt"]>,
             tenantId: Order["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .update(table)
-                .set({ deletedAt })
-                .where(
-                  and(
-                    eq(table.productId, productId),
-                    eq(table.tenantId, tenantId),
-                  ),
-                )
-                .returning(),
-            ),
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set({ deletedAt })
+                  .where(
+                    and(
+                      eq(table.productId, productId),
+                      eq(table.tenantId, tenantId),
+                    ),
+                  )
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
         );
 
         return {

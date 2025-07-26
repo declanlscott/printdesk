@@ -139,7 +139,7 @@ export namespace Announcements {
   ) {}
 
   export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/Announcements/SyncMutations",
+    "@printdesk/core/announcements/SyncMutations",
     {
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {

@@ -8,7 +8,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-import { customEnum, id, tenantTable } from "../database2/constructors";
+import { id, pgEnum, tenantTable } from "../database2/constructors";
 import {
   activeBillingAccountCustomerAuthorizationsViewName,
   activeBillingAccountManagerAuthorizationsViewName,
@@ -22,13 +22,12 @@ import {
 import type { InferFromTable, InferFromView } from "../database2/shared";
 import type { Discriminate } from "../utils/types";
 
-const billingAccountOrigin = (name: string) =>
-  customEnum(name, billingAccountOrigins);
-
 export const billingAccountsTable = tenantTable(
   billingAccountsTableName,
   {
-    origin: billingAccountOrigin("origin").default("internal").notNull(),
+    origin: pgEnum("origin", billingAccountOrigins)
+      .default("internal")
+      .notNull(),
     name: text("name").notNull(),
     reviewThreshold: numeric("review_threshold"),
     // NOTE: Set to -1 if the billing account is not a papercut shared account

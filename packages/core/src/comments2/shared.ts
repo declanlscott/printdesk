@@ -46,6 +46,6 @@ export const deleteComment = SyncMutation(
   "deleteComment",
   Schema.Struct({
     ...commentsTable.Schema.pick("id", "orderId").fields,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );

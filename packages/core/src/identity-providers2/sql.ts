@@ -1,6 +1,6 @@
 import { pgTable, primaryKey, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { customEnum, id, timestamps } from "../database2/constructors";
+import { id, pgEnum, timestamps } from "../database2/constructors";
 import {
   identityProviderKinds,
   identityProvidersTableName,
@@ -9,14 +9,12 @@ import {
 
 import type { InferFromTable } from "../database2/shared";
 
-const identityProviderKind = (name: string) =>
-  customEnum(name, identityProviderKinds);
 export const identityProvidersTable = pgTable(
   identityProvidersTableName,
   {
     id: text("id").notNull(),
     tenantId: id("tenant_id").notNull(),
-    kind: identityProviderKind("kind").notNull(),
+    kind: pgEnum("kind", identityProviderKinds).notNull(),
     ...timestamps,
   },
   (table) => [

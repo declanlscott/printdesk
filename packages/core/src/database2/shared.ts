@@ -12,9 +12,9 @@ import type { PgTable, PgView } from "drizzle-orm/pg-core";
 import type { AccessControl } from "../access-control2";
 
 export const Timestamps = Schema.Struct({
-  createdAt: Schema.Date,
-  updatedAt: Schema.Date,
-  deletedAt: Schema.NullOr(Schema.Date),
+  createdAt: Schema.DateTimeUtc,
+  updatedAt: Schema.DateTimeUtc,
+  deletedAt: Schema.NullOr(Schema.DateTimeUtc),
 });
 
 export const TenantTable = Schema.Struct({

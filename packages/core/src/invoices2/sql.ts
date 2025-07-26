@@ -1,11 +1,12 @@
 import { isNull } from "drizzle-orm";
-import { index, pgView, timestamp } from "drizzle-orm/pg-core";
+import { index, pgView } from "drizzle-orm/pg-core";
 import { Schema } from "effect";
 
 import {
-  customEnum,
-  customJsonb,
+  datetime,
   id,
+  jsonb,
+  pgEnum,
   tenantTable,
 } from "../database2/constructors";
 import {
@@ -17,14 +18,12 @@ import {
 
 import type { InferFromTable, InferFromView } from "../database2/shared";
 
-const invoiceStatus = (name: string) => customEnum(name, invoiceStatuses);
-
 export const invoicesTable = tenantTable(
   invoicesTableName,
   {
-    lineItems: customJsonb("line_items", Schema.Array(LineItem)).notNull(),
-    status: invoiceStatus("status").default("processing").notNull(),
-    chargedAt: timestamp("charged_at"),
+    lineItems: jsonb("line_items", Schema.Array(LineItem)).notNull(),
+    status: pgEnum("status", invoiceStatuses).default("processing").notNull(),
+    chargedAt: datetime("charged_at"),
     orderId: id("order_id").notNull(),
   },
   (table) => [index().on(table.orderId)],

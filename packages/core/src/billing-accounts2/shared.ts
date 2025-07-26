@@ -60,7 +60,7 @@ export const deleteBillingAccount = SyncMutation(
   "deleteBillingAccount",
   Schema.Struct({
     id: NanoId,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );
 
@@ -109,6 +109,6 @@ export const deleteBillingAccountManagerAuthorization = SyncMutation(
   "deleteBillingAccountManagerAuthorization",
   Schema.Struct({
     id: NanoId,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );

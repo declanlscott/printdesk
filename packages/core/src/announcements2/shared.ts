@@ -45,6 +45,6 @@ export const deleteAnnouncement = SyncMutation(
   "deleteAnnouncement",
   Schema.Struct({
     id: NanoId,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );

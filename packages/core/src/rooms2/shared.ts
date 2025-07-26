@@ -56,7 +56,7 @@ export const deleteRoom = SyncMutation(
   "deleteRoom",
   Schema.Struct({
     id: NanoId,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );
 export const restoreRoom = SyncMutation(

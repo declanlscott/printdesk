@@ -277,6 +277,6 @@ export const deleteProduct = SyncMutation(
   "deleteProduct",
   Schema.Struct({
     id: NanoId,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );

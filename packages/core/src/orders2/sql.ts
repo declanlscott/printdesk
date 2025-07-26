@@ -1,7 +1,7 @@
 import { isNull } from "drizzle-orm";
-import { index, pgView, timestamp, varchar } from "drizzle-orm/pg-core";
+import { index, pgView, varchar } from "drizzle-orm/pg-core";
 
-import { customJsonb, id, tenantTable } from "../database2/constructors";
+import { datetime, id, jsonb, tenantTable } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
   activeOrdersViewName,
@@ -19,14 +19,14 @@ export const ordersTable = tenantTable(
     operatorId: id("operator_id"),
     productId: id("product_id").notNull(),
     billingAccountId: id("billing_account_id").notNull(),
-    attributes: customJsonb("attributes", OrderAttributes).notNull(),
+    attributes: jsonb("attributes", OrderAttributes).notNull(),
     workflowStatus: varchar("workflow_status", {
       length: Constants.VARCHAR_LENGTH,
     }).notNull(),
     deliverTo: varchar("deliver_to", {
       length: Constants.VARCHAR_LENGTH,
     }).notNull(),
-    approvedAt: timestamp("approved_at"),
+    approvedAt: datetime("approved_at"),
   },
   (table) => [index().on(table.customerId), index().on(table.billingAccountId)],
 );

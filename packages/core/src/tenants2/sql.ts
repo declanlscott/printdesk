@@ -1,16 +1,11 @@
-import {
-  pgTable,
-  timestamp,
-  uniqueIndex,
-  uuid,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 
 import {
-  customEnum,
-  customJsonb,
+  datetime,
   id,
   idPrimaryKey,
+  jsonb,
+  pgEnum,
   timestamps,
   version,
 } from "../database2/constructors";
@@ -26,16 +21,15 @@ import {
 
 import type { InferFromTable } from "../database2/shared";
 
-const licenseStatus = (name: string) => customEnum(name, licenseStatuses);
 export const licensesTable = pgTable(licensesTableName, {
   key: uuid("key").defaultRandom().primaryKey(),
   tenantId: id("tenant_id").unique(),
-  status: licenseStatus("status").notNull().default("active"),
+  status: pgEnum("status", licenseStatuses).notNull().default("active"),
 });
 export type LicensesTable = typeof licensesTable;
 export type License = InferFromTable<LicensesTable>;
 
-const tenantStatus = (name: string) => customEnum(name, tenantStatuses);
+const tenantStatus = (name: string) => pgEnum(name, tenantStatuses);
 
 export const tenantsTable = pgTable(
   tenantsTableName,
@@ -56,12 +50,9 @@ export type Tenant = InferFromTable<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
   tenantId: id("tenant_id").primaryKey(),
-  infraProgramInput: customJsonb(
-    "infra_program_input",
-    InfraProgramInput,
-  ).notNull(),
+  infraProgramInput: jsonb("infra_program_input", InfraProgramInput).notNull(),
   apiKey: varchar("api_key"),
-  lastPapercutSyncAt: timestamp("last_papercut_sync_at"),
+  lastPapercutSyncAt: datetime("last_papercut_sync_at"),
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;

@@ -198,7 +198,7 @@ export const ordersTable = SyncTable<OrdersTable>()(
       Schema.maxLength(Constants.VARCHAR_LENGTH),
     ),
     deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-    approvedAt: Schema.NullOr(Schema.Date),
+    approvedAt: Schema.NullOr(Schema.DateTimeUtc),
   }),
   ["create", "read", "update", "delete"],
 );
@@ -235,7 +235,7 @@ export const approveOrder = SyncMutation(
   Schema.extend(
     ordersTable.Schema.pick("id", "updatedAt"),
     Schema.Struct({
-      approvedAt: Schema.Date,
+      approvedAt: Schema.DateTimeUtc,
     }),
   ),
 );
@@ -249,6 +249,6 @@ export const deleteOrder = SyncMutation(
   "deleteOrder",
   Schema.Struct({
     id: NanoId,
-    deletedAt: Schema.Date,
+    deletedAt: Schema.DateTimeUtc,
   }),
 );

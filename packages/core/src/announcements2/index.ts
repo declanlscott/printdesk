@@ -166,8 +166,8 @@ export namespace Announcements {
         const delete_ = Sync.Mutation(
           deleteAnnouncement,
           () => AccessControl.permission("announcements:delete"),
-          ({ id }, session) =>
-            repository.deleteById(id, new Date(), session.tenantId),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
         );
 
         return { create, update, delete: delete_ } as const;

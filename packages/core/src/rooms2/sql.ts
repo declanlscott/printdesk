@@ -12,12 +12,7 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-import {
-  customEnum,
-  id,
-  tenantTable,
-  version,
-} from "../database2/constructors";
+import { id, pgEnum, tenantTable, version } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
   activePublishedRoomDeliveryOptionsViewName,
@@ -33,12 +28,11 @@ import {
 
 import type { InferFromTable, InferFromView } from "../database2/shared";
 
-const roomStatus = (name: string) => customEnum(name, roomStatuses);
 export const roomsTable = tenantTable(
   roomsTableName,
   {
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    status: roomStatus("status").notNull(),
+    status: pgEnum("status", roomStatuses).notNull(),
     details: text("details"),
   },
   (table) => [
@@ -63,13 +57,11 @@ export const activePublishedRoomsView = pgView(activePublishedRoomsViewName).as(
 export type ActivePublishedRoomsView = typeof activePublishedRoomsView;
 export type ActivePublishedRoom = InferFromView<ActivePublishedRoomsView>;
 
-const workflowStatusType = (name: string) =>
-  customEnum(name, workflowStatusTypes);
 export const workflowStatusesTable = pgTable(
   workflowStatusesTableName,
   {
     id: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    type: workflowStatusType("type").notNull(),
+    type: pgEnum("type", workflowStatusTypes).notNull(),
     charging: boolean("charging").notNull(),
     color: varchar("color", { length: 9 }),
     index: smallint("index").notNull(),

@@ -60,7 +60,7 @@ export const tenantMetadataTable = NonSyncTable<TenantMetadataTable>()(
     tenantId: NanoId,
     infraProgramInput: InfraProgramInput,
     apiKey: Schema.NullOr(Schema.String),
-    lastPapercutSyncAt: Schema.NullOr(Schema.Date),
+    lastPapercutSyncAt: Schema.NullOr(Schema.DateTimeUtc),
     ...Timestamps.fields,
   }),
   [],

@@ -1,12 +1,7 @@
 import { eq, isNull } from "drizzle-orm";
 import { index, pgView, varchar } from "drizzle-orm/pg-core";
 
-import {
-  customEnum,
-  customJsonb,
-  id,
-  tenantTable,
-} from "../database2/constructors";
+import { id, jsonb, pgEnum, tenantTable } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
   activeProductsViewName,
@@ -18,15 +13,13 @@ import {
 
 import type { InferFromTable, InferFromView } from "../database2/shared";
 
-const productStatus = (name: string) => customEnum(name, productStatuses);
-
 export const productsTable = tenantTable(
   productsTableName,
   {
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    status: productStatus("status").notNull(),
+    status: pgEnum("status", productStatuses).notNull(),
     roomId: id("room_id").notNull(),
-    config: customJsonb("config", ProductConfiguration).notNull(),
+    config: jsonb("config", ProductConfiguration).notNull(),
   },
   (table) => [index().on(table.status), index().on(table.roomId)],
 );

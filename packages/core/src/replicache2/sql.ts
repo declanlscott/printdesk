@@ -10,7 +10,7 @@ import {
 import { Schema } from "effect";
 
 import { tenantIdColumns } from "../database/tables";
-import { customJsonb, id, timestamps } from "../database2/constructors";
+import { id, jsonb, timestamps } from "../database2/constructors";
 import {
   replicacheClientGroupsTableName,
   replicacheClientsTableName,
@@ -23,7 +23,7 @@ import type { InferSelectModel } from "drizzle-orm";
 
 export const replicacheMetaTable = pgTable(replicacheMetaTableName, {
   key: text("key").primaryKey(),
-  value: customJsonb("value", Schema.Any).notNull(),
+  value: jsonb("value", Schema.Any).notNull(),
 });
 export type ReplicacheMetaTable = typeof replicacheMetaTable;
 export type ReplicacheMeta = InferSelectModel<ReplicacheMetaTable>;
@@ -72,7 +72,7 @@ export const replicacheClientViewsTable = pgTable(
     tenantId: tenantIdColumns.tenantId,
     clientGroupId: uuid("client_group_id").notNull(),
     version: integer("version").notNull(),
-    record: customJsonb("record", ReplicacheClientViewRecord).notNull(),
+    record: jsonb("record", ReplicacheClientViewRecord).notNull(),
     ...timestamps,
   },
   (table) => [

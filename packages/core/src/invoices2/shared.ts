@@ -23,7 +23,7 @@ export const invoicesTable = SyncTable<InvoicesTable>()(
     ...TenantTable.fields,
     lineItems: Schema.Array(LineItem),
     status: Schema.Literal(...invoiceStatuses),
-    chargedAt: Schema.NullOr(Schema.Date),
+    chargedAt: Schema.NullOr(Schema.DateTimeUtc),
     orderId: NanoId,
   }),
   ["create", "read"],

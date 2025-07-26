@@ -64,39 +64,45 @@ export const replicacheClientViewsTable =
     [],
   );
 
-export const MutationV0 = Schema.Struct({
+export const ReplicacheMutationV0 = Schema.Struct({
   name: Schema.String,
   args: Schema.Any,
   id: Schema.Number,
   timestamp: Schema.Number,
 });
-export type MutationV0 = Schema.Schema.Type<typeof MutationV0>;
+export type ReplicacheMutationV0 = Schema.Schema.Type<
+  typeof ReplicacheMutationV0
+>;
 
-export const MutationV1 = Schema.Struct({
-  ...MutationV0.fields,
+export const ReplicacheMutationV1 = Schema.Struct({
+  ...ReplicacheMutationV0.fields,
   clientID: Schema.UUID,
 });
-export type MutationV1 = Schema.Schema.Type<typeof MutationV1>;
+export type ReplicacheMutationV1 = Schema.Schema.Type<
+  typeof ReplicacheMutationV1
+>;
 
-export const PushRequest = Schema.Union(
+export const ReplicachePushRequest = Schema.Union(
   Schema.Struct({
     pushVersion: Schema.Literal(0),
     clientID: Schema.UUID,
-    mutations: Schema.Array(MutationV0),
+    mutations: Schema.Array(ReplicacheMutationV0),
     profileID: Schema.String,
     schemaVersion: Schema.String,
   }),
   Schema.Struct({
     pushVersion: Schema.Literal(1),
     clientGroupID: Schema.UUID,
-    mutations: Schema.Array(MutationV1),
+    mutations: Schema.Array(ReplicacheMutationV1),
     profileID: Schema.String,
     schemaVersion: Schema.String,
   }),
 );
-export type PushRequest = Schema.Schema.Type<typeof PushRequest>;
+export type ReplicachePushRequest = Schema.Schema.Type<
+  typeof ReplicachePushRequest
+>;
 
-export const PullRequest = Schema.Union(
+export const ReplicachePullRequest = Schema.Union(
   Schema.Struct({
     pullVersion: Schema.Literal(0),
     schemaVersion: Schema.String,
@@ -112,4 +118,6 @@ export const PullRequest = Schema.Union(
     clientGroupID: Schema.UUID,
   }),
 );
-export type PullRequest = Schema.Schema.Type<typeof PullRequest>;
+export type ReplicachePullRequest = Schema.Schema.Type<
+  typeof ReplicachePullRequest
+>;

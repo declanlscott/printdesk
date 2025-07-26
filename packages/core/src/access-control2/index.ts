@@ -183,35 +183,35 @@ export namespace AccessControl {
     "AccessDeniedError",
   ) {}
 
-  export type Policy<TError = never, TRequirements = never> = Effect.Effect<
+  export type Policy<TError = never, TContext = never> = Effect.Effect<
     void,
     AccessDeniedError | TError,
-    Principal | TRequirements
+    Principal | TContext
   >;
 
   export const enforce =
-    <TPolicyError, TPolicyRequirements>(
-      policy: Policy<TPolicyError, TPolicyRequirements>,
+    <TPolicyError, TPolicyContext>(
+      policy: Policy<TPolicyError, TPolicyContext>,
     ) =>
-    <TSuccess, TError, TRequirements>(
-      self: Effect.Effect<TSuccess, TError, TRequirements>,
+    <TSuccess, TError, TContext>(
+      self: Effect.Effect<TSuccess, TError, TContext>,
     ) =>
       Effect.zipRight(policy, self);
 
-  export const some = <TError, TRequirements>(
-    ...policies: NonEmptyReadonlyArray<Policy<TError, TRequirements>>
-  ): Policy<TError, TRequirements> => Effect.firstSuccessOf(policies);
+  export const some = <TError, TContext>(
+    ...policies: NonEmptyReadonlyArray<Policy<TError, TContext>>
+  ): Policy<TError, TContext> => Effect.firstSuccessOf(policies);
 
-  export const every = <TError, TRequirements>(
-    ...policies: NonEmptyReadonlyArray<Policy<TError, TRequirements>>
-  ): Policy<TError, TRequirements> =>
+  export const every = <TError, TContext>(
+    ...policies: NonEmptyReadonlyArray<Policy<TError, TContext>>
+  ): Policy<TError, TContext> =>
     Effect.all(policies, { concurrency: 1, discard: true });
 
-  export const policy = <TError, TRequirements>(
+  export const policy = <TError, TContext>(
     predicate: (
       principal: Principal["Type"],
-    ) => Effect.Effect<boolean, TError, TRequirements>,
-  ): Policy<TError, TRequirements> =>
+    ) => Effect.Effect<boolean, TError, TContext>,
+  ): Policy<TError, TContext> =>
     Effect.gen(function* () {
       const principal = yield* Principal;
 

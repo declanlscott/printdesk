@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { Cost, HexColor, NanoId } from "../utils2/shared";
 
@@ -38,18 +39,30 @@ export const activePublishedRoomsView = View<ActivePublishedRoomsView>()(
   activePublishedRoomsViewName,
   roomsTable.Schema,
 );
-export const CreateRoom = roomsTable.Schema.omit("deletedAt", "tenantId");
-export const UpdateRoom = Schema.extend(
-  roomsTable.Schema.pick("id", "updatedAt"),
-  roomsTable.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(
-    Schema.partial,
+export const createRoom = SyncMutation(
+  "createRoom",
+  roomsTable.Schema.omit("deletedAt", "tenantId"),
+);
+export const updateRoom = SyncMutation(
+  "updateRoom",
+  Schema.extend(
+    roomsTable.Schema.pick("id", "updatedAt"),
+    roomsTable.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(
+      Schema.partial,
+    ),
   ),
 );
-export const DeleteRoom = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});
-export const RestoreRoom = roomsTable.Schema.pick("id");
+export const deleteRoom = SyncMutation(
+  "deleteRoom",
+  Schema.Struct({
+    id: NanoId,
+    deletedAt: Schema.Date,
+  }),
+);
+export const restoreRoom = SyncMutation(
+  "restoreRoom",
+  roomsTable.Schema.pick("id"),
+);
 
 export const workflowStatusTypes = [
   "Review",
@@ -137,10 +150,13 @@ export const Workflow = Schema.Array(
       "Workflow must have exactly one status of type 'New'",
   ),
 );
-export const SetWorkflow = Schema.Struct({
-  workflow: Workflow,
-  roomId: NanoId,
-});
+export const setWorkflow = SyncMutation(
+  "setWorkflow",
+  Schema.Struct({
+    workflow: Workflow,
+    roomId: NanoId,
+  }),
+);
 
 export const deliveryOptionsTableName = "delivery_options";
 export const deliveryOptionsTable = SyncTable<DeliveryOptionsTable>()(
@@ -177,7 +193,10 @@ export const DeliveryOptions = Schema.Array(
       "Delivery option names must be unique",
   ),
 );
-export const SetDeliveryOptions = Schema.Struct({
-  options: DeliveryOptions,
-  roomId: NanoId,
-});
+export const setDeliveryOptions = SyncMutation(
+  "setDeliveryOptions",
+  Schema.Struct({
+    options: DeliveryOptions,
+    roomId: NanoId,
+  }),
+);

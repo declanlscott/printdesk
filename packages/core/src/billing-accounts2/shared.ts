@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { SyncTable, TenantTable, Timestamps, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { Cost, NanoId } from "../utils2/shared";
 
 import type {
@@ -43,19 +44,25 @@ export const activeBillingAccountsView = View<ActiveBillingAccountsView>()(
   activeBillingAccountsViewName,
   billingAccountsTable.Schema,
 );
-export const UpdateBillingAccount = Schema.extend(
-  billingAccountsTable.Schema.pick("id", "updatedAt"),
-  billingAccountsTable.Schema.omit(
-    ...Struct.keys(TenantTable.fields),
-    "name",
-    "origin",
-    "papercutAccountId",
-  ).pipe(Schema.partial),
+export const updateBillingAccount = SyncMutation(
+  "updateBillingAccount",
+  Schema.extend(
+    billingAccountsTable.Schema.pick("id", "updatedAt"),
+    billingAccountsTable.Schema.omit(
+      ...Struct.keys(TenantTable.fields),
+      "name",
+      "origin",
+      "papercutAccountId",
+    ).pipe(Schema.partial),
+  ),
 );
-export const DeleteBillingAccount = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});
+export const deleteBillingAccount = SyncMutation(
+  "deleteBillingAccount",
+  Schema.Struct({
+    id: NanoId,
+    deletedAt: Schema.Date,
+  }),
+);
 
 export const billingAccountCustomerAuthorizationsTableName =
   "billing_account_customer_authorizations";
@@ -75,15 +82,6 @@ export const activeBillingAccountCustomerAuthorizationsView =
     activeBillingAccountCustomerAuthorizationsViewName,
     billingAccountCustomerAuthorizationsTable.Schema,
   );
-export const CreateBillingAccountCustomerAuthorization =
-  billingAccountCustomerAuthorizationsTable.Schema.omit(
-    "deletedAt",
-    "tenantId",
-  );
-export const DeleteBillingAccountCustomerAuthorization = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});
 
 export const billingAccountManagerAuthorizationsTableName =
   "billing_account_manager_authorizations";
@@ -103,9 +101,14 @@ export const activeBillingAccountManagerAuthorizationsView =
     activeBillingAccountManagerAuthorizationsViewName,
     billingAccountManagerAuthorizationsTable.Schema,
   );
-export const CreateBillingAccountManagerAuthorization =
-  billingAccountManagerAuthorizationsTable.Schema.omit("deletedAt", "tenantId");
-export const DeleteBillingAccountManagerAuthorization = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});
+export const createBillingAccountManagerAuthorization = SyncMutation(
+  "createBillingAccountManagerAuthorization",
+  billingAccountManagerAuthorizationsTable.Schema.omit("deletedAt", "tenantId"),
+);
+export const deleteBillingAccountManagerAuthorization = SyncMutation(
+  "deleteBillingAccountManagerAuthorization",
+  Schema.Struct({
+    id: NanoId,
+    deletedAt: Schema.Date,
+  }),
+);

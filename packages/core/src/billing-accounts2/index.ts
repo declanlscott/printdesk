@@ -4,7 +4,14 @@ import { Array, Effect } from "effect";
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
+import { Sync } from "../sync2";
 import { activeUsersView } from "../users2/sql";
+import {
+  createBillingAccountManagerAuthorization,
+  deleteBillingAccount,
+  deleteBillingAccountManagerAuthorization,
+  updateBillingAccount,
+} from "./shared";
 import {
   activeBillingAccountCustomerAuthorizationsView,
   activeBillingAccountManagerAuthorizationsView,
@@ -410,6 +417,32 @@ export namespace BillingAccounts {
     },
   ) {}
 
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/BillingAccounts/SyncMutations",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const update = Sync.Mutation(
+          updateBillingAccount,
+          () => AccessControl.permission("billing_accounts:update"),
+          ({ id, ...billingAccount }, session) =>
+            repository.updateById(id, billingAccount, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteBillingAccount,
+          () => AccessControl.permission("billing_accounts:delete"),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        return { update, delete: delete_ } as const;
+      }),
+    },
+  ) {}
+
   export class CustomerAuthorizationsRepository extends Effect.Service<CustomerAuthorizationsRepository>()(
     "@printdesk/core/billing-accounts/CustomerAuthorizationsRepository",
     {
@@ -680,6 +713,38 @@ export namespace BillingAccounts {
           findByIds,
           deleteById,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class ManagerAuthorizationsSyncMutations extends Effect.Service<ManagerAuthorizationsSyncMutations>()(
+    "@printdesk/core/billing-accounts/ManagerAuthorizationsSyncMutations",
+    {
+      dependencies: [ManagerAuthorizationsRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ManagerAuthorizationsRepository;
+
+        const create = Sync.Mutation(
+          createBillingAccountManagerAuthorization,
+          () =>
+            AccessControl.permission(
+              "billing_account_manager_authorizations:create",
+            ),
+          (authorization, { tenantId }) =>
+            repository.create({ ...authorization, tenantId }),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteBillingAccountManagerAuthorization,
+          () =>
+            AccessControl.permission(
+              "billing_account_manager_authorizations:delete",
+            ),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        return { create, delete: delete_ } as const;
       }),
     },
   ) {}

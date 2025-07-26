@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { NanoId } from "../utils2/shared";
 
 import type { ActiveCommentsView, CommentsTable } from "./sql";
@@ -24,22 +25,27 @@ export const activeCommentsView = View<ActiveCommentsView>()(
   commentsTable.Schema,
 );
 
-export const CreateComment = commentsTable.Schema.omit(
-  "authorId",
-  "deletedAt",
-  "tenantId",
+export const createComment = SyncMutation(
+  "createComment",
+  commentsTable.Schema.omit("authorId", "deletedAt", "tenantId"),
 );
 
-export const UpdateComment = Schema.extend(
-  commentsTable.Schema.pick("id", "orderId", "updatedAt"),
-  commentsTable.Schema.omit(
-    ...Struct.keys(TenantTable.fields),
-    "orderId",
-    "authorId",
-  ).pipe(Schema.partial),
+export const updateComment = SyncMutation(
+  "updateComment",
+  Schema.extend(
+    commentsTable.Schema.pick("id", "orderId", "updatedAt"),
+    commentsTable.Schema.omit(
+      ...Struct.keys(TenantTable.fields),
+      "orderId",
+      "authorId",
+    ).pipe(Schema.partial),
+  ),
 );
 
-export const DeleteComment = Schema.Struct({
-  ...commentsTable.Schema.pick("id", "orderId").fields,
-  deletedAt: Schema.Date,
-});
+export const deleteComment = SyncMutation(
+  "deleteComment",
+  Schema.Struct({
+    ...commentsTable.Schema.pick("id", "orderId").fields,
+    deletedAt: Schema.Date,
+  }),
+);

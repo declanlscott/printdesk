@@ -1,8 +1,18 @@
 import { and, eq, gte, inArray, notInArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
+import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
+import { Sync } from "../sync2";
+import {
+  createRoom,
+  deleteRoom,
+  restoreRoom,
+  setDeliveryOptions,
+  setWorkflow,
+  updateRoom,
+} from "./shared";
 import {
   activePublishedRoomDeliveryOptionsView,
   activePublishedRoomsView,
@@ -132,8 +142,47 @@ export namespace Rooms {
     },
   ) {}
 
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/rooms/SyncMutations",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const create = Sync.Mutation(
+          createRoom,
+          () => AccessControl.permission("rooms:create"),
+          (room, { tenantId }) => repository.create({ ...room, tenantId }),
+        );
+
+        const update = Sync.Mutation(
+          updateRoom,
+          () => AccessControl.permission("rooms:update"),
+          ({ id, ...room }, session) =>
+            repository.updateById(id, room, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteRoom,
+          () => AccessControl.permission("rooms:delete"),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        const restore = Sync.Mutation(
+          restoreRoom,
+          () => AccessControl.permission("rooms:delete"),
+          ({ id }, session) =>
+            repository.updateById(id, { deletedAt: null }, session.tenantId),
+        );
+
+        return { create, update, delete: delete_, restore } as const;
+      }),
+    },
+  ) {}
+
   export class WorkflowRepository extends Effect.Service<WorkflowRepository>()(
-    "@printdesk/core/Rooms/WorkflowRepository",
+    "@printdesk/core/rooms/WorkflowRepository",
     {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
@@ -233,8 +282,27 @@ export namespace Rooms {
     },
   ) {}
 
+  export class WorkflowSyncMutations extends Effect.Service<WorkflowSyncMutations>()(
+    "@printdesk/core/rooms/WorkflowSyncMutations",
+    {
+      dependencies: [WorkflowRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* WorkflowRepository;
+
+        const set = Sync.Mutation(
+          setWorkflow,
+          () => AccessControl.permission("workflow_statuses:create"),
+          ({ roomId, workflow }, session) =>
+            repository.upsert(workflow, roomId, session.tenantId),
+        );
+
+        return { set } as const;
+      }),
+    },
+  ) {}
+
   export class DeliveryOptionsRepository extends Effect.Service<DeliveryOptionsRepository>()(
-    "@printdesk/core/Rooms/DeliveryOptionsRepository",
+    "@printdesk/core/rooms/DeliveryOptionsRepository",
     {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
@@ -333,6 +401,25 @@ export namespace Rooms {
           getPublishedRoomMetadata,
           findByIds,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class DeliveryOptionsSyncMutations extends Effect.Service<DeliveryOptionsSyncMutations>()(
+    "@printdesk/core/rooms/DeliveryOptionsSyncMutations",
+    {
+      dependencies: [DeliveryOptionsRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* DeliveryOptionsRepository;
+
+        const set = Sync.Mutation(
+          setDeliveryOptions,
+          () => AccessControl.permission("delivery_options:create"),
+          ({ options, roomId }, session) =>
+            repository.upsert(options, roomId, session.tenantId),
+        );
+
+        return { set } as const;
       }),
     },
   ) {}

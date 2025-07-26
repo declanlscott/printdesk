@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { NonSyncTable, SyncTable, Timestamps } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { NanoId } from "../utils2/shared";
 
@@ -37,10 +38,13 @@ export const tenantsTable = SyncTable<TenantsTable>()(
   }),
   ["read", "update"],
 );
-export const UpdateTenant = Schema.extend(
-  tenantsTable.Schema.pick("id", "updatedAt"),
-  tenantsTable.Schema.omit("id", ...Struct.keys(Timestamps.fields)).pipe(
-    Schema.partial,
+export const updateTenant = SyncMutation(
+  "updateTenant",
+  Schema.extend(
+    tenantsTable.Schema.pick("id", "updatedAt"),
+    tenantsTable.Schema.omit("id", ...Struct.keys(Timestamps.fields)).pipe(
+      Schema.partial,
+    ),
   ),
 );
 

@@ -5,6 +5,8 @@ import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { identityProvidersTable } from "../identity-providers2/sql";
+import { Sync } from "../sync2";
+import { updateTenant } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -140,6 +142,24 @@ export namespace Tenants {
         );
 
         return { isSubdomainAvailable } as const;
+      }),
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/tenants/SyncMutations",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const update = Sync.Mutation(
+          updateTenant,
+          () => AccessControl.permission("tenants:update"),
+          (tenant, session) => repository.updateById(session.tenantId, tenant),
+        );
+
+        return { update } as const;
       }),
     },
   ) {}

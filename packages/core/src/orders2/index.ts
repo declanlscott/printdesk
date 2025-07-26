@@ -2,13 +2,22 @@ import { and, eq, getTableColumns, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { BillingAccounts } from "../billing-accounts2";
 import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
 import { Database } from "../database2";
 import { workflowStatusesTable } from "../rooms2/sql";
+import { Sync } from "../sync2";
 import { activeUsersView } from "../users2/sql";
+import {
+  approveOrder,
+  createOrder,
+  deleteOrder,
+  editOrder,
+  transitionOrder,
+} from "./shared";
 import { activeOrdersView, ordersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -381,6 +390,83 @@ export namespace Orders {
           canTransition,
           canDelete,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/orders/SyncMutations",
+    {
+      dependencies: [Policy.Default, BillingAccounts.Policy.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+        const policy = yield* Policy;
+        const billingAccountsPolicy = yield* BillingAccounts.Policy;
+
+        const create = Sync.Mutation(
+          createOrder,
+          ({ billingAccountId }) =>
+            AccessControl.some(
+              AccessControl.permission("orders:create"),
+              billingAccountsPolicy.hasActiveAuthorization(billingAccountId),
+            ),
+          (order, { tenantId }) =>
+            // TODO: Verify workflow status is correct
+            repository.create({ ...order, tenantId }),
+        );
+
+        const edit = Sync.Mutation(
+          editOrder,
+          ({ id }) =>
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permission("orders:update"),
+                policy.isCustomer(id),
+              ),
+              policy.canEdit(id),
+            ),
+          ({ id, ...order }, session) =>
+            repository.updateById(id, order, session.tenantId),
+        );
+
+        const approve = Sync.Mutation(
+          approveOrder,
+          ({ id }) =>
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permission("orders:update"),
+                policy.hasActiveManagerAuthorization(id),
+              ),
+              policy.canApprove(id),
+            ),
+          ({ id, ...order }, session) =>
+            // TODO: Transition to first "New" status
+            repository.updateById(id, order, session.tenantId),
+        );
+
+        const transition = Sync.Mutation(
+          transitionOrder,
+          ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("orders:update"),
+              policy.canTransition(id),
+            ),
+          ({ id, ...order }, session) =>
+            repository.updateById(id, order, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteOrder,
+          ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("orders:delete"),
+              policy.canDelete(id),
+            ),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        return { create, edit, approve, transition, delete: delete_ } as const;
       }),
     },
   ) {}

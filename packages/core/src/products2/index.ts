@@ -1,7 +1,10 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
+import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
+import { Sync } from "../sync2";
+import { createProduct, deleteProduct, updateProduct } from "./shared";
 import {
   activeProductsView,
   activePublishedProductsView,
@@ -139,6 +142,39 @@ export namespace Products {
           deleteById,
           deleteByRoomId,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/products/SyncMutations",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const create = Sync.Mutation(
+          createProduct,
+          () => AccessControl.permission("products:create"),
+          (product, { tenantId }) =>
+            repository.create({ ...product, tenantId }),
+        );
+
+        const update = Sync.Mutation(
+          updateProduct,
+          () => AccessControl.permission("products:update"),
+          ({ id, ...product }, session) =>
+            repository.updateById(id, product, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteProduct,
+          () => AccessControl.permission("products:delete"),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        return { create, update, delete: delete_ } as const;
       }),
     },
   ) {}

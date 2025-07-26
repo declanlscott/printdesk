@@ -1,6 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { NanoId } from "../utils2/shared";
 
 import type { ActiveUsersView, UsersTable } from "./sql";
@@ -37,22 +38,31 @@ export const activeUserView = View<ActiveUsersView>()(
   usersTable.Schema,
 );
 
-export const UpdateUser = Schema.extend(
-  usersTable.Schema.pick("id", "updatedAt"),
-  usersTable.Schema.omit(
-    ...Struct.keys(TenantTable.fields),
-    "origin",
-    "username",
-    "subjectId",
-    "identityProviderId",
-    "name",
-    "email",
-  ).pipe(Schema.partial),
+export const updateUser = SyncMutation(
+  "updateUser",
+  Schema.extend(
+    usersTable.Schema.pick("id", "updatedAt"),
+    usersTable.Schema.omit(
+      ...Struct.keys(TenantTable.fields),
+      "origin",
+      "username",
+      "subjectId",
+      "identityProviderId",
+      "name",
+      "email",
+    ).pipe(Schema.partial),
+  ),
 );
 
-export const DeleteUser = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});
+export const deleteUser = SyncMutation(
+  "deleteUser",
+  Schema.Struct({
+    id: NanoId,
+    deletedAt: Schema.Date,
+  }),
+);
 
-export const RestoreUser = usersTable.Schema.pick("id");
+export const restoreUser = SyncMutation(
+  "restoreUser",
+  usersTable.Schema.pick("id"),
+);

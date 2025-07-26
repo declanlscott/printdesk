@@ -1,7 +1,14 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
+import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
+import { Sync } from "../sync2";
+import {
+  createAnnouncement,
+  deleteAnnouncement,
+  updateAnnouncement,
+} from "./shared";
 import { activeAnnouncementsView, announcementsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -127,6 +134,43 @@ export namespace Announcements {
           deleteById,
           deleteByRoomId,
         };
+      }),
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/Announcements/SyncMutations",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const create = Sync.Mutation(
+          createAnnouncement,
+          () => AccessControl.permission("announcements:create"),
+          (announcement, session) =>
+            repository.create({
+              ...announcement,
+              authorId: session.userId,
+              tenantId: session.tenantId,
+            }),
+        );
+
+        const update = Sync.Mutation(
+          updateAnnouncement,
+          () => AccessControl.permission("announcements:update"),
+          ({ id, ...data }, session) =>
+            repository.updateById(id, data, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteAnnouncement,
+          () => AccessControl.permission("announcements:delete"),
+          ({ id }, session) =>
+            repository.deleteById(id, new Date(), session.tenantId),
+        );
+
+        return { create, update, delete: delete_ } as const;
       }),
     },
   ) {}

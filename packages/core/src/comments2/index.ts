@@ -7,7 +7,10 @@ import {
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
 import { Database } from "../database2";
+import { Orders } from "../orders2";
 import { activeOrdersView } from "../orders2/sql";
+import { Sync } from "../sync2";
+import { createComment, deleteComment, updateComment } from "./shared";
 import { activeCommentsView, commentsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -251,6 +254,58 @@ export namespace Comments {
         );
 
         return { isAuthor } as const;
+      }),
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/comments/SyncMutations",
+    {
+      dependencies: [Policy.Default, Orders.Policy.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+        const policy = yield* Policy;
+        const ordersPolicy = yield* Orders.Policy;
+
+        const create = Sync.Mutation(
+          createComment,
+          ({ orderId }) =>
+            AccessControl.some(
+              AccessControl.permission("comments:create"),
+              ordersPolicy.isCustomerOrManager(orderId),
+              ordersPolicy.hasActiveManagerAuthorization(orderId),
+            ),
+          (comment, session) =>
+            repository.create({
+              ...comment,
+              authorId: session.userId,
+              tenantId: session.tenantId,
+            }),
+        );
+
+        const update = Sync.Mutation(
+          updateComment,
+          ({ id }) =>
+            AccessControl.some(
+              AccessControl.permission("comments:update"),
+              policy.isAuthor(id),
+            ),
+          ({ id, ...comment }, session) =>
+            repository.updateById(id, comment, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteComment,
+          ({ id }) =>
+            AccessControl.some(
+              AccessControl.permission("comments:delete"),
+              policy.isAuthor(id),
+            ),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        return { create, update, delete: delete_ } as const;
       }),
     },
   ) {}

@@ -244,20 +244,20 @@ export namespace Database {
         const withTransaction = Effect.fn(
           "Database.TransactionManager.withTransaction",
         )(
-          <TSuccess, TError, TRequirements>(
+          <TSuccess, TError, TContext>(
             execute: (
               tx: Transaction["tx"],
-            ) => Effect.Effect<TSuccess, TError, TRequirements>,
+            ) => Effect.Effect<TSuccess, TError, TContext>,
             { shouldRetry = false }: { shouldRetry?: boolean } = {},
           ) =>
             Effect.gen(function* () {
-              const runtime = yield* Effect.runtime<TRequirements>();
+              const runtime = yield* Effect.runtime<TContext>();
               const runPromiseExit = Runtime.runPromiseExit(runtime);
 
               const transaction = Effect.async<
                 TSuccess,
                 TError | TransactionError,
-                TRequirements
+                TContext
               >((resume, signal) => {
                 db.transaction(async (tx) => {
                   const exit = await execute(tx).pipe(

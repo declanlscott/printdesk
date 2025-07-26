@@ -1,6 +1,7 @@
 import { Schema } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { NanoId } from "../utils2/shared";
 
 import type { ActiveInvoicesView, InvoicesTable } from "./sql";
@@ -34,11 +35,9 @@ export const activeInvoicesView = View<ActiveInvoicesView>()(
   invoicesTable.Schema,
 );
 
-export const CreateInvoice = invoicesTable.Schema.omit(
-  "status",
-  "chargedAt",
-  "deletedAt",
-  "tenantId",
+export const createInvoice = SyncMutation(
+  "createInvoice",
+  invoicesTable.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
 );
 
 export const Estimate = Schema.Struct({

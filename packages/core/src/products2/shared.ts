@@ -1,6 +1,7 @@
 import { Either, Schema, Struct } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { Cost, HexColor, NanoId } from "../utils2/shared";
 
@@ -256,16 +257,26 @@ export const activePublishedProductsView = View<ActivePublishedProductsView>()(
   activeProductsView.Schema,
 );
 
-export const CreateProduct = productsTable.Schema.omit("deletedAt", "tenantId");
+export const createProduct = SyncMutation(
+  "createProduct",
+  productsTable.Schema.omit("deletedAt", "tenantId"),
+);
 
-export const UpdateProduct = Schema.extend(
-  productsTable.Schema.pick("id", "updatedAt"),
-  productsTable.Schema.omit(...Struct.keys(TenantTable.fields), "roomId").pipe(
-    Schema.partial,
+export const updateProduct = SyncMutation(
+  "updateProduct",
+  Schema.extend(
+    productsTable.Schema.pick("id", "updatedAt"),
+    productsTable.Schema.omit(
+      ...Struct.keys(TenantTable.fields),
+      "roomId",
+    ).pipe(Schema.partial),
   ),
 );
 
-export const DeleteProduct = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});
+export const deleteProduct = SyncMutation(
+  "deleteProduct",
+  Schema.Struct({
+    id: NanoId,
+    deletedAt: Schema.Date,
+  }),
+);

@@ -1,12 +1,15 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
+import { AccessControl } from "../access-control2";
 import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
 import { Database } from "../database2";
 import { activeOrdersView } from "../orders2/sql";
+import { Sync } from "../sync2";
+import { createInvoice } from "./shared";
 import { activeInvoicesView, invoicesTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -153,6 +156,25 @@ export namespace Invoices {
           getActiveMetadataByOrderCustomerId,
           findByIds,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/invoices/SyncMutations",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const create = Sync.Mutation(
+          createInvoice,
+          () => AccessControl.permission("invoices:create"),
+          (invoice, { tenantId }) =>
+            repository.create({ ...invoice, tenantId }),
+        );
+
+        return { create } as const;
       }),
     },
   ) {}

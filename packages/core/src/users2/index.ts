@@ -4,6 +4,8 @@ import { Array, Effect } from "effect";
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
+import { Sync } from "../sync2";
+import { deleteUser, restoreUser, updateUser } from "./shared";
 import { activeUsersView, usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -215,6 +217,44 @@ export namespace Users {
             Effect.succeed(id === principal.userId),
           ),
       } as const,
+    },
+  ) {}
+
+  export class SyncMutations extends Effect.Service<SyncMutations>()(
+    "@printdesk/core/users/SyncMutations",
+    {
+      dependencies: [Policy.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+        const policy = yield* Policy;
+
+        const update = Sync.Mutation(
+          updateUser,
+          () => AccessControl.permission("users:update"),
+          ({ id, ...user }, session) =>
+            repository.updateById(id, user, session.tenantId),
+        );
+
+        const delete_ = Sync.Mutation(
+          deleteUser,
+          ({ id }) =>
+            AccessControl.some(
+              AccessControl.permission("users:delete"),
+              policy.isSelf(id),
+            ),
+          ({ id, deletedAt }, session) =>
+            repository.deleteById(id, deletedAt, session.tenantId),
+        );
+
+        const restore = Sync.Mutation(
+          restoreUser,
+          () => AccessControl.permission("users:delete"),
+          ({ id }, session) =>
+            repository.updateById(id, { deletedAt: null }, session.tenantId),
+        );
+
+        return { update, delete: delete_, restore } as const;
+      }),
     },
   ) {}
 }

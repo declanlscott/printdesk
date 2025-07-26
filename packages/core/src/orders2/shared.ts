@@ -1,6 +1,7 @@
 import { Either, Schema, Struct } from "effect";
 
 import { SyncTable, TenantTable, View } from "../database2/shared";
+import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { IsoDate, IsoTimestamp, NanoId } from "../utils2/shared";
 
@@ -208,39 +209,46 @@ export const activeOrdersView = View<ActiveOrdersView>()(
   ordersTable.Schema,
 );
 
-export const CreateOrder = ordersTable.Schema.omit(
-  "approvedAt",
-  "deletedAt",
-  "tenantId",
+export const createOrder = SyncMutation(
+  "createOrder",
+  ordersTable.Schema.omit("approvedAt", "deletedAt", "tenantId"),
 );
 
-export const EditOrder = Schema.extend(
-  ordersTable.Schema.pick("id", "updatedAt"),
-  ordersTable.Schema.omit(
-    ...Struct.keys(TenantTable.fields),
-    "customerId",
-    "managerId",
-    "operatorId",
-    "billingAccountId",
-    "workflowStatus",
-    "approvedAt",
-  ).pipe(Schema.partial),
+export const editOrder = SyncMutation(
+  "editOrder",
+  Schema.extend(
+    ordersTable.Schema.pick("id", "updatedAt"),
+    ordersTable.Schema.omit(
+      ...Struct.keys(TenantTable.fields),
+      "customerId",
+      "managerId",
+      "operatorId",
+      "billingAccountId",
+      "workflowStatus",
+      "approvedAt",
+    ).pipe(Schema.partial),
+  ),
 );
 
-export const ApproveOrder = Schema.extend(
-  ordersTable.Schema.pick("id", "updatedAt"),
+export const approveOrder = SyncMutation(
+  "approveOrder",
+  Schema.extend(
+    ordersTable.Schema.pick("id", "updatedAt"),
+    Schema.Struct({
+      approvedAt: Schema.Date,
+    }),
+  ),
+);
+
+export const transitionOrder = SyncMutation(
+  "transitionOrder",
+  ordersTable.Schema.pick("id", "updatedAt", "workflowStatus"),
+);
+
+export const deleteOrder = SyncMutation(
+  "deleteOrder",
   Schema.Struct({
-    approvedAt: Schema.Date,
+    id: NanoId,
+    deletedAt: Schema.Date,
   }),
 );
-
-export const TransitionOrder = ordersTable.Schema.pick(
-  "id",
-  "updatedAt",
-  "workflowStatus",
-);
-
-export const DeleteOrder = Schema.Struct({
-  id: NanoId,
-  deletedAt: Schema.Date,
-});

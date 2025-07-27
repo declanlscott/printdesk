@@ -20,18 +20,21 @@ import { Dsql } from "../aws2";
 import { Sst } from "../sst";
 import { Constants } from "../utils/constants";
 
-import type { ExtractTablesWithRelations, Logger } from "drizzle-orm";
+import type {
+  Logger as DrizzleLogger,
+  ExtractTablesWithRelations,
+} from "drizzle-orm";
 import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
 import type { PgTransaction } from "drizzle-orm/pg-core";
 
 export namespace Database {
-  export class ClientLogger extends Effect.Service<ClientLogger>()(
-    "@printdesk/core/database/ClientLogger",
+  export class Logger extends Effect.Service<Logger>()(
+    "@printdesk/core/database/Logger",
     {
       effect: Effect.runtime().pipe(
         Effect.map((runtime) => Runtime.runSync(runtime)),
         Effect.map(
-          (runSync): Logger => ({
+          (runSync): DrizzleLogger => ({
             logQuery: (query, params) =>
               runSync(
                 Effect.gen(function* () {
@@ -66,18 +69,17 @@ export namespace Database {
     "@printdesk/core/database/ConnectionTimeoutError",
   ) {}
 
+  /**
+   * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
+   *
+   * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
+   * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
+   * https://stackoverflow.com/a/16409293/749644
+   */
   export class TransactionError extends Data.TaggedError(
     "@printdesk/core/database/TransactionError",
   )<{
-    /**
-     * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
-     *
-     * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
-     * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
-     * https://stackoverflow.com/a/16409293/749644
-     */
-    readonly shouldRetry: boolean;
-    readonly cause: globalThis.Error;
+    readonly cause: globalThis.Error | DatabaseError;
   }> {}
 
   export class Database extends Effect.Service<Database>()(
@@ -96,7 +98,7 @@ export namespace Database {
             });
           }),
         ).pipe(Layer.provideMerge(Sst.Resource.layer)),
-        ClientLogger.Default,
+        Logger.Default,
       ],
       scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster;
@@ -160,7 +162,7 @@ export namespace Database {
           },
         );
 
-        const logger = yield* ClientLogger;
+        const logger = yield* Logger;
         const client = drizzle(pool, { logger });
 
         return {
@@ -230,13 +232,7 @@ export namespace Database {
             return matchTxError(error.cause);
 
           if (error instanceof DatabaseError)
-            return new TransactionError({
-              shouldRetry:
-                error.code ===
-                  Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
-                error.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE,
-              cause: error,
-            });
+            return new TransactionError({ cause: error });
 
           return null;
         };
@@ -252,7 +248,6 @@ export namespace Database {
           ) =>
             Effect.gen(function* () {
               const runtime = yield* Effect.runtime<TContext>();
-              const runPromiseExit = Runtime.runPromiseExit(runtime);
 
               const transaction = Effect.async<
                 TSuccess,
@@ -262,7 +257,7 @@ export namespace Database {
                 db.transaction(async (tx) => {
                   const exit = await execute(tx).pipe(
                     Effect.provide(Transaction.Default(tx)),
-                    runPromiseExit,
+                    Runtime.runPromiseExit(runtime),
                   );
 
                   Exit.match(exit, {
@@ -286,7 +281,6 @@ export namespace Database {
                   resume(
                     Effect.fail(
                       new TransactionError({
-                        shouldRetry: false,
                         cause: new globalThis.Error("Transaction interrupted"),
                       }),
                     ),
@@ -299,13 +293,7 @@ export namespace Database {
                 );
               });
 
-              if (!shouldRetry)
-                return yield* transaction.pipe(
-                  Effect.catchTag(
-                    "@printdesk/core/database/TransactionError",
-                    (error) => Effect.fail({ ...error, shouldRetry }),
-                  ),
-                );
+              if (!shouldRetry) return yield* transaction;
 
               const schedule = Schedule.recurs(
                 Constants.DB_TRANSACTION_MAX_RETRIES,
@@ -332,22 +320,14 @@ export namespace Database {
                   Predicate.isTagged(
                     error,
                     "@printdesk/core/database/TransactionError",
-                  ) && Predicate.isTruthy(error.shouldRetry),
+                  ) &&
+                  error.cause instanceof DatabaseError &&
+                  (error.cause.code ===
+                    Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
+                    error.cause.code ===
+                      Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE),
                 schedule,
-              }).pipe(
-                Effect.catchTag(
-                  "@printdesk/core/database/TransactionError",
-                  (error) =>
-                    Effect.fail({ ...error, shouldRetry: false } as const).pipe(
-                      Effect.tapError((error) =>
-                        Effect.logError(
-                          `[Database]: Failed to execute transaction after maximum number of retries, giving up.`,
-                          error,
-                        ),
-                      ),
-                    ),
-                ),
-              );
+              });
             }),
         );
 
@@ -361,7 +341,6 @@ export namespace Database {
                   resume(
                     Effect.fail(
                       new TransactionError({
-                        shouldRetry: false,
                         cause: new TransactionRollbackError(),
                       }),
                     ),
@@ -375,7 +354,6 @@ export namespace Database {
                     catch: (error) =>
                       matchTxError(error) ??
                       new TransactionError({
-                        shouldRetry: false,
                         cause:
                           error instanceof globalThis.Error
                             ? error

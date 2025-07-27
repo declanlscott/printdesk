@@ -8,5 +8,6 @@
   ],
   "tailwindCSS.experimental.classRegex": [
     ["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]
-  ]
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib"
 }

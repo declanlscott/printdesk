@@ -21,8 +21,8 @@
     "@printdesk/core": "workspace:*",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.44.3",
-    "effect": "^3.17.1",
-    "hono": "^4.8.5",
+    "effect": "^3.17.2",
+    "hono": "^4.8.9",
     "remeda": "^2.26.1",
     "replicache": "^15.3.0",
     "sst": "^3.17.10",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@aws-sdk/client-sts": "^3.848.0",
+    "@effect/language-service": "^0.31.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.5.1",
     "@microsoft/microsoft-graph-types": "^2.40.0",
     "@smithy/util-waiter": "^4.0.6",

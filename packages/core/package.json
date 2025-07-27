@@ -12,7 +12,7 @@
     "@aws-sdk/client-dynamodb": "^3.848.0",
     "@aws-sdk/client-eventbridge": "^3.848.0",
     "@aws-sdk/client-s3": "^3.850.0",
-    "@aws-sdk/client-sqs": "^3.848.0",
+    "@aws-sdk/client-sqs": "^3.854.0",
     "@aws-sdk/client-ssm": "^3.849.0",
     "@aws-sdk/cloudfront-signer": "^3.821.0",
     "@aws-sdk/lib-dynamodb": "^3.850.0",

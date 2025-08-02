@@ -25,7 +25,11 @@ import type {
   ExtractTablesWithRelations,
 } from "drizzle-orm";
 import type { NodePgQueryResultHKT } from "drizzle-orm/node-postgres";
-import type { PgTransaction } from "drizzle-orm/pg-core";
+import type {
+  AnyPgSelectQueryBuilder,
+  PgSelectDynamic,
+  PgTransaction,
+} from "drizzle-orm/pg-core";
 
 export namespace Database {
   export class Logger extends Effect.Service<Logger>()(
@@ -380,6 +384,26 @@ export namespace Database {
           }),
         );
 
+        const useDynamic = Effect.fn("Database.TransactionManager.useDynamic")(
+          <
+            TQueryBuilder extends AnyPgSelectQueryBuilder,
+            TDynamic extends PgSelectDynamic<TQueryBuilder>,
+          >(
+            callback: (tx: Transaction["tx"]) => TDynamic,
+          ) =>
+            Effect.serviceOption(Transaction).pipe(
+              Effect.flatMap(
+                Option.match({
+                  onSome: ({ tx }) => Effect.succeed(callback(tx)),
+                  onNone: () =>
+                    Effect.dieMessage(
+                      `"useDynamic" called outside of transaction scope`,
+                    ),
+                }),
+              ),
+            ),
+        );
+
         const afterTransaction = Effect.fn(
           "Database.TransactionManager.afterTransaction",
         )(
@@ -401,7 +425,12 @@ export namespace Database {
             ),
         );
 
-        return { withTransaction, useTransaction, afterTransaction } as const;
+        return {
+          withTransaction,
+          useTransaction,
+          useDynamic,
+          afterTransaction,
+        } as const;
       }),
     },
   ) {}

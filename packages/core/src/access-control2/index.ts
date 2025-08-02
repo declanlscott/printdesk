@@ -1,6 +1,6 @@
 import { Array, Context, Data, Effect, Schema, Struct } from "effect";
 
-import * as schema from "../database2/schema";
+import * as models from "../database2/models";
 
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
@@ -33,15 +33,15 @@ export namespace AccessControl {
       ),
     );
 
-  const syncTablePermissions = Object.values(schema)
+  const syncTablePermissions = Object.values(models)
     .filter((data) => data._tag === "@printdesk/core/database/SyncTable")
     .flatMap(({ permissions }) => permissions);
 
-  const nonSyncTablePermissions = Object.values(schema)
+  const nonSyncTablePermissions = Object.values(models)
     .filter((data) => data._tag === "@printdesk/core/database/NonSyncTable")
     .flatMap(({ permissions }) => permissions);
 
-  const viewPermissions = Object.values(schema)
+  const viewPermissions = Object.values(models)
     .filter((data) => data._tag === "@printdesk/core/database/View")
     .flatMap(({ permission }) => permission);
 
@@ -179,9 +179,9 @@ export namespace AccessControl {
     "@printdesk/core/access-control/Principal",
   )<Principal, PrincipalShape>() {}
 
-  export class AccessDeniedError extends Data.TaggedError(
-    "AccessDeniedError",
-  ) {}
+  export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
+    readonly message: string;
+  }> {}
 
   export type Policy<TError = never, TContext = never> = Effect.Effect<
     void,
@@ -211,12 +211,14 @@ export namespace AccessControl {
     predicate: (
       principal: Principal["Type"],
     ) => Effect.Effect<boolean, TError, TContext>,
+    message = "Access denied",
   ): Policy<TError, TContext> =>
     Effect.gen(function* () {
       const principal = yield* Principal;
 
       const access = yield* predicate(principal);
-      if (!access) yield* Effect.fail(new AccessDeniedError());
+      if (!access)
+        return yield* Effect.fail(new AccessDeniedError({ message }));
     });
 
   export const permission = (permission: Permission) =>

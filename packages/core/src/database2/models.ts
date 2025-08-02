@@ -1,3 +1,8 @@
+/**
+ * Exports every database model excluding replicache's since it depends on
+ * every other sync table.
+ */
+
 export {
   announcementsTable,
   activeAnnouncementsView,
@@ -22,12 +27,6 @@ export {
   activeProductsView,
   activePublishedProductsView,
 } from "../products2/shared";
-export {
-  replicacheMetaTable,
-  replicacheClientsTable,
-  replicacheClientViewsTable,
-  replicacheClientGroupsTable,
-} from "../replicache2/shared";
 export {
   roomsTable,
   activeRoomsView,

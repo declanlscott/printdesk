@@ -1,6 +1,6 @@
-import * as schema from "./schema";
+import * as models from "./models";
 
-export const syncTables = Object.values(schema).filter(
+export const syncTables = Object.values(models).filter(
   (data) => data._tag === "@printdesk/core/database/SyncTable",
 );
 export type SyncTable = (typeof syncTables)[number];
@@ -10,7 +10,7 @@ export type SyncTableByName<TName extends SyncTableName> = Extract<
   { name: TName }
 >;
 
-export const nonSyncTables = Object.values(schema).filter(
+export const nonSyncTables = Object.values(models).filter(
   (data) => data._tag === "@printdesk/core/database/NonSyncTable",
 );
 export type NonSyncTable = (typeof nonSyncTables)[number];
@@ -19,10 +19,3 @@ export type NonSyncTableByName<TName extends NonSyncTableName> = Extract<
   NonSyncTable,
   { name: TName }
 >;
-
-export const views = Object.values(schema).filter(
-  (data) => data._tag === "@printdesk/core/database/View",
-);
-export type View = (typeof views)[number];
-export type ViewName = View["name"];
-export type ViewByName<TName extends ViewName> = Extract<View, { name: TName }>;

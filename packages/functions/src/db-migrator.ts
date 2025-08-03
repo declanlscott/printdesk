@@ -25,15 +25,10 @@ type DrizzleMigration = {
   created_at: string;
 };
 
-const LambdaLayer = Layer.mergeAll(
-  Layer.effectDiscard(Database.Database.setupPoolListeners).pipe(
-    Layer.provideMerge(Database.Database.Default),
-  ),
-  Logger.defaultLayer,
-);
+const layer = Layer.mergeAll(Database.DatabaseLive, Logger.defaultLayer);
 
 export const handler = LambdaHandler.make({
-  layer: LambdaLayer,
+  layer,
   handler: () =>
     Logger.logInfo("Running database migrations ...").pipe(
       Effect.andThen(() =>

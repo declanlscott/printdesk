@@ -177,6 +177,10 @@ export namespace Database {
     },
   ) {}
 
+  export const DatabaseLive = Layer.effectDiscard(
+    Database.setupPoolListeners,
+  ).pipe(Layer.provideMerge(Database.Default));
+
   export interface AfterEffect {
     onSuccessOnly: boolean;
     effect: Effect.Effect<void>;
@@ -224,7 +228,7 @@ export namespace Database {
   export class TransactionManager extends Effect.Service<TransactionManager>()(
     "@printdesk/core/database/TransactionManager",
     {
-      dependencies: [Database.Default],
+      dependencies: [DatabaseLive],
       effect: Effect.gen(function* () {
         const db = yield* Database.client;
 

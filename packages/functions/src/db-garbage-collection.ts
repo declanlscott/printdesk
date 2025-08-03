@@ -1,7 +1,8 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
-import { Database } from "@printdesk/core/database2";
 import { Replicache } from "@printdesk/core/replicache2";
+import { Constants } from "@printdesk/core/utils/constants";
+import { paginate } from "@printdesk/core/utils2/shared";
 import { Array, Effect, Layer } from "effect";
 
 const layer = Layer.mergeAll(
@@ -9,7 +10,6 @@ const layer = Layer.mergeAll(
   Replicache.ClientsRepository.Default,
   Replicache.ClientViewsRepository.Default,
   Replicache.ClientViewMetadataRepository.Default,
-  Database.TransactionManager.Default,
   Logger.defaultLayer,
 );
 
@@ -17,8 +17,6 @@ export const handler = LambdaHandler.make({
   layer,
   handler: () =>
     Effect.gen(function* () {
-      const db = yield* Database.TransactionManager;
-
       const replicacheClientGroupsRepository =
         yield* Replicache.ClientGroupsRepository;
       const replicacheClientsRepository = yield* Replicache.ClientsRepository;
@@ -27,23 +25,29 @@ export const handler = LambdaHandler.make({
       const replicacheClientViewMetadataRepository =
         yield* Replicache.ClientViewMetadataRepository;
 
-      yield* db.withTransaction(() =>
-        Effect.gen(function* () {
-          const expiredGroupIds = yield* replicacheClientGroupsRepository
-            .deleteExpired()
-            .pipe(Effect.map(Array.map(({ id }) => id)));
+      const expiredGroupIds = yield* paginate(
+        replicacheClientGroupsRepository.deleteExpired(),
+        Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
+      ).pipe(Effect.map(Array.map(({ id }) => id)));
 
-          yield* Effect.all(
-            [
-              replicacheClientsRepository.deleteByGroupIds(expiredGroupIds),
-              replicacheClientViewsRepository.deleteByGroupIds(expiredGroupIds),
-              replicacheClientViewMetadataRepository.deleteByGroupIds(
-                expiredGroupIds,
-              ),
-            ],
-            { concurrency: "unbounded" },
-          );
-        }),
+      yield* Effect.all(
+        [
+          paginate(
+            replicacheClientsRepository.deleteByGroupIds(expiredGroupIds),
+            Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
+          ),
+          paginate(
+            replicacheClientViewsRepository.deleteByGroupIds(expiredGroupIds),
+            Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
+          ),
+          paginate(
+            replicacheClientViewMetadataRepository.deleteByGroupIds(
+              expiredGroupIds,
+            ),
+            Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
+          ),
+        ],
+        { concurrency: "unbounded" },
       );
     }),
 });

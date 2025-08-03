@@ -1,5 +1,6 @@
 import {
   and,
+  asc,
   eq,
   gt,
   inArray,
@@ -69,7 +70,17 @@ export namespace Replicache {
               db.useTransaction((tx) =>
                 tx
                   .delete(table)
-                  .where(lt(table.updatedAt, expiredAt))
+                  .where(
+                    inArray(
+                      table.id,
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(lt(table.updatedAt, expiredAt))
+                        .orderBy(asc(table.updatedAt))
+                        .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                    ),
+                  )
                   .returning(),
               ),
             ),
@@ -132,7 +143,17 @@ export namespace Replicache {
           db.useTransaction((tx) =>
             tx
               .delete(table)
-              .where(inArray(table.clientGroupId, clientGroupIds))
+              .where(
+                inArray(
+                  table.clientGroupId,
+                  tx
+                    .select({ id: table.clientGroupId })
+                    .from(table)
+                    .where(inArray(table.clientGroupId, clientGroupIds))
+                    .orderBy(asc(table.updatedAt))
+                    .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                ),
+              )
               .returning(),
           ),
         );
@@ -220,7 +241,16 @@ export namespace Replicache {
           db.useTransaction((tx) =>
             tx
               .delete(table)
-              .where(inArray(table.clientGroupId, clientGroupIds))
+              .where(
+                inArray(
+                  table.clientGroupId,
+                  tx
+                    .select({ id: table.clientGroupId })
+                    .from(table)
+                    .where(inArray(table.clientGroupId, clientGroupIds))
+                    .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                ),
+              )
               .returning(),
           ),
         );
@@ -275,7 +305,16 @@ export namespace Replicache {
           db.useTransaction((tx) =>
             tx
               .delete(table)
-              .where(inArray(table.clientGroupId, clientGroupIds))
+              .where(
+                inArray(
+                  table.clientGroupId,
+                  tx
+                    .select({ id: table.clientGroupId })
+                    .from(table)
+                    .where(inArray(table.clientGroupId, clientGroupIds))
+                    .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                ),
+              )
               .returning(),
           ),
         );

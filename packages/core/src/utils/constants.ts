@@ -50,6 +50,14 @@ export namespace Constants {
   export const ENTRA_ID = "entra_id";
   export const GOOGLE = "google";
 
+  /**
+   * - A transaction can modify up to 3,000 rows, regardless of the number of secondary indexes
+   * - The 3,000-row limit applies to all DML statements (INSERT, UPDATE, DELETE)
+   *
+   * See: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-unsupported-features.html#working-with-postgresql-compatibility-unsupported-limitations
+   */
+  export const DB_TRANSACTION_ROW_MODIFICATION_LIMIT = 3_000;
+
   export const DB_SCHEMA_VERSION = 1;
   export const DB_TRANSACTION_MAX_RETRIES = 10;
   export const POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE = "40001";
@@ -60,7 +68,7 @@ export namespace Constants {
   export const PAPERCUT_SERVER_PATH_PREFIX = "/papercut/server";
   export const PAPERCUT_WEB_SERVICES_API_PATH = "/rpc/api/xmlrpc";
 
-  export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
+  export const PAPERCUT_API_PAGINATION_LIMIT = 1_000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
 
   export const ASSETS_MIME_TYPES = [

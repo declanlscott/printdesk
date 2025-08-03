@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Chunk, Effect, Schema } from "effect";
 
 import { Constants } from "../utils/constants";
 
@@ -20,3 +20,24 @@ export const IsoDate = Schema.String.pipe(
 export const HexColor = Schema.String.pipe(
   Schema.pattern(Constants.HEX_COLOR_REGEX),
 );
+
+export type Page<TElement> = ReadonlyArray<TElement>;
+
+export const paginate = <TPageElement, TError, TContext>(
+  page: Effect.Effect<Page<TPageElement>, TError, TContext>,
+  size: number,
+) =>
+  Effect.gen(function* () {
+    const all = Chunk.empty<TPageElement>();
+    let currentPage: Page<TPageElement>;
+    let hasNextPage: boolean;
+    do {
+      currentPage = yield* page;
+
+      all.pipe(Chunk.append(currentPage));
+
+      hasNextPage = currentPage.length >= size;
+    } while (hasNextPage);
+
+    return Chunk.toReadonlyArray(all);
+  });

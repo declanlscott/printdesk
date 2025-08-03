@@ -19,7 +19,7 @@ import type {
 export const roomStatuses = ["draft", "published"] as const;
 export type RoomStatus = (typeof roomStatuses)[number];
 export const roomsTableName = "rooms";
-export const roomsTable = SyncTable<RoomsTable>()(
+export const rooms = SyncTable<RoomsTable>()(
   roomsTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -30,26 +30,24 @@ export const roomsTable = SyncTable<RoomsTable>()(
   ["create", "read", "update", "delete"],
 );
 export const activeRoomsViewName = `active_${roomsTableName}`;
-export const activeRoomsView = View<ActiveRoomsView>()(
+export const activeRooms = View<ActiveRoomsView>()(
   activeRoomsViewName,
-  roomsTable.Schema,
+  rooms.Schema,
 );
 export const activePublishedRoomsViewName = `active_published_${roomsTableName}`;
-export const activePublishedRoomsView = View<ActivePublishedRoomsView>()(
+export const activePublishedRooms = View<ActivePublishedRoomsView>()(
   activePublishedRoomsViewName,
-  roomsTable.Schema,
+  rooms.Schema,
 );
 export const createRoom = SyncMutation(
   "createRoom",
-  roomsTable.Schema.omit("deletedAt", "tenantId"),
+  rooms.Schema.omit("deletedAt", "tenantId"),
 );
 export const updateRoom = SyncMutation(
   "updateRoom",
   Schema.extend(
-    roomsTable.Schema.pick("id", "updatedAt"),
-    roomsTable.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(
-      Schema.partial,
-    ),
+    rooms.Schema.pick("id", "updatedAt"),
+    rooms.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(Schema.partial),
   ),
 );
 export const deleteRoom = SyncMutation(
@@ -59,10 +57,7 @@ export const deleteRoom = SyncMutation(
     deletedAt: Schema.DateTimeUtc,
   }),
 );
-export const restoreRoom = SyncMutation(
-  "restoreRoom",
-  roomsTable.Schema.pick("id"),
-);
+export const restoreRoom = SyncMutation("restoreRoom", rooms.Schema.pick("id"));
 
 export const workflowStatusTypes = [
   "Review",
@@ -109,7 +104,7 @@ export const defaultWorkflow = [
   },
 ] satisfies Array<Omit<WorkflowStatus, "index" | "roomId" | "tenantId">>;
 export const workflowStatusesTableName = "workflow_statuses";
-export const workflowStatusesTable = SyncTable<WorkflowStatusesTable>()(
+export const workflowStatuses = SyncTable<WorkflowStatusesTable>()(
   workflowStatusesTableName,
   Schema.Struct({
     id: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
@@ -123,14 +118,14 @@ export const workflowStatusesTable = SyncTable<WorkflowStatusesTable>()(
   ["create", "read"],
 );
 export const activePublishedRoomWorkflowStatusesViewName = `active_published_room_${workflowStatusesTableName}`;
-export const activePublishedRoomWorkflowStatusesView =
+export const activePublishedRoomWorkflowStatuses =
   View<ActivePublishedRoomWorkflowStatusesView>()(
     activePublishedRoomWorkflowStatusesViewName,
-    workflowStatusesTable.Schema,
+    workflowStatuses.Schema,
   );
 export const Workflow = Schema.Array(
   Schema.Struct({
-    ...workflowStatusesTable.Schema.omit("index", "roomId", "tenantId", "type")
+    ...workflowStatuses.Schema.omit("index", "roomId", "tenantId", "type")
       .fields,
     type: Schema.Literal(
       ...workflowStatusTypes.filter((type) => type !== "Review"),
@@ -159,7 +154,7 @@ export const setWorkflow = SyncMutation(
 );
 
 export const deliveryOptionsTableName = "delivery_options";
-export const deliveryOptionsTable = SyncTable<DeliveryOptionsTable>()(
+export const deliveryOptions = SyncTable<DeliveryOptionsTable>()(
   deliveryOptionsTableName,
   Schema.Struct({
     id: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
@@ -179,13 +174,13 @@ export const deliveryOptionsTable = SyncTable<DeliveryOptionsTable>()(
   ["create", "read"],
 );
 export const activePublishedRoomDeliveryOptionsViewName = `active_published_room_${deliveryOptionsTableName}`;
-export const activePublishedRoomDeliveryOptionsView =
+export const activePublishedRoomDeliveryOptions =
   View<ActivePublishedRoomDeliveryOptionsView>()(
     activePublishedRoomDeliveryOptionsViewName,
-    deliveryOptionsTable.Schema,
+    deliveryOptions.Schema,
   );
 export const DeliveryOptions = Schema.Array(
-  deliveryOptionsTable.Schema.omit("index", "roomId", "tenantId"),
+  deliveryOptions.Schema.omit("index", "roomId", "tenantId"),
 ).pipe(
   Schema.filter(
     (opts) =>

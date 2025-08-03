@@ -7,7 +7,7 @@ import { NanoId } from "../utils2/shared";
 import type { ActiveCommentsView, CommentsTable } from "./sql";
 
 export const commentsTableName = "comments";
-export const commentsTable = SyncTable<CommentsTable>()(
+export const comments = SyncTable<CommentsTable>()(
   commentsTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -20,21 +20,21 @@ export const commentsTable = SyncTable<CommentsTable>()(
 );
 
 export const activeCommentsViewName = `active_${commentsTableName}`;
-export const activeCommentsView = View<ActiveCommentsView>()(
+export const activeComments = View<ActiveCommentsView>()(
   activeCommentsViewName,
-  commentsTable.Schema,
+  comments.Schema,
 );
 
 export const createComment = SyncMutation(
   "createComment",
-  commentsTable.Schema.omit("authorId", "deletedAt", "tenantId"),
+  comments.Schema.omit("authorId", "deletedAt", "tenantId"),
 );
 
 export const updateComment = SyncMutation(
   "updateComment",
   Schema.extend(
-    commentsTable.Schema.pick("id", "orderId", "updatedAt"),
-    commentsTable.Schema.omit(
+    comments.Schema.pick("id", "orderId", "updatedAt"),
+    comments.Schema.omit(
       ...Struct.keys(TenantTable.fields),
       "orderId",
       "authorId",
@@ -45,7 +45,7 @@ export const updateComment = SyncMutation(
 export const deleteComment = SyncMutation(
   "deleteComment",
   Schema.Struct({
-    ...commentsTable.Schema.pick("id", "orderId").fields,
+    ...comments.Schema.pick("id", "orderId").fields,
     deletedAt: Schema.DateTimeUtc,
   }),
 );

@@ -233,7 +233,7 @@ export const ProductConfigurationV1 = Schema.Struct({
 export const ProductConfiguration = Schema.Union(ProductConfigurationV1);
 
 export const productsTableName = "products";
-export const productsTable = SyncTable<ProductsTable>()(
+export const products = SyncTable<ProductsTable>()(
   productsTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -246,30 +246,29 @@ export const productsTable = SyncTable<ProductsTable>()(
 );
 
 export const activeProductsViewName = `active_${productsTableName}`;
-export const activeProductsView = View<ActiveProductsView>()(
+export const activeProducts = View<ActiveProductsView>()(
   activeProductsViewName,
-  productsTable.Schema,
+  products.Schema,
 );
 
 export const activePublishedProductsViewName = `active_published_${productsTableName}`;
-export const activePublishedProductsView = View<ActivePublishedProductsView>()(
+export const activePublishedProducts = View<ActivePublishedProductsView>()(
   activePublishedProductsViewName,
-  activeProductsView.Schema,
+  activeProducts.Schema,
 );
 
 export const createProduct = SyncMutation(
   "createProduct",
-  productsTable.Schema.omit("deletedAt", "tenantId"),
+  products.Schema.omit("deletedAt", "tenantId"),
 );
 
 export const updateProduct = SyncMutation(
   "updateProduct",
   Schema.extend(
-    productsTable.Schema.pick("id", "updatedAt"),
-    productsTable.Schema.omit(
-      ...Struct.keys(TenantTable.fields),
-      "roomId",
-    ).pipe(Schema.partial),
+    products.Schema.pick("id", "updatedAt"),
+    products.Schema.omit(...Struct.keys(TenantTable.fields), "roomId").pipe(
+      Schema.partial,
+    ),
   ),
 );
 

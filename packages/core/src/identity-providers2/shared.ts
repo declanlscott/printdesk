@@ -16,7 +16,7 @@ export const identityProviderKinds = [
 export type IdentityProviderKind = (typeof identityProviderKinds)[number];
 
 export const identityProvidersTableName = "identity_providers";
-export const identityProvidersTable = NonSyncTable<IdentityProvidersTable>()(
+export const identityProviders = NonSyncTable<IdentityProvidersTable>()(
   identityProvidersTableName,
   Schema.Struct({
     id: Schema.String,
@@ -29,7 +29,7 @@ export const identityProvidersTable = NonSyncTable<IdentityProvidersTable>()(
 
 export const identityProviderUserGroupsTableName =
   "identity_provider_user_groups";
-export const identityProviderUserGroupsTable =
+export const identityProviderUserGroups =
   NonSyncTable<IdentityProviderUserGroupsTable>()(
     identityProviderUserGroupsTableName,
     Schema.Struct({

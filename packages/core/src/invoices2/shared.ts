@@ -17,7 +17,7 @@ export const LineItemV1 = Schema.TaggedStruct("LineItemV1", {
 export const LineItem = Schema.Union(LineItemV1);
 
 export const invoicesTableName = "invoices";
-export const invoicesTable = SyncTable<InvoicesTable>()(
+export const invoices = SyncTable<InvoicesTable>()(
   invoicesTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -30,14 +30,14 @@ export const invoicesTable = SyncTable<InvoicesTable>()(
 );
 
 export const activeInvoicesViewName = `active_${invoicesTableName}`;
-export const activeInvoicesView = View<ActiveInvoicesView>()(
+export const activeInvoices = View<ActiveInvoicesView>()(
   activeInvoicesViewName,
-  invoicesTable.Schema,
+  invoices.Schema,
 );
 
 export const createInvoice = SyncMutation(
   "createInvoice",
-  invoicesTable.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
+  invoices.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
 );
 
 export const Estimate = Schema.Struct({

@@ -3,38 +3,35 @@
  * every other sync table.
  */
 
+export { announcements, activeAnnouncements } from "../announcements2/shared";
 export {
-  announcementsTable,
-  activeAnnouncementsView,
-} from "../announcements2/shared";
-export {
-  billingAccountsTable,
-  activeBillingAccountsView,
-  billingAccountCustomerAuthorizationsTable,
-  activeBillingAccountCustomerAuthorizationsView,
-  billingAccountManagerAuthorizationsTable,
-  activeBillingAccountManagerAuthorizationsView,
+  billingAccounts,
+  activeBillingAccounts,
+  billingAccountCustomerAuthorizations,
+  activeBillingAccountCustomerAuthorizations,
+  billingAccountManagerAuthorizations,
+  activeBillingAccountManagerAuthorizations,
 } from "../billing-accounts2/shared";
-export { commentsTable, activeCommentsView } from "../comments2/shared";
+export { comments, activeComments } from "../comments2/shared";
 export {
-  identityProvidersTable,
-  identityProviderUserGroupsTable,
+  identityProviders,
+  identityProviderUserGroups,
 } from "../identity-providers2/shared";
-export { invoicesTable, activeInvoicesView } from "../invoices2/shared";
-export { ordersTable, activeOrdersView } from "../orders2/shared";
+export { invoices, activeInvoices } from "../invoices2/shared";
+export { orders, activeOrders } from "../orders2/shared";
 export {
-  productsTable,
-  activeProductsView,
-  activePublishedProductsView,
+  products,
+  activeProducts,
+  activePublishedProducts,
 } from "../products2/shared";
 export {
-  roomsTable,
-  activeRoomsView,
-  activePublishedRoomsView,
-  workflowStatusesTable,
-  activePublishedRoomWorkflowStatusesView,
-  deliveryOptionsTable,
-  activePublishedRoomDeliveryOptionsView,
+  rooms,
+  activeRooms,
+  activePublishedRooms,
+  workflowStatuses,
+  activePublishedRoomWorkflowStatuses,
+  deliveryOptions,
+  activePublishedRoomDeliveryOptions,
 } from "../rooms2/shared";
-export { licensesTable, tenantsTable } from "../tenants2/shared";
-export { usersTable, activeUserView } from "../users2/shared";
+export { licenses, tenants, tenantMetadata } from "../tenants2/shared";
+export { users, activeUsers } from "../users2/shared";

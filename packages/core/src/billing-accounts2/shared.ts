@@ -17,7 +17,7 @@ export const billingAccountOrigins = ["papercut", "internal"] as const;
 export type BillingAccountOrigin = (typeof billingAccountOrigins)[number];
 
 export const billingAccountsTableName = "billing_accounts";
-export const billingAccountsTable = SyncTable<BillingAccountsTable>()(
+export const billingAccounts = SyncTable<BillingAccountsTable>()(
   billingAccountsTableName,
   Schema.Struct({
     id: NanoId,
@@ -40,15 +40,15 @@ export const billingAccountsTable = SyncTable<BillingAccountsTable>()(
   ["read", "update", "delete"],
 );
 export const activeBillingAccountsViewName = `active_${billingAccountsTableName}`;
-export const activeBillingAccountsView = View<ActiveBillingAccountsView>()(
+export const activeBillingAccounts = View<ActiveBillingAccountsView>()(
   activeBillingAccountsViewName,
-  billingAccountsTable.Schema,
+  billingAccounts.Schema,
 );
 export const updateBillingAccount = SyncMutation(
   "updateBillingAccount",
   Schema.extend(
-    billingAccountsTable.Schema.pick("id", "updatedAt"),
-    billingAccountsTable.Schema.omit(
+    billingAccounts.Schema.pick("id", "updatedAt"),
+    billingAccounts.Schema.omit(
       ...Struct.keys(TenantTable.fields),
       "name",
       "origin",
@@ -66,7 +66,7 @@ export const deleteBillingAccount = SyncMutation(
 
 export const billingAccountCustomerAuthorizationsTableName =
   "billing_account_customer_authorizations";
-export const billingAccountCustomerAuthorizationsTable =
+export const billingAccountCustomerAuthorizations =
   SyncTable<BillingAccountCustomerAuthorizationsTable>()(
     billingAccountCustomerAuthorizationsTableName,
     Schema.Struct({
@@ -77,15 +77,15 @@ export const billingAccountCustomerAuthorizationsTable =
     ["read"],
   );
 export const activeBillingAccountCustomerAuthorizationsViewName = `active_${billingAccountCustomerAuthorizationsTableName}`;
-export const activeBillingAccountCustomerAuthorizationsView =
+export const activeBillingAccountCustomerAuthorizations =
   View<ActiveBillingAccountCustomerAuthorizationsView>()(
     activeBillingAccountCustomerAuthorizationsViewName,
-    billingAccountCustomerAuthorizationsTable.Schema,
+    billingAccountCustomerAuthorizations.Schema,
   );
 
 export const billingAccountManagerAuthorizationsTableName =
   "billing_account_manager_authorizations";
-export const billingAccountManagerAuthorizationsTable =
+export const billingAccountManagerAuthorizations =
   SyncTable<BillingAccountManagerAuthorizationsTable>()(
     billingAccountManagerAuthorizationsTableName,
     Schema.Struct({
@@ -96,14 +96,14 @@ export const billingAccountManagerAuthorizationsTable =
     ["create", "read", "delete"],
   );
 export const activeBillingAccountManagerAuthorizationsViewName = `active_${billingAccountManagerAuthorizationsTableName}`;
-export const activeBillingAccountManagerAuthorizationsView =
+export const activeBillingAccountManagerAuthorizations =
   View<ActiveBillingAccountManagerAuthorizationsView>()(
     activeBillingAccountManagerAuthorizationsViewName,
-    billingAccountManagerAuthorizationsTable.Schema,
+    billingAccountManagerAuthorizations.Schema,
   );
 export const createBillingAccountManagerAuthorization = SyncMutation(
   "createBillingAccountManagerAuthorization",
-  billingAccountManagerAuthorizationsTable.Schema.omit("deletedAt", "tenantId"),
+  billingAccountManagerAuthorizations.Schema.omit("deletedAt", "tenantId"),
 );
 export const deleteBillingAccountManagerAuthorization = SyncMutation(
   "deleteBillingAccountManagerAuthorization",

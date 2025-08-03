@@ -1,20 +1,20 @@
-import { Schema } from "effect";
+import { Array, Data, Schema } from "effect";
 
 import { NonSyncTable, Timestamps } from "../database2/shared";
+import { syncTables } from "../database2/tables";
 import { NanoId } from "../utils2/shared";
 
+import type { VersionNotSupportedResponse } from "replicache";
 import type {
   ReplicacheClientGroupsTable,
   ReplicacheClientsTable,
+  ReplicacheClientViewMetadataTable,
   ReplicacheClientViewsTable,
   ReplicacheMetaTable,
 } from "./sql";
 
-// TODO: Client view record schema
-export const ReplicacheClientViewRecord = Schema.Struct({});
-
 export const replicacheMetaTableName = "replicache_meta";
-export const replicacheMetaTable = NonSyncTable<ReplicacheMetaTable>()(
+export const replicacheMeta = NonSyncTable<ReplicacheMetaTable>()(
   replicacheMetaTableName,
   Schema.Struct({
     key: Schema.String,
@@ -24,42 +24,62 @@ export const replicacheMetaTable = NonSyncTable<ReplicacheMetaTable>()(
 );
 
 export const replicacheClientGroupsTableName = "replicache_client_groups";
-export const replicacheClientGroupsTable =
+export const replicacheClientGroups =
   NonSyncTable<ReplicacheClientGroupsTable>()(
     replicacheClientGroupsTableName,
     Schema.Struct({
       id: Schema.UUID,
       tenantId: NanoId,
       userId: NanoId,
-      cvrVersion: Schema.Int,
+      clientViewVersion: Schema.NullOr(Schema.Int),
+      lastMutationId: Schema.Int,
       ...Timestamps.fields,
     }),
     [],
   );
 
 export const replicacheClientsTableName = "replicache_clients";
-export const replicacheClientsTable = NonSyncTable<ReplicacheClientsTable>()(
+export const replicacheClients = NonSyncTable<ReplicacheClientsTable>()(
   replicacheClientsTableName,
   Schema.Struct({
     id: Schema.UUID,
     tenantId: NanoId,
     clientGroupId: Schema.UUID,
     lastMutationId: Schema.Int,
+    version: Schema.Int,
     ...Timestamps.fields,
   }),
   [],
 );
 
 export const replicacheClientViewsTableName = "replicache_client_views";
-export const replicacheClientViewsTable =
-  NonSyncTable<ReplicacheClientViewsTable>()(
-    replicacheClientViewsTableName,
+export const replicacheClientViews = NonSyncTable<ReplicacheClientViewsTable>()(
+  replicacheClientViewsTableName,
+  Schema.Struct({
+    clientGroupId: Schema.UUID,
+    version: Schema.Int,
+    clientVersion: Schema.Int,
+    tenantId: NanoId,
+  }),
+  [],
+);
+
+export const replicacheClientViewEntryEntities = Array.map(
+  syncTables,
+  ({ name }) => name,
+);
+export const replicacheClientViewMetadataTableName =
+  "replicache_client_view_metadata";
+export const replicacheClientViewMetadata =
+  NonSyncTable<ReplicacheClientViewMetadataTable>()(
+    replicacheClientViewMetadataTableName,
     Schema.Struct({
-      tenantId: NanoId,
       clientGroupId: Schema.UUID,
-      version: Schema.Int,
-      record: ReplicacheClientViewRecord,
-      ...Timestamps.fields,
+      clientViewVersion: Schema.Int,
+      entity: Schema.Literal(...replicacheClientViewEntryEntities),
+      entityId: NanoId,
+      entityVersion: Schema.NullOr(Schema.Int),
+      tenantId: NanoId,
     }),
     [],
   );
@@ -121,3 +141,7 @@ export const ReplicachePullRequest = Schema.Union(
 export type ReplicachePullRequest = Schema.Schema.Type<
   typeof ReplicachePullRequest
 >;
+
+export class VersionNotSupportedError extends Data.TaggedError(
+  "VersionNotSupportedError",
+)<{ readonly response: VersionNotSupportedResponse }> {}

@@ -11,7 +11,7 @@ export const licenseStatuses = ["active", "expired"] as const;
 export type LicenseStatus = (typeof licenseStatuses)[number];
 export const LicenseKey = Schema.UUID;
 export const licensesTableName = "licenses";
-export const licensesTable = NonSyncTable<LicensesTable>()(
+export const licenses = NonSyncTable<LicensesTable>()(
   licensesTableName,
   Schema.Struct({
     key: LicenseKey,
@@ -27,7 +27,7 @@ export const TenantSubdomain = Schema.String.pipe(
   Schema.pattern(Constants.TENANT_SUBDOMAIN_REGEX),
 );
 export const tenantsTableName = "tenants";
-export const tenantsTable = SyncTable<TenantsTable>()(
+export const tenants = SyncTable<TenantsTable>()(
   tenantsTableName,
   Schema.Struct({
     id: NanoId,
@@ -41,8 +41,8 @@ export const tenantsTable = SyncTable<TenantsTable>()(
 export const updateTenant = SyncMutation(
   "updateTenant",
   Schema.extend(
-    tenantsTable.Schema.pick("id", "updatedAt"),
-    tenantsTable.Schema.omit("id", ...Struct.keys(Timestamps.fields)).pipe(
+    tenants.Schema.pick("id", "updatedAt"),
+    tenants.Schema.omit("id", ...Struct.keys(Timestamps.fields)).pipe(
       Schema.partial,
     ),
   ),
@@ -54,7 +54,7 @@ export const InfraProgramInput = Schema.Struct({
   timezone: Timezone,
 });
 export const tenantMetadataTableName = "tenant_metadata";
-export const tenantMetadataTable = NonSyncTable<TenantMetadataTable>()(
+export const tenantMetadata = NonSyncTable<TenantMetadataTable>()(
   tenantMetadataTableName,
   Schema.Struct({
     tenantId: NanoId,

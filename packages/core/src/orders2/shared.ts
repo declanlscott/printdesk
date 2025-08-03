@@ -184,7 +184,7 @@ export const OrderAttributesV1 = Schema.TaggedStruct("OrderAttributesV1", {
 export const OrderAttributes = Schema.Union(OrderAttributesV1);
 
 export const ordersTableName = "orders";
-export const ordersTable = SyncTable<OrdersTable>()(
+export const orders = SyncTable<OrdersTable>()(
   ordersTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -204,21 +204,21 @@ export const ordersTable = SyncTable<OrdersTable>()(
 );
 
 export const activeOrdersViewName = `active_${ordersTableName}`;
-export const activeOrdersView = View<ActiveOrdersView>()(
+export const activeOrders = View<ActiveOrdersView>()(
   activeOrdersViewName,
-  ordersTable.Schema,
+  orders.Schema,
 );
 
 export const createOrder = SyncMutation(
   "createOrder",
-  ordersTable.Schema.omit("approvedAt", "deletedAt", "tenantId"),
+  orders.Schema.omit("approvedAt", "deletedAt", "tenantId"),
 );
 
 export const editOrder = SyncMutation(
   "editOrder",
   Schema.extend(
-    ordersTable.Schema.pick("id", "updatedAt"),
-    ordersTable.Schema.omit(
+    orders.Schema.pick("id", "updatedAt"),
+    orders.Schema.omit(
       ...Struct.keys(TenantTable.fields),
       "customerId",
       "managerId",
@@ -233,7 +233,7 @@ export const editOrder = SyncMutation(
 export const approveOrder = SyncMutation(
   "approveOrder",
   Schema.extend(
-    ordersTable.Schema.pick("id", "updatedAt"),
+    orders.Schema.pick("id", "updatedAt"),
     Schema.Struct({
       approvedAt: Schema.DateTimeUtc,
     }),
@@ -242,7 +242,7 @@ export const approveOrder = SyncMutation(
 
 export const transitionOrder = SyncMutation(
   "transitionOrder",
-  ordersTable.Schema.pick("id", "updatedAt", "workflowStatus"),
+  orders.Schema.pick("id", "updatedAt", "workflowStatus"),
 );
 
 export const deleteOrder = SyncMutation(

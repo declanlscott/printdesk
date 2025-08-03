@@ -7,7 +7,7 @@ import { NanoId } from "../utils2/shared";
 import type { ActiveAnnouncementsView, AnnouncementsTable } from "./sql";
 
 export const announcementsTableName = "announcements";
-export const announcementsTable = SyncTable<AnnouncementsTable>()(
+export const announcements = SyncTable<AnnouncementsTable>()(
   announcementsTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -19,21 +19,21 @@ export const announcementsTable = SyncTable<AnnouncementsTable>()(
 );
 
 export const activeAnnouncementsViewName = `active_${announcementsTableName}`;
-export const activeAnnouncementsView = View<ActiveAnnouncementsView>()(
+export const activeAnnouncements = View<ActiveAnnouncementsView>()(
   activeAnnouncementsViewName,
-  announcementsTable.Schema,
+  announcements.Schema,
 );
 
 export const createAnnouncement = SyncMutation(
   "createAnnouncement",
-  announcementsTable.Schema.omit("authorId", "deletedAt", "tenantId"),
+  announcements.Schema.omit("authorId", "deletedAt", "tenantId"),
 );
 
 export const updateAnnouncement = SyncMutation(
   "updateAnnouncement",
   Schema.extend(
-    announcementsTable.Schema.pick("id", "updatedAt"),
-    announcementsTable.Schema.omit(
+    announcements.Schema.pick("id", "updatedAt"),
+    announcements.Schema.omit(
       ...Struct.keys(TenantTable.fields),
       "roomId",
       "authorId",

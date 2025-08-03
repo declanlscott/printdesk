@@ -18,7 +18,7 @@ export const userRoles = [
 export type UserRole = (typeof userRoles)[number];
 
 export const usersTableName = "users";
-export const usersTable = SyncTable<UsersTable>()(
+export const users = SyncTable<UsersTable>()(
   usersTableName,
   Schema.Struct({
     ...TenantTable.fields,
@@ -33,16 +33,16 @@ export const usersTable = SyncTable<UsersTable>()(
   ["read", "update", "delete"],
 );
 export const activeUsersViewName = `active_${usersTableName}`;
-export const activeUserView = View<ActiveUsersView>()(
+export const activeUsers = View<ActiveUsersView>()(
   activeUsersViewName,
-  usersTable.Schema,
+  users.Schema,
 );
 
 export const updateUser = SyncMutation(
   "updateUser",
   Schema.extend(
-    usersTable.Schema.pick("id", "updatedAt"),
-    usersTable.Schema.omit(
+    users.Schema.pick("id", "updatedAt"),
+    users.Schema.omit(
       ...Struct.keys(TenantTable.fields),
       "origin",
       "username",
@@ -62,7 +62,4 @@ export const deleteUser = SyncMutation(
   }),
 );
 
-export const restoreUser = SyncMutation(
-  "restoreUser",
-  usersTable.Schema.pick("id"),
-);
+export const restoreUser = SyncMutation("restoreUser", users.Schema.pick("id"));

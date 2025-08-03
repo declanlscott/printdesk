@@ -196,6 +196,12 @@ importers:
 
   packages/functions:
     dependencies:
+      '@effect-aws/lambda':
+        specifier: ^1.5.1
+        version: 1.5.1(@effect/platform-node-shared@0.47.0(@effect/cluster@0.46.2(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      '@effect-aws/powertools-logger':
+        specifier: ^1.5.1
+        version: 1.5.1(@aws-lambda-powertools/logger@2.24.1)(effect@3.17.2)
       '@hono/trpc-server':
         specifier: ^0.4.0
         version: 0.4.0(@trpc/server@11.4.3(typescript@5.8.3))(hono@4.8.9)
@@ -430,6 +436,20 @@ packages:
 
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
+
+  '@aws-lambda-powertools/commons@2.24.1':
+    resolution: {integrity: sha512-/CnngAi5HeWPWshGPyfctR/Cbmx1jVPa5mwutfmM2Z1sE8hRkJ4tsdpzXyub8RiwptU8QD7XfyhJts+0whjwkg==}
+
+  '@aws-lambda-powertools/logger@2.24.1':
+    resolution: {integrity: sha512-rIM3Nprv8bxPGYn5uf0bvG64m/TISCjf89E/CWMCAKDlC7cAJbM5O0EmPI0woduMeJk8LuUOqFbADd4JUiLGmw==}
+    peerDependencies:
+      '@aws-lambda-powertools/jmespath': 2.24.1
+      '@middy/core': 4.x || 5.x || 6.x
+    peerDependenciesMeta:
+      '@aws-lambda-powertools/jmespath':
+        optional: true
+      '@middy/core':
+        optional: true
 
   '@aws-sdk/client-appsync@3.848.0':
     resolution: {integrity: sha512-bq+iVp+p6I0WWV9mJ8uFirCkTp0GWGm11VWgMUGmFgQKVi4YXSSQfiV2nKuq8U4woqP4eXV/My1OvHZumOTNLg==}
@@ -805,14 +825,78 @@ packages:
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
 
+  '@effect-aws/lambda@1.5.1':
+    resolution: {integrity: sha512-fA8bd1dypjCMGr94NpIVVPrpLRECY4Sgr8WRsKo6On/NAZexLIvT0m6oU27HT986ydwzx88ypjYm0E0nf0TiHQ==}
+    peerDependencies:
+      '@effect/platform': '>=0.83.0'
+      '@effect/platform-node-shared': '>=0.36.0'
+      effect: '>=3.15.5 <4.0.0'
+
+  '@effect-aws/powertools-logger@1.5.1':
+    resolution: {integrity: sha512-LGqsr/BHShLFk1QxM7L+ai+eJp+jxYZdKm7qc0/S1Saz3ZrsJVNIXhbxElh61WTjD/4/TDNnjx4MV8F3w+ZYRQ==}
+    peerDependencies:
+      '@aws-lambda-powertools/logger': '>=2.0.0'
+      effect: '>=3.0.4 <4.0.0'
+
+  '@effect/cluster@0.46.2':
+    resolution: {integrity: sha512-kkAvDzy1OX0pcucIHOxd8JER8EFGmypRQAjZDdxlyvFrZv5IZSHvCL5owKGzu11NiaAc2R0rAWZNPQN8GhIZQA==}
+    peerDependencies:
+      '@effect/platform': ^0.90.0
+      '@effect/rpc': ^0.68.0
+      '@effect/sql': ^0.44.0
+      '@effect/workflow': ^0.8.1
+      effect: ^3.17.3
+
+  '@effect/experimental@0.54.3':
+    resolution: {integrity: sha512-FR+4KfGxte/BwQyVvbq8boWSWyN5p69tdtUQX9Owf/JfnLmZY42d+L3nnn1Gg8EhTPiAk+hMnODWWHnV03JmbQ==}
+    peerDependencies:
+      '@effect/platform': ^0.90.0
+      effect: ^3.17.4
+      ioredis: ^5
+      lmdb: ^3
+    peerDependenciesMeta:
+      ioredis:
+        optional: true
+      lmdb:
+        optional: true
+
   '@effect/language-service@0.31.0':
     resolution: {integrity: sha512-bQnbggFFhSGEblQABVEKpwutYuBN3eVqbdQjH8P/0cKs9P8LIytOZZZtOa0N7mBFxHuYZCzs2eyEDUhiKZhtEQ==}
     hasBin: true
+
+  '@effect/platform-node-shared@0.47.0':
+    resolution: {integrity: sha512-ITsvT1Upphnf5Iq6gkUef4oy/ivoJkl8grtIuVkNE38I3EC57A/00anDXlwSgUd7i4pRT+KX5ypcc1/TsehCeg==}
+    peerDependencies:
+      '@effect/cluster': ^0.46.0
+      '@effect/platform': ^0.90.0
+      '@effect/rpc': ^0.68.0
+      '@effect/sql': ^0.44.0
+      effect: ^3.17.1
 
   '@effect/platform@0.89.0':
     resolution: {integrity: sha512-9nTaD1h/X4M4qdl/4E1atwoe+p4VoH0SJiYd2mJrDJC18alwqlI/xaKNGRnJVPbIrhbKC62YJ9h2mqfkE4t2YA==}
     peerDependencies:
       effect: ^3.17.0
+
+  '@effect/rpc@0.68.2':
+    resolution: {integrity: sha512-AFmOeB+Tl71yIDCA9ZSK0wd2uWZrPTvkJ4kcGo8Ad7okUMsAwwz2AOfJHayFbbA4XRUS8rLmSYI8H3oM0yvqVQ==}
+    peerDependencies:
+      '@effect/platform': ^0.90.0
+      effect: ^3.17.5
+
+  '@effect/sql@0.44.0':
+    resolution: {integrity: sha512-HxVEk9ufZZnJ2AuqUlgirjlSDYQ49QDM6o7MkcFQtp4UKrCmDgTshNre11rACOiMZH3ywH6cWViJ1eLwf10D2A==}
+    peerDependencies:
+      '@effect/experimental': ^0.54.0
+      '@effect/platform': ^0.90.0
+      effect: ^3.17.0
+
+  '@effect/workflow@0.8.1':
+    resolution: {integrity: sha512-kZRChyGlhgaPB19st/F0FZmz9Y6aQSLBbbC/oBiXspB4rdxkP10O1Z7nVsCcASQ10hfxjdoR816kxf9LctSTKQ==}
+    peerDependencies:
+      '@effect/platform': ^0.90.0
+      '@effect/rpc': ^0.68.0
+      effect: ^3.17.1
 
   '@emnapi/runtime@1.4.5':
     resolution: {integrity: sha512-++LApOtY0pEEz1zrd9vy1/zXVaVJJ/EbAF3u0fXIzPJEDtnITsBGbbK0EkM72amhl/R5b+5xx0Y/QhcVOpuulg==}
@@ -1434,6 +1518,88 @@ packages:
 
   '@oslojs/jwt@0.3.0':
     resolution: {integrity: sha512-bg9hh6gc7ppS2haLv2nE7oezroXK6a6zGTz6JzCHXAQKCOOZM4HfOrV9DwCaDimrTcDi1nHAe2ueAAxZ23eeUA==}
+
+  '@parcel/watcher-android-arm64@2.5.1':
+    resolution: {integrity: sha512-KF8+j9nNbUN8vzOFDpRMsaKBHZ/mcjEjMToVMJOhTozkDonQFFrRcfdLWn6yWKCmJKmdVxSgHiYvTCef4/qcBA==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [android]
+
+  '@parcel/watcher-darwin-arm64@2.5.1':
+    resolution: {integrity: sha512-eAzPv5osDmZyBhou8PoF4i6RQXAfeKL9tjb3QzYuccXFMQU0ruIc/POh30ePnaOyD1UXdlKguHBmsTs53tVoPw==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@parcel/watcher-darwin-x64@2.5.1':
+    resolution: {integrity: sha512-1ZXDthrnNmwv10A0/3AJNZ9JGlzrF82i3gNQcWOzd7nJ8aj+ILyW1MTxVk35Db0u91oD5Nlk9MBiujMlwmeXZg==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [darwin]
+
+  '@parcel/watcher-freebsd-x64@2.5.1':
+    resolution: {integrity: sha512-SI4eljM7Flp9yPuKi8W0ird8TI/JK6CSxju3NojVI6BjHsTyK7zxA9urjVjEKJ5MBYC+bLmMcbAWlZ+rFkLpJQ==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [freebsd]
+
+  '@parcel/watcher-linux-arm-glibc@2.5.1':
+    resolution: {integrity: sha512-RCdZlEyTs8geyBkkcnPWvtXLY44BCeZKmGYRtSgtwwnHR4dxfHRG3gR99XdMEdQ7KeiDdasJwwvNSF5jKtDwdA==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@parcel/watcher-linux-arm-musl@2.5.1':
+    resolution: {integrity: sha512-6E+m/Mm1t1yhB8X412stiKFG3XykmgdIOqhjWj+VL8oHkKABfu/gjFj8DvLrYVHSBNC+/u5PeNrujiSQ1zwd1Q==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm]
+    os: [linux]
+
+  '@parcel/watcher-linux-arm64-glibc@2.5.1':
+    resolution: {integrity: sha512-LrGp+f02yU3BN9A+DGuY3v3bmnFUggAITBGriZHUREfNEzZh/GO06FF5u2kx8x+GBEUYfyTGamol4j3m9ANe8w==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@parcel/watcher-linux-arm64-musl@2.5.1':
+    resolution: {integrity: sha512-cFOjABi92pMYRXS7AcQv9/M1YuKRw8SZniCDw0ssQb/noPkRzA+HBDkwmyOJYp5wXcsTrhxO0zq1U11cK9jsFg==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [linux]
+
+  '@parcel/watcher-linux-x64-glibc@2.5.1':
+    resolution: {integrity: sha512-GcESn8NZySmfwlTsIur+49yDqSny2IhPeZfXunQi48DMugKeZ7uy1FX83pO0X22sHntJ4Ub+9k34XQCX+oHt2A==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@parcel/watcher-linux-x64-musl@2.5.1':
+    resolution: {integrity: sha512-n0E2EQbatQ3bXhcH2D1XIAANAcTZkQICBPVaxMeaCVBtOpBZpWJuf7LwyWPSBDITb7In8mqQgJ7gH8CILCURXg==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [linux]
+
+  '@parcel/watcher-win32-arm64@2.5.1':
+    resolution: {integrity: sha512-RFzklRvmc3PkjKjry3hLF9wD7ppR4AKcWNzH7kXR7GUe0Igb3Nz8fyPwtZCSquGrhU5HhUNDr/mKBqj7tqA2Vw==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [arm64]
+    os: [win32]
+
+  '@parcel/watcher-win32-ia32@2.5.1':
+    resolution: {integrity: sha512-c2KkcVN+NJmuA7CGlaGD1qJh1cLfDnQsHjE89E60vUEMlqduHGCdCLJCID5geFVM0dOtA3ZiIO8BoEQmzQVfpQ==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [ia32]
+    os: [win32]
+
+  '@parcel/watcher-win32-x64@2.5.1':
+    resolution: {integrity: sha512-9lHBdJITeNR++EvSQVUcaZoWupyHfXe1jZvGZ06O/5MflPcuPLtEphScIBL+AiCWBO46tDSHzWyD0uDmmZqsgA==}
+    engines: {node: '>= 10.0.0'}
+    cpu: [x64]
+    os: [win32]
+
+  '@parcel/watcher@2.5.1':
+    resolution: {integrity: sha512-dfUnCxiN9H4ap84DvD2ubjw+3vUNpstxa0TneY/Paat8a3R4uQZDLSvWjmznAY/DoahqTHl9V46HF/Zs3F29pg==}
+    engines: {node: '>= 10.0.0'}
 
   '@petamoriken/float16@3.9.2':
     resolution: {integrity: sha512-VgffxawQde93xKxT3qap3OH+meZf7VaSB5Sqd4Rqc+FP5alWbpOyan/7tRbOAvynjpG3GpdtAuGU/NdhQpmrog==}
@@ -3289,6 +3455,11 @@ packages:
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
 
+  detect-libc@1.0.3:
+    resolution: {integrity: sha512-pGjwhsmsp4kL2RTz08wcOlGN83otlqHeD/Z5T8GXZB+/YcpQ/dgo+lbU8ZsGxV0HIvqqxo9l7mqYwyYMD9bKDg==}
+    engines: {node: '>=0.10'}
+    hasBin: true
+
   detect-libc@2.0.4:
     resolution: {integrity: sha512-3UDv+G9CsCKO1WKMGw9fwq/SWJYbI0c5Y7LU1AXYoDdbhE2AHQ6N6Nb34sG8Fj7T5APy8qXDCKuuIHd1BR0tVA==}
     engines: {node: '>=8'}
@@ -4421,6 +4592,9 @@ packages:
 
   nlcst-to-string@4.0.0:
     resolution: {integrity: sha512-YKLBCcUYKAg0FNlOBT6aI91qFmSiFKiluk655WzPF+DDMA02qIyy8uiRqI8QXtcFpEvll12LpL5MXqEmAZ+dcA==}
+
+  node-addon-api@7.1.1:
+    resolution: {integrity: sha512-5m3bsyrjFWE1xf7nz7YXdN4udnVtXK6/Yfgn5qnahL6bCkf2yKt4k3nuTKAtT4r3IG8JNR2ncsIMdZuAzJjHQQ==}
 
   node-fetch-native@1.6.6:
     resolution: {integrity: sha512-8Mc2HhqPdlIfedsuZoc3yioPuzp6b+L5jRCRY1QzuWZh2EGJVQrGppC6V6cF0bLdbW0+O2YpqCA25aF/1lvipQ==}
@@ -5571,6 +5745,10 @@ packages:
   util@0.12.5:
     resolution: {integrity: sha512-kZf/K6hEIrWHI6XqOFUiiMa+79wE/D8Q+NCNAWclkyg3b4d2k7s0QGepNjiABc+aR3N1PAyHL7p6UcLY6LmrnA==}
 
+  uuid@11.1.0:
+    resolution: {integrity: sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A==}
+    hasBin: true
+
   uuid@8.0.0:
     resolution: {integrity: sha512-jOXGuXZAWdsTH7eZLtyXMqUb9EcWMGZNbL9YcGBJl4MH4nrxHmZJhEHvyLFrkxo+28uLb/NYRcStH48fnD0Vzw==}
     hasBin: true
@@ -5712,6 +5890,18 @@ packages:
 
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
+
+  ws@8.18.3:
+    resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
 
   xml2js@0.6.2:
     resolution: {integrity: sha512-T4rieHaC1EXcES0Kxxj4JWgaUQHDk+qwHcYOCFHfiwKz7tOVPLq7Hjq9dM1WCMhylqMEfP7hMcOIChvotiZegA==}
@@ -5914,6 +6104,13 @@ snapshots:
       '@aws-sdk/types': 3.840.0
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
+
+  '@aws-lambda-powertools/commons@2.24.1': {}
+
+  '@aws-lambda-powertools/logger@2.24.1':
+    dependencies:
+      '@aws-lambda-powertools/commons': 2.24.1
+      lodash.merge: 4.6.2
 
   '@aws-sdk/client-appsync@3.848.0':
     dependencies:
@@ -7032,7 +7229,46 @@ snapshots:
 
   '@drizzle-team/brocli@0.10.2': {}
 
+  '@effect-aws/lambda@1.5.1(@effect/platform-node-shared@0.47.0(@effect/cluster@0.46.2(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      '@effect/platform-node-shared': 0.47.0(@effect/cluster@0.46.2(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2)
+      effect: 3.17.2
+
+  '@effect-aws/powertools-logger@1.5.1(@aws-lambda-powertools/logger@2.24.1)(effect@3.17.2)':
+    dependencies:
+      '@aws-lambda-powertools/logger': 2.24.1
+      effect: 3.17.2
+
+  '@effect/cluster@0.46.2(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      '@effect/rpc': 0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      '@effect/sql': 0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      '@effect/workflow': 0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2)
+      effect: 3.17.2
+
+  '@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      effect: 3.17.2
+      uuid: 11.1.0
+
   '@effect/language-service@0.31.0': {}
+
+  '@effect/platform-node-shared@0.47.0(@effect/cluster@0.46.2(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/cluster': 0.46.2(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2))(effect@3.17.2)
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      '@effect/rpc': 0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      '@effect/sql': 0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      '@parcel/watcher': 2.5.1
+      effect: 3.17.2
+      multipasta: 0.2.7
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@effect/platform@0.89.0(effect@3.17.2)':
     dependencies:
@@ -7041,6 +7277,25 @@ snapshots:
       find-my-way-ts: 0.1.6
       msgpackr: 1.11.5
       multipasta: 0.2.7
+
+  '@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      effect: 3.17.2
+
+  '@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/experimental': 0.54.3(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      '@opentelemetry/semantic-conventions': 1.36.0
+      effect: 3.17.2
+      uuid: 11.1.0
+
+  '@effect/workflow@0.8.1(@effect/platform@0.89.0(effect@3.17.2))(@effect/rpc@0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2))(effect@3.17.2)':
+    dependencies:
+      '@effect/platform': 0.89.0(effect@3.17.2)
+      '@effect/rpc': 0.68.2(@effect/platform@0.89.0(effect@3.17.2))(effect@3.17.2)
+      effect: 3.17.2
 
   '@emnapi/runtime@1.4.5':
     dependencies:
@@ -7496,6 +7751,66 @@ snapshots:
   '@oslojs/jwt@0.3.0':
     dependencies:
       '@oslojs/encoding': 0.4.1
+
+  '@parcel/watcher-android-arm64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-darwin-arm64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-darwin-x64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-freebsd-x64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm-glibc@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm-musl@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm64-glibc@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-arm64-musl@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-x64-glibc@2.5.1':
+    optional: true
+
+  '@parcel/watcher-linux-x64-musl@2.5.1':
+    optional: true
+
+  '@parcel/watcher-win32-arm64@2.5.1':
+    optional: true
+
+  '@parcel/watcher-win32-ia32@2.5.1':
+    optional: true
+
+  '@parcel/watcher-win32-x64@2.5.1':
+    optional: true
+
+  '@parcel/watcher@2.5.1':
+    dependencies:
+      detect-libc: 1.0.3
+      is-glob: 4.0.3
+      micromatch: 4.0.8
+      node-addon-api: 7.1.1
+    optionalDependencies:
+      '@parcel/watcher-android-arm64': 2.5.1
+      '@parcel/watcher-darwin-arm64': 2.5.1
+      '@parcel/watcher-darwin-x64': 2.5.1
+      '@parcel/watcher-freebsd-x64': 2.5.1
+      '@parcel/watcher-linux-arm-glibc': 2.5.1
+      '@parcel/watcher-linux-arm-musl': 2.5.1
+      '@parcel/watcher-linux-arm64-glibc': 2.5.1
+      '@parcel/watcher-linux-arm64-musl': 2.5.1
+      '@parcel/watcher-linux-x64-glibc': 2.5.1
+      '@parcel/watcher-linux-x64-musl': 2.5.1
+      '@parcel/watcher-win32-arm64': 2.5.1
+      '@parcel/watcher-win32-ia32': 2.5.1
+      '@parcel/watcher-win32-x64': 2.5.1
 
   '@petamoriken/float16@3.9.2':
     optional: true
@@ -10044,6 +10359,8 @@ snapshots:
 
   destr@2.0.5: {}
 
+  detect-libc@1.0.3: {}
+
   detect-libc@2.0.4:
     optional: true
 
@@ -11417,6 +11734,8 @@ snapshots:
     dependencies:
       '@types/nlcst': 2.0.3
 
+  node-addon-api@7.1.1: {}
+
   node-fetch-native@1.6.6: {}
 
   node-fetch@2.7.0:
@@ -12669,6 +12988,8 @@ snapshots:
       is-typed-array: 1.1.15
       which-typed-array: 1.1.19
 
+  uuid@11.1.0: {}
+
   uuid@8.0.0: {}
 
   uuid@8.3.2: {}
@@ -12783,6 +13104,8 @@ snapshots:
       strip-ansi: 7.1.0
 
   wrappy@1.0.2: {}
+
+  ws@8.18.3: {}
 
   xml2js@0.6.2:
     dependencies:

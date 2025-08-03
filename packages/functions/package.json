@@ -5,6 +5,8 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@effect-aws/lambda": "^1.5.1",
+    "@effect-aws/powertools-logger": "^1.5.1",
     "@hono/trpc-server": "^0.4.0",
     "@hono/valibot-validator": "^0.5.3",
     "@oslojs/jwt": "^0.3.0",

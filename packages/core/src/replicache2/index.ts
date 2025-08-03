@@ -182,16 +182,33 @@ export namespace Replicache {
         const db = yield* Database.TransactionManager;
         const table = replicacheClientViewMetadataTable;
 
-        const createMany = Effect.fn("Replicache.ClientViewMetadata.create")(
+        const upsertMany = Effect.fn(
+          "Replicache.ClientViewMetadata.upsertMany",
+        )(
           (
             values: Array<InferInsertModel<ReplicacheClientViewMetadataTable>>,
           ) =>
             db.useTransaction((tx) =>
-              tx.insert(table).values(values).returning(),
+              tx
+                .insert(table)
+                .values(values)
+                .onConflictDoUpdate({
+                  target: [
+                    table.clientGroupId,
+                    table.entity,
+                    table.entityId,
+                    table.tenantId,
+                  ],
+                  set: {
+                    entityVersion: sql`EXCLUDED.${table.entityVersion}`,
+                    clientViewVersion: sql`EXCLUDED.${table.clientViewVersion}`,
+                  },
+                })
+                .returning(),
             ),
         );
 
-        return { createMany } as const;
+        return { upsertMany } as const;
       }),
     },
   ) {}

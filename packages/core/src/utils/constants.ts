@@ -1,4 +1,4 @@
-import type { Duration } from "date-fns";
+import { Duration } from "effect";
 
 export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
@@ -84,9 +84,7 @@ export namespace Constants {
 
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 
-  export const REPLICACHE_LIFETIME = {
-    weeks: 2,
-  } as const satisfies Duration;
+  export const REPLICACHE_LIFETIME = Duration.weeks(2);
 
   export const WORKFLOW_REVIEW_STATUS = "Review";
 

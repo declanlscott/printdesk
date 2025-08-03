@@ -1,7 +1,19 @@
-import { and, eq, gt, isNotNull, lte, max, or, sql } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import {
+  and,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  lt,
+  lte,
+  max,
+  or,
+  sql,
+} from "drizzle-orm";
+import { Array, DateTime, Effect } from "effect";
 
 import { Database } from "../database2";
+import { Constants } from "../utils/constants";
 import {
   replicacheClientGroupsTable,
   replicacheClientsTable,
@@ -46,7 +58,25 @@ export namespace Replicache {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        return { findById } as const;
+        const deleteExpired = Effect.fn(
+          "Replicache.ClientGroupsRepository.deleteExpired",
+        )(() =>
+          DateTime.now.pipe(
+            Effect.map(
+              DateTime.subtractDuration(Constants.REPLICACHE_LIFETIME),
+            ),
+            Effect.flatMap((expiredAt) =>
+              db.useTransaction((tx) =>
+                tx
+                  .delete(table)
+                  .where(lt(table.updatedAt, expiredAt))
+                  .returning(),
+              ),
+            ),
+          ),
+        );
+
+        return { findById, deleteExpired } as const;
       }),
     },
   ) {}
@@ -96,7 +126,22 @@ export namespace Replicache {
             ),
         );
 
-        return { findById, findSinceVersionByGroupId } as const;
+        const deleteByGroupIds = Effect.fn(
+          "Replicache.ClientsRepository.deleteByGroupIds",
+        )((clientGroupIds: Array<ReplicacheClient["clientGroupId"]>) =>
+          db.useTransaction((tx) =>
+            tx
+              .delete(table)
+              .where(inArray(table.clientGroupId, clientGroupIds))
+              .returning(),
+          ),
+        );
+
+        return {
+          findById,
+          findSinceVersionByGroupId,
+          deleteByGroupIds,
+        } as const;
       }),
     },
   ) {}
@@ -169,7 +214,23 @@ export namespace Replicache {
               ),
         );
 
-        return { upsert, findById, findMaxVersionByGroupId } as const;
+        const deleteByGroupIds = Effect.fn(
+          "Replicache.ClientViewsRepository.deleteByGroupIds",
+        )((clientGroupIds: Array<ReplicacheClient["clientGroupId"]>) =>
+          db.useTransaction((tx) =>
+            tx
+              .delete(table)
+              .where(inArray(table.clientGroupId, clientGroupIds))
+              .returning(),
+          ),
+        );
+
+        return {
+          upsert,
+          findById,
+          findMaxVersionByGroupId,
+          deleteByGroupIds,
+        } as const;
       }),
     },
   ) {}
@@ -208,7 +269,18 @@ export namespace Replicache {
             ),
         );
 
-        return { upsertMany } as const;
+        const deleteByGroupIds = Effect.fn(
+          "Replicache.ClientViewMetadata.deleteByGroupIds",
+        )((clientGroupIds: Array<ReplicacheClient["clientGroupId"]>) =>
+          db.useTransaction((tx) =>
+            tx
+              .delete(table)
+              .where(inArray(table.clientGroupId, clientGroupIds))
+              .returning(),
+          ),
+        );
+
+        return { upsertMany, deleteByGroupIds } as const;
       }),
     },
   ) {}

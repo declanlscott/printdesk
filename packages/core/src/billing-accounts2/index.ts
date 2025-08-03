@@ -1,9 +1,21 @@
-import { and, eq, inArray, not, or } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableName,
+  getViewName,
+  getViewSelectedFields,
+  inArray,
+  not,
+  notInArray,
+  or,
+} from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
+import { Replicache } from "../replicache2";
+import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { Sync } from "../sync2";
 import { activeUsersView } from "../users2/sql";
 import {
@@ -22,6 +34,7 @@ import {
 } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
 import type {
   BillingAccount,
   BillingAccountCustomerAuthorization,
@@ -35,7 +48,10 @@ export namespace BillingAccounts {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/billing-accounts/Repository",
     {
-      dependencies: [Database.TransactionManager.Default],
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewMetadataQueryBuilder.Default,
+      ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = billingAccountsTable;
@@ -44,6 +60,9 @@ export namespace BillingAccounts {
           activeBillingAccountCustomerAuthorizationsView;
         const activeManagerAuthorizationsView =
           activeBillingAccountManagerAuthorizationsView;
+
+        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
+        const metadataTable = replicacheClientViewMetadataTable;
 
         const upsertMany = Effect.fn("BillingAccounts.Repository.upsertMany")(
           (values: Array<InferInsertModel<BillingAccountsTable>>) =>
@@ -68,73 +87,524 @@ export namespace BillingAccounts {
               ),
         );
 
-        const getMetadata = Effect.fn("BillingAccounts.Repository.getMetadata")(
-          (tenantId: BillingAccount["tenantId"]) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: table.id, version: table.version })
-                .from(table)
-                .where(eq(table.tenantId, tenantId)),
-            ),
+        const findCreates = Effect.fn("BillingAccounts.Repository.findCreates")(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_creates`)
+                      .as(
+                        tx
+                          .select()
+                          .from(table)
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
         );
 
-        const getActiveMetadata = Effect.fn(
-          "BillingAccounts.Repository.getActiveMetadata",
-        )((tenantId: BillingAccount["tenantId"]) =>
-          db.useTransaction((tx) =>
-            tx
-              .select({ id: activeView.id, version: activeView.version })
-              .from(activeView)
-              .where(eq(activeView.tenantId, tenantId)),
-          ),
+        const findActiveCreates = Effect.fn(
+          "BillingAccounts.Repository.findActiveCreates",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_creates`)
+                      .as(
+                        tx
+                          .select()
+                          .from(activeView)
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
         );
 
-        const getActiveMetadataByCustomerId = Effect.fn(
-          "BillingAccounts.Repository.getActiveMetadataByCustomerId",
+        const findActiveCreatesByCustomerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveCreatesByCustomerId",
         )(
           (
             customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccount["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: activeView.id, version: activeView.version })
-                .from(activeView)
-                .innerJoin(
-                  activeCustomerAuthorizationsView,
-                  and(
-                    eq(
-                      activeView.id,
-                      activeCustomerAuthorizationsView.billingAccountId,
-                    ),
-                    eq(
-                      activeView.tenantId,
-                      activeCustomerAuthorizationsView.tenantId,
-                    ),
-                  ),
-                )
-                .where(
-                  and(
-                    eq(activeCustomerAuthorizationsView.customerId, customerId),
-                    eq(activeView.tenantId, tenantId),
-                  ),
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .as(
+                        tx
+                          .select(getViewSelectedFields(activeView))
+                          .from(activeView)
+                          .innerJoin(
+                            activeCustomerAuthorizationsView,
+                            and(
+                              eq(
+                                activeView.id,
+                                activeCustomerAuthorizationsView.billingAccountId,
+                              ),
+                              eq(
+                                activeView.tenantId,
+                                activeCustomerAuthorizationsView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizationsView.customerId,
+                                customerId,
+                              ),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
                 ),
-            ),
+              ),
         );
 
-        const findByIds = Effect.fn("BillingAccounts.Repository.findByIds")(
+        const findUpdates = Effect.fn("BillingAccounts.Repository.findUpdates")(
           (
-            ids: ReadonlyArray<BillingAccount["id"]>,
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccount["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select()
-                .from(table)
-                .where(
-                  and(inArray(table.id, ids), eq(table.tenantId, tenantId)),
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_updates`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entityId, table.id),
+                              not(
+                                eq(metadataTable.entityVersion, table.version),
+                              ),
+                              eq(metadataTable.tenantId, table.tenantId),
+                            ),
+                          )
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
                 ),
-            ),
+              ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "BillingAccounts.Repository.findActiveUpdates",
+        )(
+          (
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeView.version,
+                                ),
+                              ),
+                              eq(metadataTable.tenantId, activeView.tenantId),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveUpdatesByCustomerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveUpdatesByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates_by_customer`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeView.version,
+                                ),
+                              ),
+                              eq(metadataTable.tenantId, activeView.tenantId),
+                            ),
+                          )
+                          .innerJoin(
+                            activeCustomerAuthorizationsView,
+                            and(
+                              eq(
+                                activeView.id,
+                                activeCustomerAuthorizationsView.billingAccountId,
+                              ),
+                              eq(
+                                activeView.tenantId,
+                                activeCustomerAuthorizationsView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizationsView.customerId,
+                                customerId,
+                              ),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findDeletes = Effect.fn("BillingAccounts.Repository.findDeletes")(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.tenantId, tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "BillingAccounts.Repository.findActiveDeletes",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .where(eq(activeView.tenantId, tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletesByCustomerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveDeletesByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .innerJoin(
+                          activeCustomerAuthorizationsView,
+                          and(
+                            eq(
+                              activeView.id,
+                              activeCustomerAuthorizationsView.billingAccountId,
+                            ),
+                            eq(
+                              activeView.tenantId,
+                              activeCustomerAuthorizationsView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeCustomerAuthorizationsView.customerId,
+                              customerId,
+                            ),
+                            eq(activeView.tenantId, tenantId),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findFastForward = Effect.fn(
+          "BillingAccounts.Repository.findFastForward",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+            excludeIds: Array<BillingAccount["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entity, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForward = Effect.fn(
+          "BillingAccounts.Repository.findActiveFastForward",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+            excludeIds: Array<BillingAccount["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entity, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForwardByCustomerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveFastForwardByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+            excludeIds: Array<BillingAccount["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entity, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .innerJoin(
+                            activeCustomerAuthorizationsView,
+                            and(
+                              eq(
+                                activeView.id,
+                                activeCustomerAuthorizationsView.billingAccountId,
+                              ),
+                              eq(
+                                activeView.tenantId,
+                                activeCustomerAuthorizationsView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizationsView.customerId,
+                                customerId,
+                              ),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
         );
 
         const findByOrigin = Effect.fn(
@@ -346,10 +816,18 @@ export namespace BillingAccounts {
 
         return {
           upsertMany,
-          getMetadata,
-          getActiveMetadata,
-          getActiveMetadataByCustomerId,
-          findByIds,
+          findCreates,
+          findActiveCreates,
+          findActiveCreatesByCustomerId,
+          findUpdates,
+          findActiveUpdates,
+          findActiveUpdatesByCustomerId,
+          findDeletes,
+          findActiveDeletes,
+          findActiveDeletesByCustomerId,
+          findFastForward,
+          findActiveFastForward,
+          findActiveFastForwardByCustomerId,
           findByOrigin,
           findActiveCustomerIds,
           findActiveManagerIds,
@@ -446,11 +924,17 @@ export namespace BillingAccounts {
   export class CustomerAuthorizationsRepository extends Effect.Service<CustomerAuthorizationsRepository>()(
     "@printdesk/core/billing-accounts/CustomerAuthorizationsRepository",
     {
-      dependencies: [Database.TransactionManager.Default],
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewMetadataQueryBuilder.Default,
+      ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = billingAccountCustomerAuthorizationsTable;
         const activeView = activeBillingAccountCustomerAuthorizationsView;
+
+        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
+        const metadataTable = replicacheClientViewMetadataTable;
 
         const upsertMany = Effect.fn(
           "BillingAccounts.CustomerAuthorizationsRepository.upsertMany",
@@ -476,63 +960,466 @@ export namespace BillingAccounts {
             ),
         );
 
-        const getMetadata = Effect.fn(
-          "BillingAccount.CustomerAuthorizationsRepository.getMetadata",
-        )((tenantId: BillingAccountCustomerAuthorization["tenantId"]) =>
-          db.useTransaction((tx) =>
-            tx
-              .select({ id: table.id, version: table.version })
-              .from(table)
-              .where(eq(table.tenantId, tenantId)),
-          ),
+        const findCreates = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findCreates",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_creates`)
+                      .as(
+                        tx
+                          .select()
+                          .from(table)
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
         );
 
-        const getActiveMetadata = Effect.fn(
-          "BillingAccount.CustomerAuthorizationsRepository.getActiveMetadata",
-        )((tenantId: BillingAccountCustomerAuthorization["tenantId"]) =>
-          db.useTransaction((tx) =>
-            tx
-              .select({ id: activeView.id, version: activeView.version })
-              .from(activeView)
-              .where(eq(activeView.tenantId, tenantId)),
-          ),
+        const findActiveCreates = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findActiveCreates",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_creates`)
+                      .as(
+                        tx
+                          .select()
+                          .from(activeView)
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
         );
 
-        const getActiveMetadataByCustomerId = Effect.fn(
-          "BillingAccounts.CustomerAuthorizationsRepository.getActiveMetadataByCustomerId",
+        const findActiveCreatesByCustomerId = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findActiveCreatesByCustomerId",
         )(
           (
             customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccountCustomerAuthorization["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: activeView.id, version: activeView.version })
-                .from(activeView)
-                .where(
-                  and(
-                    eq(activeView.customerId, customerId),
-                    eq(activeView.tenantId, tenantId),
-                  ),
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .as(
+                        tx
+                          .select()
+                          .from(activeView)
+                          .where(
+                            and(
+                              eq(activeView.customerId, customerId),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
                 ),
-            ),
+              ),
         );
 
-        const findByIds = Effect.fn(
-          "BillingAccounts.CustomerAuthorizationsRepository.findByIds",
+        const findUpdates = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findUpdates",
         )(
           (
-            ids: ReadonlyArray<BillingAccountCustomerAuthorization["id"]>,
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccountCustomerAuthorization["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select()
-                .from(table)
-                .where(
-                  and(inArray(table.id, ids), eq(table.tenantId, tenantId)),
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entityId, table.id),
+                              not(
+                                eq(metadataTable.entityVersion, table.version),
+                              ),
+                              eq(metadataTable.tenantId, table.tenantId),
+                            ),
+                          )
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
                 ),
-            ),
+              ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findActiveUpdates",
+        )(
+          (
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeView.version,
+                                ),
+                              ),
+                              eq(metadataTable.tenantId, activeView.tenantId),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveUpdatesByCustomerId = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findActiveUpdatesByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates_by_customer`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeView.version,
+                                ),
+                              ),
+                              eq(metadataTable.tenantId, activeView.tenantId),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(activeView.customerId, customerId),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findDeletes = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findDeletes",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.tenantId, tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "BillingAccounts.CustomerAuthorizationsRepository.findActiveDeletes",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .where(eq(activeView.tenantId, tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletesByCustomerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveDeletesByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .where(
+                          and(
+                            eq(activeView.customerId, customerId),
+                            eq(activeView.tenantId, tenantId),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findFastForward = Effect.fn(
+          "BillingAccounts.Repository.findFastForward",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entityId, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForward = Effect.fn(
+          "BillingAccounts.Repository.findActiveFastForward",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForwardByCustomerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveFastForwardByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(activeView.customerId, customerId),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
         );
 
         const findByOrigin = Effect.fn(
@@ -575,10 +1462,18 @@ export namespace BillingAccounts {
 
         return {
           upsertMany,
-          getMetadata,
-          getActiveMetadata,
-          getActiveMetadataByCustomerId,
-          findByIds,
+          findCreates,
+          findActiveCreates,
+          findActiveCreatesByCustomerId,
+          findUpdates,
+          findActiveUpdates,
+          findActiveUpdatesByCustomerId,
+          findDeletes,
+          findActiveDeletes,
+          findActiveDeletesByCustomerId,
+          findFastForward,
+          findActiveFastForward,
+          findActiveFastForwardByCustomerId,
           findByOrigin,
         } as const;
       }),
@@ -588,13 +1483,19 @@ export namespace BillingAccounts {
   export class ManagerAuthorizationsRepository extends Effect.Service<ManagerAuthorizationsRepository>()(
     "@printdesk/core/billing-accounts/ManagerAuthorizationsRepository",
     {
-      dependencies: [Database.TransactionManager.Default],
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewMetadataQueryBuilder.Default,
+      ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = billingAccountManagerAuthorizationsTable;
         const activeView = activeBillingAccountManagerAuthorizationsView;
-        const activeCustomerAuthorizationView =
+        const activeCustomerAuthorizationsView =
           activeBillingAccountCustomerAuthorizationsView;
+
+        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
+        const metadataTable = replicacheClientViewMetadataTable;
 
         const create = Effect.fn(
           "BillingAccounts.ManagerAuthorizationsRepository.create",
@@ -612,76 +1513,530 @@ export namespace BillingAccounts {
               ),
         );
 
-        const getMetadata = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.getMetadata",
-        )((tenantId: BillingAccountManagerAuthorization["tenantId"]) =>
-          db.useTransaction((tx) =>
-            tx
-              .select({ id: table.id, version: table.version })
-              .from(table)
-              .where(eq(table.tenantId, tenantId)),
-          ),
+        const findCreates = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findCreates",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_creates`)
+                      .as(
+                        tx
+                          .select()
+                          .from(table)
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
         );
 
-        const getActiveMetadata = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.getActiveMetadata",
-        )((tenantId: BillingAccountManagerAuthorization["tenantId"]) =>
-          db.useTransaction((tx) =>
-            tx
-              .select({ id: activeView.id, version: activeView.version })
-              .from(activeView)
-              .where(eq(activeView.tenantId, tenantId)),
-          ),
+        const findActiveCreates = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreates",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_creates`)
+                      .as(
+                        tx
+                          .select()
+                          .from(activeView)
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
         );
 
-        const getActiveMetadataByCustomerId = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.getActiveMetadataByCustomerId",
+        const findActiveCreatesByCustomerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreatesByCustomerId",
         )(
           (
             customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccountManagerAuthorization["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: activeView.id, version: activeView.version })
-                .from(activeView)
-                .innerJoin(
-                  activeCustomerAuthorizationView,
-                  and(
-                    eq(
-                      activeView.billingAccountId,
-                      activeCustomerAuthorizationView.billingAccountId,
-                    ),
-                    eq(
-                      activeView.tenantId,
-                      activeCustomerAuthorizationView.tenantId,
-                    ),
-                  ),
-                )
-                .where(
-                  and(
-                    eq(activeCustomerAuthorizationView.customerId, customerId),
-                    eq(activeView.tenantId, tenantId),
-                  ),
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .as(
+                        tx
+                          .select(getViewSelectedFields(activeView))
+                          .from(activeView)
+                          .innerJoin(
+                            activeCustomerAuthorizationsView,
+                            and(
+                              eq(
+                                activeView.billingAccountId,
+                                activeCustomerAuthorizationsView.billingAccountId,
+                              ),
+                              eq(
+                                activeView.tenantId,
+                                activeCustomerAuthorizationsView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizationsView.customerId,
+                                customerId,
+                              ),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
                 ),
-            ),
+              ),
         );
 
-        const findByIds = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.findByIds",
+        const findUpdates = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findUpdates",
         )(
           (
-            ids: ReadonlyArray<BillingAccountManagerAuthorization["id"]>,
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccountManagerAuthorization["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select()
-                .from(table)
-                .where(
-                  and(inArray(table.id, ids), eq(table.tenantId, tenantId)),
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_updates`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entityId, table.id),
+                              not(
+                                eq(metadataTable.entityVersion, table.version),
+                              ),
+                              eq(metadataTable.tenantId, table.tenantId),
+                            ),
+                          )
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
                 ),
-            ),
+              ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdates",
+        )(
+          (
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeView.version,
+                                ),
+                              ),
+                              eq(metadataTable.tenantId, activeView.tenantId),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveUpdatesByCustomerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdatesByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_updates_by_customer`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeView.version,
+                                ),
+                              ),
+                              eq(metadataTable.tenantId, activeView.tenantId),
+                            ),
+                          )
+                          .innerJoin(
+                            activeCustomerAuthorizationsView,
+                            and(
+                              eq(
+                                activeView.billingAccountId,
+                                activeCustomerAuthorizationsView.billingAccountId,
+                              ),
+                              eq(
+                                activeView.tenantId,
+                                activeCustomerAuthorizationsView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizationsView.customerId,
+                                customerId,
+                              ),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findDeletes = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findDeletes",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.tenantId, tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletes",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .where(eq(activeView.tenantId, tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletesByCustomer = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletesByCustomer",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .innerJoin(
+                          activeCustomerAuthorizationsView,
+                          and(
+                            eq(
+                              activeView.id,
+                              activeCustomerAuthorizationsView.billingAccountId,
+                            ),
+                            eq(
+                              activeView.tenantId,
+                              activeCustomerAuthorizationsView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeCustomerAuthorizationsView.customerId,
+                              customerId,
+                            ),
+                            eq(activeView.tenantId, tenantId),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findFastForward = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findFastForward",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entityId, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForward = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForward",
+        )(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, tenantId)),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForwardByCustomer = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForwardByCustomer",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .innerJoin(
+                            activeCustomerAuthorizationsView,
+                            and(
+                              eq(
+                                activeView.id,
+                                activeCustomerAuthorizationsView.billingAccountId,
+                              ),
+                              eq(
+                                activeView.tenantId,
+                                activeCustomerAuthorizationsView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizationsView.customerId,
+                                customerId,
+                              ),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
         );
 
         const deleteById = Effect.fn(
@@ -707,10 +2062,18 @@ export namespace BillingAccounts {
 
         return {
           create,
-          getMetadata,
-          getActiveMetadata,
-          getActiveMetadataByCustomerId,
-          findByIds,
+          findCreates,
+          findActiveCreates,
+          findActiveCreatesByCustomerId,
+          findUpdates,
+          findActiveUpdates,
+          findActiveUpdatesByCustomerId,
+          findDeletes,
+          findActiveDeletes,
+          findActiveDeletesByCustomer,
+          findFastForward,
+          findActiveFastForward,
+          findActiveFastForwardByCustomer,
           deleteById,
         } as const;
       }),

@@ -1,26 +1,35 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { identityProvidersTable } from "../identity-providers2/sql";
+import { Replicache } from "../replicache2";
+import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { Sync } from "../sync2";
 import { updateTenant } from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { IdentityProvider } from "../identity-providers2/sql";
+import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
 import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
 
 export namespace Tenants {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/tenants/Repository",
     {
-      dependencies: [Database.TransactionManager.Default],
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewMetadataQueryBuilder.Default,
+      ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = tenantsTable;
+
+        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
+        const metadataTable = replicacheClientViewMetadataTable;
 
         const upsert = Effect.fn("Tenants.Repository.upsert")(
           (tenant: InferInsertModel<TenantsTable>) =>
@@ -38,14 +47,131 @@ export namespace Tenants {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const getMetadata = Effect.fn("Tenants.Repository.getMetadata")(
-          (id: Tenant["id"]) =>
-            db.useTransaction((tx) =>
-              tx
-                .select({ id: table.id, version: table.version })
-                .from(table)
-                .where(eq(table.id, id)),
+        const findCreates = Effect.fn("Tenants.Repository.findCreates")(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            id: Tenant["id"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                id,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_creates`)
+                      .as(tx.select().from(table).where(eq(table.id, id)));
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
+        );
+
+        const findUpdates = Effect.fn("Tenants.Repository.findUpdates")(
+          (
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            id: Tenant["id"],
+          ) =>
+            metadataQb.updates(getTableName(table), clientGroupId, id).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          table,
+                          and(
+                            eq(metadataTable.entityId, table.id),
+                            not(eq(metadataTable.entityVersion, table.version)),
+                            eq(metadataTable.tenantId, table.id),
+                          ),
+                        )
+                        .where(eq(table.id, id)),
+                    );
+
+                  return tx.select(cte[getTableName(table)]).from(cte);
+                }),
+              ),
             ),
+        );
+
+        const findDeletes = Effect.fn("Tenants.Repository.findDeletes")(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            id: Tenant["id"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                id,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.id, id)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findFastForward = Effect.fn("Tenants.Repository.findFastForward")(
+          (
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            id: Tenant["id"],
+            excludeIds: Array<Tenant["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                id,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(metadataTable.entityId, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.id, id)),
+                      );
+
+                    return tx.select(cte[getTableName(table)]).from(cte);
+                  }),
+                ),
+              ),
         );
 
         const findById = Effect.fn("Tenants.Repository.findById")(
@@ -106,7 +232,10 @@ export namespace Tenants {
 
         return {
           upsert,
-          getMetadata,
+          findCreates,
+          findUpdates,
+          findDeletes,
+          findFastForward,
           findById,
           findByIdentityProvider,
           findBySubdomain,

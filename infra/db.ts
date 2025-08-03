@@ -1,5 +1,5 @@
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
-import * as v from "valibot";
+import { Schema } from "effect";
 
 import * as custom from "./custom";
 import { aws_, isProdStage } from "./misc";
@@ -30,15 +30,24 @@ export const dbMigratorInvocation = new aws.lambda.Invocation(
   },
 );
 
-export const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
-  (result) =>
-    v.parse(
-      v.object(
-        { success: v.literal(true, "Database migration failed") },
-        "Invalid database migration result",
+const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
+  Schema.decodeSync(
+    Schema.transform(
+      Schema.parseJson(
+        Schema.Struct({
+          success: Schema.Literal(true).annotations({
+            message: () => "Database migration failed",
+          }),
+        }).annotations({ message: () => "Invalid database migration result" }),
       ),
-      JSON.parse(result),
-    ).success,
+      Schema.Literal(true),
+      {
+        decode: ({ success }) => success,
+        encode: (success) => ({ success }),
+        strict: true,
+      },
+    ),
+  ),
 );
 
 export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {

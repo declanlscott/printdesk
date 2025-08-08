@@ -2,13 +2,17 @@ import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { identityProvidersTable } from "../identity-providers2/sql";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
-import { updateTenant } from "./shared";
+import {
+  isLicenseAvailable,
+  isTenantSubdomainAvailable,
+  updateTenant,
+} from "./shared";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -245,29 +249,34 @@ export namespace Tenants {
     },
   ) {}
 
-  export class Policy extends Effect.Service<Policy>()(
-    "@printdesk/core/tenants/Policy",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/tenants/Policies",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isSubdomainAvailable = Effect.fn(
-          "Tenants.Policy.isSubdomainAvailable",
-        )((subdomain: Tenant["subdomain"]) =>
-          AccessControl.policy(() =>
-            Effect.gen(function* () {
-              if (["api", "auth", "backend", "www"].includes(subdomain))
-                return false;
+        const isSubdomainAvailable = yield* DataAccess.makePolicy(
+          isTenantSubdomainAvailable,
+          Effect.succeed({
+            make: ({ subdomain }) =>
+              AccessControl.policy(() =>
+                Effect.gen(function* () {
+                  if (["api", "auth", "backend", "www"].includes(subdomain))
+                    return false;
 
-              return yield* repository.findBySubdomain(subdomain).pipe(
-                Effect.catchTag("NoSuchElementException", () =>
-                  Effect.succeed(null),
-                ),
-                Effect.map((tenant) => !tenant || tenant.status === "setup"),
-              );
-            }),
-          ),
+                  return yield* repository.findBySubdomain(subdomain).pipe(
+                    Effect.catchTag("NoSuchElementException", () =>
+                      Effect.succeed(null),
+                    ),
+                    Effect.map(
+                      (tenant) => !tenant || tenant.status === "setup",
+                    ),
+                  );
+                }),
+              ),
+          }),
         );
 
         return { isSubdomainAvailable } as const;
@@ -275,17 +284,21 @@ export namespace Tenants {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/tenants/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/tenants/Mutations",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const update = Sync.Mutation(
+        const update = yield* DataAccess.makeMutation(
           updateTenant,
-          () => AccessControl.permission("tenants:update"),
-          (tenant, session) => repository.updateById(session.tenantId, tenant),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("tenants:update"),
+            mutator: (tenant, session) =>
+              repository.updateById(session.tenantId, tenant),
+          }),
         );
 
         return { update } as const;
@@ -336,26 +349,31 @@ export namespace Tenants {
     },
   ) {}
 
-  export class LicensesPolicy extends Effect.Service<LicensesPolicy>()(
-    "@printdesk/core/tenants/LicensesPolicy",
+  export class LicensePolicies extends Effect.Service<LicensePolicies>()(
+    "@printdesk/core/tenants/LicensePolicies",
     {
+      accessors: true,
       dependencies: [LicensesRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* LicensesRepository;
 
-        const isAvailable = Effect.fn("Tenants.LicensesPolicy.isAvailable")(
-          (key: License["key"]) =>
-            AccessControl.policy(() =>
-              repository
-                .findByKeyWithTenant(key)
-                .pipe(
-                  Effect.map(
-                    ({ license, tenant }) =>
-                      license.status === "active" &&
-                      (license.tenantId === null || tenant?.status === "setup"),
+        const isAvailable = yield* DataAccess.makePolicy(
+          isLicenseAvailable,
+          Effect.succeed({
+            make: ({ key }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findByKeyWithTenant(key)
+                  .pipe(
+                    Effect.map(
+                      ({ license, tenant }) =>
+                        license.status === "active" &&
+                        (license.tenantId === null ||
+                          tenant?.status === "setup"),
+                    ),
                   ),
-                ),
-            ),
+              ),
+          }),
         );
 
         return { isAvailable } as const;

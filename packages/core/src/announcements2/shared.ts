@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
+import { DataAccess } from "../data-access2";
 import { SyncTable, TenantTable, View } from "../database2/shared";
-import { SyncMutation } from "../sync2/shared";
 import { NanoId } from "../utils2/shared";
 
 import type { ActiveAnnouncementsView, AnnouncementsTable } from "./sql";
@@ -24,14 +24,14 @@ export const activeAnnouncements = View<ActiveAnnouncementsView>()(
   announcements.Schema,
 );
 
-export const createAnnouncement = SyncMutation(
-  "createAnnouncement",
-  announcements.Schema.omit("authorId", "deletedAt", "tenantId"),
-);
+export const createAnnouncement = new DataAccess.Mutation({
+  name: "createAnnouncement",
+  Args: announcements.Schema.omit("authorId", "deletedAt", "tenantId"),
+});
 
-export const updateAnnouncement = SyncMutation(
-  "updateAnnouncement",
-  Schema.extend(
+export const updateAnnouncement = new DataAccess.Mutation({
+  name: "updateAnnouncement",
+  Args: Schema.extend(
     announcements.Schema.pick("id", "updatedAt"),
     announcements.Schema.omit(
       ...Struct.keys(TenantTable.fields),
@@ -39,12 +39,12 @@ export const updateAnnouncement = SyncMutation(
       "authorId",
     ).pipe(Schema.partial),
   ),
-);
+});
 
-export const deleteAnnouncement = SyncMutation(
-  "deleteAnnouncement",
-  Schema.Struct({
+export const deleteAnnouncement = new DataAccess.Mutation({
+  name: "deleteAnnouncement",
+  Args: Schema.Struct({
     id: NanoId,
     deletedAt: Schema.DateTimeUtc,
   }),
-);
+});

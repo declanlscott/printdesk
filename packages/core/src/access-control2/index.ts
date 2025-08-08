@@ -53,12 +53,23 @@ export namespace AccessControl {
     tailscale_oauth_client: ["update"],
   } as const);
 
-  export const Permission = Schema.Literal(
+  export const permissions = [
     ...syncTablePermissions,
     ...nonSyncTablePermissions,
     ...viewPermissions,
     ...externalPermissions,
-  );
+  ] as const;
+  export type Permissions = typeof permissions;
+
+  export type InferReadPermissions<
+    TPermissions extends Permissions = Permissions,
+  > = {
+    [TPermission in TPermissions[number]]: TPermission extends `${string}:read`
+      ? TPermission
+      : never;
+  }[TPermissions[number]];
+
+  export const Permission = Schema.Literal(...permissions);
   export type Permission = Schema.Schema.Type<typeof Permission>;
 
   export type UserRoleAcls = ReadonlyRecord<
@@ -182,6 +193,14 @@ export namespace AccessControl {
   export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
     readonly message: string;
   }> {}
+
+  export type MakePolicy<
+    TArgs extends Schema.Schema.AnyNoContext,
+    TError,
+    TContext,
+  > = (
+    args: Schema.Schema.Type<TArgs>,
+  ) => AccessControl.Policy<TError, TContext>;
 
   export type Policy<TError = never, TContext = never> = Effect.Effect<
     void,

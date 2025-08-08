@@ -1,7 +1,7 @@
 import { Either, Schema, Struct } from "effect";
 
+import { DataAccess } from "../data-access2";
 import { SyncTable, TenantTable, View } from "../database2/shared";
-import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { Cost, HexColor, NanoId } from "../utils2/shared";
 
@@ -257,25 +257,25 @@ export const activePublishedProducts = View<ActivePublishedProductsView>()(
   activeProducts.Schema,
 );
 
-export const createProduct = SyncMutation(
-  "createProduct",
-  products.Schema.omit("deletedAt", "tenantId"),
-);
+export const createProduct = new DataAccess.Mutation({
+  name: "createProduct",
+  Args: products.Schema.omit("deletedAt", "tenantId"),
+});
 
-export const updateProduct = SyncMutation(
-  "updateProduct",
-  Schema.extend(
+export const updateProduct = new DataAccess.Mutation({
+  name: "updateProduct",
+  Args: Schema.extend(
     products.Schema.pick("id", "updatedAt"),
     products.Schema.omit(...Struct.keys(TenantTable.fields), "roomId").pipe(
       Schema.partial,
     ),
   ),
-);
+});
 
-export const deleteProduct = SyncMutation(
-  "deleteProduct",
-  Schema.Struct({
+export const deleteProduct = new DataAccess.Mutation({
+  name: "deleteProduct",
+  Args: Schema.Struct({
     id: NanoId,
     deletedAt: Schema.DateTimeUtc,
   }),
-);
+});

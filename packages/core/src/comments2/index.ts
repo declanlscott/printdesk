@@ -15,13 +15,18 @@ import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { Orders } from "../orders2";
 import { activeOrdersView } from "../orders2/sql";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
-import { createComment, deleteComment, updateComment } from "./shared";
+import {
+  createComment,
+  deleteComment,
+  isCommentAuthor,
+  updateComment,
+} from "./shared";
 import { activeCommentsView, commentsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -977,24 +982,28 @@ export namespace Comments {
     },
   ) {}
 
-  export class Policy extends Effect.Service<Policy>()(
-    "@printdesk/core/comments/Policy",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/comments/Policies",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isAuthor = Effect.fn("Comments.Policy.isAuthor")(
-          (commentId: Comment["id"]) =>
-            AccessControl.policy((principal) =>
-              repository
-                .findById(commentId, principal.tenantId)
-                .pipe(
-                  Effect.map(
-                    (comment) => comment.authorId === principal.userId,
+        const isAuthor = yield* DataAccess.makePolicy(
+          isCommentAuthor,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      (comment) => comment.authorId === principal.userId,
+                    ),
                   ),
-                ),
-            ),
+              ),
+          }),
         );
 
         return { isAuthor } as const;
@@ -1002,51 +1011,61 @@ export namespace Comments {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/comments/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/comments/Mutations",
     {
-      dependencies: [Policy.Default, Orders.Policy.Default],
+      accessors: true,
+      dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
-        const policy = yield* Policy;
-        const ordersPolicy = yield* Orders.Policy;
 
-        const create = Sync.Mutation(
+        const { isCustomerOrManager, hasActiveManagerAuthorization } =
+          yield* Orders.Policies;
+
+        const { isAuthor } = yield* Policies;
+
+        const create = yield* DataAccess.makeMutation(
           createComment,
-          ({ orderId }) =>
-            AccessControl.some(
-              AccessControl.permission("comments:create"),
-              ordersPolicy.isCustomerOrManager(orderId),
-              ordersPolicy.hasActiveManagerAuthorization(orderId),
-            ),
-          (comment, session) =>
-            repository.create({
-              ...comment,
-              authorId: session.userId,
-              tenantId: session.tenantId,
-            }),
+          Effect.succeed({
+            makePolicy: ({ orderId }) =>
+              AccessControl.some(
+                AccessControl.permission("comments:create"),
+                isCustomerOrManager.make({ id: orderId }),
+                hasActiveManagerAuthorization.make({ id: orderId }),
+              ),
+            mutator: (comment, session) =>
+              repository.create({
+                ...comment,
+                authorId: session.userId,
+                tenantId: session.tenantId,
+              }),
+          }),
         );
 
-        const update = Sync.Mutation(
+        const update = yield* DataAccess.makeMutation(
           updateComment,
-          ({ id }) =>
-            AccessControl.some(
-              AccessControl.permission("comments:update"),
-              policy.isAuthor(id),
-            ),
-          ({ id, ...comment }, session) =>
-            repository.updateById(id, comment, session.tenantId),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.some(
+                AccessControl.permission("comments:update"),
+                isAuthor.make({ id }),
+              ),
+            mutator: ({ id, ...comment }, session) =>
+              repository.updateById(id, comment, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteComment,
-          ({ id }) =>
-            AccessControl.some(
-              AccessControl.permission("comments:delete"),
-              policy.isAuthor(id),
-            ),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.some(
+                AccessControl.permission("comments:delete"),
+                isAuthor.make({ id }),
+              ),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
         return { create, update, delete: delete_ } as const;

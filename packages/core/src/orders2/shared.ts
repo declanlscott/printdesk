@@ -1,7 +1,7 @@
 import { Either, Schema, Struct } from "effect";
 
+import { DataAccess } from "../data-access2";
 import { SyncTable, TenantTable, View } from "../database2/shared";
-import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { IsoDate, IsoTimestamp, NanoId } from "../utils2/shared";
 
@@ -209,14 +209,55 @@ export const activeOrders = View<ActiveOrdersView>()(
   orders.Schema,
 );
 
-export const createOrder = SyncMutation(
-  "createOrder",
-  orders.Schema.omit("approvedAt", "deletedAt", "tenantId"),
-);
+export const isOrderCustomer = new DataAccess.Policy({
+  name: "isOrderCustomer",
+  Args: orders.Schema.pick("id"),
+});
 
-export const editOrder = SyncMutation(
-  "editOrder",
-  Schema.extend(
+export const isOrderManager = new DataAccess.Policy({
+  name: "isOrderManager",
+  Args: orders.Schema.pick("id"),
+});
+
+export const isOrderCustomerOrManager = new DataAccess.Policy({
+  name: "isOrderCustomerOrManager",
+  Args: orders.Schema.pick("id"),
+});
+
+export const hasActiveOrderBillingAccountManagerAuthorization =
+  new DataAccess.Policy({
+    name: "hasActiveOrderBillingAccountManagerAuthorization",
+    Args: orders.Schema.pick("id"),
+  });
+
+export const canEditOrder = new DataAccess.Policy({
+  name: "canEditOrder",
+  Args: orders.Schema.pick("id"),
+});
+
+export const canApproveOrder = new DataAccess.Policy({
+  name: "canApproveOrder",
+  Args: orders.Schema.pick("id"),
+});
+
+export const canTransitionOrder = new DataAccess.Policy({
+  name: "canTransitionOrder",
+  Args: orders.Schema.pick("id"),
+});
+
+export const canDeleteOrder = new DataAccess.Policy({
+  name: "canDeleteOrder",
+  Args: orders.Schema.pick("id"),
+});
+
+export const createOrder = new DataAccess.Mutation({
+  name: "createOrder",
+  Args: orders.Schema.omit("approvedAt", "deletedAt", "tenantId"),
+});
+
+export const editOrder = new DataAccess.Mutation({
+  name: "editOrder",
+  Args: Schema.extend(
     orders.Schema.pick("id", "updatedAt"),
     orders.Schema.omit(
       ...Struct.keys(TenantTable.fields),
@@ -228,27 +269,27 @@ export const editOrder = SyncMutation(
       "approvedAt",
     ).pipe(Schema.partial),
   ),
-);
+});
 
-export const approveOrder = SyncMutation(
-  "approveOrder",
-  Schema.extend(
-    orders.Schema.pick("id", "updatedAt"),
+export const approveOrder = new DataAccess.Mutation({
+  name: "approveOrder",
+  Args: Schema.extend(
+    orders.Schema.pick("id", "updatedAt", "workflowStatus"),
     Schema.Struct({
       approvedAt: Schema.DateTimeUtc,
     }),
   ),
-);
+});
 
-export const transitionOrder = SyncMutation(
-  "transitionOrder",
-  orders.Schema.pick("id", "updatedAt", "workflowStatus"),
-);
+export const transitionOrder = new DataAccess.Mutation({
+  name: "transitionOrder",
+  Args: orders.Schema.pick("id", "updatedAt", "workflowStatus"),
+});
 
-export const deleteOrder = SyncMutation(
-  "deleteOrder",
-  Schema.Struct({
+export const deleteOrder = new DataAccess.Mutation({
+  name: "deleteOrder",
+  Args: Schema.Struct({
     id: NanoId,
     deletedAt: Schema.DateTimeUtc,
   }),
-);
+});

@@ -10,10 +10,10 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
 import { createProduct, deleteProduct, updateProduct } from "./shared";
 import {
   activeProductsView,
@@ -574,32 +574,39 @@ export namespace Products {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/products/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/products/Mutations",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = Sync.Mutation(
+        const create = yield* DataAccess.makeMutation(
           createProduct,
-          () => AccessControl.permission("products:create"),
-          (product, { tenantId }) =>
-            repository.create({ ...product, tenantId }),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("products:create"),
+            mutator: (product, { tenantId }) =>
+              repository.create({ ...product, tenantId }),
+          }),
         );
 
-        const update = Sync.Mutation(
+        const update = yield* DataAccess.makeMutation(
           updateProduct,
-          () => AccessControl.permission("products:update"),
-          ({ id, ...product }, session) =>
-            repository.updateById(id, product, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("products:update"),
+            mutator: ({ id, ...product }, session) =>
+              repository.updateById(id, product, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteProduct,
-          () => AccessControl.permission("products:delete"),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("products:delete"),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
         return { create, update, delete: delete_ } as const;

@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
+import { DataAccess } from "../data-access2";
 import { SyncTable, TenantTable, View } from "../database2/shared";
-import { SyncMutation } from "../sync2/shared";
 import { NanoId } from "../utils2/shared";
 
 import type { ActiveUsersView, UsersTable } from "./sql";
@@ -38,9 +38,14 @@ export const activeUsers = View<ActiveUsersView>()(
   users.Schema,
 );
 
-export const updateUser = SyncMutation(
-  "updateUser",
-  Schema.extend(
+export const isUserSelf = new DataAccess.Policy({
+  name: "isUserSelf",
+  Args: users.Schema.pick("id"),
+});
+
+export const updateUser = new DataAccess.Mutation({
+  name: "updateUser",
+  Args: Schema.extend(
     users.Schema.pick("id", "updatedAt"),
     users.Schema.omit(
       ...Struct.keys(TenantTable.fields),
@@ -52,14 +57,17 @@ export const updateUser = SyncMutation(
       "email",
     ).pipe(Schema.partial),
   ),
-);
+});
 
-export const deleteUser = SyncMutation(
-  "deleteUser",
-  Schema.Struct({
+export const deleteUser = new DataAccess.Mutation({
+  name: "deleteUser",
+  Args: Schema.Struct({
     id: NanoId,
     deletedAt: Schema.DateTimeUtc,
   }),
-);
+});
 
-export const restoreUser = SyncMutation("restoreUser", users.Schema.pick("id"));
+export const restoreUser = new DataAccess.Mutation({
+  name: "restoreUser",
+  Args: users.Schema.pick("id"),
+});

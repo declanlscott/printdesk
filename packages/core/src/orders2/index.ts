@@ -17,17 +17,25 @@ import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { workflowStatusesTable } from "../rooms2/sql";
-import { Sync } from "../sync2";
 import { activeUsersView } from "../users2/sql";
 import {
   approveOrder,
+  canApproveOrder,
+  canDeleteOrder,
+  canEditOrder,
+  canTransitionOrder,
   createOrder,
   deleteOrder,
   editOrder,
+  hasActiveOrderBillingAccountManagerAuthorization,
+  isOrderCustomer,
+  isOrderCustomerOrManager,
+  isOrderManager,
   transitionOrder,
 } from "./shared";
 import { activeOrdersView, ordersTable } from "./sql";
@@ -974,93 +982,136 @@ export namespace Orders {
     },
   ) {}
 
-  export class Policy extends Effect.Service<Policy>()(
-    "@printdesk/core/orders/Policy",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/orders/Policies",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isCustomer = Effect.fn("Orders.Policy.isCustomer")(
-          (id: Order["id"]) =>
-            AccessControl.policy((principal) =>
-              repository
-                .findById(id, principal.tenantId)
-                .pipe(
-                  Effect.map((order) => order.customerId === principal.userId),
-                ),
-            ),
+        const isCustomer = yield* DataAccess.makePolicy(
+          isOrderCustomer,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      (order) => order.customerId === principal.userId,
+                    ),
+                  ),
+              ),
+          }),
         );
 
-        const isManager = Effect.fn("Orders.Policy.isManager")(
-          (id: Order["id"]) =>
-            AccessControl.policy((principal) =>
-              repository
-                .findById(id, principal.tenantId)
-                .pipe(
-                  Effect.map((order) => order.managerId === principal.userId),
-                ),
-            ),
+        const isManager = yield* DataAccess.makePolicy(
+          isOrderManager,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map((order) => order.managerId === principal.userId),
+                  ),
+              ),
+          }),
         );
 
-        const isCustomerOrManager = Effect.fn(
-          "Orders.Policy.isCustomerOrManager",
-        )((id: Order["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findById(id, principal.tenantId)
-              .pipe(
-                Effect.map(
-                  (order) =>
-                    order.customerId === principal.userId ||
-                    order.managerId === principal.userId,
-                ),
+        const isCustomerOrManager = yield* DataAccess.makePolicy(
+          isOrderCustomerOrManager,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      (order) =>
+                        order.customerId === principal.userId ||
+                        order.managerId === principal.userId,
+                    ),
+                  ),
               ),
-          ),
+          }),
         );
 
-        const hasActiveManagerAuthorization = (id: Order["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findActiveManagerIds(id, principal.tenantId)
-              .pipe(
-                Effect.map(
-                  Array.some((managerId) => managerId === principal.userId),
-                ),
+        const hasActiveManagerAuthorization = yield* DataAccess.makePolicy(
+          hasActiveOrderBillingAccountManagerAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveManagerIds(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      Array.some((managerId) => managerId === principal.userId),
+                    ),
+                  ),
               ),
-          );
+          }),
+        );
 
-        const canEdit = (id: Order["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findStatus(id, principal.tenantId)
-              .pipe(
-                Effect.map((status) =>
-                  status !== null
-                    ? !(
-                        status.type === "InProgress" ||
-                        status.type === "Completed"
-                      )
-                    : false,
-                ),
+        const canEdit = yield* DataAccess.makePolicy(
+          canEditOrder,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findStatus(id, principal.tenantId)
+                  .pipe(
+                    Effect.map((status) =>
+                      status !== null
+                        ? !(
+                            status.type === "InProgress" ||
+                            status.type === "Completed"
+                          )
+                        : false,
+                    ),
+                  ),
               ),
-          );
+          }),
+        );
 
-        const canApprove = (id: Order["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findStatus(id, principal.tenantId)
-              .pipe(Effect.map((status) => status?.type === "Review")),
-          );
+        const canApprove = yield* DataAccess.makePolicy(
+          canApproveOrder,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findStatus(id, principal.tenantId)
+                  .pipe(
+                    Effect.map((status) =>
+                      status !== null
+                        ? !(
+                            status.type === "InProgress" ||
+                            status.type === "Completed"
+                          )
+                        : false,
+                    ),
+                  ),
+              ),
+          }),
+        );
 
-        const canTransition = (id: Order["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findStatus(id, principal.tenantId)
-              .pipe(Effect.map((status) => status?.type !== "Completed")),
-          );
+        const canTransition = yield* DataAccess.makePolicy(
+          canTransitionOrder,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findStatus(id, principal.tenantId)
+                  .pipe(Effect.map((status) => status?.type !== "Completed")),
+              ),
+          }),
+        );
 
-        const canDelete = canEdit;
+        const canDelete = yield* DataAccess.makePolicy(
+          canDeleteOrder,
+          Effect.succeed(canEdit),
+        );
 
         return {
           isCustomer,
@@ -1076,76 +1127,96 @@ export namespace Orders {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/orders/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/orders/Mutations",
     {
-      dependencies: [Policy.Default, BillingAccounts.Policy.Default],
+      accessors: true,
+      dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
-        const policy = yield* Policy;
-        const billingAccountsPolicy = yield* BillingAccounts.Policy;
 
-        const create = Sync.Mutation(
+        const hasActiveAuthorization =
+          yield* BillingAccounts.Policies.hasActiveAuthorization;
+
+        const {
+          isCustomerOrManager,
+          canEdit,
+          hasActiveManagerAuthorization,
+          canApprove,
+          canTransition,
+          canDelete,
+        } = yield* Policies;
+
+        const create = yield* DataAccess.makeMutation(
           createOrder,
-          ({ billingAccountId }) =>
-            AccessControl.some(
-              AccessControl.permission("orders:create"),
-              billingAccountsPolicy.hasActiveAuthorization(billingAccountId),
-            ),
-          (order, { tenantId }) =>
-            // TODO: Verify workflow status is correct
-            repository.create({ ...order, tenantId }),
+          Effect.succeed({
+            makePolicy: ({ billingAccountId }) =>
+              AccessControl.some(
+                AccessControl.permission("orders:create"),
+                hasActiveAuthorization.make({ id: billingAccountId }),
+              ),
+            mutator: (order, { tenantId }) =>
+              // TODO: Verify workflow status is correct
+              repository.create({ ...order, tenantId }),
+          }),
         );
 
-        const edit = Sync.Mutation(
+        const edit = yield* DataAccess.makeMutation(
           editOrder,
-          ({ id }) =>
-            AccessControl.every(
-              AccessControl.some(
-                AccessControl.permission("orders:update"),
-                policy.isCustomer(id),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.some(
+                  AccessControl.permission("orders:update"),
+                  isCustomerOrManager.make({ id }),
+                ),
+                canEdit.make({ id }),
               ),
-              policy.canEdit(id),
-            ),
-          ({ id, ...order }, session) =>
-            repository.updateById(id, order, session.tenantId),
+            mutator: (order, { tenantId }) =>
+              repository.updateById(order.id, order, tenantId),
+          }),
         );
 
-        const approve = Sync.Mutation(
+        const approve = yield* DataAccess.makeMutation(
           approveOrder,
-          ({ id }) =>
-            AccessControl.every(
-              AccessControl.some(
-                AccessControl.permission("orders:update"),
-                policy.hasActiveManagerAuthorization(id),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.some(
+                  AccessControl.permission("orders:update"),
+                  hasActiveManagerAuthorization.make({ id }),
+                ),
+                canApprove.make({ id }),
               ),
-              policy.canApprove(id),
-            ),
-          ({ id, ...order }, session) =>
-            // TODO: Transition to first "New" status
-            repository.updateById(id, order, session.tenantId),
+            mutator: ({ id, ...order }, session) =>
+              repository.updateById(id, order, session.tenantId),
+          }),
         );
 
-        const transition = Sync.Mutation(
+        const transition = yield* DataAccess.makeMutation(
           transitionOrder,
-          ({ id }) =>
-            AccessControl.every(
-              AccessControl.permission("orders:update"),
-              policy.canTransition(id),
-            ),
-          ({ id, ...order }, session) =>
-            repository.updateById(id, order, session.tenantId),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("orders:update"),
+                canTransition.make({ id }),
+              ),
+            mutator: ({ id, ...order }, session) =>
+              repository.updateById(id, order, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteOrder,
-          ({ id }) =>
-            AccessControl.every(
-              AccessControl.permission("orders:delete"),
-              policy.canDelete(id),
-            ),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("orders:delete"),
+                canDelete.make({ id }),
+              ),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
         return { create, edit, approve, transition, delete: delete_ } as const;

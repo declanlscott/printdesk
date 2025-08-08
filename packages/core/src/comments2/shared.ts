@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
+import { DataAccess } from "../data-access2";
 import { SyncTable, TenantTable, View } from "../database2/shared";
-import { SyncMutation } from "../sync2/shared";
 import { NanoId } from "../utils2/shared";
 
 import type { ActiveCommentsView, CommentsTable } from "./sql";
@@ -25,27 +25,33 @@ export const activeComments = View<ActiveCommentsView>()(
   comments.Schema,
 );
 
-export const createComment = SyncMutation(
-  "createComment",
-  comments.Schema.omit("authorId", "deletedAt", "tenantId"),
-);
+export const isCommentAuthor = new DataAccess.Policy({
+  name: "isCommentAuthor",
+  Args: comments.Schema.pick("id"),
+});
 
-export const updateComment = SyncMutation(
-  "updateComment",
-  Schema.extend(
-    comments.Schema.pick("id", "orderId", "updatedAt"),
-    comments.Schema.omit(
-      ...Struct.keys(TenantTable.fields),
-      "orderId",
-      "authorId",
-    ).pipe(Schema.partial),
+export const createComment = new DataAccess.Mutation({
+  name: "createComment",
+  Args: comments.Schema.omit("authorId", "deletedAt", "tenantId"),
+});
+
+export const updateComment = new DataAccess.Mutation({
+  name: "updateComment",
+  Args: comments.Schema.pick("id", "orderId", "updatedAt").pipe(
+    Schema.extend(
+      comments.Schema.omit(
+        ...Struct.keys(TenantTable.fields),
+        "orderId",
+        "authorId",
+      ).pipe(Schema.partial),
+    ),
   ),
-);
+});
 
-export const deleteComment = SyncMutation(
-  "deleteComment",
-  Schema.Struct({
+export const deleteComment = new DataAccess.Mutation({
+  name: "deleteComment",
+  Args: Schema.Struct({
     ...comments.Schema.pick("id", "orderId").fields,
     deletedAt: Schema.DateTimeUtc,
   }),
-);
+});

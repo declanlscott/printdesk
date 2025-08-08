@@ -10,10 +10,10 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
 import {
   createAnnouncement,
   deleteAnnouncement,
@@ -411,36 +411,43 @@ export namespace Announcements {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/announcements/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/announcements/Mutations",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = Sync.Mutation(
+        const create = yield* DataAccess.makeMutation(
           createAnnouncement,
-          () => AccessControl.permission("announcements:create"),
-          (announcement, session) =>
-            repository.create({
-              ...announcement,
-              authorId: session.userId,
-              tenantId: session.tenantId,
-            }),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("announcements:create"),
+            mutator: (announcement, session) =>
+              repository.create({
+                ...announcement,
+                authorId: session.userId,
+                tenantId: session.tenantId,
+              }),
+          }),
         );
 
-        const update = Sync.Mutation(
+        const update = yield* DataAccess.makeMutation(
           updateAnnouncement,
-          () => AccessControl.permission("announcements:update"),
-          ({ id, ...data }, session) =>
-            repository.updateById(id, data, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("announcements:update"),
+            mutator: ({ id, ...data }, session) =>
+              repository.updateById(id, data, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteAnnouncement,
-          () => AccessControl.permission("announcements:delete"),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("announcements:delete"),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
         return { create, update, delete: delete_ } as const;

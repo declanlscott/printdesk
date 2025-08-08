@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
+import { DataAccess } from "../data-access2";
 import { SyncTable, TenantTable, View } from "../database2/shared";
-import { SyncMutation } from "../sync2/shared";
 import { Constants } from "../utils/constants";
 import { Cost, HexColor, NanoId } from "../utils2/shared";
 
@@ -39,25 +39,28 @@ export const activePublishedRooms = View<ActivePublishedRoomsView>()(
   activePublishedRoomsViewName,
   rooms.Schema,
 );
-export const createRoom = SyncMutation(
-  "createRoom",
-  rooms.Schema.omit("deletedAt", "tenantId"),
-);
-export const updateRoom = SyncMutation(
-  "updateRoom",
-  Schema.extend(
+export const createRoom = new DataAccess.Mutation({
+  name: "createRoom",
+  Args: rooms.Schema.omit("deletedAt", "tenantId"),
+});
+export const updateRoom = new DataAccess.Mutation({
+  name: "updateRoom",
+  Args: Schema.extend(
     rooms.Schema.pick("id", "updatedAt"),
     rooms.Schema.omit(...Struct.keys(TenantTable.fields)).pipe(Schema.partial),
   ),
-);
-export const deleteRoom = SyncMutation(
-  "deleteRoom",
-  Schema.Struct({
+});
+export const deleteRoom = new DataAccess.Mutation({
+  name: "deleteRoom",
+  Args: Schema.Struct({
     id: NanoId,
     deletedAt: Schema.DateTimeUtc,
   }),
-);
-export const restoreRoom = SyncMutation("restoreRoom", rooms.Schema.pick("id"));
+});
+export const restoreRoom = new DataAccess.Mutation({
+  name: "restoreRoom",
+  Args: rooms.Schema.pick("id"),
+});
 
 export const workflowStatusTypes = [
   "Review",
@@ -145,13 +148,13 @@ export const Workflow = Schema.Array(
       "Workflow must have exactly one status of type 'New'",
   ),
 );
-export const setWorkflow = SyncMutation(
-  "setWorkflow",
-  Schema.Struct({
+export const setWorkflow = new DataAccess.Mutation({
+  name: "setWorkflow",
+  Args: Schema.Struct({
     workflow: Workflow,
     roomId: NanoId,
   }),
-);
+});
 
 export const deliveryOptionsTableName = "delivery_options";
 export const deliveryOptions = SyncTable<DeliveryOptionsTable>()(
@@ -188,10 +191,10 @@ export const DeliveryOptions = Schema.Array(
       "Delivery option names must be unique",
   ),
 );
-export const setDeliveryOptions = SyncMutation(
-  "setDeliveryOptions",
-  Schema.Struct({
+export const setDeliveryOptions = new DataAccess.Mutation({
+  name: "setDeliveryOptions",
+  Args: Schema.Struct({
     options: DeliveryOptions,
     roomId: NanoId,
   }),
-);
+});

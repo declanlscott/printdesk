@@ -10,12 +10,12 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
-import { deleteUser, restoreUser, updateUser } from "./shared";
+import { deleteUser, isUserSelf, restoreUser, updateUser } from "./shared";
 import { activeUsersView, usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -480,49 +480,65 @@ export namespace Users {
     },
   ) {}
 
-  export class Policy extends Effect.Service<Policy>()(
-    "@printdesk/core/users/Policy",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/users/Policies",
     {
-      succeed: {
-        isSelf: (id: User["id"]) =>
-          AccessControl.policy((principal) =>
-            Effect.succeed(id === principal.userId),
-          ),
-      } as const,
+      accessors: true,
+      effect: Effect.gen(function* () {
+        const isSelf = yield* DataAccess.makePolicy(
+          isUserSelf,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                Effect.succeed(id === principal.userId),
+              ),
+          }),
+        );
+
+        return { isSelf } as const;
+      }),
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/users/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/users/Mutations",
     {
-      dependencies: [Policy.Default],
+      accessors: true,
+      dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
-        const policy = yield* Policy;
 
-        const update = Sync.Mutation(
+        const { isSelf } = yield* Policies;
+
+        const update = yield* DataAccess.makeMutation(
           updateUser,
-          () => AccessControl.permission("users:update"),
-          ({ id, ...user }, session) =>
-            repository.updateById(id, user, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("users:update"),
+            mutator: (user, session) =>
+              repository.updateById(user.id, user, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteUser,
-          ({ id }) =>
-            AccessControl.some(
-              AccessControl.permission("users:delete"),
-              policy.isSelf(id),
-            ),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: ({ id }) =>
+              AccessControl.some(
+                AccessControl.permission("users:delete"),
+                isSelf.make({ id }),
+              ),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
-        const restore = Sync.Mutation(
+        const restore = yield* DataAccess.makeMutation(
           restoreUser,
-          () => AccessControl.permission("users:delete"),
-          ({ id }, session) =>
-            repository.updateById(id, { deletedAt: null }, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("users:delete"),
+            mutator: ({ id }, session) =>
+              repository.updateById(id, { deletedAt: null }, session.tenantId),
+          }),
         );
 
         return { update, delete: delete_, restore } as const;

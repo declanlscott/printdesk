@@ -11,11 +11,11 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
 import {
   createRoom,
   deleteRoom,
@@ -564,38 +564,48 @@ export namespace Rooms {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/rooms/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/rooms/Mutations",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = Sync.Mutation(
+        const create = yield* DataAccess.makeMutation(
           createRoom,
-          () => AccessControl.permission("rooms:create"),
-          (room, { tenantId }) => repository.create({ ...room, tenantId }),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("rooms:create"),
+            mutator: (room, { tenantId }) =>
+              repository.create({ ...room, tenantId }),
+          }),
         );
 
-        const update = Sync.Mutation(
+        const update = yield* DataAccess.makeMutation(
           updateRoom,
-          () => AccessControl.permission("rooms:update"),
-          ({ id, ...room }, session) =>
-            repository.updateById(id, room, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("rooms:update"),
+            mutator: ({ id, ...room }, session) =>
+              repository.updateById(id, room, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteRoom,
-          () => AccessControl.permission("rooms:delete"),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("rooms:delete"),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
-        const restore = Sync.Mutation(
+        const restore = yield* DataAccess.makeMutation(
           restoreRoom,
-          () => AccessControl.permission("rooms:delete"),
-          ({ id }, session) =>
-            repository.updateById(id, { deletedAt: null }, session.tenantId),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("rooms:delete"),
+            mutator: ({ id }, session) =>
+              repository.updateById(id, { deletedAt: null }, session.tenantId),
+          }),
         );
 
         return { create, update, delete: delete_, restore } as const;
@@ -968,18 +978,22 @@ export namespace Rooms {
     },
   ) {}
 
-  export class WorkflowSyncMutations extends Effect.Service<WorkflowSyncMutations>()(
-    "@printdesk/core/rooms/WorkflowSyncMutations",
+  export class WorkflowMutations extends Effect.Service<WorkflowMutations>()(
+    "@printdesk/core/rooms/WorkflowMutations",
     {
+      accessors: true,
       dependencies: [WorkflowRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* WorkflowRepository;
 
-        const set = Sync.Mutation(
+        const set = yield* DataAccess.makeMutation(
           setWorkflow,
-          () => AccessControl.permission("workflow_statuses:create"),
-          ({ roomId, workflow }, session) =>
-            repository.upsert(workflow, roomId, session.tenantId),
+          Effect.succeed({
+            makePolicy: () =>
+              AccessControl.permission("workflow_statuses:create"),
+            mutator: ({ workflow, roomId }, session) =>
+              repository.upsert(workflow, roomId, session.tenantId),
+          }),
         );
 
         return { set } as const;
@@ -1358,18 +1372,22 @@ export namespace Rooms {
     },
   ) {}
 
-  export class DeliveryOptionsSyncMutations extends Effect.Service<DeliveryOptionsSyncMutations>()(
-    "@printdesk/core/rooms/DeliveryOptionsSyncMutations",
+  export class DeliveryOptionsMutations extends Effect.Service<DeliveryOptionsMutations>()(
+    "@printdesk/core/rooms/DeliveryOptionsMutations",
     {
+      accessors: true,
       dependencies: [DeliveryOptionsRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* DeliveryOptionsRepository;
 
-        const set = Sync.Mutation(
+        const set = yield* DataAccess.makeMutation(
           setDeliveryOptions,
-          () => AccessControl.permission("delivery_options:create"),
-          ({ options, roomId }, session) =>
-            repository.upsert(options, roomId, session.tenantId),
+          Effect.succeed({
+            makePolicy: () =>
+              AccessControl.permission("delivery_options:create"),
+            mutator: ({ options, roomId }, session) =>
+              repository.upsert(options, roomId, session.tenantId),
+          }),
         );
 
         return { set } as const;

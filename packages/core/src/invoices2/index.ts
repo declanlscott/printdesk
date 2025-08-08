@@ -15,11 +15,11 @@ import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { activeOrdersView } from "../orders2/sql";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
 import { createInvoice } from "./shared";
 import { activeInvoicesView, invoicesTable } from "./sql";
 
@@ -903,18 +903,21 @@ export namespace Invoices {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/invoices/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/invoices/Mutations",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = Sync.Mutation(
+        const create = yield* DataAccess.makeMutation(
           createInvoice,
-          () => AccessControl.permission("invoices:create"),
-          (invoice, { tenantId }) =>
-            repository.create({ ...invoice, tenantId }),
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("invoices:create"),
+            mutator: (invoice, { tenantId }) =>
+              repository.create({ ...invoice, tenantId }),
+          }),
         );
 
         return { create } as const;

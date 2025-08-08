@@ -12,16 +12,19 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { Sync } from "../sync2";
 import { activeUsersView } from "../users2/sql";
 import {
   createBillingAccountManagerAuthorization,
   deleteBillingAccount,
   deleteBillingAccountManagerAuthorization,
+  hasActiveBillingAccountAuthorization,
+  hasActiveBillingAccountCustomerAuthorization,
+  hasActiveBillingAccountManagerAuthorization,
   updateBillingAccount,
 } from "./shared";
 import {
@@ -839,51 +842,60 @@ export namespace BillingAccounts {
     },
   ) {}
 
-  export class Policy extends Effect.Service<Policy>()(
-    "@printdesk/core/billing-accounts/Policy",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/billing-accounts/Policies",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const hasActiveManagerAuthorization = Effect.fn(
-          "BillingAccounts.Policy.hasActiveManagerAuthorization",
-        )((id: BillingAccount["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findActiveCustomerIds(id, principal.tenantId)
-              .pipe(
-                Effect.map(
-                  Array.some((customerId) => customerId === principal.userId),
-                ),
+        const hasActiveManagerAuthorization = yield* DataAccess.makePolicy(
+          hasActiveBillingAccountManagerAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveManagerIds(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      Array.some((managerId) => managerId === principal.userId),
+                    ),
+                  ),
               ),
-          ),
+          }),
         );
 
-        const hasActiveCustomerAuthorization = Effect.fn(
-          "BillingAccounts.Policy.hasActiveCustomerAuthorization",
-        )((id: BillingAccount["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findActiveManagerIds(id, principal.tenantId)
-              .pipe(
-                Effect.map(
-                  Array.some((managerId) => managerId === principal.userId),
-                ),
+        const hasActiveCustomerAuthorization = yield* DataAccess.makePolicy(
+          hasActiveBillingAccountCustomerAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveManagerIds(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      Array.some((managerId) => managerId === principal.userId),
+                    ),
+                  ),
               ),
-          ),
+          }),
         );
 
-        const hasActiveAuthorization = Effect.fn(
-          "BillingAccounts.Policy.hasActiveAuthorization",
-        )((id: BillingAccount["id"]) =>
-          AccessControl.policy((principal) =>
-            repository
-              .findActiveAuthorizedUserIds(id, principal.tenantId)
-              .pipe(
-                Effect.map(Array.some((userId) => userId === principal.userId)),
+        const hasActiveAuthorization = yield* DataAccess.makePolicy(
+          hasActiveBillingAccountAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveAuthorizedUserIds(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      Array.some((userId) => userId === principal.userId),
+                    ),
+                  ),
               ),
-          ),
+          }),
         );
 
         return {
@@ -895,25 +907,32 @@ export namespace BillingAccounts {
     },
   ) {}
 
-  export class SyncMutations extends Effect.Service<SyncMutations>()(
-    "@printdesk/core/BillingAccounts/SyncMutations",
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/billing-account/Mutations",
     {
+      accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const update = Sync.Mutation(
+        const update = yield* DataAccess.makeMutation(
           updateBillingAccount,
-          () => AccessControl.permission("billing_accounts:update"),
-          ({ id, ...billingAccount }, session) =>
-            repository.updateById(id, billingAccount, session.tenantId),
+          Effect.succeed({
+            makePolicy: () =>
+              AccessControl.permission("billing_accounts:update"),
+            mutator: ({ id, ...billingAccount }, session) =>
+              repository.updateById(id, billingAccount, session.tenantId),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteBillingAccount,
-          () => AccessControl.permission("billing_accounts:delete"),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: () =>
+              AccessControl.permission("billing_accounts:delete"),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
         return { update, delete: delete_ } as const;
@@ -2080,31 +2099,36 @@ export namespace BillingAccounts {
     },
   ) {}
 
-  export class ManagerAuthorizationsSyncMutations extends Effect.Service<ManagerAuthorizationsSyncMutations>()(
-    "@printdesk/core/billing-accounts/ManagerAuthorizationsSyncMutations",
+  export class ManagerAuthorizationMutations extends Effect.Service<ManagerAuthorizationMutations>()(
+    "@printdesk/core/billing-accounts/ManagerAuthorizationMutations",
     {
+      accessors: true,
       dependencies: [ManagerAuthorizationsRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* ManagerAuthorizationsRepository;
 
-        const create = Sync.Mutation(
+        const create = yield* DataAccess.makeMutation(
           createBillingAccountManagerAuthorization,
-          () =>
-            AccessControl.permission(
-              "billing_account_manager_authorizations:create",
-            ),
-          (authorization, { tenantId }) =>
-            repository.create({ ...authorization, tenantId }),
+          Effect.succeed({
+            makePolicy: () =>
+              AccessControl.permission(
+                "billing_account_manager_authorizations:create",
+              ),
+            mutator: (authorization, { tenantId }) =>
+              repository.create({ ...authorization, tenantId }),
+          }),
         );
 
-        const delete_ = Sync.Mutation(
+        const delete_ = yield* DataAccess.makeMutation(
           deleteBillingAccountManagerAuthorization,
-          () =>
-            AccessControl.permission(
-              "billing_account_manager_authorizations:delete",
-            ),
-          ({ id, deletedAt }, session) =>
-            repository.deleteById(id, deletedAt, session.tenantId),
+          Effect.succeed({
+            makePolicy: () =>
+              AccessControl.permission(
+                "billing_account_manager_authorizations:delete",
+              ),
+            mutator: ({ id, deletedAt }, session) =>
+              repository.deleteById(id, deletedAt, session.tenantId),
+          }),
         );
 
         return { create, delete: delete_ } as const;

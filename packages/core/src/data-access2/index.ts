@@ -14,8 +14,8 @@ interface Session {
 
 export namespace DataAccess {
   export class Policy<
-    TName extends string,
-    TArgs extends Schema.Schema.AnyNoContext,
+    TName extends string = string,
+    TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
   > extends Data.Class<{ readonly name: TName; readonly Args: TArgs }> {}
 
   export type PolicyShape<
@@ -38,9 +38,65 @@ export namespace DataAccess {
     make: PolicyShape<TArgs, TError, TContext>,
   ) => make;
 
+  type PolicyRegister<
+    TName extends string = string,
+    TPolicy extends Policy = Policy,
+  > = Record<TName, TPolicy>;
+
+  type InferPolicySchema<TRegister extends PolicyRegister> = {
+    [TName in keyof TRegister]: Schema.Struct<{
+      name: Schema.Literal<[TName & string]>;
+      args: TRegister[TName]["Args"];
+    }>;
+  }[keyof TRegister];
+
+  export class PolicyClient<
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    TRegister extends PolicyRegister = {},
+  > extends Data.Class {
+    #policies = HashMap.empty<string, Policy>();
+
+    register<TName extends string, TArgs extends Schema.Schema.AnyNoContext>(
+      policy: Policy<TName, TArgs>,
+    ): PolicyClient<TRegister & PolicyRegister<TName, Policy<TName, TArgs>>> {
+      this.#policies = HashMap.set(this.#policies, policy.name, policy);
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+      return this as any;
+    }
+
+    dispatch<TName extends keyof TRegister & string, TError, TContext>(
+      name: TName,
+      args: Schema.Schema.Type<TRegister[TName]["Args"]>,
+      policy: PolicyShape<TRegister[TName]["Args"], TError, TContext>,
+    ) {
+      return policy.pipe(
+        Effect.flatMap(({ make }) => make(args)),
+        Effect.withSpan("DataAccess.PolicyClient.dispatch", {
+          attributes: { name },
+        }),
+      );
+    }
+
+    get Schema() {
+      return Schema.Union(
+        ...this.#policies.pipe(
+          HashMap.values,
+          Iterable.map(
+            (policy) =>
+              Schema.Struct({
+                name: Schema.Literal(policy.name),
+                args: policy.Args,
+              }) as InferPolicySchema<TRegister>,
+          ),
+        ),
+      );
+    }
+  }
+
   export class Mutation<
     TName extends string = string,
-    TArgs extends Schema.Schema.Any = Schema.Schema.Any,
+    TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
   > extends Data.Class<{ readonly name: TName; readonly Args: TArgs }> {}
 
   export type Mutator<
@@ -145,18 +201,16 @@ export namespace DataAccess {
     >(
       name: TName,
       args: Schema.Schema.Type<TRegister[TName]["Args"]>,
-      mutation: TRegister[TName]["Args"] extends Schema.Schema.AnyNoContext
-        ? MutationShape<
-            TRegister[TName]["Args"],
-            TPolicyError,
-            TPolicyContext,
-            TMutatorSuccess,
-            TMutatorError,
-            TMutatorContext,
-            TMutationError,
-            TMutationContext
-          >
-        : never,
+      mutation: MutationShape<
+        TRegister[TName]["Args"],
+        TPolicyError,
+        TPolicyContext,
+        TMutatorSuccess,
+        TMutatorError,
+        TMutatorContext,
+        TMutationError,
+        TMutationContext
+      >,
     ) {
       return mutation.pipe(
         Effect.flatMap(({ makePolicy, mutator }) =>
@@ -164,7 +218,7 @@ export namespace DataAccess {
             AccessControl.enforce(makePolicy(args)),
           ),
         ),
-        Effect.withSpan("Sync.MutationClient.dispatch", {
+        Effect.withSpan("DataAccess.MutationClient.dispatch", {
           attributes: { name },
         }),
       );

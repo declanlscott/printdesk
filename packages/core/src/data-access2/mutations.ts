@@ -44,7 +44,7 @@ import { deleteUser, restoreUser, updateUser } from "../users2/shared";
 export class Mutations extends Effect.Service<Mutations>()(
   "@printdesk/core/data-access/Mutations",
   {
-    dependencies: [],
+    accessors: true,
     effect: Effect.gen(function* () {
       const session = yield* Effect.succeed({
         userId: "TODO",

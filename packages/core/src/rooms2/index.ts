@@ -17,13 +17,10 @@ import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import {
-  createRoom,
-  deleteRoom,
-  restoreRoom,
-  setDeliveryOptions,
-  setWorkflow,
-  updateRoom,
-} from "./shared";
+  DeliveryOptionsContract,
+  RoomsContract,
+  WorkflowsContract,
+} from "./contracts";
 import {
   activePublishedRoomDeliveryOptionsView,
   activePublishedRoomsView,
@@ -36,7 +33,6 @@ import {
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { DeliveryOptions, Workflow } from "./shared";
 import type { DeliveryOption, Room, RoomsTable, WorkflowStatus } from "./sql";
 
 export namespace Rooms {
@@ -573,7 +569,7 @@ export namespace Rooms {
         const repository = yield* Repository;
 
         const create = yield* DataAccess.makeMutation(
-          createRoom,
+          RoomsContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:create"),
             mutator: (room, { tenantId }) =>
@@ -582,7 +578,7 @@ export namespace Rooms {
         );
 
         const update = yield* DataAccess.makeMutation(
-          updateRoom,
+          RoomsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:update"),
             mutator: ({ id, ...room }, session) =>
@@ -591,7 +587,7 @@ export namespace Rooms {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteRoom,
+          RoomsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
             mutator: ({ id, deletedAt }, session) =>
@@ -600,7 +596,7 @@ export namespace Rooms {
         );
 
         const restore = yield* DataAccess.makeMutation(
-          restoreRoom,
+          RoomsContract.restore,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
             mutator: ({ id }, session) =>
@@ -630,7 +626,7 @@ export namespace Rooms {
 
         const upsert = Effect.fn("Rooms.WorkflowRepository.upsert")(
           (
-            workflow: (typeof Workflow)["Type"],
+            workflow: (typeof WorkflowsContract.Workflow)["Type"],
             roomId: WorkflowStatus["roomId"],
             tenantId: WorkflowStatus["tenantId"],
           ) =>
@@ -987,7 +983,7 @@ export namespace Rooms {
         const repository = yield* WorkflowRepository;
 
         const set = yield* DataAccess.makeMutation(
-          setWorkflow,
+          WorkflowsContract.set,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("workflow_statuses:create"),
@@ -1018,7 +1014,7 @@ export namespace Rooms {
 
         const upsert = Effect.fn("Rooms.DeliveryOptionsRepository.upsert")(
           (
-            options: (typeof DeliveryOptions)["Type"],
+            options: (typeof DeliveryOptionsContract.DeliveryOptions)["Type"],
             roomId: DeliveryOption["roomId"],
             tenantId: DeliveryOption["tenantId"],
           ) =>
@@ -1381,7 +1377,7 @@ export namespace Rooms {
         const repository = yield* DeliveryOptionsRepository;
 
         const set = yield* DataAccess.makeMutation(
-          setDeliveryOptions,
+          DeliveryOptionsContract.set,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("delivery_options:create"),

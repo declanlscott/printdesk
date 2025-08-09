@@ -8,11 +8,7 @@ import { buildConflictSet } from "../database2/constructors";
 import { identityProvidersTable } from "../identity-providers2/sql";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import {
-  isLicenseAvailable,
-  isTenantSubdomainAvailable,
-  updateTenant,
-} from "./shared";
+import { LicensesContract, TenantsContract } from "./contracts";
 import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -258,7 +254,7 @@ export namespace Tenants {
         const repository = yield* Repository;
 
         const isSubdomainAvailable = yield* DataAccess.makePolicy(
-          isTenantSubdomainAvailable,
+          TenantsContract.isSubdomainAvailable,
           Effect.succeed({
             make: ({ subdomain }) =>
               AccessControl.policy(() =>
@@ -293,7 +289,7 @@ export namespace Tenants {
         const repository = yield* Repository;
 
         const update = yield* DataAccess.makeMutation(
-          updateTenant,
+          TenantsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("tenants:update"),
             mutator: (tenant, session) =>
@@ -358,7 +354,7 @@ export namespace Tenants {
         const repository = yield* LicensesRepository;
 
         const isAvailable = yield* DataAccess.makePolicy(
-          isLicenseAvailable,
+          LicensesContract.isAvailable,
           Effect.succeed({
             make: ({ key }) =>
               AccessControl.policy(() =>

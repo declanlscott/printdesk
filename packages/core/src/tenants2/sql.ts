@@ -11,49 +11,52 @@ import {
 } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
-  InfraProgramInput,
-  licensesTableName,
-  licenseStatuses,
-  tenantMetadataTableName,
-  tenantsTableName,
-  tenantStatuses,
-} from "./shared";
+  LicensesContract,
+  TenantMetadataContract,
+  TenantsContract,
+} from "./contracts";
 
-import type { InferFromTable } from "../database2/shared";
+import type { DatabaseContract } from "../database2/contract";
 
-export const licensesTable = pgTable(licensesTableName, {
+export const licensesTable = pgTable(LicensesContract.tableName, {
   key: uuid("key").defaultRandom().primaryKey(),
   tenantId: id("tenant_id").unique(),
-  status: pgEnum("status", licenseStatuses).notNull().default("active"),
+  status: pgEnum("status", LicensesContract.statuses)
+    .notNull()
+    .default("active"),
 });
 export type LicensesTable = typeof licensesTable;
-export type License = InferFromTable<LicensesTable>;
-
-const tenantStatus = (name: string) => pgEnum(name, tenantStatuses);
+export type License = DatabaseContract.InferFromTable<LicensesTable>;
 
 export const tenantsTable = pgTable(
-  tenantsTableName,
+  TenantsContract.tableName,
   {
     ...idPrimaryKey,
     subdomain: varchar("subdomain", {
       length: Constants.VARCHAR_LENGTH,
     }).notNull(),
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    status: tenantStatus("status").notNull().default("setup"),
+    status: pgEnum("status", TenantsContract.statuses)
+      .notNull()
+      .default("setup"),
     ...timestamps,
     ...version,
   },
   (table) => [uniqueIndex().on(table.subdomain)],
 );
 export type TenantsTable = typeof tenantsTable;
-export type Tenant = InferFromTable<TenantsTable>;
+export type Tenant = DatabaseContract.InferFromTable<TenantsTable>;
 
-export const tenantMetadataTable = pgTable(tenantMetadataTableName, {
+export const tenantMetadataTable = pgTable(TenantMetadataContract.tableName, {
   tenantId: id("tenant_id").primaryKey(),
-  infraProgramInput: jsonb("infra_program_input", InfraProgramInput).notNull(),
+  infraProgramInput: jsonb(
+    "infra_program_input",
+    TenantMetadataContract.InfraProgramInput,
+  ).notNull(),
   apiKey: varchar("api_key"),
   lastPapercutSyncAt: datetime("last_papercut_sync_at"),
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;
-export type TenantMetadata = InferFromTable<TenantMetadataTable>;
+export type TenantMetadata =
+  DatabaseContract.InferFromTable<TenantMetadataTable>;

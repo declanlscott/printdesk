@@ -15,24 +15,18 @@ import {
 import { id, pgEnum, tenantTable, version } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import {
-  activePublishedRoomDeliveryOptionsViewName,
-  activePublishedRoomsViewName,
-  activePublishedRoomWorkflowStatusesViewName,
-  activeRoomsViewName,
-  deliveryOptionsTableName,
-  roomsTableName,
-  roomStatuses,
-  workflowStatusesTableName,
-  workflowStatusTypes,
-} from "./shared";
+  DeliveryOptionsContract,
+  RoomsContract,
+  WorkflowsContract,
+} from "./contracts";
 
-import type { InferFromTable, InferFromView } from "../database2/shared";
+import type { DatabaseContract } from "../database2/contract";
 
 export const roomsTable = tenantTable(
-  roomsTableName,
+  RoomsContract.tableName,
   {
     name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    status: pgEnum("status", roomStatuses).notNull(),
+    status: pgEnum("status", RoomsContract.statuses).notNull(),
     details: text("details"),
   },
   (table) => [
@@ -41,27 +35,29 @@ export const roomsTable = tenantTable(
   ],
 );
 export type RoomsTable = typeof roomsTable;
-export type Room = InferFromTable<RoomsTable>;
-export const activeRoomsView = pgView(activeRoomsViewName).as((qb) =>
+export type Room = DatabaseContract.InferFromTable<RoomsTable>;
+export const activeRoomsView = pgView(RoomsContract.activeViewName).as((qb) =>
   qb.select().from(roomsTable).where(isNull(roomsTable.deletedAt)),
 );
 export type ActiveRoomsView = typeof activeRoomsView;
-export type ActiveRoom = InferFromView<ActiveRoomsView>;
-export const activePublishedRoomsView = pgView(activePublishedRoomsViewName).as(
-  (qb) =>
-    qb
-      .select()
-      .from(activeRoomsView)
-      .where(eq(activeRoomsView.status, "published")),
+export type ActiveRoom = DatabaseContract.InferFromView<ActiveRoomsView>;
+export const activePublishedRoomsView = pgView(
+  RoomsContract.activePublishedViewName,
+).as((qb) =>
+  qb
+    .select()
+    .from(activeRoomsView)
+    .where(eq(activeRoomsView.status, "published")),
 );
 export type ActivePublishedRoomsView = typeof activePublishedRoomsView;
-export type ActivePublishedRoom = InferFromView<ActivePublishedRoomsView>;
+export type ActivePublishedRoom =
+  DatabaseContract.InferFromView<ActivePublishedRoomsView>;
 
 export const workflowStatusesTable = pgTable(
-  workflowStatusesTableName,
+  WorkflowsContract.tableName,
   {
     id: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    type: pgEnum("type", workflowStatusTypes).notNull(),
+    type: pgEnum("type", WorkflowsContract.statusTypes).notNull(),
     charging: boolean("charging").notNull(),
     color: varchar("color", { length: 9 }),
     index: smallint("index").notNull(),
@@ -77,9 +73,10 @@ export const workflowStatusesTable = pgTable(
   ],
 );
 export type WorkflowStatusesTable = typeof workflowStatusesTable;
-export type WorkflowStatus = InferFromTable<WorkflowStatusesTable>;
+export type WorkflowStatus =
+  DatabaseContract.InferFromTable<WorkflowStatusesTable>;
 export const activePublishedRoomWorkflowStatusesView = pgView(
-  activePublishedRoomWorkflowStatusesViewName,
+  WorkflowsContract.activePublishedRoomViewName,
 ).as((qb) =>
   qb
     .select(getTableColumns(workflowStatusesTable))
@@ -95,10 +92,10 @@ export const activePublishedRoomWorkflowStatusesView = pgView(
 export type ActivePublishedRoomWorkflowStatusesView =
   typeof activePublishedRoomWorkflowStatusesView;
 export type ActivePublishedRoomWorkflowStatus =
-  InferFromView<ActivePublishedRoomWorkflowStatusesView>;
+  DatabaseContract.InferFromView<ActivePublishedRoomWorkflowStatusesView>;
 
 export const deliveryOptionsTable = pgTable(
-  deliveryOptionsTableName,
+  DeliveryOptionsContract.tableName,
   {
     id: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
     description: varchar("description", {
@@ -121,9 +118,10 @@ export const deliveryOptionsTable = pgTable(
   ],
 );
 export type DeliveryOptionsTable = typeof deliveryOptionsTable;
-export type DeliveryOption = InferFromTable<DeliveryOptionsTable>;
+export type DeliveryOption =
+  DatabaseContract.InferFromTable<DeliveryOptionsTable>;
 export const activePublishedRoomDeliveryOptionsView = pgView(
-  activePublishedRoomDeliveryOptionsViewName,
+  DeliveryOptionsContract.activePublishedRoomViewName,
 ).as((qb) =>
   qb
     .select(getTableColumns(deliveryOptionsTable))
@@ -139,4 +137,4 @@ export const activePublishedRoomDeliveryOptionsView = pgView(
 export type ActivePublishedRoomDeliveryOptionsView =
   typeof activePublishedRoomDeliveryOptionsView;
 export type ActivePublishedRoomDeliveryOption =
-  InferFromView<ActivePublishedRoomDeliveryOptionsView>;
+  DatabaseContract.InferFromView<ActivePublishedRoomDeliveryOptionsView>;

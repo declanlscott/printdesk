@@ -21,12 +21,7 @@ import { Orders } from "../orders2";
 import { activeOrdersView } from "../orders2/sql";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import {
-  createComment,
-  deleteComment,
-  isCommentAuthor,
-  updateComment,
-} from "./shared";
+import { CommentsContract } from "./contract";
 import { activeCommentsView, commentsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -991,7 +986,7 @@ export namespace Comments {
         const repository = yield* Repository;
 
         const isAuthor = yield* DataAccess.makePolicy(
-          isCommentAuthor,
+          CommentsContract.isAuthor,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1025,7 +1020,7 @@ export namespace Comments {
         const { isAuthor } = yield* Policies;
 
         const create = yield* DataAccess.makeMutation(
-          createComment,
+          CommentsContract.create,
           Effect.succeed({
             makePolicy: ({ orderId }) =>
               AccessControl.some(
@@ -1043,7 +1038,7 @@ export namespace Comments {
         );
 
         const update = yield* DataAccess.makeMutation(
-          updateComment,
+          CommentsContract.update,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.some(
@@ -1056,7 +1051,7 @@ export namespace Comments {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteComment,
+          CommentsContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.some(

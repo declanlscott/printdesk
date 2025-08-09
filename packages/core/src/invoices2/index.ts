@@ -20,7 +20,7 @@ import { Database } from "../database2";
 import { activeOrdersView } from "../orders2/sql";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { createInvoice } from "./shared";
+import { InvoicesContract } from "./contract";
 import { activeInvoicesView, invoicesTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -912,7 +912,7 @@ export namespace Invoices {
         const repository = yield* Repository;
 
         const create = yield* DataAccess.makeMutation(
-          createInvoice,
+          InvoicesContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("invoices:create"),
             mutator: (invoice, { tenantId }) =>

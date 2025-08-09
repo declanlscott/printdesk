@@ -2,20 +2,19 @@ import { isNull } from "drizzle-orm";
 import { index, pgView, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { pgEnum, tenantTable } from "../database2/constructors";
-import { userRoles } from "../users/shared";
-import { activeUsersViewName, userOrigins, usersTableName } from "./shared";
+import { UsersContract } from "./contract";
 
-import type { InferFromTable, InferFromView } from "../database2/shared";
+import type { DatabaseContract } from "../database2/contract";
 import type { Discriminate } from "../utils/types";
 
 export const usersTable = tenantTable(
-  usersTableName,
+  UsersContract.tableName,
   {
-    origin: pgEnum("origin", userOrigins).notNull(),
+    origin: pgEnum("origin", UsersContract.origins).notNull(),
     username: text("username").notNull(),
     subjectId: text("subject_id").notNull(),
     identityProviderId: text("identity_provider_id").notNull(),
-    role: pgEnum("role", userRoles).notNull().default("customer"),
+    role: pgEnum("role", UsersContract.roles).notNull().default("customer"),
     name: text("name").notNull(),
     email: text("email").notNull(),
   },
@@ -29,15 +28,15 @@ export const usersTable = tenantTable(
   ],
 );
 export type UsersTable = typeof usersTable;
-export type User = InferFromTable<UsersTable>;
+export type User = DatabaseContract.InferFromTable<UsersTable>;
 export type UserByOrigin<TUserOrigin extends User["origin"]> = Discriminate<
   User,
   "origin",
   TUserOrigin
 >;
 
-export const activeUsersView = pgView(activeUsersViewName).as((qb) =>
+export const activeUsersView = pgView(UsersContract.activeViewName).as((qb) =>
   qb.select().from(usersTable).where(isNull(usersTable.deletedAt)),
 );
 export type ActiveUsersView = typeof activeUsersView;
-export type ActiveUser = InferFromView<ActiveUsersView>;
+export type ActiveUser = DatabaseContract.InferFromView<ActiveUsersView>;

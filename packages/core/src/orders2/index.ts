@@ -23,21 +23,7 @@ import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { workflowStatusesTable } from "../rooms2/sql";
 import { activeUsersView } from "../users2/sql";
-import {
-  approveOrder,
-  canApproveOrder,
-  canDeleteOrder,
-  canEditOrder,
-  canTransitionOrder,
-  createOrder,
-  deleteOrder,
-  editOrder,
-  hasActiveOrderBillingAccountManagerAuthorization,
-  isOrderCustomer,
-  isOrderCustomerOrManager,
-  isOrderManager,
-  transitionOrder,
-} from "./shared";
+import { OrdersContract } from "./contract";
 import { activeOrdersView, ordersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -991,7 +977,7 @@ export namespace Orders {
         const repository = yield* Repository;
 
         const isCustomer = yield* DataAccess.makePolicy(
-          isOrderCustomer,
+          OrdersContract.isCustomer,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1007,7 +993,7 @@ export namespace Orders {
         );
 
         const isManager = yield* DataAccess.makePolicy(
-          isOrderManager,
+          OrdersContract.isManager,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1021,7 +1007,7 @@ export namespace Orders {
         );
 
         const isCustomerOrManager = yield* DataAccess.makePolicy(
-          isOrderCustomerOrManager,
+          OrdersContract.isCustomerOrManager,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1039,7 +1025,7 @@ export namespace Orders {
         );
 
         const hasActiveManagerAuthorization = yield* DataAccess.makePolicy(
-          hasActiveOrderBillingAccountManagerAuthorization,
+          OrdersContract.hasActiveManagerAuthorization,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1055,7 +1041,7 @@ export namespace Orders {
         );
 
         const canEdit = yield* DataAccess.makePolicy(
-          canEditOrder,
+          OrdersContract.canEdit,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1076,7 +1062,7 @@ export namespace Orders {
         );
 
         const canApprove = yield* DataAccess.makePolicy(
-          canApproveOrder,
+          OrdersContract.canApprove,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1097,7 +1083,7 @@ export namespace Orders {
         );
 
         const canTransition = yield* DataAccess.makePolicy(
-          canTransitionOrder,
+          OrdersContract.canTransition,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -1109,7 +1095,7 @@ export namespace Orders {
         );
 
         const canDelete = yield* DataAccess.makePolicy(
-          canDeleteOrder,
+          OrdersContract.canDelete,
           Effect.succeed(canEdit),
         );
 
@@ -1148,7 +1134,7 @@ export namespace Orders {
         } = yield* Policies;
 
         const create = yield* DataAccess.makeMutation(
-          createOrder,
+          OrdersContract.create,
           Effect.succeed({
             makePolicy: ({ billingAccountId }) =>
               AccessControl.some(
@@ -1162,7 +1148,7 @@ export namespace Orders {
         );
 
         const edit = yield* DataAccess.makeMutation(
-          editOrder,
+          OrdersContract.edit,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
@@ -1178,7 +1164,7 @@ export namespace Orders {
         );
 
         const approve = yield* DataAccess.makeMutation(
-          approveOrder,
+          OrdersContract.approve,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
@@ -1194,7 +1180,7 @@ export namespace Orders {
         );
 
         const transition = yield* DataAccess.makeMutation(
-          transitionOrder,
+          OrdersContract.transition,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
@@ -1207,7 +1193,7 @@ export namespace Orders {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteOrder,
+          OrdersContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(

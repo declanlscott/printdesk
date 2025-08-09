@@ -1,4 +1,4 @@
-import { Array, Context, Data, Effect, Schema, Struct } from "effect";
+import { Array, Context, Data, Effect, Option, Schema, Struct } from "effect";
 
 import * as models from "../database2/models";
 
@@ -68,6 +68,12 @@ export namespace AccessControl {
       ? TPermission
       : never;
   }[TPermissions[number]];
+
+  export const readPermissions = Array.filterMap(permissions, (permission) =>
+    permission.endsWith(":read")
+      ? Option.some(permission as InferReadPermissions)
+      : Option.none(),
+  );
 
   export const Permission = Schema.Literal(...permissions);
   export type Permission = Schema.Schema.Type<typeof Permission>;

@@ -19,14 +19,9 @@ import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { activeUsersView } from "../users2/sql";
 import {
-  createBillingAccountManagerAuthorization,
-  deleteBillingAccount,
-  deleteBillingAccountManagerAuthorization,
-  hasActiveBillingAccountAuthorization,
-  hasActiveBillingAccountCustomerAuthorization,
-  hasActiveBillingAccountManagerAuthorization,
-  updateBillingAccount,
-} from "./shared";
+  BillingAccountManagerAuthorizationsContract,
+  BillingAccountsContract,
+} from "./contracts";
 import {
   activeBillingAccountCustomerAuthorizationsView,
   activeBillingAccountManagerAuthorizationsView,
@@ -851,7 +846,7 @@ export namespace BillingAccounts {
         const repository = yield* Repository;
 
         const hasActiveManagerAuthorization = yield* DataAccess.makePolicy(
-          hasActiveBillingAccountManagerAuthorization,
+          BillingAccountsContract.hasActiveManagerAuthorization,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -867,7 +862,7 @@ export namespace BillingAccounts {
         );
 
         const hasActiveCustomerAuthorization = yield* DataAccess.makePolicy(
-          hasActiveBillingAccountCustomerAuthorization,
+          BillingAccountsContract.hasActiveCustomerAuthorization,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -883,7 +878,7 @@ export namespace BillingAccounts {
         );
 
         const hasActiveAuthorization = yield* DataAccess.makePolicy(
-          hasActiveBillingAccountAuthorization,
+          BillingAccountsContract.hasActiveAuthorization,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -916,7 +911,7 @@ export namespace BillingAccounts {
         const repository = yield* Repository;
 
         const update = yield* DataAccess.makeMutation(
-          updateBillingAccount,
+          BillingAccountsContract.update,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("billing_accounts:update"),
@@ -926,7 +921,7 @@ export namespace BillingAccounts {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteBillingAccount,
+          BillingAccountsContract.delete_,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("billing_accounts:delete"),
@@ -2108,7 +2103,7 @@ export namespace BillingAccounts {
         const repository = yield* ManagerAuthorizationsRepository;
 
         const create = yield* DataAccess.makeMutation(
-          createBillingAccountManagerAuthorization,
+          BillingAccountManagerAuthorizationsContract.create,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission(
@@ -2120,7 +2115,7 @@ export namespace BillingAccounts {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteBillingAccountManagerAuthorization,
+          BillingAccountManagerAuthorizationsContract.delete_,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission(

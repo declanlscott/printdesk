@@ -9,30 +9,31 @@ import {
   pgEnum,
   tenantTable,
 } from "../database2/constructors";
-import {
-  activeInvoicesViewName,
-  invoicesTableName,
-  invoiceStatuses,
-  LineItem,
-} from "./shared";
+import { InvoicesContract } from "./contract";
 
-import type { InferFromTable, InferFromView } from "../database2/shared";
+import type { DatabaseContract } from "../database2/contract";
 
 export const invoicesTable = tenantTable(
-  invoicesTableName,
+  InvoicesContract.tableName,
   {
-    lineItems: jsonb("line_items", Schema.Array(LineItem)).notNull(),
-    status: pgEnum("status", invoiceStatuses).default("processing").notNull(),
+    lineItems: jsonb(
+      "line_items",
+      Schema.Array(InvoicesContract.LineItem),
+    ).notNull(),
+    status: pgEnum("status", InvoicesContract.statuses)
+      .default("processing")
+      .notNull(),
     chargedAt: datetime("charged_at"),
     orderId: id("order_id").notNull(),
   },
   (table) => [index().on(table.orderId)],
 );
 export type InvoicesTable = typeof invoicesTable;
-export type Invoice = InferFromTable<InvoicesTable>;
+export type Invoice = DatabaseContract.InferFromTable<InvoicesTable>;
 
-export const activeInvoicesView = pgView(activeInvoicesViewName).as((qb) =>
-  qb.select().from(invoicesTable).where(isNull(invoicesTable.deletedAt)),
+export const activeInvoicesView = pgView(InvoicesContract.activeViewName).as(
+  (qb) =>
+    qb.select().from(invoicesTable).where(isNull(invoicesTable.deletedAt)),
 );
 export type ActiveInvoicesView = typeof activeInvoicesView;
-export type ActiveInvoice = InferFromView<ActiveInvoicesView>;
+export type ActiveInvoice = DatabaseContract.InferFromView<ActiveInvoicesView>;

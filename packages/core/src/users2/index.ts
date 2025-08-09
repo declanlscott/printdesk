@@ -15,7 +15,7 @@ import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { deleteUser, isUserSelf, restoreUser, updateUser } from "./shared";
+import { UsersContract } from "./contract";
 import { activeUsersView, usersTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -486,7 +486,7 @@ export namespace Users {
       accessors: true,
       effect: Effect.gen(function* () {
         const isSelf = yield* DataAccess.makePolicy(
-          isUserSelf,
+          UsersContract.isSelf,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -511,7 +511,7 @@ export namespace Users {
         const { isSelf } = yield* Policies;
 
         const update = yield* DataAccess.makeMutation(
-          updateUser,
+          UsersContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("users:update"),
             mutator: (user, session) =>
@@ -520,7 +520,7 @@ export namespace Users {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteUser,
+          UsersContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.some(
@@ -533,7 +533,7 @@ export namespace Users {
         );
 
         const restore = yield* DataAccess.makeMutation(
-          restoreUser,
+          UsersContract.restore,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("users:delete"),
             mutator: ({ id }, session) =>

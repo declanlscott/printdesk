@@ -14,11 +14,7 @@ import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import {
-  createAnnouncement,
-  deleteAnnouncement,
-  updateAnnouncement,
-} from "./shared";
+import { AnnouncementsContract } from "./contract";
 import { activeAnnouncementsView, announcementsTable } from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -420,7 +416,7 @@ export namespace Announcements {
         const repository = yield* Repository;
 
         const create = yield* DataAccess.makeMutation(
-          createAnnouncement,
+          AnnouncementsContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:create"),
             mutator: (announcement, session) =>
@@ -433,7 +429,7 @@ export namespace Announcements {
         );
 
         const update = yield* DataAccess.makeMutation(
-          updateAnnouncement,
+          AnnouncementsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:update"),
             mutator: ({ id, ...data }, session) =>
@@ -442,7 +438,7 @@ export namespace Announcements {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteAnnouncement,
+          AnnouncementsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:delete"),
             mutator: ({ id, deletedAt }, session) =>

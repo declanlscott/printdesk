@@ -13,17 +13,16 @@ import { Schema } from "effect";
 import { tenantIdColumns } from "../database/tables";
 import { id, jsonb, pgEnum, timestamps } from "../database2/constructors";
 import {
-  replicacheClientGroupsTableName,
-  replicacheClientsTableName,
-  replicacheClientViewEntryEntities,
-  replicacheClientViewMetadataTableName,
-  replicacheClientViewsTableName,
-  replicacheMetaTableName,
-} from "./shared";
+  ReplicacheClientGroupsContract,
+  ReplicacheClientsContract,
+  ReplicacheClientViewMetadataContract,
+  ReplicacheClientViewsContract,
+  ReplicacheMetaContract,
+} from "./contracts";
 
 import type { InferSelectModel } from "drizzle-orm";
 
-export const replicacheMetaTable = pgTable(replicacheMetaTableName, {
+export const replicacheMetaTable = pgTable(ReplicacheMetaContract.tableName, {
   key: text("key").primaryKey(),
   value: jsonb("value", Schema.Any).notNull(),
 });
@@ -31,7 +30,7 @@ export type ReplicacheMetaTable = typeof replicacheMetaTable;
 export type ReplicacheMeta = InferSelectModel<ReplicacheMetaTable>;
 
 export const replicacheClientGroupsTable = pgTable(
-  replicacheClientGroupsTableName,
+  ReplicacheClientGroupsContract.tableName,
   {
     id: uuid("id").notNull(),
     tenantId: tenantIdColumns.tenantId,
@@ -49,7 +48,7 @@ export type ReplicacheClientGroup =
   InferSelectModel<ReplicacheClientGroupsTable>;
 
 export const replicacheClientsTable = pgTable(
-  replicacheClientsTableName,
+  ReplicacheClientsContract.tableName,
   {
     id: uuid("id").notNull(),
     tenantId: tenantIdColumns.tenantId,
@@ -70,7 +69,7 @@ export type ReplicacheClientsTable = typeof replicacheClientsTable;
 export type ReplicacheClient = InferSelectModel<ReplicacheClientsTable>;
 
 export const replicacheClientViewsTable = pgTable(
-  replicacheClientViewsTableName,
+  ReplicacheClientViewsContract.tableName,
   {
     clientGroupId: uuid("client_group_id").notNull(),
     version: integer("version").notNull(),
@@ -87,11 +86,14 @@ export type ReplicacheClientViewsTable = typeof replicacheClientViewsTable;
 export type ReplicacheClientView = InferSelectModel<ReplicacheClientViewsTable>;
 
 export const replicacheClientViewMetadataTable = pgTable(
-  replicacheClientViewMetadataTableName,
+  ReplicacheClientViewMetadataContract.tableName,
   {
     clientGroupId: uuid("client_group_id").notNull(),
     clientViewVersion: integer("client_view_version").notNull(),
-    entity: pgEnum("entity", replicacheClientViewEntryEntities).notNull(),
+    entity: pgEnum(
+      "entity",
+      ReplicacheClientViewMetadataContract.entities,
+    ).notNull(),
     entityId: id("entity_id").notNull(),
     entityVersion: integer("entity_version"),
     tenantId: tenantIdColumns.tenantId,

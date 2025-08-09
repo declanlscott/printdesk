@@ -1,7 +1,10 @@
-import * as models from "./models";
+import { Array } from "effect";
 
-export const views = Object.values(models).filter(
-  (data) => data._tag === "@printdesk/core/database/View",
+import { models } from "./models";
+
+export const views = Array.filter(
+  models,
+  (model) => model._tag === "@printdesk/core/database/View",
 );
 export type View = (typeof views)[number];
 export type ViewName = View["name"];

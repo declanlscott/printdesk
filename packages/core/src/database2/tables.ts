@@ -1,7 +1,10 @@
-import * as models from "./models";
+import { Array } from "effect";
 
-export const syncTables = Object.values(models).filter(
-  (data) => data._tag === "@printdesk/core/database/SyncTable",
+import { models } from "./models";
+
+export const syncTables = Array.filter(
+  models,
+  (model) => model._tag === "@printdesk/core/database/SyncTable",
 );
 export type SyncTable = (typeof syncTables)[number];
 export type SyncTableName = SyncTable["name"];
@@ -10,8 +13,9 @@ export type SyncTableByName<TName extends SyncTableName> = Extract<
   { name: TName }
 >;
 
-export const nonSyncTables = Object.values(models).filter(
-  (data) => data._tag === "@printdesk/core/database/NonSyncTable",
+export const nonSyncTables = Array.filter(
+  models,
+  (model) => model._tag === "@printdesk/core/database/NonSyncTable",
 );
 export type NonSyncTable = (typeof nonSyncTables)[number];
 export type NonSyncTableName = NonSyncTable["name"];

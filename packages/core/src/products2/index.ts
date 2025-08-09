@@ -14,7 +14,7 @@ import { DataAccess } from "../data-access2";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { createProduct, deleteProduct, updateProduct } from "./shared";
+import { ProductsContract } from "./contract";
 import {
   activeProductsView,
   activePublishedProductsView,
@@ -583,7 +583,7 @@ export namespace Products {
         const repository = yield* Repository;
 
         const create = yield* DataAccess.makeMutation(
-          createProduct,
+          ProductsContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:create"),
             mutator: (product, { tenantId }) =>
@@ -592,7 +592,7 @@ export namespace Products {
         );
 
         const update = yield* DataAccess.makeMutation(
-          updateProduct,
+          ProductsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, ...product }, session) =>
@@ -601,7 +601,7 @@ export namespace Products {
         );
 
         const delete_ = yield* DataAccess.makeMutation(
-          deleteProduct,
+          ProductsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:delete"),
             mutator: ({ id, deletedAt }, session) =>

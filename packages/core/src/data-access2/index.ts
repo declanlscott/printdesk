@@ -1,7 +1,7 @@
-import { Data, Effect, HashMap, Iterable, Schema } from "effect";
+/* eslint-disable @typescript-eslint/no-empty-object-type */
+import { Data, Effect, HashMap, Schema } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { ReplicacheContract } from "../replicache2/contracts";
 
 import type { Tenant } from "../tenants2/sql";
 import type { User } from "../users2/sql";
@@ -13,10 +13,13 @@ interface Session {
 }
 
 export namespace DataAccess {
-  export class PolicySignature<
+  export class Function<
     TName extends string = string,
     TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  > extends Data.Class<{ readonly name: TName; readonly Args: TArgs }> {}
+  > extends Data.Class<{
+    readonly name: TName;
+    readonly Args: TArgs;
+  }> {}
 
   export type MakePolicyShape<
     TArgs extends Schema.Schema.AnyNoContext,
@@ -28,47 +31,25 @@ export namespace DataAccess {
     TContext
   >;
 
-  export const makePolicy = <
-    TName extends string,
-    TArgs extends Schema.Schema.AnyNoContext,
-    TError,
-    TContext,
-  >(
-    _signature: PolicySignature<TName, TArgs>,
-    makePolicy: MakePolicyShape<TArgs, TError, TContext>,
-  ) => makePolicy;
+  export const makePolicy = <TFunction extends Function, TError, TContext>(
+    _policy: TFunction,
+    make: MakePolicyShape<TFunction["Args"], TError, TContext>,
+  ) => make;
 
-  type PolicySignatureRegister<
-    TName extends string = string,
-    TSignature extends PolicySignature = PolicySignature,
-  > = Record<TName, TSignature>;
+  type FunctionRegister<TFunction extends Function = Function> = Record<
+    TFunction["name"],
+    TFunction
+  >;
 
-  type InferPolicySignature<TRegister extends PolicySignatureRegister> = {
-    [TName in keyof TRegister]: Schema.Struct<{
-      name: Schema.Literal<[TName & string]>;
-      args: TRegister[TName]["Args"];
-    }>;
-  }[keyof TRegister];
+  export class PolicyRegistry<TRegister extends FunctionRegister = {}> {
+    #policies = HashMap.empty<Function["name"], Function>();
 
-  export class PolicySignatureRegistry<
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    TRegister extends PolicySignatureRegister = {},
-  > {
-    #signatures = HashMap.empty<string, PolicySignature>();
+    register<TFunction extends Function>(
+      policy: TFunction,
+    ): PolicyRegistry<TRegister & FunctionRegister<TFunction>> {
+      this.#policies = HashMap.set(this.#policies, policy.name, policy);
 
-    register<TName extends string, TArgs extends Schema.Schema.AnyNoContext>(
-      signature: PolicySignature<TName, TArgs>,
-    ): PolicySignatureRegistry<
-      TRegister & PolicySignatureRegister<TName, PolicySignature<TName, TArgs>>
-    > {
-      this.#signatures = HashMap.set(
-        this.#signatures,
-        signature.name,
-        signature,
-      );
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-      return this as any;
+      return this;
     }
 
     dispatch<TName extends keyof TRegister & string, TError, TContext>(
@@ -78,32 +59,12 @@ export namespace DataAccess {
     ) {
       return makePolicy.pipe(
         Effect.flatMap(({ make }) => make(args)),
-        Effect.withSpan("DataAccess.PolicySignatureRegistry.dispatch", {
+        Effect.withSpan("DataAccess.PolicyRegistry.dispatch", {
           attributes: { name },
         }),
       );
     }
-
-    get Schema() {
-      return Schema.Union(
-        ...this.#signatures.pipe(
-          HashMap.values,
-          Iterable.map(
-            (policy) =>
-              Schema.Struct({
-                name: Schema.Literal(policy.name),
-                args: policy.Args,
-              }) as InferPolicySignature<TRegister>,
-          ),
-        ),
-      );
-    }
   }
-
-  export class MutationSignature<
-    TName extends string = string,
-    TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  > extends Data.Class<{ readonly name: TName; readonly Args: TArgs }> {}
 
   export type Mutator<
     TArgs extends Schema.Schema.AnyNoContext,
@@ -143,8 +104,7 @@ export namespace DataAccess {
   >;
 
   export const makeMutation = <
-    TName extends string,
-    TArgs extends Schema.Schema.AnyNoContext,
+    TFunction extends Function,
     TPolicyError,
     TPolicyContext,
     TMutatorSuccess,
@@ -153,9 +113,9 @@ export namespace DataAccess {
     TMutationError,
     TMutationContext,
   >(
-    _signature: MutationSignature<TName, TArgs>,
-    mutation: MutationShape<
-      TArgs,
+    _mutation: TFunction,
+    make: MutationShape<
+      TFunction["Args"],
       TPolicyError,
       TPolicyContext,
       TMutatorSuccess,
@@ -164,40 +124,19 @@ export namespace DataAccess {
       TMutationError,
       TMutationContext
     >,
-  ) => mutation;
+  ) => make;
 
-  type MutationSignatureRegister<
-    TName extends string = string,
-    TSignature extends MutationSignature = MutationSignature,
-  > = Record<TName, TSignature>;
-
-  type InferMutationSignature<TRegister extends MutationSignatureRegister> = {
-    [TName in keyof TRegister]: Schema.Struct<{
-      name: Schema.Literal<[TName & string]>;
-      args: TRegister[TName]["Args"];
-    }>;
-  }[keyof TRegister];
-
-  export class MutationSignatureRegistry<
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    TRegister extends MutationSignatureRegister = {},
+  export class MutationRegistry<
+    TRegister extends FunctionRegister = {},
   > extends Data.Class<{ readonly session: Session }> {
-    #signatures = HashMap.empty<string, MutationSignature>();
+    #mutations = HashMap.empty<Function["name"], Function>();
 
-    register<TName extends string, TArgs extends Schema.Schema.AnyNoContext>(
-      signature: MutationSignature<TName, TArgs>,
-    ): MutationSignatureRegistry<
-      TRegister &
-        MutationSignatureRegister<TName, MutationSignature<TName, TArgs>>
-    > {
-      this.#signatures = HashMap.set(
-        this.#signatures,
-        signature.name,
-        signature,
-      );
+    register<TFunction extends Function>(
+      mutation: TFunction,
+    ): MutationRegistry<TRegister & FunctionRegister<TFunction>> {
+      this.#mutations = HashMap.set(this.#mutations, mutation.name, mutation);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-      return this as any;
+      return this;
     }
 
     dispatch<
@@ -211,7 +150,9 @@ export namespace DataAccess {
       TMutationContext,
     >(
       name: TName,
-      args: Schema.Schema.Type<TRegister[TName]["Args"]>,
+      args:
+        | { encoded: Schema.Schema.Encoded<TRegister[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TRegister[TName]["Args"]> },
       mutation: MutationShape<
         TRegister[TName]["Args"],
         TPolicyError,
@@ -223,33 +164,35 @@ export namespace DataAccess {
         TMutationContext
       >,
     ) {
-      return mutation.pipe(
-        Effect.flatMap(({ makePolicy, mutator }) =>
-          mutator(args, this.session).pipe(
-            AccessControl.enforce(makePolicy(args)),
-          ),
-        ),
-        Effect.withSpan("DataAccess.MutationSignatureRegistry.dispatch", {
-          attributes: { name },
-        }),
-      );
-    }
-
-    get ReplicacheMutation() {
-      return Schema.Union(
-        ...this.#signatures.pipe(
-          HashMap.values,
-          Iterable.map((signature) =>
-            Schema.extend(
-              ReplicacheContract.MutationV1.omit("name", "args"),
-              Schema.Struct({
-                name: Schema.Literal(signature.name),
-                args: signature.Args,
-              }) as InferMutationSignature<TRegister>,
+      const mutate = (args: Schema.Schema.Type<TRegister[TName]["Args"]>) =>
+        Effect.succeed(args).pipe(
+          Effect.flatMap((args) =>
+            mutation.pipe(
+              Effect.flatMap(({ mutator, makePolicy }) =>
+                mutator(args, this.session).pipe(
+                  AccessControl.enforce(makePolicy(args)),
+                ),
+              ),
             ),
           ),
-        ),
-      );
+        );
+
+      if ("encoded" in args)
+        return this.#mutations.pipe(
+          HashMap.get(name),
+          Effect.map(({ Args }) => Args as TRegister[TName]["Args"]),
+          Effect.map(
+            Schema.decode<
+              Schema.Schema.Type<TRegister[TName]["Args"]>,
+              Schema.Schema.Encoded<TRegister[TName]["Args"]>,
+              never
+            >,
+          ),
+          Effect.flatMap((decode) => decode(args.encoded)),
+          Effect.flatMap(mutate),
+        );
+
+      return mutate(args.decoded);
     }
   }
 }

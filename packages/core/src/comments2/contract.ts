@@ -26,17 +26,17 @@ export namespace CommentsContract {
     table.Schema,
   );
 
-  export const isAuthor = new DataAccess.PolicySignature({
+  export const isAuthor = new DataAccess.Function({
     name: "isCommentAuthor",
     Args: table.Schema.pick("id"),
   });
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createComment",
     Args: table.Schema.omit("authorId", "deletedAt", "tenantId"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateComment",
     Args: table.Schema.pick("id", "orderId", "updatedAt").pipe(
       Schema.extend(
@@ -49,7 +49,7 @@ export namespace CommentsContract {
     ),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteComment",
     Args: Schema.Struct({
       ...table.Schema.pick("id", "orderId").fields,

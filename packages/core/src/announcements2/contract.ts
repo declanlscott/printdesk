@@ -25,12 +25,12 @@ export namespace AnnouncementsContract {
     table.Schema,
   );
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createAnnouncement",
     Args: table.Schema.omit("authorId", "deletedAt", "tenantId"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateAnnouncement",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -42,7 +42,7 @@ export namespace AnnouncementsContract {
     ),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteAnnouncement",
     Args: Schema.Struct({
       id: NanoId,

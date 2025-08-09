@@ -210,52 +210,52 @@ export namespace OrdersContract {
     table.Schema,
   );
 
-  export const isCustomer = new DataAccess.PolicySignature({
+  export const isCustomer = new DataAccess.Function({
     name: "isOrderCustomer",
     Args: table.Schema.pick("id"),
   });
 
-  export const isManager = new DataAccess.PolicySignature({
+  export const isManager = new DataAccess.Function({
     name: "isOrderManager",
     Args: table.Schema.pick("id"),
   });
 
-  export const isCustomerOrManager = new DataAccess.PolicySignature({
+  export const isCustomerOrManager = new DataAccess.Function({
     name: "isOrderCustomerOrManager",
     Args: table.Schema.pick("id"),
   });
 
-  export const hasActiveManagerAuthorization = new DataAccess.PolicySignature({
+  export const hasActiveManagerAuthorization = new DataAccess.Function({
     name: "hasActiveOrderBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
   });
 
-  export const canEdit = new DataAccess.PolicySignature({
+  export const canEdit = new DataAccess.Function({
     name: "canEditOrder",
     Args: table.Schema.pick("id"),
   });
 
-  export const canApprove = new DataAccess.PolicySignature({
+  export const canApprove = new DataAccess.Function({
     name: "canApproveOrder",
     Args: table.Schema.pick("id"),
   });
 
-  export const canTransition = new DataAccess.PolicySignature({
+  export const canTransition = new DataAccess.Function({
     name: "canTransitionOrder",
     Args: table.Schema.pick("id"),
   });
 
-  export const canDelete = new DataAccess.PolicySignature({
+  export const canDelete = new DataAccess.Function({
     name: "canDeleteOrder",
     Args: table.Schema.pick("id"),
   });
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createOrder",
     Args: table.Schema.omit("approvedAt", "deletedAt", "tenantId"),
   });
 
-  export const edit = new DataAccess.MutationSignature({
+  export const edit = new DataAccess.Function({
     name: "editOrder",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -271,7 +271,7 @@ export namespace OrdersContract {
     ),
   });
 
-  export const approve = new DataAccess.MutationSignature({
+  export const approve = new DataAccess.Function({
     name: "approveOrder",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt", "workflowStatus"),
@@ -281,12 +281,12 @@ export namespace OrdersContract {
     ),
   });
 
-  export const transition = new DataAccess.MutationSignature({
+  export const transition = new DataAccess.Function({
     name: "transitionOrder",
     Args: table.Schema.pick("id", "updatedAt", "workflowStatus"),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteOrder",
     Args: Schema.Struct({
       id: NanoId,

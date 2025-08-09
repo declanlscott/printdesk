@@ -259,12 +259,12 @@ export namespace ProductsContract {
       activeView.Schema,
     );
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createProduct",
     Args: table.Schema.omit("deletedAt", "tenantId"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateProduct",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -275,7 +275,7 @@ export namespace ProductsContract {
     ),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteProduct",
     Args: Schema.Struct({
       id: NanoId,

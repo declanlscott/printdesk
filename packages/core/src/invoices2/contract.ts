@@ -37,7 +37,7 @@ export namespace InvoicesContract {
     table.Schema,
   );
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createInvoice",
     Args: table.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
   });

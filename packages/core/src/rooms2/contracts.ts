@@ -45,12 +45,12 @@ export namespace RoomsContract {
       table.Schema,
     );
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createRoom",
     Args: table.Schema.omit("deletedAt", "tenantId"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateRoom",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -60,7 +60,7 @@ export namespace RoomsContract {
     ),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteRoom",
     Args: Schema.Struct({
       id: NanoId,
@@ -68,7 +68,7 @@ export namespace RoomsContract {
     }),
   });
 
-  export const restore = new DataAccess.MutationSignature({
+  export const restore = new DataAccess.Function({
     name: "restoreRoom",
     Args: table.Schema.pick("id"),
   });
@@ -160,7 +160,7 @@ export namespace WorkflowsContract {
     ),
   );
 
-  export const set = new DataAccess.MutationSignature({
+  export const set = new DataAccess.Function({
     name: "setWorkflow",
     Args: Schema.Struct({
       workflow: Workflow,
@@ -208,7 +208,7 @@ export namespace DeliveryOptionsContract {
     ),
   );
 
-  export const set = new DataAccess.MutationSignature({
+  export const set = new DataAccess.Function({
     name: "setDeliveryOptions",
     Args: Schema.Struct({
       options: DeliveryOptions,

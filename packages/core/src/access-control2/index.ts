@@ -1,11 +1,12 @@
 import { Array, Context, Data, Effect, Option, Schema, Struct } from "effect";
 
-import * as models from "../database2/models";
+import { nonSyncTables, syncTables } from "../database2/tables";
+import { views } from "../database2/views";
 
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
 import type { Tenant } from "../tenants2/sql";
-import type { UserRole } from "../users2/shared";
+import type { UsersContract } from "../users2/contract";
 import type { User } from "../users2/sql";
 
 export namespace AccessControl {
@@ -33,17 +34,15 @@ export namespace AccessControl {
       ),
     );
 
-  const syncTablePermissions = Object.values(models)
-    .filter((data) => data._tag === "@printdesk/core/database/SyncTable")
-    .flatMap(({ permissions }) => permissions);
+  const syncTablePermissions = syncTables.flatMap(
+    ({ permissions }) => permissions,
+  );
 
-  const nonSyncTablePermissions = Object.values(models)
-    .filter((data) => data._tag === "@printdesk/core/database/NonSyncTable")
-    .flatMap(({ permissions }) => permissions);
+  const nonSyncTablePermissions = nonSyncTables.flatMap(
+    ({ permissions }) => permissions,
+  );
 
-  const viewPermissions = Object.values(models)
-    .filter((data) => data._tag === "@printdesk/core/database/View")
-    .flatMap(({ permission }) => permission);
+  const viewPermissions = views.flatMap(({ permission }) => permission);
 
   const externalPermissions = makePermissionsFromConfig({
     document_constraints: ["read", "update"],
@@ -79,7 +78,7 @@ export namespace AccessControl {
   export type Permission = Schema.Schema.Type<typeof Permission>;
 
   export type UserRoleAcls = ReadonlyRecord<
-    UserRole,
+    UsersContract.Role,
     ReadonlyArray<Permission>
   >;
   export const userRoleAcls = {

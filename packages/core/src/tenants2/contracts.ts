@@ -28,12 +28,12 @@ export namespace TenantsContract {
     ["read", "update"],
   );
 
-  export const isSubdomainAvailable = new DataAccess.PolicySignature({
+  export const isSubdomainAvailable = new DataAccess.Function({
     name: "isTenantSubdomainAvailable",
     Args: table.Schema.pick("subdomain"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateTenant",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -61,7 +61,7 @@ export namespace LicensesContract {
     [],
   );
 
-  export const isAvailable = new DataAccess.PolicySignature({
+  export const isAvailable = new DataAccess.Function({
     name: "isLicenseAvailable",
     Args: table.Schema.pick("key"),
   });

@@ -47,22 +47,22 @@ export namespace BillingAccountsContract {
     table.Schema,
   );
 
-  export const hasActiveManagerAuthorization = new DataAccess.PolicySignature({
+  export const hasActiveManagerAuthorization = new DataAccess.Function({
     name: "hasActiveBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
   });
 
-  export const hasActiveCustomerAuthorization = new DataAccess.PolicySignature({
+  export const hasActiveCustomerAuthorization = new DataAccess.Function({
     name: "hasActiveBillingAccountCustomerAuthorization",
     Args: table.Schema.pick("id"),
   });
 
-  export const hasActiveAuthorization = new DataAccess.PolicySignature({
+  export const hasActiveAuthorization = new DataAccess.Function({
     name: "hasActiveBillingAccountAuthorization",
     Args: table.Schema.pick("id"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateBillingAccount",
     Args: table.Schema.pick("id", "updatedAt").pipe(
       Schema.extend(
@@ -76,7 +76,7 @@ export namespace BillingAccountsContract {
     ),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteBillingAccount",
     Args: Schema.Struct({
       id: NanoId,
@@ -126,12 +126,12 @@ export namespace BillingAccountManagerAuthorizationsContract {
       table.Schema,
     );
 
-  export const create = new DataAccess.MutationSignature({
+  export const create = new DataAccess.Function({
     name: "createBillingAccountManagerAuthorization",
     Args: table.Schema.omit("deletedAt", "tenantId"),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteBillingAccountManagerAuthorization",
     Args: Schema.Struct({
       id: NanoId,

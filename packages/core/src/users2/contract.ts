@@ -40,12 +40,12 @@ export namespace UsersContract {
     table.Schema,
   );
 
-  export const isSelf = new DataAccess.PolicySignature({
+  export const isSelf = new DataAccess.Function({
     name: "isUserSelf",
     Args: table.Schema.pick("id"),
   });
 
-  export const update = new DataAccess.MutationSignature({
+  export const update = new DataAccess.Function({
     name: "updateUser",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -61,7 +61,7 @@ export namespace UsersContract {
     ),
   });
 
-  export const delete_ = new DataAccess.MutationSignature({
+  export const delete_ = new DataAccess.Function({
     name: "deleteUser",
     Args: Schema.Struct({
       id: NanoId,
@@ -69,7 +69,7 @@ export namespace UsersContract {
     }),
   });
 
-  export const restore = new DataAccess.MutationSignature({
+  export const restore = new DataAccess.Function({
     name: "restoreUser",
     Args: table.Schema.pick("id"),
   });

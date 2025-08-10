@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { Data, Effect, HashMap, Schema } from "effect";
 
 import { AccessControl } from "../access-control2";
@@ -16,53 +15,131 @@ export namespace DataAccess {
   export class Function<
     TName extends string = string,
     TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  > extends Data.Class<{
-    readonly name: TName;
-    readonly Args: TArgs;
-  }> {}
+  > extends Data.Class<{ readonly name: TName; readonly Args: TArgs }> {}
 
-  export type MakePolicyShape<
-    TArgs extends Schema.Schema.AnyNoContext,
-    TError,
-    TContext,
-  > = Effect.Effect<
-    { readonly make: AccessControl.MakePolicy<TArgs, TError, TContext> },
-    TError,
-    TContext
-  >;
+  // TODO: Invocation
 
-  export const makePolicy = <TFunction extends Function, TError, TContext>(
-    _policy: TFunction,
-    make: MakePolicyShape<TFunction["Args"], TError, TContext>,
-  ) => make;
+  type FunctionMap = HashMap.HashMap<Function["name"], Function>;
 
-  type FunctionRegister<TFunction extends Function = Function> = Record<
+  type FunctionRecord<TFunction extends Function = Function> = Record<
     TFunction["name"],
     TFunction
   >;
 
-  export class PolicyRegistry<TRegister extends FunctionRegister = {}> {
-    #policies = HashMap.empty<Function["name"], Function>();
+  export type MakePolicyShape<
+    TArgs extends Schema.Schema.AnyNoContext,
+    TPolicyError,
+    TPolicyContext,
+    TMakePolicyError,
+    TMakePolicyContext,
+  > = Effect.Effect<
+    {
+      readonly make: AccessControl.MakePolicy<
+        TArgs,
+        TPolicyError,
+        TPolicyContext
+      >;
+    },
+    TMakePolicyError,
+    TMakePolicyContext
+  >;
 
-    register<TFunction extends Function>(
-      policy: TFunction,
-    ): PolicyRegistry<TRegister & FunctionRegister<TFunction>> {
-      this.#policies = HashMap.set(this.#policies, policy.name, policy);
+  export const makePolicy = <
+    TFunction extends Function,
+    TPolicyError,
+    TPolicyContext,
+    TMakePolicyError,
+    TMakePolicyContext,
+  >(
+    _policy: TFunction,
+    make: MakePolicyShape<
+      TFunction["Args"],
+      TPolicyError,
+      TPolicyContext,
+      TMakePolicyError,
+      TMakePolicyContext
+    >,
+  ) => make;
 
-      return this;
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  export class Functions<TRecord extends FunctionRecord = {}, TIsDone = false> {
+    #isDone = false;
+    #map = HashMap.empty<Function["name"], Function>() satisfies FunctionMap;
+
+    add<TFunction extends Function>(
+      function_: TIsDone extends false ? TFunction : never,
+    ) {
+      if (!this.#isDone)
+        this.#map = HashMap.set(this.#map, function_.name, function_);
+
+      return this as Functions<TRecord & FunctionRecord<TFunction>, TIsDone>;
     }
 
-    dispatch<TName extends keyof TRegister & string, TError, TContext>(
+    done(this: TIsDone extends false ? Functions<TRecord, TIsDone> : never) {
+      this.#isDone = true;
+
+      return this as Functions<TRecord, true>;
+    }
+
+    get $inferRecord() {
+      return {} as {
+        [TName in keyof TRecord]: Function<
+          TName & string,
+          TRecord[TName]["Args"]
+        >;
+      };
+    }
+
+    get map() {
+      return this.#map;
+    }
+  }
+
+  export class PolicyDispatcher<
+    TRecord extends FunctionRecord,
+  > extends Data.Class<{ map: FunctionMap }> {
+    dispatch<
+      TName extends keyof TRecord & string,
+      TPolicyError,
+      TPolicyContext,
+      TMakePolicyError,
+      TMakePolicyContext,
+    >(
       name: TName,
-      args: Schema.Schema.Type<TRegister[TName]["Args"]>,
-      makePolicy: MakePolicyShape<TRegister[TName]["Args"], TError, TContext>,
+      args:
+        | { encoded: Schema.Schema.Encoded<TRecord[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TRecord[TName]["Args"]> },
+      makePolicy: MakePolicyShape<
+        TRecord[TName]["Args"],
+        TPolicyError,
+        TPolicyContext,
+        TMakePolicyError,
+        TMakePolicyContext
+      >,
     ) {
-      return makePolicy.pipe(
-        Effect.flatMap(({ make }) => make(args)),
-        Effect.withSpan("DataAccess.PolicyRegistry.dispatch", {
-          attributes: { name },
-        }),
-      );
+      const make = (args: Schema.Schema.Type<TRecord[TName]["Args"]>) =>
+        Effect.succeed(args).pipe(
+          Effect.flatMap((args) =>
+            makePolicy.pipe(Effect.flatMap(({ make }) => make(args))),
+          ),
+        );
+
+      if ("encoded" in args)
+        return this.map.pipe(
+          HashMap.get(name),
+          Effect.map(({ Args }) => Args as TRecord[TName]["Args"]),
+          Effect.map(
+            Schema.decode<
+              Schema.Schema.Type<TRecord[TName]["Args"]>,
+              Schema.Schema.Encoded<TRecord[TName]["Args"]>,
+              never
+            >,
+          ),
+          Effect.flatMap((decode) => decode(args.encoded)),
+          Effect.flatMap(make),
+        );
+
+      return make(args.decoded);
     }
   }
 
@@ -126,21 +203,14 @@ export namespace DataAccess {
     >,
   ) => make;
 
-  export class MutationRegistry<
-    TRegister extends FunctionRegister = {},
-  > extends Data.Class<{ readonly session: Session }> {
-    #mutations = HashMap.empty<Function["name"], Function>();
-
-    register<TFunction extends Function>(
-      mutation: TFunction,
-    ): MutationRegistry<TRegister & FunctionRegister<TFunction>> {
-      this.#mutations = HashMap.set(this.#mutations, mutation.name, mutation);
-
-      return this;
-    }
-
+  export class MutationDispatcher<
+    TRecord extends FunctionRecord,
+  > extends Data.Class<{
+    readonly session: Session;
+    readonly map: FunctionMap;
+  }> {
     dispatch<
-      TName extends keyof TRegister & string,
+      TName extends keyof TRecord & string,
       TPolicyError,
       TPolicyContext,
       TMutatorSuccess,
@@ -151,10 +221,10 @@ export namespace DataAccess {
     >(
       name: TName,
       args:
-        | { encoded: Schema.Schema.Encoded<TRegister[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TRegister[TName]["Args"]> },
+        | { encoded: Schema.Schema.Encoded<TRecord[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TRecord[TName]["Args"]> },
       mutation: MutationShape<
-        TRegister[TName]["Args"],
+        TRecord[TName]["Args"],
         TPolicyError,
         TPolicyContext,
         TMutatorSuccess,
@@ -164,7 +234,7 @@ export namespace DataAccess {
         TMutationContext
       >,
     ) {
-      const mutate = (args: Schema.Schema.Type<TRegister[TName]["Args"]>) =>
+      const mutate = (args: Schema.Schema.Type<TRecord[TName]["Args"]>) =>
         Effect.succeed(args).pipe(
           Effect.flatMap((args) =>
             mutation.pipe(
@@ -178,13 +248,13 @@ export namespace DataAccess {
         );
 
       if ("encoded" in args)
-        return this.#mutations.pipe(
+        return this.map.pipe(
           HashMap.get(name),
-          Effect.map(({ Args }) => Args as TRegister[TName]["Args"]),
+          Effect.map(({ Args }) => Args as TRecord[TName]["Args"]),
           Effect.map(
             Schema.decode<
-              Schema.Schema.Type<TRegister[TName]["Args"]>,
-              Schema.Schema.Encoded<TRegister[TName]["Args"]>,
+              Schema.Schema.Type<TRecord[TName]["Args"]>,
+              Schema.Schema.Encoded<TRecord[TName]["Args"]>,
               never
             >,
           ),

@@ -23,23 +23,30 @@ export namespace DataAccessFunctions {
     "@printdesk/core/data-access/Policies",
     {
       accessors: true,
-      succeed: {
-        registry: new DataAccess.PolicyRegistry()
-          .register(BillingAccountsContract.hasActiveManagerAuthorization)
-          .register(BillingAccountsContract.hasActiveCustomerAuthorization)
-          .register(BillingAccountsContract.hasActiveAuthorization)
-          .register(CommentsContract.isAuthor)
-          .register(OrdersContract.isCustomer)
-          .register(OrdersContract.isManager)
-          .register(OrdersContract.isCustomerOrManager)
-          .register(OrdersContract.hasActiveManagerAuthorization)
-          .register(OrdersContract.canEdit)
-          .register(OrdersContract.canApprove)
-          .register(OrdersContract.canTransition)
-          .register(OrdersContract.canDelete)
-          .register(TenantsContract.isSubdomainAvailable)
-          .register(LicensesContract.isAvailable)
-          .register(UsersContract.isSelf),
+      sync: () => {
+        const policies = new DataAccess.Functions()
+          .add(BillingAccountsContract.hasActiveManagerAuthorization)
+          .add(BillingAccountsContract.hasActiveCustomerAuthorization)
+          .add(BillingAccountsContract.hasActiveAuthorization)
+          .add(CommentsContract.isAuthor)
+          .add(OrdersContract.isCustomer)
+          .add(OrdersContract.isManager)
+          .add(OrdersContract.isCustomerOrManager)
+          .add(OrdersContract.hasActiveManagerAuthorization)
+          .add(OrdersContract.canEdit)
+          .add(OrdersContract.canApprove)
+          .add(OrdersContract.canTransition)
+          .add(OrdersContract.canDelete)
+          .add(TenantsContract.isSubdomainAvailable)
+          .add(LicensesContract.isAvailable)
+          .add(UsersContract.isSelf)
+          .done();
+
+        const dispatcher = new DataAccess.PolicyDispatcher<
+          (typeof policies)["$inferRecord"]
+        >({ map: policies.map });
+
+        return { dispatcher };
       },
     },
   ) {}
@@ -54,38 +61,43 @@ export namespace DataAccessFunctions {
           tenantId: "TODO",
         });
 
-        const registry = new DataAccess.MutationRegistry({ session })
-          .register(AnnouncementsContract.create)
-          .register(AnnouncementsContract.update)
-          .register(AnnouncementsContract.delete_)
-          .register(BillingAccountsContract.update)
-          .register(BillingAccountsContract.delete_)
-          .register(BillingAccountManagerAuthorizationsContract.create)
-          .register(BillingAccountManagerAuthorizationsContract.delete_)
-          .register(CommentsContract.create)
-          .register(CommentsContract.update)
-          .register(CommentsContract.delete_)
-          .register(DeliveryOptionsContract.set)
-          .register(InvoicesContract.create)
-          .register(OrdersContract.create)
-          .register(OrdersContract.edit)
-          .register(OrdersContract.approve)
-          .register(OrdersContract.transition)
-          .register(OrdersContract.delete_)
-          .register(ProductsContract.create)
-          .register(ProductsContract.update)
-          .register(ProductsContract.delete_)
-          .register(RoomsContract.create)
-          .register(RoomsContract.update)
-          .register(RoomsContract.delete_)
-          .register(RoomsContract.restore)
-          .register(TenantsContract.update)
-          .register(UsersContract.update)
-          .register(UsersContract.delete_)
-          .register(UsersContract.restore)
-          .register(WorkflowsContract.set);
+        const mutations = new DataAccess.Functions()
+          .add(AnnouncementsContract.create)
+          .add(AnnouncementsContract.update)
+          .add(AnnouncementsContract.delete_)
+          .add(BillingAccountsContract.update)
+          .add(BillingAccountsContract.delete_)
+          .add(BillingAccountManagerAuthorizationsContract.create)
+          .add(BillingAccountManagerAuthorizationsContract.delete_)
+          .add(CommentsContract.create)
+          .add(CommentsContract.update)
+          .add(CommentsContract.delete_)
+          .add(DeliveryOptionsContract.set)
+          .add(InvoicesContract.create)
+          .add(OrdersContract.create)
+          .add(OrdersContract.edit)
+          .add(OrdersContract.approve)
+          .add(OrdersContract.transition)
+          .add(OrdersContract.delete_)
+          .add(ProductsContract.create)
+          .add(ProductsContract.update)
+          .add(ProductsContract.delete_)
+          .add(RoomsContract.create)
+          .add(RoomsContract.update)
+          .add(RoomsContract.delete_)
+          .add(RoomsContract.restore)
+          .add(TenantsContract.update)
+          .add(UsersContract.update)
+          .add(UsersContract.delete_)
+          .add(UsersContract.restore)
+          .add(WorkflowsContract.set)
+          .done();
 
-        return { registry } as const;
+        const dispatcher = new DataAccess.MutationDispatcher<
+          (typeof mutations)["$inferRecord"]
+        >({ session, map: mutations.map });
+
+        return { dispatcher };
       }),
     },
   ) {}

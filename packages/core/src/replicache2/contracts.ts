@@ -106,39 +106,41 @@ export namespace ReplicacheContract {
     clientID: Schema.UUID,
   });
 
-  export const PushRequest = Schema.Union(
-    Schema.Struct({
-      pushVersion: Schema.Literal(0),
-      clientID: Schema.UUID,
-      mutations: Schema.Array(MutationV0),
-      profileID: Schema.String,
-      schemaVersion: Schema.String,
-    }),
-    Schema.Struct({
-      pushVersion: Schema.Literal(1),
-      clientGroupID: Schema.UUID,
-      mutations: Schema.Array(MutationV1),
-      profileID: Schema.String,
-      schemaVersion: Schema.String,
-    }),
-  );
+  export const PushRequestV0 = Schema.Struct({
+    pushVersion: Schema.Literal(0),
+    clientID: Schema.UUID,
+    mutations: Schema.Array(MutationV0),
+    profileID: Schema.String,
+    schemaVersion: Schema.String,
+  });
 
-  export const PullRequest = Schema.Union(
-    Schema.Struct({
-      pullVersion: Schema.Literal(0),
-      schemaVersion: Schema.String,
-      profileID: Schema.String,
-      cookie: Schema.NullOr(Schema.Struct({})),
-      lastMutationID: Schema.Int,
-    }),
-    Schema.Struct({
-      pullVersion: Schema.Literal(1),
-      schemaVersion: Schema.String,
-      profileID: Schema.String,
-      cookie: Schema.NullOr(Schema.Struct({ order: Schema.Int })),
-      clientGroupID: Schema.UUID,
-    }),
-  );
+  export const PushRequestV1 = Schema.Struct({
+    pushVersion: Schema.Literal(1),
+    clientGroupID: Schema.UUID,
+    mutations: Schema.Array(MutationV1),
+    profileID: Schema.String,
+    schemaVersion: Schema.String,
+  });
+
+  export const PushRequest = Schema.Union(PushRequestV0, PushRequestV1);
+
+  export const PullRequestV0 = Schema.Struct({
+    pullVersion: Schema.Literal(0),
+    schemaVersion: Schema.String,
+    profileID: Schema.String,
+    cookie: Schema.NullOr(Schema.Struct({})),
+    lastMutationID: Schema.Int,
+  });
+
+  export const PullRequestV1 = Schema.Struct({
+    pullVersion: Schema.Literal(1),
+    schemaVersion: Schema.String,
+    profileID: Schema.String,
+    cookie: Schema.NullOr(Schema.Struct({ order: Schema.Int })),
+    clientGroupID: Schema.UUID,
+  });
+
+  export const PullRequest = Schema.Union(PullRequestV0, PullRequestV1);
 
   export class VersionNotSupportedError extends Data.TaggedError(
     "VersionNotSupportedError",

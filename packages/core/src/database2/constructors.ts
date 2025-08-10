@@ -62,8 +62,8 @@ export function jsonb<TSchema extends Schema.Schema.AnyNoContext>(
   });
 
   return customType<{
-    driverData: Schema.Schema.Encoded<typeof Jsonb>;
-    data: Schema.Schema.Type<typeof Jsonb>;
+    driverData: typeof Jsonb.Encoded;
+    data: typeof Jsonb.Type;
   }>({
     dataType: () => "bytea",
     // @ts-expect-error TypeScript doesn't know that `Context<TSchema>` is `never`.
@@ -80,8 +80,8 @@ export function pgEnum<const TValues extends ReadonlyArray<string>>(
   const Enum = Schema.Literal(...values);
 
   return customType<{
-    data: typeof Enum.Type;
     driverData: typeof Enum.Encoded;
+    data: typeof Enum.Type;
   }>({
     dataType: () => "varchar(50)",
     fromDriver: Schema.decodeSync(Enum),

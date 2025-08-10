@@ -626,7 +626,7 @@ export namespace Rooms {
 
         const upsert = Effect.fn("Rooms.WorkflowRepository.upsert")(
           (
-            workflow: (typeof WorkflowsContract.Workflow)["Type"],
+            workflow: typeof WorkflowsContract.Workflow.Type,
             roomId: WorkflowStatus["roomId"],
             tenantId: WorkflowStatus["tenantId"],
           ) =>
@@ -1014,7 +1014,7 @@ export namespace Rooms {
 
         const upsert = Effect.fn("Rooms.DeliveryOptionsRepository.upsert")(
           (
-            options: (typeof DeliveryOptionsContract.DeliveryOptions)["Type"],
+            options: typeof DeliveryOptionsContract.DeliveryOptions.Type,
             roomId: DeliveryOption["roomId"],
             tenantId: DeliveryOption["tenantId"],
           ) =>

@@ -94,7 +94,7 @@ export namespace DataAccessFunctions {
           .done();
 
         const dispatcher = new DataAccess.MutationDispatcher<
-          (typeof mutations)["$inferRecord"]
+          typeof mutations.RecordType
         >({ session, map: mutations.map });
 
         return { mutations, dispatcher };

@@ -100,13 +100,11 @@ export namespace ReplicacheContract {
     id: Schema.Number,
     timestamp: Schema.Number,
   });
-  export type MutationV0 = Schema.Schema.Type<typeof MutationV0>;
 
   export const MutationV1 = Schema.Struct({
     ...MutationV0.fields,
     clientID: Schema.UUID,
   });
-  export type MutationV1 = Schema.Schema.Type<typeof MutationV1>;
 
   export const PushRequest = Schema.Union(
     Schema.Struct({
@@ -124,7 +122,6 @@ export namespace ReplicacheContract {
       schemaVersion: Schema.String,
     }),
   );
-  export type PushRequest = Schema.Schema.Type<typeof PushRequest>;
 
   export const PullRequest = Schema.Union(
     Schema.Struct({
@@ -142,7 +139,6 @@ export namespace ReplicacheContract {
       clientGroupID: Schema.UUID,
     }),
   );
-  export type PullRequest = Schema.Schema.Type<typeof PullRequest>;
 
   export class VersionNotSupportedError extends Data.TaggedError(
     "VersionNotSupportedError",

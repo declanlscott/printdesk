@@ -60,22 +60,24 @@ export namespace AccessControl {
   ] as const;
   export type Permissions = typeof permissions;
 
-  export type InferReadPermissions<
-    TPermissions extends Permissions = Permissions,
-  > = {
-    [TPermission in TPermissions[number]]: TPermission extends `${string}:read`
-      ? TPermission
-      : never;
-  }[TPermissions[number]];
+  export const Permission = Schema.Literal(...permissions);
+  export type Permission = typeof Permission.Type;
 
   export const readPermissions = Array.filterMap(permissions, (permission) =>
     permission.endsWith(":read")
-      ? Option.some(permission as InferReadPermissions)
+      ? Option.some(
+          permission as {
+            [TPermission in Permissions[number]]: TPermission extends `${string}:read`
+              ? TPermission
+              : never;
+          }[Permissions[number]],
+        )
       : Option.none(),
   );
+  export type ReadPermissions = typeof readPermissions;
 
-  export const Permission = Schema.Literal(...permissions);
-  export type Permission = Schema.Schema.Type<typeof Permission>;
+  export const ReadPermission = Schema.Literal(...readPermissions);
+  export type ReadPermission = typeof ReadPermission.Type;
 
   export type UserRoleAcls = ReadonlyRecord<
     UsersContract.Role,

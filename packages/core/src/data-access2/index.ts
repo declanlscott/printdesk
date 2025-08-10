@@ -91,6 +91,13 @@ export namespace DataAccess {
     #isDone = false;
     #map = HashMap.empty<Function["name"], Function>() satisfies FunctionMap;
 
+    readonly RecordType = {} as {
+      [TName in keyof TRecord]: Function<
+        TName & string,
+        TRecord[TName]["Args"]
+      >;
+    };
+
     add<TFunction extends Function>(
       fn: TIsDone extends false ? TFunction : never,
     ) {
@@ -103,15 +110,6 @@ export namespace DataAccess {
       this.#isDone = true;
 
       return this as Functions<TRecord, true>;
-    }
-
-    get $inferRecord() {
-      return {} as {
-        [TName in keyof TRecord]: Function<
-          TName & string,
-          TRecord[TName]["Args"]
-        >;
-      };
     }
 
     get map() {

@@ -50,7 +50,7 @@ export namespace InvoicesContract {
   });
 
   export const estimateCost = (
-    order: Schema.Schema.Type<typeof OrdersContract.Attributes>,
+    order: typeof OrdersContract.Attributes.Type,
     script: string,
   ) =>
     Schema.decodeUnknown(Estimate)(

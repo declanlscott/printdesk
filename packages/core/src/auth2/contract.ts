@@ -8,7 +8,8 @@ export namespace AuthContract {
     tenantId: NanoId,
   });
 
-  export class Session extends Schema.Class<Session>("Session")(
-    UserSubjectProperties.fields,
-  ) {}
+  export class Session extends Schema.Class<Session>("Session")({
+    userId: NanoId,
+    tenantId: NanoId,
+  }) {}
 }

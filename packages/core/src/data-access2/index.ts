@@ -100,16 +100,18 @@ export namespace DataAccess {
 
     add<TFunction extends Function>(
       fn: TIsDone extends false ? TFunction : never,
-    ) {
+    ): Functions<TRecord & FunctionRecord<TFunction>, TIsDone> {
       if (!this.#isDone) this.#map = HashMap.set(this.#map, fn.name, fn);
 
-      return this as Functions<TRecord & FunctionRecord<TFunction>, TIsDone>;
+      return this;
     }
 
-    done(this: TIsDone extends false ? Functions<TRecord, TIsDone> : never) {
+    done(
+      this: TIsDone extends false ? Functions<TRecord, TIsDone> : never,
+    ): Functions<TRecord, true> {
       this.#isDone = true;
 
-      return this as Functions<TRecord, true>;
+      return this;
     }
 
     get map() {

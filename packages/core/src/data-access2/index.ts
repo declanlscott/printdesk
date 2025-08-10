@@ -183,7 +183,7 @@ export namespace DataAccess {
     TContext,
   > = (
     args: Schema.Schema.Type<TArgs>,
-    session: Session,
+    session: AuthContract.Session,
   ) => Effect.Effect<TSuccess, TError, TContext>;
 
   export type MutationShape<
@@ -261,7 +261,7 @@ export namespace DataAccess {
   export class MutationDispatcher<
     TRecord extends FunctionRecord,
   > extends Data.Class<{
-    readonly session: Session;
+    readonly session: AuthContract.Session;
     readonly map: FunctionMap;
   }> {
     dispatch<

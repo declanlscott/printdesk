@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import { DataAccess } from ".";
 import { AnnouncementsContract } from "../announcements2/contract";
+import { Auth } from "../auth2";
 import {
   BillingAccountManagerAuthorizationsContract,
   BillingAccountsContract,
@@ -56,10 +57,7 @@ export namespace DataAccessFunctions {
     {
       accessors: true,
       effect: Effect.gen(function* () {
-        const session = yield* Effect.succeed({
-          userId: "TODO",
-          tenantId: "TODO",
-        });
+        const session = yield* Auth.Session;
 
         const mutations = new DataAccess.Functions()
           .add(AnnouncementsContract.create)

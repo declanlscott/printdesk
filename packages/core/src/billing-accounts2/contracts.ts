@@ -50,16 +50,19 @@ export namespace BillingAccountsContract {
   export const hasActiveManagerAuthorization = new DataAccess.Function({
     name: "hasActiveBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const hasActiveCustomerAuthorization = new DataAccess.Function({
     name: "hasActiveBillingAccountCustomerAuthorization",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const hasActiveAuthorization = new DataAccess.Function({
     name: "hasActiveBillingAccountAuthorization",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const update = new DataAccess.Function({
@@ -74,6 +77,7 @@ export namespace BillingAccountsContract {
         ).pipe(Schema.partial),
       ),
     ),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -82,6 +86,7 @@ export namespace BillingAccountsContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 }
 
@@ -129,6 +134,7 @@ export namespace BillingAccountManagerAuthorizationsContract {
   export const create = new DataAccess.Function({
     name: "createBillingAccountManagerAuthorization",
     Args: table.Schema.omit("deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -137,5 +143,6 @@ export namespace BillingAccountManagerAuthorizationsContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 }

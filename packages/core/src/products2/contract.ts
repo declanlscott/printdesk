@@ -262,6 +262,7 @@ export namespace ProductsContract {
   export const create = new DataAccess.Function({
     name: "createProduct",
     Args: table.Schema.omit("deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const update = new DataAccess.Function({
@@ -273,6 +274,7 @@ export namespace ProductsContract {
         "roomId",
       ).pipe(Schema.partial),
     ),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -281,5 +283,6 @@ export namespace ProductsContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 }

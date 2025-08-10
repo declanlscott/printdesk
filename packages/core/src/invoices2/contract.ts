@@ -40,6 +40,7 @@ export namespace InvoicesContract {
   export const create = new DataAccess.Function({
     name: "createInvoice",
     Args: table.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const Estimate = Schema.Struct({
@@ -54,7 +55,7 @@ export namespace InvoicesContract {
   ) =>
     Schema.decodeUnknown(Estimate)(
       // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
-      Function(
+      globalThis.Function(
         "__order__",
         [
           `Object.freeze(__order__);`,

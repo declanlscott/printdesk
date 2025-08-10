@@ -29,11 +29,13 @@ export namespace CommentsContract {
   export const isAuthor = new DataAccess.Function({
     name: "isCommentAuthor",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const create = new DataAccess.Function({
     name: "createComment",
     Args: table.Schema.omit("authorId", "deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const update = new DataAccess.Function({
@@ -47,6 +49,7 @@ export namespace CommentsContract {
         ).pipe(Schema.partial),
       ),
     ),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -55,5 +58,6 @@ export namespace CommentsContract {
       ...table.Schema.pick("id", "orderId").fields,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 }

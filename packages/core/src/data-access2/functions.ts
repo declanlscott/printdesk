@@ -46,7 +46,7 @@ export namespace DataAccessFunctions {
           (typeof policies)["$inferRecord"]
         >({ map: policies.map });
 
-        return { dispatcher };
+        return { policies, dispatcher };
       },
     },
   ) {}
@@ -97,7 +97,7 @@ export namespace DataAccessFunctions {
           (typeof mutations)["$inferRecord"]
         >({ session, map: mutations.map });
 
-        return { dispatcher };
+        return { mutations, dispatcher };
       }),
     },
   ) {}

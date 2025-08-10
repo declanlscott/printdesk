@@ -2,6 +2,7 @@ import { Data, Effect, HashMap, Schema } from "effect";
 
 import { AccessControl } from "../access-control2";
 
+import type { ParseResult } from "effect";
 import type { Tenant } from "../tenants2/sql";
 import type { User } from "../users2/sql";
 
@@ -15,7 +16,12 @@ export namespace DataAccess {
   export class Function<
     TName extends string = string,
     TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  > extends Data.Class<{ readonly name: TName; readonly Args: TArgs }> {}
+    TReturns extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
+  > extends Data.Class<{
+    readonly name: TName;
+    readonly Args: TArgs;
+    readonly Returns: TReturns;
+  }> {}
 
   // TODO: Invocation
 
@@ -27,6 +33,7 @@ export namespace DataAccess {
   >;
 
   export type MakePolicyShape<
+    TName extends string,
     TArgs extends Schema.Schema.AnyNoContext,
     TPolicyError,
     TPolicyContext,
@@ -34,6 +41,7 @@ export namespace DataAccess {
     TMakePolicyContext,
   > = Effect.Effect<
     {
+      readonly name: TName;
       readonly make: AccessControl.MakePolicy<
         TArgs,
         TPolicyError,
@@ -51,15 +59,32 @@ export namespace DataAccess {
     TMakePolicyError,
     TMakePolicyContext,
   >(
-    _policy: TFunction,
-    make: MakePolicyShape<
-      TFunction["Args"],
-      TPolicyError,
-      TPolicyContext,
+    fn: TFunction,
+    make: Effect.Effect<
+      Omit<
+        Effect.Effect.Success<
+          MakePolicyShape<
+            TFunction["name"],
+            TFunction["Args"],
+            TPolicyError,
+            TPolicyContext,
+            TMakePolicyError,
+            TMakePolicyContext
+          >
+        >,
+        "name"
+      >,
       TMakePolicyError,
       TMakePolicyContext
     >,
-  ) => make;
+  ): MakePolicyShape<
+    TFunction["name"],
+    TFunction["Args"],
+    TPolicyError,
+    TPolicyContext,
+    TMakePolicyError,
+    TMakePolicyContext
+  > => make.pipe(Effect.map((rest) => ({ name: fn.name, ...rest })));
 
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   export class Functions<TRecord extends FunctionRecord = {}, TIsDone = false> {
@@ -67,10 +92,9 @@ export namespace DataAccess {
     #map = HashMap.empty<Function["name"], Function>() satisfies FunctionMap;
 
     add<TFunction extends Function>(
-      function_: TIsDone extends false ? TFunction : never,
+      fn: TIsDone extends false ? TFunction : never,
     ) {
-      if (!this.#isDone)
-        this.#map = HashMap.set(this.#map, function_.name, function_);
+      if (!this.#isDone) this.#map = HashMap.set(this.#map, fn.name, fn);
 
       return this as Functions<TRecord & FunctionRecord<TFunction>, TIsDone>;
     }
@@ -105,41 +129,50 @@ export namespace DataAccess {
       TMakePolicyError,
       TMakePolicyContext,
     >(
-      name: TName,
-      args:
-        | { encoded: Schema.Schema.Encoded<TRecord[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TRecord[TName]["Args"]> },
       makePolicy: MakePolicyShape<
+        TName,
         TRecord[TName]["Args"],
         TPolicyError,
         TPolicyContext,
         TMakePolicyError,
         TMakePolicyContext
       >,
-    ) {
-      const make = (args: Schema.Schema.Type<TRecord[TName]["Args"]>) =>
-        Effect.succeed(args).pipe(
-          Effect.flatMap((args) =>
-            makePolicy.pipe(Effect.flatMap(({ make }) => make(args))),
-          ),
-        );
+      args:
+        | { encoded: Schema.Schema.Encoded<TRecord[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TRecord[TName]["Args"]> },
+    ): AccessControl.Policy<
+      TPolicyError | TMakePolicyError | ParseResult.ParseError,
+      TPolicyContext | TMakePolicyContext
+    > {
+      const map = this.map;
 
-      if ("encoded" in args)
-        return this.map.pipe(
-          HashMap.get(name),
-          Effect.map(({ Args }) => Args as TRecord[TName]["Args"]),
-          Effect.map(
-            Schema.decode<
-              Schema.Schema.Type<TRecord[TName]["Args"]>,
-              Schema.Schema.Encoded<TRecord[TName]["Args"]>,
-              never
-            >,
-          ),
-          Effect.flatMap((decode) => decode(args.encoded)),
-          Effect.flatMap(make),
-        );
+      return Effect.gen(function* () {
+        const { name, make } = yield* makePolicy;
 
-      return make(args.decoded);
+        const { Args } = yield* map.pipe(HashMap.get(name), Effect.orDie);
+
+        const decodedArgs = yield* "encoded" in args
+          ? Effect.succeed(args.encoded).pipe(
+              Effect.flatMap(
+                Schema.decode<
+                  Schema.Schema.Type<TRecord[TName]["Args"]>,
+                  Schema.Schema.Encoded<TRecord[TName]["Args"]>,
+                  never
+                >(Args as TRecord[TName]["Args"]),
+              ),
+            )
+          : Effect.succeed(args.decoded).pipe(
+              Effect.flatMap(
+                Schema.decode<
+                  Schema.Schema.Type<TRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TRecord[TName]["Args"]>,
+                  never
+                >(Schema.typeSchema(Args)),
+              ),
+            );
+
+        return yield* make(decodedArgs);
+      });
     }
   }
 
@@ -154,6 +187,7 @@ export namespace DataAccess {
   ) => Effect.Effect<TSuccess, TError, TContext>;
 
   export type MutationShape<
+    TName extends string,
     TArgs extends Schema.Schema.AnyNoContext,
     TPolicyError,
     TPolicyContext,
@@ -164,6 +198,7 @@ export namespace DataAccess {
     TMutationContext,
   > = Effect.Effect<
     {
+      readonly name: TName;
       readonly makePolicy: AccessControl.MakePolicy<
         TArgs,
         TPolicyError,
@@ -184,24 +219,44 @@ export namespace DataAccess {
     TFunction extends Function,
     TPolicyError,
     TPolicyContext,
-    TMutatorSuccess,
+    TMutatorSuccess extends Schema.Schema.Type<TFunction["Returns"]>,
     TMutatorError,
     TMutatorContext,
     TMutationError,
     TMutationContext,
   >(
-    _mutation: TFunction,
-    make: MutationShape<
-      TFunction["Args"],
-      TPolicyError,
-      TPolicyContext,
-      TMutatorSuccess,
-      TMutatorError,
-      TMutatorContext,
+    fn: TFunction,
+    make: Effect.Effect<
+      Omit<
+        Effect.Effect.Success<
+          MutationShape<
+            TFunction["name"],
+            TFunction["Args"],
+            TPolicyError,
+            TPolicyContext,
+            TMutatorSuccess,
+            TMutatorError,
+            TMutatorContext,
+            TMutationError,
+            TMutationContext
+          >
+        >,
+        "name"
+      >,
       TMutationError,
       TMutationContext
     >,
-  ) => make;
+  ): MutationShape<
+    TFunction["name"],
+    TFunction["Args"],
+    TPolicyError,
+    TPolicyContext,
+    TMutatorSuccess,
+    TMutatorError,
+    TMutatorContext,
+    TMutationError,
+    TMutationContext
+  > => make.pipe(Effect.map((rest) => ({ name: fn.name, ...rest })));
 
   export class MutationDispatcher<
     TRecord extends FunctionRecord,
@@ -213,17 +268,14 @@ export namespace DataAccess {
       TName extends keyof TRecord & string,
       TPolicyError,
       TPolicyContext,
-      TMutatorSuccess,
+      TMutatorSuccess extends Schema.Schema.Type<TRecord[TName]["Returns"]>,
       TMutatorError,
       TMutatorContext,
       TMutationError,
       TMutationContext,
     >(
-      name: TName,
-      args:
-        | { encoded: Schema.Schema.Encoded<TRecord[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TRecord[TName]["Args"]> },
       mutation: MutationShape<
+        TName,
         TRecord[TName]["Args"],
         TPolicyError,
         TPolicyContext,
@@ -233,36 +285,64 @@ export namespace DataAccess {
         TMutationError,
         TMutationContext
       >,
-    ) {
-      const mutate = (args: Schema.Schema.Type<TRecord[TName]["Args"]>) =>
-        Effect.succeed(args).pipe(
-          Effect.flatMap((args) =>
-            mutation.pipe(
-              Effect.flatMap(({ mutator, makePolicy }) =>
-                mutator(args, this.session).pipe(
-                  AccessControl.enforce(makePolicy(args)),
-                ),
-              ),
-            ),
-          ),
-        );
+      args:
+        | { encoded: Schema.Schema.Encoded<TRecord[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TRecord[TName]["Args"]> },
+    ): Effect.Effect<
+      TMutatorSuccess,
+      | TPolicyError
+      | TMutatorError
+      | TMutationError
+      | ParseResult.ParseError
+      | AccessControl.AccessDeniedError,
+      | TPolicyContext
+      | TMutatorContext
+      | TMutationContext
+      | AccessControl.Principal
+    > {
+      const map = this.map;
+      const session = this.session;
 
-      if ("encoded" in args)
-        return this.map.pipe(
+      return Effect.gen(function* () {
+        const { name, mutator, makePolicy } = yield* mutation;
+
+        const { Args, Returns } = yield* map.pipe(
           HashMap.get(name),
-          Effect.map(({ Args }) => Args as TRecord[TName]["Args"]),
-          Effect.map(
-            Schema.decode<
-              Schema.Schema.Type<TRecord[TName]["Args"]>,
-              Schema.Schema.Encoded<TRecord[TName]["Args"]>,
-              never
-            >,
-          ),
-          Effect.flatMap((decode) => decode(args.encoded)),
-          Effect.flatMap(mutate),
+          Effect.orDie,
         );
 
-      return mutate(args.decoded);
+        const decodedArgs = yield* "encoded" in args
+          ? Effect.succeed(args.encoded).pipe(
+              Effect.flatMap(
+                Schema.decode<
+                  Schema.Schema.Type<TRecord[TName]["Args"]>,
+                  Schema.Schema.Encoded<TRecord[TName]["Args"]>,
+                  never
+                >(Args as TRecord[TName]["Args"]),
+              ),
+            )
+          : Effect.succeed(args.decoded).pipe(
+              Effect.flatMap(
+                Schema.decode<
+                  Schema.Schema.Type<TRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TRecord[TName]["Args"]>,
+                  never
+                >(Schema.typeSchema(Args)),
+              ),
+            );
+
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        return yield* mutator(decodedArgs, session).pipe(
+          AccessControl.enforce(makePolicy(decodedArgs)),
+          Effect.flatMap(
+            Schema.decode<
+              Schema.Schema.Type<TRecord[TName]["Returns"]>,
+              Schema.Schema.Type<TRecord[TName]["Returns"]>,
+              never
+            >(Schema.typeSchema(Returns)),
+          ),
+        );
+      });
     }
   }
 }

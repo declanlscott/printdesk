@@ -213,46 +213,55 @@ export namespace OrdersContract {
   export const isCustomer = new DataAccess.Function({
     name: "isOrderCustomer",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const isManager = new DataAccess.Function({
     name: "isOrderManager",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const isCustomerOrManager = new DataAccess.Function({
     name: "isOrderCustomerOrManager",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const hasActiveManagerAuthorization = new DataAccess.Function({
     name: "hasActiveOrderBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const canEdit = new DataAccess.Function({
     name: "canEditOrder",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const canApprove = new DataAccess.Function({
     name: "canApproveOrder",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const canTransition = new DataAccess.Function({
     name: "canTransitionOrder",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const canDelete = new DataAccess.Function({
     name: "canDeleteOrder",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const create = new DataAccess.Function({
     name: "createOrder",
     Args: table.Schema.omit("approvedAt", "deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const edit = new DataAccess.Function({
@@ -269,6 +278,7 @@ export namespace OrdersContract {
         "approvedAt",
       ).pipe(Schema.partial),
     ),
+    Returns: table.Schema,
   });
 
   export const approve = new DataAccess.Function({
@@ -279,11 +289,13 @@ export namespace OrdersContract {
         approvedAt: Schema.DateTimeUtc,
       }),
     ),
+    Returns: table.Schema,
   });
 
   export const transition = new DataAccess.Function({
     name: "transitionOrder",
     Args: table.Schema.pick("id", "updatedAt", "workflowStatus"),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -292,5 +304,6 @@ export namespace OrdersContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 }

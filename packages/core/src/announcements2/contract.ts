@@ -28,6 +28,7 @@ export namespace AnnouncementsContract {
   export const create = new DataAccess.Function({
     name: "createAnnouncement",
     Args: table.Schema.omit("authorId", "deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const update = new DataAccess.Function({
@@ -40,6 +41,7 @@ export namespace AnnouncementsContract {
         "authorId",
       ).pipe(Schema.partial),
     ),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -48,5 +50,6 @@ export namespace AnnouncementsContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 }

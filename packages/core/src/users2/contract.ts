@@ -43,6 +43,7 @@ export namespace UsersContract {
   export const isSelf = new DataAccess.Function({
     name: "isUserSelf",
     Args: table.Schema.pick("id"),
+    Returns: Schema.Void,
   });
 
   export const update = new DataAccess.Function({
@@ -59,6 +60,7 @@ export namespace UsersContract {
         "email",
       ).pipe(Schema.partial),
     ),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -67,10 +69,12 @@ export namespace UsersContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 
   export const restore = new DataAccess.Function({
     name: "restoreUser",
     Args: table.Schema.pick("id"),
+    Returns: table.Schema,
   });
 }

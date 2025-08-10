@@ -48,6 +48,7 @@ export namespace RoomsContract {
   export const create = new DataAccess.Function({
     name: "createRoom",
     Args: table.Schema.omit("deletedAt", "tenantId"),
+    Returns: table.Schema,
   });
 
   export const update = new DataAccess.Function({
@@ -58,6 +59,7 @@ export namespace RoomsContract {
         ...Struct.keys(DatabaseContract.TenantTable.fields),
       ).pipe(Schema.partial),
     ),
+    Returns: table.Schema,
   });
 
   export const delete_ = new DataAccess.Function({
@@ -66,11 +68,13 @@ export namespace RoomsContract {
       id: NanoId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: table.Schema,
   });
 
   export const restore = new DataAccess.Function({
     name: "restoreRoom",
     Args: table.Schema.pick("id"),
+    Returns: table.Schema,
   });
 }
 
@@ -166,6 +170,7 @@ export namespace WorkflowsContract {
       workflow: Workflow,
       roomId: NanoId,
     }),
+    Returns: Workflow,
   });
 }
 
@@ -214,5 +219,6 @@ export namespace DeliveryOptionsContract {
       options: DeliveryOptions,
       roomId: NanoId,
     }),
+    Returns: DeliveryOptions,
   });
 }

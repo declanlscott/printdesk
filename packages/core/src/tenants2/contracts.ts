@@ -31,6 +31,7 @@ export namespace TenantsContract {
   export const isSubdomainAvailable = new DataAccess.Function({
     name: "isTenantSubdomainAvailable",
     Args: table.Schema.pick("subdomain"),
+    Returns: Schema.Void,
   });
 
   export const update = new DataAccess.Function({
@@ -42,6 +43,7 @@ export namespace TenantsContract {
         ...Struct.keys(DatabaseContract.Timestamps.fields),
       ).pipe(Schema.partial),
     ),
+    Returns: table.Schema,
   });
 }
 
@@ -64,6 +66,7 @@ export namespace LicensesContract {
   export const isAvailable = new DataAccess.Function({
     name: "isLicenseAvailable",
     Args: table.Schema.pick("key"),
+    Returns: Schema.Void,
   });
 }
 

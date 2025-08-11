@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
+import { Iterable, Record, Struct } from "effect";
 
 import { Link } from "~/.sst/platform/src/components/link";
 
@@ -14,8 +15,8 @@ export const injectLinkables = (
   ...linkables: Array<$util.Input<unknown>>
 ) =>
   Link.getProperties(linkables).apply((properties) =>
-    Object.fromEntries(
-      Object.entries(properties).map(([key, value]) => [
+    Record.fromEntries(
+      Iterable.map(Struct.entries(properties), ([key, value]) => [
         `${prefix}${key}`,
         JSON.stringify(value),
       ]),

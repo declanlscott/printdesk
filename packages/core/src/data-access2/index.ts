@@ -13,7 +13,12 @@ export namespace DataAccess {
     readonly name: TName;
     readonly Args: TArgs;
     readonly Returns: TReturns;
-  }> {}
+  }> {
+    makeInvocation = (args: Schema.Schema.Type<TArgs>) => ({
+      name: this.name,
+      args,
+    });
+  }
 
   type FunctionRecord<TFunction extends Function = Function> = Record<
     TFunction["name"],
@@ -52,8 +57,6 @@ export namespace DataAccess {
       return this.#map;
     }
   }
-
-  // TODO: Invocation
 
   export type MakePolicyShape<
     TName extends string,

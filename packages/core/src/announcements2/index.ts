@@ -10,7 +10,7 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
@@ -415,7 +415,7 @@ export namespace Announcements {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = yield* DataAccess.makeMutation(
+        const create = DataAccessContract.makeMutation(
           AnnouncementsContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:create"),
@@ -428,7 +428,7 @@ export namespace Announcements {
           }),
         );
 
-        const update = yield* DataAccess.makeMutation(
+        const update = DataAccessContract.makeMutation(
           AnnouncementsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:update"),
@@ -437,7 +437,7 @@ export namespace Announcements {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           AnnouncementsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:delete"),

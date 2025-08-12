@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
-import { Cost, NanoId } from "../utils2/shared";
+import { Cost, NanoId } from "../utils2";
 
 import type {
   ActiveBillingAccountCustomerAuthorizationsView,
@@ -47,25 +47,27 @@ export namespace BillingAccountsContract {
     table.Schema,
   );
 
-  export const hasActiveManagerAuthorization = new DataAccess.Function({
+  export const hasActiveManagerAuthorization = new DataAccessContract.Function({
     name: "hasActiveBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const hasActiveCustomerAuthorization = new DataAccess.Function({
-    name: "hasActiveBillingAccountCustomerAuthorization",
-    Args: table.Schema.pick("id"),
-    Returns: Schema.Void,
-  });
+  export const hasActiveCustomerAuthorization = new DataAccessContract.Function(
+    {
+      name: "hasActiveBillingAccountCustomerAuthorization",
+      Args: table.Schema.pick("id"),
+      Returns: Schema.Void,
+    },
+  );
 
-  export const hasActiveAuthorization = new DataAccess.Function({
+  export const hasActiveAuthorization = new DataAccessContract.Function({
     name: "hasActiveBillingAccountAuthorization",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccess.Function({
+  export const update = new DataAccessContract.Function({
     name: "updateBillingAccount",
     Args: table.Schema.pick("id", "updatedAt").pipe(
       Schema.extend(
@@ -80,7 +82,7 @@ export namespace BillingAccountsContract {
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteBillingAccount",
     Args: Schema.Struct({
       id: NanoId,
@@ -131,13 +133,13 @@ export namespace BillingAccountManagerAuthorizationsContract {
       table.Schema,
     );
 
-  export const create = new DataAccess.Function({
+  export const create = new DataAccessContract.Function({
     name: "createBillingAccountManagerAuthorization",
     Args: table.Schema.omit("deletedAt", "tenantId"),
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteBillingAccountManagerAuthorization",
     Args: Schema.Struct({
       id: NanoId,

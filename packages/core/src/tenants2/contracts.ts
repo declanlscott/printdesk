@@ -1,9 +1,9 @@
 import { Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
 import type { LicensesTable, TenantMetadataTable, TenantsTable } from "./sql";
 
@@ -28,13 +28,13 @@ export namespace TenantsContract {
     ["read", "update"],
   );
 
-  export const isSubdomainAvailable = new DataAccess.Function({
+  export const isSubdomainAvailable = new DataAccessContract.Function({
     name: "isTenantSubdomainAvailable",
     Args: table.Schema.pick("subdomain"),
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccess.Function({
+  export const update = new DataAccessContract.Function({
     name: "updateTenant",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -63,7 +63,7 @@ export namespace LicensesContract {
     [],
   );
 
-  export const isAvailable = new DataAccess.Function({
+  export const isAvailable = new DataAccessContract.Function({
     name: "isLicenseAvailable",
     Args: table.Schema.pick("key"),
     Returns: Schema.Void,

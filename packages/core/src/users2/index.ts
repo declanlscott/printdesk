@@ -10,7 +10,7 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
@@ -485,7 +485,7 @@ export namespace Users {
     {
       accessors: true,
       effect: Effect.gen(function* () {
-        const isSelf = yield* DataAccess.makePolicy(
+        const isSelf = yield* DataAccessContract.makePolicy(
           UsersContract.isSelf,
           Effect.succeed({
             make: ({ id }) =>
@@ -510,7 +510,7 @@ export namespace Users {
 
         const { isSelf } = yield* Policies;
 
-        const update = yield* DataAccess.makeMutation(
+        const update = DataAccessContract.makeMutation(
           UsersContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("users:update"),
@@ -519,7 +519,7 @@ export namespace Users {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           UsersContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>
@@ -532,7 +532,7 @@ export namespace Users {
           }),
         );
 
-        const restore = yield* DataAccess.makeMutation(
+        const restore = DataAccessContract.makeMutation(
           UsersContract.restore,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("users:delete"),

@@ -1,196 +1,95 @@
-import { Data, Effect, HashMap } from "effect";
+import { Effect } from "effect";
 
-import type { Schema } from "effect";
-import type { AccessControl } from "../access-control2";
-import type { AuthContract } from "../auth2/contract";
+import { Announcements } from "../announcements2";
+import { Auth } from "../auth2";
+import { BillingAccounts } from "../billing-accounts2";
+import { Comments } from "../comments2";
+import { Invoices } from "../invoices2";
+import { Orders } from "../orders2";
+import { Products } from "../products2";
+import { Rooms } from "../rooms2";
+import { Tenants } from "../tenants2";
+import { Users } from "../users2";
+import { DataAccessContract } from "./contract";
+import { Mutations } from "./functions";
 
 export namespace DataAccess {
-  export class Function<
-    TName extends string = string,
-    TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-    TReturns extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
-  > extends Data.Class<{
-    readonly name: TName;
-    readonly Args: TArgs;
-    readonly Returns: TReturns;
-  }> {
-    makeInvocation = (args: Schema.Schema.Type<TArgs>) => ({
-      name: this.name,
-      args,
-    });
-  }
-
-  type FunctionRecord<TFunction extends Function = Function> = Record<
-    TFunction["name"],
-    TFunction
-  >;
-
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  export class Functions<TRecord extends FunctionRecord = {}, TIsDone = false> {
-    #isDone = false;
-    #map = HashMap.empty<Function["name"], Function>();
-
-    readonly RecordType = {} as {
-      [TName in keyof TRecord]: Function<
-        TName & string,
-        TRecord[TName]["Args"]
-      >;
-    };
-
-    add<TFunction extends Function>(
-      fn: TIsDone extends false ? TFunction : never,
-    ): Functions<TRecord & FunctionRecord<TFunction>, TIsDone> {
-      if (!this.#isDone) this.#map = HashMap.set(this.#map, fn.name, fn);
-
-      return this;
-    }
-
-    done(
-      this: TIsDone extends false ? Functions<TRecord, TIsDone> : never,
-    ): Functions<TRecord, true> {
-      this.#isDone = true;
-
-      return this;
-    }
-
-    get map() {
-      return this.#map;
-    }
-  }
-
-  export type MakePolicyShape<
-    TName extends string,
-    TArgs extends Schema.Schema.AnyNoContext,
-    TPolicyError,
-    TPolicyContext,
-    TMakePolicyError,
-    TMakePolicyContext,
-  > = Effect.Effect<
+  export class ServerMutations extends Effect.Service<ServerMutations>()(
+    "@printdesk/core/data-access/ServerMutations",
     {
-      readonly name: TName;
-      readonly make: AccessControl.MakePolicy<
-        TArgs,
-        TPolicyError,
-        TPolicyContext
-      >;
+      accessors: true,
+      dependencies: [
+        Mutations.Default,
+        Announcements.Mutations.Default,
+        BillingAccounts.Mutations.Default,
+        BillingAccounts.ManagerAuthorizationMutations.Default,
+        Comments.Mutations.Default,
+        Rooms.DeliveryOptionsMutations.Default,
+        Invoices.Mutations.Default,
+        Orders.Mutations.Default,
+        Products.Mutations.Default,
+        Rooms.Mutations.Default,
+        Tenants.Mutations.Default,
+        Users.Mutations.Default,
+        Rooms.WorkflowMutations.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const session = yield* Auth.Session;
+        const functions = yield* Mutations.functions;
+
+        const announcements = yield* Announcements.Mutations;
+        const billingAccounts = yield* BillingAccounts.Mutations;
+        const billingAccountManagerAuthorizations =
+          yield* BillingAccounts.ManagerAuthorizationMutations;
+        const comments = yield* Comments.Mutations;
+        const deliveryOptions = yield* Rooms.DeliveryOptionsMutations;
+        const invoices = yield* Invoices.Mutations;
+        const orders = yield* Orders.Mutations;
+        const products = yield* Products.Mutations;
+        const rooms = yield* Rooms.Mutations;
+        const tenants = yield* Tenants.Mutations;
+        const users = yield* Users.Mutations;
+        const workflow = yield* Rooms.WorkflowMutations;
+
+        const dispatcher = yield* Effect.succeed(
+          new DataAccessContract.MutationDispatcher({
+            session,
+            functions,
+          })
+            .set(announcements.create)
+            .set(announcements.update)
+            .set(announcements.delete)
+            .set(billingAccounts.update)
+            .set(billingAccounts.delete)
+            .set(billingAccountManagerAuthorizations.create)
+            .set(billingAccountManagerAuthorizations.delete)
+            .set(comments.create)
+            .set(comments.update)
+            .set(comments.delete)
+            .set(deliveryOptions.set)
+            .set(invoices.create)
+            .set(orders.create)
+            .set(orders.edit)
+            .set(orders.approve)
+            .set(orders.transition)
+            .set(orders.delete)
+            .set(products.create)
+            .set(products.update)
+            .set(products.delete)
+            .set(rooms.create)
+            .set(rooms.update)
+            .set(rooms.delete)
+            .set(rooms.restore)
+            .set(tenants.update)
+            .set(users.update)
+            .set(users.delete)
+            .set(users.restore)
+            .set(workflow.set)
+            .done(),
+        ).pipe(Effect.cached);
+
+        return { dispatcher } as const;
+      }),
     },
-    TMakePolicyError,
-    TMakePolicyContext
-  >;
-
-  export const makePolicy = <
-    TFunction extends Function,
-    TPolicyError,
-    TPolicyContext,
-    TMakePolicyError,
-    TMakePolicyContext,
-  >(
-    fn: TFunction,
-    make: Effect.Effect<
-      Omit<
-        Effect.Effect.Success<
-          MakePolicyShape<
-            TFunction["name"],
-            TFunction["Args"],
-            TPolicyError,
-            TPolicyContext,
-            TMakePolicyError,
-            TMakePolicyContext
-          >
-        >,
-        "name"
-      >,
-      TMakePolicyError,
-      TMakePolicyContext
-    >,
-  ): MakePolicyShape<
-    TFunction["name"],
-    TFunction["Args"],
-    TPolicyError,
-    TPolicyContext,
-    TMakePolicyError,
-    TMakePolicyContext
-  > => make.pipe(Effect.map((rest) => ({ name: fn.name, ...rest })));
-
-  export type Mutator<
-    TArgs extends Schema.Schema.AnyNoContext,
-    TSuccess,
-    TError,
-    TContext,
-  > = (
-    args: Schema.Schema.Type<TArgs>,
-    session: AuthContract.Session,
-  ) => Effect.Effect<TSuccess, TError, TContext>;
-
-  export type MutationShape<
-    TName extends string,
-    TArgs extends Schema.Schema.AnyNoContext,
-    TPolicyError,
-    TPolicyContext,
-    TMutatorSuccess,
-    TMutatorError,
-    TMutatorContext,
-    TMutationError,
-    TMutationContext,
-  > = Effect.Effect<
-    {
-      readonly name: TName;
-      readonly makePolicy: AccessControl.MakePolicy<
-        TArgs,
-        TPolicyError,
-        TPolicyContext
-      >;
-      readonly mutator: Mutator<
-        TArgs,
-        TMutatorSuccess,
-        TMutatorError,
-        TMutatorContext
-      >;
-    },
-    TMutationError,
-    TMutationContext
-  >;
-
-  export const makeMutation = <
-    TFunction extends Function,
-    TPolicyError,
-    TPolicyContext,
-    TMutatorSuccess extends Schema.Schema.Type<TFunction["Returns"]>,
-    TMutatorError,
-    TMutatorContext,
-    TMutationError,
-    TMutationContext,
-  >(
-    fn: TFunction,
-    make: Effect.Effect<
-      Omit<
-        Effect.Effect.Success<
-          MutationShape<
-            TFunction["name"],
-            TFunction["Args"],
-            TPolicyError,
-            TPolicyContext,
-            TMutatorSuccess,
-            TMutatorError,
-            TMutatorContext,
-            TMutationError,
-            TMutationContext
-          >
-        >,
-        "name"
-      >,
-      TMutationError,
-      TMutationContext
-    >,
-  ): MutationShape<
-    TFunction["name"],
-    TFunction["Args"],
-    TPolicyError,
-    TPolicyContext,
-    TMutatorSuccess,
-    TMutatorError,
-    TMutatorContext,
-    TMutationError,
-    TMutationContext
-  > => make.pipe(Effect.map((rest) => ({ name: fn.name, ...rest })));
+  ) {}
 }

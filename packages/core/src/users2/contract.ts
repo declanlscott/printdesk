@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
 import type { ActiveUsersView, UsersTable } from "./sql";
 
@@ -40,13 +40,13 @@ export namespace UsersContract {
     table.Schema,
   );
 
-  export const isSelf = new DataAccess.Function({
+  export const isSelf = new DataAccessContract.Function({
     name: "isUserSelf",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccess.Function({
+  export const update = new DataAccessContract.Function({
     name: "updateUser",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -63,7 +63,7 @@ export namespace UsersContract {
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteUser",
     Args: Schema.Struct({
       id: NanoId,
@@ -72,7 +72,7 @@ export namespace UsersContract {
     Returns: table.Schema,
   });
 
-  export const restore = new DataAccess.Function({
+  export const restore = new DataAccessContract.Function({
     name: "restoreUser",
     Args: table.Schema.pick("id"),
     Returns: table.Schema,

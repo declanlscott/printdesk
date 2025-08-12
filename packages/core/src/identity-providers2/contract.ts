@@ -2,7 +2,7 @@ import { Schema } from "effect";
 
 import { DatabaseContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
 import type {
   IdentityProvidersTable,

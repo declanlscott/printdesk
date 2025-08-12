@@ -1,14 +1,15 @@
 import { Schema } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
 import type { OrdersContract } from "../orders2/contract";
 import type { ActiveInvoicesView, InvoicesTable } from "./sql";
 
 export namespace InvoicesContract {
   export const statuses = ["processing", "charged", "error"] as const;
+  export type Status = (typeof statuses)[number];
 
   export const LineItemV1 = Schema.TaggedStruct("LineItemV1", {
     name: Schema.String,
@@ -37,7 +38,7 @@ export namespace InvoicesContract {
     table.Schema,
   );
 
-  export const create = new DataAccess.Function({
+  export const create = new DataAccessContract.Function({
     name: "createInvoice",
     Args: table.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
     Returns: table.Schema,

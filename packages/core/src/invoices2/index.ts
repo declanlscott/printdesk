@@ -15,7 +15,7 @@ import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { activeOrdersView } from "../orders2/sql";
 import { Replicache } from "../replicache2";
@@ -911,7 +911,7 @@ export namespace Invoices {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = yield* DataAccess.makeMutation(
+        const create = DataAccessContract.makeMutation(
           InvoicesContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("invoices:create"),

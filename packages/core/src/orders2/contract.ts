@@ -1,9 +1,9 @@
 import { Either, Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { IsoDate, IsoTimestamp, NanoId } from "../utils2/shared";
+import { IsoDate, IsoTimestamp, NanoId } from "../utils2";
 
 import type { ActiveOrdersView, OrdersTable } from "./sql";
 
@@ -210,61 +210,61 @@ export namespace OrdersContract {
     table.Schema,
   );
 
-  export const isCustomer = new DataAccess.Function({
+  export const isCustomer = new DataAccessContract.Function({
     name: "isOrderCustomer",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isManager = new DataAccess.Function({
+  export const isManager = new DataAccessContract.Function({
     name: "isOrderManager",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isCustomerOrManager = new DataAccess.Function({
+  export const isCustomerOrManager = new DataAccessContract.Function({
     name: "isOrderCustomerOrManager",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const hasActiveManagerAuthorization = new DataAccess.Function({
+  export const hasActiveManagerAuthorization = new DataAccessContract.Function({
     name: "hasActiveOrderBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canEdit = new DataAccess.Function({
+  export const canEdit = new DataAccessContract.Function({
     name: "canEditOrder",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canApprove = new DataAccess.Function({
+  export const canApprove = new DataAccessContract.Function({
     name: "canApproveOrder",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canTransition = new DataAccess.Function({
+  export const canTransition = new DataAccessContract.Function({
     name: "canTransitionOrder",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccess.Function({
+  export const canDelete = new DataAccessContract.Function({
     name: "canDeleteOrder",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const create = new DataAccess.Function({
+  export const create = new DataAccessContract.Function({
     name: "createOrder",
     Args: table.Schema.omit("approvedAt", "deletedAt", "tenantId"),
     Returns: table.Schema,
   });
 
-  export const edit = new DataAccess.Function({
+  export const edit = new DataAccessContract.Function({
     name: "editOrder",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -281,7 +281,7 @@ export namespace OrdersContract {
     Returns: table.Schema,
   });
 
-  export const approve = new DataAccess.Function({
+  export const approve = new DataAccessContract.Function({
     name: "approveOrder",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt", "workflowStatus"),
@@ -292,13 +292,13 @@ export namespace OrdersContract {
     Returns: table.Schema,
   });
 
-  export const transition = new DataAccess.Function({
+  export const transition = new DataAccessContract.Function({
     name: "transitionOrder",
     Args: table.Schema.pick("id", "updatedAt", "workflowStatus"),
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteOrder",
     Args: Schema.Struct({
       id: NanoId,

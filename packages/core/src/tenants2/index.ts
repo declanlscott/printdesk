@@ -2,7 +2,7 @@ import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { identityProvidersTable } from "../identity-providers2/sql";
@@ -253,7 +253,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isSubdomainAvailable = yield* DataAccess.makePolicy(
+        const isSubdomainAvailable = yield* DataAccessContract.makePolicy(
           TenantsContract.isSubdomainAvailable,
           Effect.succeed({
             make: ({ subdomain }) =>
@@ -288,7 +288,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const update = yield* DataAccess.makeMutation(
+        const update = DataAccessContract.makeMutation(
           TenantsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("tenants:update"),
@@ -353,7 +353,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* LicensesRepository;
 
-        const isAvailable = yield* DataAccess.makePolicy(
+        const isAvailable = yield* DataAccessContract.makePolicy(
           LicensesContract.isAvailable,
           Effect.succeed({
             make: ({ key }) =>

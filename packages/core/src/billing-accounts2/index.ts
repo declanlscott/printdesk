@@ -12,7 +12,7 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
@@ -845,39 +845,45 @@ export namespace BillingAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const hasActiveManagerAuthorization = yield* DataAccess.makePolicy(
-          BillingAccountsContract.hasActiveManagerAuthorization,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findActiveManagerIds(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(
-                      Array.some((managerId) => managerId === principal.userId),
+        const hasActiveManagerAuthorization =
+          yield* DataAccessContract.makePolicy(
+            BillingAccountsContract.hasActiveManagerAuthorization,
+            Effect.succeed({
+              make: ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findActiveManagerIds(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(
+                        Array.some(
+                          (managerId) => managerId === principal.userId,
+                        ),
+                      ),
                     ),
-                  ),
-              ),
-          }),
-        );
+                ),
+            }),
+          );
 
-        const hasActiveCustomerAuthorization = yield* DataAccess.makePolicy(
-          BillingAccountsContract.hasActiveCustomerAuthorization,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findActiveManagerIds(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(
-                      Array.some((managerId) => managerId === principal.userId),
+        const hasActiveCustomerAuthorization =
+          yield* DataAccessContract.makePolicy(
+            BillingAccountsContract.hasActiveCustomerAuthorization,
+            Effect.succeed({
+              make: ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findActiveManagerIds(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(
+                        Array.some(
+                          (managerId) => managerId === principal.userId,
+                        ),
+                      ),
                     ),
-                  ),
-              ),
-          }),
-        );
+                ),
+            }),
+          );
 
-        const hasActiveAuthorization = yield* DataAccess.makePolicy(
+        const hasActiveAuthorization = yield* DataAccessContract.makePolicy(
           BillingAccountsContract.hasActiveAuthorization,
           Effect.succeed({
             make: ({ id }) =>
@@ -910,7 +916,7 @@ export namespace BillingAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const update = yield* DataAccess.makeMutation(
+        const update = DataAccessContract.makeMutation(
           BillingAccountsContract.update,
           Effect.succeed({
             makePolicy: () =>
@@ -920,7 +926,7 @@ export namespace BillingAccounts {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           BillingAccountsContract.delete_,
           Effect.succeed({
             makePolicy: () =>
@@ -2102,7 +2108,7 @@ export namespace BillingAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* ManagerAuthorizationsRepository;
 
-        const create = yield* DataAccess.makeMutation(
+        const create = DataAccessContract.makeMutation(
           BillingAccountManagerAuthorizationsContract.create,
           Effect.succeed({
             makePolicy: () =>
@@ -2114,7 +2120,7 @@ export namespace BillingAccounts {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           BillingAccountManagerAuthorizationsContract.delete_,
           Effect.succeed({
             makePolicy: () =>

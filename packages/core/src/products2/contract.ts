@@ -1,9 +1,9 @@
 import { Either, Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { Cost, HexColor, NanoId } from "../utils2/shared";
+import { Cost, HexColor, NanoId } from "../utils2";
 
 import type {
   ActiveProductsView,
@@ -259,13 +259,13 @@ export namespace ProductsContract {
       activeView.Schema,
     );
 
-  export const create = new DataAccess.Function({
+  export const create = new DataAccessContract.Function({
     name: "createProduct",
     Args: table.Schema.omit("deletedAt", "tenantId"),
     Returns: table.Schema,
   });
 
-  export const update = new DataAccess.Function({
+  export const update = new DataAccessContract.Function({
     name: "updateProduct",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -277,7 +277,7 @@ export namespace ProductsContract {
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteProduct",
     Args: Schema.Struct({
       id: NanoId,

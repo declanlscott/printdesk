@@ -15,7 +15,7 @@ import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Orders } from "../orders2";
 import { activeOrdersView } from "../orders2/sql";
@@ -985,7 +985,7 @@ export namespace Comments {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isAuthor = yield* DataAccess.makePolicy(
+        const isAuthor = yield* DataAccessContract.makePolicy(
           CommentsContract.isAuthor,
           Effect.succeed({
             make: ({ id }) =>
@@ -1019,7 +1019,7 @@ export namespace Comments {
 
         const { isAuthor } = yield* Policies;
 
-        const create = yield* DataAccess.makeMutation(
+        const create = DataAccessContract.makeMutation(
           CommentsContract.create,
           Effect.succeed({
             makePolicy: ({ orderId }) =>
@@ -1037,7 +1037,7 @@ export namespace Comments {
           }),
         );
 
-        const update = yield* DataAccess.makeMutation(
+        const update = DataAccessContract.makeMutation(
           CommentsContract.update,
           Effect.succeed({
             makePolicy: ({ id }) =>
@@ -1050,7 +1050,7 @@ export namespace Comments {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           CommentsContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>

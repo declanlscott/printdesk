@@ -2,9 +2,12 @@ import { Array, Data, Schema } from "effect";
 
 import { DatabaseContract } from "../database2/contract";
 import { syncTables } from "../database2/tables";
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
-import type { VersionNotSupportedResponse } from "replicache";
+import type {
+  ClientStateNotFoundResponse,
+  VersionNotSupportedResponse,
+} from "replicache";
 import type {
   ReplicacheClientGroupsTable,
   ReplicacheClientsTable,
@@ -35,7 +38,6 @@ export namespace ReplicacheClientGroupsContract {
         tenantId: NanoId,
         userId: NanoId,
         clientViewVersion: Schema.NullOr(Schema.Int),
-        lastMutationId: Schema.Int,
         ...DatabaseContract.Timestamps.fields,
       }),
       [],
@@ -106,6 +108,8 @@ export namespace ReplicacheContract {
     clientID: Schema.UUID,
   });
 
+  export const Mutation = Schema.Union(MutationV0, MutationV1);
+
   export const PushRequestV0 = Schema.Struct({
     pushVersion: Schema.Literal(0),
     clientID: Schema.UUID,
@@ -145,4 +149,8 @@ export namespace ReplicacheContract {
   export class VersionNotSupportedError extends Data.TaggedError(
     "VersionNotSupportedError",
   )<{ readonly response: VersionNotSupportedResponse }> {}
+
+  export class ClientStateNotFoundError extends Data.TaggedError(
+    "ClientStateNotFoundError",
+  )<{ readonly response: ClientStateNotFoundResponse }> {}
 }

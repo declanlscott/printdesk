@@ -11,7 +11,7 @@ import {
 import { Array, Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
@@ -568,7 +568,7 @@ export namespace Rooms {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = yield* DataAccess.makeMutation(
+        const create = DataAccessContract.makeMutation(
           RoomsContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:create"),
@@ -577,7 +577,7 @@ export namespace Rooms {
           }),
         );
 
-        const update = yield* DataAccess.makeMutation(
+        const update = DataAccessContract.makeMutation(
           RoomsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:update"),
@@ -586,7 +586,7 @@ export namespace Rooms {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           RoomsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
@@ -595,7 +595,7 @@ export namespace Rooms {
           }),
         );
 
-        const restore = yield* DataAccess.makeMutation(
+        const restore = DataAccessContract.makeMutation(
           RoomsContract.restore,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
@@ -982,7 +982,7 @@ export namespace Rooms {
       effect: Effect.gen(function* () {
         const repository = yield* WorkflowRepository;
 
-        const set = yield* DataAccess.makeMutation(
+        const set = DataAccessContract.makeMutation(
           WorkflowsContract.set,
           Effect.succeed({
             makePolicy: () =>
@@ -1376,7 +1376,7 @@ export namespace Rooms {
       effect: Effect.gen(function* () {
         const repository = yield* DeliveryOptionsRepository;
 
-        const set = yield* DataAccess.makeMutation(
+        const set = DataAccessContract.makeMutation(
           DeliveryOptionsContract.set,
           Effect.succeed({
             makePolicy: () =>

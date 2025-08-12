@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
 import type { ActiveAnnouncementsView, AnnouncementsTable } from "./sql";
 
@@ -25,13 +25,13 @@ export namespace AnnouncementsContract {
     table.Schema,
   );
 
-  export const create = new DataAccess.Function({
+  export const create = new DataAccessContract.Function({
     name: "createAnnouncement",
     Args: table.Schema.omit("authorId", "deletedAt", "tenantId"),
     Returns: table.Schema,
   });
 
-  export const update = new DataAccess.Function({
+  export const update = new DataAccessContract.Function({
     name: "updateAnnouncement",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -44,7 +44,7 @@ export namespace AnnouncementsContract {
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteAnnouncement",
     Args: Schema.Struct({
       id: NanoId,

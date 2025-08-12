@@ -1,6 +1,6 @@
 import { Array, Data, Schema } from "effect";
 
-import { NanoId } from "../utils2/shared";
+import { NanoId } from "../utils2";
 
 import type {
   InferSelectModel,

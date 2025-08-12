@@ -17,7 +17,7 @@ import {
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
 } from "../billing-accounts2/sql";
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
@@ -976,7 +976,7 @@ export namespace Orders {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isCustomer = yield* DataAccess.makePolicy(
+        const isCustomer = yield* DataAccessContract.makePolicy(
           OrdersContract.isCustomer,
           Effect.succeed({
             make: ({ id }) =>
@@ -992,7 +992,7 @@ export namespace Orders {
           }),
         );
 
-        const isManager = yield* DataAccess.makePolicy(
+        const isManager = yield* DataAccessContract.makePolicy(
           OrdersContract.isManager,
           Effect.succeed({
             make: ({ id }) =>
@@ -1006,7 +1006,7 @@ export namespace Orders {
           }),
         );
 
-        const isCustomerOrManager = yield* DataAccess.makePolicy(
+        const isCustomerOrManager = yield* DataAccessContract.makePolicy(
           OrdersContract.isCustomerOrManager,
           Effect.succeed({
             make: ({ id }) =>
@@ -1024,23 +1024,26 @@ export namespace Orders {
           }),
         );
 
-        const hasActiveManagerAuthorization = yield* DataAccess.makePolicy(
-          OrdersContract.hasActiveManagerAuthorization,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findActiveManagerIds(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(
-                      Array.some((managerId) => managerId === principal.userId),
+        const hasActiveManagerAuthorization =
+          yield* DataAccessContract.makePolicy(
+            OrdersContract.hasActiveManagerAuthorization,
+            Effect.succeed({
+              make: ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findActiveManagerIds(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(
+                        Array.some(
+                          (managerId) => managerId === principal.userId,
+                        ),
+                      ),
                     ),
-                  ),
-              ),
-          }),
-        );
+                ),
+            }),
+          );
 
-        const canEdit = yield* DataAccess.makePolicy(
+        const canEdit = yield* DataAccessContract.makePolicy(
           OrdersContract.canEdit,
           Effect.succeed({
             make: ({ id }) =>
@@ -1061,7 +1064,7 @@ export namespace Orders {
           }),
         );
 
-        const canApprove = yield* DataAccess.makePolicy(
+        const canApprove = yield* DataAccessContract.makePolicy(
           OrdersContract.canApprove,
           Effect.succeed({
             make: ({ id }) =>
@@ -1082,7 +1085,7 @@ export namespace Orders {
           }),
         );
 
-        const canTransition = yield* DataAccess.makePolicy(
+        const canTransition = yield* DataAccessContract.makePolicy(
           OrdersContract.canTransition,
           Effect.succeed({
             make: ({ id }) =>
@@ -1094,7 +1097,7 @@ export namespace Orders {
           }),
         );
 
-        const canDelete = yield* DataAccess.makePolicy(
+        const canDelete = yield* DataAccessContract.makePolicy(
           OrdersContract.canDelete,
           Effect.succeed(canEdit),
         );
@@ -1133,7 +1136,7 @@ export namespace Orders {
           canDelete,
         } = yield* Policies;
 
-        const create = yield* DataAccess.makeMutation(
+        const create = DataAccessContract.makeMutation(
           OrdersContract.create,
           Effect.succeed({
             makePolicy: ({ billingAccountId }) =>
@@ -1147,7 +1150,7 @@ export namespace Orders {
           }),
         );
 
-        const edit = yield* DataAccess.makeMutation(
+        const edit = DataAccessContract.makeMutation(
           OrdersContract.edit,
           Effect.succeed({
             makePolicy: ({ id }) =>
@@ -1163,7 +1166,7 @@ export namespace Orders {
           }),
         );
 
-        const approve = yield* DataAccess.makeMutation(
+        const approve = DataAccessContract.makeMutation(
           OrdersContract.approve,
           Effect.succeed({
             makePolicy: ({ id }) =>
@@ -1179,7 +1182,7 @@ export namespace Orders {
           }),
         );
 
-        const transition = yield* DataAccess.makeMutation(
+        const transition = DataAccessContract.makeMutation(
           OrdersContract.transition,
           Effect.succeed({
             makePolicy: ({ id }) =>
@@ -1192,7 +1195,7 @@ export namespace Orders {
           }),
         );
 
-        const delete_ = yield* DataAccess.makeMutation(
+        const delete_ = DataAccessContract.makeMutation(
           OrdersContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>

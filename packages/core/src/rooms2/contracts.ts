@@ -1,9 +1,9 @@
 import { Schema, Struct } from "effect";
 
-import { DataAccess } from "../data-access2";
+import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { Cost, HexColor, NanoId } from "../utils2/shared";
+import { Cost, HexColor, NanoId } from "../utils2";
 
 import type {
   ActivePublishedRoomDeliveryOptionsView,
@@ -45,13 +45,13 @@ export namespace RoomsContract {
       table.Schema,
     );
 
-  export const create = new DataAccess.Function({
+  export const create = new DataAccessContract.Function({
     name: "createRoom",
     Args: table.Schema.omit("deletedAt", "tenantId"),
     Returns: table.Schema,
   });
 
-  export const update = new DataAccess.Function({
+  export const update = new DataAccessContract.Function({
     name: "updateRoom",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
@@ -62,7 +62,7 @@ export namespace RoomsContract {
     Returns: table.Schema,
   });
 
-  export const delete_ = new DataAccess.Function({
+  export const delete_ = new DataAccessContract.Function({
     name: "deleteRoom",
     Args: Schema.Struct({
       id: NanoId,
@@ -71,7 +71,7 @@ export namespace RoomsContract {
     Returns: table.Schema,
   });
 
-  export const restore = new DataAccess.Function({
+  export const restore = new DataAccessContract.Function({
     name: "restoreRoom",
     Args: table.Schema.pick("id"),
     Returns: table.Schema,
@@ -164,7 +164,7 @@ export namespace WorkflowsContract {
     ),
   );
 
-  export const set = new DataAccess.Function({
+  export const set = new DataAccessContract.Function({
     name: "setWorkflow",
     Args: Schema.Struct({
       workflow: Workflow,
@@ -213,7 +213,7 @@ export namespace DeliveryOptionsContract {
     ),
   );
 
-  export const set = new DataAccess.Function({
+  export const set = new DataAccessContract.Function({
     name: "setDeliveryOptions",
     Args: Schema.Struct({
       options: DeliveryOptions,

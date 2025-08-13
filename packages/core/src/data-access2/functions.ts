@@ -1,4 +1,4 @@
-import { Effect, HashMap, Iterable, Schema } from "effect";
+import { Effect, Schema } from "effect";
 
 import { AnnouncementsContract } from "../announcements2/contract";
 import {
@@ -43,30 +43,13 @@ export class Policies extends Effect.Service<Policies>()(
           .set(UsersContract.isSelf)
           .done(),
       ).pipe(Effect.cached);
-      type PolicyRecord = Effect.Effect.Success<typeof functions>["RecordType"];
 
-      const InvocationSchema = yield* functions.pipe(
-        Effect.map(({ map }) => map),
-        Effect.map(HashMap.values),
-        Effect.map(
-          Iterable.map(
-            (fn) =>
-              Schema.Struct({
-                name: Schema.Literal(fn.name),
-                args: fn.Args,
-              }) as {
-                [TName in keyof PolicyRecord]: Schema.Struct<{
-                  name: Schema.Literal<[TName]>;
-                  args: PolicyRecord[TName]["Args"];
-                }>;
-              }[keyof PolicyRecord],
-          ),
-        ),
-        Effect.map((members) => Schema.Union(...members)),
+      const Invocation = yield* functions.pipe(
+        Effect.map(({ Invocation }) => Invocation),
         Effect.cached,
       );
 
-      return { functions, InvocationSchema } as const;
+      return { functions, Invocation } as const;
     }),
   },
 ) {}
@@ -109,34 +92,16 @@ export class Mutations extends Effect.Service<Mutations>()(
           .set(WorkflowsContract.set)
           .done(),
       ).pipe(Effect.cached);
-      type MutationRecord = Effect.Effect.Success<
-        typeof functions
-      >["RecordType"];
 
-      const ReplicacheSchema = yield* functions.pipe(
-        Effect.map(({ map }) => map),
-        Effect.map(HashMap.values),
+      const Replicache = yield* functions.pipe(
+        Effect.map(({ Invocation }) => Invocation),
         Effect.map(
-          Iterable.map((fn) =>
-            Schema.extend(
-              ReplicacheContract.MutationV1.omit("name", "args"),
-              Schema.Struct({
-                name: Schema.Literal(fn.name),
-                args: fn.Args,
-              }) as {
-                [TName in keyof MutationRecord]: Schema.Struct<{
-                  name: Schema.Literal<[TName]>;
-                  args: MutationRecord[TName]["Args"];
-                }>;
-              }[keyof MutationRecord],
-            ),
-          ),
+          Schema.extend(ReplicacheContract.MutationV1.omit("name", "args")),
         ),
-        Effect.map((members) => Schema.Union(...members)),
         Effect.cached,
       );
 
-      return { functions, ReplicacheSchema };
+      return { functions, Replicache };
     }),
   },
 ) {}

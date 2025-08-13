@@ -75,29 +75,61 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                   // 2: Begin transaction
                   db.withTransaction(() =>
                     Effect.gen(function* () {
-                      // 3: Get client group
-                      const clientGroup = yield* clientGroupsRepository
-                        .findByIdForUpdate(clientGroupId, tenantId)
-                        .pipe(
-                          Effect.catchTag("NoSuchElementException", () =>
-                            DateTime.now.pipe(
-                              Effect.map((now) =>
-                                ReplicacheClientGroupsContract.table.Schema.make(
-                                  {
-                                    id: clientGroupId,
-                                    tenantId,
-                                    userId,
-                                    clientVersion: 0,
-                                    clientViewVersion: null,
-                                    createdAt: now,
-                                    updatedAt: now,
-                                    deletedAt: null,
-                                  },
+                      const [clientGroup, client] = yield* DateTime.now.pipe(
+                        Effect.flatMap((now) =>
+                          Effect.all(
+                            [
+                              // 3: Get client group
+                              clientGroupsRepository
+                                .findByIdForUpdate(clientGroupId, tenantId)
+                                .pipe(
+                                  Effect.catchTag(
+                                    "NoSuchElementException",
+                                    () =>
+                                      Effect.succeed(
+                                        ReplicacheClientGroupsContract.table.Schema.make(
+                                          {
+                                            id: clientGroupId,
+                                            tenantId,
+                                            userId,
+                                            clientVersion: 0,
+                                            clientViewVersion: null,
+                                            createdAt: now,
+                                            updatedAt: now,
+                                            deletedAt: null,
+                                          },
+                                        ),
+                                      ),
+                                  ),
                                 ),
-                              ),
-                            ),
+                              // 5: Get client
+                              clientsRepository
+                                .findByIdForUpdate(mutation.clientID, tenantId)
+                                .pipe(
+                                  Effect.catchTag(
+                                    "NoSuchElementException",
+                                    () =>
+                                      Effect.succeed(
+                                        ReplicacheClientsContract.table.Schema.make(
+                                          {
+                                            id: mutation.clientID,
+                                            tenantId,
+                                            clientGroupId,
+                                            lastMutationId: 0,
+                                            version: 0,
+                                            createdAt: now,
+                                            updatedAt: now,
+                                            deletedAt: null,
+                                          },
+                                        ),
+                                      ),
+                                  ),
+                                ),
+                            ],
+                            { concurrency: "unbounded" },
                           ),
-                        );
+                        ),
+                      );
 
                       // 4: Verify requesting client group owns requested client
                       yield* Effect.succeed(clientGroup).pipe(
@@ -111,28 +143,6 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                           ),
                         ),
                       );
-
-                      // 5: Get client
-                      const client = yield* clientsRepository
-                        .findByIdForUpdate(mutation.clientID, tenantId)
-                        .pipe(
-                          Effect.catchTag("NoSuchElementException", () =>
-                            DateTime.now.pipe(
-                              Effect.map((now) =>
-                                ReplicacheClientsContract.table.Schema.make({
-                                  id: mutation.clientID,
-                                  tenantId,
-                                  clientGroupId,
-                                  lastMutationId: 0,
-                                  version: 0,
-                                  createdAt: now,
-                                  updatedAt: now,
-                                  deletedAt: null,
-                                }),
-                              ),
-                            ),
-                          ),
-                        );
 
                       // 6: Verify requesting client group owns the client
                       yield* Effect.succeed(client).pipe(

@@ -77,7 +77,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                     Effect.gen(function* () {
                       // 3: Get client group
                       const clientGroup = yield* clientGroupsRepository
-                        .findById(clientGroupId, tenantId)
+                        .findByIdForUpdate(clientGroupId, tenantId)
                         .pipe(
                           Effect.catchTag("NoSuchElementException", () =>
                             DateTime.now.pipe(
@@ -114,7 +114,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
 
                       // 5: Get client
                       const client = yield* clientsRepository
-                        .findById(mutation.clientID, tenantId)
+                        .findByIdForUpdate(mutation.clientID, tenantId)
                         .pipe(
                           Effect.catchTag("NoSuchElementException", () =>
                             DateTime.now.pipe(

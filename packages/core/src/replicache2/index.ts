@@ -73,8 +73,8 @@ export namespace Replicache {
               ),
         );
 
-        const findById = Effect.fn(
-          "Replicache.ClientGroupsRepository.findById",
+        const findByIdForUpdate = Effect.fn(
+          "Replicache.ClientGroupsRepository.findByIdForUpdate",
         )(
           (
             id: ReplicacheClientGroup["id"],
@@ -85,7 +85,8 @@ export namespace Replicache {
                 tx
                   .select()
                   .from(table)
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .for("update"),
               )
               .pipe(Effect.flatMap(Array.head)),
         );
@@ -118,7 +119,7 @@ export namespace Replicache {
           ),
         );
 
-        return { upsert, findById, deleteExpired } as const;
+        return { upsert, findByIdForUpdate, deleteExpired } as const;
       }),
     },
   ) {}
@@ -156,7 +157,9 @@ export namespace Replicache {
               ),
         );
 
-        const findById = Effect.fn("Replicache.ClientsRepository.findById")(
+        const findByIdForUpdate = Effect.fn(
+          "Replicache.ClientsRepository.findByIdForUpdate",
+        )(
           (
             id: ReplicacheClient["id"],
             tenantId: ReplicacheClient["tenantId"],
@@ -166,7 +169,8 @@ export namespace Replicache {
                 tx
                   .select()
                   .from(table)
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .for("update"),
               )
               .pipe(Effect.flatMap(Array.head)),
         );
@@ -216,7 +220,7 @@ export namespace Replicache {
 
         return {
           upsert,
-          findById,
+          findByIdForUpdate,
           findSinceVersionByGroupId,
           deleteByGroupIds,
         } as const;

@@ -37,6 +37,7 @@ export namespace ReplicacheClientGroupsContract {
         id: Schema.UUID,
         tenantId: NanoId,
         userId: NanoId,
+        clientVersion: Schema.Int,
         clientViewVersion: Schema.NullOr(Schema.Int),
         ...DatabaseContract.Timestamps.fields,
       }),

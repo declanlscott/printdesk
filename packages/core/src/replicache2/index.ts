@@ -27,6 +27,8 @@ import type { SyncTableName } from "../database2/tables";
 import type {
   ReplicacheClient,
   ReplicacheClientGroup,
+  ReplicacheClientGroupsTable,
+  ReplicacheClientsTable,
   ReplicacheClientView,
   ReplicacheClientViewMetadata,
   ReplicacheClientViewMetadataTable,
@@ -41,6 +43,35 @@ export namespace Replicache {
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = replicacheClientGroupsTable;
+
+        const upsert = Effect.fn("Replicache.ClientGroupsRepository.upsert")(
+          (clientGroup: InferInsertModel<ReplicacheClientGroupsTable>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(clientGroup)
+                  .onConflictDoUpdate({
+                    target: [table.id, table.tenantId],
+                    set: {
+                      clientVersion: sql.raw(
+                        `EXCLUDED."${table.clientVersion.name}"`,
+                      ),
+                      clientViewVersion: sql.raw(
+                        `COALESCE(EXCLUDED."${table.clientViewVersion.name}", NULL)`,
+                      ),
+                      updatedAt: sql.raw(
+                        `COALESCE(EXCLUDED."${table.updatedAt.name}", NOW())`,
+                      ),
+                    },
+                  })
+                  .returning(),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
+        );
 
         const findById = Effect.fn(
           "Replicache.ClientGroupsRepository.findById",
@@ -87,7 +118,7 @@ export namespace Replicache {
           ),
         );
 
-        return { findById, deleteExpired } as const;
+        return { upsert, findById, deleteExpired } as const;
       }),
     },
   ) {}
@@ -99,6 +130,31 @@ export namespace Replicache {
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = replicacheClientsTable;
+
+        const upsert = Effect.fn("Replicache.ClientsRepository.upsert")(
+          (client: InferInsertModel<ReplicacheClientsTable>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(client)
+                  .onConflictDoUpdate({
+                    target: [table.id, table.tenantId],
+                    set: {
+                      lastMutationId: client.lastMutationId,
+                      version: client.version,
+                      updatedAt: sql.raw(
+                        `COALESCE(EXCLUDED."${table.updatedAt.name}", NOW())`,
+                      ),
+                    },
+                  })
+                  .returning(),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
+        );
 
         const findById = Effect.fn("Replicache.ClientsRepository.findById")(
           (
@@ -159,6 +215,7 @@ export namespace Replicache {
         );
 
         return {
+          upsert,
           findById,
           findSinceVersionByGroupId,
           deleteByGroupIds,
@@ -177,15 +234,29 @@ export namespace Replicache {
 
         const upsert = Effect.fn("Replicache.ClientViewsRepository.upsert")(
           (clientView: InferInsertModel<ReplicacheClientViewsTable>) =>
-            db.useTransaction((tx) =>
-              tx
-                .insert(table)
-                .values(clientView)
-                .onConflictDoUpdate({
-                  target: [table.clientGroupId, table.version, table.tenantId],
-                  set: { clientVersion: sql`EXCLUDED.${table.clientVersion}` },
-                }),
-            ),
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(clientView)
+                  .onConflictDoUpdate({
+                    target: [
+                      table.clientGroupId,
+                      table.version,
+                      table.tenantId,
+                    ],
+                    set: {
+                      clientVersion: sql.raw(
+                        `EXCLUDED."${table.clientVersion.name}"`,
+                      ),
+                    },
+                  })
+                  .returning(),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
         );
 
         const findById = Effect.fn("Replicache.ClientViewsRepository.findById")(

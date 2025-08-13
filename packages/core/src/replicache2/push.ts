@@ -1,4 +1,4 @@
-import { Data, DateTime, Effect, Schema } from "effect";
+import { Data, DateTime, Duration, Effect, Schema } from "effect";
 
 import { Replicache } from ".";
 import { AccessControl } from "../access-control2";
@@ -13,12 +13,12 @@ import {
 } from "./contracts";
 
 export class PastMutationError extends Data.TaggedError("PastMutationError")<{
-  readonly id: typeof ReplicacheContract.Mutation.Type.id;
+  readonly mutationId: typeof ReplicacheContract.Mutation.Type.id;
 }> {}
 
 export class FutureMutationError extends Data.TaggedError(
   "FutureMutationError",
-)<{ readonly id: typeof ReplicacheContract.Mutation.Type.id }> {}
+)<{ readonly mutationId: typeof ReplicacheContract.Mutation.Type.id }> {}
 
 export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
   "@printdesk/core/replicache/ReplicachePusher",
@@ -37,7 +37,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
       const clientGroupsRepository = yield* Replicache.ClientGroupsRepository;
       const clientsRepository = yield* Replicache.ClientsRepository;
 
-      const Mutation = yield* Mutations.ReplicacheSchema;
+      const mutations = yield* Mutations;
       const dispatcher = yield* DataAccess.ServerMutations.dispatcher;
 
       const push = Effect.fn("ReplicachePusher.push")(
@@ -53,12 +53,21 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 }),
               );
 
+            yield* Effect.forEach(pushRequest.mutations, (mutation) =>
+              // 1: Error mode is initially false
+              processMutation(mutation).pipe(
+                // 10(ii)(c): Retry mutation in error mode
+                Effect.orElse(() => processMutation(mutation, true)),
+              ),
+            );
+
             const clientGroupId = pushRequest.clientGroupID;
 
             const processMutation = (
               mutation: typeof ReplicacheContract.MutationV1.Type,
+              errorMode = false,
             ) =>
-              Effect.succeed(Mutation).pipe(
+              mutations.Replicache.pipe(
                 Effect.map(Schema.encodedSchema),
                 Effect.map(Schema.decodeUnknown),
                 Effect.flatMap((decode) => decode(mutation)),
@@ -78,7 +87,8 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                                     id: clientGroupId,
                                     tenantId,
                                     userId,
-                                    clientViewVersion: 0,
+                                    clientVersion: 0,
+                                    clientViewVersion: null,
                                     createdAt: now,
                                     updatedAt: now,
                                     deletedAt: null,
@@ -150,23 +160,73 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                       // 8: Rollback and skip if mutation is from the past (already processed)
                       if (mutation.id < nextMutationId)
                         return yield* Effect.fail(
-                          new PastMutationError({ id: mutation.id }),
+                          new PastMutationError({ mutationId: mutation.id }),
                         );
 
                       // 9: Rollback if mutation is from the future
                       if (mutation.id > nextMutationId)
                         return yield* Effect.fail(
-                          new FutureMutationError({ id: mutation.id }),
+                          new FutureMutationError({ mutationId: mutation.id }),
                         );
 
                       // 10: Perform mutation
-                      yield* dispatcher.dispatch(mutation.name, {
-                        encoded: mutation.args,
-                      });
+                      if (!errorMode)
+                        // 10(i): Business logic
+                        // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
+                        yield* dispatcher
+                          .dispatch(mutation.name, {
+                            encoded: mutation.args,
+                          })
+                          .pipe(
+                            // 10(ii)(a,b): Log and abort
+                            Effect.tapErrorCause((error) =>
+                              Effect.logError(
+                                `Error processing mutation "${mutation.id}"`,
+                                error,
+                              ),
+                            ),
+                          );
+
+                      const nextClientVersion = clientGroup.clientVersion + 1;
+
+                      yield* Effect.all(
+                        [
+                          // 11: Upsert client group
+                          clientGroupsRepository.upsert({
+                            ...clientGroup,
+                            clientVersion: nextClientVersion,
+                          }),
+                          // 12: Upsert client
+                          clientsRepository.upsert({
+                            ...client,
+                            version: nextClientVersion,
+                          }),
+                        ],
+                        { concurrency: "unbounded" },
+                      );
                     }),
                   ),
                 ),
+                Effect.timed,
+                Effect.flatMap(([duration]) =>
+                  Effect.log(
+                    `Processed mutation "${mutation.id}" in ${duration.pipe(Duration.toMillis)}ms`,
+                  ),
+                ),
+                Effect.catchTag("PastMutationError", (error) =>
+                  Effect.log(
+                    `Mutation "${error.mutationId}" already processed - skipping`,
+                  ),
+                ),
+                Effect.tapErrorCause((error) =>
+                  Effect.log(
+                    `Encountered error during push on mutation "${mutation.id}"`,
+                    error,
+                  ),
+                ),
               );
+
+            return null;
           }),
       );
 

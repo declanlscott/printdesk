@@ -35,6 +35,7 @@ export const replicacheClientGroupsTable = pgTable(
     id: uuid("id").notNull(),
     tenantId: tenantIdColumns.tenantId,
     userId: id("user_id").notNull(),
+    clientVersion: integer("client_version").notNull(),
     clientViewVersion: integer("client_view_version"), // null until first pull initializes it
     ...timestamps,
   },

@@ -8,6 +8,9 @@ import type {
   ActiveBillingAccountCustomerAuthorizationsView,
   ActiveBillingAccountManagerAuthorizationsView,
   ActiveBillingAccountsView,
+  ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView,
+  ActiveCustomerAuthorizedBillingAccountsView,
+  ActiveManagerAuthorizedBillingAccountsView,
   BillingAccountCustomerAuthorizationsTable,
   BillingAccountManagerAuthorizationsTable,
   BillingAccountsTable,
@@ -47,8 +50,28 @@ export namespace BillingAccountsContract {
     table.Schema,
   );
 
-  export const hasActiveManagerAuthorization = new DataAccessContract.Function({
-    name: "hasActiveBillingAccountManagerAuthorization",
+  export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
+  export const activeCustomerAuthorizedView =
+    DatabaseContract.View<ActiveCustomerAuthorizedBillingAccountsView>()(
+      activeCustomerAuthorizedViewName,
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ authorizedCustomerId: NanoId }),
+      ),
+    );
+
+  export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
+  export const activeManagerAuthorizedView =
+    DatabaseContract.View<ActiveManagerAuthorizedBillingAccountsView>()(
+      activeManagerAuthorizedViewName,
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ authorizedManagerId: NanoId }),
+      ),
+    );
+
+  export const hasActiveAuthorization = new DataAccessContract.Function({
+    name: "hasActiveBillingAccountAuthorization",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
@@ -61,8 +84,8 @@ export namespace BillingAccountsContract {
     },
   );
 
-  export const hasActiveAuthorization = new DataAccessContract.Function({
-    name: "hasActiveBillingAccountAuthorization",
+  export const hasActiveManagerAuthorization = new DataAccessContract.Function({
+    name: "hasActiveBillingAccountManagerAuthorization",
     Args: table.Schema.pick("id"),
     Returns: Schema.Void,
   });
@@ -111,6 +134,13 @@ export namespace BillingAccountCustomerAuthorizationsContract {
       activeViewName,
       table.Schema,
     );
+
+  export const activeAuthorizedViewName = `active_authorized_${tableName}`;
+  export const activeAuthorizedView =
+    DatabaseContract.VirtualView<ActiveBillingAccountCustomerAuthorizationsView>()(
+      activeAuthorizedViewName,
+      table.Schema,
+    );
 }
 
 export namespace BillingAccountManagerAuthorizationsContract {
@@ -131,6 +161,23 @@ export namespace BillingAccountManagerAuthorizationsContract {
     DatabaseContract.View<ActiveBillingAccountManagerAuthorizationsView>()(
       activeViewName,
       table.Schema,
+    );
+
+  export const activeAuthorizedViewName = `active_authorized_${tableName}`;
+  export const activeAuthorizedView =
+    DatabaseContract.VirtualView<ActiveBillingAccountManagerAuthorizationsView>()(
+      activeAuthorizedViewName,
+      table.Schema,
+    );
+
+  export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
+  export const activeCustomerAuthorizedView =
+    DatabaseContract.View<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>()(
+      activeCustomerAuthorizedViewName,
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ authorizedCustomerId: NanoId }),
+      ),
     );
 
   export const create = new DataAccessContract.Function({

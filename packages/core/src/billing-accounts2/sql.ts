@@ -1,4 +1,4 @@
-import { isNull } from "drizzle-orm";
+import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
 import {
   bigint,
   index,
@@ -55,6 +55,62 @@ export const activeBillingAccountsView = pgView(
 export type ActiveBillingAccountsView = typeof activeBillingAccountsView;
 export type ActiveBillingAccount =
   DatabaseContract.InferFromView<ActiveBillingAccountsView>;
+export const activeCustomerAuthorizedBillingAccountsView = pgView(
+  BillingAccountsContract.activeCustomerAuthorizedViewName,
+).as((qb) =>
+  qb
+    .select({
+      ...getViewSelectedFields(activeBillingAccountsView),
+      authorizedCustomerId:
+        activeBillingAccountCustomerAuthorizationsView.customerId,
+    })
+    .from(activeBillingAccountsView)
+    .innerJoin(
+      activeBillingAccountCustomerAuthorizationsView,
+      and(
+        eq(
+          activeBillingAccountsView.id,
+          activeBillingAccountCustomerAuthorizationsView.billingAccountId,
+        ),
+        eq(
+          activeBillingAccountsView.tenantId,
+          activeBillingAccountCustomerAuthorizationsView.tenantId,
+        ),
+      ),
+    ),
+);
+export type ActiveCustomerAuthorizedBillingAccountsView =
+  typeof activeCustomerAuthorizedBillingAccountsView;
+export type ActiveCustomerAuthorizedBillingAccount =
+  DatabaseContract.InferFromView<ActiveCustomerAuthorizedBillingAccountsView>;
+export const activeManagerAuthorizedBillingAccountsView = pgView(
+  BillingAccountsContract.activeManagerAuthorizedViewName,
+).as((qb) =>
+  qb
+    .select({
+      ...getViewSelectedFields(activeBillingAccountsView),
+      authorizedManagerId:
+        activeBillingAccountManagerAuthorizationsView.managerId,
+    })
+    .from(activeBillingAccountsView)
+    .innerJoin(
+      activeBillingAccountManagerAuthorizationsView,
+      and(
+        eq(
+          activeBillingAccountsView.id,
+          activeBillingAccountManagerAuthorizationsView.billingAccountId,
+        ),
+        eq(
+          activeBillingAccountsView.tenantId,
+          activeBillingAccountManagerAuthorizationsView.tenantId,
+        ),
+      ),
+    ),
+);
+export type ActiveManagerAuthorizedBillingAccountsView =
+  typeof activeManagerAuthorizedBillingAccountsView;
+export type ActiveManagerAuthorizedBillingAccount =
+  DatabaseContract.InferFromView<ActiveManagerAuthorizedBillingAccountsView>;
 
 export const billingAccountCustomerAuthorizationsTable = tenantTable(
   BillingAccountCustomerAuthorizationsContract.tableName,
@@ -111,3 +167,32 @@ export type ActiveBillingAccountManagerAuthorizationsView =
   typeof activeBillingAccountManagerAuthorizationsView;
 export type ActiveBillingAccountManagerAuthorization =
   DatabaseContract.InferFromView<ActiveBillingAccountManagerAuthorizationsView>;
+export const activeCustomerAuthorizedBillingAccountManagerAuthorizationsView =
+  pgView(
+    BillingAccountManagerAuthorizationsContract.activeCustomerAuthorizedViewName,
+  ).as((qb) =>
+    qb
+      .select({
+        ...getViewSelectedFields(activeBillingAccountManagerAuthorizationsView),
+        authorizedCustomerId:
+          activeBillingAccountCustomerAuthorizationsView.customerId,
+      })
+      .from(activeBillingAccountManagerAuthorizationsView)
+      .innerJoin(
+        activeBillingAccountCustomerAuthorizationsView,
+        and(
+          eq(
+            activeBillingAccountManagerAuthorizationsView.billingAccountId,
+            activeBillingAccountCustomerAuthorizationsView.billingAccountId,
+          ),
+          eq(
+            activeBillingAccountManagerAuthorizationsView.tenantId,
+            activeBillingAccountCustomerAuthorizationsView.tenantId,
+          ),
+        ),
+      ),
+  );
+export type ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView =
+  typeof activeCustomerAuthorizedBillingAccountManagerAuthorizationsView;
+export type ActiveCustomerAuthorizedBillingAccountManagerAuthorization =
+  DatabaseContract.InferFromView<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>;

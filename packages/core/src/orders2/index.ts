@@ -9,14 +9,11 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import { Array, Effect, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { BillingAccounts } from "../billing-accounts2";
-import {
-  activeBillingAccountManagerAuthorizationsView,
-  activeBillingAccountsView,
-} from "../billing-accounts2/sql";
+import { activeBillingAccountManagerAuthorizationsView } from "../billing-accounts2/sql";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
@@ -24,7 +21,11 @@ import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { workflowStatusesTable } from "../rooms2/sql";
 import { activeUsersView } from "../users2/sql";
 import { OrdersContract } from "./contract";
-import { activeOrdersView, ordersTable } from "./sql";
+import {
+  activeManagedBillingAccountOrdersView,
+  activeOrdersView,
+  ordersTable,
+} from "./sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { BillingAccountManagerAuthorization } from "../billing-accounts2/sql";
@@ -160,45 +161,33 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeView)}_creates_by_billing_account_manager`,
+                        `${getViewName(activeManagedBillingAccountOrdersView)}_creates`,
                       )
                       .as(
                         tx
-                          .select(getViewSelectedFields(activeView))
-                          .from(activeView)
-                          .innerJoin(
-                            activeBillingAccountsView,
-                            and(
-                              eq(
-                                activeView.billingAccountId,
-                                activeBillingAccountsView.id,
+                          .selectDistinctOn(
+                            [
+                              activeManagedBillingAccountOrdersView.id,
+                              activeManagedBillingAccountOrdersView.tenantId,
+                            ],
+                            Struct.omit(
+                              getViewSelectedFields(
+                                activeManagedBillingAccountOrdersView,
                               ),
-                              eq(
-                                activeView.tenantId,
-                                activeBillingAccountsView.tenantId,
-                              ),
+                              "authorizedManagerId",
                             ),
                           )
-                          .innerJoin(
-                            activeBillingAccountManagerAuthorizationsView,
-                            and(
-                              eq(
-                                activeBillingAccountsView.id,
-                                activeBillingAccountManagerAuthorizationsView.billingAccountId,
-                              ),
-                              eq(
-                                activeBillingAccountsView.tenantId,
-                                activeBillingAccountManagerAuthorizationsView.tenantId,
-                              ),
-                            ),
-                          )
+                          .from(activeManagedBillingAccountOrdersView)
                           .where(
                             and(
                               eq(
-                                activeBillingAccountManagerAuthorizationsView.managerId,
+                                activeManagedBillingAccountOrdersView.managerId,
                                 managerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeManagedBillingAccountOrdersView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
@@ -237,7 +226,7 @@ export namespace Orders {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .$with(`${OrdersContract.activePlacedViewName}_creates`)
                       .as(
                         tx
                           .select()
@@ -349,60 +338,58 @@ export namespace Orders {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
+                      .$with(
+                        `${getViewName(activeManagedBillingAccountOrdersView)}_updates`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
+                            activeManagedBillingAccountOrdersView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(
+                                metadataTable.entityId,
+                                activeManagedBillingAccountOrdersView.id,
+                              ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activeView.version,
+                                  activeManagedBillingAccountOrdersView.version,
                                 ),
                               ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .innerJoin(
-                            activeBillingAccountsView,
-                            and(
                               eq(
-                                activeView.billingAccountId,
-                                activeBillingAccountsView.id,
-                              ),
-                              eq(
-                                activeView.tenantId,
-                                activeBillingAccountsView.tenantId,
-                              ),
-                            ),
-                          )
-                          .innerJoin(
-                            activeBillingAccountManagerAuthorizationsView,
-                            and(
-                              eq(
-                                activeBillingAccountsView.id,
-                                activeBillingAccountManagerAuthorizationsView.billingAccountId,
-                              ),
-                              eq(
-                                activeBillingAccountsView.tenantId,
-                                activeBillingAccountManagerAuthorizationsView.tenantId,
+                                metadataTable.tenantId,
+                                activeManagedBillingAccountOrdersView.tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeBillingAccountManagerAuthorizationsView.managerId,
+                                activeManagedBillingAccountOrdersView.managerId,
                                 managerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeManagedBillingAccountOrdersView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeManagedBillingAccountOrdersView.id,
+                          activeManagedBillingAccountOrdersView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[
+                            getViewName(activeManagedBillingAccountOrdersView)
+                          ],
+                          "authorizedManagerId",
+                        ),
+                      )
+                      .from(cte);
                   }),
                 ),
               ),
@@ -422,7 +409,7 @@ export namespace Orders {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
+                      .$with(`${OrdersContract.activePlacedViewName}_updates`)
                       .as(
                         qb
                           .innerJoin(
@@ -529,41 +516,24 @@ export namespace Orders {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .innerJoin(
-                          activeBillingAccountsView,
-                          and(
-                            eq(
-                              activeView.billingAccountId,
-                              activeBillingAccountsView.id,
-                            ),
-                            eq(
-                              activeView.tenantId,
-                              activeBillingAccountsView.tenantId,
-                            ),
-                          ),
+                        .selectDistinctOn(
+                          [
+                            activeManagedBillingAccountOrdersView.id,
+                            activeManagedBillingAccountOrdersView.tenantId,
+                          ],
+                          { id: activeManagedBillingAccountOrdersView.id },
                         )
-                        .innerJoin(
-                          activeBillingAccountManagerAuthorizationsView,
-                          and(
-                            eq(
-                              activeBillingAccountsView.id,
-                              activeBillingAccountManagerAuthorizationsView.billingAccountId,
-                            ),
-                            eq(
-                              activeBillingAccountsView.tenantId,
-                              activeBillingAccountManagerAuthorizationsView.tenantId,
-                            ),
-                          ),
-                        )
+                        .from(activeManagedBillingAccountOrdersView)
                         .where(
                           and(
                             eq(
-                              activeBillingAccountManagerAuthorizationsView.managerId,
+                              activeManagedBillingAccountOrdersView.managerId,
                               managerId,
                             ),
-                            eq(activeView.tenantId, tenantId),
+                            eq(
+                              activeManagedBillingAccountOrdersView.tenantId,
+                              tenantId,
+                            ),
                           ),
                         ),
                     ),
@@ -705,55 +675,51 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeView)}_fast_forward_by_billing_account_manager`,
+                        `${getViewName(activeManagedBillingAccountOrdersView)}_fast_forward`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              notInArray(activeView.id, excludeIds),
-                            ),
-                          )
-                          .innerJoin(
-                            activeBillingAccountsView,
+                            activeManagedBillingAccountOrdersView,
                             and(
                               eq(
-                                activeView.billingAccountId,
-                                activeBillingAccountsView.id,
+                                metadataTable.entityId,
+                                activeManagedBillingAccountOrdersView.id,
                               ),
-                              eq(
-                                activeView.tenantId,
-                                activeBillingAccountsView.tenantId,
-                              ),
-                            ),
-                          )
-                          .innerJoin(
-                            activeBillingAccountManagerAuthorizationsView,
-                            and(
-                              eq(
-                                activeBillingAccountsView.id,
-                                activeBillingAccountManagerAuthorizationsView.billingAccountId,
-                              ),
-                              eq(
-                                activeBillingAccountsView.tenantId,
-                                activeBillingAccountManagerAuthorizationsView.tenantId,
+                              notInArray(
+                                activeManagedBillingAccountOrdersView.id,
+                                excludeIds,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeBillingAccountManagerAuthorizationsView.managerId,
+                                activeManagedBillingAccountOrdersView.managerId,
                                 managerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeManagedBillingAccountOrdersView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeManagedBillingAccountOrdersView.id,
+                          activeManagedBillingAccountOrdersView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[
+                            getViewName(activeManagedBillingAccountOrdersView)
+                          ],
+                          "authorizedManagerId",
+                        ),
+                      )
+                      .from(cte);
                   }),
                 ),
               ),
@@ -780,7 +746,9 @@ export namespace Orders {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .$with(
+                        `${OrdersContract.activePlacedViewName}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(

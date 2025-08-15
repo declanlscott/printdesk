@@ -1,7 +1,8 @@
-import { isNull } from "drizzle-orm";
+import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
 import { index, pgView } from "drizzle-orm/pg-core";
 import { Schema } from "effect";
 
+import { activeBillingAccountManagerAuthorizationsView } from "../billing-accounts2/sql";
 import {
   datetime,
   id,
@@ -9,6 +10,7 @@ import {
   pgEnum,
   tenantTable,
 } from "../database2/constructors";
+import { activeOrdersView } from "../orders2/sql";
 import { InvoicesContract } from "./contract";
 
 import type { DatabaseContract } from "../database2/contract";
@@ -37,3 +39,61 @@ export const activeInvoicesView = pgView(InvoicesContract.activeViewName).as(
 );
 export type ActiveInvoicesView = typeof activeInvoicesView;
 export type ActiveInvoice = DatabaseContract.InferFromView<ActiveInvoicesView>;
+
+export const activeManagedBillingAccountOrderInvoicesView = pgView(
+  InvoicesContract.activeManagedBillingAccountOrderViewName,
+).as((qb) =>
+  qb
+    .select({
+      ...getViewSelectedFields(activeInvoicesView),
+      authorizedManagerId:
+        activeBillingAccountManagerAuthorizationsView.managerId,
+    })
+    .from(activeInvoicesView)
+    .innerJoin(
+      activeOrdersView,
+      and(
+        eq(activeInvoicesView.orderId, activeOrdersView.id),
+        eq(activeInvoicesView.tenantId, activeOrdersView.tenantId),
+      ),
+    )
+    .innerJoin(
+      activeBillingAccountManagerAuthorizationsView,
+      and(
+        eq(
+          activeOrdersView.billingAccountId,
+          activeBillingAccountManagerAuthorizationsView.billingAccountId,
+        ),
+        eq(
+          activeOrdersView.tenantId,
+          activeBillingAccountManagerAuthorizationsView.tenantId,
+        ),
+      ),
+    ),
+);
+export type ActiveManagedBillingAccountOrderInvoicesView =
+  typeof activeManagedBillingAccountOrderInvoicesView;
+export type ActiveManagedBillingAccountOrderInvoice =
+  DatabaseContract.InferFromView<ActiveManagedBillingAccountOrderInvoicesView>;
+
+export const activePlacedOrderInvoicesView = pgView(
+  InvoicesContract.activePlacedOrderViewName,
+).as((qb) =>
+  qb
+    .select({
+      ...getViewSelectedFields(activeInvoicesView),
+      customerId: activeOrdersView.customerId,
+    })
+    .from(activeInvoicesView)
+    .innerJoin(
+      activeOrdersView,
+      and(
+        eq(activeInvoicesView.orderId, activeOrdersView.id),
+        eq(activeInvoicesView.tenantId, activeOrdersView.tenantId),
+      ),
+    ),
+);
+export type ActivePlacedOrderInvoicesView =
+  typeof activePlacedOrderInvoicesView;
+export type ActivePlacedOrderInvoice =
+  DatabaseContract.InferFromView<ActivePlacedOrderInvoicesView>;

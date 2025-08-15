@@ -5,7 +5,11 @@ import { DatabaseContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
 import { IsoDate, IsoTimestamp, NanoId } from "../utils2";
 
-import type { ActiveOrdersView, OrdersTable } from "./sql";
+import type {
+  ActiveManagedBillingAccountOrdersView,
+  ActiveOrdersView,
+  OrdersTable,
+} from "./sql";
 
 export namespace OrdersContract {
   export const AttributesV1 = Schema.TaggedStruct("OrderAttributesV1", {
@@ -209,6 +213,23 @@ export namespace OrdersContract {
     activeViewName,
     table.Schema,
   );
+
+  export const activeManagedBillingAccountViewName = `active_managed_billing_account_${tableName}`;
+  export const activeManagedBillingAccountView =
+    DatabaseContract.View<ActiveManagedBillingAccountOrdersView>()(
+      activeManagedBillingAccountViewName,
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ authorizedManagerId: NanoId }),
+      ),
+    );
+
+  export const activePlacedViewName = `active_placed_${tableName}`;
+  export const activePlacedView =
+    DatabaseContract.VirtualView<ActiveOrdersView>()(
+      activePlacedViewName,
+      table.Schema,
+    );
 
   export const isCustomer = new DataAccessContract.Function({
     name: "isOrderCustomer",

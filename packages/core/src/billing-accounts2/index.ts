@@ -9,7 +9,7 @@ import {
   notInArray,
   or,
 } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import { Array, Effect, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -19,6 +19,7 @@ import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { activeUsersView } from "../users2/sql";
 import {
+  BillingAccountCustomerAuthorizationsContract,
   BillingAccountManagerAuthorizationsContract,
   BillingAccountsContract,
 } from "./contracts";
@@ -26,6 +27,9 @@ import {
   activeBillingAccountCustomerAuthorizationsView,
   activeBillingAccountManagerAuthorizationsView,
   activeBillingAccountsView,
+  activeCustomerAuthorizedBillingAccountManagerAuthorizationsView,
+  activeCustomerAuthorizedBillingAccountsView,
+  activeManagerAuthorizedBillingAccountsView,
   billingAccountCustomerAuthorizationsTable,
   billingAccountManagerAuthorizationsTable,
   billingAccountsTable,
@@ -54,6 +58,10 @@ export namespace BillingAccounts {
         const db = yield* Database.TransactionManager;
         const table = billingAccountsTable;
         const activeView = activeBillingAccountsView;
+        const activeManagerAuthorizedView =
+          activeManagerAuthorizedBillingAccountsView;
+        const activeCustomerAuthorizedView =
+          activeCustomerAuthorizedBillingAccountsView;
         const activeCustomerAuthorizationsView =
           activeBillingAccountCustomerAuthorizationsView;
         const activeManagerAuthorizationsView =
@@ -165,6 +173,72 @@ export namespace BillingAccounts {
               ),
         );
 
+        const findActiveCreatesByManagerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveCreatesByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${getViewName(activeManagerAuthorizedView)}_creates`,
+                      )
+                      .as(
+                        tx
+                          .selectDistinctOn(
+                            [
+                              activeManagerAuthorizedView.id,
+                              activeManagerAuthorizedView.tenantId,
+                            ],
+                            Struct.omit(
+                              getViewSelectedFields(
+                                activeManagerAuthorizedView,
+                              ),
+                              "authorizedManagerId",
+                            ),
+                          )
+                          .from(activeManagerAuthorizedView)
+                          .where(
+                            and(
+                              eq(
+                                activeManagerAuthorizedView.authorizedManagerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
+        );
+
         const findActiveCreatesByCustomerId = Effect.fn(
           "BillingAccounts.Repository.findActiveCreatesByCustomerId",
         )(
@@ -185,31 +259,34 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .$with(
+                        `${getViewName(activeCustomerAuthorizedView)}_creates`,
+                      )
                       .as(
                         tx
-                          .select(getViewSelectedFields(activeView))
-                          .from(activeView)
-                          .innerJoin(
-                            activeCustomerAuthorizationsView,
-                            and(
-                              eq(
-                                activeView.id,
-                                activeCustomerAuthorizationsView.billingAccountId,
+                          .selectDistinctOn(
+                            [
+                              activeCustomerAuthorizedView.id,
+                              activeCustomerAuthorizedView.tenantId,
+                            ],
+                            Struct.omit(
+                              getViewSelectedFields(
+                                activeCustomerAuthorizedView,
                               ),
-                              eq(
-                                activeView.tenantId,
-                                activeCustomerAuthorizationsView.tenantId,
-                              ),
+                              "authorizedCustomerId",
                             ),
                           )
+                          .from(activeCustomerAuthorizedView)
                           .where(
                             and(
                               eq(
                                 activeCustomerAuthorizationsView.customerId,
                                 customerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeCustomerAuthorizationsView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
@@ -299,6 +376,75 @@ export namespace BillingAccounts {
               ),
         );
 
+        const findActiveUpdatesByManagerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveUpdatesByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${getViewName(activeManagerAuthorizedView)}_updates`,
+                      )
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeManagerAuthorizedView,
+                            and(
+                              eq(
+                                metadataTable.entityId,
+                                activeManagerAuthorizedView.id,
+                              ),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeManagerAuthorizedView.version,
+                                ),
+                              ),
+                              eq(
+                                metadataTable.tenantId,
+                                activeManagerAuthorizedView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeManagerAuthorizedView.authorizedManagerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeManagerAuthorizedView.id,
+                          activeManagerAuthorizedView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[getViewName(activeManagerAuthorizedView)],
+                          "authorizedManagerId",
+                        ),
+                      )
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
         const findActiveUpdatesByCustomerId = Effect.fn(
           "BillingAccounts.Repository.findActiveUpdatesByCustomerId",
         )(
@@ -313,47 +459,56 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_updates_by_customer`)
+                      .$with(
+                        `${getViewName(activeCustomerAuthorizedView)}_updates`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
+                            activeCustomerAuthorizedView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(
+                                metadataTable.entityId,
+                                activeCustomerAuthorizedView.id,
+                              ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activeView.version,
+                                  activeCustomerAuthorizedView.version,
                                 ),
                               ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .innerJoin(
-                            activeCustomerAuthorizationsView,
-                            and(
                               eq(
-                                activeView.id,
-                                activeCustomerAuthorizationsView.billingAccountId,
-                              ),
-                              eq(
-                                activeView.tenantId,
-                                activeCustomerAuthorizationsView.tenantId,
+                                metadataTable.tenantId,
+                                activeCustomerAuthorizedView.tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizationsView.customerId,
+                                activeCustomerAuthorizedView.authorizedCustomerId,
                                 customerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeCustomerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeCustomerAuthorizedView.id,
+                          activeCustomerAuthorizedView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[getViewName(activeCustomerAuthorizedView)],
+                          "authorizedCustomerId",
+                        ),
+                      )
+                      .from(cte);
                   }),
                 ),
               ),
@@ -415,6 +570,50 @@ export namespace BillingAccounts {
               ),
         );
 
+        const findActiveDeletesByManagerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveDeletesByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .selectDistinctOn(
+                          [
+                            activeManagerAuthorizedView.id,
+                            activeManagerAuthorizedView.tenantId,
+                          ],
+                          { id: activeManagerAuthorizedView.id },
+                        )
+                        .from(activeManagerAuthorizedView)
+                        .where(
+                          and(
+                            eq(
+                              activeManagerAuthorizedView.authorizedManagerId,
+                              managerId,
+                            ),
+                            eq(activeManagerAuthorizedView.tenantId, tenantId),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
         const findActiveDeletesByCustomerId = Effect.fn(
           "BillingAccounts.Repository.findActiveDeletesByCustomerId",
         )(
@@ -436,28 +635,21 @@ export namespace BillingAccounts {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .innerJoin(
-                          activeCustomerAuthorizationsView,
-                          and(
-                            eq(
-                              activeView.id,
-                              activeCustomerAuthorizationsView.billingAccountId,
-                            ),
-                            eq(
-                              activeView.tenantId,
-                              activeCustomerAuthorizationsView.tenantId,
-                            ),
-                          ),
+                        .selectDistinctOn(
+                          [
+                            activeCustomerAuthorizedView.id,
+                            activeCustomerAuthorizedView.tenantId,
+                          ],
+                          { id: activeCustomerAuthorizedView.id },
                         )
+                        .from(activeCustomerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizationsView.customerId,
+                              activeCustomerAuthorizedView.authorizedCustomerId,
                               customerId,
                             ),
-                            eq(activeView.tenantId, tenantId),
+                            eq(activeCustomerAuthorizedView.tenantId, tenantId),
                           ),
                         ),
                     ),
@@ -544,6 +736,76 @@ export namespace BillingAccounts {
               ),
         );
 
+        const findActiveFastForwardByManagerId = Effect.fn(
+          "BillingAccounts.Repository.findActiveFastForwardByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccount["tenantId"],
+            excludeIds: Array<BillingAccount["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${getViewName(activeManagerAuthorizedView)}_fast_forward`,
+                      )
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeManagerAuthorizedView,
+                            and(
+                              eq(
+                                metadataTable.entity,
+                                activeManagerAuthorizedView.id,
+                              ),
+                              notInArray(
+                                activeManagerAuthorizedView.id,
+                                excludeIds,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeManagerAuthorizedView.authorizedManagerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeManagerAuthorizedView.id,
+                          activeManagerAuthorizedView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[getViewName(activeManagerAuthorizedView)],
+                          "authorizedManagerId",
+                        ),
+                      )
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
         const findActiveFastForwardByCustomerId = Effect.fn(
           "BillingAccounts.Repository.findActiveFastForwardByCustomerId",
         )(
@@ -565,41 +827,50 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .$with(
+                        `${getViewName(activeCustomerAuthorizedView)}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entity, activeView.id),
-                              notInArray(activeView.id, excludeIds),
-                            ),
-                          )
-                          .innerJoin(
-                            activeCustomerAuthorizationsView,
+                            activeCustomerAuthorizedView,
                             and(
                               eq(
-                                activeView.id,
-                                activeCustomerAuthorizationsView.billingAccountId,
+                                metadataTable.entity,
+                                activeCustomerAuthorizedView.id,
                               ),
-                              eq(
-                                activeView.tenantId,
-                                activeCustomerAuthorizationsView.tenantId,
+                              notInArray(
+                                activeCustomerAuthorizedView.id,
+                                excludeIds,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizationsView.customerId,
+                                activeCustomerAuthorizedView.authorizedCustomerId,
                                 customerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeCustomerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeCustomerAuthorizedView.id,
+                          activeCustomerAuthorizedView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[getViewName(activeCustomerAuthorizedView)],
+                          "authorizedCustomerId",
+                        ),
+                      )
+                      .from(cte);
                   }),
                 ),
               ),
@@ -816,15 +1087,19 @@ export namespace BillingAccounts {
           upsertMany,
           findCreates,
           findActiveCreates,
+          findActiveCreatesByManagerId,
           findActiveCreatesByCustomerId,
           findUpdates,
           findActiveUpdates,
+          findActiveUpdatesByManagerId,
           findActiveUpdatesByCustomerId,
           findDeletes,
           findActiveDeletes,
+          findActiveDeletesByManagerId,
           findActiveDeletesByCustomerId,
           findFastForward,
           findActiveFastForward,
+          findActiveFastForwardByManagerId,
           findActiveFastForwardByCustomerId,
           findByOrigin,
           findActiveCustomerIds,
@@ -1082,7 +1357,9 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .$with(
+                        `${BillingAccountCustomerAuthorizationsContract.activeAuthorizedViewName}_creates`,
+                      )
                       .as(
                         tx
                           .select()
@@ -1196,7 +1473,9 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_updates_by_customer`)
+                      .$with(
+                        `${BillingAccountCustomerAuthorizationsContract.activeAuthorizedViewName}_updates`,
+                      )
                       .as(
                         qb
                           .innerJoin(
@@ -1418,7 +1697,9 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .$with(
+                        `${BillingAccountCustomerAuthorizationsContract.activeAuthorizedViewName}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(
@@ -1511,8 +1792,8 @@ export namespace BillingAccounts {
         const db = yield* Database.TransactionManager;
         const table = billingAccountManagerAuthorizationsTable;
         const activeView = activeBillingAccountManagerAuthorizationsView;
-        const activeCustomerAuthorizationsView =
-          activeBillingAccountCustomerAuthorizationsView;
+        const activeCustomerAuthorizedView =
+          activeCustomerAuthorizedBillingAccountManagerAuthorizationsView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
         const metadataTable = replicacheClientViewMetadataTable;
@@ -1615,6 +1896,55 @@ export namespace BillingAccounts {
               ),
         );
 
+        const findActiveCreatesByManagerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreatesByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${BillingAccountManagerAuthorizationsContract.activeAuthorizedViewName}_creates`,
+                      )
+                      .as(
+                        tx
+                          .select(getViewSelectedFields(activeView))
+                          .from(activeView)
+                          .where(
+                            and(
+                              eq(activeView.managerId, managerId),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
+        );
+
         const findActiveCreatesByCustomerId = Effect.fn(
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreatesByCustomerId",
         )(
@@ -1635,31 +1965,34 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_creates_by_customer`)
+                      .$with(
+                        `${getViewName(activeCustomerAuthorizedView)}_creates`,
+                      )
                       .as(
                         tx
-                          .select(getViewSelectedFields(activeView))
-                          .from(activeView)
-                          .innerJoin(
-                            activeCustomerAuthorizationsView,
-                            and(
-                              eq(
-                                activeView.billingAccountId,
-                                activeCustomerAuthorizationsView.billingAccountId,
+                          .selectDistinctOn(
+                            [
+                              activeCustomerAuthorizedView.id,
+                              activeCustomerAuthorizedView.tenantId,
+                            ],
+                            Struct.omit(
+                              getViewSelectedFields(
+                                activeCustomerAuthorizedView,
                               ),
-                              eq(
-                                activeView.tenantId,
-                                activeCustomerAuthorizationsView.tenantId,
-                              ),
+                              "authorizedCustomerId",
                             ),
                           )
+                          .from(activeCustomerAuthorizedView)
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizationsView.customerId,
+                                activeCustomerAuthorizedView.authorizedCustomerId,
                                 customerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeCustomerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
@@ -1751,11 +2084,11 @@ export namespace BillingAccounts {
               ),
         );
 
-        const findActiveUpdatesByCustomerId = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdatesByCustomerId",
+        const findActiveUpdatesByManagerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdatesByManagerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
+            managerId: BillingAccountManagerAuthorization["managerId"],
             clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
             tenantId: BillingAccountManagerAuthorization["tenantId"],
           ) =>
@@ -1765,7 +2098,9 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_updates_by_customer`)
+                      .$with(
+                        `${BillingAccountManagerAuthorizationsContract.activeAuthorizedViewName}_updates`,
+                      )
                       .as(
                         qb
                           .innerJoin(
@@ -1781,31 +2116,84 @@ export namespace BillingAccounts {
                               eq(metadataTable.tenantId, activeView.tenantId),
                             ),
                           )
-                          .innerJoin(
-                            activeCustomerAuthorizationsView,
-                            and(
-                              eq(
-                                activeView.billingAccountId,
-                                activeCustomerAuthorizationsView.billingAccountId,
-                              ),
-                              eq(
-                                activeView.tenantId,
-                                activeCustomerAuthorizationsView.tenantId,
-                              ),
-                            ),
-                          )
                           .where(
                             and(
-                              eq(
-                                activeCustomerAuthorizationsView.customerId,
-                                customerId,
-                              ),
+                              eq(activeView.managerId, managerId),
                               eq(activeView.tenantId, tenantId),
                             ),
                           ),
                       );
 
                     return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveUpdatesByCustomerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdatesByCustomerId",
+        )(
+          (
+            customerId: BillingAccountCustomerAuthorization["customerId"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .updates(getTableName(table), clientGroupId, tenantId)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${getViewName(activeCustomerAuthorizedView)}_updates`,
+                      )
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeCustomerAuthorizedView,
+                            and(
+                              eq(
+                                metadataTable.entityId,
+                                activeCustomerAuthorizedView.id,
+                              ),
+                              not(
+                                eq(
+                                  metadataTable.entityVersion,
+                                  activeCustomerAuthorizedView.version,
+                                ),
+                              ),
+                              eq(
+                                metadataTable.tenantId,
+                                activeCustomerAuthorizedView.tenantId,
+                              ),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(
+                                activeCustomerAuthorizedView.authorizedCustomerId,
+                                customerId,
+                              ),
+                              eq(
+                                activeCustomerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeCustomerAuthorizedView.id,
+                          activeCustomerAuthorizedView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[getViewName(activeCustomerAuthorizedView)],
+                          "authorizedCustomerId",
+                        ),
+                      )
+                      .from(cte);
                   }),
                 ),
               ),
@@ -1869,8 +2257,43 @@ export namespace BillingAccounts {
               ),
         );
 
-        const findActiveDeletesByCustomer = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletesByCustomer",
+        const findActiveDeletesByManagerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletesByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeView.id })
+                        .from(activeView)
+                        .where(
+                          and(
+                            eq(activeView.managerId, managerId),
+                            eq(activeView.tenantId, tenantId),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletesByCustomerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletesByCustomerId",
         )(
           (
             customerId: BillingAccountCustomerAuthorization["customerId"],
@@ -1890,28 +2313,21 @@ export namespace BillingAccounts {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .innerJoin(
-                          activeCustomerAuthorizationsView,
-                          and(
-                            eq(
-                              activeView.id,
-                              activeCustomerAuthorizationsView.billingAccountId,
-                            ),
-                            eq(
-                              activeView.tenantId,
-                              activeCustomerAuthorizationsView.tenantId,
-                            ),
-                          ),
+                        .selectDistinctOn(
+                          [
+                            activeCustomerAuthorizedView.id,
+                            activeCustomerAuthorizedView.tenantId,
+                          ],
+                          { id: activeCustomerAuthorizedView.id },
                         )
+                        .from(activeCustomerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizationsView.customerId,
+                              activeCustomerAuthorizedView.authorizedCustomerId,
                               customerId,
                             ),
-                            eq(activeView.tenantId, tenantId),
+                            eq(activeCustomerAuthorizedView.tenantId, tenantId),
                           ),
                         ),
                     ),
@@ -1998,8 +2414,55 @@ export namespace BillingAccounts {
               ),
         );
 
-        const findActiveFastForwardByCustomer = Effect.fn(
-          "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForwardByCustomer",
+        const findActiveFastForwardByManagerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForwardByManagerId",
+        )(
+          (
+            managerId: BillingAccountManagerAuthorization["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+          ) =>
+            metadataQb
+              .fastForward(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${BillingAccountManagerAuthorizationsContract.activeAuthorizedViewName}_fast_forward`,
+                      )
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(metadataTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(activeView.managerId, managerId),
+                              eq(activeView.tenantId, tenantId),
+                            ),
+                          ),
+                      );
+
+                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForwardByCustomerId = Effect.fn(
+          "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForwardByCustomerId",
         )(
           (
             customerId: BillingAccountCustomerAuthorization["customerId"],
@@ -2019,41 +2482,50 @@ export namespace BillingAccounts {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .$with(
+                        `${getViewName(activeCustomerAuthorizedView)}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              notInArray(activeView.id, excludeIds),
-                            ),
-                          )
-                          .innerJoin(
-                            activeCustomerAuthorizationsView,
+                            activeCustomerAuthorizedView,
                             and(
                               eq(
-                                activeView.id,
-                                activeCustomerAuthorizationsView.billingAccountId,
+                                metadataTable.entityId,
+                                activeCustomerAuthorizedView.id,
                               ),
-                              eq(
-                                activeView.tenantId,
-                                activeCustomerAuthorizationsView.tenantId,
+                              notInArray(
+                                activeCustomerAuthorizedView.id,
+                                excludeIds,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizationsView.customerId,
+                                activeCustomerAuthorizedView.authorizedCustomerId,
                                 customerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeCustomerAuthorizedView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .selectDistinctOn(
+                        [
+                          activeCustomerAuthorizedView.id,
+                          activeCustomerAuthorizedView.tenantId,
+                        ],
+                        Struct.omit(
+                          cte[getViewName(activeCustomerAuthorizedView)],
+                          "authorizedCustomerId",
+                        ),
+                      )
+                      .from(cte);
                   }),
                 ),
               ),
@@ -2084,16 +2556,20 @@ export namespace BillingAccounts {
           create,
           findCreates,
           findActiveCreates,
+          findActiveCreatesByManagerId,
           findActiveCreatesByCustomerId,
           findUpdates,
           findActiveUpdates,
+          findActiveUpdatesByManagerId,
           findActiveUpdatesByCustomerId,
           findDeletes,
           findActiveDeletes,
-          findActiveDeletesByCustomer,
+          findActiveDeletesByManagerId,
+          findActiveDeletesByCustomerId,
           findFastForward,
           findActiveFastForward,
-          findActiveFastForwardByCustomer,
+          findActiveFastForwardByManagerId,
+          findActiveFastForwardByCustomerId,
           deleteById,
         } as const;
       }),

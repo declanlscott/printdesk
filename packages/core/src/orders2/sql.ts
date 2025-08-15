@@ -1,6 +1,10 @@
-import { isNull } from "drizzle-orm";
+import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
 import { index, pgView, varchar } from "drizzle-orm/pg-core";
 
+import {
+  activeBillingAccountManagerAuthorizationsView,
+  activeBillingAccountsView,
+} from "../billing-accounts2/sql";
 import { datetime, id, jsonb, tenantTable } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import { OrdersContract } from "./contract";
@@ -34,3 +38,39 @@ export const activeOrdersView = pgView(OrdersContract.activeViewName).as((qb) =>
 );
 export type ActiveOrdersView = typeof activeOrdersView;
 export type ActiveOrder = DatabaseContract.InferFromView<ActiveOrdersView>;
+
+export const activeManagedBillingAccountOrdersView = pgView(
+  OrdersContract.activeManagedBillingAccountViewName,
+).as((qb) =>
+  qb
+    .select({
+      ...getViewSelectedFields(activeOrdersView),
+      authorizedManagerId:
+        activeBillingAccountManagerAuthorizationsView.managerId,
+    })
+    .from(activeOrdersView)
+    .innerJoin(
+      activeBillingAccountsView,
+      and(
+        eq(activeOrdersView.billingAccountId, activeBillingAccountsView.id),
+        eq(activeOrdersView.tenantId, activeBillingAccountsView.tenantId),
+      ),
+    )
+    .innerJoin(
+      activeBillingAccountManagerAuthorizationsView,
+      and(
+        eq(
+          activeBillingAccountsView.id,
+          activeBillingAccountManagerAuthorizationsView.billingAccountId,
+        ),
+        eq(
+          activeBillingAccountsView.tenantId,
+          activeBillingAccountManagerAuthorizationsView.tenantId,
+        ),
+      ),
+    ),
+);
+export type ActiveManagedBillingAccountOrdersView =
+  typeof activeManagedBillingAccountOrdersView;
+export type ActiveManagedBillingAccountOrder =
+  DatabaseContract.InferFromView<ActiveManagedBillingAccountOrdersView>;

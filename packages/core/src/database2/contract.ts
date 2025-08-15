@@ -135,4 +135,29 @@ export namespace DatabaseContract {
         Schema,
         permission: `${name}:read` as const,
       });
+
+  export interface VirtualView<
+    TName extends string,
+    TSchema extends Schema.Schema.Any,
+  > {
+    readonly _tag: "@printdesk/core/database/VirtualView";
+    readonly name: TName;
+    readonly Schema: TSchema;
+    readonly permission: `${TName}:read`;
+  }
+  export const VirtualView =
+    <TView extends PgView = never>() =>
+    <TName extends string, TSchema extends Schema.Schema.Any>(
+      name: TName,
+      Schema: Schema.Schema.Type<TSchema> extends InferFromView<TView>
+        ? TSchema
+        : never,
+    ) =>
+      Data.tagged<VirtualView<TName, TSchema>>(
+        "@printdesk/core/database/VirtualView",
+      )({
+        name,
+        Schema,
+        permission: `${name}:read` as const,
+      });
 }

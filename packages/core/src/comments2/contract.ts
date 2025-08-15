@@ -1,10 +1,16 @@
 import { Schema, Struct } from "effect";
 
+import { BillingAccountCustomerAuthorizationsContract } from "../billing-accounts2/contracts";
 import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
 import { NanoId } from "../utils2";
 
-import type { ActiveCommentsView, CommentsTable } from "./sql";
+import type {
+  ActiveCommentsView,
+  ActiveManagedBillingAccountOrderCommentsView,
+  ActivePlacedOrderCommentsView,
+  CommentsTable,
+} from "./sql";
 
 export namespace CommentsContract {
   export const tableName = "comments";
@@ -25,6 +31,28 @@ export namespace CommentsContract {
     activeViewName,
     table.Schema,
   );
+
+  export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
+  export const activeManagedBillingAccountOrderView =
+    DatabaseContract.View<ActiveManagedBillingAccountOrderCommentsView>()(
+      activeManagedBillingAccountOrderViewName,
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ authorizedManagerId: NanoId }),
+      ),
+    );
+
+  export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
+  export const activePlacedOrderView =
+    DatabaseContract.View<ActivePlacedOrderCommentsView>()(
+      activePlacedOrderViewName,
+      Schema.extend(
+        table.Schema,
+        BillingAccountCustomerAuthorizationsContract.table.Schema.pick(
+          "customerId",
+        ),
+      ),
+    );
 
   export const isAuthor = new DataAccessContract.Function({
     name: "isCommentAuthor",

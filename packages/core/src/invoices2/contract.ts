@@ -5,7 +5,12 @@ import { DatabaseContract } from "../database2/contract";
 import { NanoId } from "../utils2";
 
 import type { OrdersContract } from "../orders2/contract";
-import type { ActiveInvoicesView, InvoicesTable } from "./sql";
+import type {
+  ActiveInvoicesView,
+  ActiveManagedBillingAccountOrderInvoicesView,
+  ActivePlacedOrderInvoicesView,
+  InvoicesTable,
+} from "./sql";
 
 export namespace InvoicesContract {
   export const statuses = ["processing", "charged", "error"] as const;
@@ -37,6 +42,23 @@ export namespace InvoicesContract {
     activeViewName,
     table.Schema,
   );
+
+  export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
+  export const activeManagedBillingAccountOrderView =
+    DatabaseContract.View<ActiveManagedBillingAccountOrderInvoicesView>()(
+      activeManagedBillingAccountOrderViewName,
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ authorizedManagerId: NanoId }),
+      ),
+    );
+
+  export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
+  export const activePlacedOrderView =
+    DatabaseContract.View<ActivePlacedOrderInvoicesView>()(
+      activePlacedOrderViewName,
+      Schema.extend(table.Schema, Schema.Struct({ customerId: NanoId })),
+    );
 
   export const create = new DataAccessContract.Function({
     name: "createInvoice",

@@ -5,10 +5,10 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@mjackson/fetch-proxy": "^0.3.0",
+    "@mjackson/fetch-proxy": "^0.4.0",
     "@printdesk/core": "workspace:*"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250726.0"
+    "@cloudflare/workers-types": "^4.20250816.0"
   }
 }

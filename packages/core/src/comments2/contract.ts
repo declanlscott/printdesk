@@ -21,7 +21,7 @@ export namespace CommentsContract {
       orderId: NanoId,
       authorId: NanoId,
       content: Schema.String,
-      internal: Schema.Boolean,
+      internal: Schema.optionalWith(Schema.Boolean, { default: () => false }),
     }),
     ["create", "read", "update", "delete"],
   );

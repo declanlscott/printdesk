@@ -53,7 +53,9 @@ export namespace ReplicacheClientsContract {
       id: Schema.UUID,
       tenantId: NanoId,
       clientGroupId: Schema.UUID,
-      lastMutationId: Schema.Int,
+      lastMutationId: Schema.optionalWith(Schema.Int, {
+        default: () => 0,
+      }),
       version: Schema.Int,
       ...DatabaseContract.Timestamps.fields,
     }),

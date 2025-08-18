@@ -1,4 +1,4 @@
-import { Array, Data, Schema } from "effect";
+import { Array, Data, DateTime, Schema } from "effect";
 
 import { NanoId } from "../utils2";
 
@@ -13,9 +13,15 @@ import type { AccessControl } from "../access-control2";
 
 export namespace DatabaseContract {
   export const Timestamps = Schema.Struct({
-    createdAt: Schema.DateTimeUtc,
-    updatedAt: Schema.DateTimeUtc,
-    deletedAt: Schema.NullOr(Schema.DateTimeUtc),
+    createdAt: Schema.optionalWith(Schema.DateTimeUtc, {
+      default: DateTime.unsafeNow,
+    }),
+    updatedAt: Schema.optionalWith(Schema.DateTimeUtc, {
+      default: DateTime.unsafeNow,
+    }),
+    deletedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
+      default: () => null,
+    }),
   });
 
   export const TenantTable = Schema.Struct({

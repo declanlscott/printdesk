@@ -22,7 +22,9 @@ export namespace TenantsContract {
       id: NanoId,
       subdomain: Subdomain,
       name: Schema.String,
-      status: Schema.Literal(...statuses),
+      status: Schema.optionalWith(Schema.Literal(...statuses), {
+        default: () => "setup",
+      }),
       ...DatabaseContract.Timestamps.fields,
     }),
     ["read", "update"],
@@ -58,7 +60,9 @@ export namespace LicensesContract {
     Schema.Struct({
       key: Key,
       tenantId: NanoId,
-      status: Schema.Literal(...statuses),
+      status: Schema.optionalWith(Schema.Literal(...statuses), {
+        default: () => "active",
+      }),
     }),
     [],
   );

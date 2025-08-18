@@ -432,8 +432,8 @@ export namespace Announcements {
           AnnouncementsContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:update"),
-            mutator: ({ id, ...data }, session) =>
-              repository.updateById(id, data, session.tenantId),
+            mutator: ({ id, ...announcement }, session) =>
+              repository.updateById(id, announcement, session.tenantId),
           }),
         );
 

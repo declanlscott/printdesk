@@ -27,7 +27,9 @@ export namespace UsersContract {
       username: Schema.String,
       subjectId: Schema.String,
       identityProviderId: Schema.String,
-      role: Schema.Literal(...roles),
+      role: Schema.optionalWith(Schema.Literal(...roles), {
+        default: () => "customer",
+      }),
       name: Schema.String,
       email: Schema.String,
     }),

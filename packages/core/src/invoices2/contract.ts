@@ -30,7 +30,9 @@ export namespace InvoicesContract {
     Schema.Struct({
       ...DatabaseContract.TenantTable.fields,
       lineItems: Schema.Array(LineItem),
-      status: Schema.Literal(...statuses),
+      status: Schema.optionalWith(Schema.Literal(...statuses), {
+        default: () => "processing",
+      }),
       chargedAt: Schema.NullOr(Schema.DateTimeUtc),
       orderId: NanoId,
     }),

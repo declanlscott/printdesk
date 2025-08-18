@@ -26,7 +26,9 @@ export namespace BillingAccountsContract {
     Schema.Struct({
       id: NanoId,
       tenantId: NanoId,
-      origin: Schema.Literal(...origins),
+      origin: Schema.optionalWith(Schema.Literal(...origins), {
+        default: () => "internal",
+      }),
       name: Schema.String,
       reviewThreshold: Schema.NullOr(
         Schema.transform(Cost, Schema.String, {
@@ -35,9 +37,12 @@ export namespace BillingAccountsContract {
           strict: true,
         }),
       ),
-      papercutAccountId: Schema.Union(
-        Schema.Literal(-1),
-        Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
+      papercutAccountId: Schema.optionalWith(
+        Schema.Union(
+          Schema.Literal(-1),
+          Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
+        ),
+        { default: () => -1 },
       ),
       ...DatabaseContract.Timestamps.fields,
     }),

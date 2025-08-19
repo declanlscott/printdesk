@@ -194,8 +194,12 @@ export namespace OrdersContract {
     Schema.Struct({
       ...DatabaseContract.TenantTable.fields,
       customerId: NanoId,
-      managerId: Schema.NullOr(NanoId),
-      operatorId: Schema.NullOr(NanoId),
+      managerId: Schema.optionalWith(Schema.NullOr(NanoId), {
+        default: () => null,
+      }),
+      operatorId: Schema.optionalWith(Schema.NullOr(NanoId), {
+        default: () => null,
+      }),
       productId: NanoId,
       billingAccountId: NanoId,
       attributes: Attributes,
@@ -203,7 +207,9 @@ export namespace OrdersContract {
         Schema.maxLength(Constants.VARCHAR_LENGTH),
       ),
       deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      approvedAt: Schema.NullOr(Schema.DateTimeUtc),
+      approvedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
+        default: () => null,
+      }),
     }),
     ["create", "read", "update", "delete"],
   );
@@ -281,7 +287,13 @@ export namespace OrdersContract {
 
   export const create = new DataAccessContract.Function({
     name: "createOrder",
-    Args: table.Schema.omit("approvedAt", "deletedAt", "tenantId"),
+    Args: table.Schema.omit(
+      "managerId",
+      "operatorId",
+      "approvedAt",
+      "deletedAt",
+      "tenantId",
+    ),
     Returns: table.Schema,
   });
 

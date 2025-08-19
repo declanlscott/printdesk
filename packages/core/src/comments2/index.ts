@@ -8,7 +8,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Equal, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -940,18 +940,15 @@ export namespace Comments {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isAuthor = yield* DataAccessContract.makePolicy(
+        const isAuthor = DataAccessContract.makePolicy(
           CommentsContract.isAuthor,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository
-                  .findById(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(
-                      (comment) => comment.authorId === principal.userId,
-                    ),
-                  ),
+                repository.findById(id, principal.tenantId).pipe(
+                  Effect.map(({ authorId }) => authorId),
+                  Effect.map(Equal.equals(principal.userId)),
+                ),
               ),
           }),
         );
@@ -965,14 +962,19 @@ export namespace Comments {
     "@printdesk/core/comments/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [
+        Repository.Default,
+        Orders.Policies.Default,
+        Policies.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const { isCustomerOrManager, hasActiveManagerAuthorization } =
-          yield* Orders.Policies;
+        const isCustomerOrManager = yield* Orders.Policies.isCustomerOrManager;
+        const hasActiveManagerAuthorization =
+          yield* Orders.Policies.hasActiveManagerAuthorization;
 
-        const { isAuthor } = yield* Policies;
+        const isAuthor = yield* Policies.isAuthor;
 
         const create = DataAccessContract.makeMutation(
           CommentsContract.create,

@@ -7,7 +7,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import { Array, Effect, Equal } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -484,19 +484,17 @@ export namespace Users {
     "@printdesk/core/users/Policies",
     {
       accessors: true,
-      effect: Effect.gen(function* () {
-        const isSelf = yield* DataAccessContract.makePolicy(
+      succeed: {
+        isSelf: DataAccessContract.makePolicy(
           UsersContract.isSelf,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                Effect.succeed(id === principal.userId),
+                Effect.succeed(Equal.equals(id, principal.userId)),
               ),
           }),
-        );
-
-        return { isSelf } as const;
-      }),
+        ),
+      },
     },
   ) {}
 
@@ -504,11 +502,11 @@ export namespace Users {
     "@printdesk/core/users/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [Repository.Default, Policies.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const { isSelf } = yield* Policies;
+        const isSelf = yield* Policies.isSelf;
 
         const update = DataAccessContract.makeMutation(
           UsersContract.update,

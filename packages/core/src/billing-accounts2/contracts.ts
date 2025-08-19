@@ -84,7 +84,10 @@ export namespace BillingAccountsContract {
   export const hasActiveCustomerAuthorization = new DataAccessContract.Function(
     {
       name: "hasActiveBillingAccountCustomerAuthorization",
-      Args: table.Schema.pick("id"),
+      Args: Schema.extend(
+        table.Schema.pick("id"),
+        Schema.Struct({ customerId: Schema.optional(NanoId) }),
+      ),
       Returns: Schema.Void,
     },
   );

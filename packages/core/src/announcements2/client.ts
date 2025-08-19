@@ -1,0 +1,79 @@
+import { Effect } from "effect";
+
+import { AccessControl } from "../access-control2";
+import { DataAccessContract } from "../data-access2/contract";
+import { Replicache } from "../replicache2/client";
+import { AnnouncementsContract } from "./contract";
+
+export namespace Announcements {
+  export class ReadRepository extends Effect.Service<ReadRepository>()(
+    "@printdesk/core/announcements/client/ReadRepository",
+    {
+      dependencies: [Replicache.ReadTransactionManager.Default],
+      effect: Replicache.makeReadRepository(AnnouncementsContract.table),
+    },
+  ) {}
+
+  export class WriteRepository extends Effect.Service<WriteRepository>()(
+    "@printdesk/core/announcements/client/WriteRepository",
+    {
+      dependencies: [
+        ReadRepository.Default,
+        Replicache.WriteTransactionManager.Default,
+      ],
+      effect: ReadRepository.pipe(
+        Effect.flatMap((repository) =>
+          Replicache.makeWriteRepository(
+            AnnouncementsContract.table,
+            repository,
+          ),
+        ),
+      ),
+    },
+  ) {}
+
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/announcements/client/Mutations",
+    {
+      accessors: true,
+      dependencies: [WriteRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* WriteRepository;
+
+        const create = DataAccessContract.makeMutation(
+          AnnouncementsContract.create,
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("announcements:create"),
+            mutator: (announcement, session) =>
+              repository.create(
+                AnnouncementsContract.table.Schema.make({
+                  ...announcement,
+                  authorId: session.userId,
+                  tenantId: session.tenantId,
+                }),
+              ),
+          }),
+        );
+
+        const update = DataAccessContract.makeMutation(
+          AnnouncementsContract.update,
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("announcements:update"),
+            mutator: ({ id, ...announcement }) =>
+              repository.updateById(id, announcement),
+          }),
+        );
+
+        const delete_ = DataAccessContract.makeMutation(
+          AnnouncementsContract.delete_,
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("announcements:delete"),
+            mutator: ({ id }) => repository.deleteById(id),
+          }),
+        );
+
+        return { create, update, delete: delete_ } as const;
+      }),
+    },
+  ) {}
+}

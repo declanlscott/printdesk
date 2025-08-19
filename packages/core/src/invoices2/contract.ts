@@ -33,7 +33,9 @@ export namespace InvoicesContract {
       status: Schema.optionalWith(Schema.Literal(...statuses), {
         default: () => "processing",
       }),
-      chargedAt: Schema.NullOr(Schema.DateTimeUtc),
+      chargedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
+        default: () => null,
+      }),
       orderId: NanoId,
     }),
     ["create", "read"],

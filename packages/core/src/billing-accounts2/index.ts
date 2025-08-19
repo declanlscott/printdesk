@@ -9,7 +9,7 @@ import {
   notInArray,
   or,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Equal, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -901,8 +901,8 @@ export namespace BillingAccounts {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const findActiveCustomerIds = Effect.fn(
-          "BillingAccounts.Repository.findActiveCustomerIds",
+        const findActiveAuthorizedCustomerIds = Effect.fn(
+          "BillingAccounts.Repository.findActiveAuthorizedCustomerIds",
         )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
           db
             .useTransaction((tx) =>
@@ -942,8 +942,8 @@ export namespace BillingAccounts {
             .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
-        const findActiveManagerIds = Effect.fn(
-          "BillingAccounts.Repository.findActiveManagerIds",
+        const findActiveAuthorizedManagerIds = Effect.fn(
+          "BillingAccounts.Repository.findActiveAuthorizedManagerIds",
         )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
           db
             .useTransaction((tx) =>
@@ -1102,8 +1102,8 @@ export namespace BillingAccounts {
           findActiveFastForwardByManagerId,
           findActiveFastForwardByCustomerId,
           findByOrigin,
-          findActiveCustomerIds,
-          findActiveManagerIds,
+          findActiveAuthorizedCustomerIds,
+          findActiveAuthorizedManagerIds,
           findActiveAuthorizedUserIds,
           updateById,
           deleteById,
@@ -1120,63 +1120,49 @@ export namespace BillingAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const hasActiveManagerAuthorization =
-          yield* DataAccessContract.makePolicy(
-            BillingAccountsContract.hasActiveManagerAuthorization,
-            Effect.succeed({
-              make: ({ id }) =>
-                AccessControl.policy((principal) =>
-                  repository
-                    .findActiveManagerIds(id, principal.tenantId)
-                    .pipe(
-                      Effect.map(
-                        Array.some(
-                          (managerId) => managerId === principal.userId,
-                        ),
-                      ),
-                    ),
-                ),
-            }),
-          );
-
-        const hasActiveCustomerAuthorization =
-          yield* DataAccessContract.makePolicy(
-            BillingAccountsContract.hasActiveCustomerAuthorization,
-            Effect.succeed({
-              make: ({ id }) =>
-                AccessControl.policy((principal) =>
-                  repository
-                    .findActiveManagerIds(id, principal.tenantId)
-                    .pipe(
-                      Effect.map(
-                        Array.some(
-                          (managerId) => managerId === principal.userId,
-                        ),
-                      ),
-                    ),
-                ),
-            }),
-          );
-
-        const hasActiveAuthorization = yield* DataAccessContract.makePolicy(
-          BillingAccountsContract.hasActiveAuthorization,
+        const hasActiveCustomerAuthorization = DataAccessContract.makePolicy(
+          BillingAccountsContract.hasActiveCustomerAuthorization,
           Effect.succeed({
-            make: ({ id }) =>
+            make: ({ id, customerId }) =>
               AccessControl.policy((principal) =>
                 repository
-                  .findActiveAuthorizedUserIds(id, principal.tenantId)
+                  .findActiveAuthorizedCustomerIds(id, principal.tenantId)
                   .pipe(
                     Effect.map(
-                      Array.some((userId) => userId === principal.userId),
+                      Array.some(Equal.equals(customerId ?? principal.userId)),
                     ),
                   ),
               ),
           }),
         );
 
+        const hasActiveManagerAuthorization = DataAccessContract.makePolicy(
+          BillingAccountsContract.hasActiveManagerAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveAuthorizedManagerIds(id, principal.tenantId)
+                  .pipe(Effect.map(Array.some(Equal.equals(principal.userId)))),
+              ),
+          }),
+        );
+
+        const hasActiveAuthorization = DataAccessContract.makePolicy(
+          BillingAccountsContract.hasActiveAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveAuthorizedUserIds(id, principal.tenantId)
+                  .pipe(Effect.map(Array.some(Equal.equals(principal.userId)))),
+              ),
+          }),
+        );
+
         return {
-          hasActiveManagerAuthorization,
           hasActiveCustomerAuthorization,
+          hasActiveManagerAuthorization,
           hasActiveAuthorization,
         } as const;
       }),

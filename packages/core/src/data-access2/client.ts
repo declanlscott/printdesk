@@ -1,32 +1,24 @@
 import { Effect } from "effect";
 
-import { Announcements } from "../announcements2";
+import { Announcements } from "../announcements2/client";
 import { Auth } from "../auth2";
-import { BillingAccounts } from "../billing-accounts2";
-import { Comments } from "../comments2";
-import { Invoices } from "../invoices2";
-import { Orders } from "../orders2";
-import { Products } from "../products2";
-import { Rooms } from "../rooms2";
-import { Tenants } from "../tenants2";
+import { BillingAccounts } from "../billing-accounts2/client";
+import { Comments } from "../comments2/client";
+import { Invoices } from "../invoices2/client";
+import { Orders } from "../orders2/client";
+import { Products } from "../products2/client";
+import { Rooms } from "../rooms2/client";
+import { Tenants } from "../tenants2/client";
 import { Users } from "../users2";
 import { DataAccessContract } from "./contract";
 import { Mutations, Policies } from "./functions";
 
 export namespace DataAccess {
-  export class ServerPolicies extends Effect.Service<ServerPolicies>()(
-    "@printdesk/core/data-access/ServerPolicies",
+  export class ClientPolicies extends Effect.Service<ClientPolicies>()(
+    "@printdesk/core/data-access/ClientPolicies",
     {
       accessors: true,
-      dependencies: [
-        Policies.Default,
-        BillingAccounts.Policies.Default,
-        Comments.Policies.Default,
-        Orders.Policies.Default,
-        Tenants.Policies.Default,
-        Tenants.LicensePolicies.Default,
-        Users.Policies.Default,
-      ],
+      dependencies: [Policies.Default],
       effect: Effect.gen(function* () {
         const functions = yield* Policies.functions;
 
@@ -58,8 +50,8 @@ export namespace DataAccess {
     },
   ) {}
 
-  export class ServerMutations extends Effect.Service<ServerMutations>()(
-    "@printdesk/core/data-access/ServerMutations",
+  export class ClientMutations extends Effect.Service<ClientMutations>()(
+    "@printdesk/core/data-access/ClientMutations",
     {
       accessors: true,
       dependencies: [
@@ -96,10 +88,7 @@ export namespace DataAccess {
         const workflow = yield* Rooms.WorkflowMutations;
 
         const dispatcher = yield* Effect.succeed(
-          new DataAccessContract.MutationDispatcher({
-            session,
-            functions,
-          })
+          new DataAccessContract.MutationDispatcher({ session, functions })
             .set(announcements.create)
             .set(announcements.update)
             .set(announcements.delete)

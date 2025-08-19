@@ -9,7 +9,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Equal, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { BillingAccounts } from "../billing-accounts2";
@@ -19,6 +19,7 @@ import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { replicacheClientViewMetadataTable } from "../replicache2/sql";
 import { workflowStatusesTable } from "../rooms2/sql";
+import { Users } from "../users2";
 import { activeUsersView } from "../users2/sql";
 import { OrdersContract } from "./contract";
 import {
@@ -830,9 +831,7 @@ export namespace Orders {
             db
               .useTransaction((tx) =>
                 tx
-                  .select({
-                    status: getTableColumns(workflowStatusesTable),
-                  })
+                  .select({ status: getTableColumns(workflowStatusesTable) })
                   .from(table)
                   .leftJoin(
                     workflowStatusesTable,
@@ -944,37 +943,33 @@ export namespace Orders {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isCustomer = yield* DataAccessContract.makePolicy(
+        const isCustomer = DataAccessContract.makePolicy(
           OrdersContract.isCustomer,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository
-                  .findById(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(
-                      (order) => order.customerId === principal.userId,
-                    ),
-                  ),
+                repository.findById(id, principal.tenantId).pipe(
+                  Effect.map(({ customerId }) => customerId),
+                  Effect.map(Equal.equals(principal.userId)),
+                ),
               ),
           }),
         );
 
-        const isManager = yield* DataAccessContract.makePolicy(
+        const isManager = DataAccessContract.makePolicy(
           OrdersContract.isManager,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository
-                  .findById(id, principal.tenantId)
-                  .pipe(
-                    Effect.map((order) => order.managerId === principal.userId),
-                  ),
+                repository.findById(id, principal.tenantId).pipe(
+                  Effect.map(({ managerId }) => managerId),
+                  Effect.map(Equal.equals(principal.userId)),
+                ),
               ),
           }),
         );
 
-        const isCustomerOrManager = yield* DataAccessContract.makePolicy(
+        const isCustomerOrManager = DataAccessContract.makePolicy(
           OrdersContract.isCustomerOrManager,
           Effect.succeed({
             make: ({ id }) =>
@@ -984,34 +979,27 @@ export namespace Orders {
                   .pipe(
                     Effect.map(
                       (order) =>
-                        order.customerId === principal.userId ||
-                        order.managerId === principal.userId,
+                        Equal.equals(order.customerId, principal.userId) ||
+                        Equal.equals(order.managerId, principal.userId),
                     ),
                   ),
               ),
           }),
         );
 
-        const hasActiveManagerAuthorization =
-          yield* DataAccessContract.makePolicy(
-            OrdersContract.hasActiveManagerAuthorization,
-            Effect.succeed({
-              make: ({ id }) =>
-                AccessControl.policy((principal) =>
-                  repository
-                    .findActiveManagerIds(id, principal.tenantId)
-                    .pipe(
-                      Effect.map(
-                        Array.some(
-                          (managerId) => managerId === principal.userId,
-                        ),
-                      ),
-                    ),
-                ),
-            }),
-          );
+        const hasActiveManagerAuthorization = DataAccessContract.makePolicy(
+          OrdersContract.hasActiveManagerAuthorization,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveManagerIds(id, principal.tenantId)
+                  .pipe(Effect.map(Array.some(Equal.equals(principal.userId)))),
+              ),
+          }),
+        );
 
-        const canEdit = yield* DataAccessContract.makePolicy(
+        const canEdit = DataAccessContract.makePolicy(
           OrdersContract.canEdit,
           Effect.succeed({
             make: ({ id }) =>
@@ -1032,28 +1020,19 @@ export namespace Orders {
           }),
         );
 
-        const canApprove = yield* DataAccessContract.makePolicy(
+        const canApprove = DataAccessContract.makePolicy(
           OrdersContract.canApprove,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
                   .findStatus(id, principal.tenantId)
-                  .pipe(
-                    Effect.map((status) =>
-                      status !== null
-                        ? !(
-                            status.type === "InProgress" ||
-                            status.type === "Completed"
-                          )
-                        : false,
-                    ),
-                  ),
+                  .pipe(Effect.map((status) => status?.type === "Review")),
               ),
           }),
         );
 
-        const canTransition = yield* DataAccessContract.makePolicy(
+        const canTransition = DataAccessContract.makePolicy(
           OrdersContract.canTransition,
           Effect.succeed({
             make: ({ id }) =>
@@ -1065,9 +1044,9 @@ export namespace Orders {
           }),
         );
 
-        const canDelete = yield* DataAccessContract.makePolicy(
+        const canDelete = DataAccessContract.makePolicy(
           OrdersContract.canDelete,
-          Effect.succeed(canEdit),
+          canEdit,
         );
 
         return {
@@ -1088,29 +1067,44 @@ export namespace Orders {
     "@printdesk/core/orders/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [
+        Repository.Default,
+        Users.Policies.Default,
+        BillingAccounts.Policies.Default,
+        Policies.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const hasActiveAuthorization =
-          yield* BillingAccounts.Policies.hasActiveAuthorization;
+        const isSelf = yield* Users.Policies.isSelf;
 
-        const {
-          isCustomerOrManager,
-          canEdit,
-          hasActiveManagerAuthorization,
-          canApprove,
-          canTransition,
-          canDelete,
-        } = yield* Policies;
+        const hasActiveCustomerAuthorization =
+          yield* BillingAccounts.Policies.hasActiveCustomerAuthorization;
+        const hasActiveManagerAuthorization =
+          yield* BillingAccounts.Policies.hasActiveManagerAuthorization;
+
+        const isCustomerOrManager = yield* Policies.isCustomerOrManager;
+        const canEdit = yield* Policies.canEdit;
+        const hasOrderActiveManagerAuthorization =
+          yield* Policies.hasActiveManagerAuthorization;
+        const canApprove = yield* Policies.canApprove;
+        const canTransition = yield* Policies.canTransition;
+        const canDelete = yield* Policies.canDelete;
 
         const create = DataAccessContract.makeMutation(
           OrdersContract.create,
           Effect.succeed({
-            makePolicy: ({ billingAccountId }) =>
-              AccessControl.some(
-                AccessControl.permission("orders:create"),
-                hasActiveAuthorization.make({ id: billingAccountId }),
+            makePolicy: ({ billingAccountId, customerId }) =>
+              AccessControl.every(
+                AccessControl.some(
+                  AccessControl.permission("orders:create"),
+                  isSelf.make({ id: customerId }),
+                  hasActiveManagerAuthorization.make({ id: billingAccountId }),
+                ),
+                hasActiveCustomerAuthorization.make({
+                  id: billingAccountId,
+                  customerId,
+                }),
               ),
             mutator: (order, { tenantId }) =>
               // TODO: Verify workflow status is correct
@@ -1141,7 +1135,7 @@ export namespace Orders {
               AccessControl.every(
                 AccessControl.some(
                   AccessControl.permission("orders:update"),
-                  hasActiveManagerAuthorization.make({ id }),
+                  hasOrderActiveManagerAuthorization.make({ id }),
                 ),
                 canApprove.make({ id }),
               ),

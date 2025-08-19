@@ -8,7 +8,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import { Array, Effect, Option, Schema } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -630,41 +630,63 @@ export namespace Rooms {
             roomId: WorkflowStatus["roomId"],
             tenantId: WorkflowStatus["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .insert(table)
-                .values(
-                  workflow.reduce((values, status, index) => {
-                    values.push({
-                      ...status,
-                      index,
-                      roomId,
-                      tenantId,
-                    });
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(
+                    workflow.reduce((values, status, index) => {
+                      values.push({
+                        ...status,
+                        index,
+                        roomId,
+                        tenantId,
+                      });
 
-                    return values;
-                  }, [] as Array<WorkflowStatus>),
-                )
-                .onConflictDoUpdate({
-                  target: [table.id, table.roomId, table.tenantId],
-                  set: buildConflictSet(table),
-                })
-                .returning()
-                .then((workflow) =>
-                  tx.delete(table).where(
-                    and(
-                      notInArray(
-                        table.id,
-                        workflow.map((status) => status.id),
-                      ),
-                      gte(table.index, 0),
-                      eq(table.roomId, roomId),
-                      eq(table.tenantId, tenantId),
-                    ),
+                      return values;
+                    }, [] as Array<WorkflowStatus>),
+                  )
+                  .onConflictDoUpdate({
+                    target: [table.id, table.roomId, table.tenantId],
+                    set: buildConflictSet(table),
+                  })
+                  .returning()
+                  .then((workflow) =>
+                    tx
+                      .delete(table)
+                      .where(
+                        and(
+                          notInArray(
+                            table.id,
+                            workflow.map((status) => status.id),
+                          ),
+                          gte(table.index, 0),
+                          eq(table.roomId, roomId),
+                          eq(table.tenantId, tenantId),
+                        ),
+                      )
+                      .then(() => workflow),
                   ),
-                )
-                .then(() => workflow),
-            ),
+              )
+              .pipe(
+                Effect.map(
+                  Array.filterMap((status) =>
+                    status.type !== "Review"
+                      ? Option.some(
+                          status as WorkflowStatus & {
+                            readonly type: Exclude<
+                              WorkflowStatus["type"],
+                              "Review"
+                            >;
+                          },
+                        )
+                      : Option.none(),
+                  ),
+                ),
+                Effect.flatMap(
+                  Schema.decodeUnknown(WorkflowsContract.Workflow),
+                ),
+              ),
         );
 
         const findCreates = Effect.fn("Rooms.WorkflowRepository.findCreates")(
@@ -1018,41 +1040,49 @@ export namespace Rooms {
             roomId: DeliveryOption["roomId"],
             tenantId: DeliveryOption["tenantId"],
           ) =>
-            db.useTransaction((tx) =>
-              tx
-                .insert(table)
-                .values(
-                  options.reduce((values, option, index) => {
-                    values.push({
-                      ...option,
-                      index,
-                      roomId,
-                      tenantId,
-                    });
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(
+                    options.reduce((values, option, index) => {
+                      values.push({
+                        ...option,
+                        index,
+                        roomId,
+                        tenantId,
+                      });
 
-                    return values;
-                  }, [] as Array<DeliveryOption>),
-                )
-                .onConflictDoUpdate({
-                  target: [table.id, table.roomId, table.tenantId],
-                  set: buildConflictSet(table),
-                })
-                .returning()
-                .then((options) =>
-                  tx.delete(table).where(
-                    and(
-                      notInArray(
-                        table.id,
-                        options.map((option) => option.id),
-                      ),
-                      gte(table.index, 0),
-                      eq(table.roomId, roomId),
-                      eq(table.tenantId, tenantId),
-                    ),
+                      return values;
+                    }, [] as Array<DeliveryOption>),
+                  )
+                  .onConflictDoUpdate({
+                    target: [table.id, table.roomId, table.tenantId],
+                    set: buildConflictSet(table),
+                  })
+                  .returning()
+                  .then((options) =>
+                    tx
+                      .delete(table)
+                      .where(
+                        and(
+                          notInArray(
+                            table.id,
+                            options.map((option) => option.id),
+                          ),
+                          gte(table.index, 0),
+                          eq(table.roomId, roomId),
+                          eq(table.tenantId, tenantId),
+                        ),
+                      )
+                      .then(() => options),
                   ),
-                )
-                .then(() => options),
-            ),
+              )
+              .pipe(
+                Effect.flatMap(
+                  Schema.decode(DeliveryOptionsContract.DeliveryOptions),
+                ),
+              ),
         );
 
         const findCreates = Effect.fn(

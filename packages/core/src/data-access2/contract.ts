@@ -151,10 +151,10 @@ export namespace DataAccessContract {
     }
   >;
 
-  export class MakePolicyDispatcher<
+  export class PolicyDispatcher<
     TFunctionRecord extends FunctionRecord,
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    TMakePolicyRecord extends PolicyRecord = {},
+    TPolicyRecord extends PolicyRecord = {},
     TIsDone = false,
   > extends Data.Class<{
     readonly functions: Functions<TFunctionRecord, true>;
@@ -165,10 +165,10 @@ export namespace DataAccessContract {
       MakePolicyShape<
         keyof TFunctionRecord & string,
         TFunctionRecord[keyof TFunctionRecord]["Args"],
-        TMakePolicyRecord[keyof TMakePolicyRecord]["PolicyError"],
-        TMakePolicyRecord[keyof TMakePolicyRecord]["PolicyContext"],
-        TMakePolicyRecord[keyof TMakePolicyRecord]["MakePolicyError"],
-        TMakePolicyRecord[keyof TMakePolicyRecord]["MakePolicyContext"]
+        TPolicyRecord[keyof TPolicyRecord]["PolicyError"],
+        TPolicyRecord[keyof TPolicyRecord]["PolicyContext"],
+        TPolicyRecord[keyof TPolicyRecord]["MakePolicyError"],
+        TPolicyRecord[keyof TPolicyRecord]["MakePolicyContext"]
       >
     >();
 
@@ -189,9 +189,9 @@ export namespace DataAccessContract {
             TMakePolicyContext
           >
         : never,
-    ): MakePolicyDispatcher<
+    ): PolicyDispatcher<
       TFunctionRecord,
-      TMakePolicyRecord &
+      TPolicyRecord &
         PolicyRecord<
           TName,
           TPolicyError,
@@ -208,20 +208,16 @@ export namespace DataAccessContract {
     }
 
     done(
-      this: keyof TFunctionRecord extends keyof TMakePolicyRecord
-        ? MakePolicyDispatcher<TFunctionRecord, TMakePolicyRecord, TIsDone>
+      this: keyof TFunctionRecord extends keyof TPolicyRecord
+        ? PolicyDispatcher<TFunctionRecord, TPolicyRecord, TIsDone>
         : never,
     ) {
       this.#isDone = true;
 
-      return this as MakePolicyDispatcher<
-        TFunctionRecord,
-        TMakePolicyRecord,
-        true
-      >;
+      return this as PolicyDispatcher<TFunctionRecord, TPolicyRecord, true>;
     }
 
-    dispatch<TName extends keyof TMakePolicyRecord & string>(
+    dispatch<TName extends keyof TPolicyRecord & string>(
       name: TName,
       args:
         | { encoded: Schema.Schema.Encoded<TFunctionRecord[TName]["Args"]> }
@@ -237,10 +233,10 @@ export namespace DataAccessContract {
         )) as MakePolicyShape<
           TName,
           TFunctionRecord[TName]["Args"],
-          TMakePolicyRecord[TName]["PolicyError"],
-          TMakePolicyRecord[TName]["PolicyContext"],
-          TMakePolicyRecord[TName]["MakePolicyError"],
-          TMakePolicyRecord[TName]["MakePolicyContext"]
+          TPolicyRecord[TName]["PolicyError"],
+          TPolicyRecord[TName]["PolicyContext"],
+          TPolicyRecord[TName]["MakePolicyError"],
+          TPolicyRecord[TName]["MakePolicyContext"]
         >;
 
         const { make } = yield* makePolicy;

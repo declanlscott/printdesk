@@ -15,7 +15,7 @@ import {
   RoomsContract,
   WorkflowsContract,
 } from "../rooms2/contracts";
-import { LicensesContract, TenantsContract } from "../tenants2/contracts";
+import { TenantsContract } from "../tenants2/contracts";
 import { UsersContract } from "../users2/contract";
 import { DataAccessContract } from "./contract";
 
@@ -26,8 +26,8 @@ export class Policies extends Effect.Service<Policies>()(
     effect: Effect.gen(function* () {
       const functions = yield* Effect.succeed(
         new DataAccessContract.Functions()
-          .set(BillingAccountsContract.hasActiveManagerAuthorization)
           .set(BillingAccountsContract.hasActiveCustomerAuthorization)
+          .set(BillingAccountsContract.hasActiveManagerAuthorization)
           .set(BillingAccountsContract.hasActiveAuthorization)
           .set(CommentsContract.isAuthor)
           .set(OrdersContract.isCustomer)
@@ -38,8 +38,6 @@ export class Policies extends Effect.Service<Policies>()(
           .set(OrdersContract.canApprove)
           .set(OrdersContract.canTransition)
           .set(OrdersContract.canDelete)
-          .set(TenantsContract.isSubdomainAvailable)
-          .set(LicensesContract.isAvailable)
           .set(UsersContract.isSelf)
           .done(),
       ).pipe(Effect.cached);

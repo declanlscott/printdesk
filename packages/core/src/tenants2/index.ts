@@ -253,7 +253,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isSubdomainAvailable = yield* DataAccessContract.makePolicy(
+        const isSubdomainAvailable = DataAccessContract.makePolicy(
           TenantsContract.isSubdomainAvailable,
           Effect.succeed({
             make: ({ subdomain }) =>
@@ -266,9 +266,7 @@ export namespace Tenants {
                     Effect.catchTag("NoSuchElementException", () =>
                       Effect.succeed(null),
                     ),
-                    Effect.map(
-                      (tenant) => !tenant || tenant.status === "setup",
-                    ),
+                    Effect.map((tenant) => tenant?.status === "setup"),
                   );
                 }),
               ),
@@ -353,7 +351,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* LicensesRepository;
 
-        const isAvailable = yield* DataAccessContract.makePolicy(
+        const isAvailable = DataAccessContract.makePolicy(
           LicensesContract.isAvailable,
           Effect.succeed({
             make: ({ key }) =>

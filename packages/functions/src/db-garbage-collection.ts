@@ -2,7 +2,7 @@ import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
 import { Replicache } from "@printdesk/core/replicache2";
 import { Constants } from "@printdesk/core/utils/constants";
-import { paginate } from "@printdesk/core/utils2/shared";
+import { paginate } from "@printdesk/core/utils2";
 import { Array, Effect, Layer } from "effect";
 
 const layer = Layer.mergeAll(

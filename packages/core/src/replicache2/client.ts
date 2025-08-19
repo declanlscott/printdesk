@@ -28,9 +28,11 @@ export namespace Replicache {
             catch: (cause) => new ReplicacheError({ cause }),
           }).pipe(
             Effect.flatMap(
-              Schema.decodeUnknown(
-                Schema.Array(table.Schema as TTable["Schema"]),
-              ),
+              Schema.decodeUnknown<
+                ReadonlyArray<TTable["Schema"]["Type"]>,
+                ReadonlyArray<TTable["Schema"]["Encoded"]>,
+                never
+              >(Schema.Array(table.Schema)),
             ),
           );
 
@@ -49,9 +51,11 @@ export namespace Replicache {
 
             return yield* Effect.succeed(value).pipe(
               Effect.flatMap(
-                Schema.decodeUnknown(
-                  Schema.asSchema(table.Schema as TTable["Schema"]),
-                ),
+                Schema.decodeUnknown<
+                  TTable["Schema"]["Type"],
+                  TTable["Schema"]["Encoded"],
+                  never
+                >(Schema.asSchema(table.Schema)),
               ),
             );
           });
@@ -81,9 +85,13 @@ export namespace Replicache {
         ) =>
           Effect.succeed(value).pipe(
             Effect.flatMap(
-              Schema.encode(table.Schema as Schema.Schema.AnyNoContext),
+              Schema.encode<
+                TTable["Schema"]["Type"],
+                TTable["Schema"]["Encoded"],
+                never
+              >(Schema.asSchema(table.Schema)),
             ),
-            Effect.flatMap((encoded: TTable["Schema"]["Encoded"]) =>
+            Effect.flatMap((encoded) =>
               Effect.tryPromise({
                 try: () => tx.set(`${table.name}/${id}`, encoded),
                 catch: (cause) => new ReplicacheError({ cause }),

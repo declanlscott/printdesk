@@ -49,7 +49,7 @@ export namespace DatabaseContract {
 
   interface BaseTable<
     TTable extends PgTable,
-    TSchema extends Schema.Schema.Any,
+    TSchema extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   > {
     readonly name: TTable["_"]["name"];
@@ -59,7 +59,7 @@ export namespace DatabaseContract {
 
   export interface SyncTable<
     TTable extends PgTable,
-    TSchema extends Schema.Schema.Any,
+    TSchema extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   > extends BaseTable<TTable, TSchema, TActions> {
     readonly _tag: "@printdesk/core/database/SyncTable";
@@ -67,7 +67,7 @@ export namespace DatabaseContract {
   export const SyncTable =
     <TTable extends PgTable = never>() =>
     <
-      TSchema extends Schema.Schema.Any,
+      TSchema extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<AccessControl.PermissionAction>,
     >(
       name: TTable["_"]["name"],
@@ -89,7 +89,7 @@ export namespace DatabaseContract {
       });
 
   export interface NonSyncTable<
-    TSchema extends Schema.Schema.Any,
+    TSchema extends Schema.Schema.AnyNoContext,
     TTable extends PgTable,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   > extends BaseTable<TTable, TSchema, TActions> {
@@ -98,7 +98,7 @@ export namespace DatabaseContract {
   export const NonSyncTable =
     <TTable extends PgTable = never>() =>
     <
-      TSchema extends Schema.Schema.Any,
+      TSchema extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<AccessControl.PermissionAction>,
     >(
       name: TTable["_"]["name"],
@@ -121,7 +121,7 @@ export namespace DatabaseContract {
 
   export interface View<
     TView extends PgView,
-    TSchema extends Schema.Schema.Any,
+    TSchema extends Schema.Schema.AnyNoContext,
   > {
     readonly _tag: "@printdesk/core/database/View";
     readonly name: TView["_"]["name"];
@@ -130,7 +130,7 @@ export namespace DatabaseContract {
   }
   export const View =
     <TView extends PgView = never>() =>
-    <TSchema extends Schema.Schema.Any>(
+    <TSchema extends Schema.Schema.AnyNoContext>(
       name: TView["_"]["name"],
       Schema: Schema.Schema.Type<TSchema> extends InferFromView<TView>
         ? TSchema
@@ -144,7 +144,7 @@ export namespace DatabaseContract {
 
   export interface VirtualView<
     TName extends string,
-    TSchema extends Schema.Schema.Any,
+    TSchema extends Schema.Schema.AnyNoContext,
   > {
     readonly _tag: "@printdesk/core/database/VirtualView";
     readonly name: TName;
@@ -153,7 +153,7 @@ export namespace DatabaseContract {
   }
   export const VirtualView =
     <TView extends PgView = never>() =>
-    <TName extends string, TSchema extends Schema.Schema.Any>(
+    <TName extends string, TSchema extends Schema.Schema.AnyNoContext>(
       name: TName,
       Schema: Schema.Schema.Type<TSchema> extends InferFromView<TView>
         ? TSchema

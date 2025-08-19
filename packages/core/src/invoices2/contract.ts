@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
 import { DatabaseContract } from "../database2/contract";
@@ -80,8 +80,8 @@ export namespace InvoicesContract {
     order: typeof OrdersContract.Attributes.Type,
     script: string,
   ) =>
-    Schema.decodeUnknown(Estimate)(
-      // eslint-disable-next-line @typescript-eslint/no-implied-eval, @typescript-eslint/no-unsafe-call
+    Effect.succeed(
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
       globalThis.Function(
         "__order__",
         [
@@ -89,6 +89,10 @@ export namespace InvoicesContract {
           script,
           `return estimateCost(__order__);`,
         ].join("\n"),
-      )(order),
+      ),
+    ).pipe(
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+      Effect.map((fn) => fn.apply(undefined, [order])),
+      Effect.flatMap(Schema.decodeUnknown(Estimate)),
     );
 }

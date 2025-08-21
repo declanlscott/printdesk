@@ -104,16 +104,13 @@ export namespace Replicache {
           table: TTable,
           id: TTable["Schema"]["Type"]["id"],
         ) =>
-          Effect.gen(function* () {
-            const deleted = yield* get(table, id);
-
-            yield* Effect.tryPromise({
+          Effect.zipLeft(
+            get(table, id),
+            Effect.tryPromise({
               try: () => tx.del(`${table.name}/${id}`),
               catch: (cause) => new ReplicacheError({ cause }),
-            });
-
-            return deleted;
-          });
+            }),
+          );
 
         return { set, del } as const;
       }),

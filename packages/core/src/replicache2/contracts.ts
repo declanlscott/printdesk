@@ -1,4 +1,4 @@
-import { Array, Data, Schema } from "effect";
+import { Array, Data, Schema, Struct } from "effect";
 
 import { DatabaseContract } from "../database2/contract";
 import { syncTables } from "../database2/tables";
@@ -99,53 +99,64 @@ export namespace ReplicacheClientViewMetadataContract {
 }
 
 export namespace ReplicacheContract {
-  export const MutationV0 = Schema.Struct({
-    name: Schema.String,
-    args: Schema.Any,
-    id: Schema.Number,
-    timestamp: Schema.Number,
-  });
+  export class MutationV0 extends Schema.TaggedClass<MutationV0>("MutationV0")(
+    "MutationV0",
+    {
+      name: Schema.String,
+      args: Schema.Any,
+      id: Schema.Number,
+      timestamp: Schema.Number,
+    },
+  ) {}
 
-  export const MutationV1 = Schema.Struct({
-    ...MutationV0.fields,
-    clientID: Schema.UUID,
-  });
+  export class MutationV1 extends Schema.TaggedClass<MutationV1>("MutationV1")(
+    "MutationV1",
+    { ...Struct.omit(MutationV0.fields, "_tag"), clientID: Schema.UUID },
+  ) {}
 
   export const Mutation = Schema.Union(MutationV0, MutationV1);
 
-  export const PushRequestV0 = Schema.Struct({
-    pushVersion: Schema.Literal(0),
+  export class PushRequestV0 extends Schema.Class<PushRequestV0>(
+    "PushRequestV0",
+  )({
+    pushVersion: Schema.tag(0),
     clientID: Schema.UUID,
     mutations: Schema.Array(MutationV0),
     profileID: Schema.String,
     schemaVersion: Schema.String,
-  });
+  }) {}
 
-  export const PushRequestV1 = Schema.Struct({
-    pushVersion: Schema.Literal(1),
+  export class PushRequestV1 extends Schema.Class<PushRequestV1>(
+    "PushRequestV1",
+  )({
+    pushVersion: Schema.tag(1),
     clientGroupID: Schema.UUID,
     mutations: Schema.Array(MutationV1),
     profileID: Schema.String,
     schemaVersion: Schema.String,
-  });
+  }) {}
 
   export const PushRequest = Schema.Union(PushRequestV0, PushRequestV1);
 
-  export const PullRequestV0 = Schema.Struct({
-    pullVersion: Schema.Literal(0),
+  export class PullRequestV0 extends Schema.Class<PullRequestV0>(
+    "PullRequestV0",
+  )({
+    pullVersion: Schema.tag(0),
     schemaVersion: Schema.String,
     profileID: Schema.String,
     cookie: Schema.NullOr(Schema.Struct({})),
     lastMutationID: Schema.Int,
-  });
+  }) {}
 
-  export const PullRequestV1 = Schema.Struct({
-    pullVersion: Schema.Literal(1),
+  export class PullRequestV1 extends Schema.Class<PullRequestV1>(
+    "PullRequestV1",
+  )({
+    pullVersion: Schema.tag(1),
     schemaVersion: Schema.String,
     profileID: Schema.String,
     cookie: Schema.NullOr(Schema.Struct({ order: Schema.Int })),
     clientGroupID: Schema.UUID,
-  });
+  }) {}
 
   export const PullRequest = Schema.Union(PullRequestV0, PullRequestV1);
 

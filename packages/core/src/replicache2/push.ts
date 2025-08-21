@@ -64,7 +64,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
             const clientGroupId = pushRequest.clientGroupID;
 
             const processMutation = (
-              mutation: typeof ReplicacheContract.MutationV1.Type,
+              mutation: ReplicacheContract.MutationV1,
               errorMode = false,
             ) =>
               mutations.Replicache.pipe(

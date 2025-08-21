@@ -12,7 +12,7 @@ import type { PgTable, PgView } from "drizzle-orm/pg-core";
 import type { AccessControl } from "../access-control2";
 
 export namespace DatabaseContract {
-  export const Timestamps = Schema.Struct({
+  export class Timestamps extends Schema.Class<Timestamps>("Timestamps")({
     createdAt: Schema.optionalWith(Schema.DateTimeUtc, {
       default: DateTime.unsafeNow,
     }),
@@ -22,13 +22,13 @@ export namespace DatabaseContract {
     deletedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
       default: () => null,
     }),
-  });
+  }) {}
 
-  export const TenantTable = Schema.Struct({
+  export class TenantTable extends Schema.Class<TenantTable>("TenantTable")({
     id: NanoId,
     tenantId: NanoId,
     ...Timestamps.fields,
-  });
+  }) {}
 
   export type InferFromTable<TTable extends Table> = Readonly<
     Omit<InferSelectModel<TTable>, "version">

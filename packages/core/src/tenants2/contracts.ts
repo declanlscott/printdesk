@@ -77,10 +77,12 @@ export namespace LicensesContract {
 export namespace TenantMetadataContract {
   export const Timezone = Schema.Literal(...Intl.supportedValuesOf("timeZone"));
 
-  export const InfraProgramInput = Schema.Struct({
+  export class InfraProgramInput extends Schema.Class<InfraProgramInput>(
+    "InfraProgramInput",
+  )({
     papercutSyncCronExpression: Schema.String,
     timezone: Timezone,
-  });
+  }) {}
 
   export const tableName = "tenant_metadata";
   export const table = DatabaseContract.NonSyncTable<TenantMetadataTable>()(

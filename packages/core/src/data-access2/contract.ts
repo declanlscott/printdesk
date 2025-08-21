@@ -63,11 +63,11 @@ export namespace DataAccessContract {
           Iterable.map(
             (fn) =>
               Schema.Struct({
-                name: Schema.Literal(fn.name),
+                name: Schema.tag(fn.name),
                 args: fn.Args,
               }) as {
                 [TName in keyof TRecord]: Schema.Struct<{
-                  name: Schema.Literal<[TName & string]>;
+                  name: Schema.tag<TName & string>;
                   args: TRecord[TName]["Args"];
                 }>;
               }[keyof TRecord],

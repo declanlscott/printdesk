@@ -70,11 +70,11 @@ export namespace InvoicesContract {
     Returns: table.Schema,
   });
 
-  export const Estimate = Schema.Struct({
+  export class Estimate extends Schema.Class<Estimate>("Estimate")({
     total: Schema.Number,
     description: Schema.optional(Schema.String),
     items: Schema.Array(LineItem),
-  });
+  }) {}
 
   export const estimateCost = (
     order: typeof OrdersContract.Attributes.Type,

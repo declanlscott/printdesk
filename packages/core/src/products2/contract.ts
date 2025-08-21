@@ -15,13 +15,13 @@ export namespace ProductsContract {
   export const statuses = ["draft", "published"] as const;
   export type Status = (typeof statuses)[number];
 
-  export const Option = Schema.Struct({
+  export class Option extends Schema.Class<Option>("Option")({
     name: Schema.Trim,
     image: Schema.String,
     description: Schema.optional(Schema.String),
     cost: Cost,
-  });
-  export const Field = Schema.Struct({
+  }) {}
+  export class Field extends Schema.Class<Field>("Field")({
     name: Schema.Trim,
     required: Schema.Boolean,
     options: Schema.Array(Option).pipe(
@@ -31,14 +31,16 @@ export namespace ProductsContract {
           "Field option names must be unique",
       ),
     ),
-  });
+  }) {}
   const FallbackBoolean = (fallback = true) =>
     Schema.Boolean.pipe(
       Schema.annotations({
         decodingFallback: () => Either.right(fallback),
       }),
     );
-  export const AttributesV1 = Schema.Struct({
+  export class AttributesV1 extends Schema.TaggedClass<AttributesV1>(
+    "AttributesV1",
+  )("AttributesV1", {
     copies: Schema.Struct({
       visible: FallbackBoolean(),
     }),
@@ -219,9 +221,10 @@ export namespace ProductsContract {
         }),
       ),
     }),
-  });
-  export const ConfigurationV1 = Schema.Struct({
-    version: Schema.Literal(1),
+  }) {}
+  export class ConfigurationV1 extends Schema.TaggedClass<ConfigurationV1>(
+    "ConfigurationV1",
+  )("ConfigurationV1", {
     image: Schema.String,
     productVisibility: Schema.optional(
       Schema.Struct({
@@ -230,7 +233,7 @@ export namespace ProductsContract {
       }),
     ),
     attributes: AttributesV1,
-  });
+  }) {}
   export const Configuration = Schema.Union(ConfigurationV1);
 
   export const tableName = "products";

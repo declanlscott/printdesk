@@ -94,7 +94,12 @@ export class Mutations extends Effect.Service<Mutations>()(
       const Replicache = yield* functions.pipe(
         Effect.map(({ Invocation }) => Invocation),
         Effect.map(
-          Schema.extend(ReplicacheContract.MutationV1.omit("name", "args")),
+          Schema.extend(
+            Schema.Struct(ReplicacheContract.MutationV1.fields).omit(
+              "name",
+              "args",
+            ),
+          ),
         ),
         Effect.cached,
       );

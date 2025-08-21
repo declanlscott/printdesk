@@ -60,7 +60,15 @@ export namespace Products {
           ProductsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:delete"),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(
+                  AccessControl.permission("products:read"),
+                ),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 

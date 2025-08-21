@@ -73,7 +73,13 @@ export namespace Users {
                 AccessControl.permission("users:delete"),
                 isSelf.make({ id }),
               ),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(AccessControl.permission("users:read")),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 

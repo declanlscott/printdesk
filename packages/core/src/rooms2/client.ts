@@ -66,7 +66,13 @@ export namespace Rooms {
           RoomsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(AccessControl.permission("rooms:read")),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 
@@ -96,6 +102,7 @@ export namespace Rooms {
     {
       dependencies: [
         WorkflowReadRepository.Default,
+        Replicache.ReadTransactionManager.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: WorkflowReadRepository.pipe(
@@ -105,15 +112,16 @@ export namespace Rooms {
               WorkflowsContract.table,
               repository,
             );
-            const { set } = yield* Replicache.WriteTransactionManager;
+            const { scan } = yield* Replicache.ReadTransactionManager;
+            const { set, del } = yield* Replicache.WriteTransactionManager;
 
             const upsert = (
               workflow: typeof WorkflowsContract.Workflow.Type,
               roomId: WorkflowStatus["roomId"],
               tenantId: WorkflowStatus["tenantId"],
             ) =>
-              Effect.all([
-                ...workflow.map((status, index) =>
+              Effect.all(
+                Array.map(workflow, (status, index) =>
                   set(
                     WorkflowsContract.table,
                     status.id,
@@ -125,7 +133,7 @@ export namespace Rooms {
                     }),
                   ),
                 ),
-              ]).pipe(
+              ).pipe(
                 Effect.map(
                   Array.filterMap((status) =>
                     status.type !== "Review"
@@ -141,9 +149,29 @@ export namespace Rooms {
                   ),
                 ),
                 Effect.flatMap(Schema.decode(WorkflowsContract.Workflow)),
+                Effect.tap((workflow) =>
+                  scan(WorkflowsContract.table).pipe(
+                    Effect.map(
+                      Array.filterMap((status) =>
+                        !Array.some(workflow, (s) => s.id === status.id) &&
+                        status.index >= 0 &&
+                        status.roomId === roomId &&
+                        status.tenantId === tenantId
+                          ? Option.some(del(WorkflowsContract.table, status.id))
+                          : Option.none(),
+                      ),
+                    ),
+                    Effect.flatMap(
+                      Effect.allWith({
+                        concurrency: "unbounded",
+                        discard: true,
+                      }),
+                    ),
+                  ),
+                ),
               );
 
-            return { ...base, upsert };
+            return { ...base, upsert } as const;
           }),
         ),
       ),
@@ -186,6 +214,7 @@ export namespace Rooms {
     {
       dependencies: [
         DeliveryOptionsReadRepository.Default,
+        Replicache.ReadTransactionManager.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: DeliveryOptionsReadRepository.pipe(
@@ -195,15 +224,16 @@ export namespace Rooms {
               DeliveryOptionsContract.table,
               repository,
             );
-            const { set } = yield* Replicache.WriteTransactionManager;
+            const { scan } = yield* Replicache.ReadTransactionManager;
+            const { set, del } = yield* Replicache.WriteTransactionManager;
 
             const upsert = (
               deliveryOptions: typeof DeliveryOptionsContract.DeliveryOptions.Type,
               roomId: WorkflowStatus["roomId"],
               tenantId: WorkflowStatus["tenantId"],
             ) =>
-              Effect.all([
-                ...deliveryOptions.map((option, index) =>
+              Effect.all(
+                Array.map(deliveryOptions, (option, index) =>
                   set(
                     DeliveryOptionsContract.table,
                     option.id,
@@ -215,9 +245,31 @@ export namespace Rooms {
                     }),
                   ),
                 ),
-              ]).pipe(
+              ).pipe(
                 Effect.flatMap(
                   Schema.decode(DeliveryOptionsContract.DeliveryOptions),
+                ),
+                Effect.tap((options) =>
+                  scan(DeliveryOptionsContract.table).pipe(
+                    Effect.map(
+                      Array.filterMap((option) =>
+                        !Array.some(options, (o) => o.id === option.id) &&
+                        option.index >= 0 &&
+                        option.roomId === roomId &&
+                        option.tenantId === tenantId
+                          ? Option.some(
+                              del(DeliveryOptionsContract.table, option.id),
+                            )
+                          : Option.none(),
+                      ),
+                    ),
+                    Effect.flatMap(
+                      Effect.allWith({
+                        concurrency: "unbounded",
+                        discard: true,
+                      }),
+                    ),
+                  ),
                 ),
               );
 

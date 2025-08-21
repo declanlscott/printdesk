@@ -635,16 +635,12 @@ export namespace Rooms {
                 tx
                   .insert(table)
                   .values(
-                    workflow.reduce((values, status, index) => {
-                      values.push({
-                        ...status,
-                        index,
-                        roomId,
-                        tenantId,
-                      });
-
-                      return values;
-                    }, [] as Array<WorkflowStatus>),
+                    Array.map(workflow, (status, index) => ({
+                      ...status,
+                      index,
+                      roomId,
+                      tenantId,
+                    })),
                   )
                   .onConflictDoUpdate({
                     target: [table.id, table.roomId, table.tenantId],
@@ -1045,16 +1041,12 @@ export namespace Rooms {
                 tx
                   .insert(table)
                   .values(
-                    options.reduce((values, option, index) => {
-                      values.push({
-                        ...option,
-                        index,
-                        roomId,
-                        tenantId,
-                      });
-
-                      return values;
-                    }, [] as Array<DeliveryOption>),
+                    Array.map(options, (option, index) => ({
+                      ...option,
+                      index,
+                      roomId,
+                      tenantId,
+                    })),
                   )
                   .onConflictDoUpdate({
                     target: [table.id, table.roomId, table.tenantId],

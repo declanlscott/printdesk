@@ -205,7 +205,15 @@ export namespace BillingAccounts {
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("billing_accounts:delete"),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(
+                  AccessControl.permission("billing_accounts:read"),
+                ),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 
@@ -293,7 +301,17 @@ export namespace BillingAccounts {
               AccessControl.permission(
                 "billing_account_manager_authorizations:delete",
               ),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(
+                  AccessControl.permission(
+                    "billing_account_manager_authorizations:read",
+                  ),
+                ),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 

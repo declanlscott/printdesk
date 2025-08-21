@@ -114,7 +114,15 @@ export namespace Comments {
                 AccessControl.permission("comments:delete"),
                 isAuthor.make({ id }),
               ),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(
+                  AccessControl.permission("comments:read"),
+                ),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 

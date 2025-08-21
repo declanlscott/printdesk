@@ -297,7 +297,13 @@ export namespace Orders {
                 AccessControl.permission("orders:delete"),
                 canDelete.make({ id }),
               ),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(AccessControl.permission("orders:read")),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 

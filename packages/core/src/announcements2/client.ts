@@ -68,7 +68,15 @@ export namespace Announcements {
           AnnouncementsContract.delete_,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:delete"),
-            mutator: ({ id }) => repository.deleteById(id),
+            mutator: ({ id, deletedAt }) =>
+              repository.updateById(id, { deletedAt }).pipe(
+                AccessControl.enforce(
+                  AccessControl.permission("announcements:read"),
+                ),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
+              ),
           }),
         );
 

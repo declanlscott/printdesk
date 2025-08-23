@@ -1,18 +1,18 @@
 import { pgTable, primaryKey, text, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { id, pgEnum, timestamps } from "../database2/constructors";
+import { pgEnum, tenantId, timestamps } from "../database2/constructors";
 import {
   IdentityProviderGroupsContract,
   IdentityProvidersContract,
 } from "./contract";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 
 export const identityProvidersTable = pgTable(
   IdentityProvidersContract.tableName,
   {
     id: text("id").notNull(),
-    tenantId: id("tenant_id").notNull(),
+    tenantId,
     kind: pgEnum("kind", IdentityProvidersContract.kinds).notNull(),
     ...timestamps,
   },
@@ -22,15 +22,14 @@ export const identityProvidersTable = pgTable(
   ],
 );
 export type IdentityProvidersTable = typeof identityProvidersTable;
-export type IdentityProvider =
-  DatabaseContract.InferFromTable<IdentityProvidersTable>;
+export type IdentityProvider = TableContract.Infer<IdentityProvidersTable>;
 
 export const identityProviderUserGroupsTable = pgTable(
   IdentityProviderGroupsContract.tableName,
   {
     id: text("group_id").notNull(),
     identityProviderId: text("identity_provider_id").notNull(),
-    tenantId: id("tenant_id").notNull(),
+    tenantId,
   },
   (table) => [
     primaryKey({
@@ -41,4 +40,4 @@ export const identityProviderUserGroupsTable = pgTable(
 export type IdentityProviderUserGroupsTable =
   typeof identityProviderUserGroupsTable;
 export type IdentityProviderUserGroup =
-  DatabaseContract.InferFromTable<IdentityProviderUserGroupsTable>;
+  TableContract.Infer<IdentityProviderUserGroupsTable>;

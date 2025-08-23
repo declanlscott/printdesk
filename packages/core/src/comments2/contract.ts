@@ -2,8 +2,7 @@ import { Schema, Struct } from "effect";
 
 import { BillingAccountCustomerAuthorizationsContract } from "../billing-accounts2/contracts";
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2";
+import { TableContract } from "../database2/contract";
 
 import type {
   ActiveCommentsView,
@@ -14,12 +13,12 @@ import type {
 
 export namespace CommentsContract {
   export const tableName = "comments";
-  export const table = DatabaseContract.SyncTable<CommentsTable>()(
+  export const table = TableContract.Sync<CommentsTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
-      orderId: NanoId,
-      authorId: NanoId,
+      ...TableContract.Tenant.fields,
+      orderId: TableContract.EntityId,
+      authorId: TableContract.EntityId,
       content: Schema.String,
       internal: Schema.optionalWith(Schema.Boolean, { default: () => false }),
     }),
@@ -27,24 +26,24 @@ export namespace CommentsContract {
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveCommentsView>()(
+  export const activeView = TableContract.View<ActiveCommentsView>()(
     activeViewName,
     table.Schema,
   );
 
   export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
   export const activeManagedBillingAccountOrderView =
-    DatabaseContract.View<ActiveManagedBillingAccountOrderCommentsView>()(
+    TableContract.View<ActiveManagedBillingAccountOrderCommentsView>()(
       activeManagedBillingAccountOrderViewName,
       Schema.extend(
         table.Schema,
-        Schema.Struct({ authorizedManagerId: NanoId }),
+        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
   export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
   export const activePlacedOrderView =
-    DatabaseContract.View<ActivePlacedOrderCommentsView>()(
+    TableContract.View<ActivePlacedOrderCommentsView>()(
       activePlacedOrderViewName,
       Schema.extend(
         table.Schema,
@@ -71,7 +70,7 @@ export namespace CommentsContract {
     Args: table.Schema.pick("id", "orderId", "updatedAt").pipe(
       Schema.extend(
         table.Schema.omit(
-          ...Struct.keys(DatabaseContract.TenantTable.fields),
+          ...Struct.keys(TableContract.Tenant.fields),
           "orderId",
           "authorId",
         ).pipe(Schema.partial),

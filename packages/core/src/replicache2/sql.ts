@@ -10,8 +10,13 @@ import {
 } from "drizzle-orm/pg-core";
 import { Schema } from "effect";
 
-import { tenantIdColumns } from "../database/tables";
-import { id, jsonb, pgEnum, timestamps } from "../database2/constructors";
+import {
+  id,
+  jsonb,
+  pgEnum,
+  tenantId,
+  timestamps,
+} from "../database2/constructors";
 import {
   ReplicacheClientGroupsContract,
   ReplicacheClientsContract,
@@ -21,6 +26,7 @@ import {
 } from "./contracts";
 
 import type { InferSelectModel } from "drizzle-orm";
+import type { TableContract } from "../database2/contract";
 
 export const replicacheMetaTable = pgTable(ReplicacheMetaContract.tableName, {
   key: text("key").primaryKey(),
@@ -33,10 +39,15 @@ export const replicacheClientGroupsTable = pgTable(
   ReplicacheClientGroupsContract.tableName,
   {
     id: uuid("id").notNull(),
-    tenantId: tenantIdColumns.tenantId,
-    userId: id("user_id").notNull(),
-    clientVersion: integer("client_version").notNull(),
-    clientViewVersion: integer("client_view_version"), // null until first pull initializes it
+    tenantId,
+    userId: id<TableContract.EntityId>("user_id").notNull(),
+    clientVersion: integer("client_version")
+      .$type<TableContract.Version>()
+      .notNull(),
+    // null until first pull initializes it
+    clientViewVersion: integer(
+      "client_view_version",
+    ).$type<TableContract.Version>(),
     ...timestamps,
   },
   (table) => [
@@ -52,12 +63,12 @@ export const replicacheClientsTable = pgTable(
   ReplicacheClientsContract.tableName,
   {
     id: uuid("id").notNull(),
-    tenantId: tenantIdColumns.tenantId,
+    tenantId,
     clientGroupId: uuid("client_group_id").notNull(),
     lastMutationId: bigint("last_mutation_id", { mode: "number" })
       .notNull()
       .default(0),
-    version: integer("version").notNull(),
+    version: integer("version").$type<TableContract.Version>().notNull(),
     ...timestamps,
   },
   (table) => [
@@ -74,8 +85,10 @@ export const replicacheClientViewsTable = pgTable(
   {
     clientGroupId: uuid("client_group_id").notNull(),
     version: integer("version").notNull(),
-    clientVersion: integer("client_version").notNull(),
-    tenantId: tenantIdColumns.tenantId,
+    clientVersion: integer("client_version")
+      .$type<TableContract.Version>()
+      .notNull(),
+    tenantId,
   },
   (table) => [
     primaryKey({
@@ -90,14 +103,16 @@ export const replicacheClientViewMetadataTable = pgTable(
   ReplicacheClientViewMetadataContract.tableName,
   {
     clientGroupId: uuid("client_group_id").notNull(),
-    clientViewVersion: integer("client_view_version").notNull(),
+    clientViewVersion: integer("client_view_version")
+      .$type<TableContract.Version>()
+      .notNull(),
     entity: pgEnum(
       "entity",
       ReplicacheClientViewMetadataContract.entities,
     ).notNull(),
-    entityId: id("entity_id").notNull(),
-    entityVersion: integer("entity_version"),
-    tenantId: tenantIdColumns.tenantId,
+    entityId: id("entity_id").$type<TableContract.EntityId>().notNull(),
+    entityVersion: integer("entity_version").$type<TableContract.Version>(),
+    tenantId,
   },
   (table) => [
     primaryKey({

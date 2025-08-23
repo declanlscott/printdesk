@@ -11,7 +11,7 @@ import type {
 import type { PgTable, PgView } from "drizzle-orm/pg-core";
 import type { AccessControl } from "../access-control2";
 
-export namespace DatabaseContract {
+export namespace TableContract {
   export class Timestamps extends Schema.Class<Timestamps>("Timestamps")({
     createdAt: Schema.optionalWith(Schema.DateTimeUtc, {
       default: DateTime.unsafeNow,
@@ -24,13 +24,23 @@ export namespace DatabaseContract {
     }),
   }) {}
 
-  export class TenantTable extends Schema.Class<TenantTable>("TenantTable")({
-    id: NanoId,
-    tenantId: NanoId,
+  export const EntityId = NanoId.pipe(Schema.brand("EntityId"));
+  export type EntityId = typeof EntityId.Type;
+  export const TenantId = EntityId.pipe(Schema.brand("TenantId"));
+  export type TenantId = typeof TenantId.Type;
+  export const Version = Schema.Int.pipe(
+    Schema.positive(),
+    Schema.brand("Version"),
+  );
+  export type Version = typeof Version.Type;
+
+  export class Tenant extends Schema.Class<Tenant>("TenantTable")({
+    id: EntityId,
+    tenantId: TenantId,
     ...Timestamps.fields,
   }) {}
 
-  export type InferFromTable<TTable extends Table> = Readonly<
+  export type Infer<TTable extends Table> = Readonly<
     Omit<InferSelectModel<TTable>, "version">
   >;
 
@@ -38,7 +48,7 @@ export namespace DatabaseContract {
     Omit<InferSelectViewModel<TView>, "version">
   >;
 
-  export type InferTablePermissions<
+  export type InferPermissions<
     TTable extends PgTable,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   > = {
@@ -47,75 +57,73 @@ export namespace DatabaseContract {
       : never;
   }[number];
 
-  interface BaseTable<
+  interface Base<
     TTable extends PgTable,
     TSchema extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   > {
     readonly name: TTable["_"]["name"];
     readonly Schema: TSchema;
-    readonly permissions: Array<InferTablePermissions<TTable, TActions>>;
+    readonly permissions: Array<InferPermissions<TTable, TActions>>;
   }
 
-  export interface SyncTable<
+  export interface Sync<
     TTable extends PgTable,
     TSchema extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
-  > extends BaseTable<TTable, TSchema, TActions> {
+  > extends Base<TTable, TSchema, TActions> {
     readonly _tag: "@printdesk/core/database/SyncTable";
   }
-  export const SyncTable =
+  export const Sync =
     <TTable extends PgTable = never>() =>
     <
       TSchema extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<AccessControl.PermissionAction>,
     >(
       name: TTable["_"]["name"],
-      Schema: Schema.Schema.Type<TSchema> extends InferFromTable<TTable>
+      Schema: Schema.Schema.Type<TSchema> extends Infer<TTable>
         ? TSchema
         : never,
       actions: TActions,
     ) =>
-      Data.tagged<SyncTable<TTable, TSchema, TActions>>(
+      Data.tagged<Sync<TTable, TSchema, TActions>>(
         "@printdesk/core/database/SyncTable",
       )({
         name,
         Schema,
         permissions: Array.map(
           actions,
-          (action) =>
-            `${name}:${action}` as InferTablePermissions<TTable, TActions>,
+          (action) => `${name}:${action}` as InferPermissions<TTable, TActions>,
         ),
       });
 
-  export interface NonSyncTable<
+  export interface NonSync<
     TSchema extends Schema.Schema.AnyNoContext,
     TTable extends PgTable,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
-  > extends BaseTable<TTable, TSchema, TActions> {
+  > extends Base<TTable, TSchema, TActions> {
     readonly _tag: "@printdesk/core/database/NonSyncTable";
   }
-  export const NonSyncTable =
+  export const NonSync =
     <TTable extends PgTable = never>() =>
     <
       TSchema extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<AccessControl.PermissionAction>,
     >(
       name: TTable["_"]["name"],
-      Schema: Schema.Schema.Type<TSchema> extends InferFromTable<TTable>
+      Schema: Schema.Schema.Type<TSchema> extends Infer<TTable>
         ? TSchema
         : never,
       actions: TActions,
     ) =>
-      Data.tagged<NonSyncTable<TSchema, TTable, TActions>>(
+      Data.tagged<NonSync<TSchema, TTable, TActions>>(
         "@printdesk/core/database/NonSyncTable",
       )({
         name,
         Schema,
         permissions: Array.map(
           actions,
-          (action) =>
-            `${name}:${action}` as InferTablePermissions<TTable, TActions>,
+          (action) => `${name}:${action}` as InferPermissions<TTable, TActions>,
         ),
       });
 

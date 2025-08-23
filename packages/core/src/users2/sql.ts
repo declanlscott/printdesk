@@ -4,7 +4,7 @@ import { index, pgView, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 import { pgEnum, tenantTable } from "../database2/constructors";
 import { UsersContract } from "./contract";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 import type { Discriminate } from "../utils/types";
 
 export const usersTable = tenantTable(
@@ -28,7 +28,7 @@ export const usersTable = tenantTable(
   ],
 );
 export type UsersTable = typeof usersTable;
-export type User = DatabaseContract.InferFromTable<UsersTable>;
+export type User = TableContract.Infer<UsersTable>;
 export type UserByOrigin<TUserOrigin extends User["origin"]> = Discriminate<
   User,
   "origin",
@@ -39,4 +39,4 @@ export const activeUsersView = pgView(UsersContract.activeViewName).as((qb) =>
   qb.select().from(usersTable).where(isNull(usersTable.deletedAt)),
 );
 export type ActiveUsersView = typeof activeUsersView;
-export type ActiveUser = DatabaseContract.InferFromView<ActiveUsersView>;
+export type ActiveUser = TableContract.InferFromView<ActiveUsersView>;

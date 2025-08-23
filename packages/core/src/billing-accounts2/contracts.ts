@@ -1,8 +1,8 @@
 import { Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
-import { Cost, NanoId } from "../utils2";
+import { TableContract } from "../database2/contract";
+import { Cost } from "../utils2";
 
 import type {
   ActiveBillingAccountCustomerAuthorizationsView,
@@ -21,11 +21,10 @@ export namespace BillingAccountsContract {
   export type Origin = (typeof origins)[number];
 
   export const tableName = "billing_accounts";
-  export const table = DatabaseContract.SyncTable<BillingAccountsTable>()(
+  export const table = TableContract.Sync<BillingAccountsTable>()(
     tableName,
     Schema.Struct({
-      id: NanoId,
-      tenantId: NanoId,
+      ...TableContract.Tenant.fields,
       origin: Schema.optionalWith(Schema.Literal(...origins), {
         default: () => "internal",
       }),
@@ -44,34 +43,33 @@ export namespace BillingAccountsContract {
         ),
         { default: () => -1 },
       ),
-      ...DatabaseContract.Timestamps.fields,
     }),
     ["read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveBillingAccountsView>()(
+  export const activeView = TableContract.View<ActiveBillingAccountsView>()(
     activeViewName,
     table.Schema,
   );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    DatabaseContract.View<ActiveCustomerAuthorizedBillingAccountsView>()(
+    TableContract.View<ActiveCustomerAuthorizedBillingAccountsView>()(
       activeCustomerAuthorizedViewName,
       Schema.extend(
         table.Schema,
-        Schema.Struct({ authorizedCustomerId: NanoId }),
+        Schema.Struct({ authorizedCustomerId: TableContract.EntityId }),
       ),
     );
 
   export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
   export const activeManagerAuthorizedView =
-    DatabaseContract.View<ActiveManagerAuthorizedBillingAccountsView>()(
+    TableContract.View<ActiveManagerAuthorizedBillingAccountsView>()(
       activeManagerAuthorizedViewName,
       Schema.extend(
         table.Schema,
-        Schema.Struct({ authorizedManagerId: NanoId }),
+        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
@@ -86,7 +84,9 @@ export namespace BillingAccountsContract {
       name: "hasActiveBillingAccountCustomerAuthorization",
       Args: Schema.extend(
         table.Schema.pick("id"),
-        Schema.Struct({ customerId: Schema.optional(NanoId) }),
+        Schema.Struct({
+          customerId: Schema.optional(TableContract.EntityId),
+        }),
       ),
       Returns: Schema.Void,
     },
@@ -103,7 +103,7 @@ export namespace BillingAccountsContract {
     Args: table.Schema.pick("id", "updatedAt").pipe(
       Schema.extend(
         table.Schema.omit(
-          ...Struct.keys(DatabaseContract.TenantTable.fields),
+          ...Struct.keys(TableContract.Tenant.fields),
           "name",
           "origin",
           "papercutAccountId",
@@ -116,7 +116,7 @@ export namespace BillingAccountsContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteBillingAccount",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,
@@ -126,26 +126,26 @@ export namespace BillingAccountsContract {
 export namespace BillingAccountCustomerAuthorizationsContract {
   export const tableName = "billing_account_customer_authorizations";
   export const table =
-    DatabaseContract.SyncTable<BillingAccountCustomerAuthorizationsTable>()(
+    TableContract.Sync<BillingAccountCustomerAuthorizationsTable>()(
       tableName,
       Schema.Struct({
-        ...DatabaseContract.TenantTable.fields,
-        customerId: NanoId,
-        billingAccountId: NanoId,
+        ...TableContract.Tenant.fields,
+        customerId: TableContract.EntityId,
+        billingAccountId: TableContract.EntityId,
       }),
       ["read"],
     );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    DatabaseContract.View<ActiveBillingAccountCustomerAuthorizationsView>()(
+    TableContract.View<ActiveBillingAccountCustomerAuthorizationsView>()(
       activeViewName,
       table.Schema,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    DatabaseContract.VirtualView<ActiveBillingAccountCustomerAuthorizationsView>()(
+    TableContract.VirtualView<ActiveBillingAccountCustomerAuthorizationsView>()(
       activeAuthorizedViewName,
       table.Schema,
     );
@@ -154,37 +154,37 @@ export namespace BillingAccountCustomerAuthorizationsContract {
 export namespace BillingAccountManagerAuthorizationsContract {
   export const tableName = "billing_account_manager_authorizations";
   export const table =
-    DatabaseContract.SyncTable<BillingAccountManagerAuthorizationsTable>()(
+    TableContract.Sync<BillingAccountManagerAuthorizationsTable>()(
       tableName,
       Schema.Struct({
-        ...DatabaseContract.TenantTable.fields,
-        managerId: NanoId,
-        billingAccountId: NanoId,
+        ...TableContract.Tenant.fields,
+        managerId: TableContract.EntityId,
+        billingAccountId: TableContract.EntityId,
       }),
       ["create", "read", "delete"],
     );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    DatabaseContract.View<ActiveBillingAccountManagerAuthorizationsView>()(
+    TableContract.View<ActiveBillingAccountManagerAuthorizationsView>()(
       activeViewName,
       table.Schema,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    DatabaseContract.VirtualView<ActiveBillingAccountManagerAuthorizationsView>()(
+    TableContract.VirtualView<ActiveBillingAccountManagerAuthorizationsView>()(
       activeAuthorizedViewName,
       table.Schema,
     );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    DatabaseContract.View<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>()(
+    TableContract.View<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>()(
       activeCustomerAuthorizedViewName,
       Schema.extend(
         table.Schema,
-        Schema.Struct({ authorizedCustomerId: NanoId }),
+        Schema.Struct({ authorizedCustomerId: TableContract.EntityId }),
       ),
     );
 
@@ -197,7 +197,7 @@ export namespace BillingAccountManagerAuthorizationsContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteBillingAccountManagerAuthorization",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,

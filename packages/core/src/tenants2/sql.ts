@@ -3,9 +3,9 @@ import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
 import {
   datetime,
   id,
-  idPrimaryKey,
   jsonb,
   pgEnum,
+  primaryId,
   timestamps,
   version,
 } from "../database2/constructors";
@@ -16,7 +16,7 @@ import {
   TenantsContract,
 } from "./contracts";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 
 export const licensesTable = pgTable(LicensesContract.tableName, {
   key: uuid("key").defaultRandom().primaryKey(),
@@ -26,12 +26,12 @@ export const licensesTable = pgTable(LicensesContract.tableName, {
     .default("active"),
 });
 export type LicensesTable = typeof licensesTable;
-export type License = DatabaseContract.InferFromTable<LicensesTable>;
+export type License = TableContract.Infer<LicensesTable>;
 
 export const tenantsTable = pgTable(
   TenantsContract.tableName,
   {
-    ...idPrimaryKey,
+    id: primaryId.$type<TableContract.TenantId>(),
     subdomain: varchar("subdomain", {
       length: Constants.VARCHAR_LENGTH,
     }).notNull(),
@@ -45,7 +45,7 @@ export const tenantsTable = pgTable(
   (table) => [uniqueIndex().on(table.subdomain)],
 );
 export type TenantsTable = typeof tenantsTable;
-export type Tenant = DatabaseContract.InferFromTable<TenantsTable>;
+export type Tenant = TableContract.Infer<TenantsTable>;
 
 export const tenantMetadataTable = pgTable(TenantMetadataContract.tableName, {
   tenantId: id("tenant_id").primaryKey(),
@@ -58,5 +58,4 @@ export const tenantMetadataTable = pgTable(TenantMetadataContract.tableName, {
   ...timestamps,
 });
 export type TenantMetadataTable = typeof tenantMetadataTable;
-export type TenantMetadata =
-  DatabaseContract.InferFromTable<TenantMetadataTable>;
+export type TenantMetadata = TableContract.Infer<TenantMetadataTable>;

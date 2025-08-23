@@ -1,9 +1,9 @@
 import { Either, Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
+import { TableContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { IsoDate, IsoTimestamp, NanoId } from "../utils2";
+import { IsoDate, IsoTimestamp } from "../utils2";
 
 import type {
   ActiveManagedBillingAccountOrdersView,
@@ -189,19 +189,19 @@ export namespace OrdersContract {
   export const Attributes = Schema.Union(AttributesV1);
 
   export const tableName = "orders";
-  export const table = DatabaseContract.SyncTable<OrdersTable>()(
+  export const table = TableContract.Sync<OrdersTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
-      customerId: NanoId,
-      managerId: Schema.optionalWith(Schema.NullOr(NanoId), {
+      ...TableContract.Tenant.fields,
+      customerId: TableContract.EntityId,
+      managerId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
         default: () => null,
       }),
-      operatorId: Schema.optionalWith(Schema.NullOr(NanoId), {
+      operatorId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
         default: () => null,
       }),
-      productId: NanoId,
-      billingAccountId: NanoId,
+      productId: TableContract.EntityId,
+      billingAccountId: TableContract.EntityId,
       attributes: Attributes,
       workflowStatus: Schema.Trim.pipe(
         Schema.maxLength(Constants.VARCHAR_LENGTH),
@@ -215,27 +215,26 @@ export namespace OrdersContract {
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveOrdersView>()(
+  export const activeView = TableContract.View<ActiveOrdersView>()(
     activeViewName,
     table.Schema,
   );
 
   export const activeManagedBillingAccountViewName = `active_managed_billing_account_${tableName}`;
   export const activeManagedBillingAccountView =
-    DatabaseContract.View<ActiveManagedBillingAccountOrdersView>()(
+    TableContract.View<ActiveManagedBillingAccountOrdersView>()(
       activeManagedBillingAccountViewName,
       Schema.extend(
         table.Schema,
-        Schema.Struct({ authorizedManagerId: NanoId }),
+        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
   export const activePlacedViewName = `active_placed_${tableName}`;
-  export const activePlacedView =
-    DatabaseContract.VirtualView<ActiveOrdersView>()(
-      activePlacedViewName,
-      table.Schema,
-    );
+  export const activePlacedView = TableContract.VirtualView<ActiveOrdersView>()(
+    activePlacedViewName,
+    table.Schema,
+  );
 
   export const isCustomer = new DataAccessContract.Function({
     name: "isOrderCustomer",
@@ -302,7 +301,7 @@ export namespace OrdersContract {
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
       table.Schema.omit(
-        ...Struct.keys(DatabaseContract.TenantTable.fields),
+        ...Struct.keys(TableContract.Tenant.fields),
         "customerId",
         "managerId",
         "operatorId",
@@ -334,7 +333,7 @@ export namespace OrdersContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteOrder",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,

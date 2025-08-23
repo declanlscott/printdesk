@@ -1,8 +1,7 @@
 import { Array, Data, Schema, Struct } from "effect";
 
-import { DatabaseContract } from "../database2/contract";
+import { TableContract } from "../database2/contract";
 import { syncTables } from "../database2/tables";
-import { NanoId } from "../utils2";
 
 import type {
   ClientStateNotFoundResponse,
@@ -18,7 +17,7 @@ import type {
 
 export namespace ReplicacheMetaContract {
   export const tableName = "replicache_meta";
-  export const table = DatabaseContract.NonSyncTable<ReplicacheMetaTable>()(
+  export const table = TableContract.NonSync<ReplicacheMetaTable>()(
     tableName,
     Schema.Struct({
       key: Schema.String,
@@ -30,24 +29,23 @@ export namespace ReplicacheMetaContract {
 
 export namespace ReplicacheClientGroupsContract {
   export const tableName = "replicache_client_groups";
-  export const table =
-    DatabaseContract.NonSyncTable<ReplicacheClientGroupsTable>()(
-      tableName,
-      Schema.Struct({
-        id: Schema.UUID,
-        tenantId: NanoId,
-        userId: NanoId,
-        clientVersion: Schema.Int,
-        clientViewVersion: Schema.NullOr(Schema.Int),
-        ...DatabaseContract.Timestamps.fields,
-      }),
-      [],
-    );
+  export const table = TableContract.NonSync<ReplicacheClientGroupsTable>()(
+    tableName,
+    Schema.Struct({
+      id: Schema.UUID,
+      tenantId: TableContract.TenantId,
+      userId: TableContract.EntityId,
+      clientVersion: Schema.Int,
+      clientViewVersion: Schema.NullOr(Schema.Int),
+      ...TableContract.Timestamps.fields,
+    }),
+    [],
+  );
 }
 
 export namespace ReplicacheClientsContract {
   export const tableName = "replicache_clients";
-  export const table = DatabaseContract.NonSyncTable<ReplicacheClientsTable>()(
+  export const table = TableContract.NonSync<ReplicacheClientsTable>()(
     tableName,
     Schema.Struct({
       id: Schema.UUID,
@@ -57,7 +55,7 @@ export namespace ReplicacheClientsContract {
         default: () => 0,
       }),
       version: Schema.Int,
-      ...DatabaseContract.Timestamps.fields,
+      ...TableContract.Timestamps.fields,
     }),
     [],
   );
@@ -65,17 +63,16 @@ export namespace ReplicacheClientsContract {
 
 export namespace ReplicacheClientViewsContract {
   export const tableName = "replicache_client_views";
-  export const table =
-    DatabaseContract.NonSyncTable<ReplicacheClientViewsTable>()(
-      tableName,
-      Schema.Struct({
-        clientGroupId: Schema.UUID,
-        version: Schema.Int,
-        clientVersion: Schema.Int,
-        tenantId: NanoId,
-      }),
-      [],
-    );
+  export const table = TableContract.NonSync<ReplicacheClientViewsTable>()(
+    tableName,
+    Schema.Struct({
+      clientGroupId: Schema.UUID,
+      version: Schema.Int,
+      clientVersion: Schema.Int,
+      tenantId: NanoId,
+    }),
+    [],
+  );
 }
 
 export namespace ReplicacheClientViewMetadataContract {
@@ -84,7 +81,7 @@ export namespace ReplicacheClientViewMetadataContract {
 
   export const tableName = "replicache_client_view_metadata";
   export const table =
-    DatabaseContract.NonSyncTable<ReplicacheClientViewMetadataTable>()(
+    TableContract.NonSync<ReplicacheClientViewMetadataTable>()(
       tableName,
       Schema.Struct({
         clientGroupId: Schema.UUID,

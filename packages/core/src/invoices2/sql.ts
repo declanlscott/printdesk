@@ -13,7 +13,7 @@ import {
 import { activeOrdersView } from "../orders2/sql";
 import { InvoicesContract } from "./contract";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 
 export const invoicesTable = tenantTable(
   InvoicesContract.tableName,
@@ -26,19 +26,19 @@ export const invoicesTable = tenantTable(
       .default("processing")
       .notNull(),
     chargedAt: datetime("charged_at"),
-    orderId: id("order_id").notNull(),
+    orderId: id<TableContract.EntityId>("order_id").notNull(),
   },
   (table) => [index().on(table.orderId)],
 );
 export type InvoicesTable = typeof invoicesTable;
-export type Invoice = DatabaseContract.InferFromTable<InvoicesTable>;
+export type Invoice = TableContract.Infer<InvoicesTable>;
 
 export const activeInvoicesView = pgView(InvoicesContract.activeViewName).as(
   (qb) =>
     qb.select().from(invoicesTable).where(isNull(invoicesTable.deletedAt)),
 );
 export type ActiveInvoicesView = typeof activeInvoicesView;
-export type ActiveInvoice = DatabaseContract.InferFromView<ActiveInvoicesView>;
+export type ActiveInvoice = TableContract.InferFromView<ActiveInvoicesView>;
 
 export const activeManagedBillingAccountOrderInvoicesView = pgView(
   InvoicesContract.activeManagedBillingAccountOrderViewName,
@@ -74,7 +74,7 @@ export const activeManagedBillingAccountOrderInvoicesView = pgView(
 export type ActiveManagedBillingAccountOrderInvoicesView =
   typeof activeManagedBillingAccountOrderInvoicesView;
 export type ActiveManagedBillingAccountOrderInvoice =
-  DatabaseContract.InferFromView<ActiveManagedBillingAccountOrderInvoicesView>;
+  TableContract.InferFromView<ActiveManagedBillingAccountOrderInvoicesView>;
 
 export const activePlacedOrderInvoicesView = pgView(
   InvoicesContract.activePlacedOrderViewName,
@@ -96,4 +96,4 @@ export const activePlacedOrderInvoicesView = pgView(
 export type ActivePlacedOrderInvoicesView =
   typeof activePlacedOrderInvoicesView;
 export type ActivePlacedOrderInvoice =
-  DatabaseContract.InferFromView<ActivePlacedOrderInvoicesView>;
+  TableContract.InferFromView<ActivePlacedOrderInvoicesView>;

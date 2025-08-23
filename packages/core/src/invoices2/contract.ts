@@ -1,8 +1,7 @@
 import { Effect, Schema } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2";
+import { TableContract } from "../database2/contract";
 
 import type { OrdersContract } from "../orders2/contract";
 import type {
@@ -25,10 +24,10 @@ export namespace InvoicesContract {
   export const LineItem = Schema.Union(LineItemV1);
 
   export const tableName = "invoices";
-  export const table = DatabaseContract.SyncTable<InvoicesTable>()(
+  export const table = TableContract.Sync<InvoicesTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
+      ...TableContract.Tenant.fields,
       lineItems: Schema.Array(LineItem),
       status: Schema.optionalWith(Schema.Literal(...statuses), {
         default: () => "processing",
@@ -36,32 +35,35 @@ export namespace InvoicesContract {
       chargedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
         default: () => null,
       }),
-      orderId: NanoId,
+      orderId: TableContract.EntityId,
     }),
     ["create", "read"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveInvoicesView>()(
+  export const activeView = TableContract.View<ActiveInvoicesView>()(
     activeViewName,
     table.Schema,
   );
 
   export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
   export const activeManagedBillingAccountOrderView =
-    DatabaseContract.View<ActiveManagedBillingAccountOrderInvoicesView>()(
+    TableContract.View<ActiveManagedBillingAccountOrderInvoicesView>()(
       activeManagedBillingAccountOrderViewName,
       Schema.extend(
         table.Schema,
-        Schema.Struct({ authorizedManagerId: NanoId }),
+        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
   export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
   export const activePlacedOrderView =
-    DatabaseContract.View<ActivePlacedOrderInvoicesView>()(
+    TableContract.View<ActivePlacedOrderInvoicesView>()(
       activePlacedOrderViewName,
-      Schema.extend(table.Schema, Schema.Struct({ customerId: NanoId })),
+      Schema.extend(
+        table.Schema,
+        Schema.Struct({ customerId: TableContract.EntityId }),
+      ),
     );
 
   export const create = new DataAccessContract.Function({

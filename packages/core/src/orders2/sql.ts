@@ -9,16 +9,17 @@ import { datetime, id, jsonb, tenantTable } from "../database2/constructors";
 import { Constants } from "../utils/constants";
 import { OrdersContract } from "./contract";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 
 export const ordersTable = tenantTable(
   OrdersContract.tableName,
   {
-    customerId: id("customer_id").notNull(),
-    managerId: id("manager_id"),
-    operatorId: id("operator_id"),
-    productId: id("product_id").notNull(),
-    billingAccountId: id("billing_account_id").notNull(),
+    customerId: id<TableContract.EntityId>("customer_id").notNull(),
+    managerId: id<TableContract.EntityId>("manager_id"),
+    operatorId: id<TableContract.EntityId>("operator_id"),
+    productId: id<TableContract.EntityId>("product_id").notNull(),
+    billingAccountId:
+      id<TableContract.EntityId>("billing_account_id").notNull(),
     attributes: jsonb("attributes", OrdersContract.Attributes).notNull(),
     workflowStatus: varchar("workflow_status", {
       length: Constants.VARCHAR_LENGTH,
@@ -31,13 +32,13 @@ export const ordersTable = tenantTable(
   (table) => [index().on(table.customerId), index().on(table.billingAccountId)],
 );
 export type OrdersTable = typeof ordersTable;
-export type Order = DatabaseContract.InferFromTable<OrdersTable>;
+export type Order = TableContract.Infer<OrdersTable>;
 
 export const activeOrdersView = pgView(OrdersContract.activeViewName).as((qb) =>
   qb.select().from(ordersTable).where(isNull(ordersTable.deletedAt)),
 );
 export type ActiveOrdersView = typeof activeOrdersView;
-export type ActiveOrder = DatabaseContract.InferFromView<ActiveOrdersView>;
+export type ActiveOrder = TableContract.InferFromView<ActiveOrdersView>;
 
 export const activeManagedBillingAccountOrdersView = pgView(
   OrdersContract.activeManagedBillingAccountViewName,
@@ -73,4 +74,4 @@ export const activeManagedBillingAccountOrdersView = pgView(
 export type ActiveManagedBillingAccountOrdersView =
   typeof activeManagedBillingAccountOrdersView;
 export type ActiveManagedBillingAccountOrder =
-  DatabaseContract.InferFromView<ActiveManagedBillingAccountOrdersView>;
+  TableContract.InferFromView<ActiveManagedBillingAccountOrdersView>;

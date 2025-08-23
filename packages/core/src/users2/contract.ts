@@ -1,8 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2";
+import { TableContract } from "../database2/contract";
 
 import type { ActiveUsersView, UsersTable } from "./sql";
 
@@ -19,10 +18,10 @@ export namespace UsersContract {
   export type Role = (typeof roles)[number];
 
   export const tableName = "users";
-  export const table = DatabaseContract.SyncTable<UsersTable>()(
+  export const table = TableContract.Sync<UsersTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
+      ...TableContract.Tenant.fields,
       origin: Schema.Literal(...origins),
       username: Schema.String,
       subjectId: Schema.String,
@@ -37,7 +36,7 @@ export namespace UsersContract {
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveUsersView>()(
+  export const activeView = TableContract.View<ActiveUsersView>()(
     activeViewName,
     table.Schema,
   );
@@ -53,7 +52,7 @@ export namespace UsersContract {
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
       table.Schema.omit(
-        ...Struct.keys(DatabaseContract.TenantTable.fields),
+        ...Struct.keys(TableContract.Tenant.fields),
         "origin",
         "username",
         "subjectId",
@@ -68,7 +67,7 @@ export namespace UsersContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteUser",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,

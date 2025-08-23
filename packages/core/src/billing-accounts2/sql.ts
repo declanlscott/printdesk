@@ -15,7 +15,7 @@ import {
   BillingAccountsContract,
 } from "./contracts";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 import type { Discriminate } from "../utils/types";
 
 export const billingAccountsTable = tenantTable(
@@ -39,8 +39,7 @@ export const billingAccountsTable = tenantTable(
   ],
 );
 export type BillingAccountsTable = typeof billingAccountsTable;
-export type BillingAccount =
-  DatabaseContract.InferFromTable<BillingAccountsTable>;
+export type BillingAccount = TableContract.Infer<BillingAccountsTable>;
 export type BillingAccountByOrigin<
   TBillingAccountOrigin extends BillingAccount["origin"],
 > = Discriminate<BillingAccount, "origin", TBillingAccountOrigin>;
@@ -54,7 +53,7 @@ export const activeBillingAccountsView = pgView(
 );
 export type ActiveBillingAccountsView = typeof activeBillingAccountsView;
 export type ActiveBillingAccount =
-  DatabaseContract.InferFromView<ActiveBillingAccountsView>;
+  TableContract.InferFromView<ActiveBillingAccountsView>;
 export const activeCustomerAuthorizedBillingAccountsView = pgView(
   BillingAccountsContract.activeCustomerAuthorizedViewName,
 ).as((qb) =>
@@ -82,7 +81,7 @@ export const activeCustomerAuthorizedBillingAccountsView = pgView(
 export type ActiveCustomerAuthorizedBillingAccountsView =
   typeof activeCustomerAuthorizedBillingAccountsView;
 export type ActiveCustomerAuthorizedBillingAccount =
-  DatabaseContract.InferFromView<ActiveCustomerAuthorizedBillingAccountsView>;
+  TableContract.InferFromView<ActiveCustomerAuthorizedBillingAccountsView>;
 export const activeManagerAuthorizedBillingAccountsView = pgView(
   BillingAccountsContract.activeManagerAuthorizedViewName,
 ).as((qb) =>
@@ -110,13 +109,14 @@ export const activeManagerAuthorizedBillingAccountsView = pgView(
 export type ActiveManagerAuthorizedBillingAccountsView =
   typeof activeManagerAuthorizedBillingAccountsView;
 export type ActiveManagerAuthorizedBillingAccount =
-  DatabaseContract.InferFromView<ActiveManagerAuthorizedBillingAccountsView>;
+  TableContract.InferFromView<ActiveManagerAuthorizedBillingAccountsView>;
 
 export const billingAccountCustomerAuthorizationsTable = tenantTable(
   BillingAccountCustomerAuthorizationsContract.tableName,
   {
-    customerId: id("customer_id").notNull(),
-    billingAccountId: id("billing_account_id").notNull(),
+    customerId: id<TableContract.EntityId>("customer_id").notNull(),
+    billingAccountId:
+      id<TableContract.EntityId>("billing_account_id").notNull(),
   },
   (table) => [
     uniqueIndex().on(table.customerId, table.billingAccountId, table.tenantId),
@@ -126,7 +126,7 @@ export const billingAccountCustomerAuthorizationsTable = tenantTable(
 export type BillingAccountCustomerAuthorizationsTable =
   typeof billingAccountCustomerAuthorizationsTable;
 export type BillingAccountCustomerAuthorization =
-  DatabaseContract.InferFromTable<BillingAccountCustomerAuthorizationsTable>;
+  TableContract.Infer<BillingAccountCustomerAuthorizationsTable>;
 export const activeBillingAccountCustomerAuthorizationsView = pgView(
   BillingAccountCustomerAuthorizationsContract.activeViewName,
 ).as((qb) =>
@@ -138,13 +138,14 @@ export const activeBillingAccountCustomerAuthorizationsView = pgView(
 export type ActiveBillingAccountCustomerAuthorizationsView =
   typeof activeBillingAccountCustomerAuthorizationsView;
 export type ActiveBillingAccountCustomerAuthorization =
-  DatabaseContract.InferFromView<ActiveBillingAccountCustomerAuthorizationsView>;
+  TableContract.InferFromView<ActiveBillingAccountCustomerAuthorizationsView>;
 
 export const billingAccountManagerAuthorizationsTable = tenantTable(
   BillingAccountManagerAuthorizationsContract.tableName,
   {
-    managerId: id("manager_id").notNull(),
-    billingAccountId: id("billing_account_id").notNull(),
+    managerId: id<TableContract.EntityId>("manager_id").notNull(),
+    billingAccountId:
+      id<TableContract.EntityId>("billing_account_id").notNull(),
   },
   (table) => [
     uniqueIndex().on(table.billingAccountId, table.managerId, table.tenantId),
@@ -154,7 +155,7 @@ export const billingAccountManagerAuthorizationsTable = tenantTable(
 export type BillingAccountManagerAuthorizationsTable =
   typeof billingAccountManagerAuthorizationsTable;
 export type BillingAccountManagerAuthorization =
-  DatabaseContract.InferFromTable<BillingAccountManagerAuthorizationsTable>;
+  TableContract.Infer<BillingAccountManagerAuthorizationsTable>;
 export const activeBillingAccountManagerAuthorizationsView = pgView(
   BillingAccountManagerAuthorizationsContract.activeViewName,
 ).as((qb) =>
@@ -166,7 +167,7 @@ export const activeBillingAccountManagerAuthorizationsView = pgView(
 export type ActiveBillingAccountManagerAuthorizationsView =
   typeof activeBillingAccountManagerAuthorizationsView;
 export type ActiveBillingAccountManagerAuthorization =
-  DatabaseContract.InferFromView<ActiveBillingAccountManagerAuthorizationsView>;
+  TableContract.InferFromView<ActiveBillingAccountManagerAuthorizationsView>;
 export const activeCustomerAuthorizedBillingAccountManagerAuthorizationsView =
   pgView(
     BillingAccountManagerAuthorizationsContract.activeCustomerAuthorizedViewName,
@@ -195,4 +196,4 @@ export const activeCustomerAuthorizedBillingAccountManagerAuthorizationsView =
 export type ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView =
   typeof activeCustomerAuthorizedBillingAccountManagerAuthorizationsView;
 export type ActiveCustomerAuthorizedBillingAccountManagerAuthorization =
-  DatabaseContract.InferFromView<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>;
+  TableContract.InferFromView<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>;

@@ -1,9 +1,9 @@
 import { Either, Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
+import { TableContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { Cost, HexColor, NanoId } from "../utils2";
+import { Cost, HexColor } from "../utils2";
 
 import type {
   ActiveProductsView,
@@ -237,27 +237,27 @@ export namespace ProductsContract {
   export const Configuration = Schema.Union(ConfigurationV1);
 
   export const tableName = "products";
-  export const table = DatabaseContract.SyncTable<ProductsTable>()(
+  export const table = TableContract.Sync<ProductsTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
+      ...TableContract.Tenant.fields,
       name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
       status: Schema.Literal(...statuses),
-      roomId: NanoId,
+      roomId: TableContract.EntityId,
       config: Configuration,
     }),
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveProductsView>()(
+  export const activeView = TableContract.View<ActiveProductsView>()(
     activeViewName,
     table.Schema,
   );
 
   export const activePublishedViewName = `active_published_${tableName}`;
   export const activePublishedView =
-    DatabaseContract.View<ActivePublishedProductsView>()(
+    TableContract.View<ActivePublishedProductsView>()(
       activePublishedViewName,
       activeView.Schema,
     );
@@ -273,7 +273,7 @@ export namespace ProductsContract {
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
       table.Schema.omit(
-        ...Struct.keys(DatabaseContract.TenantTable.fields),
+        ...Struct.keys(TableContract.Tenant.fields),
         "roomId",
       ).pipe(Schema.partial),
     ),
@@ -283,7 +283,7 @@ export namespace ProductsContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteProduct",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,

@@ -4,6 +4,7 @@ import * as v from "valibot";
 
 import { Constants } from "./constants";
 
+import type { TableContract } from "../database2/contract";
 import type {
   AnyError,
   CustomError,
@@ -32,7 +33,7 @@ export function parseResource<TResource extends Record<string, unknown>>(
   }) as TResource;
 }
 
-export const generateId = customAlphabet(
+export const generateId = customAlphabet<TableContract.EntityId>(
   Constants.NANOID_CUSTOM_ALPHABET,
   Constants.NANOID_LENGTH,
 );

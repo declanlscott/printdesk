@@ -1,26 +1,25 @@
 import { Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
-import { NanoId } from "../utils2";
+import { TableContract } from "../database2/contract";
 
 import type { ActiveAnnouncementsView, AnnouncementsTable } from "./sql";
 
 export namespace AnnouncementsContract {
   export const tableName = "announcements";
-  export const table = DatabaseContract.SyncTable<AnnouncementsTable>()(
+  export const table = TableContract.Sync<AnnouncementsTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
+      ...TableContract.Tenant.fields,
       content: Schema.String,
-      roomId: NanoId,
-      authorId: NanoId,
+      roomId: TableContract.EntityId,
+      authorId: TableContract.EntityId,
     }),
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveAnnouncementsView>()(
+  export const activeView = TableContract.View<ActiveAnnouncementsView>()(
     activeViewName,
     table.Schema,
   );
@@ -36,7 +35,7 @@ export namespace AnnouncementsContract {
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
       table.Schema.omit(
-        ...Struct.keys(DatabaseContract.TenantTable.fields),
+        ...Struct.keys(TableContract.Tenant.fields),
         "roomId",
         "authorId",
       ).pipe(Schema.partial),
@@ -47,7 +46,7 @@ export namespace AnnouncementsContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteAnnouncement",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,

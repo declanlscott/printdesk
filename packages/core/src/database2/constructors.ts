@@ -11,6 +11,7 @@ import { DateTime, ParseResult, Schema } from "effect";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";
+import { TableContract } from "./contract";
 
 import type { BuildColumns, BuildExtraConfigColumns, SQL } from "drizzle-orm";
 import type {
@@ -92,18 +93,19 @@ export function pgEnum<const TValues extends ReadonlyArray<string>>(
 /**
  * NanoID column
  */
-export function id(name: string) {
-  return char(name, { length: Constants.NANOID_LENGTH });
+export function id<TType>(name: string) {
+  return char(name, { length: Constants.NANOID_LENGTH }).$type<TType>();
 }
 
 /**
  * Primary key nanoID column
  */
-export const idPrimaryKey = {
-  get id() {
-    return id("id").$default(generateId).primaryKey();
-  },
-};
+export const primaryId = id("id").$default(generateId).primaryKey();
+
+/**
+ * Tenant ID column
+ */
+export const tenantId = id<TableContract.TenantId>("tenant_id").notNull();
 
 /**
  * Timestamps columns
@@ -132,8 +134,9 @@ export type Timestamp = keyof typeof timestamps;
 export const version = {
   get version() {
     return integer("version")
+      .$type<TableContract.Version>()
       .notNull()
-      .default(1)
+      .default(TableContract.Version.make(1))
       .$onUpdateFn(() => sql`version + 1`);
   },
 };
@@ -141,16 +144,16 @@ export const version = {
 /**
  * IDs for tenant owned tables (used as composite primary key)
  */
-export const tenantIdColumns = {
+export const tenantColumns = {
   get id() {
-    return id("id").$defaultFn(generateId).notNull();
+    return id<TableContract.EntityId>("id").$defaultFn(generateId).notNull();
   },
   get tenantId() {
-    return id("tenant_id").notNull();
+    return tenantId;
   },
 };
 
-export type DefaultTenantTableColumns = typeof tenantIdColumns &
+export type DefaultTenantColumns = typeof tenantColumns &
   typeof timestamps &
   typeof version;
 
@@ -166,23 +169,19 @@ export const tenantTable = <
   extraConfig?: (
     self: BuildExtraConfigColumns<
       TTableName,
-      TColumnsMap & DefaultTenantTableColumns,
+      TColumnsMap & DefaultTenantColumns,
       "pg"
     >,
   ) => Array<PgTableExtraConfigValue>,
 ): PgTableWithColumns<{
   name: TTableName;
   schema: undefined;
-  columns: BuildColumns<
-    TTableName,
-    TColumnsMap & DefaultTenantTableColumns,
-    "pg"
-  >;
+  columns: BuildColumns<TTableName, TColumnsMap & DefaultTenantColumns, "pg">;
   dialect: "pg";
 }> =>
   pgTable(
     name,
-    { ...tenantIdColumns, ...timestamps, ...version, ...columns },
+    { ...tenantColumns, ...timestamps, ...version, ...columns },
     (table) => [
       primaryKey({ columns: [table.id, table.tenantId] }),
       ...(extraConfig?.(table) ?? []),

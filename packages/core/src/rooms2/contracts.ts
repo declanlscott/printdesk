@@ -1,9 +1,9 @@
 import { Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
+import { TableContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
-import { Cost, HexColor, NanoId } from "../utils2";
+import { Cost, HexColor } from "../utils2";
 
 import type {
   ActivePublishedRoomDeliveryOptionsView,
@@ -21,10 +21,10 @@ export namespace RoomsContract {
   export type Status = (typeof statuses)[number];
 
   export const tableName = "rooms";
-  export const table = DatabaseContract.SyncTable<RoomsTable>()(
+  export const table = TableContract.Sync<RoomsTable>()(
     tableName,
     Schema.Struct({
-      ...DatabaseContract.TenantTable.fields,
+      ...TableContract.Tenant.fields,
       name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
       status: Schema.Literal(...statuses),
       details: Schema.NullOr(Schema.String),
@@ -33,14 +33,14 @@ export namespace RoomsContract {
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = DatabaseContract.View<ActiveRoomsView>()(
+  export const activeView = TableContract.View<ActiveRoomsView>()(
     activeViewName,
     table.Schema,
   );
 
   export const activePublishedViewName = `active_published_${tableName}`;
   export const activePublishedView =
-    DatabaseContract.View<ActivePublishedRoomsView>()(
+    TableContract.View<ActivePublishedRoomsView>()(
       activePublishedViewName,
       table.Schema,
     );
@@ -55,9 +55,9 @@ export namespace RoomsContract {
     name: "updateRoom",
     Args: Schema.extend(
       table.Schema.pick("id", "updatedAt"),
-      table.Schema.omit(
-        ...Struct.keys(DatabaseContract.TenantTable.fields),
-      ).pipe(Schema.partial),
+      table.Schema.omit(...Struct.keys(TableContract.Tenant.fields)).pipe(
+        Schema.partial,
+      ),
     ),
     Returns: table.Schema,
   });
@@ -65,7 +65,7 @@ export namespace RoomsContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteRoom",
     Args: Schema.Struct({
-      id: NanoId,
+      id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: table.Schema,
@@ -123,7 +123,7 @@ export namespace WorkflowsContract {
   ] satisfies Array<Omit<WorkflowStatus, "index" | "roomId" | "tenantId">>;
 
   export const tableName = "workflow_statuses";
-  export const table = DatabaseContract.SyncTable<WorkflowStatusesTable>()(
+  export const table = TableContract.Sync<WorkflowStatusesTable>()(
     tableName,
     Schema.Struct({
       id: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
@@ -131,15 +131,15 @@ export namespace WorkflowsContract {
       charging: Schema.Boolean,
       color: Schema.NullOr(HexColor),
       index: Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
-      roomId: NanoId,
-      tenantId: NanoId,
+      roomId: TableContract.EntityId,
+      tenantId: TableContract.TenantId,
     }),
     ["create", "read"],
   );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    DatabaseContract.View<ActivePublishedRoomWorkflowStatusesView>()(
+    TableContract.View<ActivePublishedRoomWorkflowStatusesView>()(
       activePublishedRoomViewName,
       table.Schema,
     );
@@ -168,7 +168,7 @@ export namespace WorkflowsContract {
     name: "setWorkflow",
     Args: Schema.Struct({
       workflow: Workflow,
-      roomId: NanoId,
+      roomId: TableContract.EntityId,
     }),
     Returns: Workflow,
   });
@@ -176,7 +176,7 @@ export namespace WorkflowsContract {
 
 export namespace DeliveryOptionsContract {
   export const tableName = "delivery_options";
-  export const table = DatabaseContract.SyncTable<DeliveryOptionsTable>()(
+  export const table = TableContract.Sync<DeliveryOptionsTable>()(
     tableName,
     Schema.Struct({
       id: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
@@ -190,15 +190,15 @@ export namespace DeliveryOptionsContract {
         }),
       ),
       index: Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
-      roomId: NanoId,
-      tenantId: NanoId,
+      roomId: TableContract.EntityId,
+      tenantId: TableContract.TenantId,
     }),
     ["create", "read"],
   );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    DatabaseContract.View<ActivePublishedRoomDeliveryOptionsView>()(
+    TableContract.View<ActivePublishedRoomDeliveryOptionsView>()(
       activePublishedRoomViewName,
       table.Schema,
     );
@@ -217,7 +217,7 @@ export namespace DeliveryOptionsContract {
     name: "setDeliveryOptions",
     Args: Schema.Struct({
       options: DeliveryOptions,
-      roomId: NanoId,
+      roomId: TableContract.EntityId,
     }),
     Returns: DeliveryOptions,
   });

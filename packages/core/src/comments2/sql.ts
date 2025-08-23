@@ -9,27 +9,27 @@ import { id, tenantTable } from "../database2/constructors";
 import { activeOrdersView } from "../orders2/sql";
 import { CommentsContract } from "./contract";
 
-import type { DatabaseContract } from "../database2/contract";
+import type { TableContract } from "../database2/contract";
 
 export const commentsTable = tenantTable(
   CommentsContract.tableName,
   {
-    orderId: id("order_id").notNull(),
-    authorId: id("author_id").notNull(),
+    orderId: id<TableContract.EntityId>("order_id").notNull(),
+    authorId: id<TableContract.EntityId>("author_id").notNull(),
     content: text("content").notNull(),
     internal: boolean("internal").notNull().default(false),
   },
   (table) => [index().on(table.orderId)],
 );
 export type CommentsTable = typeof commentsTable;
-export type Comment = DatabaseContract.InferFromTable<CommentsTable>;
+export type Comment = TableContract.Infer<CommentsTable>;
 
 export const activeCommentsView = pgView(CommentsContract.activeViewName).as(
   (qb) =>
     qb.select().from(commentsTable).where(isNull(commentsTable.deletedAt)),
 );
 export type ActiveCommentsView = typeof activeCommentsView;
-export type ActiveComment = DatabaseContract.InferFromView<ActiveCommentsView>;
+export type ActiveComment = TableContract.InferFromView<ActiveCommentsView>;
 
 export const activeManagedBillingAccountOrderCommentsView = pgView(
   CommentsContract.activeManagedBillingAccountOrderViewName,
@@ -72,7 +72,7 @@ export const activeManagedBillingAccountOrderCommentsView = pgView(
 export type ActiveManagedBillingAccountOrderCommentsView =
   typeof activeManagedBillingAccountOrderCommentsView;
 export type ActiveManagedBillingAccountOrderComment =
-  DatabaseContract.InferFromView<ActiveManagedBillingAccountOrderCommentsView>;
+  TableContract.InferFromView<ActiveManagedBillingAccountOrderCommentsView>;
 
 export const activePlacedOrderCommentsView = pgView(
   CommentsContract.activePlacedOrderViewName,
@@ -94,4 +94,4 @@ export const activePlacedOrderCommentsView = pgView(
 export type ActivePlacedOrderCommentsView =
   typeof activePlacedOrderCommentsView;
 export type ActivePlacedOrderComment =
-  DatabaseContract.InferFromView<ActivePlacedOrderCommentsView>;
+  TableContract.InferFromView<ActivePlacedOrderCommentsView>;

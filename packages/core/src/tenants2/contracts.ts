@@ -1,7 +1,7 @@
 import { Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
-import { DatabaseContract } from "../database2/contract";
+import { TableContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
 import { NanoId } from "../utils2";
 
@@ -16,7 +16,7 @@ export namespace TenantsContract {
   );
 
   export const tableName = "tenants";
-  export const table = DatabaseContract.SyncTable<TenantsTable>()(
+  export const table = TableContract.Sync<TenantsTable>()(
     tableName,
     Schema.Struct({
       id: NanoId,
@@ -25,7 +25,7 @@ export namespace TenantsContract {
       status: Schema.optionalWith(Schema.Literal(...statuses), {
         default: () => "setup",
       }),
-      ...DatabaseContract.Timestamps.fields,
+      ...TableContract.Timestamps.fields,
     }),
     ["read", "update"],
   );
@@ -42,7 +42,7 @@ export namespace TenantsContract {
       table.Schema.pick("id", "updatedAt"),
       table.Schema.omit(
         "id",
-        ...Struct.keys(DatabaseContract.Timestamps.fields),
+        ...Struct.keys(TableContract.Timestamps.fields),
       ).pipe(Schema.partial),
     ),
     Returns: table.Schema,
@@ -55,7 +55,7 @@ export namespace LicensesContract {
 
   export const Key = Schema.UUID;
   export const tableName = "licenses";
-  export const table = DatabaseContract.NonSyncTable<LicensesTable>()(
+  export const table = TableContract.NonSync<LicensesTable>()(
     tableName,
     Schema.Struct({
       key: Key,
@@ -85,14 +85,14 @@ export namespace TenantMetadataContract {
   }) {}
 
   export const tableName = "tenant_metadata";
-  export const table = DatabaseContract.NonSyncTable<TenantMetadataTable>()(
+  export const table = TableContract.NonSync<TenantMetadataTable>()(
     tableName,
     Schema.Struct({
       tenantId: NanoId,
       infraProgramInput: InfraProgramInput,
       apiKey: Schema.NullOr(Schema.String),
       lastPapercutSyncAt: Schema.NullOr(Schema.DateTimeUtc),
-      ...DatabaseContract.Timestamps.fields,
+      ...TableContract.Timestamps.fields,
     }),
     [],
   );

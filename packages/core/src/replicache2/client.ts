@@ -29,16 +29,16 @@ export namespace Replicache {
           }).pipe(
             Effect.flatMap(
               Schema.decodeUnknown<
-                ReadonlyArray<TTable["Schema"]["Type"]>,
-                ReadonlyArray<TTable["Schema"]["Encoded"]>,
+                ReadonlyArray<TTable["DataTransferObject"]["Type"]>,
+                ReadonlyArray<TTable["DataTransferObject"]["Encoded"]>,
                 never
-              >(Schema.Array(table.Schema)),
+              >(Schema.Array(table.DataTransferObject)),
             ),
           );
 
         const get = <TTable extends SyncTable>(
           table: TTable,
-          id: TTable["Schema"]["Type"]["id"],
+          id: TTable["DataTransferObject"]["Type"]["id"],
         ) =>
           Effect.gen(function* () {
             const value = yield* Effect.tryPromise({
@@ -52,10 +52,10 @@ export namespace Replicache {
             return yield* Effect.succeed(value).pipe(
               Effect.flatMap(
                 Schema.decodeUnknown<
-                  TTable["Schema"]["Type"],
-                  TTable["Schema"]["Encoded"],
+                  TTable["DataTransferObject"]["Type"],
+                  TTable["DataTransferObject"]["Encoded"],
                   never
-                >(Schema.asSchema(table.Schema)),
+                >(Schema.asSchema(table.DataTransferObject)),
               ),
             );
           });
@@ -80,16 +80,16 @@ export namespace Replicache {
 
         const set = <TTable extends SyncTable>(
           table: TTable,
-          id: TTable["Schema"]["Type"]["id"],
-          value: TTable["Schema"]["Type"],
+          id: TTable["DataTransferObject"]["Type"]["id"],
+          value: TTable["DataTransferObject"]["Type"],
         ) =>
           Effect.succeed(value).pipe(
             Effect.flatMap(
               Schema.encode<
-                TTable["Schema"]["Type"],
-                TTable["Schema"]["Encoded"],
+                TTable["DataTransferObject"]["Type"],
+                TTable["DataTransferObject"]["Encoded"],
                 never
-              >(Schema.asSchema(table.Schema)),
+              >(Schema.asSchema(table.DataTransferObject)),
             ),
             Effect.flatMap((encoded) =>
               Effect.tryPromise({
@@ -102,7 +102,7 @@ export namespace Replicache {
 
         const del = <TTable extends SyncTable>(
           table: TTable,
-          id: TTable["Schema"]["Type"]["id"],
+          id: TTable["DataTransferObject"]["Type"]["id"],
         ) =>
           Effect.zipLeft(
             get(table, id),
@@ -123,7 +123,8 @@ export namespace Replicache {
 
       const findAll = scan(table);
 
-      const findById = (id: TTable["Schema"]["Type"]["id"]) => get(table, id);
+      const findById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>
+        get(table, id);
 
       return { findAll, findById } as const;
     });
@@ -137,19 +138,22 @@ export namespace Replicache {
     Effect.gen(function* () {
       const { set, del } = yield* Replicache.WriteTransactionManager;
 
-      const create = (value: TTable["Schema"]["Type"]) =>
+      const create = (value: TTable["DataTransferObject"]["Type"]) =>
         set(table, value.id, value);
 
       const updateById = (
-        id: TTable["Schema"]["Type"]["id"],
-        value: Partial<Omit<TTable["Schema"]["Type"], "id" | "tenantId">>,
+        id: TTable["DataTransferObject"]["Type"]["id"],
+        value: Partial<
+          Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
+        >,
       ) =>
         readRepository.findById(id).pipe(
           Effect.map((prev) => ({ ...prev, ...value })),
           Effect.flatMap((value) => set(table, value.id, value)),
         );
 
-      const deleteById = (id: TTable["Schema"]["Type"]["id"]) => del(table, id);
+      const deleteById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>
+        del(table, id);
 
       return { create, updateById, deleteById } as const;
     });

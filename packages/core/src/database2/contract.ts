@@ -3,10 +3,10 @@ import { Array, Data, DateTime, Schema } from "effect";
 import { NanoId } from "../utils2";
 
 import type {
+  Table as DrizzleTable,
+  View as DrizzleView,
   InferSelectModel,
   InferSelectViewModel,
-  Table,
-  View as View_,
 } from "drizzle-orm";
 import type { PgTable, PgView } from "drizzle-orm/pg-core";
 import type { AccessControl } from "../access-control2";
@@ -28,25 +28,29 @@ export namespace TableContract {
   export type EntityId = typeof EntityId.Type;
   export const TenantId = EntityId.pipe(Schema.brand("TenantId"));
   export type TenantId = typeof TenantId.Type;
+
+  export class TenantColumns extends Schema.Class<TenantColumns>(
+    "TenantColumns",
+  )({ id: EntityId, tenantId: TenantId }) {}
+
+  export class Tenant extends Schema.Class<Tenant>("TenantTable")({
+    ...TenantColumns.fields,
+    ...Timestamps.fields,
+  }) {}
+
   export const Version = Schema.Int.pipe(
     Schema.positive(),
     Schema.brand("Version"),
   );
   export type Version = typeof Version.Type;
 
-  export class Tenant extends Schema.Class<Tenant>("TenantTable")({
-    id: EntityId,
-    tenantId: TenantId,
-    ...Timestamps.fields,
-  }) {}
-
-  export type Infer<TTable extends Table> = Readonly<
-    Omit<InferSelectModel<TTable>, "version">
-  >;
-
-  export type InferFromView<TView extends View_> = Readonly<
-    Omit<InferSelectViewModel<TView>, "version">
-  >;
+  export type InferDataTransferObject<
+    TModel extends DrizzleTable | DrizzleView,
+  > = TModel extends DrizzleTable
+    ? Readonly<Omit<InferSelectModel<TModel>, "version">>
+    : TModel extends DrizzleView
+      ? Readonly<Omit<InferSelectViewModel<TModel>, "version">>
+      : never;
 
   export type InferPermissions<
     TTable extends PgTable,
@@ -59,38 +63,38 @@ export namespace TableContract {
 
   interface Base<
     TTable extends PgTable,
-    TSchema extends Schema.Schema.AnyNoContext,
+    TDataTransferObject extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
   > {
     readonly name: TTable["_"]["name"];
-    readonly Schema: TSchema;
+    readonly DataTransferObject: TDataTransferObject;
     readonly permissions: Array<InferPermissions<TTable, TActions>>;
   }
 
   export interface Sync<
     TTable extends PgTable,
-    TSchema extends Schema.Schema.AnyNoContext,
+    TDataTransferObject extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
-  > extends Base<TTable, TSchema, TActions> {
+  > extends Base<TTable, TDataTransferObject, TActions> {
     readonly _tag: "@printdesk/core/database/SyncTable";
   }
   export const Sync =
     <TTable extends PgTable = never>() =>
     <
-      TSchema extends Schema.Schema.AnyNoContext,
+      TDataTransferObject extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<AccessControl.PermissionAction>,
     >(
       name: TTable["_"]["name"],
-      Schema: Schema.Schema.Type<TSchema> extends Infer<TTable>
-        ? TSchema
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TTable>
+        ? TDataTransferObject
         : never,
       actions: TActions,
     ) =>
-      Data.tagged<Sync<TTable, TSchema, TActions>>(
+      Data.tagged<Sync<TTable, TDataTransferObject, TActions>>(
         "@printdesk/core/database/SyncTable",
       )({
         name,
-        Schema,
+        DataTransferObject,
         permissions: Array.map(
           actions,
           (action) => `${name}:${action}` as InferPermissions<TTable, TActions>,
@@ -98,29 +102,29 @@ export namespace TableContract {
       });
 
   export interface NonSync<
-    TSchema extends Schema.Schema.AnyNoContext,
     TTable extends PgTable,
+    TDataTransferObject extends Schema.Schema.AnyNoContext,
     TActions extends ReadonlyArray<AccessControl.PermissionAction>,
-  > extends Base<TTable, TSchema, TActions> {
+  > extends Base<TTable, TDataTransferObject, TActions> {
     readonly _tag: "@printdesk/core/database/NonSyncTable";
   }
   export const NonSync =
     <TTable extends PgTable = never>() =>
     <
-      TSchema extends Schema.Schema.AnyNoContext,
+      TDataTransferObject extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<AccessControl.PermissionAction>,
     >(
       name: TTable["_"]["name"],
-      Schema: Schema.Schema.Type<TSchema> extends Infer<TTable>
-        ? TSchema
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TTable>
+        ? TDataTransferObject
         : never,
       actions: TActions,
     ) =>
-      Data.tagged<NonSync<TSchema, TTable, TActions>>(
+      Data.tagged<NonSync<TTable, TDataTransferObject, TActions>>(
         "@printdesk/core/database/NonSyncTable",
       )({
         name,
-        Schema,
+        DataTransferObject,
         permissions: Array.map(
           actions,
           (action) => `${name}:${action}` as InferPermissions<TTable, TActions>,
@@ -129,49 +133,74 @@ export namespace TableContract {
 
   export interface View<
     TView extends PgView,
-    TSchema extends Schema.Schema.AnyNoContext,
+    TDataTransferObject extends Schema.Schema.AnyNoContext,
   > {
     readonly _tag: "@printdesk/core/database/View";
     readonly name: TView["_"]["name"];
-    readonly Schema: TSchema;
+    readonly DataTransferObject: TDataTransferObject;
     readonly permission: `${TView["_"]["name"]}:read`;
   }
   export const View =
     <TView extends PgView = never>() =>
-    <TSchema extends Schema.Schema.AnyNoContext>(
+    <TDataTransferObject extends Schema.Schema.AnyNoContext>(
       name: TView["_"]["name"],
-      Schema: Schema.Schema.Type<TSchema> extends InferFromView<TView>
-        ? TSchema
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
+        ? TDataTransferObject
         : never,
     ) =>
-      Data.tagged<View<TView, TSchema>>("@printdesk/core/database/View")({
+      Data.tagged<View<TView, TDataTransferObject>>(
+        "@printdesk/core/database/View",
+      )({
         name,
-        Schema,
+        DataTransferObject,
         permission: `${name}:read` as const,
       });
 
   export interface VirtualView<
     TName extends string,
-    TSchema extends Schema.Schema.AnyNoContext,
+    TDataTransferObject extends Schema.Schema.AnyNoContext,
   > {
     readonly _tag: "@printdesk/core/database/VirtualView";
     readonly name: TName;
-    readonly Schema: TSchema;
+    readonly DataTransferObject: TDataTransferObject;
     readonly permission: `${TName}:read`;
   }
   export const VirtualView =
     <TView extends PgView = never>() =>
-    <TName extends string, TSchema extends Schema.Schema.AnyNoContext>(
+    <
+      TName extends string,
+      TDataTransferObject extends Schema.Schema.AnyNoContext,
+    >(
       name: TName,
-      Schema: Schema.Schema.Type<TSchema> extends InferFromView<TView>
-        ? TSchema
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
+        ? TDataTransferObject
         : never,
     ) =>
-      Data.tagged<VirtualView<TName, TSchema>>(
+      Data.tagged<VirtualView<TName, TDataTransferObject>>(
         "@printdesk/core/database/VirtualView",
       )({
         name,
-        Schema,
+        DataTransferObject,
         permission: `${name}:read` as const,
       });
+
+  export interface Internal<
+    TTable extends PgTable,
+    TRow extends Schema.Schema.AnyNoContext,
+  > {
+    readonly _tag: "@printdesk/core/database/InternalTable";
+    readonly name: TTable["_"]["name"];
+    readonly Row: TRow;
+  }
+  export const Internal =
+    <TTable extends PgTable>() =>
+    <TName extends string, TRow extends Schema.Schema.AnyNoContext>(
+      name: TName,
+      Row: Schema.Schema.Type<TRow> extends InferSelectModel<TTable>
+        ? TRow
+        : never,
+    ) =>
+      Data.tagged<Internal<TTable, TRow>>(
+        "@printdesk/core/database/InternalTable",
+      )({ name, Row });
 }

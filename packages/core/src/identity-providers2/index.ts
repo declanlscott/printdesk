@@ -3,17 +3,13 @@ import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
-import { tenantsTable } from "../tenants2/sql";
-import { identityProvidersTable, identityProviderUserGroupsTable } from "./sql";
+import { TenantsSchema } from "../tenants2/schemas";
+import {
+  IdentityProvidersSchema,
+  IdentityProviderUserGroupsSchema,
+} from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { Tenant } from "../tenants2/sql";
-import type {
-  IdentityProvider,
-  IdentityProvidersTable,
-  IdentityProviderUserGroup,
-  IdentityProviderUserGroupsTable,
-} from "./sql";
 
 export namespace IdentityProviders {
   export class Repository extends Effect.Service<Repository>()(
@@ -22,10 +18,10 @@ export namespace IdentityProviders {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = identityProvidersTable;
+        const table = IdentityProvidersSchema.table;
 
         const upsert = Effect.fn("IdentityProviders.Repository.upsert")(
-          (identityProvider: InferInsertModel<IdentityProvidersTable>) =>
+          (identityProvider: InferInsertModel<IdentityProvidersSchema.Table>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -41,7 +37,7 @@ export namespace IdentityProviders {
         );
 
         const findAll = Effect.fn("IdentityProviders.Repository.findAll")(
-          (tenantId: IdentityProvider["tenantId"]) =>
+          (tenantId: IdentityProvidersSchema.Row["tenantId"]) =>
             db.useTransaction((tx) =>
               tx.select().from(table).where(eq(table.tenantId, tenantId)),
             ),
@@ -49,8 +45,8 @@ export namespace IdentityProviders {
 
         const findById = Effect.fn("IdentityProviders.Repository.findById")(
           (
-            id: IdentityProvider["id"],
-            tenantId: IdentityProvider["tenantId"],
+            id: IdentityProvidersSchema.Row["id"],
+            tenantId: IdentityProvidersSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -64,14 +60,14 @@ export namespace IdentityProviders {
 
         const findBySubdomain = Effect.fn(
           "IdentityProviders.Repository.findBySubdomain",
-        )((subdomain: Tenant["subdomain"]) =>
+        )((subdomain: TenantsSchema.Row["subdomain"]) =>
           db
             .useTransaction((tx) =>
               tx
                 .select({ identityProvider: table })
-                .from(tenantsTable)
-                .innerJoin(table, eq(tenantsTable.id, table.tenantId))
-                .where(eq(tenantsTable.subdomain, subdomain)),
+                .from(TenantsSchema.table)
+                .innerJoin(table, eq(TenantsSchema.table.id, table.tenantId))
+                .where(eq(TenantsSchema.table.subdomain, subdomain)),
             )
             .pipe(
               Effect.map(Array.map(({ identityProvider }) => identityProvider)),
@@ -89,13 +85,13 @@ export namespace IdentityProviders {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = identityProviderUserGroupsTable;
+        const table = IdentityProviderUserGroupsSchema.table;
 
         const create = Effect.fn(
           "IdentityProviders.UserGroupsRepository.create",
         )(
           (
-            identityProviderUserGroup: InferInsertModel<IdentityProviderUserGroupsTable>,
+            identityProviderUserGroup: InferInsertModel<IdentityProviderUserGroupsSchema.Table>,
           ) =>
             db
               .useTransaction((tx) =>
@@ -111,8 +107,8 @@ export namespace IdentityProviders {
           "IdentityProviders.UserGroupsRepository.findByIdentityProvider",
         )(
           (
-            identityProviderId: IdentityProvider["id"],
-            tenantId: IdentityProvider["tenantId"],
+            identityProviderId: IdentityProviderUserGroupsSchema.Row["identityProviderId"],
+            tenantId: IdentityProviderUserGroupsSchema.Row["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx
@@ -131,9 +127,9 @@ export namespace IdentityProviders {
           "IdentityProviders.UserGroupsRepository.deleteById",
         )(
           (
-            id: IdentityProviderUserGroupsTable["id"],
-            identityProviderId: IdentityProviderUserGroup["identityProviderId"],
-            tenantId: IdentityProviderUserGroup["tenantId"],
+            id: IdentityProviderUserGroupsSchema.Row["id"],
+            identityProviderId: IdentityProviderUserGroupsSchema.Row["identityProviderId"],
+            tenantId: IdentityProviderUserGroupsSchema.Row["tenantId"],
           ) =>
             db.useTransaction((tx) =>
               tx

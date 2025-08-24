@@ -46,7 +46,7 @@ export namespace Announcements {
             makePolicy: () => AccessControl.permission("announcements:create"),
             mutator: (announcement, session) =>
               repository.create(
-                AnnouncementsContract.table.Schema.make({
+                AnnouncementsContract.DataTransferObject.make({
                   ...announcement,
                   authorId: session.userId,
                   tenantId: session.tenantId,

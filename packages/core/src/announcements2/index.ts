@@ -7,19 +7,17 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import { Array, Effect, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { AnnouncementsContract } from "./contract";
-import { activeAnnouncementsView, announcementsTable } from "./sql";
+import { AnnouncementsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { Announcement, AnnouncementsTable } from "./sql";
 
 export namespace Announcements {
   export class Repository extends Effect.Service<Repository>()(
@@ -31,14 +29,14 @@ export namespace Announcements {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = announcementsTable;
-        const activeView = activeAnnouncementsView;
+        const table = AnnouncementsSchema.table;
+        const activeView = AnnouncementsSchema.activeView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn("Announcements.Repository.create")(
-          (announcement: InferInsertModel<AnnouncementsTable>) =>
+          (announcement: InferInsertModel<AnnouncementsSchema.Table>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(announcement).returning(),
@@ -51,9 +49,9 @@ export namespace Announcements {
 
         const findCreates = Effect.fn("Announcements.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -92,9 +90,9 @@ export namespace Announcements {
           "Announcements.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -131,8 +129,8 @@ export namespace Announcements {
 
         const findUpdates = Effect.fn("Announcements.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -166,8 +164,8 @@ export namespace Announcements {
           "Announcements.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -202,9 +200,9 @@ export namespace Announcements {
 
         const findDeletes = Effect.fn("Announcements.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -231,9 +229,9 @@ export namespace Announcements {
           "Announcements.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -260,10 +258,10 @@ export namespace Announcements {
           "Announcements.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
-            excludeIds: Array<Announcement["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
+            excludeIds: Array<AnnouncementsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -299,10 +297,10 @@ export namespace Announcements {
           "Announcements.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Announcement["tenantId"],
-            excludeIds: Array<Announcement["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
+            excludeIds: Array<AnnouncementsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -336,9 +334,11 @@ export namespace Announcements {
 
         const updateById = Effect.fn("Announcements.Repository.updateById")(
           (
-            id: Announcement["id"],
-            announcement: Partial<Omit<Announcement, "id" | "tenantId">>,
-            tenantId: Announcement["tenantId"],
+            id: AnnouncementsSchema.Row["id"],
+            announcement: Partial<
+              Omit<AnnouncementsSchema.Row, "id" | "tenantId">
+            >,
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -353,9 +353,9 @@ export namespace Announcements {
 
         const deleteById = Effect.fn("Announcements.Repository.deleteById")(
           (
-            id: Announcement["id"],
-            deletedAt: NonNullable<Announcement["deletedAt"]>,
-            tenantId: Announcement["tenantId"],
+            id: AnnouncementsSchema.Row["id"],
+            deletedAt: NonNullable<AnnouncementsSchema.Row["deletedAt"]>,
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -372,9 +372,9 @@ export namespace Announcements {
           "Announcements.Repository.deleteByRoomId",
         )(
           (
-            roomId: Announcement["roomId"],
-            deletedAt: NonNullable<Announcement["deletedAt"]>,
-            tenantId: Announcement["tenantId"],
+            roomId: AnnouncementsSchema.Row["roomId"],
+            deletedAt: NonNullable<AnnouncementsSchema.Row["deletedAt"]>,
+            tenantId: AnnouncementsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -420,11 +420,13 @@ export namespace Announcements {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:create"),
             mutator: (announcement, session) =>
-              repository.create({
-                ...announcement,
-                authorId: session.userId,
-                tenantId: session.tenantId,
-              }),
+              repository
+                .create({
+                  ...announcement,
+                  authorId: session.userId,
+                  tenantId: session.tenantId,
+                })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -433,7 +435,9 @@ export namespace Announcements {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:update"),
             mutator: ({ id, ...announcement }, session) =>
-              repository.updateById(id, announcement, session.tenantId),
+              repository
+                .updateById(id, announcement, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -442,7 +446,9 @@ export namespace Announcements {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:delete"),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 

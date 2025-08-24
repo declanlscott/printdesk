@@ -85,7 +85,7 @@ export namespace Comments {
               ),
             mutator: (comment, session) =>
               repository.create(
-                CommentsContract.table.Schema.make({
+                CommentsContract.DataTransferObject.make({
                   ...comment,
                   authorId: session.userId,
                   tenantId: session.tenantId,

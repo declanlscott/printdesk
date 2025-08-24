@@ -21,7 +21,7 @@ export namespace BillingAccounts {
         const { get, scan } = yield* Replicache.ReadTransactionManager;
 
         const findActiveAuthorizedManagerIds = (
-          id: typeof BillingAccountsContract.table.Schema.Type.id,
+          id: BillingAccountsContract.DataTransferObject["id"],
         ) =>
           get(BillingAccountsContract.table, id).pipe(
             Effect.flatMap((billingAccount) =>
@@ -41,7 +41,7 @@ export namespace BillingAccounts {
           );
 
         const findActiveAuthorizedCustomerIds = (
-          id: typeof BillingAccountsContract.table.Schema.Type.id,
+          id: BillingAccountsContract.DataTransferObject["id"],
         ) =>
           get(BillingAccountsContract.table, id).pipe(
             Effect.flatMap((billingAccount) =>
@@ -61,7 +61,7 @@ export namespace BillingAccounts {
           );
 
         const findActiveAuthorizedUserIds = (
-          id: typeof BillingAccountsContract.table.Schema.Type.id,
+          id: BillingAccountsContract.DataTransferObject["id"],
         ) =>
           get(BillingAccountsContract.table, id).pipe(
             Effect.flatMap((billingAccount) =>
@@ -286,10 +286,9 @@ export namespace BillingAccounts {
               ),
             mutator: (authorization, { tenantId }) =>
               repository.create(
-                BillingAccountManagerAuthorizationsContract.table.Schema.make({
-                  ...authorization,
-                  tenantId,
-                }),
+                BillingAccountManagerAuthorizationsContract.DataTransferObject.make(
+                  { ...authorization, tenantId },
+                ),
               ),
           }),
         );

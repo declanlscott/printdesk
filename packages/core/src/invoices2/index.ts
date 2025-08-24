@@ -13,22 +13,14 @@ import { Array, Effect, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
-import { activeOrdersView } from "../orders2/sql";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { InvoicesContract } from "./contract";
-import {
-  activeInvoicesView,
-  activeManagedBillingAccountOrderInvoicesView,
-  activePlacedOrderInvoicesView,
-  invoicesTable,
-} from "./sql";
+import { InvoicesSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { BillingAccountManagerAuthorization } from "../billing-accounts2/sql";
-import type { Order } from "../orders2/sql";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { Invoice, InvoicesTable } from "./sql";
+import type { BillingAccountManagerAuthorizationsSchema } from "../billing-accounts2/schemas";
+import type { OrdersSchema } from "../orders2/schema";
 
 export namespace Invoices {
   export class Repository extends Effect.Service<Repository>()(
@@ -40,17 +32,17 @@ export namespace Invoices {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = invoicesTable;
-        const activeView = activeInvoicesView;
+        const table = InvoicesSchema.table;
+        const activeView = InvoicesSchema.activeView;
         const activeManagedBillingAccountOrderView =
-          activeManagedBillingAccountOrderInvoicesView;
-        const activePlacedOrderView = activePlacedOrderInvoicesView;
+          InvoicesSchema.activeManagedBillingAccountOrderView;
+        const activePlacedOrderView = InvoicesSchema.activePlacedOrderView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn("Invoices.Repository.create")(
-          (invoice: InferInsertModel<InvoicesTable>) =>
+          (invoice: InferInsertModel<InvoicesSchema.Table>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(invoice).returning(),
@@ -60,9 +52,9 @@ export namespace Invoices {
 
         const findCreates = Effect.fn("Invoices.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -101,9 +93,9 @@ export namespace Invoices {
           "Invoices.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -142,10 +134,10 @@ export namespace Invoices {
           "Invoices.Repository.findActiveCreatesByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -208,10 +200,10 @@ export namespace Invoices {
           "Invoices.Repository.findActiveCreatesByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -258,8 +250,8 @@ export namespace Invoices {
 
         const findUpdates = Effect.fn("Invoices.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -293,8 +285,8 @@ export namespace Invoices {
           "Invoices.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -331,9 +323,9 @@ export namespace Invoices {
           "Invoices.Repository.findActiveUpdatesByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -398,9 +390,9 @@ export namespace Invoices {
           "Invoices.Repository.findActiveUpdatesByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -432,7 +424,7 @@ export namespace Invoices {
                           )
                           .where(
                             and(
-                              eq(activeOrdersView.customerId, customerId),
+                              eq(activePlacedOrderView.customerId, customerId),
                               eq(activeView.tenantId, tenantId),
                             ),
                           ),
@@ -453,9 +445,9 @@ export namespace Invoices {
 
         const findDeletes = Effect.fn("Invoices.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -482,9 +474,9 @@ export namespace Invoices {
           "Invoices.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -511,10 +503,10 @@ export namespace Invoices {
           "Invoices.Repository.findActiveDeletesByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -558,10 +550,10 @@ export namespace Invoices {
           "Invoices.Repository.findDeletesByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -593,10 +585,10 @@ export namespace Invoices {
           "Invoices.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
-            excludeIds: Array<Invoice["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
+            excludeIds: Array<InvoicesSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -632,10 +624,10 @@ export namespace Invoices {
           "Invoices.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
-            excludeIds: Array<Invoice["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
+            excludeIds: Array<InvoicesSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -671,11 +663,11 @@ export namespace Invoices {
           "Invoices.Repository.findActiveFastForwardByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
-            excludeIds: Array<Invoice["id"]>,
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
+            excludeIds: Array<InvoicesSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -739,11 +731,11 @@ export namespace Invoices {
           "Invoices.Repository.findActiveFastForwardByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Invoice["tenantId"],
-            excludeIds: Array<Invoice["id"]>,
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: InvoicesSchema.Row["tenantId"],
+            excludeIds: Array<InvoicesSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -773,7 +765,7 @@ export namespace Invoices {
                           )
                           .where(
                             and(
-                              eq(activeOrdersView.customerId, customerId),
+                              eq(activePlacedOrderView.customerId, customerId),
                               eq(activeView.tenantId, tenantId),
                             ),
                           ),
@@ -828,7 +820,9 @@ export namespace Invoices {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("invoices:create"),
             mutator: (invoice, { tenantId }) =>
-              repository.create({ ...invoice, tenantId }),
+              repository
+                .create({ ...invoice, tenantId })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 

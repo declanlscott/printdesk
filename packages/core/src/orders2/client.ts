@@ -18,9 +18,7 @@ export namespace Orders {
         const base = yield* Replicache.makeReadRepository(OrdersContract.table);
         const { get, scan } = yield* Replicache.ReadTransactionManager;
 
-        const findManagerIds = (
-          id: typeof OrdersContract.table.Schema.Type.id,
-        ) =>
+        const findManagerIds = (id: OrdersContract.DataTransferObject["id"]) =>
           get(OrdersContract.table, id).pipe(
             Effect.flatMap((order) =>
               scan(BillingAccountManagerAuthorizationsContract.table).pipe(
@@ -38,7 +36,7 @@ export namespace Orders {
             ),
           );
 
-        const findStatus = (id: typeof OrdersContract.table.Schema.Type.id) =>
+        const findStatus = (id: OrdersContract.DataTransferObject["id"]) =>
           get(OrdersContract.table, id).pipe(
             Effect.flatMap((order) =>
               get(WorkflowsContract.table, order.workflowStatus).pipe(
@@ -242,7 +240,7 @@ export namespace Orders {
               ),
             mutator: (order, { tenantId }) =>
               repository.create(
-                OrdersContract.table.Schema.make({ ...order, tenantId }),
+                OrdersContract.DataTransferObject.make({ ...order, tenantId }),
               ),
           }),
         );

@@ -4,12 +4,7 @@ import { DataAccessContract } from "../data-access2/contract";
 import { TableContract } from "../database2/contract";
 
 import type { OrdersContract } from "../orders2/contract";
-import type {
-  ActiveInvoicesView,
-  ActiveManagedBillingAccountOrderInvoicesView,
-  ActivePlacedOrderInvoicesView,
-  InvoicesTable,
-} from "./sql";
+import type { InvoicesSchema } from "./schema";
 
 export namespace InvoicesContract {
   export const statuses = ["processing", "charged", "error"] as const;
@@ -23,53 +18,63 @@ export namespace InvoicesContract {
   });
   export const LineItem = Schema.Union(LineItemV1);
 
-  export const tableName = "invoices";
-  export const table = TableContract.Sync<InvoicesTable>()(
-    tableName,
-    Schema.Struct({
-      ...TableContract.Tenant.fields,
-      lineItems: Schema.Array(LineItem),
-      status: Schema.optionalWith(Schema.Literal(...statuses), {
-        default: () => "processing",
-      }),
-      chargedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
-        default: () => null,
-      }),
-      orderId: TableContract.EntityId,
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    lineItems: Schema.Array(LineItem),
+    status: Schema.optionalWith(Schema.Literal(...statuses), {
+      default: () => "processing",
     }),
+    chargedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
+      default: () => null,
+    }),
+    orderId: TableContract.EntityId,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
+  export const tableName = "invoices";
+  export const table = TableContract.Sync<InvoicesSchema.Table>()(
+    tableName,
+    DataTransferObject,
     ["create", "read"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<ActiveInvoicesView>()(
+  export const activeView = TableContract.View<InvoicesSchema.ActiveView>()(
     activeViewName,
-    table.Schema,
+    DataTransferObject,
   );
 
   export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
   export const activeManagedBillingAccountOrderView =
-    TableContract.View<ActiveManagedBillingAccountOrderInvoicesView>()(
+    TableContract.View<InvoicesSchema.ActiveManagedBillingAccountOrderView>()(
       activeManagedBillingAccountOrderViewName,
       Schema.extend(
-        table.Schema,
+        DataTransferObject,
         Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
   export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
   export const activePlacedOrderView =
-    TableContract.View<ActivePlacedOrderInvoicesView>()(
+    TableContract.View<InvoicesSchema.ActivePlacedOrderView>()(
       activePlacedOrderViewName,
       Schema.extend(
-        table.Schema,
+        DataTransferObject,
         Schema.Struct({ customerId: TableContract.EntityId }),
       ),
     );
 
   export const create = new DataAccessContract.Function({
     name: "createInvoice",
-    Args: table.Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
-    Returns: table.Schema,
+    Args: DataTransferStruct.omit(
+      "status",
+      "chargedAt",
+      "deletedAt",
+      "tenantId",
+    ),
+    Returns: DataTransferObject,
   });
 
   export class Estimate extends Schema.Class<Estimate>("Estimate")({

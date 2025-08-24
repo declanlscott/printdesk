@@ -7,23 +7,17 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import { Array, Effect, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { ProductsContract } from "./contract";
-import {
-  activeProductsView,
-  activePublishedProductsView,
-  productsTable,
-} from "./sql";
+import { ProductsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { Product, ProductsTable } from "./sql";
 
 export namespace Products {
   export class Repository extends Effect.Service<Repository>()(
@@ -35,15 +29,15 @@ export namespace Products {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = productsTable;
-        const activeView = activeProductsView;
-        const activePublishedView = activePublishedProductsView;
+        const table = ProductsSchema.table;
+        const activeView = ProductsSchema.activeView;
+        const activePublishedView = ProductsSchema.activePublishedView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn("Products.Repository.create")(
-          (product: InferInsertModel<ProductsTable>) =>
+          (product: InferInsertModel<ProductsSchema.Table>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(product).returning(),
@@ -56,9 +50,9 @@ export namespace Products {
 
         const findCreates = Effect.fn("Products.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -97,9 +91,9 @@ export namespace Products {
           "Products.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -138,9 +132,9 @@ export namespace Products {
           "Products.Repository.findActivePublishedCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -177,8 +171,8 @@ export namespace Products {
 
         const findUpdates = Effect.fn("Products.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -212,8 +206,8 @@ export namespace Products {
           "Products.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -250,8 +244,8 @@ export namespace Products {
           "Products.Repository.findActivePublishedUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -294,9 +288,9 @@ export namespace Products {
 
         const findDeletes = Effect.fn("Products.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -323,9 +317,9 @@ export namespace Products {
           "Products.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -352,9 +346,9 @@ export namespace Products {
           "Products.Repository.findActivePublishedDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -381,10 +375,10 @@ export namespace Products {
           "Products.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
-            excludeIds: Array<Product["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
+            excludeIds: Array<ProductsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -420,10 +414,10 @@ export namespace Products {
           "Products.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
-            excludeIds: Array<Product["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
+            excludeIds: Array<ProductsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -459,10 +453,10 @@ export namespace Products {
           "Products.Repository.findActivePublishedFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Product["tenantId"],
-            excludeIds: Array<Product["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: ProductsSchema.Row["tenantId"],
+            excludeIds: Array<ProductsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -501,9 +495,9 @@ export namespace Products {
 
         const updateById = Effect.fn("Products.Repository.updateById")(
           (
-            id: Product["id"],
-            product: Partial<Omit<Product, "id" | "tenantId">>,
-            tenantId: Product["tenantId"],
+            id: ProductsSchema.Row["id"],
+            product: Partial<Omit<ProductsSchema.Row, "id" | "tenantId">>,
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -518,9 +512,9 @@ export namespace Products {
 
         const deleteById = Effect.fn("Products.Repository.deleteById")(
           (
-            id: Product["id"],
-            deletedAt: NonNullable<Product["deletedAt"]>,
-            tenantId: Product["tenantId"],
+            id: ProductsSchema.Row["id"],
+            deletedAt: NonNullable<ProductsSchema.Row["deletedAt"]>,
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -535,9 +529,9 @@ export namespace Products {
 
         const deleteByRoomId = Effect.fn("Products.Repository.deleteByRoomId")(
           (
-            roomId: Product["roomId"],
-            deletedAt: NonNullable<Product["deletedAt"]>,
-            tenantId: Product["tenantId"],
+            roomId: ProductsSchema.Row["roomId"],
+            deletedAt: NonNullable<ProductsSchema.Row["deletedAt"]>,
+            tenantId: ProductsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -587,7 +581,9 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:create"),
             mutator: (product, { tenantId }) =>
-              repository.create({ ...product, tenantId }),
+              repository
+                .create({ ...product, tenantId })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -596,7 +592,9 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, ...product }, session) =>
-              repository.updateById(id, product, session.tenantId),
+              repository
+                .updateById(id, product, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -605,7 +603,9 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:delete"),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 

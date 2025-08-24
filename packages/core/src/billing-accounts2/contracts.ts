@@ -5,77 +5,77 @@ import { TableContract } from "../database2/contract";
 import { Cost } from "../utils2";
 
 import type {
-  ActiveBillingAccountCustomerAuthorizationsView,
-  ActiveBillingAccountManagerAuthorizationsView,
-  ActiveBillingAccountsView,
-  ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView,
-  ActiveCustomerAuthorizedBillingAccountsView,
-  ActiveManagerAuthorizedBillingAccountsView,
-  BillingAccountCustomerAuthorizationsTable,
-  BillingAccountManagerAuthorizationsTable,
-  BillingAccountsTable,
-} from "./sql";
+  BillingAccountCustomerAuthorizationsSchema,
+  BillingAccountManagerAuthorizationsSchema,
+  BillingAccountsSchema,
+} from "./schemas";
 
 export namespace BillingAccountsContract {
   export const origins = ["papercut", "internal"] as const;
   export type Origin = (typeof origins)[number];
 
-  export const tableName = "billing_accounts";
-  export const table = TableContract.Sync<BillingAccountsTable>()(
-    tableName,
-    Schema.Struct({
-      ...TableContract.Tenant.fields,
-      origin: Schema.optionalWith(Schema.Literal(...origins), {
-        default: () => "internal",
-      }),
-      name: Schema.String,
-      reviewThreshold: Schema.NullOr(
-        Schema.transform(Cost, Schema.String, {
-          decode: String,
-          encode: Number,
-          strict: true,
-        }),
-      ),
-      papercutAccountId: Schema.optionalWith(
-        Schema.Union(
-          Schema.Literal(-1),
-          Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
-        ),
-        { default: () => -1 },
-      ),
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    origin: Schema.optionalWith(Schema.Literal(...origins), {
+      default: () => "internal",
     }),
+    name: Schema.String,
+    reviewThreshold: Schema.NullOr(
+      Schema.transform(Cost, Schema.String, {
+        decode: String,
+        encode: Number,
+        strict: true,
+      }),
+    ),
+    papercutAccountId: Schema.optionalWith(
+      Schema.Union(
+        Schema.Literal(-1),
+        Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
+      ),
+      { default: () => -1 },
+    ),
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
+  export const tableName = "billing_accounts";
+  export const table = TableContract.Sync<BillingAccountsSchema.Table>()(
+    tableName,
+    DataTransferObject,
     ["read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<ActiveBillingAccountsView>()(
-    activeViewName,
-    table.Schema,
-  );
+  export const activeView =
+    TableContract.View<BillingAccountsSchema.ActiveView>()(
+      activeViewName,
+      DataTransferObject,
+    );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    TableContract.View<ActiveCustomerAuthorizedBillingAccountsView>()(
+    TableContract.View<BillingAccountsSchema.ActiveCustomerAuthorizedView>()(
       activeCustomerAuthorizedViewName,
       Schema.extend(
-        table.Schema,
+        DataTransferObject,
         Schema.Struct({ authorizedCustomerId: TableContract.EntityId }),
       ),
     );
 
   export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
   export const activeManagerAuthorizedView =
-    TableContract.View<ActiveManagerAuthorizedBillingAccountsView>()(
+    TableContract.View<BillingAccountsSchema.ActiveManagerAuthorizedView>()(
       activeManagerAuthorizedViewName,
       Schema.extend(
-        table.Schema,
+        DataTransferObject,
         Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
   export const hasActiveAuthorization = new DataAccessContract.Function({
     name: "hasActiveBillingAccountAuthorization",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
@@ -83,7 +83,7 @@ export namespace BillingAccountsContract {
     {
       name: "hasActiveBillingAccountCustomerAuthorization",
       Args: Schema.extend(
-        table.Schema.pick("id"),
+        DataTransferStruct.pick("id"),
         Schema.Struct({
           customerId: Schema.optional(TableContract.EntityId),
         }),
@@ -94,15 +94,15 @@ export namespace BillingAccountsContract {
 
   export const hasActiveManagerAuthorization = new DataAccessContract.Function({
     name: "hasActiveBillingAccountManagerAuthorization",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const update = new DataAccessContract.Function({
     name: "updateBillingAccount",
-    Args: table.Schema.pick("id", "updatedAt").pipe(
+    Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
-        table.Schema.omit(
+        DataTransferStruct.omit(
           ...Struct.keys(TableContract.Tenant.fields),
           "name",
           "origin",
@@ -110,7 +110,7 @@ export namespace BillingAccountsContract {
         ).pipe(Schema.partial),
       ),
     ),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 
   export const delete_ = new DataAccessContract.Function({
@@ -119,79 +119,89 @@ export namespace BillingAccountsContract {
       id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 }
 
 export namespace BillingAccountCustomerAuthorizationsContract {
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    customerId: TableContract.EntityId,
+    billingAccountId: TableContract.EntityId,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
   export const tableName = "billing_account_customer_authorizations";
   export const table =
-    TableContract.Sync<BillingAccountCustomerAuthorizationsTable>()(
+    TableContract.Sync<BillingAccountCustomerAuthorizationsSchema.Table>()(
       tableName,
-      Schema.Struct({
-        ...TableContract.Tenant.fields,
-        customerId: TableContract.EntityId,
-        billingAccountId: TableContract.EntityId,
-      }),
+      DataTransferObject,
       ["read"],
     );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TableContract.View<ActiveBillingAccountCustomerAuthorizationsView>()(
+    TableContract.View<BillingAccountCustomerAuthorizationsSchema.ActiveView>()(
       activeViewName,
-      table.Schema,
+      DataTransferObject,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    TableContract.VirtualView<ActiveBillingAccountCustomerAuthorizationsView>()(
+    TableContract.VirtualView<BillingAccountCustomerAuthorizationsSchema.ActiveView>()(
       activeAuthorizedViewName,
-      table.Schema,
+      DataTransferObject,
     );
 }
 
 export namespace BillingAccountManagerAuthorizationsContract {
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    managerId: TableContract.EntityId,
+    billingAccountId: TableContract.EntityId,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
   export const tableName = "billing_account_manager_authorizations";
   export const table =
-    TableContract.Sync<BillingAccountManagerAuthorizationsTable>()(
+    TableContract.Sync<BillingAccountManagerAuthorizationsSchema.Table>()(
       tableName,
-      Schema.Struct({
-        ...TableContract.Tenant.fields,
-        managerId: TableContract.EntityId,
-        billingAccountId: TableContract.EntityId,
-      }),
+      DataTransferObject,
       ["create", "read", "delete"],
     );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TableContract.View<ActiveBillingAccountManagerAuthorizationsView>()(
+    TableContract.View<BillingAccountManagerAuthorizationsSchema.ActiveView>()(
       activeViewName,
-      table.Schema,
+      DataTransferObject,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    TableContract.VirtualView<ActiveBillingAccountManagerAuthorizationsView>()(
+    TableContract.VirtualView<BillingAccountManagerAuthorizationsSchema.ActiveView>()(
       activeAuthorizedViewName,
-      table.Schema,
+      DataTransferObject,
     );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    TableContract.View<ActiveCustomerAuthorizedBillingAccountManagerAuthorizationsView>()(
+    TableContract.View<BillingAccountManagerAuthorizationsSchema.ActiveCustomerAuthorizedView>()(
       activeCustomerAuthorizedViewName,
       Schema.extend(
-        table.Schema,
+        DataTransferObject,
         Schema.Struct({ authorizedCustomerId: TableContract.EntityId }),
       ),
     );
 
   export const create = new DataAccessContract.Function({
     name: "createBillingAccountManagerAuthorization",
-    Args: table.Schema.omit("deletedAt", "tenantId"),
-    Returns: table.Schema,
+    Args: DataTransferStruct.omit("deletedAt", "tenantId"),
+    Returns: DataTransferObject,
   });
 
   export const delete_ = new DataAccessContract.Function({
@@ -200,6 +210,6 @@ export namespace BillingAccountManagerAuthorizationsContract {
       id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 }

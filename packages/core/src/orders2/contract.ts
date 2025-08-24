@@ -5,11 +5,7 @@ import { TableContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
 import { IsoDate, IsoTimestamp } from "../utils2";
 
-import type {
-  ActiveManagedBillingAccountOrdersView,
-  ActiveOrdersView,
-  OrdersTable,
-} from "./sql";
+import type { OrdersSchema } from "./schema";
 
 export namespace OrdersContract {
   export const AttributesV1 = Schema.TaggedStruct("OrderAttributesV1", {
@@ -188,119 +184,125 @@ export namespace OrdersContract {
   });
   export const Attributes = Schema.Union(AttributesV1);
 
-  export const tableName = "orders";
-  export const table = TableContract.Sync<OrdersTable>()(
-    tableName,
-    Schema.Struct({
-      ...TableContract.Tenant.fields,
-      customerId: TableContract.EntityId,
-      managerId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
-        default: () => null,
-      }),
-      operatorId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
-        default: () => null,
-      }),
-      productId: TableContract.EntityId,
-      billingAccountId: TableContract.EntityId,
-      attributes: Attributes,
-      workflowStatus: Schema.Trim.pipe(
-        Schema.maxLength(Constants.VARCHAR_LENGTH),
-      ),
-      deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      approvedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
-        default: () => null,
-      }),
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    customerId: TableContract.EntityId,
+    managerId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
+      default: () => null,
     }),
+    operatorId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
+      default: () => null,
+    }),
+    productId: TableContract.EntityId,
+    billingAccountId: TableContract.EntityId,
+    attributes: Attributes,
+    workflowStatus: Schema.Trim.pipe(
+      Schema.maxLength(Constants.VARCHAR_LENGTH),
+    ),
+    deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    approvedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
+      default: () => null,
+    }),
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
+  export const tableName = "orders";
+  export const table = TableContract.Sync<OrdersSchema.Table>()(
+    tableName,
+    DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<ActiveOrdersView>()(
+  export const activeView = TableContract.View<OrdersSchema.ActiveView>()(
     activeViewName,
-    table.Schema,
+    DataTransferObject,
   );
 
   export const activeManagedBillingAccountViewName = `active_managed_billing_account_${tableName}`;
   export const activeManagedBillingAccountView =
-    TableContract.View<ActiveManagedBillingAccountOrdersView>()(
+    TableContract.View<OrdersSchema.ActiveManagedBillingAccountView>()(
       activeManagedBillingAccountViewName,
       Schema.extend(
-        table.Schema,
+        DataTransferObject,
         Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
 
   export const activePlacedViewName = `active_placed_${tableName}`;
-  export const activePlacedView = TableContract.VirtualView<ActiveOrdersView>()(
-    activePlacedViewName,
-    table.Schema,
-  );
+  export const activePlacedView =
+    TableContract.VirtualView<OrdersSchema.ActiveView>()(
+      activePlacedViewName,
+      DataTransferObject,
+    );
 
   export const isCustomer = new DataAccessContract.Function({
     name: "isOrderCustomer",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const isManager = new DataAccessContract.Function({
     name: "isOrderManager",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const isCustomerOrManager = new DataAccessContract.Function({
     name: "isOrderCustomerOrManager",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const hasActiveManagerAuthorization = new DataAccessContract.Function({
     name: "hasActiveOrderBillingAccountManagerAuthorization",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canEdit = new DataAccessContract.Function({
     name: "canEditOrder",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canApprove = new DataAccessContract.Function({
     name: "canApproveOrder",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canTransition = new DataAccessContract.Function({
     name: "canTransitionOrder",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canDelete = new DataAccessContract.Function({
     name: "canDeleteOrder",
-    Args: table.Schema.pick("id"),
+    Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
   export const create = new DataAccessContract.Function({
     name: "createOrder",
-    Args: table.Schema.omit(
+    Args: DataTransferStruct.omit(
       "managerId",
       "operatorId",
       "approvedAt",
       "deletedAt",
       "tenantId",
     ),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 
   export const edit = new DataAccessContract.Function({
     name: "editOrder",
     Args: Schema.extend(
-      table.Schema.pick("id", "updatedAt"),
-      table.Schema.omit(
+      DataTransferStruct.pick("id", "updatedAt"),
+      DataTransferStruct.omit(
         ...Struct.keys(TableContract.Tenant.fields),
         "customerId",
         "managerId",
@@ -310,24 +312,24 @@ export namespace OrdersContract {
         "approvedAt",
       ).pipe(Schema.partial),
     ),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 
   export const approve = new DataAccessContract.Function({
     name: "approveOrder",
     Args: Schema.extend(
-      table.Schema.pick("id", "updatedAt", "workflowStatus"),
+      DataTransferStruct.pick("id", "updatedAt", "workflowStatus"),
       Schema.Struct({
         approvedAt: Schema.DateTimeUtc,
       }),
     ),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 
   export const transition = new DataAccessContract.Function({
     name: "transitionOrder",
-    Args: table.Schema.pick("id", "updatedAt", "workflowStatus"),
-    Returns: table.Schema,
+    Args: DataTransferStruct.pick("id", "updatedAt", "workflowStatus"),
+    Returns: DataTransferObject,
   });
 
   export const delete_ = new DataAccessContract.Function({
@@ -336,6 +338,6 @@ export namespace OrdersContract {
       id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 }

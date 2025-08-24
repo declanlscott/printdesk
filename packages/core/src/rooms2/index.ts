@@ -8,32 +8,26 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Option, Schema } from "effect";
+import { Array, Effect, Option, Schema, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import {
   DeliveryOptionsContract,
   RoomsContract,
   WorkflowsContract,
 } from "./contracts";
 import {
-  activePublishedRoomDeliveryOptionsView,
-  activePublishedRoomsView,
-  activePublishedRoomWorkflowStatusesView,
-  activeRoomsView,
-  deliveryOptionsTable,
-  roomsTable,
-  workflowStatusesTable,
-} from "./sql";
+  DeliveryOptionsSchema,
+  RoomsSchema,
+  WorkflowStatusesSchema,
+} from "./schemas";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { DeliveryOption, Room, RoomsTable, WorkflowStatus } from "./sql";
 
 export namespace Rooms {
   export class Repository extends Effect.Service<Repository>()(
@@ -45,15 +39,15 @@ export namespace Rooms {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = roomsTable;
-        const activeView = activeRoomsView;
-        const activePublishedView = activePublishedRoomsView;
+        const table = RoomsSchema.table;
+        const activeView = RoomsSchema.activeView;
+        const activePublishedView = RoomsSchema.activePublishedView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn("Rooms.Repository.create")(
-          (room: InferInsertModel<RoomsTable>) =>
+          (room: InferInsertModel<RoomsSchema.Table>) =>
             db
               .useTransaction((tx) => tx.insert(table).values(room).returning())
               .pipe(
@@ -64,9 +58,9 @@ export namespace Rooms {
 
         const findCreates = Effect.fn("Rooms.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -105,9 +99,9 @@ export namespace Rooms {
           "Rooms.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -146,9 +140,9 @@ export namespace Rooms {
           "Rooms.Repository.findActivePublishedCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -185,8 +179,8 @@ export namespace Rooms {
 
         const findUpdates = Effect.fn("Rooms.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -220,8 +214,8 @@ export namespace Rooms {
           "Rooms.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -258,8 +252,8 @@ export namespace Rooms {
           "Rooms.Repository.findActivePublishedUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -302,9 +296,9 @@ export namespace Rooms {
 
         const findDeletes = Effect.fn("Rooms.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -331,9 +325,9 @@ export namespace Rooms {
           "Rooms.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -360,9 +354,9 @@ export namespace Rooms {
           "Rooms.Repository.findActivePublishedDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -387,10 +381,10 @@ export namespace Rooms {
 
         const findFastForward = Effect.fn("Rooms.Repository.findFastForward")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
-            excludeIds: Array<Room["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
+            excludeIds: Array<RoomsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -426,10 +420,10 @@ export namespace Rooms {
           "Rooms.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
-            excludeIds: Array<Room["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
+            excludeIds: Array<RoomsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -465,10 +459,10 @@ export namespace Rooms {
           "Rooms.Repository.findActivePublishedFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Room["tenantId"],
-            excludeIds: Array<Room["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: RoomsSchema.Row["tenantId"],
+            excludeIds: Array<RoomsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -507,9 +501,9 @@ export namespace Rooms {
 
         const updateById = Effect.fn("Rooms.Repository.updateById")(
           (
-            id: Room["id"],
-            room: Partial<Omit<Room, "id" | "tenantId">>,
-            tenantId: Room["tenantId"],
+            id: RoomsSchema.Row["id"],
+            room: Partial<Omit<RoomsSchema.Row, "id" | "tenantId">>,
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -524,9 +518,9 @@ export namespace Rooms {
 
         const deleteById = Effect.fn("Rooms.Repository.deleteById")(
           (
-            id: Room["id"],
-            deletedAt: NonNullable<Room["deletedAt"]>,
-            tenantId: Room["tenantId"],
+            id: RoomsSchema.Row["id"],
+            deletedAt: NonNullable<RoomsSchema.Row["deletedAt"]>,
+            tenantId: RoomsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -573,7 +567,9 @@ export namespace Rooms {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:create"),
             mutator: (room, { tenantId }) =>
-              repository.create({ ...room, tenantId }),
+              repository
+                .create({ ...room, tenantId })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -582,7 +578,9 @@ export namespace Rooms {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:update"),
             mutator: ({ id, ...room }, session) =>
-              repository.updateById(id, room, session.tenantId),
+              repository
+                .updateById(id, room, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -591,7 +589,9 @@ export namespace Rooms {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -600,7 +600,9 @@ export namespace Rooms {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
             mutator: ({ id }, session) =>
-              repository.updateById(id, { deletedAt: null }, session.tenantId),
+              repository
+                .updateById(id, { deletedAt: null }, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -618,17 +620,18 @@ export namespace Rooms {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = workflowStatusesTable;
-        const publishedRoomView = activePublishedRoomWorkflowStatusesView;
+        const table = WorkflowStatusesSchema.table;
+        const activePublishedRoomView =
+          WorkflowStatusesSchema.activePublishedRoomView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const upsert = Effect.fn("Rooms.WorkflowRepository.upsert")(
           (
-            workflow: typeof WorkflowsContract.Workflow.Type,
-            roomId: WorkflowStatus["roomId"],
-            tenantId: WorkflowStatus["tenantId"],
+            workflow: WorkflowsContract.Workflow,
+            roomId: WorkflowStatusesSchema.Row["roomId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -687,9 +690,9 @@ export namespace Rooms {
 
         const findCreates = Effect.fn("Rooms.WorkflowRepository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -728,9 +731,9 @@ export namespace Rooms {
           "Rooms.WorkflowRepository.findPublishedRoomCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -743,12 +746,14 @@ export namespace Rooms {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(publishedRoomView)}_creates`)
+                      .$with(`${getViewName(activePublishedRoomView)}_creates`)
                       .as(
                         tx
                           .select()
-                          .from(publishedRoomView)
-                          .where(eq(publishedRoomView.tenantId, tenantId)),
+                          .from(activePublishedRoomView)
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
@@ -767,8 +772,8 @@ export namespace Rooms {
 
         const findUpdates = Effect.fn("Rooms.WorkflowRepository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -802,8 +807,8 @@ export namespace Rooms {
           "Rooms.WorkflowRepository.findPublishedRoomUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -811,30 +816,35 @@ export namespace Rooms {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(publishedRoomView)}_updates`)
+                      .$with(`${getViewName(activePublishedRoomView)}_updates`)
                       .as(
                         qb
                           .innerJoin(
-                            publishedRoomView,
+                            activePublishedRoomView,
                             and(
-                              eq(metadataTable.entityId, publishedRoomView.id),
+                              eq(
+                                metadataTable.entityId,
+                                activePublishedRoomView.id,
+                              ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  publishedRoomView.version,
+                                  activePublishedRoomView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                publishedRoomView.tenantId,
+                                activePublishedRoomView.tenantId,
                               ),
                             ),
                           )
-                          .where(eq(publishedRoomView.tenantId, tenantId)),
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
-                      .select(cte[getViewName(publishedRoomView)])
+                      .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),
@@ -843,9 +853,9 @@ export namespace Rooms {
 
         const findDeletes = Effect.fn("Rooms.WorkflowRepository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -872,9 +882,9 @@ export namespace Rooms {
           "Rooms.WorkflowRepository.findPublishedRoomDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -888,9 +898,9 @@ export namespace Rooms {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: publishedRoomView.id })
-                        .from(publishedRoomView)
-                        .where(eq(publishedRoomView.tenantId, tenantId)),
+                        .select({ id: activePublishedRoomView.id })
+                        .from(activePublishedRoomView)
+                        .where(eq(activePublishedRoomView.tenantId, tenantId)),
                     ),
                   ),
                 ),
@@ -901,10 +911,10 @@ export namespace Rooms {
           "Rooms.WorkflowRepository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
-            excludeIds: Array<WorkflowStatus["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
+            excludeIds: Array<WorkflowStatusesSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -940,10 +950,10 @@ export namespace Rooms {
           "Rooms.WorkflowRepository.findPublishedRoomFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: WorkflowStatus["tenantId"],
-            excludeIds: Array<WorkflowStatus["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: WorkflowStatusesSchema.Row["tenantId"],
+            excludeIds: Array<WorkflowStatusesSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -956,21 +966,31 @@ export namespace Rooms {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(publishedRoomView)}_fast_forward`)
+                      .$with(
+                        `${getViewName(activePublishedRoomView)}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            publishedRoomView,
+                            activePublishedRoomView,
                             and(
-                              eq(metadataTable.entityId, publishedRoomView.id),
-                              notInArray(publishedRoomView.id, excludeIds),
+                              eq(
+                                metadataTable.entityId,
+                                activePublishedRoomView.id,
+                              ),
+                              notInArray(
+                                activePublishedRoomView.id,
+                                excludeIds,
+                              ),
                             ),
                           )
-                          .where(eq(publishedRoomView.tenantId, tenantId)),
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
-                      .select(cte[getViewName(publishedRoomView)])
+                      .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),
@@ -1024,17 +1044,18 @@ export namespace Rooms {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = deliveryOptionsTable;
-        const publishedRoomView = activePublishedRoomDeliveryOptionsView;
+        const table = DeliveryOptionsSchema.table;
+        const activePublishedRoomView =
+          DeliveryOptionsSchema.activePublishedRoomView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const upsert = Effect.fn("Rooms.DeliveryOptionsRepository.upsert")(
           (
-            options: typeof DeliveryOptionsContract.DeliveryOptions.Type,
-            roomId: DeliveryOption["roomId"],
-            tenantId: DeliveryOption["tenantId"],
+            options: DeliveryOptionsContract.DeliveryOptions,
+            roomId: DeliveryOptionsSchema.Row["roomId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -1081,9 +1102,9 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1122,9 +1143,9 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findPublishedRoomCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1137,12 +1158,14 @@ export namespace Rooms {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(publishedRoomView)}_creates`)
+                      .$with(`${getViewName(activePublishedRoomView)}_creates`)
                       .as(
                         tx
                           .select()
-                          .from(publishedRoomView)
-                          .where(eq(publishedRoomView.tenantId, tenantId)),
+                          .from(activePublishedRoomView)
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
@@ -1163,8 +1186,8 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -1198,8 +1221,8 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findPublishedRoomUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -1207,30 +1230,35 @@ export namespace Rooms {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(publishedRoomView)}_updates`)
+                      .$with(`${getViewName(activePublishedRoomView)}_updates`)
                       .as(
                         qb
                           .innerJoin(
-                            publishedRoomView,
+                            activePublishedRoomView,
                             and(
-                              eq(metadataTable.entityId, publishedRoomView.id),
+                              eq(
+                                metadataTable.entityId,
+                                activePublishedRoomView.id,
+                              ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  publishedRoomView.version,
+                                  activePublishedRoomView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                publishedRoomView.tenantId,
+                                activePublishedRoomView.tenantId,
                               ),
                             ),
                           )
-                          .where(eq(publishedRoomView.tenantId, tenantId)),
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
-                      .select(cte[getViewName(publishedRoomView)])
+                      .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),
@@ -1241,9 +1269,9 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -1270,9 +1298,9 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findPublishedRoomDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -1286,9 +1314,9 @@ export namespace Rooms {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: publishedRoomView.id })
-                        .from(publishedRoomView)
-                        .where(eq(publishedRoomView.tenantId, tenantId)),
+                        .select({ id: activePublishedRoomView.id })
+                        .from(activePublishedRoomView)
+                        .where(eq(activePublishedRoomView.tenantId, tenantId)),
                     ),
                   ),
                 ),
@@ -1299,10 +1327,10 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
-            excludeIds: Array<DeliveryOption["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -1338,10 +1366,10 @@ export namespace Rooms {
           "Rooms.DeliveryOptionsRepository.findPublishedRoomFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: DeliveryOption["tenantId"],
-            excludeIds: Array<DeliveryOption["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -1354,21 +1382,31 @@ export namespace Rooms {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(publishedRoomView)}_fast_forward`)
+                      .$with(
+                        `${getViewName(activePublishedRoomView)}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            publishedRoomView,
+                            activePublishedRoomView,
                             and(
-                              eq(metadataTable.entityId, publishedRoomView.id),
-                              notInArray(publishedRoomView.id, excludeIds),
+                              eq(
+                                metadataTable.entityId,
+                                activePublishedRoomView.id,
+                              ),
+                              notInArray(
+                                activePublishedRoomView.id,
+                                excludeIds,
+                              ),
                             ),
                           )
-                          .where(eq(publishedRoomView.tenantId, tenantId)),
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
-                      .select(cte[getViewName(publishedRoomView)])
+                      .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),

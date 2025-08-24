@@ -13,25 +13,18 @@ import { Array, Effect, Equal, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { BillingAccounts } from "../billing-accounts2";
-import { activeBillingAccountManagerAuthorizationsView } from "../billing-accounts2/sql";
+import { BillingAccountManagerAuthorizationsSchema } from "../billing-accounts2/schemas";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { workflowStatusesTable } from "../rooms2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { WorkflowStatusesSchema } from "../rooms2/schemas";
 import { Users } from "../users2";
-import { activeUsersView } from "../users2/sql";
+import { UsersSchema } from "../users2/schema";
 import { OrdersContract } from "./contract";
-import {
-  activeManagedBillingAccountOrdersView,
-  activeOrdersView,
-  ordersTable,
-} from "./sql";
+import { OrdersSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { BillingAccountManagerAuthorization } from "../billing-accounts2/sql";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { Order, OrdersTable } from "./sql";
 
 export namespace Orders {
   export class Repository extends Effect.Service<Repository>()(
@@ -43,14 +36,16 @@ export namespace Orders {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ordersTable;
-        const activeView = activeOrdersView;
+        const table = OrdersSchema.table;
+        const activeView = OrdersSchema.activeView;
+        const activeManagedBillingAccountView =
+          OrdersSchema.activeManagedBillingAccountView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn("Orders.Repository.create")(
-          (order: InferInsertModel<OrdersTable>) =>
+          (order: InferInsertModel<OrdersSchema.Table>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(order).returning(),
@@ -63,9 +58,9 @@ export namespace Orders {
 
         const findCreates = Effect.fn("Orders.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -104,9 +99,9 @@ export namespace Orders {
           "Orders.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -145,10 +140,10 @@ export namespace Orders {
           "Orders.Repository.findActiveCreatesByBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -162,31 +157,31 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountOrdersView)}_creates`,
+                        `${getViewName(activeManagedBillingAccountView)}_creates`,
                       )
                       .as(
                         tx
                           .selectDistinctOn(
                             [
-                              activeManagedBillingAccountOrdersView.id,
-                              activeManagedBillingAccountOrdersView.tenantId,
+                              activeManagedBillingAccountView.id,
+                              activeManagedBillingAccountView.tenantId,
                             ],
                             Struct.omit(
                               getViewSelectedFields(
-                                activeManagedBillingAccountOrdersView,
+                                activeManagedBillingAccountView,
                               ),
                               "authorizedManagerId",
                             ),
                           )
-                          .from(activeManagedBillingAccountOrdersView)
+                          .from(activeManagedBillingAccountView)
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountOrdersView.managerId,
+                                activeManagedBillingAccountView.managerId,
                                 managerId,
                               ),
                               eq(
-                                activeManagedBillingAccountOrdersView.tenantId,
+                                activeManagedBillingAccountView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -211,10 +206,10 @@ export namespace Orders {
           "Orders.Repository.findActiveCreatesByCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -256,8 +251,8 @@ export namespace Orders {
 
         const findUpdates = Effect.fn("Orders.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -291,8 +286,8 @@ export namespace Orders {
           "Orders.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -329,9 +324,9 @@ export namespace Orders {
           "Orders.Repository.findActiveUpdatesByBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -340,37 +335,37 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountOrdersView)}_updates`,
+                        `${getViewName(activeManagedBillingAccountView)}_updates`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeManagedBillingAccountOrdersView,
+                            activeManagedBillingAccountView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activeManagedBillingAccountOrdersView.id,
+                                activeManagedBillingAccountView.id,
                               ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activeManagedBillingAccountOrdersView.version,
+                                  activeManagedBillingAccountView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                activeManagedBillingAccountOrdersView.tenantId,
+                                activeManagedBillingAccountView.tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountOrdersView.managerId,
+                                activeManagedBillingAccountView.managerId,
                                 managerId,
                               ),
                               eq(
-                                activeManagedBillingAccountOrdersView.tenantId,
+                                activeManagedBillingAccountView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -380,13 +375,11 @@ export namespace Orders {
                     return tx
                       .selectDistinctOn(
                         [
-                          activeManagedBillingAccountOrdersView.id,
-                          activeManagedBillingAccountOrdersView.tenantId,
+                          activeManagedBillingAccountView.id,
+                          activeManagedBillingAccountView.tenantId,
                         ],
                         Struct.omit(
-                          cte[
-                            getViewName(activeManagedBillingAccountOrdersView)
-                          ],
+                          cte[getViewName(activeManagedBillingAccountView)],
                           "authorizedManagerId",
                         ),
                       )
@@ -400,9 +393,9 @@ export namespace Orders {
           "Orders.Repository.findActiveUpdatesByCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -442,9 +435,9 @@ export namespace Orders {
 
         const findDeletes = Effect.fn("Orders.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -471,9 +464,9 @@ export namespace Orders {
           "Orders.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -500,10 +493,10 @@ export namespace Orders {
           "Orders.Repository.findActiveDeletesByBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -519,20 +512,20 @@ export namespace Orders {
                       tx
                         .selectDistinctOn(
                           [
-                            activeManagedBillingAccountOrdersView.id,
-                            activeManagedBillingAccountOrdersView.tenantId,
+                            activeManagedBillingAccountView.id,
+                            activeManagedBillingAccountView.tenantId,
                           ],
-                          { id: activeManagedBillingAccountOrdersView.id },
+                          { id: activeManagedBillingAccountView.id },
                         )
-                        .from(activeManagedBillingAccountOrdersView)
+                        .from(activeManagedBillingAccountView)
                         .where(
                           and(
                             eq(
-                              activeManagedBillingAccountOrdersView.managerId,
+                              activeManagedBillingAccountView.managerId,
                               managerId,
                             ),
                             eq(
-                              activeManagedBillingAccountOrdersView.tenantId,
+                              activeManagedBillingAccountView.tenantId,
                               tenantId,
                             ),
                           ),
@@ -547,10 +540,10 @@ export namespace Orders {
           "Orders.Repository.findActiveDeletesByCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -580,10 +573,10 @@ export namespace Orders {
 
         const findFastForward = Effect.fn("Orders.Repository.findFastForward")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
-            excludeIds: Array<Order["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
+            excludeIds: Array<OrdersSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -619,10 +612,10 @@ export namespace Orders {
           "Orders.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
-            excludeIds: Array<Order["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
+            excludeIds: Array<OrdersSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -658,11 +651,11 @@ export namespace Orders {
           "Orders.Repository.findActiveFastForwardByBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
-            excludeIds: Array<Order["id"]>,
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
+            excludeIds: Array<OrdersSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -676,19 +669,19 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountOrdersView)}_fast_forward`,
+                        `${getViewName(activeManagedBillingAccountView)}_fast_forward`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeManagedBillingAccountOrdersView,
+                            activeManagedBillingAccountView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activeManagedBillingAccountOrdersView.id,
+                                activeManagedBillingAccountView.id,
                               ),
                               notInArray(
-                                activeManagedBillingAccountOrdersView.id,
+                                activeManagedBillingAccountView.id,
                                 excludeIds,
                               ),
                             ),
@@ -696,11 +689,11 @@ export namespace Orders {
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountOrdersView.managerId,
+                                activeManagedBillingAccountView.managerId,
                                 managerId,
                               ),
                               eq(
-                                activeManagedBillingAccountOrdersView.tenantId,
+                                activeManagedBillingAccountView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -710,13 +703,11 @@ export namespace Orders {
                     return tx
                       .selectDistinctOn(
                         [
-                          activeManagedBillingAccountOrdersView.id,
-                          activeManagedBillingAccountOrdersView.tenantId,
+                          activeManagedBillingAccountView.id,
+                          activeManagedBillingAccountView.tenantId,
                         ],
                         Struct.omit(
-                          cte[
-                            getViewName(activeManagedBillingAccountOrdersView)
-                          ],
+                          cte[getViewName(activeManagedBillingAccountView)],
                           "authorizedManagerId",
                         ),
                       )
@@ -730,11 +721,11 @@ export namespace Orders {
           "Orders.Repository.findActiveFastForwardByCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Order["tenantId"],
-            excludeIds: Array<Order["id"]>,
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.Row["tenantId"],
+            excludeIds: Array<OrdersSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -774,7 +765,10 @@ export namespace Orders {
         );
 
         const findById = Effect.fn("Orders.Repository.findById")(
-          (id: Order["id"], tenantId: Order["tenantId"]) =>
+          (
+            id: OrdersSchema.Row["id"],
+            tenantId: OrdersSchema.Row["tenantId"],
+          ) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -787,57 +781,73 @@ export namespace Orders {
 
         const findActiveManagerIds = Effect.fn(
           "Orders.Repository.findActiveManagerIds",
-        )((id: Order["id"], tenantId: Order["tenantId"]) =>
-          db
-            .useTransaction((tx) =>
-              tx
-                .select({ id: activeUsersView.id })
-                .from(activeView)
-                .innerJoin(
-                  activeBillingAccountManagerAuthorizationsView,
-                  and(
-                    eq(
-                      activeView.billingAccountId,
-                      activeBillingAccountManagerAuthorizationsView.billingAccountId,
-                    ),
-                    eq(
-                      activeView.tenantId,
-                      activeBillingAccountManagerAuthorizationsView.tenantId,
-                    ),
-                  ),
-                )
-                .innerJoin(
-                  activeUsersView,
-                  and(
-                    eq(
-                      activeBillingAccountManagerAuthorizationsView.managerId,
-                      activeUsersView.id,
-                    ),
-                    eq(
-                      activeBillingAccountManagerAuthorizationsView.tenantId,
-                      activeUsersView.tenantId,
-                    ),
-                  ),
-                )
-                .where(
-                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
-                ),
-            )
-            .pipe(Effect.map(Array.map(({ id }) => id))),
-        );
-
-        const findStatus = Effect.fn("Orders.Repository.findStatus")(
-          (id: Order["id"], tenantId: Order["tenantId"]) =>
+        )(
+          (
+            id: OrdersSchema.Row["id"],
+            tenantId: OrdersSchema.Row["tenantId"],
+          ) =>
             db
               .useTransaction((tx) =>
                 tx
-                  .select({ status: getTableColumns(workflowStatusesTable) })
+                  .select({ id: UsersSchema.activeView.id })
+                  .from(activeView)
+                  .innerJoin(
+                    BillingAccountManagerAuthorizationsSchema.activeView,
+                    and(
+                      eq(
+                        activeView.billingAccountId,
+                        BillingAccountManagerAuthorizationsSchema.activeView
+                          .billingAccountId,
+                      ),
+                      eq(
+                        activeView.tenantId,
+                        BillingAccountManagerAuthorizationsSchema.activeView
+                          .tenantId,
+                      ),
+                    ),
+                  )
+                  .innerJoin(
+                    UsersSchema.activeView,
+                    and(
+                      eq(
+                        BillingAccountManagerAuthorizationsSchema.activeView
+                          .managerId,
+                        UsersSchema.activeView.id,
+                      ),
+                      eq(
+                        BillingAccountManagerAuthorizationsSchema.activeView
+                          .tenantId,
+                        UsersSchema.activeView.tenantId,
+                      ),
+                    ),
+                  )
+                  .where(
+                    and(
+                      eq(activeView.id, id),
+                      eq(activeView.tenantId, tenantId),
+                    ),
+                  ),
+              )
+              .pipe(Effect.map(Array.map(({ id }) => id))),
+        );
+
+        const findStatus = Effect.fn("Orders.Repository.findStatus")(
+          (
+            id: OrdersSchema.Row["id"],
+            tenantId: OrdersSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({
+                    status: getTableColumns(WorkflowStatusesSchema.table),
+                  })
                   .from(table)
                   .leftJoin(
-                    workflowStatusesTable,
+                    WorkflowStatusesSchema.table,
                     and(
-                      eq(table.workflowStatus, workflowStatusesTable.id),
-                      eq(table.tenantId, workflowStatusesTable.tenantId),
+                      eq(table.workflowStatus, WorkflowStatusesSchema.table.id),
+                      eq(table.tenantId, WorkflowStatusesSchema.table.tenantId),
                     ),
                   )
                   .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
@@ -850,9 +860,9 @@ export namespace Orders {
 
         const updateById = Effect.fn("Orders.Repository.updateById")(
           (
-            id: Order["id"],
-            order: Partial<Omit<Order, "id" | "tenantId">>,
-            tenantId: Order["tenantId"],
+            id: OrdersSchema.Row["id"],
+            order: Partial<Omit<OrdersSchema.Row, "id" | "tenantId">>,
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -867,9 +877,9 @@ export namespace Orders {
 
         const deleteById = Effect.fn("Orders.Repository.deleteById")(
           (
-            id: Order["id"],
-            deletedAt: NonNullable<Order["deletedAt"]>,
-            tenantId: Order["tenantId"],
+            id: OrdersSchema.Row["id"],
+            deletedAt: NonNullable<OrdersSchema.Row["deletedAt"]>,
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -886,9 +896,9 @@ export namespace Orders {
           "Orders.Repository.deleteByProductId",
         )(
           (
-            productId: Order["productId"],
-            deletedAt: NonNullable<Order["deletedAt"]>,
-            tenantId: Order["tenantId"],
+            productId: OrdersSchema.Row["productId"],
+            deletedAt: NonNullable<OrdersSchema.Row["deletedAt"]>,
+            tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -1108,7 +1118,9 @@ export namespace Orders {
               ),
             mutator: (order, { tenantId }) =>
               // TODO: Verify workflow status is correct
-              repository.create({ ...order, tenantId }),
+              repository
+                .create({ ...order, tenantId })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1124,7 +1136,9 @@ export namespace Orders {
                 canEdit.make({ id }),
               ),
             mutator: (order, { tenantId }) =>
-              repository.updateById(order.id, order, tenantId),
+              repository
+                .updateById(order.id, order, tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1140,7 +1154,9 @@ export namespace Orders {
                 canApprove.make({ id }),
               ),
             mutator: ({ id, ...order }, session) =>
-              repository.updateById(id, order, session.tenantId),
+              repository
+                .updateById(id, order, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1153,7 +1169,9 @@ export namespace Orders {
                 canTransition.make({ id }),
               ),
             mutator: ({ id, ...order }, session) =>
-              repository.updateById(id, order, session.tenantId),
+              repository
+                .updateById(id, order, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1166,7 +1184,9 @@ export namespace Orders {
                 canDelete.make({ id }),
               ),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 

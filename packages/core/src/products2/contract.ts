@@ -5,11 +5,7 @@ import { TableContract } from "../database2/contract";
 import { Constants } from "../utils/constants";
 import { Cost, HexColor } from "../utils2";
 
-import type {
-  ActiveProductsView,
-  ActivePublishedProductsView,
-  ProductsTable,
-} from "./sql";
+import type { ProductsSchema } from "./schema";
 
 export namespace ProductsContract {
   export const statuses = ["draft", "published"] as const;
@@ -236,48 +232,53 @@ export namespace ProductsContract {
   }) {}
   export const Configuration = Schema.Union(ConfigurationV1);
 
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    status: Schema.Literal(...statuses),
+    roomId: TableContract.EntityId,
+    config: Configuration,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
   export const tableName = "products";
-  export const table = TableContract.Sync<ProductsTable>()(
+  export const table = TableContract.Sync<ProductsSchema.Table>()(
     tableName,
-    Schema.Struct({
-      ...TableContract.Tenant.fields,
-      name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      status: Schema.Literal(...statuses),
-      roomId: TableContract.EntityId,
-      config: Configuration,
-    }),
+    DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<ActiveProductsView>()(
+  export const activeView = TableContract.View<ProductsSchema.ActiveView>()(
     activeViewName,
-    table.Schema,
+    DataTransferObject,
   );
 
   export const activePublishedViewName = `active_published_${tableName}`;
   export const activePublishedView =
-    TableContract.View<ActivePublishedProductsView>()(
+    TableContract.View<ProductsSchema.ActivePublishedView>()(
       activePublishedViewName,
-      activeView.Schema,
+      DataTransferObject,
     );
 
   export const create = new DataAccessContract.Function({
     name: "createProduct",
-    Args: table.Schema.omit("deletedAt", "tenantId"),
-    Returns: table.Schema,
+    Args: DataTransferStruct.omit("deletedAt", "tenantId"),
+    Returns: DataTransferObject,
   });
 
   export const update = new DataAccessContract.Function({
     name: "updateProduct",
     Args: Schema.extend(
-      table.Schema.pick("id", "updatedAt"),
-      table.Schema.omit(
+      DataTransferStruct.pick("id", "updatedAt"),
+      DataTransferStruct.omit(
         ...Struct.keys(TableContract.Tenant.fields),
         "roomId",
       ).pipe(Schema.partial),
     ),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 
   export const delete_ = new DataAccessContract.Function({
@@ -286,6 +287,6 @@ export namespace ProductsContract {
       id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 }

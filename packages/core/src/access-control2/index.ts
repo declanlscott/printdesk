@@ -5,9 +5,8 @@ import { views } from "../database2/views";
 
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
-import type { Tenant } from "../tenants2/sql";
+import type { TableContract } from "../database2/contract";
 import type { UsersContract } from "../users2/contract";
-import type { User } from "../users2/sql";
 
 export namespace AccessControl {
   export type PermissionAction = "create" | "read" | "update" | "delete";
@@ -203,8 +202,8 @@ export namespace AccessControl {
   } satisfies UserRoleAcls;
 
   export type PrincipalShape = {
-    readonly userId: User["id"];
-    readonly tenantId: Tenant["id"];
+    readonly userId: TableContract.EntityId;
+    readonly tenantId: TableContract.TenantId;
     readonly acl: ReadonlySet<Permission>;
   };
 

@@ -43,7 +43,10 @@ export namespace Invoices {
             makePolicy: () => AccessControl.permission("invoices:create"),
             mutator: (invoice, { tenantId }) =>
               repository.create(
-                InvoicesContract.table.Schema.make({ ...invoice, tenantId }),
+                InvoicesContract.DataTransferObject.make({
+                  ...invoice,
+                  tenantId,
+                }),
               ),
           }),
         );

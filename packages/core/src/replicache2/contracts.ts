@@ -8,90 +8,94 @@ import type {
   VersionNotSupportedResponse,
 } from "replicache";
 import type {
-  ReplicacheClientGroupsTable,
-  ReplicacheClientsTable,
-  ReplicacheClientViewMetadataTable,
-  ReplicacheClientViewsTable,
-  ReplicacheMetaTable,
-} from "./sql";
+  ReplicacheClientGroupsSchema,
+  ReplicacheClientsSchema,
+  ReplicacheClientViewMetadataSchema,
+  ReplicacheClientViewsSchema,
+  ReplicacheMetaSchema,
+} from "./schemas";
 
 export namespace ReplicacheMetaContract {
+  export class Row extends Schema.Class<Row>("Row")({
+    key: Schema.String,
+    value: Schema.Any,
+  }) {}
+
   export const tableName = "replicache_meta";
-  export const table = TableContract.NonSync<ReplicacheMetaTable>()(
+  export const table = TableContract.Internal<ReplicacheMetaSchema.Table>()(
     tableName,
-    Schema.Struct({
-      key: Schema.String,
-      value: Schema.Any,
-    }),
-    [],
+    Row,
   );
 }
 
 export namespace ReplicacheClientGroupsContract {
+  export class Row extends Schema.Class<Row>("Row")({
+    id: Schema.UUID,
+    tenantId: TableContract.TenantId,
+    userId: TableContract.EntityId,
+    clientVersion: TableContract.Version,
+    clientViewVersion: Schema.NullOr(TableContract.Version),
+    ...TableContract.Timestamps.fields,
+  }) {}
+
   export const tableName = "replicache_client_groups";
-  export const table = TableContract.NonSync<ReplicacheClientGroupsTable>()(
-    tableName,
-    Schema.Struct({
-      id: Schema.UUID,
-      tenantId: TableContract.TenantId,
-      userId: TableContract.EntityId,
-      clientVersion: Schema.Int,
-      clientViewVersion: Schema.NullOr(Schema.Int),
-      ...TableContract.Timestamps.fields,
-    }),
-    [],
-  );
+  export const table =
+    TableContract.Internal<ReplicacheClientGroupsSchema.Table>()(
+      tableName,
+      Row,
+    );
 }
 
 export namespace ReplicacheClientsContract {
-  export const tableName = "replicache_clients";
-  export const table = TableContract.NonSync<ReplicacheClientsTable>()(
-    tableName,
-    Schema.Struct({
-      id: Schema.UUID,
-      tenantId: NanoId,
-      clientGroupId: Schema.UUID,
-      lastMutationId: Schema.optionalWith(Schema.Int, {
-        default: () => 0,
-      }),
-      version: Schema.Int,
-      ...TableContract.Timestamps.fields,
+  export class Row extends Schema.Class<Row>("Row")({
+    id: Schema.UUID,
+    tenantId: TableContract.TenantId,
+    clientGroupId: Schema.UUID,
+    lastMutationId: Schema.optionalWith(Schema.Int, {
+      default: () => 0,
     }),
-    [],
+    version: TableContract.Version,
+    ...TableContract.Timestamps.fields,
+  }) {}
+
+  export const tableName = "replicache_clients";
+  export const table = TableContract.Internal<ReplicacheClientsSchema.Table>()(
+    tableName,
+    Row,
   );
 }
 
 export namespace ReplicacheClientViewsContract {
+  export class Row extends Schema.Class<Row>("Row")({
+    clientGroupId: Schema.UUID,
+    version: TableContract.Version,
+    clientVersion: TableContract.Version,
+    tenantId: TableContract.TenantId,
+  }) {}
+
   export const tableName = "replicache_client_views";
-  export const table = TableContract.NonSync<ReplicacheClientViewsTable>()(
-    tableName,
-    Schema.Struct({
-      clientGroupId: Schema.UUID,
-      version: Schema.Int,
-      clientVersion: Schema.Int,
-      tenantId: NanoId,
-    }),
-    [],
-  );
+  export const table =
+    TableContract.Internal<ReplicacheClientViewsSchema.Table>()(tableName, Row);
 }
 
 export namespace ReplicacheClientViewMetadataContract {
   export const entities = Array.map(syncTables, ({ name }) => name);
   export type Entity = (typeof entities)[number];
 
+  export class Row extends Schema.Class<Row>("Row")({
+    clientGroupId: Schema.UUID,
+    clientViewVersion: TableContract.Version,
+    entity: Schema.Literal(...entities),
+    entityId: TableContract.EntityId,
+    entityVersion: Schema.NullOr(TableContract.Version),
+    tenantId: TableContract.TenantId,
+  }) {}
+
   export const tableName = "replicache_client_view_metadata";
   export const table =
-    TableContract.NonSync<ReplicacheClientViewMetadataTable>()(
+    TableContract.Internal<ReplicacheClientViewMetadataSchema.Table>()(
       tableName,
-      Schema.Struct({
-        clientGroupId: Schema.UUID,
-        clientViewVersion: Schema.Int,
-        entity: Schema.Literal(...entities),
-        entityId: NanoId,
-        entityVersion: Schema.NullOr(Schema.Int),
-        tenantId: NanoId,
-      }),
-      [],
+      Row,
     );
 }
 

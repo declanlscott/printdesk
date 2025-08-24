@@ -15,20 +15,13 @@ import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Orders } from "../orders2";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { CommentsContract } from "./contract";
-import {
-  activeCommentsView,
-  activeManagedBillingAccountOrderCommentsView,
-  activePlacedOrderCommentsView,
-  commentsTable,
-} from "./sql";
+import { CommentsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { BillingAccountManagerAuthorization } from "../billing-accounts2/sql";
-import type { Order } from "../orders2/sql";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type { Comment, CommentsTable } from "./sql";
+import type { BillingAccountManagerAuthorizationsSchema } from "../billing-accounts2/schemas";
+import type { OrdersSchema } from "../orders2/schema";
 
 export namespace Comments {
   export class Repository extends Effect.Service<Repository>()(
@@ -40,16 +33,16 @@ export namespace Comments {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = commentsTable;
-        const activeView = activeCommentsView;
+        const table = CommentsSchema.table;
+        const activeView = CommentsSchema.activeView;
         const activeManagedBillingAccountOrderView =
-          activeManagedBillingAccountOrderCommentsView;
+          CommentsSchema.activeManagedBillingAccountOrderView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn("Comments.Repository.create")(
-          (comment: InferInsertModel<CommentsTable>) =>
+          (comment: InferInsertModel<CommentsSchema.Table>) =>
             db
               .useTransaction((tx) =>
                 tx.insert(table).values(comment).returning(),
@@ -62,9 +55,9 @@ export namespace Comments {
 
         const findCreates = Effect.fn("Comments.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -103,9 +96,9 @@ export namespace Comments {
           "Comments.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -144,10 +137,10 @@ export namespace Comments {
           "Comments.Repository.findActiveCreatesByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -210,10 +203,10 @@ export namespace Comments {
           "Comments.Repository.findActiveCreatesByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -227,27 +220,27 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activePlacedOrderCommentsView)}_creates`,
+                        `${getViewName(CommentsSchema.activePlacedOrderView)}_creates`,
                       )
                       .as(
                         tx
                           .select(
                             Struct.omit(
                               getViewSelectedFields(
-                                activePlacedOrderCommentsView,
+                                CommentsSchema.activePlacedOrderView,
                               ),
                               "customerId",
                             ),
                           )
-                          .from(activePlacedOrderCommentsView)
+                          .from(CommentsSchema.activePlacedOrderView)
                           .where(
                             and(
                               eq(
-                                activePlacedOrderCommentsView.customerId,
+                                CommentsSchema.activePlacedOrderView.customerId,
                                 customerId,
                               ),
                               eq(
-                                activePlacedOrderCommentsView.tenantId,
+                                CommentsSchema.activePlacedOrderView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -270,8 +263,8 @@ export namespace Comments {
 
         const findUpdates = Effect.fn("Comments.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -305,8 +298,8 @@ export namespace Comments {
           "Comments.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -343,9 +336,9 @@ export namespace Comments {
           "Comments.Repository.findActiveUpdatesByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -414,9 +407,9 @@ export namespace Comments {
           "Comments.Repository.findActiveUpdatesByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -425,37 +418,37 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activePlacedOrderCommentsView)}_updates`,
+                        `${getViewName(CommentsSchema.activePlacedOrderView)}_updates`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activePlacedOrderCommentsView,
+                            CommentsSchema.activePlacedOrderView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activePlacedOrderCommentsView.id,
+                                CommentsSchema.activePlacedOrderView.id,
                               ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activePlacedOrderCommentsView.version,
+                                  CommentsSchema.activePlacedOrderView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                activePlacedOrderCommentsView.tenantId,
+                                CommentsSchema.activePlacedOrderView.tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activePlacedOrderCommentsView.customerId,
+                                CommentsSchema.activePlacedOrderView.customerId,
                                 customerId,
                               ),
                               eq(
-                                activePlacedOrderCommentsView.tenantId,
+                                CommentsSchema.activePlacedOrderView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -465,7 +458,9 @@ export namespace Comments {
                     return tx
                       .select(
                         Struct.omit(
-                          cte[getViewName(activePlacedOrderCommentsView)],
+                          cte[
+                            getViewName(CommentsSchema.activePlacedOrderView)
+                          ],
                           "customerId",
                         ),
                       )
@@ -477,9 +472,9 @@ export namespace Comments {
 
         const findDeletes = Effect.fn("Comments.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -506,9 +501,9 @@ export namespace Comments {
           "Comments.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -535,10 +530,10 @@ export namespace Comments {
           "Comments.Repository.findActiveDeletesByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -582,10 +577,10 @@ export namespace Comments {
           "Comments.Repository.findActiveDeletesByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -599,16 +594,16 @@ export namespace Comments {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: activePlacedOrderCommentsView.id })
-                        .from(activePlacedOrderCommentsView)
+                        .select({ id: CommentsSchema.activePlacedOrderView.id })
+                        .from(CommentsSchema.activePlacedOrderView)
                         .where(
                           and(
                             eq(
-                              activePlacedOrderCommentsView.customerId,
+                              CommentsSchema.activePlacedOrderView.customerId,
                               customerId,
                             ),
                             eq(
-                              activePlacedOrderCommentsView.tenantId,
+                              CommentsSchema.activePlacedOrderView.tenantId,
                               tenantId,
                             ),
                           ),
@@ -623,10 +618,10 @@ export namespace Comments {
           "Comments.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
-            excludeIds: Array<Comment["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
+            excludeIds: Array<CommentsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -662,10 +657,10 @@ export namespace Comments {
           "Comments.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
-            excludeIds: Array<Comment["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
+            excludeIds: Array<CommentsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -701,11 +696,11 @@ export namespace Comments {
           "Comments.Repository.findActiveFastForwardByOrderBillingAccountManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
-            excludeIds: Array<Comment["id"]>,
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
+            excludeIds: Array<CommentsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -773,11 +768,11 @@ export namespace Comments {
           "Comments.Repository.findActiveFastForwardByOrderCustomerId",
         )(
           (
-            customerId: Order["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: Comment["tenantId"],
-            excludeIds: Array<Comment["id"]>,
+            customerId: OrdersSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.Row["tenantId"],
+            excludeIds: Array<CommentsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -791,19 +786,19 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activePlacedOrderCommentsView)}_fast_forward`,
+                        `${getViewName(CommentsSchema.activePlacedOrderView)}_fast_forward`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activePlacedOrderCommentsView,
+                            CommentsSchema.activePlacedOrderView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activePlacedOrderCommentsView.id,
+                                CommentsSchema.activePlacedOrderView.id,
                               ),
                               notInArray(
-                                activePlacedOrderCommentsView.id,
+                                CommentsSchema.activePlacedOrderView.id,
                                 excludeIds,
                               ),
                             ),
@@ -811,11 +806,11 @@ export namespace Comments {
                           .where(
                             and(
                               eq(
-                                activePlacedOrderCommentsView.customerId,
+                                CommentsSchema.activePlacedOrderView.customerId,
                                 customerId,
                               ),
                               eq(
-                                activePlacedOrderCommentsView.tenantId,
+                                CommentsSchema.activePlacedOrderView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -825,7 +820,9 @@ export namespace Comments {
                     return tx
                       .select(
                         Struct.omit(
-                          cte[getViewName(activePlacedOrderCommentsView)],
+                          cte[
+                            getViewName(CommentsSchema.activePlacedOrderView)
+                          ],
                           "customerId",
                         ),
                       )
@@ -836,7 +833,10 @@ export namespace Comments {
         );
 
         const findById = Effect.fn("Comments.Repository.findById")(
-          (id: Comment["id"], tenantId: Comment["tenantId"]) =>
+          (
+            id: CommentsSchema.Row["id"],
+            tenantId: CommentsSchema.Row["tenantId"],
+          ) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -849,9 +849,9 @@ export namespace Comments {
 
         const updateById = Effect.fn("Comments.Repository.updateById")(
           (
-            id: Comment["id"],
-            comment: Partial<Omit<Comment, "id" | "tenantId">>,
-            tenantId: Comment["tenantId"],
+            id: CommentsSchema.Row["id"],
+            comment: Partial<Omit<CommentsSchema.Row, "id" | "tenantId">>,
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -866,9 +866,9 @@ export namespace Comments {
 
         const deleteById = Effect.fn("Comments.Repository.deleteById")(
           (
-            id: Comment["id"],
-            deletedAt: NonNullable<Comment["deletedAt"]>,
-            tenantId: Comment["tenantId"],
+            id: CommentsSchema.Row["id"],
+            deletedAt: NonNullable<CommentsSchema.Row["deletedAt"]>,
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -885,9 +885,9 @@ export namespace Comments {
           "Comments.Repository.deleteByOrderId",
         )(
           (
-            orderId: Comment["orderId"],
-            deletedAt: NonNullable<Comment["deletedAt"]>,
-            tenantId: Comment["tenantId"],
+            orderId: CommentsSchema.Row["orderId"],
+            deletedAt: NonNullable<CommentsSchema.Row["deletedAt"]>,
+            tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -986,11 +986,13 @@ export namespace Comments {
                 hasActiveManagerAuthorization.make({ id: orderId }),
               ),
             mutator: (comment, session) =>
-              repository.create({
-                ...comment,
-                authorId: session.userId,
-                tenantId: session.tenantId,
-              }),
+              repository
+                .create({
+                  ...comment,
+                  authorId: session.userId,
+                  tenantId: session.tenantId,
+                })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1003,7 +1005,9 @@ export namespace Comments {
                 isAuthor.make({ id }),
               ),
             mutator: ({ id, ...comment }, session) =>
-              repository.updateById(id, comment, session.tenantId),
+              repository
+                .updateById(id, comment, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1016,7 +1020,9 @@ export namespace Comments {
                 isAuthor.make({ id }),
               ),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 

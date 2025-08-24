@@ -16,35 +16,20 @@ import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
-import { replicacheClientViewMetadataTable } from "../replicache2/sql";
-import { activeUsersView } from "../users2/sql";
+import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { UsersSchema } from "../users2/schema";
 import {
   BillingAccountCustomerAuthorizationsContract,
   BillingAccountManagerAuthorizationsContract,
   BillingAccountsContract,
 } from "./contracts";
 import {
-  activeBillingAccountCustomerAuthorizationsView,
-  activeBillingAccountManagerAuthorizationsView,
-  activeBillingAccountsView,
-  activeCustomerAuthorizedBillingAccountManagerAuthorizationsView,
-  activeCustomerAuthorizedBillingAccountsView,
-  activeManagerAuthorizedBillingAccountsView,
-  billingAccountCustomerAuthorizationsTable,
-  billingAccountManagerAuthorizationsTable,
-  billingAccountsTable,
-} from "./sql";
+  BillingAccountCustomerAuthorizationsSchema,
+  BillingAccountManagerAuthorizationsSchema,
+  BillingAccountsSchema,
+} from "./schemas";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { ReplicacheClientViewMetadata } from "../replicache2/sql";
-import type {
-  BillingAccount,
-  BillingAccountCustomerAuthorization,
-  BillingAccountCustomerAuthorizationsTable,
-  BillingAccountManagerAuthorization,
-  BillingAccountManagerAuthorizationsTable,
-  BillingAccountsTable,
-} from "./sql";
 
 export namespace BillingAccounts {
   export class Repository extends Effect.Service<Repository>()(
@@ -56,22 +41,22 @@ export namespace BillingAccounts {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = billingAccountsTable;
-        const activeView = activeBillingAccountsView;
+        const table = BillingAccountsSchema.table;
+        const activeView = BillingAccountsSchema.activeView;
         const activeManagerAuthorizedView =
-          activeManagerAuthorizedBillingAccountsView;
+          BillingAccountsSchema.activeManagerAuthorizedView;
         const activeCustomerAuthorizedView =
-          activeCustomerAuthorizedBillingAccountsView;
+          BillingAccountsSchema.activeCustomerAuthorizedView;
         const activeCustomerAuthorizationsView =
-          activeBillingAccountCustomerAuthorizationsView;
+          BillingAccountCustomerAuthorizationsSchema.activeView;
         const activeManagerAuthorizationsView =
-          activeBillingAccountManagerAuthorizationsView;
+          BillingAccountManagerAuthorizationsSchema.activeView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const upsertMany = Effect.fn("BillingAccounts.Repository.upsertMany")(
-          (values: Array<InferInsertModel<BillingAccountsTable>>) =>
+          (values: Array<InferInsertModel<BillingAccountsSchema.Table>>) =>
             db
               .useTransaction((tx) =>
                 tx
@@ -95,9 +80,9 @@ export namespace BillingAccounts {
 
         const findCreates = Effect.fn("BillingAccounts.Repository.findCreates")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -136,9 +121,9 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -177,10 +162,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveCreatesByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -243,10 +228,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveCreatesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -307,8 +292,8 @@ export namespace BillingAccounts {
 
         const findUpdates = Effect.fn("BillingAccounts.Repository.findUpdates")(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -342,8 +327,8 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -380,9 +365,9 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveUpdatesByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -449,9 +434,9 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveUpdatesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -516,9 +501,9 @@ export namespace BillingAccounts {
 
         const findDeletes = Effect.fn("BillingAccounts.Repository.findDeletes")(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -545,9 +530,9 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -574,10 +559,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveDeletesByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -618,10 +603,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveDeletesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -662,10 +647,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
-            excludeIds: Array<BillingAccount["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+            excludeIds: Array<BillingAccountsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -701,10 +686,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
-            excludeIds: Array<BillingAccount["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+            excludeIds: Array<BillingAccountsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -740,11 +725,11 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveFastForwardByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
-            excludeIds: Array<BillingAccount["id"]>,
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+            excludeIds: Array<BillingAccountsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -810,11 +795,11 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveFastForwardByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccount["tenantId"],
-            excludeIds: Array<BillingAccount["id"]>,
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+            excludeIds: Array<BillingAccountsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -879,9 +864,9 @@ export namespace BillingAccounts {
         const findByOrigin = Effect.fn(
           "BillingAccounts.Repository.findByOrigin",
         )(
-          <TBillingAccountOrigin extends BillingAccount["origin"]>(
+          <TBillingAccountOrigin extends BillingAccountsSchema.Row["origin"]>(
             origin: TBillingAccountOrigin,
-            tenantId: BillingAccount["tenantId"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -903,157 +888,180 @@ export namespace BillingAccounts {
 
         const findActiveAuthorizedCustomerIds = Effect.fn(
           "BillingAccounts.Repository.findActiveAuthorizedCustomerIds",
-        )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
-          db
-            .useTransaction((tx) =>
-              tx
-                .select({ id: activeUsersView.id })
-                .from(activeView)
-                .innerJoin(
-                  activeCustomerAuthorizationsView,
-                  and(
-                    eq(
-                      activeView.id,
-                      activeCustomerAuthorizationsView.billingAccountId,
+        )(
+          (
+            id: BillingAccountsSchema.Row["id"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({ id: UsersSchema.activeView.id })
+                  .from(activeView)
+                  .innerJoin(
+                    activeCustomerAuthorizationsView,
+                    and(
+                      eq(
+                        activeView.id,
+                        activeCustomerAuthorizationsView.billingAccountId,
+                      ),
+                      eq(
+                        activeView.tenantId,
+                        activeCustomerAuthorizationsView.tenantId,
+                      ),
                     ),
-                    eq(
-                      activeView.tenantId,
-                      activeCustomerAuthorizationsView.tenantId,
+                  )
+                  .innerJoin(
+                    UsersSchema.activeView,
+                    and(
+                      eq(
+                        activeCustomerAuthorizationsView.customerId,
+                        UsersSchema.activeView.id,
+                      ),
+                      eq(
+                        activeCustomerAuthorizationsView.tenantId,
+                        UsersSchema.activeView.tenantId,
+                      ),
+                    ),
+                  )
+                  .where(
+                    and(
+                      eq(activeView.id, id),
+                      eq(activeView.tenantId, tenantId),
                     ),
                   ),
-                )
-                .innerJoin(
-                  activeUsersView,
-                  and(
-                    eq(
-                      activeCustomerAuthorizationsView.customerId,
-                      activeUsersView.id,
-                    ),
-                    eq(
-                      activeCustomerAuthorizationsView.tenantId,
-                      activeUsersView.tenantId,
-                    ),
-                  ),
-                )
-                .where(
-                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
-                ),
-            )
-            .pipe(Effect.map(Array.map(({ id }) => id))),
+              )
+              .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
         const findActiveAuthorizedManagerIds = Effect.fn(
           "BillingAccounts.Repository.findActiveAuthorizedManagerIds",
-        )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
-          db
-            .useTransaction((tx) =>
-              tx
-                .select({ id: activeUsersView.id })
-                .from(activeView)
-                .innerJoin(
-                  activeManagerAuthorizationsView,
-                  and(
-                    eq(
-                      activeView.id,
-                      activeManagerAuthorizationsView.billingAccountId,
+        )(
+          (
+            id: BillingAccountsSchema.Row["id"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({ id: UsersSchema.activeView.id })
+                  .from(activeView)
+                  .innerJoin(
+                    activeManagerAuthorizationsView,
+                    and(
+                      eq(
+                        activeView.id,
+                        activeManagerAuthorizationsView.billingAccountId,
+                      ),
+                      eq(
+                        activeView.tenantId,
+                        activeManagerAuthorizationsView.tenantId,
+                      ),
                     ),
-                    eq(
-                      activeView.tenantId,
-                      activeManagerAuthorizationsView.tenantId,
+                  )
+                  .innerJoin(
+                    UsersSchema.activeView,
+                    and(
+                      eq(
+                        activeManagerAuthorizationsView.managerId,
+                        UsersSchema.activeView.id,
+                      ),
+                      eq(
+                        activeManagerAuthorizationsView.tenantId,
+                        UsersSchema.activeView.tenantId,
+                      ),
+                    ),
+                  )
+                  .where(
+                    and(
+                      eq(activeView.id, id),
+                      eq(activeView.tenantId, tenantId),
                     ),
                   ),
-                )
-                .innerJoin(
-                  activeUsersView,
-                  and(
-                    eq(
-                      activeManagerAuthorizationsView.managerId,
-                      activeUsersView.id,
-                    ),
-                    eq(
-                      activeManagerAuthorizationsView.tenantId,
-                      activeUsersView.tenantId,
-                    ),
-                  ),
-                )
-                .where(
-                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
-                ),
-            )
-            .pipe(Effect.map(Array.map(({ id }) => id))),
+              )
+              .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
         const findActiveAuthorizedUserIds = Effect.fn(
           "BillingAccounts.Repository.findActiveAuthorizedUserIds",
-        )((id: BillingAccount["id"], tenantId: BillingAccount["tenantId"]) =>
-          db
-            .useTransaction((tx) =>
-              tx
-                .select({ id: activeUsersView.id })
-                .from(activeView)
-                .innerJoin(
-                  activeCustomerAuthorizationsView,
-                  and(
-                    eq(
-                      activeView.id,
-                      activeCustomerAuthorizationsView.billingAccountId,
-                    ),
-                    eq(
-                      activeView.tenantId,
-                      activeCustomerAuthorizationsView.tenantId,
-                    ),
-                  ),
-                )
-                .innerJoin(
-                  activeManagerAuthorizationsView,
-                  and(
-                    eq(
-                      activeView.id,
-                      activeManagerAuthorizationsView.billingAccountId,
-                    ),
-                    eq(
-                      activeView.tenantId,
-                      activeManagerAuthorizationsView.tenantId,
-                    ),
-                  ),
-                )
-                .innerJoin(
-                  activeUsersView,
-                  or(
+        )(
+          (
+            id: BillingAccountsSchema.Row["id"],
+            tenantId: BillingAccountsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({ id: UsersSchema.activeView.id })
+                  .from(activeView)
+                  .innerJoin(
+                    activeCustomerAuthorizationsView,
                     and(
                       eq(
-                        activeCustomerAuthorizationsView.customerId,
-                        activeUsersView.id,
+                        activeView.id,
+                        activeCustomerAuthorizationsView.billingAccountId,
                       ),
                       eq(
+                        activeView.tenantId,
                         activeCustomerAuthorizationsView.tenantId,
-                        activeUsersView.tenantId,
                       ),
                     ),
+                  )
+                  .innerJoin(
+                    activeManagerAuthorizationsView,
                     and(
                       eq(
-                        activeManagerAuthorizationsView.managerId,
-                        activeUsersView.id,
+                        activeView.id,
+                        activeManagerAuthorizationsView.billingAccountId,
                       ),
                       eq(
+                        activeView.tenantId,
                         activeManagerAuthorizationsView.tenantId,
-                        activeUsersView.tenantId,
                       ),
                     ),
+                  )
+                  .innerJoin(
+                    UsersSchema.activeView,
+                    or(
+                      and(
+                        eq(
+                          activeCustomerAuthorizationsView.customerId,
+                          UsersSchema.activeView.id,
+                        ),
+                        eq(
+                          activeCustomerAuthorizationsView.tenantId,
+                          UsersSchema.activeView.tenantId,
+                        ),
+                      ),
+                      and(
+                        eq(
+                          activeManagerAuthorizationsView.managerId,
+                          UsersSchema.activeView.id,
+                        ),
+                        eq(
+                          activeManagerAuthorizationsView.tenantId,
+                          UsersSchema.activeView.tenantId,
+                        ),
+                      ),
+                    ),
+                  )
+                  .where(
+                    and(
+                      eq(activeView.id, id),
+                      eq(activeView.tenantId, tenantId),
+                    ),
                   ),
-                )
-                .where(
-                  and(eq(activeView.id, id), eq(activeView.tenantId, tenantId)),
-                ),
-            )
-            .pipe(Effect.map(Array.map(({ id }) => id))),
+              )
+              .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
         const updateById = Effect.fn("BillingAccounts.Repository.updateById")(
           (
-            id: BillingAccount["id"],
-            billingAccount: Partial<Omit<BillingAccount, "id" | "tenantId">>,
-            tenantId: BillingAccount["tenantId"],
+            id: BillingAccountsSchema.Row["id"],
+            billingAccount: Partial<
+              Omit<BillingAccountsSchema.Row, "id" | "tenantId">
+            >,
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -1068,9 +1076,9 @@ export namespace BillingAccounts {
 
         const deleteById = Effect.fn("BillingAccounts.Repository.deleteById")(
           (
-            id: BillingAccount["id"],
-            deletedAt: NonNullable<BillingAccount["deletedAt"]>,
-            tenantId: BillingAccount["tenantId"],
+            id: BillingAccountsSchema.Row["id"],
+            deletedAt: NonNullable<BillingAccountsSchema.Row["deletedAt"]>,
+            tenantId: BillingAccountsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -1183,7 +1191,9 @@ export namespace BillingAccounts {
             makePolicy: () =>
               AccessControl.permission("billing_accounts:update"),
             mutator: ({ id, ...billingAccount }, session) =>
-              repository.updateById(id, billingAccount, session.tenantId),
+              repository
+                .updateById(id, billingAccount, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1193,7 +1203,9 @@ export namespace BillingAccounts {
             makePolicy: () =>
               AccessControl.permission("billing_accounts:delete"),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -1211,18 +1223,19 @@ export namespace BillingAccounts {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = billingAccountCustomerAuthorizationsTable;
-        const activeView = activeBillingAccountCustomerAuthorizationsView;
+        const table = BillingAccountCustomerAuthorizationsSchema.table;
+        const activeView =
+          BillingAccountCustomerAuthorizationsSchema.activeView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const upsertMany = Effect.fn(
           "BillingAccounts.CustomerAuthorizationsRepository.upsertMany",
         )(
           (
             values: Array<
-              InferInsertModel<BillingAccountCustomerAuthorizationsTable>
+              InferInsertModel<BillingAccountCustomerAuthorizationsSchema.Table>
             >,
           ) =>
             db.useTransaction((tx) =>
@@ -1245,9 +1258,9 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1286,9 +1299,9 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1327,10 +1340,10 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findActiveCreatesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1376,8 +1389,8 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -1411,8 +1424,8 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -1449,9 +1462,9 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findActiveUpdatesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -1495,9 +1508,9 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -1524,9 +1537,9 @@ export namespace BillingAccounts {
           "BillingAccounts.CustomerAuthorizationsRepository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -1553,10 +1566,10 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveDeletesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -1588,10 +1601,12 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountCustomerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -1627,10 +1642,12 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountCustomerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -1666,11 +1683,13 @@ export namespace BillingAccounts {
           "BillingAccounts.Repository.findActiveFastForwardByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountCustomerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -1712,9 +1731,9 @@ export namespace BillingAccounts {
         const findByOrigin = Effect.fn(
           "BillingAccounts.CustomerAuthorizationsRepository.findByOrigin",
         )(
-          <TBillingAccountOrigin extends BillingAccount["origin"]>(
+          <TBillingAccountOrigin extends BillingAccountsSchema.Row["origin"]>(
             origin: TBillingAccountOrigin,
-            tenantId: BillingAccountCustomerAuthorization["tenantId"],
+            tenantId: BillingAccountCustomerAuthorizationsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -1722,17 +1741,25 @@ export namespace BillingAccounts {
                   .select({ customerAuthorization: table })
                   .from(table)
                   .innerJoin(
-                    billingAccountsTable,
+                    BillingAccountsSchema.table,
                     and(
-                      eq(billingAccountsTable.id, table.billingAccountId),
-                      eq(billingAccountsTable.tenantId, table.tenantId),
+                      eq(
+                        BillingAccountsSchema.table.id,
+                        table.billingAccountId,
+                      ),
+                      eq(BillingAccountsSchema.table.tenantId, table.tenantId),
                     ),
                   )
                   .where(
                     and(
-                      eq(billingAccountsTable.origin, origin),
+                      eq(BillingAccountsSchema.table.origin, origin),
                       origin === "papercut"
-                        ? not(eq(billingAccountsTable.papercutAccountId, -1))
+                        ? not(
+                            eq(
+                              BillingAccountsSchema.table.papercutAccountId,
+                              -1,
+                            ),
+                          )
                         : undefined,
                       eq(table.tenantId, tenantId),
                     ),
@@ -1776,19 +1803,19 @@ export namespace BillingAccounts {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = billingAccountManagerAuthorizationsTable;
-        const activeView = activeBillingAccountManagerAuthorizationsView;
+        const table = BillingAccountManagerAuthorizationsSchema.table;
+        const activeView = BillingAccountManagerAuthorizationsSchema.activeView;
         const activeCustomerAuthorizedView =
-          activeCustomerAuthorizedBillingAccountManagerAuthorizationsView;
+          BillingAccountManagerAuthorizationsSchema.activeCustomerAuthorizedView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = replicacheClientViewMetadataTable;
+        const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
         const create = Effect.fn(
           "BillingAccounts.ManagerAuthorizationsRepository.create",
         )(
           (
-            authorization: InferInsertModel<BillingAccountManagerAuthorizationsTable>,
+            authorization: InferInsertModel<BillingAccountManagerAuthorizationsSchema.Table>,
           ) =>
             db
               .useTransaction((tx) =>
@@ -1804,9 +1831,9 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1845,9 +1872,9 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1886,10 +1913,10 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreatesByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -1935,10 +1962,10 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveCreatesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -2001,8 +2028,8 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -2036,8 +2063,8 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdates",
         )(
           (
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -2074,9 +2101,9 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdatesByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -2120,9 +2147,9 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveUpdatesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -2189,9 +2216,9 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -2218,9 +2245,9 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletes",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -2247,10 +2274,10 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletesByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -2282,10 +2309,10 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveDeletesByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -2326,10 +2353,12 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountManagerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -2365,10 +2394,12 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountManagerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -2404,11 +2435,13 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForwardByManagerId",
         )(
           (
-            managerId: BillingAccountManagerAuthorization["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountManagerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -2451,11 +2484,13 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.findActiveFastForwardByCustomerId",
         )(
           (
-            customerId: BillingAccountCustomerAuthorization["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadata["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadata["clientGroupId"],
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
-            excludeIds: Array<BillingAccountCustomerAuthorization["id"]>,
+            customerId: BillingAccountCustomerAuthorizationsSchema.Row["customerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
+            excludeIds: Array<
+              BillingAccountManagerAuthorizationsSchema.Row["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -2521,11 +2556,11 @@ export namespace BillingAccounts {
           "BillingAccounts.ManagerAuthorizationsRepository.deleteById",
         )(
           (
-            id: BillingAccountManagerAuthorization["id"],
+            id: BillingAccountManagerAuthorizationsSchema.Row["id"],
             deletedAt: NonNullable<
-              BillingAccountManagerAuthorization["deletedAt"]
+              BillingAccountManagerAuthorizationsSchema.Row["deletedAt"]
             >,
-            tenantId: BillingAccountManagerAuthorization["tenantId"],
+            tenantId: BillingAccountManagerAuthorizationsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -2578,7 +2613,9 @@ export namespace BillingAccounts {
                 "billing_account_manager_authorizations:create",
               ),
             mutator: (authorization, { tenantId }) =>
-              repository.create({ ...authorization, tenantId }),
+              repository
+                .create({ ...authorization, tenantId })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
@@ -2590,7 +2627,9 @@ export namespace BillingAccounts {
                 "billing_account_manager_authorizations:delete",
               ),
             mutator: ({ id, deletedAt }, session) =>
-              repository.deleteById(id, deletedAt, session.tenantId),
+              repository
+                .deleteById(id, deletedAt, session.tenantId)
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 

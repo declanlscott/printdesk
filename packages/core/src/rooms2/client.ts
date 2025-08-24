@@ -9,8 +9,6 @@ import {
   WorkflowsContract,
 } from "./contracts";
 
-import type { WorkflowStatus } from "./sql";
-
 export namespace Rooms {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/rooms/client/ReadRepository",
@@ -49,7 +47,7 @@ export namespace Rooms {
             makePolicy: () => AccessControl.permission("rooms:create"),
             mutator: (room, { tenantId }) =>
               repository.create(
-                RoomsContract.table.Schema.make({ ...room, tenantId }),
+                RoomsContract.DataTransferObject.make({ ...room, tenantId }),
               ),
           }),
         );
@@ -116,9 +114,9 @@ export namespace Rooms {
             const { set, del } = yield* Replicache.WriteTransactionManager;
 
             const upsert = (
-              workflow: typeof WorkflowsContract.Workflow.Type,
-              roomId: WorkflowStatus["roomId"],
-              tenantId: WorkflowStatus["tenantId"],
+              workflow: WorkflowsContract.Workflow,
+              roomId: WorkflowsContract.DataTransferObject["roomId"],
+              tenantId: WorkflowsContract.DataTransferObject["tenantId"],
             ) =>
               Effect.all(
                 Array.map(workflow, (status, index) =>
@@ -229,15 +227,15 @@ export namespace Rooms {
 
             const upsert = (
               deliveryOptions: typeof DeliveryOptionsContract.DeliveryOptions.Type,
-              roomId: WorkflowStatus["roomId"],
-              tenantId: WorkflowStatus["tenantId"],
+              roomId: WorkflowsContract.DataTransferObject["roomId"],
+              tenantId: WorkflowsContract.DataTransferObject["tenantId"],
             ) =>
               Effect.all(
                 Array.map(deliveryOptions, (option, index) =>
                   set(
                     DeliveryOptionsContract.table,
                     option.id,
-                    DeliveryOptionsContract.table.Schema.make({
+                    DeliveryOptionsContract.DataTransferObject.make({
                       ...option,
                       index,
                       roomId,

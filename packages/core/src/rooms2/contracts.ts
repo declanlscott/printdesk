@@ -6,60 +6,60 @@ import { Constants } from "../utils/constants";
 import { Cost, HexColor } from "../utils2";
 
 import type {
-  ActivePublishedRoomDeliveryOptionsView,
-  ActivePublishedRoomsView,
-  ActivePublishedRoomWorkflowStatusesView,
-  ActiveRoomsView,
-  DeliveryOptionsTable,
-  RoomsTable,
-  WorkflowStatus,
-  WorkflowStatusesTable,
-} from "./sql";
+  DeliveryOptionsSchema,
+  RoomsSchema,
+  WorkflowStatusesSchema,
+} from "./schemas";
 
 export namespace RoomsContract {
   export const statuses = ["draft", "published"] as const;
   export type Status = (typeof statuses)[number];
 
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    status: Schema.Literal(...statuses),
+    details: Schema.NullOr(Schema.String),
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
   export const tableName = "rooms";
-  export const table = TableContract.Sync<RoomsTable>()(
+  export const table = TableContract.Sync<RoomsSchema.Table>()(
     tableName,
-    Schema.Struct({
-      ...TableContract.Tenant.fields,
-      name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      status: Schema.Literal(...statuses),
-      details: Schema.NullOr(Schema.String),
-    }),
+    DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<ActiveRoomsView>()(
+  export const activeView = TableContract.View<RoomsSchema.ActiveView>()(
     activeViewName,
-    table.Schema,
+    DataTransferObject,
   );
 
   export const activePublishedViewName = `active_published_${tableName}`;
   export const activePublishedView =
-    TableContract.View<ActivePublishedRoomsView>()(
+    TableContract.View<RoomsSchema.ActivePublishedView>()(
       activePublishedViewName,
-      table.Schema,
+      DataTransferObject,
     );
 
   export const create = new DataAccessContract.Function({
     name: "createRoom",
-    Args: table.Schema.omit("deletedAt", "tenantId"),
-    Returns: table.Schema,
+    Args: DataTransferStruct.omit("deletedAt", "tenantId"),
+    Returns: DataTransferObject,
   });
 
   export const update = new DataAccessContract.Function({
     name: "updateRoom",
     Args: Schema.extend(
-      table.Schema.pick("id", "updatedAt"),
-      table.Schema.omit(...Struct.keys(TableContract.Tenant.fields)).pipe(
+      DataTransferStruct.pick("id", "updatedAt"),
+      DataTransferStruct.omit(...Struct.keys(TableContract.Tenant.fields)).pipe(
         Schema.partial,
       ),
     ),
-    Returns: table.Schema,
+    Returns: DataTransferObject,
   });
 
   export const delete_ = new DataAccessContract.Function({
@@ -68,13 +68,13 @@ export namespace RoomsContract {
       id: TableContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
-    Returns: table.Schema,
+    Returns: DataTransferStruct,
   });
 
   export const restore = new DataAccessContract.Function({
     name: "restoreRoom",
-    Args: table.Schema.pick("id"),
-    Returns: table.Schema,
+    Args: DataTransferStruct.pick("id"),
+    Returns: DataTransferStruct,
   });
 }
 
@@ -89,64 +89,46 @@ export namespace WorkflowsContract {
   export type StatusType = (typeof statusTypes)[number];
   export type PostReviewStatusType = Exclude<StatusType, "Review">;
 
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    type: Schema.Literal(...statusTypes),
+    charging: Schema.Boolean,
+    color: Schema.NullOr(HexColor),
+    index: Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
+    roomId: TableContract.EntityId,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
   export const default_ = [
-    {
-      id: "New",
-      type: "New",
-      charging: false,
-      color: null,
-    },
-    {
-      id: "Pending",
-      type: "Pending",
-      charging: false,
-      color: null,
-    },
-    {
-      id: "In Progress",
-      type: "InProgress",
-      charging: false,
-      color: null,
-    },
-    {
-      id: "Completed",
-      type: "Completed",
-      charging: true,
-      color: null,
-    },
-    {
-      id: "Canceled",
-      type: "Completed",
-      charging: false,
-      color: null,
-    },
-  ] satisfies Array<Omit<WorkflowStatus, "index" | "roomId" | "tenantId">>;
+    { name: "New", type: "New", charging: false },
+    { name: "Pending", type: "Pending", charging: false },
+    { name: "In Progress", type: "InProgress", charging: false },
+    { name: "Completed", type: "Completed", charging: true },
+    { name: "Canceled", type: "Completed", charging: false },
+  ] as const satisfies ReadonlyArray<
+    Pick<DataTransferObject, "name" | "type" | "charging">
+  >;
 
   export const tableName = "workflow_statuses";
-  export const table = TableContract.Sync<WorkflowStatusesTable>()(
+  export const table = TableContract.Sync<WorkflowStatusesSchema.Table>()(
     tableName,
-    Schema.Struct({
-      id: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      type: Schema.Literal(...statusTypes),
-      charging: Schema.Boolean,
-      color: Schema.NullOr(HexColor),
-      index: Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
-      roomId: TableContract.EntityId,
-      tenantId: TableContract.TenantId,
-    }),
+    DataTransferObject,
     ["create", "read"],
   );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    TableContract.View<ActivePublishedRoomWorkflowStatusesView>()(
+    TableContract.View<WorkflowStatusesSchema.ActivePublishedRoomView>()(
       activePublishedRoomViewName,
-      table.Schema,
+      DataTransferObject,
     );
 
   export const Workflow = Schema.Array(
     Schema.Struct({
-      ...table.Schema.omit("index", "roomId", "tenantId", "type").fields,
+      ...DataTransferStruct.omit("index", "roomId", "tenantId", "type").fields,
       type: Schema.Literal(...statusTypes.filter((type) => type !== "Review")),
     }),
   ).pipe(
@@ -163,6 +145,7 @@ export namespace WorkflowsContract {
         "Workflow must have exactly one status of type 'New'",
     ),
   );
+  export type Workflow = typeof Workflow.Type;
 
   export const set = new DataAccessContract.Function({
     name: "setWorkflow",
@@ -175,36 +158,41 @@ export namespace WorkflowsContract {
 }
 
 export namespace DeliveryOptionsContract {
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...TableContract.Tenant.fields,
+    name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    description: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
+    detailsLabel: Schema.NullOr(Schema.Trim),
+    cost: Schema.NullOr(
+      Schema.transform(Cost, Schema.String, {
+        decode: String,
+        encode: Number,
+        strict: true,
+      }),
+    ),
+    index: Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
+    roomId: TableContract.EntityId,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
   export const tableName = "delivery_options";
-  export const table = TableContract.Sync<DeliveryOptionsTable>()(
+  export const table = TableContract.Sync<DeliveryOptionsSchema.Table>()(
     tableName,
-    Schema.Struct({
-      id: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      description: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-      detailsLabel: Schema.NullOr(Schema.Trim),
-      cost: Schema.NullOr(
-        Schema.transform(Cost, Schema.String, {
-          decode: String,
-          encode: Number,
-          strict: true,
-        }),
-      ),
-      index: Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
-      roomId: TableContract.EntityId,
-      tenantId: TableContract.TenantId,
-    }),
+    DataTransferObject,
     ["create", "read"],
   );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    TableContract.View<ActivePublishedRoomDeliveryOptionsView>()(
+    TableContract.View<DeliveryOptionsSchema.ActivePublishedRoomView>()(
       activePublishedRoomViewName,
-      table.Schema,
+      DataTransferObject,
     );
 
   export const DeliveryOptions = Schema.Array(
-    table.Schema.omit("index", "roomId", "tenantId"),
+    DataTransferStruct.omit("index", "roomId", "tenantId"),
   ).pipe(
     Schema.filter(
       (opts) =>
@@ -212,6 +200,7 @@ export namespace DeliveryOptionsContract {
         "Delivery option names must be unique",
     ),
   );
+  export type DeliveryOptions = typeof DeliveryOptions.Type;
 
   export const set = new DataAccessContract.Function({
     name: "setDeliveryOptions",

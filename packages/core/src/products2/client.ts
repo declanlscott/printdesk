@@ -43,7 +43,10 @@ export namespace Products {
             makePolicy: () => AccessControl.permission("products:create"),
             mutator: (product, { tenantId }) =>
               repository.create(
-                ProductsContract.table.Schema.make({ ...product, tenantId }),
+                ProductsContract.DataTransferObject.make({
+                  ...product,
+                  tenantId,
+                }),
               ),
           }),
         );

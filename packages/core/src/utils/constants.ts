@@ -94,7 +94,7 @@ export namespace Constants {
 
   export const REPLICACHE_LIFETIME = Duration.weeks(2);
 
-  export const WORKFLOW_REVIEW_STATUS = "Review";
+  export const SOFT_DELETE_LIFETIME = Duration.weeks(12);
 
   export const MONTH_TRUNCATED_ISO_DATE_REGEX = new RegExp(
     /^\d{4}-(?:0[1-9]|1[0-2])$/u,

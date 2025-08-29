@@ -6,20 +6,39 @@ import {
   integer,
   pgTable,
   primaryKey,
+  varchar as varchar_,
 } from "drizzle-orm/pg-core";
-import { DateTime, ParseResult, Schema } from "effect";
+import { Array, DateTime, Match, ParseResult, Record, Schema } from "effect";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";
 import { TableContract } from "./contract";
 
-import type { BuildColumns, BuildExtraConfigColumns, SQL } from "drizzle-orm";
+import type {
+  BuildColumns,
+  BuildExtraConfigColumns,
+  SQL,
+  Writable,
+} from "drizzle-orm";
 import type {
   PgColumnBuilderBase,
   PgTable,
   PgTableExtraConfigValue,
   PgTableWithColumns,
+  PgVarcharConfig,
 } from "drizzle-orm/pg-core";
+
+export const varchar = <
+  TName extends string,
+  U extends string,
+  T extends Readonly<[U, ...U[]]>,
+  L extends number | undefined,
+>(
+  name: TName,
+  config: PgVarcharConfig<T | Writable<T>, L> = {
+    length: Constants.VARCHAR_LENGTH as L,
+  },
+) => varchar_(name, config);
 
 export const datetime = customType<{
   driverData: typeof Schema.DateTimeUtc.Encoded;
@@ -191,26 +210,24 @@ export const tenantTable = <
 export function buildConflictSet<TTable extends PgTable>(table: TTable) {
   const tableName = getTableName(table);
 
-  return Object.values(getTableColumns(table)).reduce(
+  return Array.reduce(
+    Object.values(getTableColumns(table)),
+    Record.empty<string, SQL>(),
     (set, column) => {
-      let statement: string;
-      switch (column.name) {
-        case "updated_at": {
-          statement = `COALESCE(EXCLUDED."${column.name}", NOW())`;
-          break;
-        }
-        case "version": {
-          statement = `"${tableName}"."version" + 1`;
-          break;
-        }
-        default:
-          statement = `COALESCE(EXCLUDED."${column.name}", "${tableName}"."${column.name}")`;
-      }
-
-      set[column.name] = sql.raw(statement);
+      set[column.name] = sql.raw(
+        Match.value(column.name).pipe(
+          Match.when(
+            "updated_at",
+            (name) => `COALESCE(EXCLUDED."${name}", NOW())`,
+          ),
+          Match.when("version", (name) => `"${tableName}"."${name}" + 1`),
+          Match.orElse(
+            (name) => `COALESCE(EXCLUDED."${name}", "${tableName}"."${name}")`,
+          ),
+        ),
+      );
 
       return set;
     },
-    {} as Record<string, SQL>,
   );
 }

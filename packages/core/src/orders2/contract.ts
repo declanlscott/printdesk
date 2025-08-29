@@ -2,7 +2,6 @@ import { Either, Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
 import { TableContract } from "../database2/contract";
-import { Constants } from "../utils/constants";
 import { IsoDate, IsoTimestamp } from "../utils2";
 
 import type { OrdersSchema } from "./schema";
@@ -197,11 +196,9 @@ export namespace OrdersContract {
     }),
     productId: TableContract.EntityId,
     billingAccountId: TableContract.EntityId,
+    workflowStatusId: TableContract.EntityId,
+    deliveryOptionId: TableContract.EntityId,
     attributes: Attributes,
-    workflowStatus: Schema.Trim.pipe(
-      Schema.maxLength(Constants.VARCHAR_LENGTH),
-    ),
-    deliverTo: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
     approvedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
       default: () => null,
     }),
@@ -225,10 +222,10 @@ export namespace OrdersContract {
   export const activeManagedBillingAccountView =
     TableContract.View<OrdersSchema.ActiveManagedBillingAccountView>()(
       activeManagedBillingAccountViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        authorizedManagerId: TableContract.EntityId,
+      }),
     );
 
   export const activePlacedViewName = `active_placed_${tableName}`;
@@ -308,7 +305,7 @@ export namespace OrdersContract {
         "managerId",
         "operatorId",
         "billingAccountId",
-        "workflowStatus",
+        "workflowStatusId",
         "approvedAt",
       ).pipe(Schema.partial),
     ),
@@ -317,18 +314,16 @@ export namespace OrdersContract {
 
   export const approve = new DataAccessContract.Function({
     name: "approveOrder",
-    Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt", "workflowStatus"),
-      Schema.Struct({
-        approvedAt: Schema.DateTimeUtc,
-      }),
-    ),
+    Args: Schema.Struct({
+      ...DataTransferStruct.pick("id", "updatedAt", "workflowStatusId").fields,
+      approvedAt: Schema.DateTimeUtc,
+    }),
     Returns: DataTransferObject,
   });
 
   export const transition = new DataAccessContract.Function({
     name: "transitionOrder",
-    Args: DataTransferStruct.pick("id", "updatedAt", "workflowStatus"),
+    Args: DataTransferStruct.pick("id", "updatedAt", "workflowStatusId"),
     Returns: DataTransferObject,
   });
 

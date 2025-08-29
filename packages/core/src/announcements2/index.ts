@@ -351,44 +351,6 @@ export namespace Announcements {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const deleteById = Effect.fn("Announcements.Repository.deleteById")(
-          (
-            id: AnnouncementsSchema.Row["id"],
-            deletedAt: NonNullable<AnnouncementsSchema.Row["deletedAt"]>,
-            tenantId: AnnouncementsSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set({ deletedAt })
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
-        const deleteByRoomId = Effect.fn(
-          "Announcements.Repository.deleteByRoomId",
-        )(
-          (
-            roomId: AnnouncementsSchema.Row["roomId"],
-            deletedAt: NonNullable<AnnouncementsSchema.Row["deletedAt"]>,
-            tenantId: AnnouncementsSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set({ deletedAt })
-                  .where(
-                    and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
-                  )
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
         return {
           create,
           findCreates,
@@ -400,8 +362,6 @@ export namespace Announcements {
           findFastForward,
           findActiveFastForward,
           updateById,
-          deleteById,
-          deleteByRoomId,
         };
       }),
     },
@@ -447,7 +407,7 @@ export namespace Announcements {
             makePolicy: () => AccessControl.permission("announcements:delete"),
             mutator: ({ id, deletedAt }, session) =>
               repository
-                .deleteById(id, deletedAt, session.tenantId)
+                .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
           }),
         );

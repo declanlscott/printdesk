@@ -2,7 +2,6 @@ import { eq, isNull } from "drizzle-orm";
 import { index, pgView, varchar } from "drizzle-orm/pg-core";
 
 import { id, jsonb, pgEnum, tenantTable } from "../database2/constructors";
-import { Constants } from "../utils/constants";
 import { ProductsContract } from "./contract";
 
 import type { InferSelectViewModel } from "drizzle-orm";
@@ -12,8 +11,10 @@ export namespace ProductsSchema {
   export const table = tenantTable(
     ProductsContract.tableName,
     {
-      name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-      status: pgEnum("status", ProductsContract.statuses).notNull(),
+      name: varchar("name").notNull(),
+      status: pgEnum("status", ProductsContract.statuses)
+        .default("draft")
+        .notNull(),
       roomId: id<TableContract.EntityId>("room_id").notNull(),
       config: jsonb("config", ProductsContract.Configuration).notNull(),
     },

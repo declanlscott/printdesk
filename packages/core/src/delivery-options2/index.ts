@@ -1,27 +1,33 @@
 import {
   and,
+  asc,
+  desc,
   eq,
   getTableName,
   getViewName,
+  gte,
   inArray,
+  lte,
   not,
   notInArray,
+  sql,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Number, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
-import { ProductsContract } from "./contract";
-import { ProductsSchema } from "./schema";
+import { DeliveryOptionsContract } from "./contract";
+import { DeliveryOptionsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
 
-export namespace Products {
+export namespace DeliveryOptions {
   export class Repository extends Effect.Service<Repository>()(
-    "@printdesk/core/products/Repository",
+    "@printdesk/core/delivery-options/Repository",
     {
       dependencies: [
         Database.TransactionManager.Default,
@@ -29,18 +35,19 @@ export namespace Products {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ProductsSchema.table;
-        const activeView = ProductsSchema.activeView;
-        const activePublishedView = ProductsSchema.activePublishedView;
+        const table = DeliveryOptionsSchema.table;
+        const activeView = DeliveryOptionsSchema.activeView;
+        const activePublishedRoomView =
+          DeliveryOptionsSchema.activePublishedRoomView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
         const metadataTable = ReplicacheClientViewMetadataSchema.table;
 
-        const create = Effect.fn("Products.Repository.create")(
-          (product: InferInsertModel<ProductsSchema.Table>) =>
+        const create = Effect.fn("DeliveryOptions.Repository.create")(
+          (deliveryOption: InferInsertModel<DeliveryOptionsSchema.Table>) =>
             db
               .useTransaction((tx) =>
-                tx.insert(table).values(product).returning(),
+                tx.insert(table).values(deliveryOption).returning(),
               )
               .pipe(
                 Effect.flatMap(Array.head),
@@ -48,11 +55,29 @@ export namespace Products {
               ),
         );
 
-        const findCreates = Effect.fn("Products.Repository.findCreates")(
+        const upsertMany = Effect.fn("DeliveryOptions.Repository.upsertMany")(
+          (
+            deliveryOptions: Array<
+              InferInsertModel<DeliveryOptionsSchema.Table>
+            >,
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .insert(table)
+                .values(deliveryOptions)
+                .onConflictDoUpdate({
+                  target: [table.id, table.tenantId],
+                  set: buildConflictSet(table),
+                })
+                .returning(),
+            ),
+        );
+
+        const findCreates = Effect.fn("DeliveryOptions.Repository.findCreates")(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -88,12 +113,12 @@ export namespace Products {
         );
 
         const findActiveCreates = Effect.fn(
-          "Products.Repository.findActiveCreates",
+          "DeliveryOptions.Repository.findActiveCreates",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -128,13 +153,13 @@ export namespace Products {
               ),
         );
 
-        const findActivePublishedCreates = Effect.fn(
-          "Products.Repository.findActivePublishedCreates",
+        const findActivePublishedRoomCreates = Effect.fn(
+          "DeliveryOptions.Repository.findActivePublishedRoomCreates",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -147,12 +172,14 @@ export namespace Products {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activePublishedView)}_creates`)
+                      .$with(`${getViewName(activePublishedRoomView)}_creates`)
                       .as(
                         tx
                           .select()
-                          .from(activePublishedView)
-                          .where(eq(activePublishedView.tenantId, tenantId)),
+                          .from(activePublishedRoomView)
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
@@ -169,10 +196,10 @@ export namespace Products {
               ),
         );
 
-        const findUpdates = Effect.fn("Products.Repository.findUpdates")(
+        const findUpdates = Effect.fn("DeliveryOptions.Repository.findUpdates")(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -203,11 +230,11 @@ export namespace Products {
         );
 
         const findActiveUpdates = Effect.fn(
-          "Products.Repository.findActiveUpdates",
+          "DeliveryOptions.Repository.findActiveUpdates",
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -240,12 +267,12 @@ export namespace Products {
               ),
         );
 
-        const findActivePublishedUpdates = Effect.fn(
-          "Products.Repository.findActivePublishedUpdates",
+        const findActivePublishedRoomUpdates = Effect.fn(
+          "DeliveryOptions.Repository.findActivePublishedRoomUpdates",
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -253,44 +280,46 @@ export namespace Products {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activePublishedView)}_updates`)
+                      .$with(`${getViewName(activePublishedRoomView)}_updates`)
                       .as(
                         qb
                           .innerJoin(
-                            activePublishedView,
+                            activePublishedRoomView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activePublishedView.id,
+                                activePublishedRoomView.id,
                               ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activePublishedView.version,
+                                  activePublishedRoomView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                activePublishedView.tenantId,
+                                activePublishedRoomView.tenantId,
                               ),
                             ),
                           )
-                          .where(eq(activePublishedView.tenantId, tenantId)),
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
-                      .select(cte[getViewName(activePublishedView)])
+                      .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),
               ),
         );
 
-        const findDeletes = Effect.fn("Products.Repository.findDeletes")(
+        const findDeletes = Effect.fn("DeliveryOptions.Repository.findDeletes")(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -314,12 +343,12 @@ export namespace Products {
         );
 
         const findActiveDeletes = Effect.fn(
-          "Products.Repository.findActiveDeletes",
+          "DeliveryOptions.Repository.findActiveDeletes",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -342,13 +371,13 @@ export namespace Products {
               ),
         );
 
-        const findActivePublishedDeletes = Effect.fn(
-          "Products.Repository.findActivePublishedDeletes",
+        const findActivePublishedRoomDeletes = Effect.fn(
+          "DeliveryOptions.Repository.findActivePublishedRoomDeletes",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -362,9 +391,9 @@ export namespace Products {
                   db.useTransaction((tx) =>
                     qb.except(
                       tx
-                        .select({ id: activePublishedView.id })
-                        .from(activePublishedView)
-                        .where(eq(activePublishedView.tenantId, tenantId)),
+                        .select({ id: activePublishedRoomView.id })
+                        .from(activePublishedRoomView)
+                        .where(eq(activePublishedRoomView.tenantId, tenantId)),
                     ),
                   ),
                 ),
@@ -372,13 +401,13 @@ export namespace Products {
         );
 
         const findFastForward = Effect.fn(
-          "Products.Repository.findFastForward",
+          "DeliveryOptions.Repository.findFastForward",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-            excludeIds: Array<ProductsSchema.Row["id"]>,
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -411,13 +440,13 @@ export namespace Products {
         );
 
         const findActiveFastForward = Effect.fn(
-          "Products.Repository.findActiveFastForward",
+          "DeliveryOptions.Repository.findActiveFastForward",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-            excludeIds: Array<ProductsSchema.Row["id"]>,
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -449,14 +478,14 @@ export namespace Products {
               ),
         );
 
-        const findActivePublishedFastForward = Effect.fn(
-          "Products.Repository.findActivePublishedFastForward",
+        const findActivePublishedRoomFastForward = Effect.fn(
+          "DeliveryOptions.Repository.findActivePublishedRoomFastForward",
         )(
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-            excludeIds: Array<ProductsSchema.Row["id"]>,
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -469,60 +498,147 @@ export namespace Products {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${getViewName(activePublishedView)}_fast_forward`)
+                      .$with(
+                        `${getViewName(activePublishedRoomView)}_fast_forward`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            activePublishedView,
+                            activePublishedRoomView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activePublishedView.id,
+                                activePublishedRoomView.id,
                               ),
-                              notInArray(activePublishedView.id, excludeIds),
+                              notInArray(
+                                activePublishedRoomView.id,
+                                excludeIds,
+                              ),
                             ),
                           )
-                          .where(eq(activePublishedView.tenantId, tenantId)),
+                          .where(
+                            eq(activePublishedRoomView.tenantId, tenantId),
+                          ),
                       );
 
                     return tx
-                      .select(cte[getViewName(activePublishedView)])
+                      .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),
               ),
         );
 
-        const updateById = Effect.fn("Products.Repository.updateById")(
+        const findTailIndexByRoomId = Effect.fn(
+          "DeliveryOptions.Repository.findTailIndexByRoomId",
+        )(
           (
-            id: ProductsSchema.Row["id"],
-            product: Partial<Omit<ProductsSchema.Row, "id" | "tenantId">>,
-            tenantId: ProductsSchema.Row["tenantId"],
+            roomId: DeliveryOptionsSchema.Row["roomId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({ index: table.index })
+                  .from(table)
+                  .where(
+                    and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
+                  )
+                  .orderBy(desc(table.index))
+                  .limit(1),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const findSliceByRoomId = Effect.fn(
+          "DeliveryOptions.Repository.findSliceByRoomId",
+        )(
+          (
+            start: DeliveryOptionsSchema.Row["index"],
+            end: DeliveryOptionsSchema.Row["index"],
+            roomId: DeliveryOptionsSchema.Row["roomId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+          ) =>
+            Effect.succeed(Number.sign(end - start) > 0).pipe(
+              Effect.flatMap((isAscending) =>
+                db.useTransaction((tx) =>
+                  tx
+                    .select()
+                    .from(table)
+                    .where(
+                      and(
+                        eq(table.roomId, roomId),
+                        eq(table.tenantId, tenantId),
+                        isAscending
+                          ? and(gte(table.index, start), lte(table.index, end))
+                          : and(lte(table.index, start), gte(table.index, end)),
+                      ),
+                    )
+                    .orderBy(
+                      isAscending ? asc(table.index) : desc(table.index),
+                    ),
+                ),
+              ),
+            ),
+        );
+
+        const negateIndexes = Effect.fn(
+          "DeliveryOptions.Repository.negateIndexes",
+        )(
+          (
+            ids: ReadonlyArray<DeliveryOptionsSchema.Row["id"]>,
+            roomId: DeliveryOptionsSchema.Row["roomId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .update(table)
+                .set({ index: sql`-${table.index}` })
+                .where(
+                  and(
+                    inArray(table.id, ids),
+                    eq(table.roomId, roomId),
+                    eq(table.tenantId, tenantId),
+                  ),
+                )
+                .returning(),
+            ),
+        );
+
+        const updateById = Effect.fn("DeliveryOptions.Repository.updateById")(
+          (
+            id: DeliveryOptionsSchema.Row["id"],
+            deliveryOption: Partial<
+              Omit<DeliveryOptionsSchema.Row, "id" | "tenantId">
+            >,
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
-                  .set(product)
+                  .set(deliveryOption)
                   .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
                   .returning(),
               )
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const updateByRoomId = Effect.fn("Products.Repository.updateByRoomId")(
+        const updateByRoomId = Effect.fn(
+          "DeliveryOptions.Repository.updateByRoomId",
+        )(
           (
-            roomId: ProductsSchema.Row["roomId"],
-            product: Partial<
-              Omit<ProductsSchema.Row, "id" | "roomId" | "tenantId">
+            roomId: DeliveryOptionsSchema.Row["roomId"],
+            deliveryOption: Partial<
+              Omit<DeliveryOptionsSchema.Row, "id" | "roomId" | "tenantId">
             >,
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
-                  .set(product)
+                  .set(deliveryOption)
                   .where(
                     and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
                   )
@@ -533,18 +649,22 @@ export namespace Products {
 
         return {
           create,
+          upsertMany,
           findCreates,
           findActiveCreates,
-          findActivePublishedCreates,
+          findActivePublishedRoomCreates,
           findUpdates,
           findActiveUpdates,
-          findActivePublishedUpdates,
+          findActivePublishedRoomUpdates,
           findDeletes,
           findActiveDeletes,
-          findActivePublishedDeletes,
+          findActivePublishedRoomDeletes,
           findFastForward,
           findActiveFastForward,
-          findActivePublishedFastForward,
+          findActivePublishedRoomFastForward,
+          findTailIndexByRoomId,
+          findSliceByRoomId,
+          negateIndexes,
           updateById,
           updateByRoomId,
         } as const;
@@ -553,81 +673,104 @@ export namespace Products {
   ) {}
 
   export class Mutations extends Effect.Service<Mutations>()(
-    "@printdesk/core/products/Mutations",
+    "@printdesk/core/delivery-options/Mutations",
     {
       accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const create = DataAccessContract.makeMutation(
-          ProductsContract.create,
+        const append = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.append,
           Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:create"),
-            mutator: (product, { tenantId }) =>
+            makePolicy: () =>
+              AccessControl.permission("delivery_options:create"),
+            mutator: (deliveryOption, { tenantId }) =>
               repository
-                .create({ ...product, tenantId })
-                .pipe(Effect.map(Struct.omit("version"))),
+                .findTailIndexByRoomId(deliveryOption.roomId, tenantId)
+                .pipe(
+                  Effect.catchTag("NoSuchElementException", () =>
+                    Effect.succeed({ index: -1 }),
+                  ),
+                  Effect.map(({ index }) => ++index),
+                  Effect.flatMap((index) =>
+                    repository.create({ ...deliveryOption, index, tenantId }),
+                  ),
+                  Effect.map(Struct.omit("version")),
+                ),
           }),
         );
 
         const edit = DataAccessContract.makeMutation(
-          ProductsContract.edit,
+          DeliveryOptionsContract.edit,
           Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, ...product }, session) =>
+            makePolicy: () =>
+              AccessControl.permission("delivery_options:update"),
+            mutator: ({ id, ...deliveryOption }, session) =>
               repository
-                .updateById(id, product, session.tenantId)
+                .updateById(id, deliveryOption, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
-        const publish = DataAccessContract.makeMutation(
-          ProductsContract.publish,
+        const reorder = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.reorder,
           Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, updatedAt }, session) =>
-              repository
-                .updateById(
-                  id,
-                  { status: "published", updatedAt },
-                  session.tenantId,
-                )
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+            makePolicy: () =>
+              AccessControl.permission("delivery_options:update"),
+            mutator: ({ oldIndex, newIndex, updatedAt, roomId }, session) =>
+              Effect.gen(function* () {
+                const delta = newIndex - oldIndex;
+                const shift = -Number.sign(delta);
 
-        const draft = DataAccessContract.makeMutation(
-          ProductsContract.draft,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, updatedAt }, session) =>
-              repository
-                .updateById(
-                  id,
-                  { status: "draft", updatedAt },
+                const slice = yield* repository.findSliceByRoomId(
+                  oldIndex,
+                  newIndex,
+                  roomId,
                   session.tenantId,
-                )
-                .pipe(Effect.map(Struct.omit("version"))),
+                );
+
+                const sliceLength = slice.length;
+                const absoluteDelta = Math.abs(delta);
+                if (sliceLength !== absoluteDelta)
+                  return yield* Effect.fail(
+                    new DeliveryOptionsContract.InvalidReorderDeltaError({
+                      sliceLength,
+                      absoluteDelta,
+                    }),
+                  );
+
+                // Temporarily negate indexes to avoid uniqueness violations in upsert
+                yield* repository.negateIndexes(
+                  Array.map(slice, ({ id }) => id),
+                  roomId,
+                  session.tenantId,
+                );
+
+                return yield* repository.upsertMany(
+                  Array.map(slice, (option, sliceIndex) => ({
+                    ...option,
+                    index: option.index + (sliceIndex === 0 ? delta : shift),
+                    updatedAt,
+                  })),
+                );
+              }),
           }),
         );
 
         const delete_ = DataAccessContract.makeMutation(
-          ProductsContract.delete_,
+          DeliveryOptionsContract.delete_,
           Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:delete"),
+            makePolicy: () =>
+              AccessControl.permission("delivery_options:delete"),
             mutator: ({ id, deletedAt }, session) =>
               repository
-                .updateById(
-                  id,
-                  { deletedAt, status: "draft" },
-                  session.tenantId,
-                )
+                .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
-        return { create, edit, publish, draft, delete: delete_ } as const;
+        return { append, edit, reorder, delete: delete_ } as const;
       }),
     },
   ) {}

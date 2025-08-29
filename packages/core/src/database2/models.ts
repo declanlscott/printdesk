@@ -11,6 +11,7 @@ import {
   BillingAccountsContract,
 } from "../billing-accounts2/contracts";
 import { CommentsContract } from "../comments2/contract";
+import { DeliveryOptionsContract } from "../delivery-options2/contract";
 import {
   IdentityProviderGroupsContract,
   IdentityProvidersContract,
@@ -18,17 +19,18 @@ import {
 import { InvoicesContract } from "../invoices2/contract";
 import { OrdersContract } from "../orders2/contract";
 import { ProductsContract } from "../products2/contract";
-import {
-  DeliveryOptionsContract,
-  RoomsContract,
-  WorkflowsContract,
-} from "../rooms2/contracts";
+import { RoomsContract } from "../rooms2/contracts";
 import {
   LicensesContract,
   TenantMetadataContract,
   TenantsContract,
 } from "../tenants2/contracts";
 import { UsersContract } from "../users2/contract";
+import {
+  BillingAccountWorkflowsContract,
+  RoomWorkflowsContract,
+  WorkflowStatusesContract,
+} from "../workflows2/contracts";
 
 export const models = Array.make(
   AnnouncementsContract.table,
@@ -49,6 +51,7 @@ export const models = Array.make(
   CommentsContract.activeManagedBillingAccountOrderView,
   CommentsContract.activePlacedOrderView,
   DeliveryOptionsContract.table,
+  DeliveryOptionsContract.activeView,
   DeliveryOptionsContract.activePublishedRoomView,
   IdentityProvidersContract.table,
   IdentityProviderGroupsContract.table,
@@ -71,6 +74,12 @@ export const models = Array.make(
   TenantMetadataContract.table,
   UsersContract.table,
   UsersContract.activeView,
-  WorkflowsContract.table,
-  WorkflowsContract.activePublishedRoomView,
+  BillingAccountWorkflowsContract.table,
+  BillingAccountWorkflowsContract.activeView,
+  BillingAccountWorkflowsContract.activeManagerAuthorizedView,
+  BillingAccountWorkflowsContract.activeCustomerAuthorizedView,
+  RoomWorkflowsContract.table,
+  RoomWorkflowsContract.activeView,
+  RoomWorkflowsContract.activePublishedRoomView,
+  WorkflowStatusesContract.table,
 );

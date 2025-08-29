@@ -50,20 +50,20 @@ export namespace InvoicesContract {
   export const activeManagedBillingAccountOrderView =
     TableContract.View<InvoicesSchema.ActiveManagedBillingAccountOrderView>()(
       activeManagedBillingAccountOrderViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        authorizedManagerId: TableContract.EntityId,
+      }),
     );
 
   export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
   export const activePlacedOrderView =
     TableContract.View<InvoicesSchema.ActivePlacedOrderView>()(
       activePlacedOrderViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ customerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        customerId: TableContract.EntityId,
+      }),
     );
 
   export const create = new DataAccessContract.Function({

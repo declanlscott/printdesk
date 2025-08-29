@@ -1,5 +1,7 @@
 import { Array, Data, DateTime, Schema } from "effect";
 
+import { Constants } from "../utils/constants";
+import { generateId } from "../utils/shared";
 import { NanoId } from "../utils2";
 
 import type {
@@ -12,6 +14,11 @@ import type { PgTable, PgView } from "drizzle-orm/pg-core";
 import type { AccessControl } from "../access-control2";
 
 export namespace TableContract {
+  export const VarChar = Schema.Trim.pipe(
+    Schema.maxLength(Constants.VARCHAR_LENGTH),
+  );
+  export type VarChar = typeof VarChar.Type;
+
   export class Timestamps extends Schema.Class<Timestamps>("Timestamps")({
     createdAt: Schema.optionalWith(Schema.DateTimeUtc, {
       default: DateTime.unsafeNow,
@@ -31,7 +38,10 @@ export namespace TableContract {
 
   export class TenantColumns extends Schema.Class<TenantColumns>(
     "TenantColumns",
-  )({ id: EntityId, tenantId: TenantId }) {}
+  )({
+    id: Schema.optionalWith(EntityId, { default: generateId }),
+    tenantId: TenantId,
+  }) {}
 
   export class Tenant extends Schema.Class<Tenant>("TenantTable")({
     ...TenantColumns.fields,

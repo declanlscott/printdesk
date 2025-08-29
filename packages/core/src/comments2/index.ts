@@ -864,36 +864,21 @@ export namespace Comments {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const deleteById = Effect.fn("Comments.Repository.deleteById")(
-          (
-            id: CommentsSchema.Row["id"],
-            deletedAt: NonNullable<CommentsSchema.Row["deletedAt"]>,
-            tenantId: CommentsSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set({ deletedAt })
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
-        const deleteByOrderId = Effect.fn(
-          "Comments.Repository.deleteByOrderId",
+        const updateByOrderId = Effect.fn(
+          "Comments.Repository.updateByOrderId",
         )(
           (
             orderId: CommentsSchema.Row["orderId"],
-            deletedAt: NonNullable<CommentsSchema.Row["deletedAt"]>,
+            comment: Partial<
+              Omit<CommentsSchema.Row, "id" | "orderId" | "tenantId">
+            >,
             tenantId: CommentsSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
-                  .set({ deletedAt })
+                  .set(comment)
                   .where(
                     and(
                       eq(table.orderId, orderId),
@@ -925,8 +910,7 @@ export namespace Comments {
           findActiveFastForwardByOrderCustomerId,
           findById,
           updateById,
-          deleteById,
-          deleteByOrderId,
+          updateByOrderId,
         } as const;
       }),
     },
@@ -1021,7 +1005,7 @@ export namespace Comments {
               ),
             mutator: ({ id, deletedAt }, session) =>
               repository
-                .deleteById(id, deletedAt, session.tenantId)
+                .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
           }),
         );

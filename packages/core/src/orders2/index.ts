@@ -892,30 +892,6 @@ export namespace Orders {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const deleteByProductId = Effect.fn(
-          "Orders.Repository.deleteByProductId",
-        )(
-          (
-            productId: OrdersSchema.Row["productId"],
-            deletedAt: NonNullable<OrdersSchema.Row["deletedAt"]>,
-            tenantId: OrdersSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set({ deletedAt })
-                  .where(
-                    and(
-                      eq(table.productId, productId),
-                      eq(table.tenantId, tenantId),
-                    ),
-                  )
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
         return {
           create,
           findCreates,
@@ -938,8 +914,6 @@ export namespace Orders {
           findActiveManagerIds,
           findStatus,
           updateById,
-          deleteById,
-          deleteByProductId,
         } as const;
       }),
     },
@@ -1185,7 +1159,7 @@ export namespace Orders {
               ),
             mutator: ({ id, deletedAt }, session) =>
               repository
-                .deleteById(id, deletedAt, session.tenantId)
+                .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
           }),
         );

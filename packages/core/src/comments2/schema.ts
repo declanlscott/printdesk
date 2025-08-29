@@ -50,23 +50,10 @@ export namespace CommentsSchema {
         ),
       )
       .innerJoin(
-        BillingAccountsSchema.activeView,
-        and(
-          eq(
-            OrdersSchema.activeView.billingAccountId,
-            BillingAccountsSchema.activeView.id,
-          ),
-          eq(
-            OrdersSchema.activeView.tenantId,
-            BillingAccountsSchema.activeView.tenantId,
-          ),
-        ),
-      )
-      .innerJoin(
         BillingAccountManagerAuthorizationsSchema.activeView,
         and(
           eq(
-            BillingAccountsSchema.activeView.id,
+            OrdersSchema.activeView.billingAccountId,
             BillingAccountManagerAuthorizationsSchema.activeView
               .billingAccountId,
           ),

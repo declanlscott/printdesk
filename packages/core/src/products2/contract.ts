@@ -2,7 +2,6 @@ import { Either, Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
 import { TableContract } from "../database2/contract";
-import { Constants } from "../utils/constants";
 import { Cost, HexColor } from "../utils2";
 
 import type { ProductsSchema } from "./schema";
@@ -236,8 +235,10 @@ export namespace ProductsContract {
     "DataTransferObject",
   )({
     ...TableContract.Tenant.fields,
-    name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
-    status: Schema.Literal(...statuses),
+    name: TableContract.VarChar,
+    status: Schema.optionalWith(Schema.Literal(...statuses), {
+      default: () => "draft",
+    }),
     roomId: TableContract.EntityId,
     config: Configuration,
   }) {}
@@ -269,15 +270,28 @@ export namespace ProductsContract {
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Function({
-    name: "updateProduct",
+  export const edit = new DataAccessContract.Function({
+    name: "editProduct",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(
         ...Struct.keys(TableContract.Tenant.fields),
+        "status",
         "roomId",
       ).pipe(Schema.partial),
     ),
+    Returns: DataTransferObject,
+  });
+
+  export const publish = new DataAccessContract.Function({
+    name: "publishProduct",
+    Args: DataTransferStruct.pick("id", "updatedAt"),
+    Returns: DataTransferObject,
+  });
+
+  export const draft = new DataAccessContract.Function({
+    name: "draftProduct",
+    Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 

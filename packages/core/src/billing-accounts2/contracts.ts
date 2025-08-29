@@ -57,20 +57,20 @@ export namespace BillingAccountsContract {
   export const activeCustomerAuthorizedView =
     TableContract.View<BillingAccountsSchema.ActiveCustomerAuthorizedView>()(
       activeCustomerAuthorizedViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedCustomerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        authorizedCustomerId: TableContract.EntityId,
+      }),
     );
 
   export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
   export const activeManagerAuthorizedView =
     TableContract.View<BillingAccountsSchema.ActiveManagerAuthorizedView>()(
       activeManagerAuthorizedViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        authorizedManagerId: TableContract.EntityId,
+      }),
     );
 
   export const hasActiveAuthorization = new DataAccessContract.Function({
@@ -82,12 +82,10 @@ export namespace BillingAccountsContract {
   export const hasActiveCustomerAuthorization = new DataAccessContract.Function(
     {
       name: "hasActiveBillingAccountCustomerAuthorization",
-      Args: Schema.extend(
-        DataTransferStruct.pick("id"),
-        Schema.Struct({
-          customerId: Schema.optional(TableContract.EntityId),
-        }),
-      ),
+      Args: Schema.Struct({
+        ...DataTransferStruct.pick("id").fields,
+        customerId: Schema.optional(TableContract.EntityId),
+      }),
       Returns: Schema.Void,
     },
   );
@@ -192,10 +190,10 @@ export namespace BillingAccountManagerAuthorizationsContract {
   export const activeCustomerAuthorizedView =
     TableContract.View<BillingAccountManagerAuthorizationsSchema.ActiveCustomerAuthorizedView>()(
       activeCustomerAuthorizedViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedCustomerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        authorizedCustomerId: TableContract.EntityId,
+      }),
     );
 
   export const create = new DataAccessContract.Function({

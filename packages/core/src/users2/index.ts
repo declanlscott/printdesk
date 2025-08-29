@@ -443,23 +443,6 @@ export namespace Users {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const deleteById = Effect.fn("Users.Repository.deleteById")(
-          (
-            id: UsersSchema.Row["id"],
-            deletedAt: NonNullable<UsersSchema.Row["deletedAt"]>,
-            tenantId: UsersSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set({ deletedAt })
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
         return {
           upsertMany,
           findCreates,
@@ -476,7 +459,6 @@ export namespace Users {
           findByIdentityProvider,
           findByUsernames,
           updateById,
-          deleteById,
         } as const;
       }),
     },
@@ -531,7 +513,7 @@ export namespace Users {
               ),
             mutator: ({ id, deletedAt }, session) =>
               repository
-                .deleteById(id, deletedAt, session.tenantId)
+                .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
           }),
         );

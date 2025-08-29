@@ -1,13 +1,12 @@
-import { Array, Effect, Option, Schema } from "effect";
+import { Effect, Tuple } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Products } from "../products2/client";
 import { Replicache } from "../replicache2/client";
-import {
-  DeliveryOptionsContract,
-  RoomsContract,
-  WorkflowsContract,
-} from "./contracts";
+import { RoomWorkflows } from "../workflows2/client";
+import { RoomWorkflowsContract } from "../workflows2/contracts";
+import { RoomsContract } from "./contracts";
 
 export namespace Rooms {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
@@ -40,23 +39,69 @@ export namespace Rooms {
       dependencies: [WriteRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
+        const workflowsRepository = yield* RoomWorkflows.WriteRepository;
+        const productsRepository = yield* Products.WriteRepository;
 
         const create = DataAccessContract.makeMutation(
           RoomsContract.create,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:create"),
-            mutator: (room, { tenantId }) =>
-              repository.create(
-                RoomsContract.DataTransferObject.make({ ...room, tenantId }),
-              ),
+            mutator: ({ workflowId, ...room }, { tenantId }) =>
+              Effect.all(
+                Tuple.make(
+                  repository.create(
+                    RoomsContract.DataTransferObject.make({
+                      ...room,
+                      tenantId,
+                    }),
+                  ),
+                  workflowsRepository.create(
+                    RoomWorkflowsContract.DataTransferObject.make({
+                      id: workflowId,
+                      roomId: room.id,
+                      createdAt: room.createdAt,
+                      updatedAt: room.updatedAt,
+                      tenantId,
+                    }),
+                  ),
+                ),
+                { concurrency: "unbounded" },
+              ).pipe(Effect.map(Tuple.at(0))),
           }),
         );
 
-        const update = DataAccessContract.makeMutation(
-          RoomsContract.update,
+        const edit = DataAccessContract.makeMutation(
+          RoomsContract.edit,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:update"),
             mutator: ({ id, ...room }) => repository.updateById(id, room),
+          }),
+        );
+
+        const publish = DataAccessContract.makeMutation(
+          RoomsContract.publish,
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("rooms:update"),
+            mutator: ({ id, updatedAt }) =>
+              repository.updateById(id, { status: "published", updatedAt }),
+          }),
+        );
+
+        const draft = DataAccessContract.makeMutation(
+          RoomsContract.draft,
+          Effect.succeed({
+            makePolicy: () => AccessControl.permission("rooms:update"),
+            mutator: ({ id, updatedAt }) =>
+              Effect.all(
+                Tuple.make(
+                  repository.updateById(id, { status: "draft", updatedAt }),
+                  productsRepository.updateByRoomId(id, {
+                    status: "draft",
+                    updatedAt,
+                  }),
+                ),
+                { concurrency: "unbounded" },
+              ).pipe(Effect.map(Tuple.at(0))),
           }),
         );
 
@@ -65,12 +110,35 @@ export namespace Rooms {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
             mutator: ({ id, deletedAt }) =>
-              repository.updateById(id, { deletedAt }).pipe(
-                AccessControl.enforce(AccessControl.permission("rooms:read")),
-                Effect.catchTag("AccessDeniedError", () =>
-                  repository.deleteById(id),
+              Effect.all(
+                Tuple.make(
+                  repository.updateById(id, { deletedAt }).pipe(
+                    AccessControl.enforce(
+                      AccessControl.permission("rooms:read"),
+                    ),
+                    Effect.catchTag("AccessDeniedError", () =>
+                      repository.deleteById(id),
+                    ),
+                  ),
+                  workflowsRepository.updateByRoomId(id, { deletedAt }).pipe(
+                    AccessControl.enforce(
+                      AccessControl.permission("room_workflows:read"),
+                    ),
+                    Effect.catchTag("AccessDeniedError", () =>
+                      workflowsRepository.deleteByRoomId(id),
+                    ),
+                  ),
+                  productsRepository.updateByRoomId(id, { deletedAt }).pipe(
+                    AccessControl.enforce(
+                      AccessControl.permission("products:read"),
+                    ),
+                    Effect.catchTag("AccessDeniedError", () =>
+                      productsRepository.deleteByRoomId(id),
+                    ),
+                  ),
                 ),
-              ),
+                { concurrency: "unbounded" },
+              ).pipe(Effect.map(Tuple.at(0))),
           }),
         );
 
@@ -78,225 +146,26 @@ export namespace Rooms {
           RoomsContract.restore,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:delete"),
-            mutator: ({ id }) => repository.updateById(id, { deletedAt: null }),
-          }),
-        );
-
-        return { create, update, delete: delete_, restore } as const;
-      }),
-    },
-  ) {}
-
-  export class WorkflowReadRepository extends Effect.Service<WorkflowReadRepository>()(
-    "@printdesk/core/rooms/client/WorkflowReadRepository",
-    {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(WorkflowsContract.table),
-    },
-  ) {}
-
-  export class WorkflowWriteRepository extends Effect.Service<WorkflowWriteRepository>()(
-    "@printdesk/core/rooms/client/WorkflowWriteRepository",
-    {
-      dependencies: [
-        WorkflowReadRepository.Default,
-        Replicache.ReadTransactionManager.Default,
-        Replicache.WriteTransactionManager.Default,
-      ],
-      effect: WorkflowReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Effect.gen(function* () {
-            const base = yield* Replicache.makeWriteRepository(
-              WorkflowsContract.table,
-              repository,
-            );
-            const { scan } = yield* Replicache.ReadTransactionManager;
-            const { set, del } = yield* Replicache.WriteTransactionManager;
-
-            const upsert = (
-              workflow: WorkflowsContract.Workflow,
-              roomId: WorkflowsContract.DataTransferObject["roomId"],
-              tenantId: WorkflowsContract.DataTransferObject["tenantId"],
-            ) =>
+            mutator: ({ id }) =>
               Effect.all(
-                Array.map(workflow, (status, index) =>
-                  set(
-                    WorkflowsContract.table,
-                    status.id,
-                    WorkflowsContract.table.Schema.make({
-                      ...status,
-                      index,
-                      roomId,
-                      tenantId,
-                    }),
-                  ),
+                Tuple.make(
+                  repository.updateById(id, { deletedAt: null }),
+                  workflowsRepository.updateByRoomId(id, { deletedAt: null }),
+                  productsRepository.updateByRoomId(id, { deletedAt: null }),
                 ),
-              ).pipe(
-                Effect.map(
-                  Array.filterMap((status) =>
-                    status.type !== "Review"
-                      ? Option.some(
-                          status as WorkflowStatus & {
-                            readonly type: Exclude<
-                              WorkflowStatus["type"],
-                              "Review"
-                            >;
-                          },
-                        )
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Schema.decode(WorkflowsContract.Workflow)),
-                Effect.tap((workflow) =>
-                  scan(WorkflowsContract.table).pipe(
-                    Effect.map(
-                      Array.filterMap((status) =>
-                        !Array.some(workflow, (s) => s.id === status.id) &&
-                        status.index >= 0 &&
-                        status.roomId === roomId &&
-                        status.tenantId === tenantId
-                          ? Option.some(del(WorkflowsContract.table, status.id))
-                          : Option.none(),
-                      ),
-                    ),
-                    Effect.flatMap(
-                      Effect.allWith({
-                        concurrency: "unbounded",
-                        discard: true,
-                      }),
-                    ),
-                  ),
-                ),
-              );
-
-            return { ...base, upsert } as const;
-          }),
-        ),
-      ),
-    },
-  ) {}
-
-  export class WorkflowMutations extends Effect.Service<WorkflowMutations>()(
-    "@printdesk/core/rooms/client/WorkflowMutations",
-    {
-      accessors: true,
-      dependencies: [WorkflowWriteRepository.Default],
-      effect: Effect.gen(function* () {
-        const repository = yield* WorkflowWriteRepository;
-
-        const set = DataAccessContract.makeMutation(
-          WorkflowsContract.set,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("workflow_statuses:create"),
-            mutator: ({ workflow, roomId }, session) =>
-              repository.upsert(workflow, roomId, session.tenantId),
+                { concurrency: "unbounded" },
+              ).pipe(Effect.map(Tuple.at(0))),
           }),
         );
 
-        return { set } as const;
-      }),
-    },
-  ) {}
-
-  export class DeliveryOptionsReadRepository extends Effect.Service<DeliveryOptionsReadRepository>()(
-    "@printdesk/core/rooms/client/DeliveryOptionsReadRepository",
-    {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(DeliveryOptionsContract.table),
-    },
-  ) {}
-
-  export class DeliveryOptionsWriteRepository extends Effect.Service<DeliveryOptionsWriteRepository>()(
-    "@printdesk/core/rooms/client/DeliveryOptionsWriteRepository",
-    {
-      dependencies: [
-        DeliveryOptionsReadRepository.Default,
-        Replicache.ReadTransactionManager.Default,
-        Replicache.WriteTransactionManager.Default,
-      ],
-      effect: DeliveryOptionsReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Effect.gen(function* () {
-            const base = yield* Replicache.makeWriteRepository(
-              DeliveryOptionsContract.table,
-              repository,
-            );
-            const { scan } = yield* Replicache.ReadTransactionManager;
-            const { set, del } = yield* Replicache.WriteTransactionManager;
-
-            const upsert = (
-              deliveryOptions: typeof DeliveryOptionsContract.DeliveryOptions.Type,
-              roomId: WorkflowsContract.DataTransferObject["roomId"],
-              tenantId: WorkflowsContract.DataTransferObject["tenantId"],
-            ) =>
-              Effect.all(
-                Array.map(deliveryOptions, (option, index) =>
-                  set(
-                    DeliveryOptionsContract.table,
-                    option.id,
-                    DeliveryOptionsContract.DataTransferObject.make({
-                      ...option,
-                      index,
-                      roomId,
-                      tenantId,
-                    }),
-                  ),
-                ),
-              ).pipe(
-                Effect.flatMap(
-                  Schema.decode(DeliveryOptionsContract.DeliveryOptions),
-                ),
-                Effect.tap((options) =>
-                  scan(DeliveryOptionsContract.table).pipe(
-                    Effect.map(
-                      Array.filterMap((option) =>
-                        !Array.some(options, (o) => o.id === option.id) &&
-                        option.index >= 0 &&
-                        option.roomId === roomId &&
-                        option.tenantId === tenantId
-                          ? Option.some(
-                              del(DeliveryOptionsContract.table, option.id),
-                            )
-                          : Option.none(),
-                      ),
-                    ),
-                    Effect.flatMap(
-                      Effect.allWith({
-                        concurrency: "unbounded",
-                        discard: true,
-                      }),
-                    ),
-                  ),
-                ),
-              );
-
-            return { ...base, upsert } as const;
-          }),
-        ),
-      ),
-    },
-  ) {}
-
-  export class DeliveryOptionsMutations extends Effect.Service<DeliveryOptionsMutations>()(
-    "@printdesk/core/rooms/client/DeliveryOptionsMutations",
-    {
-      accessors: true,
-      dependencies: [DeliveryOptionsWriteRepository.Default],
-      effect: Effect.gen(function* () {
-        const repository = yield* DeliveryOptionsWriteRepository;
-
-        const set = DataAccessContract.makeMutation(
-          DeliveryOptionsContract.set,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:create"),
-            mutator: ({ options, roomId }, session) =>
-              repository.upsert(options, roomId, session.tenantId),
-          }),
-        );
-
-        return { set } as const;
+        return {
+          create,
+          edit,
+          publish,
+          draft,
+          delete: delete_,
+          restore,
+        } as const;
       }),
     },
   ) {}

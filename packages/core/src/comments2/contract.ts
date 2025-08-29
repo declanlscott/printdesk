@@ -35,22 +35,22 @@ export namespace CommentsContract {
   export const activeManagedBillingAccountOrderView =
     TableContract.View<CommentsSchema.ActiveManagedBillingAccountOrderView>()(
       activeManagedBillingAccountOrderViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
-      ),
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        authorizedManagerId: TableContract.EntityId,
+      }),
     );
 
   export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
   export const activePlacedOrderView =
     TableContract.View<CommentsSchema.ActivePlacedOrderView>()(
       activePlacedOrderViewName,
-      Schema.extend(
-        DataTransferObject,
-        BillingAccountCustomerAuthorizationsContract.DataTransferStruct.pick(
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        ...BillingAccountCustomerAuthorizationsContract.DataTransferStruct.pick(
           "customerId",
-        ),
-      ),
+        ).fields,
+      }),
     );
 
   export const isAuthor = new DataAccessContract.Function({

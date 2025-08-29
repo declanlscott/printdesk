@@ -33,8 +33,13 @@ export namespace ReplicacheClientGroupsContract {
     id: Schema.UUID,
     tenantId: TableContract.TenantId,
     userId: TableContract.EntityId,
-    clientVersion: TableContract.Version,
-    clientViewVersion: Schema.NullOr(TableContract.Version),
+    clientVersion: Schema.optionalWith(TableContract.Version, {
+      default: () => TableContract.Version.make(0),
+    }),
+    clientViewVersion: Schema.optionalWith(
+      Schema.NullOr(TableContract.Version),
+      { default: () => null },
+    ),
     ...TableContract.Timestamps.fields,
   }) {}
 
@@ -54,7 +59,9 @@ export namespace ReplicacheClientsContract {
     lastMutationId: Schema.optionalWith(Schema.Int, {
       default: () => 0,
     }),
-    version: TableContract.Version,
+    version: Schema.optionalWith(TableContract.Version, {
+      default: () => TableContract.Version.make(0),
+    }),
     ...TableContract.Timestamps.fields,
   }) {}
 

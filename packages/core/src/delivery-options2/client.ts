@@ -27,11 +27,10 @@ export namespace DeliveryOptions {
               ),
             ),
             Effect.flatMap(Array.head),
-            Effect.map((asdf) => asdf),
             Effect.map(({ index }) => ({ index })),
           );
 
-        const findSlice = (
+        const findSliceByRoomId = (
           start: DeliveryOptionsContract.DataTransferObject["index"],
           end: DeliveryOptionsContract.DataTransferObject["index"],
           roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
@@ -56,7 +55,7 @@ export namespace DeliveryOptions {
             ),
           );
 
-        return { ...base, findTailIndexByRoomId, findSlice } as const;
+        return { ...base, findTailIndexByRoomId, findSliceByRoomId } as const;
       }),
     },
   ) {}
@@ -132,7 +131,7 @@ export namespace DeliveryOptions {
                 const delta = newIndex - oldIndex;
                 const shift = -Number.sign(delta);
 
-                const slice = yield* readRepository.findSlice(
+                const slice = yield* readRepository.findSliceByRoomId(
                   oldIndex,
                   newIndex,
                   roomId,

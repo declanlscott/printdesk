@@ -6,17 +6,15 @@ import {
   BillingAccountsContract,
 } from "../billing-accounts2/contracts";
 import { CommentsContract } from "../comments2/contract";
+import { DeliveryOptionsContract } from "../delivery-options2/contract";
 import { InvoicesContract } from "../invoices2/contract";
 import { OrdersContract } from "../orders2/contract";
 import { ProductsContract } from "../products2/contract";
 import { ReplicacheContract } from "../replicache2/contracts";
-import {
-  DeliveryOptionsContract,
-  RoomsContract,
-  WorkflowsContract,
-} from "../rooms2/contracts";
+import { RoomsContract } from "../rooms2/contracts";
 import { TenantsContract } from "../tenants2/contracts";
 import { UsersContract } from "../users2/contract";
+import { WorkflowStatusesContract } from "../workflows2/contracts";
 import { DataAccessContract } from "./contract";
 
 export class Policies extends Effect.Service<Policies>()(
@@ -69,7 +67,10 @@ export class Mutations extends Effect.Service<Mutations>()(
           .set(CommentsContract.create)
           .set(CommentsContract.update)
           .set(CommentsContract.delete_)
-          .set(DeliveryOptionsContract.set)
+          .set(DeliveryOptionsContract.append)
+          .set(DeliveryOptionsContract.edit)
+          .set(DeliveryOptionsContract.reorder)
+          .set(DeliveryOptionsContract.delete_)
           .set(InvoicesContract.create)
           .set(OrdersContract.create)
           .set(OrdersContract.edit)
@@ -77,17 +78,24 @@ export class Mutations extends Effect.Service<Mutations>()(
           .set(OrdersContract.transition)
           .set(OrdersContract.delete_)
           .set(ProductsContract.create)
-          .set(ProductsContract.update)
+          .set(ProductsContract.edit)
+          .set(ProductsContract.publish)
+          .set(ProductsContract.draft)
           .set(ProductsContract.delete_)
           .set(RoomsContract.create)
-          .set(RoomsContract.update)
+          .set(RoomsContract.edit)
+          .set(RoomsContract.publish)
+          .set(RoomsContract.draft)
           .set(RoomsContract.delete_)
           .set(RoomsContract.restore)
           .set(TenantsContract.update)
           .set(UsersContract.update)
           .set(UsersContract.delete_)
           .set(UsersContract.restore)
-          .set(WorkflowsContract.set)
+          .set(WorkflowStatusesContract.append)
+          .set(WorkflowStatusesContract.edit)
+          .set(WorkflowStatusesContract.reorder)
+          .set(WorkflowStatusesContract.delete_)
           .done(),
       ).pipe(Effect.cached);
 

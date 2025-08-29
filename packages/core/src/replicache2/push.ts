@@ -6,6 +6,7 @@ import { Auth } from "../auth2";
 import { DataAccess } from "../data-access2";
 import { Mutations } from "../data-access2/functions";
 import { Database } from "../database2";
+import { TableContract } from "../database2/contract";
 import {
   ReplicacheClientGroupsContract,
   ReplicacheClientsContract,
@@ -87,16 +88,13 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                                     "NoSuchElementException",
                                     () =>
                                       Effect.succeed(
-                                        ReplicacheClientGroupsContract.table.Schema.make(
+                                        ReplicacheClientGroupsContract.table.Row.make(
                                           {
                                             id: clientGroupId,
                                             tenantId,
                                             userId,
-                                            clientVersion: 0,
-                                            clientViewVersion: null,
                                             createdAt: now,
                                             updatedAt: now,
-                                            deletedAt: null,
                                           },
                                         ),
                                       ),
@@ -110,16 +108,13 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                                     "NoSuchElementException",
                                     () =>
                                       Effect.succeed(
-                                        ReplicacheClientsContract.table.Schema.make(
+                                        ReplicacheClientsContract.table.Row.make(
                                           {
                                             id: mutation.clientID,
                                             tenantId,
                                             clientGroupId,
-                                            lastMutationId: 0,
-                                            version: 0,
                                             createdAt: now,
                                             updatedAt: now,
-                                            deletedAt: null,
                                           },
                                         ),
                                       ),
@@ -197,7 +192,9 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                             ),
                           );
 
-                      const nextClientVersion = clientGroup.clientVersion + 1;
+                      const nextClientVersion = TableContract.Version.make(
+                        clientGroup.clientVersion + 1,
+                      );
 
                       yield* Effect.all(
                         [

@@ -163,7 +163,7 @@ export namespace WorkflowStatusesContract {
   });
 
   export const reorder = new DataAccessContract.Function({
-    name: "reorderDeliveryOptions",
+    name: "reorderWorkflowStatuses",
     Args: Schema.extend(
       DataTransferStruct.pick("workflowId", "updatedAt"),
       Schema.Struct({

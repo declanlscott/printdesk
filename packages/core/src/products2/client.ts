@@ -107,7 +107,14 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, updatedAt }) =>
-              repository.updateById(id, { status: "published", updatedAt }),
+              repository.updateById(id, ({ config }) => ({
+                status: "published",
+                config: ProductsContract.Configuration.make({
+                  ...config,
+                  status: "published",
+                }),
+                updatedAt,
+              })),
           }),
         );
 
@@ -116,7 +123,14 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, updatedAt }) =>
-              repository.updateById(id, { status: "draft", updatedAt }),
+              repository.updateById(id, ({ config }) => ({
+                status: "draft",
+                config: ProductsContract.Configuration.make({
+                  ...config,
+                  status: "draft",
+                }),
+                updatedAt,
+              })),
           }),
         );
 

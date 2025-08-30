@@ -493,6 +493,24 @@ export namespace Products {
               ),
         );
 
+        const findByIdForUpdate = Effect.fn(
+          "Products.Repository.findByIdForUpdate",
+        )(
+          (
+            id: ProductsSchema.Row["id"],
+            tenantId: ProductsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .for("update"),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const updateById = Effect.fn("Products.Repository.updateById")(
           (
             id: ProductsSchema.Row["id"],
@@ -545,6 +563,7 @@ export namespace Products {
           findFastForward,
           findActiveFastForward,
           findActivePublishedFastForward,
+          findByIdForUpdate,
           updateById,
           updateByRoomId,
         } as const;
@@ -587,13 +606,24 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, updatedAt }, session) =>
-              repository
-                .updateById(
-                  id,
-                  { status: "published", updatedAt },
-                  session.tenantId,
-                )
-                .pipe(Effect.map(Struct.omit("version"))),
+              repository.findByIdForUpdate(id, session.tenantId).pipe(
+                Effect.flatMap((prev) =>
+                  repository
+                    .updateById(
+                      id,
+                      {
+                        status: "published",
+                        config: ProductsContract.Configuration.make({
+                          ...prev.config,
+                          status: "published",
+                        }),
+                        updatedAt,
+                      },
+                      session.tenantId,
+                    )
+                    .pipe(Effect.map(Struct.omit("version"))),
+                ),
+              ),
           }),
         );
 
@@ -602,13 +632,24 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, updatedAt }, session) =>
-              repository
-                .updateById(
-                  id,
-                  { status: "draft", updatedAt },
-                  session.tenantId,
-                )
-                .pipe(Effect.map(Struct.omit("version"))),
+              repository.findByIdForUpdate(id, session.tenantId).pipe(
+                Effect.flatMap((prev) =>
+                  repository
+                    .updateById(
+                      id,
+                      {
+                        status: "draft",
+                        config: ProductsContract.Configuration.make({
+                          ...prev.config,
+                          status: "draft",
+                        }),
+                        updatedAt,
+                      },
+                      session.tenantId,
+                    )
+                    .pipe(Effect.map(Struct.omit("version"))),
+                ),
+              ),
           }),
         );
 

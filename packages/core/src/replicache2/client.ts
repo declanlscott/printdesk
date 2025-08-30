@@ -1,4 +1,4 @@
-import { Cause, Data, Effect, Schema } from "effect";
+import { Cause, Data, Effect, Predicate, Schema } from "effect";
 
 import type {
   ReadTransaction as ReadTx,
@@ -143,13 +143,22 @@ export namespace Replicache {
 
       const updateById = (
         id: TTable["DataTransferObject"]["Type"]["id"],
-        value: Partial<
-          Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
-        >,
+        value:
+          | Partial<
+              Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
+            >
+          | ((
+              prev: TTable["DataTransferObject"]["Type"],
+            ) => Partial<
+              Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
+            >),
       ) =>
         readRepository.findById(id).pipe(
-          Effect.map((prev) => ({ ...prev, ...value })),
-          Effect.flatMap((value) => set(table, value.id, value)),
+          Effect.map((prev) => ({
+            ...prev,
+            ...(Predicate.isFunction(value) ? value(prev) : value),
+          })),
+          Effect.flatMap((next) => set(table, next.id, next)),
         );
 
       const deleteById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>

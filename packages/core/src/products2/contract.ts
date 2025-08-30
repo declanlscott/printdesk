@@ -2,6 +2,7 @@ import { Either, Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
 import { TableContract } from "../database2/contract";
+import { productStatuses } from "../products/shared";
 import { Cost, HexColor } from "../utils2";
 
 import type { ProductsSchema } from "./schema";
@@ -221,7 +222,10 @@ export namespace ProductsContract {
     "ConfigurationV1",
   )("ConfigurationV1", {
     image: Schema.String,
-    productVisibility: Schema.optional(
+    status: Schema.optionalWith(Schema.Literal(...productStatuses), {
+      default: () => "draft",
+    }),
+    orderAttachments: Schema.optional(
       Schema.Struct({
         fileUploadEnabled: Schema.Boolean,
         physicalCopyEnabled: Schema.Boolean,

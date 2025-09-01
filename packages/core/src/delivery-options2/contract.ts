@@ -13,13 +13,14 @@ export namespace DeliveryOptionsContract {
     ...TableContract.Tenant.fields,
     name: TableContract.VarChar,
     description: TableContract.VarChar,
-    detailsLabel: Schema.NullOr(TableContract.VarChar),
-    cost: Schema.NullOr(
-      Schema.transform(Cost, Schema.String, {
+    detailsLabel: TableContract.VarChar.pipe(Schema.NullOr),
+    cost: Cost.pipe(
+      Schema.transform(Schema.String, {
         decode: String,
         encode: Number,
         strict: true,
       }),
+      Schema.NullOr,
     ),
     index: Schema.NonNegativeInt,
     roomId: TableContract.EntityId,
@@ -73,7 +74,7 @@ export namespace DeliveryOptionsContract {
       oldIndex: Schema.NonNegativeInt,
       newIndex: Schema.NonNegativeInt,
     }),
-    Returns: Schema.Array(DataTransferObject),
+    Returns: DataTransferObject.pipe(Schema.Array),
   });
 
   export class InvalidReorderDeltaError extends Schema.TaggedError<InvalidReorderDeltaError>(

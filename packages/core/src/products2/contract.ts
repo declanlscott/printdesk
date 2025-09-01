@@ -2,7 +2,6 @@ import { Either, Schema, Struct } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
 import { TableContract } from "../database2/contract";
-import { productStatuses } from "../products/shared";
 import { Cost, HexColor } from "../utils2";
 
 import type { ProductsSchema } from "./schema";
@@ -14,19 +13,13 @@ export namespace ProductsContract {
   export class Option extends Schema.Class<Option>("Option")({
     name: Schema.Trim,
     image: Schema.String,
-    description: Schema.optional(Schema.String),
+    description: Schema.Trim.pipe(Schema.optional),
     cost: Cost,
   }) {}
   export class Field extends Schema.Class<Field>("Field")({
     name: Schema.Trim,
     required: Schema.Boolean,
-    options: Schema.Array(Option).pipe(
-      Schema.filter(
-        (opts) =>
-          Array.from(new Set(opts)).length === opts.length ||
-          "Field option names must be unique",
-      ),
-    ),
+    options: Option.pipe(Schema.Array),
   }) {}
   const FallbackBoolean = (fallback = true) =>
     Schema.Boolean.pipe(
@@ -48,7 +41,7 @@ export namespace ProductsContract {
     }),
     due: Schema.Struct({
       visible: FallbackBoolean(),
-      leadTimeDays: Schema.Int.pipe(
+      leadTimeDays: Schema.NonNegativeInt.pipe(
         Schema.annotations({
           decodingFallback: () => Either.right(0),
         }),
@@ -62,175 +55,69 @@ export namespace ProductsContract {
         "Sat",
         "Sun",
       ),
-      paperStock: Schema.optional(
-        Schema.Struct({
-          options: Schema.Array(Option).pipe(
-            Schema.filter(
-              (opts) =>
-                Array.from(new Set(opts.map((o) => o.name))).length ===
-                  opts.length || "Paper stock option names must be unique",
-            ),
-          ),
-        }),
-      ),
-      custom: Schema.optional(
-        Schema.Struct({
-          name: Schema.String,
-          fields: Schema.Array(Field).pipe(
-            Schema.filter(
-              (fields) =>
-                Array.from(new Set(fields.map((f) => f.name))).length ===
-                  fields.length || "Custom field names must be unique",
-            ),
-          ),
-        }),
-      ),
-      customOperatorOnly: Schema.optional(
-        Schema.Struct({
-          name: Schema.String,
-          fields: Schema.Array(Field).pipe(
-            Schema.filter(
-              (fields) =>
-                Array.from(new Set(fields.map((f) => f.name))).length ===
-                  fields.length || "Custom operator field names must be unique",
-            ),
-          ),
-        }),
-      ),
-      backCover: Schema.optional(
-        Schema.Struct({
-          options: Schema.Array(Option).pipe(
-            Schema.filter(
-              (opts) =>
-                Array.from(new Set(opts.map((o) => o.name))).length ===
-                  opts.length || "Back cover option names must be unique",
-            ),
-          ),
-        }),
-      ),
-      cutting: Schema.optional(
-        Schema.Struct({
-          options: Schema.Array(Option).pipe(
-            Schema.filter(
-              (opts) =>
-                Array.from(new Set(opts.map((o) => o.name))).length ===
-                  opts.length || "Cutting option names must be unique",
-            ),
-          ),
-        }),
-      ),
-      binding: Schema.optional(
-        Schema.Struct({
-          options: Schema.Array(
-            Schema.Struct({
-              ...Option.fields,
-              subAttributes: Schema.Array(
-                Schema.Struct({
-                  name: Schema.Trim,
-                  description: Schema.optional(Schema.String),
-                  options: Schema.Array(Option).pipe(
-                    Schema.filter(
-                      (opts) =>
-                        Array.from(new Set(opts.map((o) => o.name))).length ===
-                          opts.length ||
-                        "Binding sub-attribute option names must be unique",
-                    ),
-                  ),
-                }),
-              ).pipe(
-                Schema.filter(
-                  (attrs) =>
-                    Array.from(new Set(attrs.map((a) => a.name))).length ===
-                      attrs.length ||
-                    "Binding sub-attribute names must be unique",
-                ),
-              ),
-            }),
-          ).pipe(
-            Schema.filter(
-              (opts) =>
-                Array.from(new Set(opts.map((o) => o.name))).length ===
-                  opts.length || "Binding option names must be unique",
-            ),
-          ),
-        }),
-      ),
-      holePunching: Schema.optional(
-        Schema.Array(Option).pipe(
-          Schema.filter(
-            (opts) =>
-              Array.from(new Set(opts.map((o) => o.name))).length ===
-                opts.length || "Hole punching option names must be unique",
-          ),
-        ),
-      ),
-      folding: Schema.optional(
-        Schema.Array(Option).pipe(
-          Schema.filter(
-            (opts) =>
-              Array.from(new Set(opts.map((o) => o.name))).length ===
-                opts.length || "Folding option names must be unique",
-          ),
-        ),
-      ),
-      laminating: Schema.optional(
-        Schema.Array(Option).pipe(
-          Schema.filter(
-            (opts) =>
-              Array.from(new Set(opts.map((o) => o.name))).length ===
-                opts.length || "Laminating option names must be unique",
-          ),
-        ),
-      ),
-      packaging: Schema.optional(
-        Schema.Struct({
-          name: Schema.Trim,
-          image: Schema.String,
-          cost: Cost,
-          showItemsPerSet: Schema.Boolean,
-        }),
-      ),
-      material: Schema.optional(
-        Schema.Struct({
-          name: Schema.Trim,
-          color: Schema.Struct({
+      paperStock: Schema.Struct({
+        options: Option.pipe(Schema.Array),
+      }).pipe(Schema.optional),
+      custom: Schema.Struct({
+        name: Schema.String,
+        fields: Field.pipe(Schema.Array),
+      }).pipe(Schema.optional),
+      customOperatorOnly: Schema.Struct({
+        name: Schema.String,
+        fields: Field.pipe(Schema.Array),
+      }).pipe(Schema.optional),
+      backCover: Schema.Struct({
+        options: Option.pipe(Schema.Array),
+      }).pipe(Schema.optional),
+      cutting: Schema.Struct({
+        options: Option.pipe(Schema.Array),
+      }).pipe(Schema.optional),
+      binding: Schema.Struct({
+        options: Schema.Struct({
+          ...Option.fields,
+          subAttributes: Schema.Struct({
             name: Schema.Trim,
-            value: Schema.optional(HexColor),
-          }),
-          cost: Cost,
+            description: Schema.Trim.pipe(Schema.optional),
+            options: Option.pipe(Schema.Array),
+          }).pipe(Schema.Array),
+        }).pipe(Schema.Array),
+      }).pipe(Schema.optional),
+      holePunching: Option.pipe(Schema.Array, Schema.optional),
+      folding: Option.pipe(Schema.Array, Schema.optional),
+      laminating: Option.pipe(Schema.Array, Schema.optional),
+      packaging: Schema.Struct({
+        name: Schema.Trim,
+        image: Schema.String,
+        cost: Cost,
+        showItemsPerSet: Schema.Boolean,
+      }).pipe(Schema.optional),
+      material: Schema.Struct({
+        name: Schema.Trim,
+        color: Schema.Struct({
+          name: Schema.Trim,
+          value: HexColor.pipe(Schema.optional),
         }),
-      ),
-      proofRequired: Schema.optional(
-        Schema.Struct({
-          options: Schema.Array(
-            Schema.Struct({
-              name: Schema.Trim,
-              description: Schema.optional(Schema.String),
-            }),
-          ).pipe(
-            Schema.filter(
-              (opts) =>
-                Array.from(new Set(opts.map((o) => o.name))).length ===
-                  opts.length || "Proof required option names must be unique",
-            ),
-          ),
-        }),
-      ),
+        cost: Cost,
+      }).pipe(Schema.optional),
+      proofRequired: Schema.Struct({
+        options: Schema.Struct({
+          name: Schema.Trim,
+          description: Schema.optional(Schema.String),
+        }).pipe(Schema.Array),
+      }).pipe(Schema.optional),
     }),
   }) {}
   export class ConfigurationV1 extends Schema.TaggedClass<ConfigurationV1>(
     "ConfigurationV1",
   )("ConfigurationV1", {
     image: Schema.String,
-    status: Schema.optionalWith(Schema.Literal(...productStatuses), {
-      default: () => "draft",
-    }),
-    orderAttachments: Schema.optional(
-      Schema.Struct({
-        fileUploadEnabled: Schema.Boolean,
-        physicalCopyEnabled: Schema.Boolean,
-      }),
+    status: Schema.Literal(...statuses).pipe(
+      Schema.optionalWith({ default: () => "draft" }),
     ),
+    orderAttachments: Schema.Struct({
+      fileUploadEnabled: Schema.Boolean,
+      physicalCopyEnabled: Schema.Boolean,
+    }).pipe(Schema.optional),
     attributes: AttributesV1,
   }) {}
   export const Configuration = Schema.Union(ConfigurationV1);
@@ -240,9 +127,9 @@ export namespace ProductsContract {
   )({
     ...TableContract.Tenant.fields,
     name: TableContract.VarChar,
-    status: Schema.optionalWith(Schema.Literal(...statuses), {
-      default: () => "draft",
-    }),
+    status: Schema.Literal(...statuses).pipe(
+      Schema.optionalWith({ default: () => "draft" }),
+    ),
     roomId: TableContract.EntityId,
     config: Configuration,
   }) {}

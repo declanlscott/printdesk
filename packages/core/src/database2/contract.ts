@@ -20,15 +20,16 @@ export namespace TableContract {
   export type VarChar = typeof VarChar.Type;
 
   export class Timestamps extends Schema.Class<Timestamps>("Timestamps")({
-    createdAt: Schema.optionalWith(Schema.DateTimeUtc, {
-      default: DateTime.unsafeNow,
-    }),
-    updatedAt: Schema.optionalWith(Schema.DateTimeUtc, {
-      default: DateTime.unsafeNow,
-    }),
-    deletedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
-      default: () => null,
-    }),
+    createdAt: Schema.DateTimeUtc.pipe(
+      Schema.optionalWith({ default: DateTime.unsafeNow }),
+    ),
+    updatedAt: Schema.DateTimeUtc.pipe(
+      Schema.optionalWith({ default: DateTime.unsafeNow }),
+    ),
+    deletedAt: Schema.DateTimeUtc.pipe(
+      Schema.NullOr,
+      Schema.optionalWith({ default: () => null }),
+    ),
   }) {}
 
   export const EntityId = NanoId.pipe(Schema.brand("EntityId"));
@@ -39,7 +40,7 @@ export namespace TableContract {
   export class TenantColumns extends Schema.Class<TenantColumns>(
     "TenantColumns",
   )({
-    id: Schema.optionalWith(EntityId, { default: generateId }),
+    id: EntityId.pipe(Schema.optionalWith({ default: generateId })),
     tenantId: TenantId,
   }) {}
 
@@ -48,10 +49,7 @@ export namespace TableContract {
     ...Timestamps.fields,
   }) {}
 
-  export const Version = Schema.Int.pipe(
-    Schema.positive(),
-    Schema.brand("Version"),
-  );
+  export const Version = Schema.NonNegativeInt.pipe(Schema.brand("Version"));
   export type Version = typeof Version.Type;
 
   export type InferDataTransferObject<

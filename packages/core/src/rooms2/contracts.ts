@@ -15,10 +15,10 @@ export namespace RoomsContract {
   )({
     ...TableContract.Tenant.fields,
     name: TableContract.VarChar,
-    status: Schema.optionalWith(Schema.Literal(...statuses), {
-      default: () => "draft",
-    }),
-    details: Schema.NullOr(Schema.String),
+    status: Schema.Literal(...statuses).pipe(
+      Schema.optionalWith({ default: () => "draft" }),
+    ),
+    details: Schema.String.pipe(Schema.NullOr),
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
@@ -46,9 +46,9 @@ export namespace RoomsContract {
     name: "createRoom",
     Args: Schema.Struct({
       ...DataTransferStruct.omit("deletedAt", "tenantId").fields,
-      workflowId: Schema.optionalWith(TableContract.EntityId, {
-        default: generateId,
-      }),
+      workflowId: TableContract.EntityId.pipe(
+        Schema.optionalWith({ default: generateId }),
+      ),
     }),
     Returns: DataTransferObject,
   });

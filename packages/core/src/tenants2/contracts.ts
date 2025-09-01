@@ -21,9 +21,9 @@ export namespace LicensesContract {
   )({
     key: Key,
     tenantId: TableContract.TenantId,
-    status: Schema.optionalWith(Schema.Literal(...statuses), {
-      default: () => "active",
-    }),
+    status: Schema.Literal(...statuses).pipe(
+      Schema.optionalWith({ default: () => "active" }),
+    ),
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
@@ -56,9 +56,9 @@ export namespace TenantsContract {
     id: TableContract.EntityId,
     subdomain: Subdomain,
     name: Schema.String,
-    status: Schema.optionalWith(Schema.Literal(...statuses), {
-      default: () => "setup",
-    }),
+    status: Schema.Literal(...statuses).pipe(
+      Schema.optionalWith({ default: () => "setup" }),
+    ),
     ...TableContract.Timestamps.fields,
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
@@ -104,8 +104,8 @@ export namespace TenantMetadataContract {
   )({
     tenantId: TableContract.TenantId,
     infraProgramInput: InfraProgramInput,
-    apiKey: Schema.NullOr(Schema.String),
-    lastPapercutSyncAt: Schema.NullOr(Schema.DateTimeUtc),
+    apiKey: Schema.String.pipe(Schema.NullOr),
+    lastPapercutSyncAt: Schema.DateTimeUtc.pipe(Schema.NullOr),
     ...TableContract.Timestamps.fields,
   }) {}
 

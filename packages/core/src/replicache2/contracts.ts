@@ -33,12 +33,12 @@ export namespace ReplicacheClientGroupsContract {
     id: Schema.UUID,
     tenantId: TableContract.TenantId,
     userId: TableContract.EntityId,
-    clientVersion: Schema.optionalWith(TableContract.Version, {
-      default: () => TableContract.Version.make(0),
-    }),
-    clientViewVersion: Schema.optionalWith(
-      Schema.NullOr(TableContract.Version),
-      { default: () => null },
+    clientVersion: TableContract.Version.pipe(
+      Schema.optionalWith({ default: () => TableContract.Version.make(0) }),
+    ),
+    clientViewVersion: TableContract.Version.pipe(
+      Schema.NullOr,
+      Schema.optionalWith({ default: () => null }),
     ),
     ...TableContract.Timestamps.fields,
   }) {}
@@ -56,12 +56,12 @@ export namespace ReplicacheClientsContract {
     id: Schema.UUID,
     tenantId: TableContract.TenantId,
     clientGroupId: Schema.UUID,
-    lastMutationId: Schema.optionalWith(Schema.Int, {
-      default: () => 0,
-    }),
-    version: Schema.optionalWith(TableContract.Version, {
-      default: () => TableContract.Version.make(0),
-    }),
+    lastMutationId: Schema.NonNegativeInt.pipe(
+      Schema.optionalWith({ default: () => 0 }),
+    ),
+    version: TableContract.Version.pipe(
+      Schema.optionalWith({ default: () => TableContract.Version.make(0) }),
+    ),
     ...TableContract.Timestamps.fields,
   }) {}
 
@@ -94,7 +94,7 @@ export namespace ReplicacheClientViewMetadataContract {
     clientViewVersion: TableContract.Version,
     entity: Schema.Literal(...entities),
     entityId: TableContract.EntityId,
-    entityVersion: Schema.NullOr(TableContract.Version),
+    entityVersion: TableContract.Version.pipe(Schema.NullOr),
     tenantId: TableContract.TenantId,
   }) {}
 
@@ -129,7 +129,7 @@ export namespace ReplicacheContract {
   )({
     pushVersion: Schema.tag(0),
     clientID: Schema.UUID,
-    mutations: Schema.Array(MutationV0),
+    mutations: MutationV0.pipe(Schema.Array),
     profileID: Schema.String,
     schemaVersion: Schema.String,
   }) {}
@@ -139,7 +139,7 @@ export namespace ReplicacheContract {
   )({
     pushVersion: Schema.tag(1),
     clientGroupID: Schema.UUID,
-    mutations: Schema.Array(MutationV1),
+    mutations: MutationV1.pipe(Schema.Array),
     profileID: Schema.String,
     schemaVersion: Schema.String,
   }) {}
@@ -152,7 +152,7 @@ export namespace ReplicacheContract {
     pullVersion: Schema.tag(0),
     schemaVersion: Schema.String,
     profileID: Schema.String,
-    cookie: Schema.NullOr(Schema.Struct({})),
+    cookie: Schema.Struct({}).pipe(Schema.NullOr),
     lastMutationID: Schema.Int,
   }) {}
 
@@ -162,7 +162,7 @@ export namespace ReplicacheContract {
     pullVersion: Schema.tag(1),
     schemaVersion: Schema.String,
     profileID: Schema.String,
-    cookie: Schema.NullOr(Schema.Struct({ order: Schema.Int })),
+    cookie: Schema.Struct({ order: Schema.NonNegativeInt }).pipe(Schema.NullOr),
     clientGroupID: Schema.UUID,
   }) {}
 

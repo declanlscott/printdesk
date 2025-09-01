@@ -32,7 +32,7 @@ export namespace Replicache {
                 ReadonlyArray<TTable["DataTransferObject"]["Type"]>,
                 ReadonlyArray<TTable["DataTransferObject"]["Encoded"]>,
                 never
-              >(Schema.Array(table.DataTransferObject)),
+              >(table.DataTransferObject.pipe(Schema.Array)),
             ),
           );
 

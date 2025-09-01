@@ -14,7 +14,9 @@ export namespace CommentsContract {
     orderId: TableContract.EntityId,
     authorId: TableContract.EntityId,
     content: Schema.String,
-    internal: Schema.optionalWith(Schema.Boolean, { default: () => false }),
+    internal: Schema.Boolean.pipe(
+      Schema.optionalWith({ default: () => false }),
+    ),
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 

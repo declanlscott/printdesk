@@ -18,6 +18,7 @@ export namespace BillingAccountWorkflowsContract {
     ...TableContract.Tenant.fields,
     billingAccountId: TableContract.EntityId,
   }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "billing_account_workflows";
   export const table =
@@ -53,6 +54,12 @@ export namespace BillingAccountWorkflowsContract {
         Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
       ),
     );
+
+  export const doesExist = new DataAccessContract.Function({
+    name: "doesBillingAccountWorkflowExist",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
 }
 
 export namespace RoomWorkflowsContract {
@@ -62,6 +69,7 @@ export namespace RoomWorkflowsContract {
     ...TableContract.Tenant.fields,
     roomId: TableContract.EntityId,
   }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "room_workflows";
   export const table = TableContract.Sync<RoomWorkflowsSchema.Table>()(
@@ -83,6 +91,12 @@ export namespace RoomWorkflowsContract {
       activePublishedRoomViewName,
       DataTransferObject,
     );
+
+  export const doesExist = new DataAccessContract.Function({
+    name: "doesRoomWorkflowExist",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
 }
 
 export namespace WorkflowStatusesContract {
@@ -96,7 +110,7 @@ export namespace WorkflowStatusesContract {
     name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
     type: Schema.Literal(...types),
     charging: Schema.Boolean,
-    color: Schema.NullOr(HexColor),
+    color: HexColor.pipe(Schema.NullOr),
     index: Schema.NonNegativeInt,
     workflowId: TableContract.EntityId,
   }) {}
@@ -106,7 +120,7 @@ export namespace WorkflowStatusesContract {
   export const table = TableContract.Sync<WorkflowStatusesSchema.Table>()(
     tableName,
     DataTransferObject,
-    ["create", "read", "update", "delete"],
+    ["read"],
   );
 
   export const activeViewName = `active_${tableName}`;
@@ -152,12 +166,11 @@ export namespace WorkflowStatusesContract {
   export const edit = new DataAccessContract.Function({
     name: "editWorkflowStatus",
     Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt"),
+      DataTransferStruct.pick("id", "workflowId", "updatedAt"),
       DataTransferStruct.omit(
         ...Struct.keys(TableContract.Tenant.fields),
-        "workflowId",
         "index",
-      ),
+      ).pipe(Schema.partial),
     ),
     Returns: DataTransferObject,
   });
@@ -172,7 +185,7 @@ export namespace WorkflowStatusesContract {
         workflowId: TableContract.EntityId,
       }),
     ),
-    Returns: Schema.Array(DataTransferObject),
+    Returns: DataTransferObject.pipe(Schema.Array),
   });
 
   export class InvalidReorderDeltaError extends Schema.TaggedError<InvalidReorderDeltaError>(

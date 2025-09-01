@@ -22,13 +22,14 @@ export namespace InvoicesContract {
     "DataTransferObject",
   )({
     ...TableContract.Tenant.fields,
-    lineItems: Schema.Array(LineItem),
-    status: Schema.optionalWith(Schema.Literal(...statuses), {
-      default: () => "processing",
-    }),
-    chargedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
-      default: () => null,
-    }),
+    lineItems: LineItem.pipe(Schema.Array),
+    status: Schema.Literal(...statuses).pipe(
+      Schema.optionalWith({ default: () => "processing" }),
+    ),
+    chargedAt: Schema.DateTimeUtc.pipe(
+      Schema.NullOr,
+      Schema.optionalWith({ default: () => null }),
+    ),
     orderId: TableContract.EntityId,
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
@@ -80,7 +81,7 @@ export namespace InvoicesContract {
   export class Estimate extends Schema.Class<Estimate>("Estimate")({
     total: Schema.Number,
     description: Schema.optional(Schema.String),
-    items: Schema.Array(LineItem),
+    items: LineItem.pipe(Schema.Array),
   }) {}
 
   export const estimateCost = (

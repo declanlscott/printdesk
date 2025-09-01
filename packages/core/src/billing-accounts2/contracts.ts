@@ -18,24 +18,19 @@ export namespace BillingAccountsContract {
     "DataTransferObject",
   )({
     ...TableContract.Tenant.fields,
-    origin: Schema.optionalWith(Schema.Literal(...origins), {
-      default: () => "internal",
-    }),
+    origin: Schema.Literal(...origins).pipe(
+      Schema.optionalWith({ default: () => "internal" }),
+    ),
     name: Schema.String,
-    reviewThreshold: Schema.NullOr(
-      Schema.transform(Cost, Schema.String, {
-        decode: String,
-        encode: Number,
-        strict: true,
-      }),
-    ),
-    papercutAccountId: Schema.optionalWith(
-      Schema.Union(
-        Schema.Literal(-1),
-        Schema.Int.pipe(Schema.greaterThanOrEqualTo(0)),
-      ),
-      { default: () => -1 },
-    ),
+    reviewThreshold: Schema.transform(Cost, Schema.String, {
+      decode: String,
+      encode: Number,
+      strict: true,
+    }).pipe(Schema.NullOr),
+    papercutAccountId: Schema.Union(
+      Schema.Literal(-1),
+      Schema.NonNegativeInt,
+    ).pipe(Schema.optionalWith({ default: () => -1 })),
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 

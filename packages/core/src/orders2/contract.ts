@@ -1,4 +1,4 @@
-import { Either, Schema, Struct } from "effect";
+import { Either, Equal, Predicate, Schema } from "effect";
 
 import { DataAccessContract } from "../data-access2/contract";
 import { TableContract } from "../database2/contract";
@@ -20,190 +20,191 @@ export namespace OrdersContract {
 
     // Order dates
     created: IsoTimestamp,
-    due: Schema.optional(IsoDate),
+    due: IsoDate.pipe(Schema.optional),
 
     // Copies
-    copies: Schema.optional(
-      Schema.Struct({
-        quantity: Schema.Number,
-      }),
-    ),
+    copies: Schema.Struct({
+      quantity: Schema.Number,
+    }).pipe(Schema.optional),
 
     // Color mode
-    color: Schema.optional(
-      Schema.Struct({
-        enabled: Schema.Boolean.annotations({
-          decodingFallback: () => Either.right(false),
-        }),
+    color: Schema.Struct({
+      enabled: Schema.Boolean.annotations({
+        decodingFallback: () => Either.right(false),
       }),
-    ),
+    }).pipe(Schema.optional),
 
     // Pages
-    pages: Schema.optional(
-      Schema.Struct({
-        grayscalePages: Schema.Int,
-        colorPages: Schema.Int,
-      }),
-    ),
+    pages: Schema.Struct({
+      grayscalePages: Schema.Int,
+      colorPages: Schema.Int,
+    }).pipe(Schema.optional),
 
     // Single or double sided
-    printOnBothSides: Schema.optional(
-      Schema.Struct({
-        enabled: Schema.Boolean,
-      }),
-    ),
+    printOnBothSides: Schema.Struct({
+      enabled: Schema.Boolean,
+    }).pipe(Schema.optional),
 
     // Paper stock
-    paperStock: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        size: Schema.String,
-        color: Schema.String,
-        type: Schema.String,
-      }),
-    ),
+    paperStock: Schema.Struct({
+      cost: Schema.Number,
+      size: Schema.String,
+      color: Schema.String,
+      type: Schema.String,
+    }).pipe(Schema.optional),
 
     // Collating
-    collating: Schema.optional(
-      Schema.Struct({
-        name: Schema.String,
-      }),
-    ),
+    collating: Schema.Struct({
+      name: Schema.String,
+    }).pipe(Schema.optional),
 
     // Front Cover
-    frontCover: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-      }),
-    ),
+    frontCover: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+    }).pipe(Schema.optional),
 
     // Binding
-    binding: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
+    binding: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+
+      // Binding option sub-attributes
+      attributes: Schema.Struct({
         name: Schema.String,
 
-        // Binding option sub-attributes
-        attributes: Schema.Array(
-          Schema.Struct({
-            name: Schema.String,
-
-            // Binding option sub-attribute options
-            option: Schema.Struct({
-              cost: Schema.Number,
-              name: Schema.String,
-            }),
-          }),
-        ),
-      }),
-    ),
-
-    // Cutting
-    cutting: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-      }),
-    ),
-
-    // Hole punching
-    holePunching: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-      }),
-    ),
-
-    // Folding
-    folding: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-      }),
-    ),
-
-    // Packaging
-    packaging: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-        itemsPerSet: Schema.Number,
-      }),
-    ),
-
-    // Laminating
-    laminating: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-      }),
-    ),
-
-    // Proof Required
-    proofRequired: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-      }),
-    ),
-
-    // Material
-    material: Schema.optional(
-      Schema.Struct({
-        cost: Schema.Number,
-        name: Schema.String,
-
-        // Material color options
-        color: Schema.Struct({
+        // Binding option sub-attribute options
+        option: Schema.Struct({
           cost: Schema.Number,
           name: Schema.String,
-          value: Schema.String,
         }),
+      }).pipe(Schema.Array),
+    }).pipe(Schema.optional),
+
+    // Cutting
+    cutting: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+    }).pipe(Schema.optional),
+
+    // Hole punching
+    holePunching: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+    }).pipe(Schema.optional),
+
+    // Folding
+    folding: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+    }).pipe(Schema.optional),
+
+    // Packaging
+    packaging: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+      itemsPerSet: Schema.Number,
+    }).pipe(Schema.optional),
+
+    // Laminating
+    laminating: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+    }).pipe(Schema.optional),
+
+    // Proof Required
+    proofRequired: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+    }).pipe(Schema.optional),
+
+    // Material
+    material: Schema.Struct({
+      cost: Schema.Number,
+      name: Schema.String,
+
+      // Material color options
+      color: Schema.Struct({
+        cost: Schema.Number,
+        name: Schema.String,
+        value: Schema.String,
       }),
-    ),
+    }).pipe(Schema.optional),
 
     // Custom text fields
-    custom: Schema.optional(
-      Schema.Struct({
-        fields: Schema.Array(
-          Schema.Struct({
-            name: Schema.String,
-            value: Schema.String,
+    custom: Schema.Struct({
+      fields: Schema.Struct({
+        name: Schema.String,
+        value: Schema.String,
 
-            // Custom drop-down list options
-            option: Schema.Struct({
-              cost: Schema.Number,
-              name: Schema.String,
-            }),
-          }),
-        ),
-      }),
-    ),
+        // Custom drop-down list options
+        option: Schema.Struct({
+          cost: Schema.Number,
+          name: Schema.String,
+        }),
+      }).pipe(Schema.Array),
+    }).pipe(Schema.optional),
   });
   export const Attributes = Schema.Union(AttributesV1);
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
+  const dtoFilter = (
+    personalAccountId: TableContract.EntityId | null,
+    sharedAccountId: TableContract.EntityId | null,
+    sharedAccountWorkflowStatusId: TableContract.EntityId | null,
+    roomWorkflowStatusId: TableContract.EntityId | null,
+  ) => {
+    if (
+      !Equal.equals(
+        Predicate.isNull(personalAccountId),
+        Predicate.isNull(sharedAccountId),
+      )
+    )
+      return "Order account must be either personal or shared.";
+
+    if (
+      !Equal.equals(
+        Predicate.isNull(sharedAccountWorkflowStatusId),
+        Predicate.isNull(roomWorkflowStatusId),
+      )
+    )
+      return "Order workflow status must be either shared or room.";
+
+    return true;
+  };
+
+  export const DataTransferObject = Schema.Struct({
     ...TableContract.Tenant.fields,
     customerId: TableContract.EntityId,
-    managerId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
-      default: () => null,
-    }),
-    operatorId: Schema.optionalWith(Schema.NullOr(TableContract.EntityId), {
-      default: () => null,
-    }),
+    managerId: TableContract.EntityId.pipe(
+      Schema.NullOr,
+      Schema.optionalWith({ default: () => null }),
+    ),
+    operatorId: TableContract.EntityId.pipe(
+      Schema.NullOr,
+      Schema.optionalWith({ default: () => null }),
+    ),
     productId: TableContract.EntityId,
-    billingAccountId: TableContract.EntityId,
-    workflowStatusId: TableContract.EntityId,
+    personalAccountId: TableContract.EntityId.pipe(Schema.NullOr),
+    sharedAccountId: TableContract.EntityId.pipe(Schema.NullOr),
+    sharedAccountWorkflowStatusId: TableContract.EntityId.pipe(Schema.NullOr),
+    roomWorkflowStatusId: TableContract.EntityId.pipe(Schema.NullOr),
     deliveryOptionId: TableContract.EntityId,
     attributes: Attributes,
-    approvedAt: Schema.optionalWith(Schema.NullOr(Schema.DateTimeUtc), {
-      default: () => null,
-    }),
-  }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+    approvedAt: Schema.DateTimeUtc.pipe(
+      Schema.NullOr,
+      Schema.optionalWith({ default: () => null }),
+    ),
+  }).pipe(
+    Schema.filter((dto) =>
+      dtoFilter(
+        dto.personalAccountId,
+        dto.sharedAccountId,
+        dto.sharedAccountWorkflowStatusId,
+        dto.roomWorkflowStatusId,
+      ),
+    ),
+  );
+  export type DataTransferObject = typeof DataTransferObject.Type;
 
   export const tableName = "orders";
   export const table = TableContract.Sync<OrdersSchema.Table>()(
@@ -222,10 +223,10 @@ export namespace OrdersContract {
   export const activeManagedBillingAccountView =
     TableContract.View<OrdersSchema.ActiveManagedBillingAccountView>()(
       activeManagedBillingAccountViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        authorizedManagerId: TableContract.EntityId,
-      }),
+      Schema.extend(
+        DataTransferObject,
+        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
+      ),
     );
 
   export const activePlacedViewName = `active_placed_${tableName}`;
@@ -237,77 +238,78 @@ export namespace OrdersContract {
 
   export const isCustomer = new DataAccessContract.Function({
     name: "isOrderCustomer",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const isManager = new DataAccessContract.Function({
     name: "isOrderManager",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const isCustomerOrManager = new DataAccessContract.Function({
     name: "isOrderCustomerOrManager",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const hasActiveManagerAuthorization = new DataAccessContract.Function({
     name: "hasActiveOrderBillingAccountManagerAuthorization",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canEdit = new DataAccessContract.Function({
     name: "canEditOrder",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canApprove = new DataAccessContract.Function({
     name: "canApproveOrder",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canTransition = new DataAccessContract.Function({
     name: "canTransitionOrder",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const canDelete = new DataAccessContract.Function({
     name: "canDeleteOrder",
-    Args: DataTransferStruct.pick("id"),
+    Args: DataTransferObject.from.pick("id"),
     Returns: Schema.Void,
   });
 
   export const create = new DataAccessContract.Function({
     name: "createOrder",
-    Args: DataTransferStruct.omit(
-      "managerId",
-      "operatorId",
-      "approvedAt",
-      "deletedAt",
-      "tenantId",
-    ),
+    Args: DataTransferObject.from
+      .omit("managerId", "operatorId", "approvedAt", "deletedAt", "tenantId")
+      .pipe(
+        Schema.filter((dto) =>
+          dtoFilter(
+            dto.personalAccountId,
+            dto.sharedAccountId,
+            dto.sharedAccountWorkflowStatusId,
+            dto.roomWorkflowStatusId,
+          ),
+        ),
+      ),
     Returns: DataTransferObject,
   });
 
   export const edit = new DataAccessContract.Function({
     name: "editOrder",
     Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt"),
-      DataTransferStruct.omit(
-        ...Struct.keys(TableContract.Tenant.fields),
-        "customerId",
-        "managerId",
-        "operatorId",
-        "billingAccountId",
-        "workflowStatusId",
-        "approvedAt",
-      ).pipe(Schema.partial),
+      DataTransferObject.from.pick("id", "updatedAt"),
+      Schema.Struct({
+        productId: TableContract.EntityId,
+        deliveryOptionId: TableContract.EntityId,
+        attributes: Attributes,
+      }).pipe(Schema.partial),
     ),
     Returns: DataTransferObject,
   });
@@ -315,15 +317,31 @@ export namespace OrdersContract {
   export const approve = new DataAccessContract.Function({
     name: "approveOrder",
     Args: Schema.Struct({
-      ...DataTransferStruct.pick("id", "updatedAt", "workflowStatusId").fields,
+      id: TableContract.EntityId,
+      roomWorkflowStatusId: TableContract.EntityId,
       approvedAt: Schema.DateTimeUtc,
     }),
     Returns: DataTransferObject,
   });
 
-  export const transition = new DataAccessContract.Function({
-    name: "transitionOrder",
-    Args: DataTransferStruct.pick("id", "updatedAt", "workflowStatusId"),
+  export const transitionSharedAccountWorkflowStatus =
+    new DataAccessContract.Function({
+      name: "transitionOrderSharedAccountWorkflowStatus",
+      Args: Schema.Struct({
+        id: TableContract.EntityId,
+        updatedAt: Schema.DateTimeUtc,
+        sharedAccountWorkflowStatusId: TableContract.EntityId,
+      }),
+      Returns: DataTransferObject,
+    });
+
+  export const transitionRoomWorkflowStatus = new DataAccessContract.Function({
+    name: "transitionOrderRoomWorkflowStatus",
+    Args: Schema.Struct({
+      id: TableContract.EntityId,
+      updatedAt: Schema.DateTimeUtc,
+      roomWorkflowStatusId: TableContract.EntityId,
+    }),
     Returns: DataTransferObject,
   });
 

@@ -1,71 +1,103 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
-import { index, pgView } from "drizzle-orm/pg-core";
+import { and, eq, getViewSelectedFields, isNull, ne } from "drizzle-orm";
+import { check, index, pgView } from "drizzle-orm/pg-core";
 
-import { BillingAccountManagerAuthorizationsSchema } from "../billing-accounts2/schemas";
-import { datetime, id, jsonb, tenantTable } from "../database2/constructors";
+import { Columns } from "../columns2";
+import { SharedAccountManagerAuthorizationsSchema } from "../shared-accounts2/schemas";
+import { Tables } from "../tables2";
 import { OrdersContract } from "./contract";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
-import type { TableContract } from "../database2/contract";
+import type { ColumnsContract } from "../columns2/contract";
 
 export namespace OrdersSchema {
-  export const table = tenantTable(
+  type OrderRow<TRow> = Omit<
+    TRow,
+    "roomWorkflowStatusId" | "sharedAccountWorkflowStatusId"
+  > &
+    (
+      | {
+          roomWorkflowStatusId: ColumnsContract.EntityId;
+          sharedAccountWorkflowStatusId: null;
+        }
+      | {
+          roomWorkflowStatusId: null;
+          sharedAccountWorkflowStatusId: ColumnsContract.EntityId;
+        }
+    );
+
+  export const table = new Tables.Sync(
     OrdersContract.tableName,
     {
-      customerId: id<TableContract.EntityId>("customer_id").notNull(),
-      managerId: id<TableContract.EntityId>("manager_id"),
-      operatorId: id<TableContract.EntityId>("operator_id"),
-      productId: id<TableContract.EntityId>("product_id").notNull(),
-      billingAccountId:
-        id<TableContract.EntityId>("billing_account_id").notNull(),
-      workflowStatusId:
-        id<TableContract.EntityId>("workflow_status_id").notNull(),
-      deliveryOptionId:
-        id<TableContract.EntityId>("delivery_option_id").notNull(),
-      attributes: jsonb("attributes", OrdersContract.Attributes).notNull(),
-      approvedAt: datetime("approved_at"),
+      customerId: Columns.entityId.notNull(),
+      managerId: Columns.entityId,
+      operatorId: Columns.entityId,
+      productId: Columns.entityId.notNull(),
+      sharedAccountId: Columns.entityId, // null when charging to customer's personal account
+      roomWorkflowStatusId: Columns.entityId,
+      sharedAccountWorkflowStatusId: Columns.entityId,
+      deliveryOptionId: Columns.entityId.notNull(),
+      attributes: Columns.jsonb(OrdersContract.Attributes).notNull(),
+      approvedAt: Columns.datetime(),
     },
     (table) => [
       index().on(table.customerId),
-      index().on(table.billingAccountId),
+      index().on(table.sharedAccountId),
+      index().on(table.roomWorkflowStatusId),
+      index().on(table.sharedAccountWorkflowStatusId),
+      check(
+        "workflow_status_id_xor",
+        ne(
+          isNull(table.roomWorkflowStatusId),
+          isNull(table.sharedAccountWorkflowStatusId),
+        ),
+      ),
     ],
   );
-  export type Table = typeof table;
-  export type Row = InferSelectModel<Table>;
+  export type Table = typeof table.definition;
+  export type Row = OrderRow<InferSelectModel<Table>>;
 
   export const activeView = pgView(OrdersContract.activeViewName).as((qb) =>
-    qb.select().from(table).where(isNull(table.deletedAt)),
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
-  export type ActiveRow = InferSelectViewModel<ActiveView>;
+  export type ActiveRow = OrderRow<InferSelectViewModel<ActiveView>>;
 
-  export const activeManagedBillingAccountView = pgView(
-    OrdersContract.activeManagedBillingAccountViewName,
+  export const activeCustomerPlacedView = activeView;
+  export type ActiveCustomerPlacedView = typeof activeCustomerPlacedView;
+  export type ActiveCustomerPlacedRow = OrderRow<
+    InferSelectViewModel<ActiveCustomerPlacedView>
+  >;
+
+  export const activeManagerAuthorizedSharedAccountView = pgView(
+    OrdersContract.activeManagerAuthorizedSharedAccountViewName,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          BillingAccountManagerAuthorizationsSchema.activeView.managerId,
+          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
-        BillingAccountManagerAuthorizationsSchema.activeView,
+        SharedAccountManagerAuthorizationsSchema.activeView,
         and(
           eq(
-            activeView.billingAccountId,
-            BillingAccountManagerAuthorizationsSchema.activeView
-              .billingAccountId,
+            activeView.sharedAccountId,
+            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            BillingAccountManagerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
           ),
         ),
       ),
   );
-  export type ActiveManagedBillingAccountView =
-    typeof activeManagedBillingAccountView;
-  export type ActiveManagedBillingAccount =
-    InferSelectViewModel<ActiveManagedBillingAccountView>;
+  export type ActiveManagerAuthorizedSharedAccountView =
+    typeof activeManagerAuthorizedSharedAccountView;
+  export type ActiveManagerAuthorizedSharedAccountRow = OrderRow<
+    InferSelectViewModel<ActiveManagerAuthorizedSharedAccountView>
+  >;
 }

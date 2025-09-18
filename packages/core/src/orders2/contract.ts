@@ -1,7 +1,8 @@
-import { Either, Equal, Predicate, Schema } from "effect";
+import { Either, Schema } from "effect";
 
+import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
-import { TableContract } from "../database2/contract";
+import { TablesContract } from "../tables2/contract";
 import { IsoDate, IsoTimestamp } from "../utils2";
 
 import type { OrdersSchema } from "./schema";
@@ -147,169 +148,149 @@ export namespace OrdersContract {
   });
   export const Attributes = Schema.Union(AttributesV1);
 
-  const dtoFilter = (
-    personalAccountId: TableContract.EntityId | null,
-    sharedAccountId: TableContract.EntityId | null,
-    sharedAccountWorkflowStatusId: TableContract.EntityId | null,
-    roomWorkflowStatusId: TableContract.EntityId | null,
-  ) => {
-    if (
-      !Equal.equals(
-        Predicate.isNull(personalAccountId),
-        Predicate.isNull(sharedAccountId),
-      )
-    )
-      return "Order account must be either personal or shared.";
-
-    if (
-      !Equal.equals(
-        Predicate.isNull(sharedAccountWorkflowStatusId),
-        Predicate.isNull(roomWorkflowStatusId),
-      )
-    )
-      return "Order workflow status must be either shared or room.";
-
-    return true;
-  };
-
-  export const DataTransferObject = Schema.Struct({
-    ...TableContract.Tenant.fields,
-    customerId: TableContract.EntityId,
-    managerId: TableContract.EntityId.pipe(
+  const BaseDto = Schema.Struct({
+    ...ColumnsContract.Tenant.fields,
+    customerId: ColumnsContract.EntityId,
+    managerId: ColumnsContract.EntityId.pipe(
       Schema.NullOr,
       Schema.optionalWith({ default: () => null }),
     ),
-    operatorId: TableContract.EntityId.pipe(
+    operatorId: ColumnsContract.EntityId.pipe(
       Schema.NullOr,
       Schema.optionalWith({ default: () => null }),
     ),
-    productId: TableContract.EntityId,
-    personalAccountId: TableContract.EntityId.pipe(Schema.NullOr),
-    sharedAccountId: TableContract.EntityId.pipe(Schema.NullOr),
-    sharedAccountWorkflowStatusId: TableContract.EntityId.pipe(Schema.NullOr),
-    roomWorkflowStatusId: TableContract.EntityId.pipe(Schema.NullOr),
-    deliveryOptionId: TableContract.EntityId,
+    productId: ColumnsContract.EntityId,
+    sharedAccountId: ColumnsContract.EntityId.pipe(Schema.NullOr),
+    deliveryOptionId: ColumnsContract.EntityId,
     attributes: Attributes,
     approvedAt: Schema.DateTimeUtc.pipe(
       Schema.NullOr,
       Schema.optionalWith({ default: () => null }),
     ),
-  }).pipe(
-    Schema.filter((dto) =>
-      dtoFilter(
-        dto.personalAccountId,
-        dto.sharedAccountId,
-        dto.sharedAccountWorkflowStatusId,
-        dto.roomWorkflowStatusId,
-      ),
-    ),
+  });
+
+  export const SharedAccountWorkflowStatusDto = Schema.Struct({
+    ...BaseDto.fields,
+    sharedAccountWorkflowStatusId: ColumnsContract.EntityId,
+    roomWorkflowStatusId: Schema.Null,
+  });
+
+  export const RoomWorkflowStatusDto = Schema.Struct({
+    ...BaseDto.fields,
+    sharedAccountWorkflowStatusId: Schema.Null,
+    roomWorkflowStatusId: ColumnsContract.EntityId,
+  });
+
+  export const DataTransferObject = Schema.Union(
+    SharedAccountWorkflowStatusDto,
+    RoomWorkflowStatusDto,
   );
   export type DataTransferObject = typeof DataTransferObject.Type;
 
   export const tableName = "orders";
-  export const table = TableContract.Sync<OrdersSchema.Table>()(
+  export const table = TablesContract.makeTable<OrdersSchema.Table>()(
     tableName,
     DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<OrdersSchema.ActiveView>()(
+  export const activeView = TablesContract.makeView<OrdersSchema.ActiveView>()(
     activeViewName,
     DataTransferObject,
   );
 
-  export const activeManagedBillingAccountViewName = `active_managed_billing_account_${tableName}`;
-  export const activeManagedBillingAccountView =
-    TableContract.View<OrdersSchema.ActiveManagedBillingAccountView>()(
-      activeManagedBillingAccountViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedManagerId: TableContract.EntityId }),
-      ),
+  export const activeCustomerPlacedViewName = `active_customer_placed_${tableName}`;
+  export const activeCustomerPlacedView =
+    TablesContract.makeVirtualView<OrdersSchema.ActiveCustomerPlacedView>()(
+      activeCustomerPlacedViewName,
+      DataTransferObject,
     );
 
-  export const activePlacedViewName = `active_placed_${tableName}`;
-  export const activePlacedView =
-    TableContract.VirtualView<OrdersSchema.ActiveView>()(
-      activePlacedViewName,
-      DataTransferObject,
+  export const activeManagerAuthorizedSharedAccountViewName = `active_manager_authorized_shared_account_${tableName}`;
+  export const activeManagerAuthorizedSharedAccountView =
+    TablesContract.makeVirtualView<OrdersSchema.ActiveManagerAuthorizedSharedAccountView>()(
+      activeManagerAuthorizedSharedAccountViewName,
+      Schema.extend(
+        DataTransferObject,
+        Schema.Struct({ authorizedManagerId: ColumnsContract.EntityId }),
+      ),
     );
 
   export const isCustomer = new DataAccessContract.Function({
     name: "isOrderCustomer",
-    Args: DataTransferObject.from.pick("id"),
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
   export const isManager = new DataAccessContract.Function({
     name: "isOrderManager",
-    Args: DataTransferObject.from.pick("id"),
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
   export const isCustomerOrManager = new DataAccessContract.Function({
     name: "isOrderCustomerOrManager",
-    Args: DataTransferObject.from.pick("id"),
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const hasActiveManagerAuthorization = new DataAccessContract.Function({
-    name: "hasActiveOrderBillingAccountManagerAuthorization",
-    Args: DataTransferObject.from.pick("id"),
+  export const isAuthorizedManager = new DataAccessContract.Function({
+    name: "isOrderAuthorizedManager",
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canEdit = new DataAccessContract.Function({
-    name: "canEditOrder",
-    Args: DataTransferObject.from.pick("id"),
+  export const isEditable = new DataAccessContract.Function({
+    name: "isOrderEditable",
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canApprove = new DataAccessContract.Function({
-    name: "canApproveOrder",
-    Args: DataTransferObject.from.pick("id"),
+  export const isApprovable = new DataAccessContract.Function({
+    name: "isOrderApprovable",
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canTransition = new DataAccessContract.Function({
-    name: "canTransitionOrder",
-    Args: DataTransferObject.from.pick("id"),
+  export const isTransitionable = new DataAccessContract.Function({
+    name: "isOrderTransitionable",
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Function({
-    name: "canDeleteOrder",
-    Args: DataTransferObject.from.pick("id"),
+  export const isDeletable = new DataAccessContract.Function({
+    name: "isOrderDeletable",
+    Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
+  const omittedOnCreate = [
+    "managerId",
+    "operatorId",
+    "approvedAt",
+    "deletedAt",
+    "tenantId",
+  ] as const;
   export const create = new DataAccessContract.Function({
     name: "createOrder",
-    Args: DataTransferObject.from
-      .omit("managerId", "operatorId", "approvedAt", "deletedAt", "tenantId")
-      .pipe(
-        Schema.filter((dto) =>
-          dtoFilter(
-            dto.personalAccountId,
-            dto.sharedAccountId,
-            dto.sharedAccountWorkflowStatusId,
-            dto.roomWorkflowStatusId,
-          ),
-        ),
-      ),
+    Args: Schema.Union(
+      SharedAccountWorkflowStatusDto.omit(...omittedOnCreate),
+      RoomWorkflowStatusDto.omit(...omittedOnCreate),
+    ),
     Returns: DataTransferObject,
   });
 
   export const edit = new DataAccessContract.Function({
     name: "editOrder",
     Args: Schema.extend(
-      DataTransferObject.from.pick("id", "updatedAt"),
-      Schema.Struct({
-        productId: TableContract.EntityId,
-        deliveryOptionId: TableContract.EntityId,
-        attributes: Attributes,
-      }).pipe(Schema.partial),
+      BaseDto.pick("id", "updatedAt"),
+      BaseDto.pick(
+        "productId",
+        "sharedAccountId",
+        "deliveryOptionId",
+        "attributes",
+      ).pipe(Schema.partial),
     ),
     Returns: DataTransferObject,
   });
@@ -317,38 +298,34 @@ export namespace OrdersContract {
   export const approve = new DataAccessContract.Function({
     name: "approveOrder",
     Args: Schema.Struct({
-      id: TableContract.EntityId,
-      roomWorkflowStatusId: TableContract.EntityId,
+      id: ColumnsContract.EntityId,
+      roomWorkflowStatusId: ColumnsContract.EntityId,
       approvedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const transitionRoomWorkflowStatus = new DataAccessContract.Function({
+    name: "transitionOrderRoomWorkflowStatus",
+    Args: RoomWorkflowStatusDto.pick("id", "updatedAt", "roomWorkflowStatusId"),
     Returns: DataTransferObject,
   });
 
   export const transitionSharedAccountWorkflowStatus =
     new DataAccessContract.Function({
       name: "transitionOrderSharedAccountWorkflowStatus",
-      Args: Schema.Struct({
-        id: TableContract.EntityId,
-        updatedAt: Schema.DateTimeUtc,
-        sharedAccountWorkflowStatusId: TableContract.EntityId,
-      }),
+      Args: SharedAccountWorkflowStatusDto.pick(
+        "id",
+        "updatedAt",
+        "sharedAccountWorkflowStatusId",
+      ),
       Returns: DataTransferObject,
     });
-
-  export const transitionRoomWorkflowStatus = new DataAccessContract.Function({
-    name: "transitionOrderRoomWorkflowStatus",
-    Args: Schema.Struct({
-      id: TableContract.EntityId,
-      updatedAt: Schema.DateTimeUtc,
-      roomWorkflowStatusId: TableContract.EntityId,
-    }),
-    Returns: DataTransferObject,
-  });
 
   export const delete_ = new DataAccessContract.Function({
     name: "deleteOrder",
     Args: Schema.Struct({
-      id: TableContract.EntityId,
+      id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: DataTransferObject,

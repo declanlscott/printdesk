@@ -1,10 +1,10 @@
-import { Cause, Data, Effect, Predicate, Schema } from "effect";
+import { Cause, Data, Effect, Schema } from "effect";
 
 import type {
   ReadTransaction as ReadTx,
   WriteTransaction as WriteTx,
 } from "replicache";
-import type { SyncTable } from "../database2/tables";
+import type { Models } from "../models2";
 
 export namespace Replicache {
   export class ReplicacheError extends Data.TaggedError(
@@ -22,7 +22,7 @@ export namespace Replicache {
       effect: Effect.gen(function* () {
         const { tx } = yield* ReadTransaction;
 
-        const scan = <TTable extends SyncTable>(table: TTable) =>
+        const scan = <TTable extends Models.SyncTable>(table: TTable) =>
           Effect.tryPromise({
             try: () => tx.scan({ prefix: `${table.name}/` }).toArray(),
             catch: (cause) => new ReplicacheError({ cause }),
@@ -36,7 +36,7 @@ export namespace Replicache {
             ),
           );
 
-        const get = <TTable extends SyncTable>(
+        const get = <TTable extends Models.SyncTable>(
           table: TTable,
           id: TTable["DataTransferObject"]["Type"]["id"],
         ) =>
@@ -78,7 +78,7 @@ export namespace Replicache {
         const { tx } = yield* WriteTransaction;
         const { get } = yield* ReadTransactionManager;
 
-        const set = <TTable extends SyncTable>(
+        const set = <TTable extends Models.SyncTable>(
           table: TTable,
           id: TTable["DataTransferObject"]["Type"]["id"],
           value: TTable["DataTransferObject"]["Type"],
@@ -100,7 +100,7 @@ export namespace Replicache {
             Effect.andThen(get(table, id)),
           );
 
-        const del = <TTable extends SyncTable>(
+        const del = <TTable extends Models.SyncTable>(
           table: TTable,
           id: TTable["DataTransferObject"]["Type"]["id"],
         ) =>
@@ -117,7 +117,9 @@ export namespace Replicache {
     },
   ) {}
 
-  export const makeReadRepository = <TTable extends SyncTable>(table: TTable) =>
+  export const makeReadRepository = <TTable extends Models.SyncTable>(
+    table: TTable,
+  ) =>
     Effect.gen(function* () {
       const { scan, get } = yield* Replicache.ReadTransactionManager;
 
@@ -129,7 +131,7 @@ export namespace Replicache {
       return { findAll, findById } as const;
     });
 
-  export const makeWriteRepository = <TTable extends SyncTable>(
+  export const makeWriteRepository = <TTable extends Models.SyncTable>(
     table: TTable,
     readRepository: Effect.Effect.Success<
       ReturnType<typeof makeReadRepository<TTable>>
@@ -143,21 +145,14 @@ export namespace Replicache {
 
       const updateById = (
         id: TTable["DataTransferObject"]["Type"]["id"],
-        value:
-          | Partial<
-              Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
-            >
-          | ((
-              prev: TTable["DataTransferObject"]["Type"],
-            ) => Partial<
-              Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
-            >),
+        update: (
+          prev: TTable["DataTransferObject"]["Type"],
+        ) => Partial<
+          Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
+        >,
       ) =>
         readRepository.findById(id).pipe(
-          Effect.map((prev) => ({
-            ...prev,
-            ...(Predicate.isFunction(value) ? value(prev) : value),
-          })),
+          Effect.map((prev) => ({ ...prev, ...update(prev) })),
           Effect.flatMap((next) => set(table, next.id, next)),
         );
 

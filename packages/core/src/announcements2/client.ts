@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
 import { Replicache } from "../replicache2/client";
 import { AnnouncementsContract } from "./contract";
 
@@ -9,8 +10,13 @@ export namespace Announcements {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/announcements/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(AnnouncementsContract.table),
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Models.SyncTables.announcements.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
     },
   ) {}
 
@@ -18,16 +24,15 @@ export namespace Announcements {
     "@printdesk/core/announcements/client/WriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(
-            AnnouncementsContract.table,
-            repository,
-          ),
-        ),
+      effect: Effect.all([
+        Models.SyncTables.announcements,
+        ReadRepository,
+      ]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}
@@ -60,7 +65,7 @@ export namespace Announcements {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:update"),
             mutator: ({ id, ...announcement }) =>
-              repository.updateById(id, announcement),
+              repository.updateById(id, () => announcement),
           }),
         );
 
@@ -69,14 +74,16 @@ export namespace Announcements {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("announcements:delete"),
             mutator: ({ id, deletedAt }) =>
-              repository.updateById(id, { deletedAt }).pipe(
-                AccessControl.enforce(
-                  AccessControl.permission("announcements:read"),
+              repository
+                .updateById(id, () => ({ deletedAt }))
+                .pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("announcements:read"),
+                  ),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    repository.deleteById(id),
+                  ),
                 ),
-                Effect.catchTag("AccessDeniedError", () =>
-                  repository.deleteById(id),
-                ),
-              ),
           }),
         );
 

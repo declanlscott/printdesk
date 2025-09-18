@@ -1,30 +1,33 @@
 import { eq, isNull } from "drizzle-orm";
-import { index, pgView, varchar } from "drizzle-orm/pg-core";
+import { index, pgView } from "drizzle-orm/pg-core";
 
-import { id, jsonb, pgEnum, tenantTable } from "../database2/constructors";
+import { Columns } from "../columns2";
+import { Tables } from "../tables2";
 import { ProductsContract } from "./contract";
 
-import type { InferSelectViewModel } from "drizzle-orm";
-import type { TableContract } from "../database2/contract";
+import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace ProductsSchema {
-  export const table = tenantTable(
+  export const table = new Tables.Sync(
     ProductsContract.tableName,
     {
-      name: varchar("name").notNull(),
-      status: pgEnum("status", ProductsContract.statuses)
+      name: Columns.varchar().notNull(),
+      status: Columns.union(ProductsContract.statuses)
         .default("draft")
         .notNull(),
-      roomId: id<TableContract.EntityId>("room_id").notNull(),
-      config: jsonb("config", ProductsContract.Configuration).notNull(),
+      roomId: Columns.entityId.notNull(),
+      config: Columns.jsonb(ProductsContract.Configuration).notNull(),
     },
     (table) => [index().on(table.status), index().on(table.roomId)],
   );
-  export type Table = typeof table;
-  export type Row = TableContract.InferDataTransferObject<Table>;
+  export type Table = typeof table.definition;
+  export type Row = InferSelectModel<Table>;
 
   export const activeView = pgView(ProductsContract.activeViewName).as((qb) =>
-    qb.select().from(table).where(isNull(table.deletedAt)),
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;

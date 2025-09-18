@@ -1,97 +1,40 @@
-import { Array, Effect, Equal, Number, Option, Order } from "effect";
+import {
+  Array,
+  Cause,
+  Effect,
+  Equal,
+  Match,
+  Number,
+  Option,
+  Order,
+  Ordering,
+  Struct,
+} from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
+import { Orders } from "../orders2/client";
 import { Replicache } from "../replicache2/client";
 import {
-  BillingAccountWorkflowsContract,
-  RoomWorkflowsContract,
+  SharedAccountWorkflowsContract,
   WorkflowStatusesContract,
 } from "./contracts";
 
-export namespace BillingAccountWorkflows {
-  export class ReadRepository extends Effect.Service<ReadRepository>()(
-    "@printdesk/core/workflows/client/BillingAccountsReadRepository",
-    {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(
-        BillingAccountWorkflowsContract.table,
-      ),
-    },
-  ) {}
-
-  export class WriteRepository extends Effect.Service<WriteRepository>()(
-    "@printdesk/core/workflows/client/BillingAccountsWriteRepository",
-    {
-      dependencies: [
-        ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
-      ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Effect.gen(function* () {
-            const base = yield* Replicache.makeWriteRepository(
-              BillingAccountWorkflowsContract.table,
-              repository,
-            );
-
-            const updateByBillingAccountId = (
-              billingAccountId: BillingAccountWorkflowsContract.DataTransferObject["billingAccountId"],
-              workflow: Partial<
-                Omit<
-                  BillingAccountWorkflowsContract.DataTransferObject,
-                  "id" | "billingAccountId" | "tenantId"
-                >
-              >,
-            ) =>
-              repository.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((prev) =>
-                    Equal.equals(prev.billingAccountId, billingAccountId)
-                      ? Option.some(
-                          base.updateById(prev.id, {
-                            ...prev,
-                            ...workflow,
-                          }),
-                        )
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-              );
-
-            const deleteByBillingAccountId = (
-              billingAccountId: BillingAccountWorkflowsContract.DataTransferObject["billingAccountId"],
-            ) =>
-              repository.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((workflow) =>
-                    Equal.equals(workflow.billingAccountId, billingAccountId)
-                      ? Option.some(base.deleteById(workflow.id))
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-              );
-
-            return {
-              ...base,
-              updateByBillingAccountId,
-              deleteByBillingAccountId,
-            } as const;
-          }),
-        ),
-      ),
-    },
-  ) {}
-}
+import type { ColumnsContract } from "../columns2/contract";
+import type { SharedAccountManagerAuthorizationsContract } from "../shared-accounts2/contracts";
 
 export namespace RoomWorkflows {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/RoomsReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(RoomWorkflowsContract.table),
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Models.SyncTables.roomWorkflows.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
     },
   ) {}
 
@@ -99,172 +42,361 @@ export namespace RoomWorkflows {
     "@printdesk/core/workflows/client/RoomsWriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Effect.gen(function* () {
-            const base = yield* Replicache.makeWriteRepository(
-              RoomWorkflowsContract.table,
-              repository,
-            );
-
-            const updateByRoomId = (
-              roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
-              workflow: Partial<
-                Omit<
-                  RoomWorkflowsContract.DataTransferObject,
-                  "id" | "roomId" | "tenantId"
-                >
-              >,
-            ) =>
-              repository.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((prev) =>
-                    Equal.equals(prev.roomId, roomId)
-                      ? Option.some(
-                          base.updateById(prev.id, {
-                            ...prev,
-                            ...workflow,
-                          }),
-                        )
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-              );
-
-            const deleteByRoomId = (
-              roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
-            ) =>
-              repository.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((workflow) =>
-                    Equal.equals(workflow.roomId, roomId)
-                      ? Option.some(base.deleteById(workflow.id))
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-              );
-
-            return { ...base, updateByRoomId, deleteByRoomId } as const;
-          }),
-        ),
+      effect: Effect.all([
+        Models.SyncTables.roomWorkflows,
+        ReadRepository,
+      ]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
+    },
+  ) {}
+}
+
+export namespace SharedAccountWorkflows {
+  export class ReadRepository extends Effect.Service<ReadRepository>()(
+    "@printdesk/core/workflows/client/SharedAccountsReadRepository",
+    {
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const table = yield* Models.syncTables.sharedAccountWorkflows;
+        const base = yield* Replicache.makeReadRepository(table);
+        const { scan } = yield* Replicache.ReadTransactionManager;
+
+        const sharedAccountManagerAuthorizationsTable =
+          yield* Models.SyncTables.sharedAccountManagerAuthorizations;
+
+        const findActiveManagerAuthorized = (
+          managerId: SharedAccountManagerAuthorizationsContract.DataTransferObject["managerId"],
+          id: SharedAccountWorkflowsContract.DataTransferObject["id"],
+        ) =>
+          base.findById(id).pipe(
+            Effect.flatMap((workflow) =>
+              scan(sharedAccountManagerAuthorizationsTable).pipe(
+                Effect.map(
+                  Array.filterMap((authorization) =>
+                    Equal.equals(
+                      authorization.sharedAccountId,
+                      workflow.sharedAccountId,
+                    ) && Equal.equals(authorization.managerId, managerId)
+                      ? Option.some(workflow)
+                      : Option.none(),
+                  ),
+                ),
+              ),
+            ),
+            Effect.flatMap(Array.head),
+          );
+
+        return { ...base, findActiveManagerAuthorized };
+      }),
+    },
+  ) {}
+
+  export class WriteRepository extends Effect.Service<WriteRepository>()(
+    "@printdesk/core/workflows/client/SharedAccountsWriteRepository",
+    {
+      dependencies: [
+        Models.SyncTables.Default,
+        ReadRepository.Default,
+        Replicache.WriteTransactionManager.Default,
+      ],
+      effect: Effect.all([
+        Models.SyncTables.sharedAccountWorkflows,
+        ReadRepository,
+      ]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
+      ),
+    },
+  ) {}
+
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/workflows/client/SharedAccountPolicies",
+    {
+      accessors: true,
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+
+        const isManagerAuthorized = DataAccessContract.makePolicy(
+          SharedAccountWorkflowsContract.isManagerAuthorized,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveManagerAuthorized(principal.userId, id)
+                  .pipe(
+                    Effect.andThen(true),
+                    Effect.catchTag("NoSuchElementException", () =>
+                      Effect.succeed(false),
+                    ),
+                  ),
+              ),
+          }),
+        );
+
+        return { isManagerAuthorized } as const;
+      }),
     },
   ) {}
 }
 
 export namespace WorkflowStatuses {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
-    "@printdesk/core/workflows/client/WorkflowStatusesReadRepository",
+    "@printdesk/core/workflows/client/StatusesReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(
-          WorkflowStatusesContract.table,
-        );
+        const table = yield* Models.syncTables.workflowStatuses;
+        const base = yield* Replicache.makeReadRepository(table);
 
-        const findTailIndexByWorkflowId = (
-          workflowId: WorkflowStatusesContract.DataTransferObject["workflowId"],
-        ) =>
+        const findLastByWorkflowId = (workflowId: ColumnsContract.EntityId) =>
           base.findAll.pipe(
             Effect.map(
-              Array.filter((option) => option.workflowId === workflowId),
+              Array.filterMap((ws) =>
+                Equal.equals(ws.roomWorkflowId, workflowId) ||
+                Equal.equals(ws.sharedAccountWorkflowId, workflowId)
+                  ? Option.some(ws)
+                  : Option.none(),
+              ),
             ),
             Effect.map(
-              Array.sortWith(
-                (status) => status.index,
-                Order.reverse(Order.number),
-              ),
+              Array.sortBy(Order.mapInput(Order.number, Struct.get("index"))),
             ),
-            Effect.flatMap(Array.head),
-            Effect.map(({ index }) => ({ index })),
+            Effect.flatMap(Array.last),
           );
 
-        const findSliceByWorkflowId = (
-          start: WorkflowStatusesContract.DataTransferObject["index"],
-          end: WorkflowStatusesContract.DataTransferObject["index"],
-          workflowId: WorkflowStatusesContract.DataTransferObject["workflowId"],
+        const findSlice = (
+          id: WorkflowStatusesContract.DataTransferObject["id"],
+          index: WorkflowStatusesContract.DataTransferObject["index"],
         ) =>
-          Effect.succeed(Number.sign(end - start) > 0).pipe(
-            Effect.flatMap((isAscending) =>
+          base.findById(id).pipe(
+            Effect.flatMap((workflowStatus) =>
               base.findAll.pipe(
                 Effect.map(
-                  Array.filter((status) =>
-                    status.workflowId === workflowId && isAscending
-                      ? status.index >= start && status.index <= end
-                      : status.index <= start && status.index >= end,
-                  ),
-                ),
-                Effect.map(
-                  Array.sortWith(
-                    (option) => option.index,
-                    isAscending ? Order.number : Order.reverse(Order.number),
+                  Array.filterMap((ws) =>
+                    (Equal.equals(
+                      ws.roomWorkflowId,
+                      workflowStatus.roomWorkflowId,
+                    ) ||
+                      Equal.equals(
+                        ws.sharedAccountWorkflowId,
+                        workflowStatus.sharedAccountWorkflowId,
+                      )) &&
+                    Number.between(ws.index, {
+                      minimum: Number.min(workflowStatus.index, index),
+                      maximum: Number.max(workflowStatus.index, index),
+                    })
+                      ? Option.some(ws)
+                      : Option.none(),
                   ),
                 ),
               ),
             ),
+            Effect.map(
+              Array.sortBy(Order.mapInput(Order.number, Struct.get("index"))),
+            ),
           );
+
+        const findTailSliceById = (
+          id: WorkflowStatusesContract.DataTransferObject["id"],
+        ) =>
+          base
+            .findById(id)
+            .pipe(
+              Effect.flatMap((workflowStatus) =>
+                base.findAll.pipe(
+                  Effect.map(
+                    Array.filterMap((ws) =>
+                      (Equal.equals(
+                        ws.roomWorkflowId,
+                        workflowStatus.roomWorkflowId,
+                      ) ||
+                        Equal.equals(
+                          ws.sharedAccountWorkflowId,
+                          workflowStatus.sharedAccountWorkflowId,
+                        )) &&
+                      Number.greaterThanOrEqualTo(
+                        ws.index,
+                        workflowStatus.index,
+                      )
+                        ? Option.some(ws)
+                        : Option.none(),
+                    ),
+                  ),
+                ),
+              ),
+            );
 
         return {
           ...base,
-          findTailIndexByWorkflowId,
-          findSliceByWorkflowId,
+          findLastByWorkflowId,
+          findSlice,
+          findTailSliceById,
         } as const;
       }),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
-    "@printdesk/core/workflows/client/WorkflowStatusesWriteRepository",
+    "@printdesk/core/workflows/client/StatusesWriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(
-            WorkflowStatusesContract.table,
-            repository,
-          ),
-        ),
+      effect: Effect.all([
+        Models.SyncTables.workflowStatuses,
+        ReadRepository,
+      ]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}
 
-  export class Mutations extends Effect.Service<Mutations>()(
-    "@printdesk/core/workflows/client/WorkflowStatusesMutations",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/workflows/StatusesPolicies",
     {
       accessors: true,
-      dependencies: [ReadRepository.Default, WriteRepository.Default],
+      dependencies: [
+        ReadRepository.Default,
+        SharedAccountWorkflows.ReadRepository.Default,
+        Orders.ReadRepository.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+        const sharedAccountWorkflowRepository =
+          yield* SharedAccountWorkflows.ReadRepository;
+        const ordersRepository = yield* Orders.ReadRepository;
+
+        const isEditable = DataAccessContract.makePolicy(
+          WorkflowStatusesContract.isEditable,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy((principal) =>
+                repository.findById(id).pipe(
+                  Effect.flatMap((workflowStatus) =>
+                    Match.value(workflowStatus).pipe(
+                      Match.when({ roomWorkflowId: Match.null }, (status) =>
+                        sharedAccountWorkflowRepository
+                          .findActiveManagerAuthorized(
+                            principal.userId,
+                            status.sharedAccountWorkflowId,
+                          )
+                          .pipe(
+                            Effect.andThen(true),
+                            Effect.catchTag("NoSuchElementException", () =>
+                              Effect.succeed(false),
+                            ),
+                          ),
+                      ),
+                      Match.orElse(() =>
+                        Effect.succeed(principal.acl.has("rooms:update")),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          }),
+        );
+
+        const isDeletable = DataAccessContract.makePolicy(
+          WorkflowStatusesContract.isDeletable,
+          isEditable.pipe(
+            Effect.flatMap((isEditable) =>
+              Effect.succeed({
+                make: ({ id }) =>
+                  AccessControl.every(
+                    AccessControl.policy(() =>
+                      ordersRepository
+                        .findByWorkflowStatusId(id)
+                        .pipe(Effect.map(Array.isEmptyArray)),
+                    ),
+                    isEditable.make({ id }),
+                  ),
+              }),
+            ),
+          ),
+        );
+
+        return { isEditable, isDeletable } as const;
+      }),
+    },
+  ) {}
+
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/workflows/StatusesMutations",
+    {
+      accessors: true,
+      dependencies: [
+        ReadRepository.Default,
+        WriteRepository.Default,
+        SharedAccountWorkflows.Policies.Default,
+        Policies.Default,
+      ],
       effect: Effect.gen(function* () {
         const readRepository = yield* ReadRepository;
         const writeRepository = yield* WriteRepository;
 
+        const isManagerAuthorizedSharedAccountWorkflow =
+          yield* SharedAccountWorkflows.Policies.isManagerAuthorized;
+
+        const isEditable = yield* Policies.isEditable;
+        const isDeletable = yield* Policies.isDeletable;
+
         const append = DataAccessContract.makeMutation(
           WorkflowStatusesContract.append,
           Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("workflow_statuses:create"),
+            makePolicy: (args) =>
+              AccessControl.some(
+                AccessControl.permission("workflow_statuses:create"),
+                Match.value(args).pipe(
+                  Match.when({ roomWorkflowId: Match.null }, (args) =>
+                    isManagerAuthorizedSharedAccountWorkflow.make({
+                      id: args.sharedAccountWorkflowId,
+                    }),
+                  ),
+                  Match.orElse(() => AccessControl.permission("rooms:update")),
+                ),
+              ),
             mutator: (workflowStatus, { tenantId }) =>
               readRepository
-                .findTailIndexByWorkflowId(workflowStatus.workflowId)
+                .findLastByWorkflowId(
+                  workflowStatus.roomWorkflowId ??
+                    workflowStatus.sharedAccountWorkflowId,
+                )
                 .pipe(
+                  Effect.map(Struct.get("index")),
+                  Effect.map(Number.increment),
                   Effect.catchTag("NoSuchElementException", () =>
-                    Effect.succeed({ index: -1 }),
+                    Effect.succeed(0),
                   ),
-                  Effect.map(({ index }) => ++index),
                   Effect.flatMap((index) =>
                     writeRepository.create(
-                      WorkflowStatusesContract.DataTransferObject.make({
-                        ...workflowStatus,
-                        index,
-                        tenantId,
-                      }),
+                      Match.value(workflowStatus).pipe(
+                        Match.when({ roomWorkflowId: Match.null }, (status) =>
+                          WorkflowStatusesContract.SharedAccountWorkflowDto.make(
+                            { ...status, index, tenantId },
+                          ),
+                        ),
+                        Match.orElse((status) =>
+                          WorkflowStatusesContract.RoomWorkflowDto.make({
+                            ...status,
+                            index,
+                            tenantId,
+                          }),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -274,46 +406,64 @@ export namespace WorkflowStatuses {
         const edit = DataAccessContract.makeMutation(
           WorkflowStatusesContract.edit,
           Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("workflow_statuses:update"),
+            makePolicy: ({ id }) =>
+              AccessControl.some(
+                AccessControl.permission("workflow_statuses:update"),
+                isEditable.make({ id }),
+              ),
             mutator: ({ id, ...workflowStatus }) =>
-              writeRepository.updateById(id, workflowStatus),
+              writeRepository.updateById(id, () => workflowStatus),
           }),
         );
 
         const reorder = DataAccessContract.makeMutation(
           WorkflowStatusesContract.reorder,
           Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("workflow_statuses:update"),
-            mutator: ({ oldIndex, newIndex, updatedAt, workflowId }) =>
+            makePolicy: ({ id }) =>
+              AccessControl.some(
+                AccessControl.permission("workflow_statuses:update"),
+                isEditable.make({ id }),
+              ),
+            mutator: ({ id, index, updatedAt }) =>
               Effect.gen(function* () {
-                const delta = newIndex - oldIndex;
-                const shift = -Number.sign(delta);
+                const slice = yield* readRepository
+                  .findSlice(id, index)
+                  .pipe(
+                    Effect.flatMap((slice) =>
+                      Array.last(slice).pipe(
+                        Effect.map((status) =>
+                          status.id === id ? Array.reverse(slice) : slice,
+                        ),
+                      ),
+                    ),
+                  );
 
-                const slice = yield* readRepository.findSliceByWorkflowId(
-                  oldIndex,
-                  newIndex,
-                  workflowId,
-                );
+                const delta = index - slice[0].index;
+                const shift = Ordering.reverse(Number.sign(delta));
 
-                const sliceLength = slice.length;
-                const absoluteDelta = Math.abs(delta);
-                if (sliceLength !== absoluteDelta)
+                if (!shift)
                   return yield* Effect.fail(
-                    new WorkflowStatusesContract.InvalidReorderDeltaError({
-                      sliceLength,
-                      absoluteDelta,
-                    }),
+                    new Cause.IllegalArgumentException(
+                      `Invalid workflow status index, delta with existing index must be non-zero.`,
+                    ),
+                  );
+
+                const actualDelta = (slice.length - 1) * -shift;
+                if (delta !== actualDelta)
+                  return yield* Effect.fail(
+                    new Cause.IllegalArgumentException(
+                      `Invalid workflow status index, delta mismatch. Delta: ${delta}, actual delta: ${actualDelta}.`,
+                    ),
                   );
 
                 return yield* Effect.all(
-                  Array.map(slice, (option, sliceIndex) =>
-                    writeRepository.updateById(option.id, {
-                      index: option.index + (sliceIndex === 0 ? delta : shift),
+                  Array.map(slice, (status, i) =>
+                    writeRepository.updateById(status.id, () => ({
+                      index: status.index + (i === 0 ? delta : shift),
                       updatedAt,
-                    }),
+                    })),
                   ),
+                  { concurrency: "unbounded" },
                 );
               }),
           }),
@@ -322,17 +472,38 @@ export namespace WorkflowStatuses {
         const delete_ = DataAccessContract.makeMutation(
           WorkflowStatusesContract.delete_,
           Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("workflow_statuses:delete"),
-            mutator: ({ id, deletedAt }) =>
-              writeRepository.updateById(id, { deletedAt }).pipe(
-                AccessControl.enforce(
-                  AccessControl.permission("workflow_statuses:read"),
-                ),
-                Effect.catchTag("AccessDeniedError", () =>
-                  writeRepository.deleteById(id),
-                ),
+            makePolicy: ({ id }) =>
+              AccessControl.some(
+                AccessControl.permission("workflow_statuses:delete"),
+                isDeletable.make({ id }),
               ),
+            mutator: ({ id, deletedAt }) =>
+              Effect.gen(function* () {
+                const slice = yield* readRepository.findTailSliceById(id);
+
+                const deleted = yield* writeRepository.deleteById(id).pipe(
+                  Effect.map((value) => ({
+                    ...value,
+                    deletedAt,
+                  })),
+                );
+
+                yield* Effect.all(
+                  Array.filterMap(slice, (status, i) =>
+                    i === 0
+                      ? Option.none()
+                      : Option.some(
+                          writeRepository.updateById(status.id, () => ({
+                            index: Number.decrement(status.index),
+                            updatedAt: deletedAt,
+                          })),
+                        ),
+                  ),
+                  { concurrency: "unbounded" },
+                );
+
+                return deleted;
+              }),
           }),
         );
 

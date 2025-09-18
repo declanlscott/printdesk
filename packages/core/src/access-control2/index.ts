@@ -1,86 +1,16 @@
-import { Array, Context, Data, Effect, Option, Schema, Struct } from "effect";
+import { Context, Data, Effect } from "effect";
 
-import { nonSyncTables, syncTables } from "../database2/tables";
-import { views } from "../database2/views";
-
+import type { Schema } from "effect";
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
-import type { TableContract } from "../database2/contract";
+import type { ColumnsContract } from "../columns2/contract";
+import type { Permissions } from "../permissions2";
 import type { UsersContract } from "../users2/contract";
 
 export namespace AccessControl {
-  export type PermissionAction = "create" | "read" | "update" | "delete";
-
-  export type PermissionsConfig = Record<
-    string,
-    ReadonlyArray<PermissionAction>
-  >;
-
-  export type InferPermissionsFromConfig<TConfig extends PermissionsConfig> = {
-    [TResource in keyof TConfig]: TConfig[TResource][number] extends PermissionAction
-      ? `${TResource & string}:${TConfig[TResource][number]}`
-      : never;
-  }[keyof TConfig];
-
-  const makePermissionsFromConfig = <TConfig extends PermissionsConfig>(
-    config: TConfig,
-  ) =>
-    Array.flatMap(Struct.entries(config), ([resource, actions]) =>
-      Array.map(
-        actions,
-        (action) =>
-          `${resource}:${action}` as InferPermissionsFromConfig<TConfig>,
-      ),
-    );
-
-  const syncTablePermissions = syncTables.flatMap(
-    ({ permissions }) => permissions,
-  );
-
-  const nonSyncTablePermissions = nonSyncTables.flatMap(
-    ({ permissions }) => permissions,
-  );
-
-  const viewPermissions = views.flatMap(({ permission }) => permission);
-
-  const externalPermissions = makePermissionsFromConfig({
-    document_constraints: ["read", "update"],
-    papercut_sync: ["create", "read"],
-    // NOTE: proxy structure: protocol (https/http), fqdn (*.tailnet-*.ts.net), port, path (other than root /)
-    papercut_tailscale_proxy: ["read", "update"],
-    tailscale_oauth_client: ["update"],
-  } as const);
-
-  export const permissions = [
-    ...syncTablePermissions,
-    ...nonSyncTablePermissions,
-    ...viewPermissions,
-    ...externalPermissions,
-  ] as const;
-  export type Permissions = typeof permissions;
-
-  export const Permission = Schema.Literal(...permissions);
-  export type Permission = typeof Permission.Type;
-
-  export const readPermissions = Array.filterMap(permissions, (permission) =>
-    permission.endsWith(":read")
-      ? Option.some(
-          permission as {
-            [TPermission in Permissions[number]]: TPermission extends `${string}:read`
-              ? TPermission
-              : never;
-          }[Permissions[number]],
-        )
-      : Option.none(),
-  );
-  export type ReadPermissions = typeof readPermissions;
-
-  export const ReadPermission = Schema.Literal(...readPermissions);
-  export type ReadPermission = typeof ReadPermission.Type;
-
   export type UserRoleAcls = ReadonlyRecord<
     UsersContract.Role,
-    ReadonlyArray<Permission>
+    ReadonlyArray<Permissions.Permission>
   >;
   export const userRoleAcls = {
     administrator: [
@@ -88,13 +18,13 @@ export namespace AccessControl {
       "announcements:read",
       "announcements:update",
       "announcements:delete",
-      "billing_accounts:read",
-      "billing_accounts:update",
-      "billing_accounts:delete",
-      "billing_account_customer_authorizations:read",
-      "billing_account_manager_authorizations:create",
-      "billing_account_manager_authorizations:read",
-      "billing_account_manager_authorizations:delete",
+      "shared_accounts:read",
+      "shared_accounts:update",
+      "shared_accounts:delete",
+      "shared_account_customer_authorizations:read",
+      "shared_account_manager_authorizations:create",
+      "shared_account_manager_authorizations:read",
+      "shared_account_manager_authorizations:delete",
       "comments:create",
       "comments:read",
       "comments:update",
@@ -130,8 +60,8 @@ export namespace AccessControl {
       "users:read",
       "users:update",
       "users:delete",
-      "billing_account_workflows:read",
       "room_workflows:read",
+      "shared_account_workflows:read",
       "workflow_statuses:create",
       "workflow_statuses:read",
       "workflow_statuses:update",
@@ -142,10 +72,10 @@ export namespace AccessControl {
       "active_announcements:read",
       "announcements:update",
       "announcements:delete",
-      "active_billing_accounts:read",
-      "billing_accounts:update",
-      "active_billing_account_customer_authorizations:read",
-      "active_billing_account_manager_authorizations:read",
+      "active_shared_accounts:read",
+      "shared_accounts:update",
+      "active_shared_account_customer_authorizations:read",
+      "active_shared_account_manager_authorizations:read",
       "comments:create",
       "active_comments:read",
       "delivery_options:create",
@@ -167,59 +97,61 @@ export namespace AccessControl {
       "rooms:update",
       "tenants:read",
       "active_users:read",
-      "billing_account_workflows:read",
       "room_workflows:read",
-      "workflow_statuses:create",
+      "shared_account_workflows:read",
       "workflow_statuses:read",
-      "workflow_statuses:update",
-      "workflow_statuses:delete",
     ] as const,
     manager: [
       "active_announcements:read",
-      "active_manager_authorized_billing_accounts:read",
-      "active_customer_authorized_billing_accounts:read",
-      "active_authorized_billing_account_customer_authorizations:read",
-      "active_authorized_billing_account_manager_authorizations:read",
-      "active_customer_authorized_billing_account_manager_authorizations:read",
-      "active_managed_billing_account_order_comments:read",
-      "active_placed_order_comments:read",
+      "active_manager_authorized_shared_accounts:read",
+      "active_customer_authorized_shared_accounts:read",
+      "active_authorized_shared_account_customer_authorizations:read",
+      "active_authorized_shared_account_manager_authorizations:read",
+      "active_customer_authorized_shared_account_manager_authorizations:read",
+      "active_customer_placed_order_comments:read",
+      "active_manager_authorized_shared_account_order_comments:read",
       "active_published_room_delivery_options:read",
       "document_constraints:read",
-      "active_managed_billing_account_order_invoices:read",
-      "active_placed_order_invoices:read",
-      "active_managed_billing_account_orders:read",
-      "active_placed_orders:read",
+      "active_customer_placed_order_invoices:read",
+      "active_manager_authorized_shared_account_order_invoices:read",
+      "active_customer_placed_orders:read",
+      "active_manager_authorized_shared_account_orders:read",
       "active_published_products:read",
       "active_published_rooms:read",
       "tenants:read",
       "active_users:read",
-      "active_customer_authorized_billing_account_workflows:read",
-      "active_manager_authorized_billing_account_workflows:read",
       "active_published_room_workflows:read",
+      "active_customer_authorized_shared_account_workflows:read",
+      "active_manager_authorized_shared_account_workflows:read",
+      "active_published_room_workflow_statuses:read",
+      "active_customer_authorized_shared_account_workflow_statuses:read",
+      "active_manager_authorized_shared_account_workflow_statuses:read",
     ] as const,
     customer: [
       "active_announcements:read",
-      "active_customer_authorized_billing_accounts:read",
-      "active_authorized_billing_account_customer_authorizations:read",
-      "active_customer_authorized_billing_account_manager_authorizations:read",
-      "active_placed_order_comments:read",
+      "active_customer_authorized_shared_accounts:read",
+      "active_authorized_shared_account_customer_authorizations:read",
+      "active_customer_authorized_shared_account_manager_authorizations:read",
+      "active_customer_placed_order_comments:read",
       "active_published_room_delivery_options:read",
       "document_constraints:read",
-      "active_placed_order_invoices:read",
-      "active_placed_orders:read",
+      "active_customer_placed_order_invoices:read",
+      "active_customer_placed_orders:read",
       "active_published_products:read",
       "active_published_rooms:read",
       "tenants:read",
       "active_users:read",
-      "active_customer_authorized_billing_account_workflows:read",
       "active_published_room_workflows:read",
+      "active_customer_authorized_shared_account_workflows:read",
+      "active_published_room_workflow_statuses:read",
+      "active_customer_authorized_shared_account_workflow_statuses:read",
     ] as const,
   } satisfies UserRoleAcls;
 
   export type PrincipalShape = {
-    readonly userId: TableContract.EntityId;
-    readonly tenantId: TableContract.TenantId;
-    readonly acl: ReadonlySet<Permission>;
+    readonly userId: ColumnsContract.EntityId;
+    readonly tenantId: ColumnsContract.TenantId;
+    readonly acl: ReadonlySet<Permissions.Permission>;
   };
 
   export class Principal extends Context.Tag(
@@ -266,7 +198,7 @@ export namespace AccessControl {
     predicate: (
       principal: Principal["Type"],
     ) => Effect.Effect<boolean, TError, TContext>,
-    message = "Access denied",
+    message = "Access denied.",
   ): Policy<TError, TContext> =>
     Effect.gen(function* () {
       const principal = yield* Principal;
@@ -276,6 +208,6 @@ export namespace AccessControl {
         return yield* Effect.fail(new AccessDeniedError({ message }));
     });
 
-  export const permission = (permission: Permission) =>
+  export const permission = (permission: Permissions.Permission) =>
     policy((principal) => Effect.succeed(principal.acl.has(permission)));
 }

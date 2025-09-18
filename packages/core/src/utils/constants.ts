@@ -63,7 +63,7 @@ export namespace Constants {
   export const POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE = "40001";
   export const POSTGRES_DEADLOCK_DETECTED_ERROR_CODE = "40P01";
 
-  export const VARCHAR_LENGTH = 40;
+  export const VARCHAR_LENGTH = 50;
 
   export const PAPERCUT_SERVER_PATH_PREFIX = "/papercut/server";
   export const PAPERCUT_WEB_SERVICES_API_PATH = "/rpc/api/xmlrpc";

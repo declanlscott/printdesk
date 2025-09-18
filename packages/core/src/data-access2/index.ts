@@ -2,16 +2,16 @@ import { Effect } from "effect";
 
 import { Announcements } from "../announcements2";
 import { Auth } from "../auth2";
-import { BillingAccounts } from "../billing-accounts2";
 import { Comments } from "../comments2";
 import { DeliveryOptions } from "../delivery-options2";
 import { Invoices } from "../invoices2";
 import { Orders } from "../orders2";
 import { Products } from "../products2";
 import { Rooms } from "../rooms2";
+import { SharedAccounts } from "../shared-accounts2";
 import { Tenants } from "../tenants2";
 import { Users } from "../users2";
-import { WorkflowStatuses } from "../workflows2";
+import { SharedAccountWorkflows, WorkflowStatuses } from "../workflows2";
 import { DataAccessContract } from "./contract";
 import { Mutations, Policies } from "./functions";
 
@@ -22,36 +22,42 @@ export namespace DataAccess {
       accessors: true,
       dependencies: [
         Policies.Default,
-        BillingAccounts.Policies.Default,
+        SharedAccounts.Policies.Default,
         Comments.Policies.Default,
         Orders.Policies.Default,
         Tenants.Policies.Default,
         Tenants.LicensePolicies.Default,
         Users.Policies.Default,
+        SharedAccountWorkflows.Policies.Default,
+        WorkflowStatuses.Policies.Default,
       ],
       effect: Effect.gen(function* () {
         const functions = yield* Policies.functions;
 
-        const billingAccounts = yield* BillingAccounts.Policies;
         const comments = yield* Comments.Policies;
         const orders = yield* Orders.Policies;
+        const sharedAccounts = yield* SharedAccounts.Policies;
         const users = yield* Users.Policies;
+        const sharedAccountWorkflows = yield* SharedAccountWorkflows.Policies;
+        const workflowStatuses = yield* WorkflowStatuses.Policies;
 
         const dispatcher = yield* Effect.succeed(
           new DataAccessContract.PolicyDispatcher({ functions })
-            .set(billingAccounts.hasActiveCustomerAuthorization)
-            .set(billingAccounts.hasActiveManagerAuthorization)
-            .set(billingAccounts.hasActiveAuthorization)
             .set(comments.isAuthor)
             .set(orders.isCustomer)
             .set(orders.isManager)
             .set(orders.isCustomerOrManager)
-            .set(orders.hasActiveManagerAuthorization)
-            .set(orders.canEdit)
-            .set(orders.canApprove)
-            .set(orders.canTransition)
-            .set(orders.canDelete)
+            .set(orders.isManagerAuthorized)
+            .set(orders.isEditable)
+            .set(orders.isApprovable)
+            .set(orders.isTransitionable)
+            .set(orders.isDeletable)
+            .set(sharedAccounts.isCustomerAuthorized)
+            .set(sharedAccounts.isManagerAuthorized)
             .set(users.isSelf)
+            .set(sharedAccountWorkflows.isManagerAuthorized)
+            .set(workflowStatuses.isEditable)
+            .set(workflowStatuses.isDeletable)
             .done(),
         ).pipe(Effect.cached);
 
@@ -67,8 +73,8 @@ export namespace DataAccess {
       dependencies: [
         Mutations.Default,
         Announcements.Mutations.Default,
-        BillingAccounts.Mutations.Default,
-        BillingAccounts.ManagerAuthorizationMutations.Default,
+        SharedAccounts.Mutations.Default,
+        SharedAccounts.ManagerAuthorizationMutations.Default,
         Comments.Mutations.Default,
         DeliveryOptions.Mutations.Default,
         Invoices.Mutations.Default,
@@ -84,15 +90,15 @@ export namespace DataAccess {
         const functions = yield* Mutations.functions;
 
         const announcements = yield* Announcements.Mutations;
-        const billingAccounts = yield* BillingAccounts.Mutations;
-        const billingAccountManagerAuthorizations =
-          yield* BillingAccounts.ManagerAuthorizationMutations;
         const comments = yield* Comments.Mutations;
         const deliveryOptions = yield* DeliveryOptions.Mutations;
         const invoices = yield* Invoices.Mutations;
         const orders = yield* Orders.Mutations;
         const products = yield* Products.Mutations;
         const rooms = yield* Rooms.Mutations;
+        const sharedAccounts = yield* SharedAccounts.Mutations;
+        const sharedAccountManagerAuthorizations =
+          yield* SharedAccounts.ManagerAuthorizationMutations;
         const tenants = yield* Tenants.Mutations;
         const users = yield* Users.Mutations;
         const workflowStatuses = yield* WorkflowStatuses.Mutations;
@@ -105,22 +111,18 @@ export namespace DataAccess {
             .set(announcements.create)
             .set(announcements.update)
             .set(announcements.delete)
-            .set(billingAccounts.update)
-            .set(billingAccounts.delete)
-            .set(billingAccountManagerAuthorizations.create)
-            .set(billingAccountManagerAuthorizations.delete)
             .set(comments.create)
             .set(comments.update)
             .set(comments.delete)
-            .set(deliveryOptions.append)
-            .set(deliveryOptions.edit)
-            .set(deliveryOptions.reorder)
+            .set(deliveryOptions.create)
+            .set(deliveryOptions.update)
             .set(deliveryOptions.delete)
             .set(invoices.create)
             .set(orders.create)
             .set(orders.edit)
             .set(orders.approve)
-            .set(orders.transition)
+            .set(orders.transitionRoomWorkflowStatus)
+            .set(orders.transitionSharedAccountWorkflowStatus)
             .set(orders.delete)
             .set(products.create)
             .set(products.edit)
@@ -133,6 +135,10 @@ export namespace DataAccess {
             .set(rooms.draft)
             .set(rooms.delete)
             .set(rooms.restore)
+            .set(sharedAccounts.update)
+            .set(sharedAccounts.delete)
+            .set(sharedAccountManagerAuthorizations.create)
+            .set(sharedAccountManagerAuthorizations.delete)
             .set(tenants.update)
             .set(users.update)
             .set(users.delete)

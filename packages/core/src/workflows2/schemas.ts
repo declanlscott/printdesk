@@ -4,120 +4,49 @@ import {
   getTableColumns,
   getViewSelectedFields,
   isNull,
+  ne,
 } from "drizzle-orm";
 import {
   boolean,
+  check,
   pgView,
   smallint,
+  unique,
   uniqueIndex,
-  varchar,
 } from "drizzle-orm/pg-core";
 
+import { Columns } from "../columns2";
+import { RoomsSchema } from "../rooms2/schema";
 import {
-  BillingAccountCustomerAuthorizationsSchema,
-  BillingAccountManagerAuthorizationsSchema,
-} from "../billing-accounts2/schemas";
-import { id, pgEnum, tenantTable } from "../database2/constructors";
-import { RoomsSchema } from "../rooms2/schemas";
+  SharedAccountCustomerAuthorizationsSchema,
+  SharedAccountManagerAuthorizationsSchema,
+} from "../shared-accounts2/schemas";
+import { Tables } from "../tables2";
 import { Constants } from "../utils/constants";
 import {
-  BillingAccountWorkflowsContract,
   RoomWorkflowsContract,
+  SharedAccountWorkflowsContract,
   WorkflowStatusesContract,
 } from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
-import type { TableContract } from "../database2/contract";
-
-export namespace BillingAccountWorkflowsSchema {
-  export const table = tenantTable(
-    BillingAccountWorkflowsContract.tableName,
-    {
-      billingAccountId:
-        id<TableContract.EntityId>("billing_account_id").notNull(),
-    },
-    (table) => [uniqueIndex().on(table.billingAccountId, table.tenantId)],
-  );
-  export type Table = typeof table;
-  export type Row = InferSelectModel<Table>;
-
-  export const activeView = pgView(
-    BillingAccountWorkflowsContract.activeViewName,
-  ).as((qb) => qb.select().from(table).where(isNull(table.deletedAt)));
-  export type ActiveView = typeof activeView;
-  export type ActiveRow = InferSelectViewModel<ActiveView>;
-
-  export const activeCustomerAuthorizedView = pgView(
-    BillingAccountWorkflowsContract.activeCustomerAuthorizedViewName,
-  ).as((qb) =>
-    qb
-      .select({
-        ...getViewSelectedFields(activeView),
-        authorizedCustomerId:
-          BillingAccountCustomerAuthorizationsSchema.activeView.customerId,
-      })
-      .from(BillingAccountCustomerAuthorizationsSchema.activeView)
-      .innerJoin(
-        BillingAccountCustomerAuthorizationsSchema.activeView,
-        and(
-          eq(
-            activeView.billingAccountId,
-            BillingAccountCustomerAuthorizationsSchema.activeView
-              .billingAccountId,
-          ),
-          eq(
-            activeView.tenantId,
-            BillingAccountCustomerAuthorizationsSchema.activeView.tenantId,
-          ),
-        ),
-      ),
-  );
-  export type ActiveCustomerAuthorizedView =
-    typeof activeCustomerAuthorizedView;
-  export type ActiveCustomerAuthorizedRow =
-    InferSelectViewModel<ActiveCustomerAuthorizedView>;
-
-  export const activeManagerAuthorizedView = pgView(
-    BillingAccountWorkflowsContract.activeManagerAuthorizedViewName,
-  ).as((qb) =>
-    qb
-      .select({
-        ...getViewSelectedFields(activeView),
-        authorizedManagerId:
-          BillingAccountManagerAuthorizationsSchema.activeView.managerId,
-      })
-      .from(activeView)
-      .innerJoin(
-        BillingAccountManagerAuthorizationsSchema.activeView,
-        and(
-          eq(
-            activeView.billingAccountId,
-            BillingAccountManagerAuthorizationsSchema.activeView
-              .billingAccountId,
-          ),
-          eq(
-            activeView.tenantId,
-            BillingAccountManagerAuthorizationsSchema.activeView.tenantId,
-          ),
-        ),
-      ),
-  );
-  export type ActiveManagerAuthorizedView = typeof activeManagerAuthorizedView;
-  export type ActiveManagerAuthorizedRow =
-    InferSelectViewModel<ActiveManagerAuthorizedView>;
-}
+import type { ColumnsContract } from "../columns2/contract";
 
 export namespace RoomWorkflowsSchema {
-  export const table = tenantTable(
+  export const table = new Tables.Sync(
     RoomWorkflowsContract.tableName,
-    { roomId: id<TableContract.EntityId>("room_id").notNull() },
+    { roomId: Columns.entityId.notNull() },
     (table) => [uniqueIndex().on(table.roomId, table.tenantId)],
   );
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
   export const activeView = pgView(RoomWorkflowsContract.activeViewName).as(
-    (qb) => qb.select().from(table).where(isNull(table.deletedAt)),
+    (qb) =>
+      qb
+        .select()
+        .from(table.definition)
+        .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;
@@ -127,12 +56,15 @@ export namespace RoomWorkflowsSchema {
   ).as((qb) =>
     qb
       .select(getViewSelectedFields(activeView))
-      .from(table)
+      .from(table.definition)
       .innerJoin(
         RoomsSchema.activePublishedView,
         and(
-          eq(table.roomId, RoomsSchema.activePublishedView.id),
-          eq(table.tenantId, RoomsSchema.activePublishedView.tenantId),
+          eq(table.definition.roomId, RoomsSchema.activePublishedView.id),
+          eq(
+            table.definition.tenantId,
+            RoomsSchema.activePublishedView.tenantId,
+          ),
         ),
       ),
   );
@@ -141,49 +73,47 @@ export namespace RoomWorkflowsSchema {
     InferSelectViewModel<ActivePublishedRoomView>;
 }
 
-export namespace WorkflowStatusesSchema {
-  export const table = tenantTable(WorkflowStatusesContract.tableName, {
-    name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-    type: pgEnum("type", WorkflowStatusesContract.types).notNull(),
-    charging: boolean("charging").notNull(),
-    color: varchar("color", { length: 9 }),
-    index: smallint("index").notNull(),
-    workflowId: id<TableContract.EntityId>("workflow_id").notNull(),
-  });
-  export type Table = typeof table;
+export namespace SharedAccountWorkflowsSchema {
+  export const table = new Tables.Sync(
+    SharedAccountWorkflowsContract.tableName,
+    { sharedAccountId: Columns.entityId.notNull() },
+    (table) => [uniqueIndex().on(table.sharedAccountId, table.tenantId)],
+  );
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(WorkflowStatusesContract.activeViewName).as(
-    (qb) =>
-      qb
-        .select(getTableColumns(table))
-        .from(table)
-        .where(isNull(table.deletedAt)),
+  export const activeView = pgView(
+    SharedAccountWorkflowsContract.activeViewName,
+  ).as((qb) =>
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeCustomerAuthorizedView = pgView(
-    WorkflowStatusesContract.activeCustomerAuthorizedViewName,
+    SharedAccountWorkflowsContract.activeCustomerAuthorizedViewName,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
         authorizedCustomerId:
-          BillingAccountWorkflowsSchema.activeCustomerAuthorizedView
-            .authorizedCustomerId,
+          SharedAccountCustomerAuthorizationsSchema.activeView.customerId,
       })
-      .from(activeView)
+      .from(SharedAccountCustomerAuthorizationsSchema.activeView)
       .innerJoin(
-        BillingAccountWorkflowsSchema.activeCustomerAuthorizedView,
+        SharedAccountCustomerAuthorizationsSchema.activeView,
         and(
           eq(
-            activeView.workflowId,
-            BillingAccountWorkflowsSchema.activeCustomerAuthorizedView.id,
+            activeView.sharedAccountId,
+            SharedAccountCustomerAuthorizationsSchema.activeView
+              .sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            BillingAccountWorkflowsSchema.activeCustomerAuthorizedView.tenantId,
+            SharedAccountCustomerAuthorizationsSchema.activeView.tenantId,
           ),
         ),
       ),
@@ -194,26 +124,25 @@ export namespace WorkflowStatusesSchema {
     InferSelectViewModel<ActiveCustomerAuthorizedView>;
 
   export const activeManagerAuthorizedView = pgView(
-    WorkflowStatusesContract.activeManagerAuthorizedViewName,
+    SharedAccountWorkflowsContract.activeManagerAuthorizedViewName,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          BillingAccountWorkflowsSchema.activeManagerAuthorizedView
-            .authorizedManagerId,
+          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
-        BillingAccountWorkflowsSchema.activeManagerAuthorizedView,
+        SharedAccountManagerAuthorizationsSchema.activeView,
         and(
           eq(
-            activeView.workflowId,
-            BillingAccountWorkflowsSchema.activeManagerAuthorizedView.id,
+            activeView.sharedAccountId,
+            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            BillingAccountWorkflowsSchema.activeManagerAuthorizedView.tenantId,
+            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
           ),
         ),
       ),
@@ -221,6 +150,138 @@ export namespace WorkflowStatusesSchema {
   export type ActiveManagerAuthorizedView = typeof activeManagerAuthorizedView;
   export type ActiveManagerAuthorizedRow =
     InferSelectViewModel<ActiveManagerAuthorizedView>;
+}
+
+export namespace WorkflowStatusesSchema {
+  type WorkflowStatusRow<TRow> = Omit<
+    TRow,
+    "roomWorkflowId" | "sharedAccountWorkflowId"
+  > &
+    (
+      | {
+          roomWorkflowId: ColumnsContract.EntityId;
+          sharedAccountWorkflowId: null;
+        }
+      | {
+          roomWorkflowId: null;
+          sharedAccountWorkflowId: ColumnsContract.EntityId;
+        }
+    );
+
+  type RoomWorkflowStatusRow<TRow> = Omit<
+    TRow,
+    "roomWorkflowId" | "sharedAccountWorkflowId"
+  > & {
+    sharedAccountWorkflowId: null;
+    roomWorkflowId: ColumnsContract.EntityId;
+  };
+
+  type SharedAccountWorkflowStatusRow<TRow> = Omit<
+    TRow,
+    "roomWorkflowId" | "sharedAccountWorkflowId"
+  > & {
+    sharedAccountWorkflowId: ColumnsContract.EntityId;
+    roomWorkflowId: null;
+  };
+
+  export const table = new Tables.Sync(
+    WorkflowStatusesContract.tableName,
+    {
+      name: Columns.varchar({
+        length: Constants.VARCHAR_LENGTH,
+      }).notNull(),
+      type: Columns.union(WorkflowStatusesContract.types).notNull(),
+      charging: boolean().notNull(),
+      color: Columns.varchar({ length: 9 }),
+      index: smallint().notNull(),
+      sharedAccountWorkflowId: Columns.entityId,
+      roomWorkflowId: Columns.entityId,
+    },
+    (table) => [
+      check(
+        "workflow_xor",
+        ne(isNull(table.sharedAccountWorkflowId), isNull(table.roomWorkflowId)),
+      ),
+      unique().on(table.sharedAccountWorkflowId, table.index),
+      unique().on(table.roomWorkflowId, table.index),
+    ],
+  );
+  export type Table = typeof table.definition;
+  export type Row = WorkflowStatusRow<InferSelectModel<Table>>;
+
+  export const activeView = pgView(WorkflowStatusesContract.activeViewName).as(
+    (qb) =>
+      qb
+        .select(getTableColumns(table.definition))
+        .from(table.definition)
+        .where(isNull(table.definition.deletedAt)),
+  );
+  export type ActiveView = typeof activeView;
+  export type ActiveRow = WorkflowStatusRow<InferSelectViewModel<ActiveView>>;
+
+  export const activeCustomerAuthorizedSharedAccountView = pgView(
+    WorkflowStatusesContract.activeCustomerAuthorizedSharedAccountViewName,
+  ).as((qb) =>
+    qb
+      .select({
+        ...getViewSelectedFields(activeView),
+        authorizedCustomerId:
+          SharedAccountWorkflowsSchema.activeCustomerAuthorizedView
+            .authorizedCustomerId,
+      })
+      .from(activeView)
+      .innerJoin(
+        SharedAccountWorkflowsSchema.activeCustomerAuthorizedView,
+        and(
+          eq(
+            activeView.sharedAccountWorkflowId,
+            SharedAccountWorkflowsSchema.activeCustomerAuthorizedView.id,
+          ),
+          eq(
+            activeView.tenantId,
+            SharedAccountWorkflowsSchema.activeCustomerAuthorizedView.tenantId,
+          ),
+        ),
+      ),
+  );
+  export type ActiveCustomerAuthorizedSharedAccountView =
+    typeof activeCustomerAuthorizedSharedAccountView;
+  export type ActiveCustomerAuthorizedSharedAccountRow =
+    SharedAccountWorkflowStatusRow<
+      InferSelectViewModel<ActiveCustomerAuthorizedSharedAccountView>
+    >;
+
+  export const activeManagerAuthorizedSharedAccountView = pgView(
+    WorkflowStatusesContract.activeManagerAuthorizedSharedAccountViewName,
+  ).as((qb) =>
+    qb
+      .select({
+        ...getViewSelectedFields(activeView),
+        authorizedManagerId:
+          SharedAccountWorkflowsSchema.activeManagerAuthorizedView
+            .authorizedManagerId,
+      })
+      .from(activeView)
+      .innerJoin(
+        SharedAccountWorkflowsSchema.activeManagerAuthorizedView,
+        and(
+          eq(
+            activeView.sharedAccountWorkflowId,
+            SharedAccountWorkflowsSchema.activeManagerAuthorizedView.id,
+          ),
+          eq(
+            activeView.tenantId,
+            SharedAccountWorkflowsSchema.activeManagerAuthorizedView.tenantId,
+          ),
+        ),
+      ),
+  );
+  export type ActiveManagerAuthorizedSharedAccountView =
+    typeof activeManagerAuthorizedSharedAccountView;
+  export type ActiveManagerAuthorizedSharedAccountRow =
+    SharedAccountWorkflowStatusRow<
+      InferSelectViewModel<ActiveManagerAuthorizedSharedAccountView>
+    >;
 
   export const activePublishedRoomView = pgView(
     WorkflowStatusesContract.activePublishedRoomViewName,
@@ -232,7 +293,7 @@ export namespace WorkflowStatusesSchema {
         RoomWorkflowsSchema.activePublishedRoomView,
         and(
           eq(
-            activeView.workflowId,
+            activeView.roomWorkflowId,
             RoomWorkflowsSchema.activePublishedRoomView.id,
           ),
           eq(
@@ -243,6 +304,7 @@ export namespace WorkflowStatusesSchema {
       ),
   );
   export type ActivePublishedRoomView = typeof activePublishedRoomView;
-  export type ActivePublishedRoomRow =
-    InferSelectViewModel<ActivePublishedRoomView>;
+  export type ActivePublishedRoomRow = RoomWorkflowStatusRow<
+    InferSelectViewModel<ActivePublishedRoomView>
+  >;
 }

@@ -1,7 +1,8 @@
 import { Schema, Struct } from "effect";
 
+import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
-import { TableContract } from "../database2/contract";
+import { TablesContract } from "../tables2/contract";
 import { Constants } from "../utils/constants";
 
 import type {
@@ -14,13 +15,13 @@ export namespace LicensesContract {
   export const statuses = ["active", "expired"] as const;
   export type Status = (typeof statuses)[number];
 
-  export const Key = Schema.UUID;
+  export const Key = Schema.UUID.pipe(Schema.Redacted);
 
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
+    ...ColumnsContract.Tenant.fields,
     key: Key,
-    tenantId: TableContract.TenantId,
     status: Schema.Literal(...statuses).pipe(
       Schema.optionalWith({ default: () => "active" }),
     ),
@@ -28,7 +29,7 @@ export namespace LicensesContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "licenses";
-  export const table = TableContract.Internal<LicensesSchema.Table>()(
+  export const table = TablesContract.makeInternalTable<LicensesSchema.Table>()(
     tableName,
     DataTransferObject,
   );
@@ -53,18 +54,17 @@ export namespace TenantsContract {
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
-    id: TableContract.EntityId,
+    ...ColumnsContract.Tenant.fields,
     subdomain: Subdomain,
     name: Schema.String,
     status: Schema.Literal(...statuses).pipe(
       Schema.optionalWith({ default: () => "setup" }),
     ),
-    ...TableContract.Timestamps.fields,
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "tenants";
-  export const table = TableContract.Sync<TenantsSchema.Table>()(
+  export const table = TablesContract.makeTable<TenantsSchema.Table>()(
     tableName,
     DataTransferObject,
     ["read", "update"],
@@ -81,8 +81,7 @@ export namespace TenantsContract {
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(
-        "id",
-        ...Struct.keys(TableContract.Timestamps.fields),
+        ...Struct.keys(ColumnsContract.Tenant.fields),
       ).pipe(Schema.partial),
     ),
     Returns: DataTransferObject,
@@ -102,16 +101,17 @@ export namespace TenantMetadataContract {
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
-    tenantId: TableContract.TenantId,
+    tenantId: ColumnsContract.TenantId,
     infraProgramInput: InfraProgramInput,
-    apiKey: Schema.String.pipe(Schema.NullOr),
+    apiKey: Schema.String.pipe(Schema.Redacted, Schema.NullOr),
     lastPapercutSyncAt: Schema.DateTimeUtc.pipe(Schema.NullOr),
-    ...TableContract.Timestamps.fields,
+    ...ColumnsContract.Timestamps.fields,
   }) {}
 
   export const tableName = "tenant_metadata";
-  export const table = TableContract.Internal<TenantMetadataSchema.Table>()(
-    tableName,
-    DataTransferObject,
-  );
+  export const table =
+    TablesContract.makeInternalTable<TenantMetadataSchema.Table>()(
+      tableName,
+      DataTransferObject,
+    );
 }

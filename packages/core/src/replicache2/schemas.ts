@@ -1,8 +1,6 @@
 import {
   bigint,
   index,
-  integer,
-  pgTable,
   primaryKey,
   text,
   uniqueIndex,
@@ -10,49 +8,38 @@ import {
 } from "drizzle-orm/pg-core";
 import { Schema } from "effect";
 
+import { Columns } from "../columns2";
+import { Tables } from "../tables2";
 import {
-  id,
-  jsonb,
-  pgEnum,
-  tenantId,
-  timestamps,
-} from "../database2/constructors";
-import {
-  ReplicacheClientGroupsContract,
-  ReplicacheClientsContract,
-  ReplicacheClientViewMetadataContract,
-  ReplicacheClientViewsContract,
-  ReplicacheMetaContract,
-} from "./contracts";
+  ReplicacheClientGroupsModel,
+  ReplicacheClientsModel,
+  ReplicacheClientViewMetadataModel,
+  ReplicacheClientViewsModel,
+  ReplicacheMetaModel,
+} from "./models";
 
 import type { InferSelectModel } from "drizzle-orm";
-import type { TableContract } from "../database2/contract";
 
 export namespace ReplicacheMetaSchema {
-  export const table = pgTable(ReplicacheMetaContract.tableName, {
-    key: text("key").primaryKey(),
-    value: jsonb("value", Schema.Any).notNull(),
+  export const table = new Tables.Table(ReplicacheMetaModel.tableName, {
+    key: text().primaryKey(),
+    value: Columns.jsonb(Schema.Any).notNull(),
   });
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }
 
 export namespace ReplicacheClientGroupsSchema {
-  export const table = pgTable(
-    ReplicacheClientGroupsContract.tableName,
+  export const table = new Tables.Table(
+    ReplicacheClientGroupsModel.tableName,
     {
       id: uuid("id").notNull(),
-      tenantId,
-      userId: id<TableContract.EntityId>("user_id").notNull(),
-      clientVersion: integer("client_version")
-        .$type<TableContract.Version>()
-        .notNull(),
-      // null until first pull initializes it
-      clientViewVersion: integer(
-        "client_view_version",
-      ).$type<TableContract.Version>(),
-      ...timestamps,
+      tenantId: Columns.tenantId,
+      userId: Columns.entityId.notNull(),
+      clientVersion: Columns.version.notNull(),
+      clientViewVersion: Columns.version, // null until first pull initializes it
+      ...Columns.timestamps,
     },
     (table) => [
       primaryKey({ columns: [table.id, table.tenantId] }),
@@ -60,22 +47,20 @@ export namespace ReplicacheClientGroupsSchema {
     ],
   );
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }
 
 export namespace ReplicacheClientsSchema {
-  export const table = pgTable(
-    ReplicacheClientsContract.tableName,
+  export const table = new Tables.Table(
+    ReplicacheClientsModel.tableName,
     {
-      id: uuid("id").notNull(),
-      tenantId,
-      clientGroupId: uuid("client_group_id").notNull(),
-      lastMutationId: bigint("last_mutation_id", { mode: "number" })
-        .notNull()
-        .default(0),
-      version: integer("version").$type<TableContract.Version>().notNull(),
-      ...timestamps,
+      id: uuid().notNull(),
+      tenantId: Columns.tenantId,
+      clientGroupId: uuid().notNull(),
+      lastMutationId: bigint({ mode: "number" }).notNull().default(0),
+      version: Columns.version.notNull(),
+      ...Columns.timestamps,
     },
     (table) => [
       primaryKey({ columns: [table.id, table.tenantId] }),
@@ -84,20 +69,18 @@ export namespace ReplicacheClientsSchema {
     ],
   );
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }
 
 export namespace ReplicacheClientViewsSchema {
-  export const table = pgTable(
-    ReplicacheClientViewsContract.tableName,
+  export const table = new Tables.Table(
+    ReplicacheClientViewsModel.tableName,
     {
-      clientGroupId: uuid("client_group_id").notNull(),
-      version: integer("version").$type<TableContract.Version>().notNull(),
-      clientVersion: integer("client_version")
-        .$type<TableContract.Version>()
-        .notNull(),
-      tenantId,
+      clientGroupId: uuid().notNull(),
+      version: Columns.version.notNull(),
+      clientVersion: Columns.version.notNull(),
+      tenantId: Columns.tenantId,
     },
     (table) => [
       primaryKey({
@@ -106,25 +89,22 @@ export namespace ReplicacheClientViewsSchema {
     ],
   );
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }
 
 export namespace ReplicacheClientViewMetadataSchema {
-  export const table = pgTable(
-    ReplicacheClientViewMetadataContract.tableName,
+  export const table = new Tables.Table(
+    ReplicacheClientViewMetadataModel.tableName,
     {
-      clientGroupId: uuid("client_group_id").notNull(),
-      clientViewVersion: integer("client_view_version")
-        .$type<TableContract.Version>()
-        .notNull(),
-      entity: pgEnum(
-        "entity",
-        ReplicacheClientViewMetadataContract.entities,
+      clientGroupId: uuid().notNull(),
+      clientViewVersion: Columns.version.notNull(),
+      entity: Columns.union(
+        ReplicacheClientViewMetadataModel.entities,
       ).notNull(),
-      entityId: id("entity_id").$type<TableContract.EntityId>().notNull(),
-      entityVersion: integer("entity_version").$type<TableContract.Version>(),
-      tenantId,
+      entityId: Columns.entityId.notNull(),
+      entityVersion: Columns.version,
+      tenantId: Columns.tenantId,
     },
     (table) => [
       primaryKey({
@@ -146,6 +126,6 @@ export namespace ReplicacheClientViewMetadataSchema {
     ],
   );
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }

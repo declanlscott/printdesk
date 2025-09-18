@@ -1,23 +1,24 @@
 import { isNull } from "drizzle-orm";
 import { index, pgView, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
-import { pgEnum, tenantTable } from "../database2/constructors";
+import { Columns } from "../columns2";
+import { Tables } from "../tables2";
 import { UsersContract } from "./contract";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 import type { Discriminate } from "../utils/types";
 
 export namespace UsersSchema {
-  export const table = tenantTable(
+  export const table = new Tables.Sync(
     UsersContract.tableName,
     {
-      origin: pgEnum("origin", UsersContract.origins).notNull(),
-      username: text("username").notNull(),
-      subjectId: text("subject_id").notNull(),
-      identityProviderId: text("identity_provider_id").notNull(),
-      role: pgEnum("role", UsersContract.roles).notNull().default("customer"),
-      name: text("name").notNull(),
-      email: text("email").notNull(),
+      origin: Columns.union(UsersContract.origins).notNull(),
+      username: text().notNull(),
+      subjectId: text().notNull(),
+      identityProviderId: text().notNull(),
+      role: Columns.union(UsersContract.roles).notNull().default("customer"),
+      name: text().notNull(),
+      email: text().notNull(),
     },
     (table) => [
       uniqueIndex().on(table.origin, table.username, table.tenantId),
@@ -28,7 +29,7 @@ export namespace UsersSchema {
       index().on(table.role),
     ],
   );
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
   export type RowByOrigin<TUserOrigin extends Row["origin"]> = Discriminate<
     Row,
@@ -37,7 +38,10 @@ export namespace UsersSchema {
   >;
 
   export const activeView = pgView(UsersContract.activeViewName).as((qb) =>
-    qb.select().from(table).where(isNull(table.deletedAt)),
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;

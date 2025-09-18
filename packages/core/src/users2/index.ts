@@ -12,7 +12,6 @@ import { Array, Effect, Equal, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { UsersContract } from "./contract";
@@ -31,13 +30,14 @@ export namespace Users {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = UsersSchema.table;
+        const table = UsersSchema.table.definition;
         const activeView = UsersSchema.activeView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
-        const upsertMany = Effect.fn("Users.Repository.upsert")(
+        const upsertMany = Effect.fn("Users.Repository.upsertMany")(
           (users: Array<InferInsertModel<UsersSchema.Table>>) =>
             db.useTransaction((tx) =>
               tx
@@ -45,7 +45,7 @@ export namespace Users {
                 .values(users)
                 .onConflictDoUpdate({
                   target: [table.id, table.tenantId],
-                  set: buildConflictSet(table),
+                  set: UsersSchema.table.conflictSet,
                 })
                 .returning(),
             ),
@@ -77,6 +77,7 @@ export namespace Users {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -96,7 +97,7 @@ export namespace Users {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: UsersSchema.Row["tenantId"],
+            tenantId: UsersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -118,6 +119,7 @@ export namespace Users {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -158,7 +160,10 @@ export namespace Users {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -169,7 +174,7 @@ export namespace Users {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: UsersSchema.Row["tenantId"],
+            tenantId: UsersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -196,7 +201,10 @@ export namespace Users {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -235,7 +243,7 @@ export namespace Users {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: UsersSchema.Row["tenantId"],
+            tenantId: UsersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -289,7 +297,10 @@ export namespace Users {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -301,8 +312,8 @@ export namespace Users {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: UsersSchema.Row["tenantId"],
-            excludeIds: Array<UsersSchema.Row["id"]>,
+            tenantId: UsersSchema.ActiveRow["tenantId"],
+            excludeIds: Array<UsersSchema.ActiveRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -328,7 +339,10 @@ export namespace Users {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -344,28 +358,6 @@ export namespace Users {
                   .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
               )
               .pipe(Effect.flatMap(Array.head)),
-        );
-
-        const findActiveIdsByRoles = Effect.fn(
-          "Users.Repository.findActiveIdsByRoles",
-        )(
-          (
-            roles: ReadonlyArray<UsersSchema.Row["role"]>,
-            tenantId: UsersSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .select({ id: activeView.id })
-                  .from(activeView)
-                  .where(
-                    and(
-                      inArray(activeView.role, roles),
-                      eq(activeView.tenantId, tenantId),
-                    ),
-                  ),
-              )
-              .pipe(Effect.map(Array.map(({ id }) => id))),
         );
 
         const findByOrigin = Effect.fn("Users.Repository.findByOrigin")(
@@ -454,7 +446,6 @@ export namespace Users {
           findFastForward,
           findActiveFastForward,
           findById,
-          findActiveIdsByRoles,
           findByOrigin,
           findByIdentityProvider,
           findByUsernames,

@@ -1,13 +1,12 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import { Array, Effect } from "effect";
 
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
 import { TenantsSchema } from "../tenants2/schemas";
 import {
   IdentityProvidersSchema,
   IdentityProviderUserGroupsSchema,
-} from "./schema";
+} from "./schemas";
 
 import type { InferInsertModel } from "drizzle-orm";
 
@@ -18,7 +17,7 @@ export namespace IdentityProviders {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = IdentityProvidersSchema.table;
+        const table = IdentityProvidersSchema.table.definition;
 
         const upsert = Effect.fn("IdentityProviders.Repository.upsert")(
           (identityProvider: InferInsertModel<IdentityProvidersSchema.Table>) =>
@@ -29,7 +28,7 @@ export namespace IdentityProviders {
                   .values(identityProvider)
                   .onConflictDoUpdate({
                     target: [table.id, table.tenantId],
-                    set: buildConflictSet(table),
+                    set: IdentityProvidersSchema.table.conflictSet,
                   })
                   .returning(),
               )
@@ -61,17 +60,16 @@ export namespace IdentityProviders {
         const findBySubdomain = Effect.fn(
           "IdentityProviders.Repository.findBySubdomain",
         )((subdomain: TenantsSchema.Row["subdomain"]) =>
-          db
-            .useTransaction((tx) =>
-              tx
-                .select({ identityProvider: table })
-                .from(TenantsSchema.table)
-                .innerJoin(table, eq(TenantsSchema.table.id, table.tenantId))
-                .where(eq(TenantsSchema.table.subdomain, subdomain)),
-            )
-            .pipe(
-              Effect.map(Array.map(({ identityProvider }) => identityProvider)),
-            ),
+          db.useTransaction((tx) =>
+            tx
+              .select(getTableColumns(table))
+              .from(TenantsSchema.table.definition)
+              .innerJoin(
+                table,
+                eq(TenantsSchema.table.definition.id, table.tenantId),
+              )
+              .where(eq(TenantsSchema.table.definition.subdomain, subdomain)),
+          ),
         );
 
         return { upsert, findAll, findById, findBySubdomain } as const;
@@ -85,7 +83,7 @@ export namespace IdentityProviders {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = IdentityProviderUserGroupsSchema.table;
+        const table = IdentityProviderUserGroupsSchema.table.definition;
 
         const create = Effect.fn(
           "IdentityProviders.UserGroupsRepository.create",

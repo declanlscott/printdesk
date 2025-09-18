@@ -1,20 +1,23 @@
-import { Effect, Schema } from "effect";
+import { Effect, Schema, Struct } from "effect";
 
 import { AnnouncementsContract } from "../announcements2/contract";
-import {
-  BillingAccountManagerAuthorizationsContract,
-  BillingAccountsContract,
-} from "../billing-accounts2/contracts";
 import { CommentsContract } from "../comments2/contract";
 import { DeliveryOptionsContract } from "../delivery-options2/contract";
 import { InvoicesContract } from "../invoices2/contract";
 import { OrdersContract } from "../orders2/contract";
 import { ProductsContract } from "../products2/contract";
-import { ReplicacheContract } from "../replicache2/contracts";
-import { RoomsContract } from "../rooms2/contracts";
+import { ReplicacheContract } from "../replicache2/contract";
+import { RoomsContract } from "../rooms2/contract";
+import {
+  SharedAccountManagerAuthorizationsContract,
+  SharedAccountsContract,
+} from "../shared-accounts2/contracts";
 import { TenantsContract } from "../tenants2/contracts";
 import { UsersContract } from "../users2/contract";
-import { WorkflowStatusesContract } from "../workflows2/contracts";
+import {
+  SharedAccountWorkflowsContract,
+  WorkflowStatusesContract,
+} from "../workflows2/contracts";
 import { DataAccessContract } from "./contract";
 
 export class Policies extends Effect.Service<Policies>()(
@@ -24,24 +27,26 @@ export class Policies extends Effect.Service<Policies>()(
     effect: Effect.gen(function* () {
       const functions = yield* Effect.succeed(
         new DataAccessContract.Functions()
-          .set(BillingAccountsContract.hasActiveCustomerAuthorization)
-          .set(BillingAccountsContract.hasActiveManagerAuthorization)
-          .set(BillingAccountsContract.hasActiveAuthorization)
           .set(CommentsContract.isAuthor)
           .set(OrdersContract.isCustomer)
           .set(OrdersContract.isManager)
           .set(OrdersContract.isCustomerOrManager)
-          .set(OrdersContract.hasActiveManagerAuthorization)
-          .set(OrdersContract.canEdit)
-          .set(OrdersContract.canApprove)
-          .set(OrdersContract.canTransition)
-          .set(OrdersContract.canDelete)
+          .set(OrdersContract.isAuthorizedManager)
+          .set(OrdersContract.isEditable)
+          .set(OrdersContract.isApprovable)
+          .set(OrdersContract.isTransitionable)
+          .set(OrdersContract.isDeletable)
+          .set(SharedAccountsContract.isCustomerAuthorized)
+          .set(SharedAccountsContract.isManagerAuthorized)
           .set(UsersContract.isSelf)
+          .set(SharedAccountWorkflowsContract.isManagerAuthorized)
+          .set(WorkflowStatusesContract.isEditable)
+          .set(WorkflowStatusesContract.isDeletable)
           .done(),
       ).pipe(Effect.cached);
 
       const Invocation = yield* functions.pipe(
-        Effect.map(({ Invocation }) => Invocation),
+        Effect.map(Struct.get("Invocation")),
         Effect.cached,
       );
 
@@ -60,22 +65,18 @@ export class Mutations extends Effect.Service<Mutations>()(
           .set(AnnouncementsContract.create)
           .set(AnnouncementsContract.update)
           .set(AnnouncementsContract.delete_)
-          .set(BillingAccountsContract.update)
-          .set(BillingAccountsContract.delete_)
-          .set(BillingAccountManagerAuthorizationsContract.create)
-          .set(BillingAccountManagerAuthorizationsContract.delete_)
           .set(CommentsContract.create)
           .set(CommentsContract.update)
           .set(CommentsContract.delete_)
-          .set(DeliveryOptionsContract.append)
-          .set(DeliveryOptionsContract.edit)
-          .set(DeliveryOptionsContract.reorder)
+          .set(DeliveryOptionsContract.create)
+          .set(DeliveryOptionsContract.update)
           .set(DeliveryOptionsContract.delete_)
           .set(InvoicesContract.create)
           .set(OrdersContract.create)
           .set(OrdersContract.edit)
           .set(OrdersContract.approve)
-          .set(OrdersContract.transition)
+          .set(OrdersContract.transitionRoomWorkflowStatus)
+          .set(OrdersContract.transitionSharedAccountWorkflowStatus)
           .set(OrdersContract.delete_)
           .set(ProductsContract.create)
           .set(ProductsContract.edit)
@@ -88,6 +89,10 @@ export class Mutations extends Effect.Service<Mutations>()(
           .set(RoomsContract.draft)
           .set(RoomsContract.delete_)
           .set(RoomsContract.restore)
+          .set(SharedAccountsContract.update)
+          .set(SharedAccountsContract.delete_)
+          .set(SharedAccountManagerAuthorizationsContract.create)
+          .set(SharedAccountManagerAuthorizationsContract.delete_)
           .set(TenantsContract.update)
           .set(UsersContract.update)
           .set(UsersContract.delete_)
@@ -100,7 +105,7 @@ export class Mutations extends Effect.Service<Mutations>()(
       ).pipe(Effect.cached);
 
       const Replicache = yield* functions.pipe(
-        Effect.map(({ Invocation }) => Invocation),
+        Effect.map(Struct.get("Invocation")),
         Effect.map(
           Schema.extend(
             Schema.Struct(ReplicacheContract.MutationV1.fields).omit(

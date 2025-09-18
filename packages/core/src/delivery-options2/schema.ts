@@ -1,37 +1,30 @@
 import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
-import {
-  numeric,
-  pgView,
-  smallint,
-  unique,
-  varchar,
-} from "drizzle-orm/pg-core";
+import { numeric, pgView } from "drizzle-orm/pg-core";
 
-import { id, tenantTable } from "../database2/constructors";
-import { RoomsSchema } from "../rooms2/schemas";
+import { Columns } from "../columns2";
+import { RoomsSchema } from "../rooms2/schema";
+import { Tables } from "../tables2";
 import { DeliveryOptionsContract } from "./contract";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
-import type { TableContract } from "../database2/contract";
 
 export namespace DeliveryOptionsSchema {
-  export const table = tenantTable(
-    DeliveryOptionsContract.tableName,
-    {
-      name: varchar("name").notNull(),
-      description: varchar("description").notNull(),
-      detailsLabel: varchar("details_label"),
-      cost: numeric("cost"),
-      index: smallint("index").notNull(),
-      roomId: id<TableContract.EntityId>("room_id").notNull(),
-    },
-    (table) => [unique().on(table.index, table.roomId, table.tenantId)],
-  );
-  export type Table = typeof table;
+  export const table = new Tables.Sync(DeliveryOptionsContract.tableName, {
+    name: Columns.varchar().notNull(),
+    description: Columns.varchar().notNull(),
+    detailsLabel: Columns.varchar(),
+    cost: numeric(),
+    roomId: Columns.entityId.notNull(),
+  });
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
   export const activeView = pgView(DeliveryOptionsContract.activeViewName).as(
-    (qb) => qb.select().from(table).where(isNull(table.deletedAt)),
+    (qb) =>
+      qb
+        .select()
+        .from(table.definition)
+        .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;

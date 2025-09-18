@@ -1,31 +1,33 @@
 import { eq, isNull } from "drizzle-orm";
 import { index, pgView, text, unique } from "drizzle-orm/pg-core";
 
-import { pgEnum, tenantTable, varchar } from "../database2/constructors";
-import { RoomsContract } from "./contracts";
+import { Columns } from "../columns2";
+import { Tables } from "../tables2";
+import { RoomsContract } from "./contract";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace RoomsSchema {
-  export const table = tenantTable(
+  export const table = new Tables.Sync(
     RoomsContract.tableName,
     {
-      name: varchar("name").notNull(),
-      status: pgEnum("status", RoomsContract.statuses)
-        .default("draft")
-        .notNull(),
-      details: text("details"),
+      name: Columns.varchar().notNull(),
+      status: Columns.union(RoomsContract.statuses).default("draft").notNull(),
+      details: text(),
     },
     (table) => [
       unique().on(table.name, table.tenantId),
       index().on(table.status),
     ],
   );
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
   export const activeView = pgView(RoomsContract.activeViewName).as((qb) =>
-    qb.select().from(table).where(isNull(table.deletedAt)),
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;

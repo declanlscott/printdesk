@@ -2,6 +2,7 @@ import { Effect, Equal } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
 import { Replicache } from "../replicache2/client";
 import { UsersContract } from "./contract";
 
@@ -9,8 +10,13 @@ export namespace Users {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/users/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(UsersContract.table),
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Models.SyncTables.users.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
     },
   ) {}
 
@@ -18,13 +24,12 @@ export namespace Users {
     "@printdesk/core/users/client/WriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(UsersContract.table, repository),
-        ),
+      effect: Effect.all([Models.SyncTables.users, ReadRepository]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}
@@ -61,7 +66,7 @@ export namespace Users {
           UsersContract.update,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("users:update"),
-            mutator: (user) => repository.updateById(user.id, user),
+            mutator: ({ id, ...user }) => repository.updateById(id, () => user),
           }),
         );
 
@@ -74,12 +79,14 @@ export namespace Users {
                 isSelf.make({ id }),
               ),
             mutator: ({ id, deletedAt }) =>
-              repository.updateById(id, { deletedAt }).pipe(
-                AccessControl.enforce(AccessControl.permission("users:read")),
-                Effect.catchTag("AccessDeniedError", () =>
-                  repository.deleteById(id),
+              repository
+                .updateById(id, () => ({ deletedAt }))
+                .pipe(
+                  AccessControl.enforce(AccessControl.permission("users:read")),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    repository.deleteById(id),
+                  ),
                 ),
-              ),
           }),
         );
 
@@ -87,7 +94,8 @@ export namespace Users {
           UsersContract.restore,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("users:delete"),
-            mutator: ({ id }) => repository.updateById(id, { deletedAt: null }),
+            mutator: ({ id }) =>
+              repository.updateById(id, () => ({ deletedAt: null })),
           }),
         );
 

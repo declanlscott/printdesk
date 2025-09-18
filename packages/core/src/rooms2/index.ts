@@ -16,8 +16,8 @@ import { Products } from "../products2";
 import { Replicache } from "../replicache2";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { RoomWorkflows } from "../workflows2";
-import { RoomsContract } from "./contracts";
-import { RoomsSchema } from "./schemas";
+import { RoomsContract } from "./contract";
+import { RoomsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
 
@@ -31,12 +31,13 @@ export namespace Rooms {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = RoomsSchema.table;
+        const table = RoomsSchema.table.definition;
         const activeView = RoomsSchema.activeView;
         const activePublishedView = RoomsSchema.activePublishedView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const create = Effect.fn("Rooms.Repository.create")(
           (room: InferInsertModel<RoomsSchema.Table>) =>
@@ -74,6 +75,7 @@ export namespace Rooms {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -115,6 +117,7 @@ export namespace Rooms {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -156,6 +159,7 @@ export namespace Rooms {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -196,7 +200,10 @@ export namespace Rooms {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -234,7 +241,10 @@ export namespace Rooms {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -279,6 +289,7 @@ export namespace Rooms {
                       );
 
                     return tx
+                      .with(cte)
                       .select(cte[getViewName(activePublishedView)])
                       .from(cte);
                   }),
@@ -402,7 +413,10 @@ export namespace Rooms {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -441,7 +455,10 @@ export namespace Rooms {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -484,6 +501,7 @@ export namespace Rooms {
                       );
 
                     return tx
+                      .with(cte)
                       .select(cte[getViewName(activePublishedView)])
                       .from(cte);
                   }),

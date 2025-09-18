@@ -167,7 +167,7 @@ export namespace Database {
         );
 
         const logger = yield* Logger;
-        const client = drizzle(pool, { logger });
+        const client = drizzle(pool, { logger, casing: "snake_case" });
 
         return {
           setupPoolListeners,

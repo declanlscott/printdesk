@@ -1,15 +1,8 @@
-import { pgTable, uniqueIndex, uuid, varchar } from "drizzle-orm/pg-core";
+import { eq, sql } from "drizzle-orm";
+import { check, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
-import {
-  datetime,
-  jsonb,
-  pgEnum,
-  primaryId,
-  tenantId,
-  timestamps,
-  version,
-} from "../database2/constructors";
-import { Constants } from "../utils/constants";
+import { Columns } from "../columns2";
+import { Tables } from "../tables2";
 import {
   LicensesContract,
   TenantMetadataContract,
@@ -17,57 +10,53 @@ import {
 } from "./contracts";
 
 import type { InferSelectModel } from "drizzle-orm";
-import type { TableContract } from "../database2/contract";
 
 export namespace LicensesSchema {
-  export const table = pgTable(LicensesContract.tableName, {
-    key: uuid("key").defaultRandom().primaryKey(),
-    tenantId: tenantId.unique(),
-    status: pgEnum("status", LicensesContract.statuses)
-      .notNull()
-      .default("active"),
-  });
+  export const table = new Tables.NonSync(
+    LicensesContract.tableName,
+    {
+      key: Columns.redactedUuid()
+        .notNull()
+        .default(sql`gen_random_uuid()`),
+      status: Columns.union(LicensesContract.statuses)
+        .notNull()
+        .default("active"),
+    },
+    (table) => [unique().on(table.tenantId), uniqueIndex().on(table.key)],
+  );
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }
 
 export namespace TenantsSchema {
-  export const table = pgTable(
+  export const table = new Tables.Sync(
     TenantsContract.tableName,
     {
-      id: primaryId.$type<TableContract.EntityId>(),
-      subdomain: varchar("subdomain", {
-        length: Constants.VARCHAR_LENGTH,
-      })
-        .$type<TenantsContract.Subdomain>()
-        .notNull(),
-      name: varchar("name", { length: Constants.VARCHAR_LENGTH }).notNull(),
-      status: pgEnum("status", TenantsContract.statuses)
+      subdomain: Columns.varchar().$type<TenantsContract.Subdomain>().notNull(),
+      name: Columns.varchar().notNull(),
+      status: Columns.union(TenantsContract.statuses)
         .notNull()
         .default("setup"),
-      ...timestamps,
-      ...version,
     },
-    (table) => [uniqueIndex().on(table.subdomain)],
+    (table) => [check("tenant_id", eq(table.id, table.tenantId))],
   );
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }
 
 export namespace TenantMetadataSchema {
-  export const table = pgTable(TenantMetadataContract.tableName, {
-    tenantId: tenantId.primaryKey(),
-    infraProgramInput: jsonb(
-      "infra_program_input",
+  export const table = new Tables.Table(TenantMetadataContract.tableName, {
+    tenantId: Columns.tenantId.primaryKey(),
+    infraProgramInput: Columns.jsonb(
       TenantMetadataContract.InfraProgramInput,
     ).notNull(),
-    apiKey: varchar("api_key"),
-    lastPapercutSyncAt: datetime("last_papercut_sync_at"),
-    ...timestamps,
+    apiKey: Columns.redactedVarchar(),
+    lastPapercutSyncAt: Columns.datetime(),
+    ...Columns.timestamps,
   });
 
-  export type Table = typeof table;
+  export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 }

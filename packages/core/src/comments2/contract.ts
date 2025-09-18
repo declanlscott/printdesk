@@ -1,8 +1,9 @@
 import { Schema, Struct } from "effect";
 
-import { BillingAccountCustomerAuthorizationsContract } from "../billing-accounts2/contracts";
+import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
-import { TableContract } from "../database2/contract";
+import { SharedAccountCustomerAuthorizationsContract } from "../shared-accounts2/contracts";
+import { TablesContract } from "../tables2/contract";
 
 import type { CommentsSchema } from "./schema";
 
@@ -10,9 +11,9 @@ export namespace CommentsContract {
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
-    ...TableContract.Tenant.fields,
-    orderId: TableContract.EntityId,
-    authorId: TableContract.EntityId,
+    ...ColumnsContract.Tenant.fields,
+    orderId: ColumnsContract.EntityId,
+    authorId: ColumnsContract.EntityId,
     content: Schema.String,
     internal: Schema.Boolean.pipe(
       Schema.optionalWith({ default: () => false }),
@@ -21,37 +22,38 @@ export namespace CommentsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "comments";
-  export const table = TableContract.Sync<CommentsSchema.Table>()(
+  export const table = TablesContract.makeTable<CommentsSchema.Table>()(
     tableName,
     DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<CommentsSchema.ActiveView>()(
-    activeViewName,
-    DataTransferObject,
-  );
+  export const activeView =
+    TablesContract.makeView<CommentsSchema.ActiveView>()(
+      activeViewName,
+      DataTransferObject,
+    );
 
-  export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
-  export const activeManagedBillingAccountOrderView =
-    TableContract.View<CommentsSchema.ActiveManagedBillingAccountOrderView>()(
-      activeManagedBillingAccountOrderViewName,
+  export const activeCustomerPlacedOrderViewName = `active_customer_placed_order_${tableName}`;
+  export const activeCustomerPlacedOrderView =
+    TablesContract.makeView<CommentsSchema.ActiveCustomerPlacedOrderView>()(
+      activeCustomerPlacedOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedManagerId: TableContract.EntityId,
+        ...SharedAccountCustomerAuthorizationsContract.DataTransferStruct.pick(
+          "customerId",
+        ).fields,
       }),
     );
 
-  export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
-  export const activePlacedOrderView =
-    TableContract.View<CommentsSchema.ActivePlacedOrderView>()(
-      activePlacedOrderViewName,
+  export const activeManagerAuthorizedSharedAccountOrderViewName = `active_manager_authorized_shared_account_order_${tableName}`;
+  export const activeManagerAuthorizedSharedAccountOrderView =
+    TablesContract.makeView<CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderView>()(
+      activeManagerAuthorizedSharedAccountOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        ...BillingAccountCustomerAuthorizationsContract.DataTransferStruct.pick(
-          "customerId",
-        ).fields,
+        authorizedManagerId: ColumnsContract.EntityId,
       }),
     );
 
@@ -72,7 +74,7 @@ export namespace CommentsContract {
     Args: DataTransferStruct.pick("id", "orderId", "updatedAt").pipe(
       Schema.extend(
         DataTransferStruct.omit(
-          ...Struct.keys(TableContract.Tenant.fields),
+          ...Struct.keys(ColumnsContract.Tenant.fields),
           "orderId",
           "authorId",
         ).pipe(Schema.partial),

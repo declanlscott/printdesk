@@ -1,7 +1,8 @@
 import { Schema, Struct } from "effect";
 
+import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
-import { TableContract } from "../database2/contract";
+import { TablesContract } from "../tables2/contract";
 
 import type { UsersSchema } from "./schema";
 
@@ -20,7 +21,7 @@ export namespace UsersContract {
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
-    ...TableContract.Tenant.fields,
+    ...ColumnsContract.Tenant.fields,
     origin: Schema.Literal(...origins),
     username: Schema.String,
     subjectId: Schema.String,
@@ -34,14 +35,14 @@ export namespace UsersContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "users";
-  export const table = TableContract.Sync<UsersSchema.Table>()(
+  export const table = TablesContract.makeTable<UsersSchema.Table>()(
     tableName,
     DataTransferObject,
     ["read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<UsersSchema.ActiveView>()(
+  export const activeView = TablesContract.makeView<UsersSchema.ActiveView>()(
     activeViewName,
     DataTransferObject,
   );
@@ -57,7 +58,7 @@ export namespace UsersContract {
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(
-        ...Struct.keys(TableContract.Tenant.fields),
+        ...Struct.keys(ColumnsContract.Tenant.fields),
         "origin",
         "username",
         "subjectId",
@@ -72,7 +73,7 @@ export namespace UsersContract {
   export const delete_ = new DataAccessContract.Function({
     name: "deleteUser",
     Args: Schema.Struct({
-      id: TableContract.EntityId,
+      id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: DataTransferObject,

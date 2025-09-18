@@ -20,8 +20,6 @@ import { CommentsContract } from "./contract";
 import { CommentsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { BillingAccountManagerAuthorizationsSchema } from "../billing-accounts2/schemas";
-import type { OrdersSchema } from "../orders2/schema";
 
 export namespace Comments {
   export class Repository extends Effect.Service<Repository>()(
@@ -33,13 +31,14 @@ export namespace Comments {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = CommentsSchema.table;
+        const table = CommentsSchema.table.definition;
         const activeView = CommentsSchema.activeView;
-        const activeManagedBillingAccountOrderView =
-          CommentsSchema.activeManagedBillingAccountOrderView;
+        const activeManagedSharedAccountOrderView =
+          CommentsSchema.activeManagerAuthorizedSharedAccountOrderView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const create = Effect.fn("Comments.Repository.create")(
           (comment: InferInsertModel<CommentsSchema.Table>) =>
@@ -79,6 +78,7 @@ export namespace Comments {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -98,7 +98,7 @@ export namespace Comments {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
+            tenantId: CommentsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -120,6 +120,7 @@ export namespace Comments {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -133,14 +134,14 @@ export namespace Comments {
               ),
         );
 
-        const findActiveCreatesByOrderBillingAccountManagerId = Effect.fn(
-          "Comments.Repository.findActiveCreatesByOrderBillingAccountManagerId",
+        const findActiveCustomerPlacedOrderCreates = Effect.fn(
+          "Comments.Repository.findActiveCustomerPlacedOrderCreates",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: CommentsSchema.ActiveCustomerPlacedOrderRow["customerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
+            tenantId: CommentsSchema.ActiveCustomerPlacedOrderRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -154,93 +155,29 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountOrderView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .selectDistinctOn(
-                            [
-                              activeManagedBillingAccountOrderView.id,
-                              activeManagedBillingAccountOrderView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeManagedBillingAccountOrderView,
-                              ),
-                              "authorizedManagerId",
-                            ),
-                          )
-                          .from(activeManagedBillingAccountOrderView)
-                          .where(
-                            and(
-                              eq(
-                                activeManagedBillingAccountOrderView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagedBillingAccountOrderView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveCreatesByOrderCustomerId = Effect.fn(
-          "Comments.Repository.findActiveCreatesByOrderCustomerId",
-        )(
-          (
-            customerId: OrdersSchema.Row["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(CommentsSchema.activePlacedOrderView)}_creates`,
+                        `${getViewName(CommentsSchema.activeCustomerPlacedOrderView)}_creates`,
                       )
                       .as(
                         tx
                           .select(
                             Struct.omit(
                               getViewSelectedFields(
-                                CommentsSchema.activePlacedOrderView,
+                                CommentsSchema.activeCustomerPlacedOrderView,
                               ),
                               "customerId",
                             ),
                           )
-                          .from(CommentsSchema.activePlacedOrderView)
+                          .from(CommentsSchema.activeCustomerPlacedOrderView)
                           .where(
                             and(
                               eq(
-                                CommentsSchema.activePlacedOrderView.customerId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .customerId,
                                 customerId,
                               ),
                               eq(
-                                CommentsSchema.activePlacedOrderView.tenantId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .tenantId,
                                 tenantId,
                               ),
                             ),
@@ -248,6 +185,74 @@ export namespace Comments {
                       );
 
                     return tx
+                      .with(cte)
+                      .select()
+                      .from(cte)
+                      .where(
+                        inArray(
+                          cte.id,
+                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        ),
+                      );
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountOrderCreates = Effect.fn(
+          "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderCreates",
+        )(
+          (
+            managerId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["authorizedManagerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["tenantId"],
+          ) =>
+            metadataQb
+              .creates(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${getViewName(activeManagedSharedAccountOrderView)}_creates`,
+                      )
+                      .as(
+                        tx
+                          .selectDistinctOn(
+                            [
+                              activeManagedSharedAccountOrderView.id,
+                              activeManagedSharedAccountOrderView.tenantId,
+                            ],
+                            Struct.omit(
+                              getViewSelectedFields(
+                                activeManagedSharedAccountOrderView,
+                              ),
+                              "authorizedManagerId",
+                            ),
+                          )
+                          .from(activeManagedSharedAccountOrderView)
+                          .where(
+                            and(
+                              eq(
+                                activeManagedSharedAccountOrderView.authorizedManagerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagedSharedAccountOrderView.tenantId,
+                                tenantId,
+                              ),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -288,7 +293,10 @@ export namespace Comments {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -299,7 +307,7 @@ export namespace Comments {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
+            tenantId: CommentsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -326,19 +334,22 @@ export namespace Comments {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
         );
 
-        const findActiveUpdatesByOrderBillingAccountManagerId = Effect.fn(
-          "Comments.Repository.findActiveUpdatesByOrderBillingAccountManagerId",
+        const findActiveCustomerPlacedOrderUpdates = Effect.fn(
+          "Comments.Repository.findActiveCustomerPlacedOrderUpdates",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: CommentsSchema.ActiveCustomerPlacedOrderRow["customerId"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
+            tenantId: CommentsSchema.ActiveCustomerPlacedOrderRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -347,37 +358,41 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountOrderView)}_updates`,
+                        `${getViewName(CommentsSchema.activeCustomerPlacedOrderView)}_updates`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeManagedBillingAccountOrderView,
+                            CommentsSchema.activeCustomerPlacedOrderView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activeManagedBillingAccountOrderView.id,
+                                CommentsSchema.activeCustomerPlacedOrderView.id,
                               ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activeManagedBillingAccountOrderView.version,
+                                  CommentsSchema.activeCustomerPlacedOrderView
+                                    .version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                activeManagedBillingAccountOrderView.tenantId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountOrderView.authorizedManagerId,
-                                managerId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .customerId,
+                                customerId,
                               ),
                               eq(
-                                activeManagedBillingAccountOrderView.tenantId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .tenantId,
                                 tenantId,
                               ),
                             ),
@@ -385,16 +400,15 @@ export namespace Comments {
                       );
 
                     return tx
-                      .selectDistinctOn(
-                        [
-                          activeManagedBillingAccountOrderView.id,
-                          activeManagedBillingAccountOrderView.tenantId,
-                        ],
+                      .with(cte)
+                      .select(
                         Struct.omit(
                           cte[
-                            getViewName(activeManagedBillingAccountOrderView)
+                            getViewName(
+                              CommentsSchema.activeCustomerPlacedOrderView,
+                            )
                           ],
-                          "authorizedManagerId",
+                          "customerId",
                         ),
                       )
                       .from(cte);
@@ -403,13 +417,13 @@ export namespace Comments {
               ),
         );
 
-        const findActiveUpdatesByOrderCustomerId = Effect.fn(
-          "Comments.Repository.findActiveUpdatesByOrderCustomerId",
+        const findActiveManagerAuthorizedSharedAccountOrderUpdates = Effect.fn(
+          "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderUpdates",
         )(
           (
-            customerId: OrdersSchema.Row["customerId"],
+            managerId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["authorizedManagerId"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
+            tenantId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -418,37 +432,37 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(CommentsSchema.activePlacedOrderView)}_updates`,
+                        `${getViewName(activeManagedSharedAccountOrderView)}_updates`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            CommentsSchema.activePlacedOrderView,
+                            activeManagedSharedAccountOrderView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                CommentsSchema.activePlacedOrderView.id,
+                                activeManagedSharedAccountOrderView.id,
                               ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  CommentsSchema.activePlacedOrderView.version,
+                                  activeManagedSharedAccountOrderView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                CommentsSchema.activePlacedOrderView.tenantId,
+                                activeManagedSharedAccountOrderView.tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                CommentsSchema.activePlacedOrderView.customerId,
-                                customerId,
+                                activeManagedSharedAccountOrderView.authorizedManagerId,
+                                managerId,
                               ),
                               eq(
-                                CommentsSchema.activePlacedOrderView.tenantId,
+                                activeManagedSharedAccountOrderView.tenantId,
                                 tenantId,
                               ),
                             ),
@@ -456,12 +470,17 @@ export namespace Comments {
                       );
 
                     return tx
-                      .select(
+                      .with(cte)
+                      .selectDistinctOn(
+                        [
+                          cte[getViewName(activeManagedSharedAccountOrderView)]
+                            .id,
+                          cte[getViewName(activeManagedSharedAccountOrderView)]
+                            .tenantId,
+                        ],
                         Struct.omit(
-                          cte[
-                            getViewName(CommentsSchema.activePlacedOrderView)
-                          ],
-                          "customerId",
+                          cte[getViewName(activeManagedSharedAccountOrderView)],
+                          "authorizedManagerId",
                         ),
                       )
                       .from(cte);
@@ -526,14 +545,59 @@ export namespace Comments {
               ),
         );
 
-        const findActiveDeletesByOrderBillingAccountManagerId = Effect.fn(
-          "Comments.Repository.findActiveDeletesByOrderBillingAccountManagerId",
+        const findActiveCustomerPlacedOrderDeletes = Effect.fn(
+          "Comments.Repository.findActiveCustomerPlacedOrderDeletes",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: CommentsSchema.ActiveCustomerPlacedOrderRow["customerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
+            tenantId: CommentsSchema.ActiveCustomerPlacedOrderRow["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({
+                          id: CommentsSchema.activeCustomerPlacedOrderView.id,
+                        })
+                        .from(CommentsSchema.activeCustomerPlacedOrderView)
+                        .where(
+                          and(
+                            eq(
+                              CommentsSchema.activeCustomerPlacedOrderView
+                                .customerId,
+                              customerId,
+                            ),
+                            eq(
+                              CommentsSchema.activeCustomerPlacedOrderView
+                                .tenantId,
+                              tenantId,
+                            ),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountOrderDeletes = Effect.fn(
+          "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderDeletes",
+        )(
+          (
+            managerId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["authorizedManagerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -549,61 +613,20 @@ export namespace Comments {
                       tx
                         .selectDistinctOn(
                           [
-                            activeManagedBillingAccountOrderView.id,
-                            activeManagedBillingAccountOrderView.tenantId,
+                            activeManagedSharedAccountOrderView.id,
+                            activeManagedSharedAccountOrderView.tenantId,
                           ],
-                          { id: activeManagedBillingAccountOrderView.id },
+                          { id: activeManagedSharedAccountOrderView.id },
                         )
-                        .from(activeManagedBillingAccountOrderView)
+                        .from(activeManagedSharedAccountOrderView)
                         .where(
                           and(
                             eq(
-                              activeManagedBillingAccountOrderView.authorizedManagerId,
+                              activeManagedSharedAccountOrderView.authorizedManagerId,
                               managerId,
                             ),
                             eq(
-                              activeManagedBillingAccountOrderView.tenantId,
-                              tenantId,
-                            ),
-                          ),
-                        ),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveDeletesByOrderCustomerId = Effect.fn(
-          "Comments.Repository.findActiveDeletesByOrderCustomerId",
-        )(
-          (
-            customerId: OrdersSchema.Row["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: CommentsSchema.activePlacedOrderView.id })
-                        .from(CommentsSchema.activePlacedOrderView)
-                        .where(
-                          and(
-                            eq(
-                              CommentsSchema.activePlacedOrderView.customerId,
-                              customerId,
-                            ),
-                            eq(
-                              CommentsSchema.activePlacedOrderView.tenantId,
+                              activeManagedSharedAccountOrderView.tenantId,
                               tenantId,
                             ),
                           ),
@@ -647,7 +670,10 @@ export namespace Comments {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -659,8 +685,8 @@ export namespace Comments {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
-            excludeIds: Array<CommentsSchema.Row["id"]>,
+            tenantId: CommentsSchema.ActiveRow["tenantId"],
+            excludeIds: Array<CommentsSchema.ActiveRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -686,93 +712,26 @@ export namespace Comments {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveFastForwardByOrderBillingAccountManagerId = Effect.fn(
-          "Comments.Repository.findActiveFastForwardByOrderBillingAccountManagerId",
-        )(
-          (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
-            excludeIds: Array<CommentsSchema.Row["id"]>,
-          ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagedBillingAccountOrderView)}_fast_forward`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeManagedBillingAccountOrderView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeManagedBillingAccountOrderView.id,
-                              ),
-                              notInArray(
-                                activeManagedBillingAccountOrderView.id,
-                                excludeIds,
-                              ),
-                            ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeManagedBillingAccountOrderView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagedBillingAccountOrderView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
                     return tx
-                      .selectDistinctOn(
-                        [
-                          activeManagedBillingAccountOrderView.id,
-                          activeManagedBillingAccountOrderView.tenantId,
-                        ],
-                        Struct.omit(
-                          cte[
-                            getViewName(activeManagedBillingAccountOrderView)
-                          ],
-                          "authorizedManagerId",
-                        ),
-                      )
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
                       .from(cte);
                   }),
                 ),
               ),
         );
 
-        const findActiveFastForwardByOrderCustomerId = Effect.fn(
-          "Comments.Repository.findActiveFastForwardByOrderCustomerId",
+        const findActiveCustomerPlacedOrderFastForward = Effect.fn(
+          "Comments.Repository.findActiveCustomerPlacedOrderFastForward",
         )(
           (
-            customerId: OrdersSchema.Row["customerId"],
+            customerId: CommentsSchema.ActiveCustomerPlacedOrderRow["customerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: CommentsSchema.Row["tenantId"],
-            excludeIds: Array<CommentsSchema.Row["id"]>,
+            tenantId: CommentsSchema.ActiveCustomerPlacedOrderRow["tenantId"],
+            excludeIds: Array<
+              CommentsSchema.ActiveCustomerPlacedOrderRow["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -786,19 +745,19 @@ export namespace Comments {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(CommentsSchema.activePlacedOrderView)}_fast_forward`,
+                        `${getViewName(CommentsSchema.activeCustomerPlacedOrderView)}_fast_forward`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            CommentsSchema.activePlacedOrderView,
+                            CommentsSchema.activeCustomerPlacedOrderView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                CommentsSchema.activePlacedOrderView.id,
+                                CommentsSchema.activeCustomerPlacedOrderView.id,
                               ),
                               notInArray(
-                                CommentsSchema.activePlacedOrderView.id,
+                                CommentsSchema.activeCustomerPlacedOrderView.id,
                                 excludeIds,
                               ),
                             ),
@@ -806,11 +765,13 @@ export namespace Comments {
                           .where(
                             and(
                               eq(
-                                CommentsSchema.activePlacedOrderView.customerId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .customerId,
                                 customerId,
                               ),
                               eq(
-                                CommentsSchema.activePlacedOrderView.tenantId,
+                                CommentsSchema.activeCustomerPlacedOrderView
+                                  .tenantId,
                                 tenantId,
                               ),
                             ),
@@ -818,10 +779,13 @@ export namespace Comments {
                       );
 
                     return tx
+                      .with(cte)
                       .select(
                         Struct.omit(
                           cte[
-                            getViewName(CommentsSchema.activePlacedOrderView)
+                            getViewName(
+                              CommentsSchema.activeCustomerPlacedOrderView,
+                            )
                           ],
                           "customerId",
                         ),
@@ -831,6 +795,86 @@ export namespace Comments {
                 ),
               ),
         );
+
+        const findActiveManagerAuthorizedSharedAccountOrderFastForward =
+          Effect.fn(
+            "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderFastForward",
+          )(
+            (
+              managerId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["authorizedManagerId"],
+              clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+              clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+              tenantId: CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["tenantId"],
+              excludeIds: Array<
+                CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderRow["id"]
+              >,
+            ) =>
+              metadataQb
+                .fastForward(
+                  getTableName(table),
+                  clientViewVersion,
+                  clientGroupId,
+                  tenantId,
+                )
+                .pipe(
+                  Effect.flatMap((qb) =>
+                    db.useTransaction((tx) => {
+                      const cte = tx
+                        .$with(
+                          `${getViewName(activeManagedSharedAccountOrderView)}_fast_forward`,
+                        )
+                        .as(
+                          qb
+                            .innerJoin(
+                              activeManagedSharedAccountOrderView,
+                              and(
+                                eq(
+                                  metadataTable.entityId,
+                                  activeManagedSharedAccountOrderView.id,
+                                ),
+                                notInArray(
+                                  activeManagedSharedAccountOrderView.id,
+                                  excludeIds,
+                                ),
+                              ),
+                            )
+                            .where(
+                              and(
+                                eq(
+                                  activeManagedSharedAccountOrderView.authorizedManagerId,
+                                  managerId,
+                                ),
+                                eq(
+                                  activeManagedSharedAccountOrderView.tenantId,
+                                  tenantId,
+                                ),
+                              ),
+                            ),
+                        );
+
+                      return tx
+                        .with(cte)
+                        .selectDistinctOn(
+                          [
+                            cte[
+                              getViewName(activeManagedSharedAccountOrderView)
+                            ].id,
+                            cte[
+                              getViewName(activeManagedSharedAccountOrderView)
+                            ].tenantId,
+                          ],
+                          Struct.omit(
+                            cte[
+                              getViewName(activeManagedSharedAccountOrderView)
+                            ],
+                            "authorizedManagerId",
+                          ),
+                        )
+                        .from(cte);
+                    }),
+                  ),
+                ),
+          );
 
         const findById = Effect.fn("Comments.Repository.findById")(
           (
@@ -894,20 +938,20 @@ export namespace Comments {
           create,
           findCreates,
           findActiveCreates,
-          findActiveCreatesByOrderBillingAccountManagerId,
-          findActiveCreatesByOrderCustomerId,
+          findActiveCustomerPlacedOrderCreates,
+          findActiveManagerAuthorizedSharedAccountOrderCreates,
           findUpdates,
           findActiveUpdates,
-          findActiveUpdatesByOrderBillingAccountManagerId,
-          findActiveUpdatesByOrderCustomerId,
+          findActiveCustomerPlacedOrderUpdates,
+          findActiveManagerAuthorizedSharedAccountOrderUpdates,
           findDeletes,
           findActiveDeletes,
-          findActiveDeletesByOrderBillingAccountManagerId,
-          findActiveDeletesByOrderCustomerId,
+          findActiveCustomerPlacedOrderDeletes,
+          findActiveManagerAuthorizedSharedAccountOrderDeletes,
           findFastForward,
           findActiveFastForward,
-          findActiveFastForwardByOrderBillingAccountManagerId,
-          findActiveFastForwardByOrderCustomerId,
+          findActiveCustomerPlacedOrderFastForward,
+          findActiveManagerAuthorizedSharedAccountOrderFastForward,
           findById,
           updateById,
           updateByOrderId,
@@ -929,10 +973,12 @@ export namespace Comments {
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository.findById(id, principal.tenantId).pipe(
-                  Effect.map(({ authorId }) => authorId),
-                  Effect.map(Equal.equals(principal.userId)),
-                ),
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("authorId")),
+                    Effect.map(Equal.equals(principal.userId)),
+                  ),
               ),
           }),
         );
@@ -955,8 +1001,7 @@ export namespace Comments {
         const repository = yield* Repository;
 
         const isCustomerOrManager = yield* Orders.Policies.isCustomerOrManager;
-        const hasActiveManagerAuthorization =
-          yield* Orders.Policies.hasActiveManagerAuthorization;
+        const isManagerAuthorized = yield* Orders.Policies.isManagerAuthorized;
 
         const isAuthor = yield* Policies.isAuthor;
 
@@ -967,7 +1012,7 @@ export namespace Comments {
               AccessControl.some(
                 AccessControl.permission("comments:create"),
                 isCustomerOrManager.make({ id: orderId }),
-                hasActiveManagerAuthorization.make({ id: orderId }),
+                isManagerAuthorized.make({ id: orderId }),
               ),
             mutator: (comment, session) =>
               repository

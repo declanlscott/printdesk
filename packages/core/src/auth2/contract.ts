@@ -1,17 +1,17 @@
 import { Schema } from "effect";
 
-import { TableContract } from "../database2/contract";
+import { ColumnsContract } from "../columns2/contract";
 
 export namespace AuthContract {
   export class UserSubjectProperties extends Schema.Class<UserSubjectProperties>(
     "UserSubjectProperties",
   )({
-    id: TableContract.EntityId,
-    tenantId: TableContract.TenantId,
+    id: ColumnsContract.EntityId,
+    tenantId: ColumnsContract.TenantId,
   }) {}
 
   export class Session extends Schema.Class<Session>("Session")({
-    userId: TableContract.EntityId,
-    tenantId: TableContract.TenantId,
+    userId: ColumnsContract.EntityId,
+    tenantId: ColumnsContract.TenantId,
   }) {}
 }

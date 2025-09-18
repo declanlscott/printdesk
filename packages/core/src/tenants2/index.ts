@@ -1,12 +1,19 @@
-import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableColumns,
+  getTableName,
+  inArray,
+  not,
+  notInArray,
+} from "drizzle-orm";
 import { Array, Effect, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
-import { TableContract } from "../database2/contract";
-import { IdentityProvidersSchema } from "../identity-providers2/schema";
+import { IdentityProvidersSchema } from "../identity-providers2/schemas";
 import { Replicache } from "../replicache2";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { LicensesContract, TenantsContract } from "./contracts";
@@ -24,10 +31,11 @@ export namespace Tenants {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = TenantsSchema.table;
+        const table = TenantsSchema.table.definition;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const upsert = Effect.fn("Tenants.Repository.upsert")(
           (tenant: InferInsertModel<TenantsSchema.Table>) =>
@@ -38,7 +46,7 @@ export namespace Tenants {
                   .values(tenant)
                   .onConflictDoUpdate({
                     target: [table.id],
-                    set: buildConflictSet(table),
+                    set: TenantsSchema.table.conflictSet,
                   })
                   .returning(),
               )
@@ -56,7 +64,7 @@ export namespace Tenants {
                 getTableName(table),
                 clientViewVersion,
                 clientGroupId,
-                TableContract.TenantId.make(id),
+                ColumnsContract.TenantId.make(id),
               )
               .pipe(
                 Effect.flatMap((qb) =>
@@ -66,6 +74,7 @@ export namespace Tenants {
                       .as(tx.select().from(table).where(eq(table.id, id)));
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -88,7 +97,7 @@ export namespace Tenants {
               .updates(
                 getTableName(table),
                 clientGroupId,
-                TableContract.TenantId.make(id),
+                ColumnsContract.TenantId.make(id),
               )
               .pipe(
                 Effect.flatMap((qb) =>
@@ -110,7 +119,10 @@ export namespace Tenants {
                           .where(eq(table.id, id)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -127,7 +139,7 @@ export namespace Tenants {
                 getTableName(table),
                 clientViewVersion,
                 clientGroupId,
-                TableContract.TenantId.make(id),
+                ColumnsContract.TenantId.make(id),
               )
               .pipe(
                 Effect.flatMap((qb) =>
@@ -155,7 +167,7 @@ export namespace Tenants {
                 getTableName(table),
                 clientViewVersion,
                 clientGroupId,
-                TableContract.TenantId.make(id),
+                ColumnsContract.TenantId.make(id),
               )
               .pipe(
                 Effect.flatMap((qb) =>
@@ -174,7 +186,10 @@ export namespace Tenants {
                           .where(eq(table.id, id)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -199,23 +214,23 @@ export namespace Tenants {
             db
               .useTransaction((tx) =>
                 tx
-                  .select({ tenant: table })
+                  .select(getTableColumns(table))
                   .from(table)
                   .innerJoin(
-                    IdentityProvidersSchema.table,
-                    eq(IdentityProvidersSchema.table.tenantId, table.id),
+                    IdentityProvidersSchema.table.definition,
+                    eq(
+                      IdentityProvidersSchema.table.definition.tenantId,
+                      table.id,
+                    ),
                   )
                   .where(
                     and(
-                      eq(IdentityProvidersSchema.table.kind, kind),
-                      eq(IdentityProvidersSchema.table.id, id),
+                      eq(IdentityProvidersSchema.table.definition.kind, kind),
+                      eq(IdentityProvidersSchema.table.definition.id, id),
                     ),
                   ),
               )
-              .pipe(
-                Effect.map(Array.map(({ tenant }) => tenant)),
-                Effect.flatMap(Array.head),
-              ),
+              .pipe(Effect.flatMap(Array.head)),
         );
 
         const findBySubdomain = Effect.fn("Tenants.Repository.findBySubdomain")(
@@ -321,7 +336,7 @@ export namespace Tenants {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = LicensesSchema.table;
+        const table = LicensesSchema.table.definition;
 
         const findByKeyWithTenant = Effect.fn(
           "Tenants.LicensesRepository.findByKey",
@@ -331,12 +346,12 @@ export namespace Tenants {
               tx
                 .select({
                   license: table,
-                  tenant: TenantsSchema.table,
+                  tenant: TenantsSchema.table.definition,
                 })
                 .from(table)
                 .leftJoin(
-                  TenantsSchema.table,
-                  eq(TenantsSchema.table.id, table.tenantId),
+                  TenantsSchema.table.definition,
+                  eq(TenantsSchema.table.definition.id, table.tenantId),
                 )
                 .where(eq(table.key, key)),
             )
@@ -402,7 +417,7 @@ export namespace Tenants {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = TenantMetadataSchema.table;
+        const table = TenantMetadataSchema.table.definition;
 
         const upsert = Effect.fn("Tenants.MetadataRepository.upsert")(
           (metadata: InferInsertModel<TenantMetadataSchema.Table>) =>
@@ -413,7 +428,7 @@ export namespace Tenants {
                   .values(metadata)
                   .onConflictDoUpdate({
                     target: [table.tenantId],
-                    set: buildConflictSet(table),
+                    set: TenantMetadataSchema.table.conflictSet,
                   })
                   .returning(),
               )
@@ -429,7 +444,7 @@ export namespace Tenants {
                 .select()
                 .from(table)
                 .where(
-                  eq(table.tenantId, TableContract.TenantId.make(tenantId)),
+                  eq(table.tenantId, ColumnsContract.TenantId.make(tenantId)),
                 ),
             )
             .pipe(Effect.flatMap(Array.head)),

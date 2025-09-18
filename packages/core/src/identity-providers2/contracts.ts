@@ -1,12 +1,13 @@
 import { Schema } from "effect";
 
-import { TableContract } from "../database2/contract";
+import { ColumnsContract } from "../columns2/contract";
+import { TablesContract } from "../tables2/contract";
 import { Constants } from "../utils/constants";
 
 import type {
   IdentityProvidersSchema,
   IdentityProviderUserGroupsSchema,
-} from "./schema";
+} from "./schemas";
 
 export namespace IdentityProvidersContract {
   export const kinds = [Constants.ENTRA_ID, Constants.GOOGLE] as const;
@@ -15,30 +16,30 @@ export namespace IdentityProvidersContract {
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
-    id: Schema.String,
-    tenantId: TableContract.TenantId,
+    ...ColumnsContract.Tenant.fields,
     kind: Schema.Literal(...kinds),
-    ...TableContract.Timestamps.fields,
+    externalId: Schema.String,
   }) {}
 
   export const tableName = "identity_providers";
-  export const table = TableContract.NonSync<IdentityProvidersSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["create", "read", "delete"],
-  );
+  export const table =
+    TablesContract.makeTable<IdentityProvidersSchema.Table>()(
+      tableName,
+      DataTransferObject,
+      ["create", "read", "delete"],
+    );
 }
 
-export namespace IdentityProviderGroupsContract {
+export namespace IdentityProviderUserGroupsContract {
   export class Row extends Schema.Class<Row>("Row")({
-    id: Schema.String,
-    identityProviderId: Schema.String,
-    tenantId: TableContract.TenantId,
+    ...ColumnsContract.Tenant.fields,
+    externalId: Schema.String,
+    identityProviderId: ColumnsContract.EntityId,
   }) {}
 
   export const tableName = "identity_provider_user_groups";
   export const table =
-    TableContract.Internal<IdentityProviderUserGroupsSchema.Table>()(
+    TablesContract.makeInternalTable<IdentityProviderUserGroupsSchema.Table>()(
       tableName,
       Row,
     );

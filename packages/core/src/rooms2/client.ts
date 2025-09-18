@@ -2,18 +2,24 @@ import { Effect, Tuple } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
 import { Products } from "../products2/client";
 import { Replicache } from "../replicache2/client";
 import { RoomWorkflows } from "../workflows2/client";
 import { RoomWorkflowsContract } from "../workflows2/contracts";
-import { RoomsContract } from "./contracts";
+import { RoomsContract } from "./contract";
 
 export namespace Rooms {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/rooms/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(RoomsContract.table),
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Models.SyncTables.rooms.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
     },
   ) {}
 
@@ -21,13 +27,12 @@ export namespace Rooms {
     "@printdesk/core/rooms/client/WriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(RoomsContract.table, repository),
-        ),
+      effect: Effect.all([Models.SyncTables.rooms, ReadRepository]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}

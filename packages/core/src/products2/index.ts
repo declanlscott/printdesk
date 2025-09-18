@@ -29,12 +29,13 @@ export namespace Products {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ProductsSchema.table;
+        const table = ProductsSchema.table.definition;
         const activeView = ProductsSchema.activeView;
         const activePublishedView = ProductsSchema.activePublishedView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const create = Effect.fn("Products.Repository.create")(
           (product: InferInsertModel<ProductsSchema.Table>) =>
@@ -74,6 +75,7 @@ export namespace Products {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -93,7 +95,7 @@ export namespace Products {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: ProductsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -115,6 +117,7 @@ export namespace Products {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -134,7 +137,7 @@ export namespace Products {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -156,6 +159,7 @@ export namespace Products {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -196,7 +200,10 @@ export namespace Products {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -207,7 +214,7 @@ export namespace Products {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: ProductsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -234,7 +241,10 @@ export namespace Products {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -245,7 +255,7 @@ export namespace Products {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -279,6 +289,7 @@ export namespace Products {
                       );
 
                     return tx
+                      .with(cte)
                       .select(cte[getViewName(activePublishedView)])
                       .from(cte);
                   }),
@@ -319,7 +330,7 @@ export namespace Products {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: ProductsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -348,7 +359,7 @@ export namespace Products {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -404,7 +415,10 @@ export namespace Products {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -416,8 +430,8 @@ export namespace Products {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-            excludeIds: Array<ProductsSchema.Row["id"]>,
+            tenantId: ProductsSchema.ActiveRow["tenantId"],
+            excludeIds: Array<ProductsSchema.ActiveRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -443,7 +457,10 @@ export namespace Products {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -455,8 +472,8 @@ export namespace Products {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-            excludeIds: Array<ProductsSchema.Row["id"]>,
+            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
+            excludeIds: Array<ProductsSchema.ActivePublishedRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -486,6 +503,7 @@ export namespace Products {
                       );
 
                     return tx
+                      .with(cte)
                       .select(cte[getViewName(activePublishedView)])
                       .from(cte);
                   }),

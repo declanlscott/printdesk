@@ -1,23 +1,17 @@
 import {
   and,
-  asc,
-  desc,
   eq,
   getTableName,
   getViewName,
-  gte,
   inArray,
-  lte,
   not,
   notInArray,
-  sql,
 } from "drizzle-orm";
-import { Array, Effect, Number, Struct } from "effect";
+import { Array, Effect, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
-import { buildConflictSet } from "../database2/constructors";
 import { Replicache } from "../replicache2";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { DeliveryOptionsContract } from "./contract";
@@ -35,13 +29,14 @@ export namespace DeliveryOptions {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = DeliveryOptionsSchema.table;
+        const table = DeliveryOptionsSchema.table.definition;
         const activeView = DeliveryOptionsSchema.activeView;
         const activePublishedRoomView =
           DeliveryOptionsSchema.activePublishedRoomView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const create = Effect.fn("DeliveryOptions.Repository.create")(
           (deliveryOption: InferInsertModel<DeliveryOptionsSchema.Table>) =>
@@ -53,24 +48,6 @@ export namespace DeliveryOptions {
                 Effect.flatMap(Array.head),
                 Effect.catchTag("NoSuchElementException", Effect.die),
               ),
-        );
-
-        const upsertMany = Effect.fn("DeliveryOptions.Repository.upsertMany")(
-          (
-            deliveryOptions: Array<
-              InferInsertModel<DeliveryOptionsSchema.Table>
-            >,
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .insert(table)
-                .values(deliveryOptions)
-                .onConflictDoUpdate({
-                  target: [table.id, table.tenantId],
-                  set: buildConflictSet(table),
-                })
-                .returning(),
-            ),
         );
 
         const findCreates = Effect.fn("DeliveryOptions.Repository.findCreates")(
@@ -99,6 +76,7 @@ export namespace DeliveryOptions {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -118,7 +96,7 @@ export namespace DeliveryOptions {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -140,6 +118,7 @@ export namespace DeliveryOptions {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -159,7 +138,7 @@ export namespace DeliveryOptions {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.ActivePublishedRoomRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -183,6 +162,7 @@ export namespace DeliveryOptions {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -223,7 +203,10 @@ export namespace DeliveryOptions {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -234,7 +217,7 @@ export namespace DeliveryOptions {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -261,7 +244,10 @@ export namespace DeliveryOptions {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -272,7 +258,7 @@ export namespace DeliveryOptions {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.ActivePublishedRoomRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -308,6 +294,7 @@ export namespace DeliveryOptions {
                       );
 
                     return tx
+                      .with(cte)
                       .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
@@ -348,7 +335,7 @@ export namespace DeliveryOptions {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -377,7 +364,7 @@ export namespace DeliveryOptions {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+            tenantId: DeliveryOptionsSchema.ActivePublishedRoomRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -433,7 +420,10 @@ export namespace DeliveryOptions {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -445,8 +435,8 @@ export namespace DeliveryOptions {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
-            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
+            tenantId: DeliveryOptionsSchema.ActiveRow["tenantId"],
+            excludeIds: Array<DeliveryOptionsSchema.ActiveRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -472,7 +462,10 @@ export namespace DeliveryOptions {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -484,8 +477,10 @@ export namespace DeliveryOptions {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
-            excludeIds: Array<DeliveryOptionsSchema.Row["id"]>,
+            tenantId: DeliveryOptionsSchema.ActivePublishedRoomRow["tenantId"],
+            excludeIds: Array<
+              DeliveryOptionsSchema.ActivePublishedRoomRow["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -522,87 +517,12 @@ export namespace DeliveryOptions {
                       );
 
                     return tx
+                      .with(cte)
                       .select(cte[getViewName(activePublishedRoomView)])
                       .from(cte);
                   }),
                 ),
               ),
-        );
-
-        const findTailIndexByRoomId = Effect.fn(
-          "DeliveryOptions.Repository.findTailIndexByRoomId",
-        )(
-          (
-            roomId: DeliveryOptionsSchema.Row["roomId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .select({ index: table.index })
-                  .from(table)
-                  .where(
-                    and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
-                  )
-                  .orderBy(desc(table.index))
-                  .limit(1),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
-        const findSliceByRoomId = Effect.fn(
-          "DeliveryOptions.Repository.findSliceByRoomId",
-        )(
-          (
-            start: DeliveryOptionsSchema.Row["index"],
-            end: DeliveryOptionsSchema.Row["index"],
-            roomId: DeliveryOptionsSchema.Row["roomId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
-          ) =>
-            Effect.succeed(Number.sign(end - start) > 0).pipe(
-              Effect.flatMap((isAscending) =>
-                db.useTransaction((tx) =>
-                  tx
-                    .select()
-                    .from(table)
-                    .where(
-                      and(
-                        eq(table.roomId, roomId),
-                        eq(table.tenantId, tenantId),
-                        isAscending
-                          ? and(gte(table.index, start), lte(table.index, end))
-                          : and(lte(table.index, start), gte(table.index, end)),
-                      ),
-                    )
-                    .orderBy(
-                      isAscending ? asc(table.index) : desc(table.index),
-                    ),
-                ),
-              ),
-            ),
-        );
-
-        const negateIndexes = Effect.fn(
-          "DeliveryOptions.Repository.negateIndexes",
-        )(
-          (
-            ids: ReadonlyArray<DeliveryOptionsSchema.Row["id"]>,
-            roomId: DeliveryOptionsSchema.Row["roomId"],
-            tenantId: DeliveryOptionsSchema.Row["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .update(table)
-                .set({ index: sql`-${table.index}` })
-                .where(
-                  and(
-                    inArray(table.id, ids),
-                    eq(table.roomId, roomId),
-                    eq(table.tenantId, tenantId),
-                  ),
-                )
-                .returning(),
-            ),
         );
 
         const updateById = Effect.fn("DeliveryOptions.Repository.updateById")(
@@ -649,7 +569,6 @@ export namespace DeliveryOptions {
 
         return {
           create,
-          upsertMany,
           findCreates,
           findActiveCreates,
           findActivePublishedRoomCreates,
@@ -662,9 +581,6 @@ export namespace DeliveryOptions {
           findFastForward,
           findActiveFastForward,
           findActivePublishedRoomFastForward,
-          findTailIndexByRoomId,
-          findSliceByRoomId,
-          negateIndexes,
           updateById,
           updateByRoomId,
         } as const;
@@ -680,29 +596,20 @@ export namespace DeliveryOptions {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const append = DataAccessContract.makeMutation(
-          DeliveryOptionsContract.append,
+        const create = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.create,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("delivery_options:create"),
             mutator: (deliveryOption, { tenantId }) =>
               repository
-                .findTailIndexByRoomId(deliveryOption.roomId, tenantId)
-                .pipe(
-                  Effect.catchTag("NoSuchElementException", () =>
-                    Effect.succeed({ index: -1 }),
-                  ),
-                  Effect.map(({ index }) => ++index),
-                  Effect.flatMap((index) =>
-                    repository.create({ ...deliveryOption, index, tenantId }),
-                  ),
-                  Effect.map(Struct.omit("version")),
-                ),
+                .create({ ...deliveryOption, tenantId })
+                .pipe(Effect.map(Struct.omit("version"))),
           }),
         );
 
-        const edit = DataAccessContract.makeMutation(
-          DeliveryOptionsContract.edit,
+        const update = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.update,
           Effect.succeed({
             makePolicy: () =>
               AccessControl.permission("delivery_options:update"),
@@ -710,51 +617,6 @@ export namespace DeliveryOptions {
               repository
                 .updateById(id, deliveryOption, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
-
-        const reorder = DataAccessContract.makeMutation(
-          DeliveryOptionsContract.reorder,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:update"),
-            mutator: ({ oldIndex, newIndex, updatedAt, roomId }, session) =>
-              Effect.gen(function* () {
-                const delta = newIndex - oldIndex;
-                const shift = -Number.sign(delta);
-
-                const slice = yield* repository.findSliceByRoomId(
-                  oldIndex,
-                  newIndex,
-                  roomId,
-                  session.tenantId,
-                );
-
-                const sliceLength = slice.length;
-                const absoluteDelta = Math.abs(delta);
-                if (sliceLength !== absoluteDelta)
-                  return yield* Effect.fail(
-                    new DeliveryOptionsContract.InvalidReorderDeltaError({
-                      sliceLength,
-                      absoluteDelta,
-                    }),
-                  );
-
-                // Temporarily negate indexes to avoid uniqueness violations in upsert
-                yield* repository.negateIndexes(
-                  Array.map(slice, ({ id }) => id),
-                  roomId,
-                  session.tenantId,
-                );
-
-                return yield* repository.upsertMany(
-                  Array.map(slice, (option, sliceIndex) => ({
-                    ...option,
-                    index: option.index + (sliceIndex === 0 ? delta : shift),
-                    updatedAt,
-                  })),
-                );
-              }),
           }),
         );
 
@@ -770,7 +632,7 @@ export namespace DeliveryOptions {
           }),
         );
 
-        return { append, edit, reorder, delete: delete_ } as const;
+        return { create, update, delete: delete_ } as const;
       }),
     },
   ) {}

@@ -2,6 +2,7 @@ import { Effect } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
 import { Replicache } from "../replicache2/client";
 import { InvoicesContract } from "./contract";
 
@@ -9,8 +10,13 @@ export namespace Invoices {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/invoices/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(InvoicesContract.table),
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Models.SyncTables.invoices.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
     },
   ) {}
 
@@ -18,13 +24,12 @@ export namespace Invoices {
     "@printdesk/core/invoices/client/WriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(InvoicesContract.table, repository),
-        ),
+      effect: Effect.all([Models.SyncTables.invoices, ReadRepository]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}

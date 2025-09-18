@@ -2,6 +2,7 @@ import { Array, Effect, Equal, Option } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
 import { Replicache } from "../replicache2/client";
 import { ProductsContract } from "./contract";
 
@@ -9,8 +10,13 @@ export namespace Products {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/products/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(ProductsContract.table),
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: Models.SyncTables.products.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
     },
   ) {}
 
@@ -18,57 +24,51 @@ export namespace Products {
     "@printdesk/core/products/client/WriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Effect.gen(function* () {
-            const base = yield* Replicache.makeWriteRepository(
-              ProductsContract.table,
-              repository,
-            );
+      effect: Effect.gen(function* () {
+        const table = yield* Models.SyncTables.products;
+        const repository = yield* ReadRepository;
+        const base = yield* Replicache.makeWriteRepository(table, repository);
 
-            const updateByRoomId = (
-              roomId: ProductsContract.DataTransferObject["roomId"],
-              product: Partial<
-                Omit<
-                  ProductsContract.DataTransferObject,
-                  "id" | "roomId" | "tenantId"
-                >
-              >,
-            ) =>
-              repository.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((prev) =>
-                    Equal.equals(prev.roomId, roomId)
-                      ? Option.some(
-                          base.updateById(prev.id, { ...prev, ...product }),
-                        )
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-              );
+        const updateByRoomId = (
+          roomId: ProductsContract.DataTransferObject["roomId"],
+          product: Partial<
+            Omit<
+              ProductsContract.DataTransferObject,
+              "id" | "roomId" | "tenantId"
+            >
+          >,
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((p) =>
+                Equal.equals(p.roomId, roomId)
+                  ? Option.some(base.updateById(p.id, () => product))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
 
-            const deleteByRoomId = (
-              roomId: ProductsContract.DataTransferObject["roomId"],
-            ) =>
-              repository.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((product) =>
-                    Equal.equals(product.roomId, roomId)
-                      ? Option.some(base.deleteById(product.id))
-                      : Option.none(),
-                  ),
-                ),
-                Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-              );
+        const deleteByRoomId = (
+          roomId: ProductsContract.DataTransferObject["roomId"],
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((product) =>
+                Equal.equals(product.roomId, roomId)
+                  ? Option.some(base.deleteById(product.id))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
 
-            return { ...base, updateByRoomId, deleteByRoomId };
-          }),
-        ),
-      ),
+        return { ...base, updateByRoomId, deleteByRoomId };
+      }),
     },
   ) {}
 
@@ -98,7 +98,8 @@ export namespace Products {
           ProductsContract.edit,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, ...product }) => repository.updateById(id, product),
+            mutator: ({ id, ...product }) =>
+              repository.updateById(id, () => product),
           }),
         );
 
@@ -139,14 +140,16 @@ export namespace Products {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("products:delete"),
             mutator: ({ id, deletedAt }) =>
-              repository.updateById(id, { deletedAt }).pipe(
-                AccessControl.enforce(
-                  AccessControl.permission("products:read"),
+              repository
+                .updateById(id, () => ({ deletedAt }))
+                .pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("products:read"),
+                  ),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    repository.deleteById(id),
+                  ),
                 ),
-                Effect.catchTag("AccessDeniedError", () =>
-                  repository.deleteById(id),
-                ),
-              ),
           }),
         );
 

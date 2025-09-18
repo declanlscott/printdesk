@@ -1,33 +1,76 @@
-import { Array, Effect, Equal, Option } from "effect";
+import { Array, Effect, Equal, Match, Option, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { BillingAccounts } from "../billing-accounts2/client";
-import { BillingAccountManagerAuthorizationsContract } from "../billing-accounts2/contracts";
 import { DataAccessContract } from "../data-access2/contract";
+import { Models } from "../models2";
 import { Replicache } from "../replicache2/client";
-import { WorkflowsContract } from "../rooms2/contracts";
+import { SharedAccounts } from "../shared-accounts2/client";
 import { Users } from "../users2/client";
 import { OrdersContract } from "./contract";
+
+import type { ColumnsContract } from "../columns2/contract";
 
 export namespace Orders {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/orders/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(OrdersContract.table);
+        const table = yield* Models.SyncTables.orders;
+        const base = yield* Replicache.makeReadRepository(table);
+
+        const workflowStatusesTable = yield* Models.SyncTables.workflowStatuses;
+        const sharedAccountManagerAuthorizationsTable =
+          yield* Models.SyncTables.sharedAccountManagerAuthorizations;
+
         const { get, scan } = yield* Replicache.ReadTransactionManager;
 
-        const findManagerIds = (id: OrdersContract.DataTransferObject["id"]) =>
-          get(OrdersContract.table, id).pipe(
+        const findByIdWithWorkflowStatus = (
+          id: OrdersContract.DataTransferObject["id"],
+        ) =>
+          Effect.gen(function* () {
+            const order = yield* get(table, id);
+
+            const workflowStatus = yield* get(
+              workflowStatusesTable,
+              order.roomWorkflowStatusId ?? order.sharedAccountWorkflowStatusId,
+            );
+
+            return { order, workflowStatus };
+          });
+
+        const findByWorkflowStatusId = (
+          workflowStatusId: ColumnsContract.EntityId,
+        ) =>
+          base.findAll.pipe(
+            Effect.map(
+              Array.filterMap((order) =>
+                Equal.equals(order.roomWorkflowStatusId, workflowStatusId) ||
+                Equal.equals(
+                  order.sharedAccountWorkflowStatusId,
+                  workflowStatusId,
+                )
+                  ? Option.some(order)
+                  : Option.none(),
+              ),
+            ),
+          );
+
+        const findActiveManagerIds = (
+          id: OrdersContract.DataTransferObject["id"],
+        ) =>
+          get(table, id).pipe(
             Effect.flatMap((order) =>
-              scan(BillingAccountManagerAuthorizationsContract.table).pipe(
+              scan(sharedAccountManagerAuthorizationsTable).pipe(
                 Effect.map(
                   Array.filterMap((authorization) =>
                     Equal.equals(
-                      authorization.billingAccountId,
-                      order.billingAccountId,
-                    )
+                      authorization.sharedAccountId,
+                      order.sharedAccountId,
+                    ) && Equal.equals(authorization.deletedAt, null)
                       ? Option.some(authorization.managerId)
                       : Option.none(),
                   ),
@@ -36,18 +79,12 @@ export namespace Orders {
             ),
           );
 
-        const findStatus = (id: OrdersContract.DataTransferObject["id"]) =>
-          get(OrdersContract.table, id).pipe(
-            Effect.flatMap((order) =>
-              get(WorkflowsContract.table, order.workflowStatus).pipe(
-                Effect.catchTag("NoSuchElementException", () =>
-                  Effect.succeed(null),
-                ),
-              ),
-            ),
-          );
-
-        return { ...base, findManagerIds, findStatus } as const;
+        return {
+          ...base,
+          findByIdWithWorkflowStatus,
+          findByWorkflowStatusId,
+          findActiveManagerIds,
+        } as const;
       }),
     },
   ) {}
@@ -56,13 +93,12 @@ export namespace Orders {
     "@printdesk/core/orders/client/WriteRepository",
     {
       dependencies: [
+        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: ReadRepository.pipe(
-        Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(OrdersContract.table, repository),
-        ),
+      effect: Effect.all([Models.SyncTables.orders, ReadRepository]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}
@@ -80,10 +116,12 @@ export namespace Orders {
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository.findById(id).pipe(
-                  Effect.map(({ customerId }) => customerId),
-                  Effect.map(Equal.equals(principal.userId)),
-                ),
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("customerId")),
+                    Effect.map(Equal.equals(principal.userId)),
+                  ),
               ),
           }),
         );
@@ -93,10 +131,12 @@ export namespace Orders {
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository.findById(id).pipe(
-                  Effect.map(({ managerId }) => managerId),
-                  Effect.map(Equal.equals(principal.userId)),
-                ),
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("managerId")),
+                    Effect.map(Equal.equals(principal.userId)),
+                  ),
               ),
           }),
         );
@@ -119,77 +159,91 @@ export namespace Orders {
           }),
         );
 
-        const hasActiveManagerAuthorization = DataAccessContract.makePolicy(
-          OrdersContract.hasActiveManagerAuthorization,
+        const isManagerAuthorized = DataAccessContract.makePolicy(
+          OrdersContract.isAuthorizedManager,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
-                  .findManagerIds(id)
+                  .findActiveManagerIds(id)
                   .pipe(Effect.map(Array.some(Equal.equals(principal.userId)))),
               ),
           }),
         );
 
-        const canEdit = DataAccessContract.makePolicy(
-          OrdersContract.canEdit,
+        const isEditable = DataAccessContract.makePolicy(
+          OrdersContract.isEditable,
+          Effect.succeed({
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository.findByIdWithWorkflowStatus(id).pipe(
+                  Effect.map(({ order, workflowStatus }) =>
+                    Match.value(order).pipe(
+                      Match.when(
+                        { sharedAccountWorkflowStatusId: Match.null },
+                        (order) =>
+                          !order.approvedAt &&
+                          !(
+                            workflowStatus.type === "InProgress" ||
+                            workflowStatus.type === "Completed"
+                          ),
+                      ),
+                      Match.orElse(() => true),
+                    ),
+                  ),
+                ),
+              ),
+          }),
+        );
+
+        const isApprovable = DataAccessContract.makePolicy(
+          OrdersContract.isApprovable,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy(() =>
                 repository
-                  .findStatus(id)
+                  .findByIdWithWorkflowStatus(id)
                   .pipe(
-                    Effect.map((status) =>
-                      status !== null
-                        ? !(
-                            status.type === "InProgress" ||
-                            status.type === "Completed"
-                          )
-                        : false,
+                    Effect.map(
+                      ({ order }) =>
+                        order.sharedAccountWorkflowStatusId !== null,
                     ),
                   ),
               ),
           }),
         );
 
-        const canApprove = DataAccessContract.makePolicy(
-          OrdersContract.canApprove,
+        const isTransitionable = DataAccessContract.makePolicy(
+          OrdersContract.isTransitionable,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy(() =>
                 repository
-                  .findStatus(id)
-                  .pipe(Effect.map((status) => status?.type === "Review")),
+                  .findByIdWithWorkflowStatus(id)
+                  .pipe(
+                    Effect.map(
+                      ({ workflowStatus }) =>
+                        workflowStatus.type !== "Completed",
+                    ),
+                  ),
               ),
           }),
         );
 
-        const canTransition = DataAccessContract.makePolicy(
-          OrdersContract.canTransition,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findStatus(id)
-                  .pipe(Effect.map((status) => status?.type !== "Completed")),
-              ),
-          }),
-        );
-
-        const canDelete = DataAccessContract.makePolicy(
-          OrdersContract.canDelete,
-          canEdit,
+        const isDeletable = DataAccessContract.makePolicy(
+          OrdersContract.isDeletable,
+          isEditable,
         );
 
         return {
           isCustomer,
           isManager,
           isCustomerOrManager,
-          hasActiveManagerAuthorization,
-          canEdit,
-          canDelete,
-          canApprove,
-          canTransition,
+          isManagerAuthorized,
+          isEditable,
+          isApprovable,
+          isTransitionable,
+          isDeletable,
         } as const;
       }),
     },
@@ -202,7 +256,7 @@ export namespace Orders {
       dependencies: [
         WriteRepository.Default,
         Users.Policies.Default,
-        BillingAccounts.Policies.Default,
+        SharedAccounts.Policies.Default,
         Policies.Default,
       ],
       effect: Effect.gen(function* () {
@@ -210,37 +264,62 @@ export namespace Orders {
 
         const isSelf = yield* Users.Policies.isSelf;
 
-        const hasActiveCustomerAuthorization =
-          yield* BillingAccounts.Policies.hasActiveCustomerAuthorization;
-        const hasActiveManagerAuthorization =
-          yield* BillingAccounts.Policies.hasActiveManagerAuthorization;
+        const isCustomerAuthorizedSharedAccount =
+          yield* SharedAccounts.Policies.isCustomerAuthorized;
+        const isManagerAuthorizedSharedAccount =
+          yield* SharedAccounts.Policies.isManagerAuthorized;
 
         const isCustomerOrManager = yield* Policies.isCustomerOrManager;
-        const canEdit = yield* Policies.canEdit;
-        const hasOrderActiveManagerAuthorization =
-          yield* Policies.hasActiveManagerAuthorization;
-        const canApprove = yield* Policies.canApprove;
-        const canTransition = yield* Policies.canTransition;
-        const canDelete = yield* Policies.canDelete;
+        const isEditable = yield* Policies.isEditable;
+        const isManagerAuthorized = yield* Policies.isManagerAuthorized;
+        const isApprovable = yield* Policies.isApprovable;
+        const isTransitionable = yield* Policies.isTransitionable;
+        const isDeletable = yield* Policies.isDeletable;
 
         const create = DataAccessContract.makeMutation(
           OrdersContract.create,
           Effect.succeed({
-            makePolicy: ({ billingAccountId, customerId }) =>
-              AccessControl.every(
-                AccessControl.some(
-                  AccessControl.permission("orders:create"),
-                  isSelf.make({ id: customerId }),
-                  hasActiveManagerAuthorization.make({ id: billingAccountId }),
+            makePolicy: (order) =>
+              AccessControl.some(
+                AccessControl.permission("orders:create"),
+                Match.value(order).pipe(
+                  Match.when({ sharedAccountId: Match.string }, (order) =>
+                    AccessControl.every(
+                      AccessControl.some(
+                        isSelf.make({ id: order.customerId }),
+                        isManagerAuthorizedSharedAccount.make({
+                          id: order.sharedAccountId,
+                        }),
+                      ),
+                      isCustomerAuthorizedSharedAccount.make({
+                        id: order.sharedAccountId,
+                        customerId: order.customerId,
+                      }),
+                    ),
+                  ),
+                  Match.orElse((order) =>
+                    isSelf.make({ id: order.customerId }),
+                  ),
                 ),
-                hasActiveCustomerAuthorization.make({
-                  id: billingAccountId,
-                  customerId,
-                }),
               ),
             mutator: (order, { tenantId }) =>
-              repository.create(
-                OrdersContract.DataTransferObject.make({ ...order, tenantId }),
+              // TODO: Verify workflow status is correct
+              Match.value(order).pipe(
+                Match.when(
+                  { sharedAccountWorkflowStatusId: Match.null },
+                  (order) =>
+                    OrdersContract.RoomWorkflowStatusDto.make({
+                      ...order,
+                      tenantId,
+                    }),
+                ),
+                Match.orElse((order) =>
+                  OrdersContract.SharedAccountWorkflowStatusDto.make({
+                    ...order,
+                    tenantId,
+                  }),
+                ),
+                repository.create,
               ),
           }),
         );
@@ -252,11 +331,14 @@ export namespace Orders {
               AccessControl.every(
                 AccessControl.some(
                   AccessControl.permission("orders:update"),
-                  isCustomerOrManager.make({ id }),
+                  AccessControl.some(
+                    isCustomerOrManager.make({ id }),
+                    isManagerAuthorized.make({ id }),
+                  ),
                 ),
-                canEdit.make({ id }),
+                isEditable.make({ id }),
               ),
-            mutator: (order) => repository.updateById(order.id, order),
+            mutator: (order) => repository.updateById(order.id, () => order),
           }),
         );
 
@@ -267,45 +349,87 @@ export namespace Orders {
               AccessControl.every(
                 AccessControl.some(
                   AccessControl.permission("orders:update"),
-                  hasOrderActiveManagerAuthorization.make({ id }),
+                  isManagerAuthorized.make({ id }),
                 ),
-                canApprove.make({ id }),
+                isApprovable.make({ id }),
               ),
-            mutator: ({ id, ...order }) => repository.updateById(id, order),
+            mutator: ({ id, ...order }) =>
+              repository.updateById(id, () => order),
           }),
         );
 
-        const transition = DataAccessContract.makeMutation(
-          OrdersContract.transition,
+        const transitionRoomWorkflowStatus = DataAccessContract.makeMutation(
+          OrdersContract.transitionRoomWorkflowStatus,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
                 AccessControl.permission("orders:update"),
-                canTransition.make({ id }),
+                isTransitionable.make({ id }),
               ),
-            mutator: ({ id, ...order }) => repository.updateById(id, order),
+            mutator: ({ id, ...order }) =>
+              repository.updateById(id, () => ({
+                ...order,
+                sharedAccountWorkflowStatusId: null,
+              })),
           }),
         );
+
+        const transitionSharedAccountWorkflowStatus =
+          DataAccessContract.makeMutation(
+            OrdersContract.transitionSharedAccountWorkflowStatus,
+            Effect.succeed({
+              makePolicy: ({ id }) =>
+                AccessControl.every(
+                  AccessControl.some(
+                    AccessControl.permission("orders:update"),
+                    isManagerAuthorized.make({ id }),
+                  ),
+                  isTransitionable.make({ id }),
+                ),
+              mutator: ({ id, ...order }) =>
+                repository.updateById(id, () => ({
+                  ...order,
+                  roomWorkflowStatusId: null,
+                })),
+            }),
+          );
 
         const delete_ = DataAccessContract.makeMutation(
           OrdersContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
-                AccessControl.permission("orders:delete"),
-                canDelete.make({ id }),
+                AccessControl.some(
+                  AccessControl.permission("orders:delete"),
+                  AccessControl.some(
+                    isCustomerOrManager.make({ id }),
+                    isManagerAuthorized.make({ id }),
+                  ),
+                ),
+                isDeletable.make({ id }),
               ),
             mutator: ({ id, deletedAt }) =>
-              repository.updateById(id, { deletedAt }).pipe(
-                AccessControl.enforce(AccessControl.permission("orders:read")),
-                Effect.catchTag("AccessDeniedError", () =>
-                  repository.deleteById(id),
+              repository
+                .updateById(id, () => ({ deletedAt }))
+                .pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("orders:read"),
+                  ),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    repository.deleteById(id),
+                  ),
                 ),
-              ),
           }),
         );
 
-        return { create, edit, approve, transition, delete: delete_ } as const;
+        return {
+          create,
+          edit,
+          approve,
+          transitionRoomWorkflowStatus,
+          transitionSharedAccountWorkflowStatus,
+          delete: delete_,
+        } as const;
       }),
     },
   ) {}

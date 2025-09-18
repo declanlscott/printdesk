@@ -8,23 +8,23 @@ import {
   inArray,
   not,
   notInArray,
+  or,
 } from "drizzle-orm";
-import { Array, Effect, Equal, Struct } from "effect";
+import { Array, Effect, Equal, Match, Schema, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
-import { BillingAccounts } from "../billing-accounts2";
-import { BillingAccountManagerAuthorizationsSchema } from "../billing-accounts2/schemas";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Replicache } from "../replicache2";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
-import { WorkflowStatusesSchema } from "../rooms2/schemas";
+import { SharedAccounts } from "../shared-accounts2";
 import { Users } from "../users2";
-import { UsersSchema } from "../users2/schema";
+import { WorkflowStatusesSchema } from "../workflows2/schemas";
 import { OrdersContract } from "./contract";
 import { OrdersSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { ColumnsContract } from "../columns2/contract";
 
 export namespace Orders {
   export class Repository extends Effect.Service<Repository>()(
@@ -36,19 +36,24 @@ export namespace Orders {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = OrdersSchema.table;
+        const table = OrdersSchema.table.definition;
         const activeView = OrdersSchema.activeView;
-        const activeManagedBillingAccountView =
-          OrdersSchema.activeManagedBillingAccountView;
+        const activeCustomerPlacedView = OrdersSchema.activeCustomerPlacedView;
+        const activeManagerAuthorizedSharedAccountView =
+          OrdersSchema.activeManagerAuthorizedSharedAccountView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const create = Effect.fn("Orders.Repository.create")(
           (order: InferInsertModel<OrdersSchema.Table>) =>
             db
-              .useTransaction((tx) =>
-                tx.insert(table).values(order).returning(),
+              .useTransaction(
+                (tx) =>
+                  tx.insert(table).values(order).returning() as Promise<
+                    Array<OrdersSchema.Row>
+                  >,
               )
               .pipe(
                 Effect.flatMap(Array.head),
@@ -82,6 +87,7 @@ export namespace Orders {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -89,7 +95,7 @@ export namespace Orders {
                           cte.id,
                           tx.select({ id: cte.id }).from(cte).except(qb),
                         ),
-                      );
+                      ) as Promise<Array<OrdersSchema.Row>>;
                   }),
                 ),
               ),
@@ -101,7 +107,7 @@ export namespace Orders {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -123,6 +129,7 @@ export namespace Orders {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -130,20 +137,20 @@ export namespace Orders {
                           cte.id,
                           tx.select({ id: cte.id }).from(cte).except(qb),
                         ),
-                      );
+                      ) as Promise<Array<OrdersSchema.ActiveRow>>;
                   }),
                 ),
               ),
         );
 
-        const findActiveCreatesByBillingAccountManagerId = Effect.fn(
-          "Orders.Repository.findActiveCreatesByBillingAccountManagerId",
+        const findActiveCustomerPlacedCreates = Effect.fn(
+          "Orders.Repository.findActiveCustomerPlacedCreates",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: OrdersSchema.ActiveRow["customerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -157,38 +164,25 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountView)}_creates`,
+                        `${OrdersContract.activeCustomerPlacedViewName}_creates`,
                       )
                       .as(
                         tx
-                          .selectDistinctOn(
-                            [
-                              activeManagedBillingAccountView.id,
-                              activeManagedBillingAccountView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeManagedBillingAccountView,
-                              ),
-                              "authorizedManagerId",
-                            ),
-                          )
-                          .from(activeManagedBillingAccountView)
+                          .select()
+                          .from(activeCustomerPlacedView)
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountView.managerId,
-                                managerId,
+                                activeCustomerPlacedView.customerId,
+                                customerId,
                               ),
-                              eq(
-                                activeManagedBillingAccountView.tenantId,
-                                tenantId,
-                              ),
+                              eq(activeCustomerPlacedView.tenantId, tenantId),
                             ),
                           ),
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -196,20 +190,20 @@ export namespace Orders {
                           cte.id,
                           tx.select({ id: cte.id }).from(cte).except(qb),
                         ),
-                      );
+                      ) as Promise<Array<OrdersSchema.ActiveCustomerPlacedRow>>;
                   }),
                 ),
               ),
         );
 
-        const findActiveCreatesByCustomerId = Effect.fn(
-          "Orders.Repository.findActiveCreatesByCustomerId",
+        const findActiveManagerAuthorizedSharedAccountCreates = Effect.fn(
+          "Orders.Repository.findActiveManagerAuthorizedSharedAccountCreates",
         )(
           (
-            customerId: OrdersSchema.Row["customerId"],
+            managerId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -222,20 +216,40 @@ export namespace Orders {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${OrdersContract.activePlacedViewName}_creates`)
+                      .$with(
+                        `${getViewName(activeManagerAuthorizedSharedAccountView)}_creates`,
+                      )
                       .as(
                         tx
-                          .select()
-                          .from(activeView)
+                          .selectDistinctOn(
+                            [
+                              activeManagerAuthorizedSharedAccountView.id,
+                              activeManagerAuthorizedSharedAccountView.tenantId,
+                            ],
+                            Struct.omit(
+                              getViewSelectedFields(
+                                activeManagerAuthorizedSharedAccountView,
+                              ),
+                              "authorizedManagerId",
+                            ),
+                          )
+                          .from(activeManagerAuthorizedSharedAccountView)
                           .where(
                             and(
-                              eq(activeView.customerId, customerId),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeManagerAuthorizedSharedAccountView.managerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagerAuthorizedSharedAccountView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -243,7 +257,14 @@ export namespace Orders {
                           cte.id,
                           tx.select({ id: cte.id }).from(cte).except(qb),
                         ),
-                      );
+                      ) as Promise<
+                      Array<
+                        Omit<
+                          OrdersSchema.ActiveManagerAuthorizedSharedAccountRow,
+                          "authorizedManagerId"
+                        >
+                      >
+                    >;
                   }),
                 ),
               ),
@@ -276,7 +297,10 @@ export namespace Orders {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte) as Promise<Array<OrdersSchema.Row>>;
                   }),
                 ),
               ),
@@ -287,7 +311,7 @@ export namespace Orders {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -314,19 +338,22 @@ export namespace Orders {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte) as Promise<Array<OrdersSchema.ActiveRow>>;
                   }),
                 ),
               ),
         );
 
-        const findActiveUpdatesByBillingAccountManagerId = Effect.fn(
-          "Orders.Repository.findActiveUpdatesByBillingAccountManagerId",
+        const findActiveCustomerPlacedUpdates = Effect.fn(
+          "Orders.Repository.findActiveCustomerPlacedUpdates",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: OrdersSchema.ActiveRow["customerId"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -335,67 +362,58 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountView)}_updates`,
+                        `${OrdersContract.activeCustomerPlacedViewName}_updates`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeManagedBillingAccountView,
+                            activeCustomerPlacedView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activeManagedBillingAccountView.id,
+                                activeCustomerPlacedView.id,
                               ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activeManagedBillingAccountView.version,
+                                  activeCustomerPlacedView.version,
                                 ),
                               ),
                               eq(
                                 metadataTable.tenantId,
-                                activeManagedBillingAccountView.tenantId,
+                                activeCustomerPlacedView.tenantId,
                               ),
                             ),
                           )
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountView.managerId,
-                                managerId,
+                                activeCustomerPlacedView.customerId,
+                                customerId,
                               ),
-                              eq(
-                                activeManagedBillingAccountView.tenantId,
-                                tenantId,
-                              ),
+                              eq(activeCustomerPlacedView.tenantId, tenantId),
                             ),
                           ),
                       );
 
                     return tx
-                      .selectDistinctOn(
-                        [
-                          activeManagedBillingAccountView.id,
-                          activeManagedBillingAccountView.tenantId,
-                        ],
-                        Struct.omit(
-                          cte[getViewName(activeManagedBillingAccountView)],
-                          "authorizedManagerId",
-                        ),
-                      )
-                      .from(cte);
+                      .with(cte)
+                      .select(cte[getViewName(activeCustomerPlacedView)])
+                      .from(cte) as Promise<
+                      Array<OrdersSchema.ActiveCustomerPlacedRow>
+                    >;
                   }),
                 ),
               ),
         );
 
-        const findActiveUpdatesByCustomerId = Effect.fn(
-          "Orders.Repository.findActiveUpdatesByCustomerId",
+        const findActiveManagerAuthorizedSharedAccountUpdates = Effect.fn(
+          "Orders.Repository.findActiveManagerAuthorizedSharedAccountUpdates",
         )(
           (
-            customerId: OrdersSchema.Row["customerId"],
+            managerId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -403,31 +421,76 @@ export namespace Orders {
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
                     const cte = tx
-                      .$with(`${OrdersContract.activePlacedViewName}_updates`)
+                      .$with(
+                        `${getViewName(activeManagerAuthorizedSharedAccountView)}_updates`,
+                      )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
+                            activeManagerAuthorizedSharedAccountView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(
+                                metadataTable.entityId,
+                                activeManagerAuthorizedSharedAccountView.id,
+                              ),
                               not(
                                 eq(
                                   metadataTable.entityVersion,
-                                  activeView.version,
+                                  activeManagerAuthorizedSharedAccountView.version,
                                 ),
                               ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
+                              eq(
+                                metadataTable.tenantId,
+                                activeManagerAuthorizedSharedAccountView.tenantId,
+                              ),
                             ),
                           )
                           .where(
                             and(
-                              eq(activeView.customerId, customerId),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeManagerAuthorizedSharedAccountView.managerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagerAuthorizedSharedAccountView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .selectDistinctOn(
+                        [
+                          cte[
+                            getViewName(
+                              activeManagerAuthorizedSharedAccountView,
+                            )
+                          ].id,
+                          cte[
+                            getViewName(
+                              activeManagerAuthorizedSharedAccountView,
+                            )
+                          ].tenantId,
+                        ],
+                        Struct.omit(
+                          cte[
+                            getViewName(
+                              activeManagerAuthorizedSharedAccountView,
+                            )
+                          ],
+                          "authorizedManagerId",
+                        ),
+                      )
+                      .from(cte) as Promise<
+                      Array<
+                        Omit<
+                          OrdersSchema.ActiveManagerAuthorizedSharedAccountRow,
+                          "authorizedManagerId"
+                        >
+                      >
+                    >;
                   }),
                 ),
               ),
@@ -466,7 +529,7 @@ export namespace Orders {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -489,14 +552,49 @@ export namespace Orders {
               ),
         );
 
-        const findActiveDeletesByBillingAccountManagerId = Effect.fn(
-          "Orders.Repository.findActiveDeletesByBillingAccountManagerId",
+        const findActiveCustomerPlacedDeletes = Effect.fn(
+          "Orders.Repository.findActiveCustomerPlacedDeletes",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: OrdersSchema.ActiveCustomerPlacedRow["customerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
+            tenantId: OrdersSchema.ActiveCustomerPlacedRow["tenantId"],
+          ) =>
+            metadataQb
+              .deletes(
+                getTableName(table),
+                clientViewVersion,
+                clientGroupId,
+                tenantId,
+              )
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: activeCustomerPlacedView.id })
+                        .from(activeCustomerPlacedView)
+                        .where(
+                          and(
+                            eq(activeCustomerPlacedView.customerId, customerId),
+                            eq(activeCustomerPlacedView.tenantId, tenantId),
+                          ),
+                        ),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountDeletes = Effect.fn(
+          "Orders.Repository.findActiveManagerAuthorizedSharedAccountDeletes",
+        )(
+          (
+            managerId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
+            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
+            tenantId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -512,57 +610,22 @@ export namespace Orders {
                       tx
                         .selectDistinctOn(
                           [
-                            activeManagedBillingAccountView.id,
-                            activeManagedBillingAccountView.tenantId,
+                            activeManagerAuthorizedSharedAccountView.id,
+                            activeManagerAuthorizedSharedAccountView.tenantId,
                           ],
-                          { id: activeManagedBillingAccountView.id },
+                          { id: activeManagerAuthorizedSharedAccountView.id },
                         )
-                        .from(activeManagedBillingAccountView)
+                        .from(activeManagerAuthorizedSharedAccountView)
                         .where(
                           and(
                             eq(
-                              activeManagedBillingAccountView.managerId,
+                              activeManagerAuthorizedSharedAccountView.managerId,
                               managerId,
                             ),
                             eq(
-                              activeManagedBillingAccountView.tenantId,
+                              activeManagerAuthorizedSharedAccountView.tenantId,
                               tenantId,
                             ),
-                          ),
-                        ),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveDeletesByCustomerId = Effect.fn(
-          "Orders.Repository.findActiveDeletesByCustomerId",
-        )(
-          (
-            customerId: OrdersSchema.Row["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .where(
-                          and(
-                            eq(activeView.customerId, customerId),
-                            eq(activeView.tenantId, tenantId),
                           ),
                         ),
                     ),
@@ -602,7 +665,10 @@ export namespace Orders {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte) as Promise<Array<OrdersSchema.Row>>;
                   }),
                 ),
               ),
@@ -614,8 +680,8 @@ export namespace Orders {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
-            excludeIds: Array<OrdersSchema.Row["id"]>,
+            tenantId: OrdersSchema.ActiveRow["tenantId"],
+            excludeIds: Array<OrdersSchema.ActiveRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -641,21 +707,24 @@ export namespace Orders {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte) as Promise<Array<OrdersSchema.ActiveRow>>;
                   }),
                 ),
               ),
         );
 
-        const findActiveFastForwardByBillingAccountManagerId = Effect.fn(
-          "Orders.Repository.findActiveFastForwardByBillingAccountManagerId",
+        const findActiveCustomerPlacedFastForward = Effect.fn(
+          "Orders.Repository.findActiveCustomerPlacedFastForward",
         )(
           (
-            managerId: BillingAccountManagerAuthorizationsSchema.Row["managerId"],
+            customerId: OrdersSchema.ActiveCustomerPlacedRow["customerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
-            excludeIds: Array<OrdersSchema.Row["id"]>,
+            tenantId: OrdersSchema.ActiveCustomerPlacedRow["tenantId"],
+            excludeIds: Array<OrdersSchema.ActiveCustomerPlacedRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -669,19 +738,19 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${getViewName(activeManagedBillingAccountView)}_fast_forward`,
+                        `${OrdersContract.activeCustomerPlacedViewName}_fast_forward`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeManagedBillingAccountView,
+                            activeCustomerPlacedView,
                             and(
                               eq(
                                 metadataTable.entityId,
-                                activeManagedBillingAccountView.id,
+                                activeCustomerPlacedView.id,
                               ),
                               notInArray(
-                                activeManagedBillingAccountView.id,
+                                activeCustomerPlacedView.id,
                                 excludeIds,
                               ),
                             ),
@@ -689,43 +758,36 @@ export namespace Orders {
                           .where(
                             and(
                               eq(
-                                activeManagedBillingAccountView.managerId,
-                                managerId,
+                                activeCustomerPlacedView.customerId,
+                                customerId,
                               ),
-                              eq(
-                                activeManagedBillingAccountView.tenantId,
-                                tenantId,
-                              ),
+                              eq(activeCustomerPlacedView.tenantId, tenantId),
                             ),
                           ),
                       );
 
                     return tx
-                      .selectDistinctOn(
-                        [
-                          activeManagedBillingAccountView.id,
-                          activeManagedBillingAccountView.tenantId,
-                        ],
-                        Struct.omit(
-                          cte[getViewName(activeManagedBillingAccountView)],
-                          "authorizedManagerId",
-                        ),
-                      )
-                      .from(cte);
+                      .with(cte)
+                      .select(cte[getViewName(activeCustomerPlacedView)])
+                      .from(cte) as Promise<
+                      Array<OrdersSchema.ActiveCustomerPlacedRow>
+                    >;
                   }),
                 ),
               ),
         );
 
-        const findActiveFastForwardByCustomerId = Effect.fn(
-          "Orders.Repository.findActiveFastForwardByCustomerId",
+        const findActiveManagerAuthorizedSharedAccountFastForward = Effect.fn(
+          "Orders.Repository.findActiveManagerAuthorizedSharedAccountFastForward",
         )(
           (
-            customerId: OrdersSchema.Row["customerId"],
+            managerId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: OrdersSchema.Row["tenantId"],
-            excludeIds: Array<OrdersSchema.Row["id"]>,
+            tenantId: OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
+            excludeIds: Array<
+              OrdersSchema.ActiveManagerAuthorizedSharedAccountRow["id"]
+            >,
           ) =>
             metadataQb
               .fastForward(
@@ -739,26 +801,69 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${OrdersContract.activePlacedViewName}_fast_forward`,
+                        `${getViewName(activeManagerAuthorizedSharedAccountView)}_fast_forward`,
                       )
                       .as(
                         qb
                           .innerJoin(
-                            activeView,
+                            activeManagerAuthorizedSharedAccountView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
-                              notInArray(activeView.id, excludeIds),
+                              eq(
+                                metadataTable.entityId,
+                                activeManagerAuthorizedSharedAccountView.id,
+                              ),
+                              notInArray(
+                                activeManagerAuthorizedSharedAccountView.id,
+                                excludeIds,
+                              ),
                             ),
                           )
                           .where(
                             and(
-                              eq(activeView.customerId, customerId),
-                              eq(activeView.tenantId, tenantId),
+                              eq(
+                                activeManagerAuthorizedSharedAccountView.managerId,
+                                managerId,
+                              ),
+                              eq(
+                                activeManagerAuthorizedSharedAccountView.tenantId,
+                                tenantId,
+                              ),
                             ),
                           ),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .selectDistinctOn(
+                        [
+                          cte[
+                            getViewName(
+                              activeManagerAuthorizedSharedAccountView,
+                            )
+                          ].id,
+                          cte[
+                            getViewName(
+                              activeManagerAuthorizedSharedAccountView,
+                            )
+                          ].tenantId,
+                        ],
+                        Struct.omit(
+                          cte[
+                            getViewName(
+                              activeManagerAuthorizedSharedAccountView,
+                            )
+                          ],
+                          "authorizedManagerId",
+                        ),
+                      )
+                      .from(cte) as Promise<
+                      Array<
+                        Omit<
+                          OrdersSchema.ActiveManagerAuthorizedSharedAccountRow,
+                          "authorizedManagerId"
+                        >
+                      >
+                    >;
                   }),
                 ),
               ),
@@ -770,13 +875,92 @@ export namespace Orders {
             tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             db
-              .useTransaction((tx) =>
+              .useTransaction(
+                (tx) =>
+                  tx
+                    .select()
+                    .from(table)
+                    .where(
+                      and(eq(table.id, id), eq(table.tenantId, tenantId)),
+                    ) as Promise<Array<OrdersSchema.Row>>,
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const findByIdWithWorkflowStatus = Effect.fn(
+          "Orders.Repository.findByIdWithWorkflowStatus",
+        )(
+          (
+            id: OrdersSchema.Row["id"],
+            tenantId: OrdersSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction(
+                (tx) =>
+                  tx
+                    .select({
+                      order: getTableColumns(OrdersSchema.table.definition),
+                      workflowStatus: getTableColumns(
+                        WorkflowStatusesSchema.table.definition,
+                      ),
+                    })
+                    .from(table)
+                    .innerJoin(
+                      WorkflowStatusesSchema.table.definition,
+                      and(
+                        or(
+                          eq(
+                            table.roomWorkflowStatusId,
+                            WorkflowStatusesSchema.table.definition.id,
+                          ),
+                          eq(
+                            table.sharedAccountWorkflowStatusId,
+                            WorkflowStatusesSchema.table.definition.id,
+                          ),
+                        ),
+                        eq(
+                          table.tenantId,
+                          WorkflowStatusesSchema.table.definition.tenantId,
+                        ),
+                      ),
+                    )
+                    .where(
+                      and(eq(table.id, id), eq(table.tenantId, tenantId)),
+                    ) as Promise<
+                    Array<{
+                      order: OrdersSchema.Row;
+                      workflowStatus: WorkflowStatusesSchema.Row;
+                    }>
+                  >,
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const findByWorkflowStatusId = Effect.fn(
+          "Orders.Repository.findByWorkflowStatusId",
+        )(
+          (
+            workflowStatusId: ColumnsContract.EntityId,
+            tenantId: OrdersSchema.Row["tenantId"],
+          ) =>
+            db.useTransaction(
+              (tx) =>
                 tx
                   .select()
                   .from(table)
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
-              )
-              .pipe(Effect.flatMap(Array.head)),
+                  .where(
+                    and(
+                      or(
+                        eq(table.roomWorkflowStatusId, workflowStatusId),
+                        eq(
+                          table.sharedAccountWorkflowStatusId,
+                          workflowStatusId,
+                        ),
+                      ),
+                      eq(table.tenantId, tenantId),
+                    ),
+                  ) as Promise<Array<OrdersSchema.Row>>,
+            ),
         );
 
         const findActiveManagerIds = Effect.fn(
@@ -789,73 +973,22 @@ export namespace Orders {
             db
               .useTransaction((tx) =>
                 tx
-                  .select({ id: UsersSchema.activeView.id })
-                  .from(activeView)
-                  .innerJoin(
-                    BillingAccountManagerAuthorizationsSchema.activeView,
-                    and(
-                      eq(
-                        activeView.billingAccountId,
-                        BillingAccountManagerAuthorizationsSchema.activeView
-                          .billingAccountId,
-                      ),
-                      eq(
-                        activeView.tenantId,
-                        BillingAccountManagerAuthorizationsSchema.activeView
-                          .tenantId,
-                      ),
-                    ),
-                  )
-                  .innerJoin(
-                    UsersSchema.activeView,
-                    and(
-                      eq(
-                        BillingAccountManagerAuthorizationsSchema.activeView
-                          .managerId,
-                        UsersSchema.activeView.id,
-                      ),
-                      eq(
-                        BillingAccountManagerAuthorizationsSchema.activeView
-                          .tenantId,
-                        UsersSchema.activeView.tenantId,
-                      ),
-                    ),
-                  )
+                  .select({
+                    managerId:
+                      activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                  })
+                  .from(activeManagerAuthorizedSharedAccountView)
                   .where(
                     and(
-                      eq(activeView.id, id),
-                      eq(activeView.tenantId, tenantId),
+                      eq(activeManagerAuthorizedSharedAccountView.id, id),
+                      eq(
+                        activeManagerAuthorizedSharedAccountView.tenantId,
+                        tenantId,
+                      ),
                     ),
                   ),
               )
-              .pipe(Effect.map(Array.map(({ id }) => id))),
-        );
-
-        const findStatus = Effect.fn("Orders.Repository.findStatus")(
-          (
-            id: OrdersSchema.Row["id"],
-            tenantId: OrdersSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .select({
-                    status: getTableColumns(WorkflowStatusesSchema.table),
-                  })
-                  .from(table)
-                  .leftJoin(
-                    WorkflowStatusesSchema.table,
-                    and(
-                      eq(table.workflowStatus, WorkflowStatusesSchema.table.id),
-                      eq(table.tenantId, WorkflowStatusesSchema.table.tenantId),
-                    ),
-                  )
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
-              )
-              .pipe(
-                Effect.flatMap(Array.head),
-                Effect.map(({ status }) => status),
-              ),
+              .pipe(Effect.map(Array.map(Struct.get("managerId")))),
         );
 
         const updateById = Effect.fn("Orders.Repository.updateById")(
@@ -865,29 +998,13 @@ export namespace Orders {
             tenantId: OrdersSchema.Row["tenantId"],
           ) =>
             db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set(order)
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
-        const deleteById = Effect.fn("Orders.Repository.deleteById")(
-          (
-            id: OrdersSchema.Row["id"],
-            deletedAt: NonNullable<OrdersSchema.Row["deletedAt"]>,
-            tenantId: OrdersSchema.Row["tenantId"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set({ deletedAt })
-                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
-                  .returning(),
+              .useTransaction(
+                (tx) =>
+                  tx
+                    .update(table)
+                    .set(order)
+                    .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                    .returning() as Promise<Array<OrdersSchema.Row>>,
               )
               .pipe(Effect.flatMap(Array.head)),
         );
@@ -896,23 +1013,24 @@ export namespace Orders {
           create,
           findCreates,
           findActiveCreates,
-          findActiveCreatesByBillingAccountManagerId,
-          findActiveCreatesByCustomerId,
+          findActiveCustomerPlacedCreates,
+          findActiveManagerAuthorizedSharedAccountCreates,
           findUpdates,
           findActiveUpdates,
-          findActiveUpdatesByBillingAccountManagerId,
-          findActiveUpdatesByCustomerId,
+          findActiveCustomerPlacedUpdates,
+          findActiveManagerAuthorizedSharedAccountUpdates,
           findDeletes,
           findActiveDeletes,
-          findActiveDeletesByBillingAccountManagerId,
-          findActiveDeletesByCustomerId,
+          findActiveCustomerPlacedDeletes,
+          findActiveManagerAuthorizedSharedAccountDeletes,
           findFastForward,
           findActiveFastForward,
-          findActiveFastForwardByBillingAccountManagerId,
-          findActiveFastForwardByCustomerId,
+          findActiveCustomerPlacedFastForward,
+          findActiveManagerAuthorizedSharedAccountFastForward,
           findById,
+          findByIdWithWorkflowStatus,
+          findByWorkflowStatusId,
           findActiveManagerIds,
-          findStatus,
           updateById,
         } as const;
       }),
@@ -932,10 +1050,12 @@ export namespace Orders {
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository.findById(id, principal.tenantId).pipe(
-                  Effect.map(({ customerId }) => customerId),
-                  Effect.map(Equal.equals(principal.userId)),
-                ),
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("customerId")),
+                    Effect.map(Equal.equals(principal.userId)),
+                  ),
               ),
           }),
         );
@@ -945,10 +1065,12 @@ export namespace Orders {
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
-                repository.findById(id, principal.tenantId).pipe(
-                  Effect.map(({ managerId }) => managerId),
-                  Effect.map(Equal.equals(principal.userId)),
-                ),
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("managerId")),
+                    Effect.map(Equal.equals(principal.userId)),
+                  ),
               ),
           }),
         );
@@ -971,8 +1093,8 @@ export namespace Orders {
           }),
         );
 
-        const hasActiveManagerAuthorization = DataAccessContract.makePolicy(
-          OrdersContract.hasActiveManagerAuthorization,
+        const isManagerAuthorized = DataAccessContract.makePolicy(
+          OrdersContract.isAuthorizedManager,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
@@ -983,65 +1105,93 @@ export namespace Orders {
           }),
         );
 
-        const canEdit = DataAccessContract.makePolicy(
-          OrdersContract.canEdit,
+        const isEditable = DataAccessContract.makePolicy(
+          OrdersContract.isEditable,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
-                  .findStatus(id, principal.tenantId)
+                  .findByIdWithWorkflowStatus(id, principal.tenantId)
                   .pipe(
-                    Effect.map((status) =>
-                      status !== null
-                        ? !(
-                            status.type === "InProgress" ||
-                            status.type === "Completed"
-                          )
-                        : false,
+                    Effect.flatMap(({ order, workflowStatus }) =>
+                      Effect.gen(function* () {
+                        const decode = Schema.decodeUnknown(
+                          OrdersContract.DataTransferObject,
+                        );
+
+                        return {
+                          order: yield* decode(order),
+                          workflowStatus,
+                        };
+                      }),
+                    ),
+                    Effect.map(({ order, workflowStatus }) =>
+                      Match.value(order).pipe(
+                        Match.when(
+                          { sharedAccountWorkflowStatusId: Match.null },
+                          (order) =>
+                            !order.approvedAt &&
+                            !(
+                              workflowStatus.type === "InProgress" ||
+                              workflowStatus.type === "Completed"
+                            ),
+                        ),
+                        Match.orElse(() => true),
+                      ),
                     ),
                   ),
               ),
           }),
         );
 
-        const canApprove = DataAccessContract.makePolicy(
-          OrdersContract.canApprove,
+        const isApprovable = DataAccessContract.makePolicy(
+          OrdersContract.isApprovable,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
-                  .findStatus(id, principal.tenantId)
-                  .pipe(Effect.map((status) => status?.type === "Review")),
+                  .findByIdWithWorkflowStatus(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      ({ order }) =>
+                        order.sharedAccountWorkflowStatusId !== null,
+                    ),
+                  ),
               ),
           }),
         );
 
-        const canTransition = DataAccessContract.makePolicy(
-          OrdersContract.canTransition,
+        const isTransitionable = DataAccessContract.makePolicy(
+          OrdersContract.isTransitionable,
           Effect.succeed({
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
-                  .findStatus(id, principal.tenantId)
-                  .pipe(Effect.map((status) => status?.type !== "Completed")),
+                  .findByIdWithWorkflowStatus(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(
+                      ({ workflowStatus }) =>
+                        workflowStatus.type !== "Completed",
+                    ),
+                  ),
               ),
           }),
         );
 
-        const canDelete = DataAccessContract.makePolicy(
-          OrdersContract.canDelete,
-          canEdit,
+        const isDeletable = DataAccessContract.makePolicy(
+          OrdersContract.isDeletable,
+          isEditable,
         );
 
         return {
           isCustomer,
           isManager,
           isCustomerOrManager,
-          hasActiveManagerAuthorization,
-          canEdit,
-          canApprove,
-          canTransition,
-          canDelete,
+          isManagerAuthorized,
+          isEditable,
+          isApprovable,
+          isTransitionable,
+          isDeletable,
         } as const;
       }),
     },
@@ -1054,7 +1204,7 @@ export namespace Orders {
       dependencies: [
         Repository.Default,
         Users.Policies.Default,
-        BillingAccounts.Policies.Default,
+        SharedAccounts.Policies.Default,
         Policies.Default,
       ],
       effect: Effect.gen(function* () {
@@ -1062,39 +1212,49 @@ export namespace Orders {
 
         const isSelf = yield* Users.Policies.isSelf;
 
-        const hasActiveCustomerAuthorization =
-          yield* BillingAccounts.Policies.hasActiveCustomerAuthorization;
-        const hasActiveManagerAuthorization =
-          yield* BillingAccounts.Policies.hasActiveManagerAuthorization;
+        const isSharedAccountCustomerAuthorized =
+          yield* SharedAccounts.Policies.isCustomerAuthorized;
+        const isSharedAccountManagerAuthorized =
+          yield* SharedAccounts.Policies.isManagerAuthorized;
 
         const isCustomerOrManager = yield* Policies.isCustomerOrManager;
-        const canEdit = yield* Policies.canEdit;
-        const hasOrderActiveManagerAuthorization =
-          yield* Policies.hasActiveManagerAuthorization;
-        const canApprove = yield* Policies.canApprove;
-        const canTransition = yield* Policies.canTransition;
-        const canDelete = yield* Policies.canDelete;
+        const isEditable = yield* Policies.isEditable;
+        const isManagerAuthorized = yield* Policies.isManagerAuthorized;
+        const isApprovable = yield* Policies.isApprovable;
+        const isTransitionable = yield* Policies.isTransitionable;
+        const isDeletable = yield* Policies.isDeletable;
 
         const create = DataAccessContract.makeMutation(
           OrdersContract.create,
           Effect.succeed({
-            makePolicy: ({ billingAccountId, customerId }) =>
-              AccessControl.every(
-                AccessControl.some(
-                  AccessControl.permission("orders:create"),
-                  isSelf.make({ id: customerId }),
-                  hasActiveManagerAuthorization.make({ id: billingAccountId }),
+            makePolicy: (order) =>
+              AccessControl.some(
+                AccessControl.permission("orders:create"),
+                Match.value(order).pipe(
+                  Match.when({ sharedAccountId: Match.string }, (order) =>
+                    AccessControl.every(
+                      AccessControl.some(
+                        isSelf.make({ id: order.customerId }),
+                        isSharedAccountManagerAuthorized.make({
+                          id: order.sharedAccountId,
+                        }),
+                      ),
+                      isSharedAccountCustomerAuthorized.make({
+                        id: order.sharedAccountId,
+                        customerId: order.customerId,
+                      }),
+                    ),
+                  ),
+                  Match.orElse((order) =>
+                    isSelf.make({ id: order.customerId }),
+                  ),
                 ),
-                hasActiveCustomerAuthorization.make({
-                  id: billingAccountId,
-                  customerId,
-                }),
               ),
             mutator: (order, { tenantId }) =>
               // TODO: Verify workflow status is correct
               repository
                 .create({ ...order, tenantId })
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(Effect.map(({ version: _, ...dto }) => dto)),
           }),
         );
 
@@ -1105,14 +1265,17 @@ export namespace Orders {
               AccessControl.every(
                 AccessControl.some(
                   AccessControl.permission("orders:update"),
-                  isCustomerOrManager.make({ id }),
+                  AccessControl.some(
+                    isCustomerOrManager.make({ id }),
+                    isManagerAuthorized.make({ id }),
+                  ),
                 ),
-                canEdit.make({ id }),
+                isEditable.make({ id }),
               ),
-            mutator: (order, { tenantId }) =>
+            mutator: (order, session) =>
               repository
-                .updateById(order.id, order, tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .updateById(order.id, order, session.tenantId)
+                .pipe(Effect.map(({ version: _, ...dto }) => dto)),
           }),
         );
 
@@ -1123,48 +1286,92 @@ export namespace Orders {
               AccessControl.every(
                 AccessControl.some(
                   AccessControl.permission("orders:update"),
-                  hasOrderActiveManagerAuthorization.make({ id }),
+                  isManagerAuthorized.make({ id }),
                 ),
-                canApprove.make({ id }),
+                isApprovable.make({ id }),
               ),
             mutator: ({ id, ...order }, session) =>
               repository
-                .updateById(id, order, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .updateById(
+                  id,
+                  { ...order, sharedAccountWorkflowStatusId: null },
+                  session.tenantId,
+                )
+                .pipe(Effect.map(({ version: _, ...dto }) => dto)),
           }),
         );
 
-        const transition = DataAccessContract.makeMutation(
-          OrdersContract.transition,
+        const transitionRoomWorkflowStatus = DataAccessContract.makeMutation(
+          OrdersContract.transitionRoomWorkflowStatus,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
                 AccessControl.permission("orders:update"),
-                canTransition.make({ id }),
+                isTransitionable.make({ id }),
               ),
             mutator: ({ id, ...order }, session) =>
               repository
-                .updateById(id, order, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .updateById(
+                  id,
+                  { ...order, sharedAccountWorkflowStatusId: null },
+                  session.tenantId,
+                )
+                .pipe(Effect.map(({ version: _, ...dto }) => dto)),
           }),
         );
+
+        const transitionSharedAccountWorkflowStatus =
+          DataAccessContract.makeMutation(
+            OrdersContract.transitionSharedAccountWorkflowStatus,
+            Effect.succeed({
+              makePolicy: ({ id }) =>
+                AccessControl.every(
+                  AccessControl.some(
+                    AccessControl.permission("orders:update"),
+                    isManagerAuthorized.make({ id }),
+                  ),
+                  isTransitionable.make({ id }),
+                ),
+              mutator: ({ id, ...order }, session) =>
+                repository
+                  .updateById(
+                    id,
+                    { ...order, roomWorkflowStatusId: null },
+                    session.tenantId,
+                  )
+                  .pipe(Effect.map(({ version: _, ...dto }) => dto)),
+            }),
+          );
 
         const delete_ = DataAccessContract.makeMutation(
           OrdersContract.delete_,
           Effect.succeed({
             makePolicy: ({ id }) =>
               AccessControl.every(
-                AccessControl.permission("orders:delete"),
-                canDelete.make({ id }),
+                AccessControl.some(
+                  AccessControl.permission("orders:delete"),
+                  AccessControl.some(
+                    isCustomerOrManager.make({ id }),
+                    isManagerAuthorized.make({ id }),
+                  ),
+                ),
+                isDeletable.make({ id }),
               ),
             mutator: ({ id, deletedAt }, session) =>
               repository
                 .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(Effect.map(({ version: _, ...dto }) => dto)),
           }),
         );
 
-        return { create, edit, approve, transition, delete: delete_ } as const;
+        return {
+          create,
+          edit,
+          approve,
+          transitionRoomWorkflowStatus,
+          transitionSharedAccountWorkflowStatus,
+          delete: delete_,
+        } as const;
       }),
     },
   ) {}

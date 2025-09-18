@@ -11,7 +11,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import { Array, DateTime, Effect } from "effect";
+import { Array, DateTime, Effect, Struct } from "effect";
 
 import { Database } from "../database2";
 import { Constants } from "../utils/constants";
@@ -23,7 +23,7 @@ import {
 } from "./schemas";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { SyncTableName } from "../database2/tables";
+import type { Models } from "../models2";
 
 export namespace Replicache {
   export class ClientGroupsRepository extends Effect.Service<ClientGroupsRepository>()(
@@ -32,7 +32,7 @@ export namespace Replicache {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientGroupsSchema.table;
+        const table = ReplicacheClientGroupsSchema.table.definition;
 
         const upsert = Effect.fn("Replicache.ClientGroupsRepository.upsert")(
           (clientGroup: InferInsertModel<typeof table>) =>
@@ -81,32 +81,27 @@ export namespace Replicache {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const deleteExpired = Effect.fn(
-          "Replicache.ClientGroupsRepository.deleteExpired",
-        )(() =>
-          DateTime.now.pipe(
-            Effect.map(
-              DateTime.subtractDuration(Constants.REPLICACHE_LIFETIME),
-            ),
-            Effect.flatMap((expiredAt) =>
-              db.useTransaction((tx) =>
-                tx
-                  .delete(table)
-                  .where(
-                    inArray(
-                      table.id,
-                      tx
-                        .select({ id: table.id })
-                        .from(table)
-                        .where(lt(table.updatedAt, expiredAt))
-                        .orderBy(asc(table.updatedAt))
-                        .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
-                    ),
-                  )
-                  .returning(),
-              ),
+        const deleteExpired = DateTime.now.pipe(
+          Effect.map(DateTime.subtractDuration(Constants.REPLICACHE_LIFETIME)),
+          Effect.flatMap((expiredAt) =>
+            db.useTransaction((tx) =>
+              tx
+                .delete(table)
+                .where(
+                  inArray(
+                    table.id,
+                    tx
+                      .select({ id: table.id })
+                      .from(table)
+                      .where(lt(table.updatedAt, expiredAt))
+                      .orderBy(asc(table.updatedAt))
+                      .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                  ),
+                )
+                .returning(),
             ),
           ),
+          Effect.withSpan("Replicache.ClientGroupsRepository.deleteExpired"),
         );
 
         return { upsert, findByIdForUpdate, deleteExpired } as const;
@@ -120,7 +115,7 @@ export namespace Replicache {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientsSchema.table;
+        const table = ReplicacheClientsSchema.table.definition;
 
         const upsert = Effect.fn("Replicache.ClientsRepository.upsert")(
           (client: InferInsertModel<typeof table>) =>
@@ -229,7 +224,7 @@ export namespace Replicache {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientViewsSchema.table;
+        const table = ReplicacheClientViewsSchema.table.definition;
 
         const upsert = Effect.fn("Replicache.ClientViewsRepository.upsert")(
           (clientView: InferInsertModel<typeof table>) =>
@@ -301,7 +296,7 @@ export namespace Replicache {
               )
               .pipe(
                 Effect.flatMap(Array.head),
-                Effect.map(({ version }) => version ?? 0),
+                Effect.map(Struct.get("version")),
               ),
         );
 
@@ -346,7 +341,7 @@ export namespace Replicache {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientViewMetadataSchema.table;
+        const table = ReplicacheClientViewMetadataSchema.table.definition;
 
         const upsertMany = Effect.fn(
           "Replicache.ClientViewMetadata.upsertMany",
@@ -407,12 +402,12 @@ export namespace Replicache {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientViewMetadataSchema.table;
+        const table = ReplicacheClientViewMetadataSchema.table.definition;
 
         const creates = Effect.fn(
           "Replicache.ClientViewMetadataQueryBuilder.creates",
         )(
-          <TEntity extends SyncTableName>(
+          <TEntity extends Models.SyncTableName>(
             entity: TEntity,
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
@@ -437,7 +432,7 @@ export namespace Replicache {
         const updates = Effect.fn(
           "Replicache.ClientViewMetadataQueryBuilder.updates",
         )(
-          <TEntity extends SyncTableName>(
+          <TEntity extends Models.SyncTableName>(
             entity: TEntity,
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
             tenantId: ReplicacheClientViewMetadataSchema.Row["tenantId"],
@@ -460,7 +455,7 @@ export namespace Replicache {
         const deletes = Effect.fn(
           "Replicache.ClientViewMetadataQueryBuilder.deletes",
         )(
-          <TEntity extends SyncTableName>(
+          <TEntity extends Models.SyncTableName>(
             entity: TEntity,
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
@@ -491,7 +486,7 @@ export namespace Replicache {
         const fastForward = Effect.fn(
           "Replicache.ClientViewMetadataQueryBuilder.fastForward",
         )(
-          <TEntity extends SyncTableName>(
+          <TEntity extends Models.SyncTableName>(
             entity: TEntity,
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
@@ -517,8 +512,4 @@ export namespace Replicache {
       }),
     },
   ) {}
-
-  // export type ClientViewShape = Effect.Effect<void>;
-
-  // export const makeClientView = () => "";
 }

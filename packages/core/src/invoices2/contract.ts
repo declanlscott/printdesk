@@ -1,7 +1,8 @@
 import { Effect, Schema } from "effect";
 
+import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
-import { TableContract } from "../database2/contract";
+import { TablesContract } from "../tables2/contract";
 
 import type { OrdersContract } from "../orders2/contract";
 import type { InvoicesSchema } from "./schema";
@@ -21,7 +22,7 @@ export namespace InvoicesContract {
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
   )({
-    ...TableContract.Tenant.fields,
+    ...ColumnsContract.Tenant.fields,
     lineItems: LineItem.pipe(Schema.Array),
     status: Schema.Literal(...statuses).pipe(
       Schema.optionalWith({ default: () => "processing" }),
@@ -30,40 +31,41 @@ export namespace InvoicesContract {
       Schema.NullOr,
       Schema.optionalWith({ default: () => null }),
     ),
-    orderId: TableContract.EntityId,
+    orderId: ColumnsContract.EntityId,
   }) {}
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "invoices";
-  export const table = TableContract.Sync<InvoicesSchema.Table>()(
+  export const table = TablesContract.makeTable<InvoicesSchema.Table>()(
     tableName,
     DataTransferObject,
     ["create", "read"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TableContract.View<InvoicesSchema.ActiveView>()(
-    activeViewName,
-    DataTransferObject,
-  );
+  export const activeView =
+    TablesContract.makeView<InvoicesSchema.ActiveView>()(
+      activeViewName,
+      DataTransferObject,
+    );
 
-  export const activeManagedBillingAccountOrderViewName = `active_managed_billing_account_order_${tableName}`;
-  export const activeManagedBillingAccountOrderView =
-    TableContract.View<InvoicesSchema.ActiveManagedBillingAccountOrderView>()(
-      activeManagedBillingAccountOrderViewName,
+  export const activeManagerAuthorizedSharedAccountOrderViewName = `active_manager_authorized_shared_account_order_${tableName}`;
+  export const activeManagerAuthorizedSharedAccountOrderView =
+    TablesContract.makeView<InvoicesSchema.ActiveManagerAuthorizedSharedAccountOrderView>()(
+      activeManagerAuthorizedSharedAccountOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedManagerId: TableContract.EntityId,
+        authorizedManagerId: ColumnsContract.EntityId,
       }),
     );
 
-  export const activePlacedOrderViewName = `active_placed_order_${tableName}`;
-  export const activePlacedOrderView =
-    TableContract.View<InvoicesSchema.ActivePlacedOrderView>()(
-      activePlacedOrderViewName,
+  export const activeCustomerPlacedOrderViewName = `active_customer_placed_order_${tableName}`;
+  export const activeCustomerPlacedOrderView =
+    TablesContract.makeView<InvoicesSchema.ActiveCustomerPlacedOrderView>()(
+      activeCustomerPlacedOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        customerId: TableContract.EntityId,
+        customerId: ColumnsContract.EntityId,
       }),
     );
 

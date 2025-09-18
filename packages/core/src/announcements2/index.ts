@@ -29,11 +29,12 @@ export namespace Announcements {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = AnnouncementsSchema.table;
+        const table = AnnouncementsSchema.table.definition;
         const activeView = AnnouncementsSchema.activeView;
 
         const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable = ReplicacheClientViewMetadataSchema.table;
+        const metadataTable =
+          ReplicacheClientViewMetadataSchema.table.definition;
 
         const create = Effect.fn("Announcements.Repository.create")(
           (announcement: InferInsertModel<AnnouncementsSchema.Table>) =>
@@ -73,6 +74,7 @@ export namespace Announcements {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -92,7 +94,7 @@ export namespace Announcements {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: AnnouncementsSchema.Row["tenantId"],
+            tenantId: AnnouncementsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .creates(
@@ -114,6 +116,7 @@ export namespace Announcements {
                       );
 
                     return tx
+                      .with(cte)
                       .select()
                       .from(cte)
                       .where(
@@ -154,7 +157,10 @@ export namespace Announcements {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -165,7 +171,7 @@ export namespace Announcements {
         )(
           (
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: AnnouncementsSchema.Row["tenantId"],
+            tenantId: AnnouncementsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .updates(getTableName(table), clientGroupId, tenantId)
@@ -192,7 +198,10 @@ export namespace Announcements {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -231,7 +240,7 @@ export namespace Announcements {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: AnnouncementsSchema.Row["tenantId"],
+            tenantId: AnnouncementsSchema.ActiveRow["tenantId"],
           ) =>
             metadataQb
               .deletes(
@@ -287,7 +296,10 @@ export namespace Announcements {
                           .where(eq(table.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getTableName(table)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
                   }),
                 ),
               ),
@@ -299,8 +311,8 @@ export namespace Announcements {
           (
             clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
             clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: AnnouncementsSchema.Row["tenantId"],
-            excludeIds: Array<AnnouncementsSchema.Row["id"]>,
+            tenantId: AnnouncementsSchema.ActiveRow["tenantId"],
+            excludeIds: Array<AnnouncementsSchema.ActiveRow["id"]>,
           ) =>
             metadataQb
               .fastForward(
@@ -326,7 +338,10 @@ export namespace Announcements {
                           .where(eq(activeView.tenantId, tenantId)),
                       );
 
-                    return tx.select(cte[getViewName(activeView)]).from(cte);
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
                   }),
                 ),
               ),

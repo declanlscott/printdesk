@@ -58,16 +58,16 @@ export namespace Products {
         ) =>
           repository.findAll.pipe(
             Effect.map(
-              Array.filterMap((product) =>
-                Equal.equals(product.roomId, roomId)
-                  ? Option.some(base.deleteById(product.id))
+              Array.filterMap((p) =>
+                Equal.equals(p.roomId, roomId)
+                  ? Option.some(base.deleteById(p.id))
                   : Option.none(),
               ),
             ),
             Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
           );
 
-        return { ...base, updateByRoomId, deleteByRoomId };
+        return { ...base, updateByRoomId, deleteByRoomId } as const;
       }),
     },
   ) {}

@@ -23,6 +23,7 @@ import {
 
 import type { ColumnsContract } from "../columns2/contract";
 import type { SharedAccountManagerAuthorizationsContract } from "../shared-accounts2/contracts";
+import type { RoomWorkflowsContract } from "./contracts";
 
 export namespace RoomWorkflows {
   export class ReadRepository extends Effect.Service<ReadRepository>()(
@@ -46,12 +47,47 @@ export namespace RoomWorkflows {
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([
-        Models.SyncTables.roomWorkflows,
-        ReadRepository,
-      ]).pipe(
-        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
-      ),
+      effect: Effect.gen(function* () {
+        const table = yield* Models.SyncTables.roomWorkflows;
+        const repository = yield* ReadRepository;
+        const base = yield* Replicache.makeWriteRepository(table, repository);
+
+        const updateByRoomId = (
+          roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
+          roomWorkflow: Partial<
+            Omit<
+              RoomWorkflowsContract.DataTransferObject,
+              "id" | "roomId" | "tenantId"
+            >
+          >,
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((rw) =>
+                Equal.equals(rw.roomId, roomId)
+                  ? Option.some(base.updateById(rw.id, () => roomWorkflow))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
+
+        const deleteByRoomId = (
+          roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((rw) =>
+                Equal.equals(rw.roomId, roomId)
+                  ? Option.some(base.deleteById(rw.id))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
+
+        return { ...base, updateByRoomId, deleteByRoomId } as const;
+      }),
     },
   ) {}
 }

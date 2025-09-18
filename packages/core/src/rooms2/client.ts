@@ -79,7 +79,7 @@ export namespace Rooms {
           RoomsContract.edit,
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, ...room }) => repository.updateById(id, room),
+            mutator: ({ id, ...room }) => repository.updateById(id, () => room),
           }),
         );
 
@@ -88,7 +88,10 @@ export namespace Rooms {
           Effect.succeed({
             makePolicy: () => AccessControl.permission("rooms:update"),
             mutator: ({ id, updatedAt }) =>
-              repository.updateById(id, { status: "published", updatedAt }),
+              repository.updateById(id, () => ({
+                status: "published",
+                updatedAt,
+              })),
           }),
         );
 
@@ -99,7 +102,10 @@ export namespace Rooms {
             mutator: ({ id, updatedAt }) =>
               Effect.all(
                 Tuple.make(
-                  repository.updateById(id, { status: "draft", updatedAt }),
+                  repository.updateById(id, () => ({
+                    status: "draft",
+                    updatedAt,
+                  })),
                   productsRepository.updateByRoomId(id, {
                     status: "draft",
                     updatedAt,
@@ -117,14 +123,16 @@ export namespace Rooms {
             mutator: ({ id, deletedAt }) =>
               Effect.all(
                 Tuple.make(
-                  repository.updateById(id, { deletedAt }).pipe(
-                    AccessControl.enforce(
-                      AccessControl.permission("rooms:read"),
+                  repository
+                    .updateById(id, () => ({ deletedAt }))
+                    .pipe(
+                      AccessControl.enforce(
+                        AccessControl.permission("rooms:read"),
+                      ),
+                      Effect.catchTag("AccessDeniedError", () =>
+                        repository.deleteById(id),
+                      ),
                     ),
-                    Effect.catchTag("AccessDeniedError", () =>
-                      repository.deleteById(id),
-                    ),
-                  ),
                   workflowsRepository.updateByRoomId(id, { deletedAt }).pipe(
                     AccessControl.enforce(
                       AccessControl.permission("room_workflows:read"),
@@ -154,7 +162,7 @@ export namespace Rooms {
             mutator: ({ id }) =>
               Effect.all(
                 Tuple.make(
-                  repository.updateById(id, { deletedAt: null }),
+                  repository.updateById(id, () => ({ deletedAt: null })),
                   workflowsRepository.updateByRoomId(id, { deletedAt: null }),
                   productsRepository.updateByRoomId(id, { deletedAt: null }),
                 ),

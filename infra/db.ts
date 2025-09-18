@@ -1,5 +1,5 @@
 import { DsqlSigner } from "@aws-sdk/dsql-signer";
-import { Schema } from "effect";
+import { Schema, Struct } from "effect";
 
 import * as custom from "./custom";
 import { aws_, isProdStage } from "./misc";
@@ -42,7 +42,7 @@ const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
       ),
       Schema.Literal(true),
       {
-        decode: ({ success }) => success,
+        decode: Struct.get("success"),
         encode: (success) => ({ success }),
         strict: true,
       },

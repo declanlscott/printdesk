@@ -162,6 +162,9 @@ importers:
       '@azure/msal-node':
         specifier: ^2.16.3
         version: 2.16.3
+      '@effect-aws/dsql':
+        specifier: ^0.1.0
+        version: 0.1.0(effect@3.17.13)
       '@microsoft/microsoft-graph-client':
         specifier: ^3.0.7
         version: 3.0.7
@@ -824,6 +827,11 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@effect-aws/dsql@0.1.0':
+    resolution: {integrity: sha512-Xo1K5/KklMR0UrvBzSgQGulgWmgvxONItuhNtHZ5Oq9Iqix1xrBMk+eO6PT2YwKN5cFz4zfIZZYFuoHmvKxRSg==}
+    peerDependencies:
+      effect: '>=3.15.5 <4.0.0'
 
   '@effect-aws/lambda@1.5.1':
     resolution: {integrity: sha512-fA8bd1dypjCMGr94NpIVVPrpLRECY4Sgr8WRsKo6On/NAZexLIvT0m6oU27HT986ydwzx88ypjYm0E0nf0TiHQ==}
@@ -7271,6 +7279,13 @@ snapshots:
   '@cloudflare/workers-types@4.20250913.0': {}
 
   '@drizzle-team/brocli@0.10.2': {}
+
+  '@effect-aws/dsql@0.1.0(effect@3.17.13)':
+    dependencies:
+      '@aws-sdk/dsql-signer': 3.888.0
+      effect: 3.17.13
+    transitivePeerDependencies:
+      - aws-crt
 
   '@effect-aws/lambda@1.5.1(@effect/platform-node-shared@0.47.0(@effect/cluster@0.46.2(@effect/platform@0.90.9(effect@3.17.13))(@effect/rpc@0.68.2(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(@effect/workflow@0.8.1(@effect/platform@0.90.9(effect@3.17.13))(@effect/rpc@0.68.2(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(effect@3.17.13))(effect@3.17.13))(@effect/platform@0.90.9(effect@3.17.13))(@effect/rpc@0.68.2(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(@effect/sql@0.44.0(@effect/experimental@0.54.3(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13))(effect@3.17.13))(@effect/platform@0.90.9(effect@3.17.13))(effect@3.17.13)':
     dependencies:

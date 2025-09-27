@@ -19,6 +19,7 @@
     "@aws-sdk/s3-request-presigner": "^3.888.0",
     "@aws-sdk/util-format-url": "^3.887.0",
     "@azure/msal-node": "^2.16.3",
+    "@effect-aws/dsql": "^0.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@msgpack/msgpack": "^3.1.2",
     "@smithy/protocol-http": "^5.2.1",

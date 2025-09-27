@@ -16,7 +16,7 @@ import {
 } from "effect";
 import { DatabaseError, Pool } from "pg";
 
-import { Dsql } from "../aws2";
+import { DsqlSigner } from "../aws2";
 import { Sst } from "../sst";
 import { Constants } from "../utils/constants";
 
@@ -91,22 +91,12 @@ export namespace Database {
     {
       accessors: true,
       dependencies: [
-        Layer.unwrapEffect(
-          Effect.gen(function* () {
-            const dsqlCluster = yield* Sst.Resource.DsqlCluster;
-            const aws = yield* Sst.Resource.Aws;
-
-            return Dsql.Signer.Default({
-              hostname: dsqlCluster.host,
-              region: aws.region,
-            });
-          }),
-        ).pipe(Layer.provideMerge(Sst.Resource.layer)),
+        DsqlSigner.layer.pipe(Layer.provideMerge(Sst.Resource.layer)),
         Logger.Default,
       ],
       scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster;
-        const dsqlSigner = yield* Dsql.Signer;
+        const dsqlSigner = yield* DsqlSigner.Tag;
 
         const pool = yield* Effect.acquireRelease(
           Effect.sync(
@@ -117,7 +107,10 @@ export namespace Database {
                 port: dsqlCluster.port,
                 ssl: dsqlCluster.ssl,
                 user: dsqlCluster.user,
-                password: () => dsqlSigner.getDbConnectAdminAuthToken(),
+                password: () =>
+                  dsqlSigner
+                    .getDbConnectAdminAuthToken()
+                    .pipe(DsqlSigner.runtime.runPromise),
               }),
           ),
           (pool) => Effect.promise(() => pool.end()),

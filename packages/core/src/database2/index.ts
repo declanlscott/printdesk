@@ -305,11 +305,7 @@ export namespace Database {
                   Effect.succeed(delay).pipe(
                     Effect.tap(() =>
                       Effect.logInfo(
-                        `[Database]: Transaction attempt #${
-                          attempt + 1
-                        } failed, retrying again in ${Duration.toMillis(
-                          delay,
-                        )}ms ...`,
+                        `[Database]: Transaction attempt #${attempt + 1} failed, retrying again in ${delay.pipe(Duration.format)} ...`,
                       ),
                     ),
                   ),

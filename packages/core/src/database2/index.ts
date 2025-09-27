@@ -301,30 +301,29 @@ export namespace Database {
               ).pipe(
                 Schedule.intersect(Schedule.exponential(Duration.millis(10))),
                 Schedule.jittered,
-                Schedule.modifyDelayEffect(([attempt], delay) =>
-                  Effect.succeed(delay).pipe(
-                    Effect.tap(() =>
-                      Effect.logInfo(
-                        `[Database]: Transaction attempt #${attempt + 1} failed, retrying again in ${delay.pipe(Duration.format)} ...`,
-                      ),
-                    ),
-                  ),
+                Schedule.repetitions,
+                Schedule.modifyDelayEffect((attempt, delay) =>
+                  Effect.logInfo(
+                    `[Database]: Transaction attempt #${attempt + 1} failed, retrying again in ${delay.pipe(Duration.format)} ...`,
+                  ).pipe(Effect.as(delay)),
                 ),
               );
 
-              return yield* Effect.retry(transaction, {
-                while: (error) =>
-                  Predicate.isTagged(
-                    error,
-                    "@printdesk/core/database/TransactionError",
-                  ) &&
-                  error.cause instanceof DatabaseError &&
-                  (error.cause.code ===
-                    Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
-                    error.cause.code ===
-                      Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE),
-                schedule,
-              });
+              return yield* transaction.pipe(
+                Effect.retry({
+                  while: (error) =>
+                    Predicate.isTagged(
+                      error,
+                      "@printdesk/core/database/TransactionError",
+                    ) &&
+                    error.cause instanceof DatabaseError &&
+                    (error.cause.code ===
+                      Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
+                      error.cause.code ===
+                        Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE),
+                  schedule,
+                }),
+              );
             }),
         );
 

@@ -9,15 +9,15 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
-    "@aws-sdk/client-dynamodb": "^3.888.0",
-    "@aws-sdk/client-eventbridge": "^3.888.0",
-    "@aws-sdk/client-s3": "^3.888.0",
-    "@aws-sdk/client-sqs": "^3.888.0",
-    "@aws-sdk/client-ssm": "^3.888.0",
-    "@aws-sdk/cloudfront-signer": "^3.887.0",
-    "@aws-sdk/lib-dynamodb": "^3.888.0",
-    "@aws-sdk/s3-request-presigner": "^3.888.0",
-    "@aws-sdk/util-format-url": "^3.887.0",
+    "@aws-sdk/client-dynamodb": "^3.896.0",
+    "@aws-sdk/client-eventbridge": "^3.896.0",
+    "@aws-sdk/client-s3": "^3.896.0",
+    "@aws-sdk/client-sqs": "^3.896.0",
+    "@aws-sdk/client-ssm": "^3.896.0",
+    "@aws-sdk/cloudfront-signer": "^3.893.0",
+    "@aws-sdk/lib-dynamodb": "^3.896.0",
+    "@aws-sdk/s3-request-presigner": "^3.896.0",
+    "@aws-sdk/util-format-url": "^3.893.0",
     "@azure/msal-node": "^2.16.3",
     "@effect-aws/dsql": "^0.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -25,12 +25,12 @@
     "@smithy/protocol-http": "^5.2.1",
     "@smithy/signature-v4": "^5.2.1",
     "fast-xml-parser": "^4.5.3",
-    "nanoid": "^5.1.5",
+    "nanoid": "^5.1.6",
     "pg": "^8.16.3"
   },
   "devDependencies": {
     "@smithy/types": "^4.5.0",
     "@types/pg": "^8.15.5",
-    "drizzle-kit": "^0.31.4"
+    "drizzle-kit": "^0.31.5"
   }
 }

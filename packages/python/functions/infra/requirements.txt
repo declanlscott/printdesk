@@ -1,10 +1,10 @@
-aws-lambda-powertools[parser,tracer]~=3.19.0
-boto3~=1.40.11
-pulumi~=3.190.0
-pulumi-aws~=7.4.0
-pulumi-cloudflare~=6.5.0
+aws-lambda-powertools[parser,tracer]~=3.20.0
+boto3~=1.40.40
+pulumi~=3.198.0
+pulumi-aws~=7.7.0
+pulumi-cloudflare~=6.9.1
 pulumi-random~=4.18.3
-requests~=2.32.4
-git+https://github.com/sst/sst.git@v3.17.10#subdirectory=sdk/python
+requests~=2.32.5
+git+https://github.com/sst/sst.git@v3.17.14#subdirectory=sdk/python
 types-boto3-appsync~=1.40.0
 types-boto3-sts~=1.40.0

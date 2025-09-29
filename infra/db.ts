@@ -1,13 +1,18 @@
-import { DsqlSigner } from "@aws-sdk/dsql-signer";
 import { Schema, Struct } from "effect";
 
-import * as custom from "./custom";
+import * as lib from "./lib";
 import { aws_, isProdStage } from "./misc";
 import { calculateHash, normalizePath } from "./utils";
 
-export const dsqlCluster = new custom.aws.Dsql.Cluster(
+export const dsqlCluster = new lib.aws.DsqlCluster(
   "DsqlCluster",
-  { deletionProtectionEnabled: isProdStage },
+  {
+    tags: {
+      "sst:app": $app.name,
+      "sst:stage": $app.stage,
+    },
+    deletionProtectionEnabled: isProdStage,
+  },
   { retainOnDelete: isProdStage },
 );
 
@@ -30,7 +35,7 @@ export const dbMigratorInvocation = new aws.lambda.Invocation(
   },
 );
 
-const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
+export const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
   Schema.decodeSync(
     Schema.transform(
       Schema.parseJson(
@@ -68,18 +73,6 @@ new sst.x.DevCommand("Studio", {
     command: "pnpm drizzle:studio",
     directory: "packages/core",
     autostart: true,
-  },
-  environment: {
-    DB_PASSWORD: $resolve([
-      dsqlCluster.endpoint,
-      aws.getRegionOutput().name,
-    ]).apply(([hostname, region]) =>
-      new DsqlSigner({
-        hostname,
-        region,
-        expiresIn: 43200, // 12 hours
-      }).getDbConnectAdminAuthToken(),
-    ),
   },
 });
 

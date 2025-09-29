@@ -10,7 +10,6 @@ import {
   cloudfrontRewriteUriFunction,
   cloudfrontS3OriginAccessControl,
 } from "./cdn";
-import * as custom from "./custom";
 import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
 import { domains, tenantDomains, zone } from "./dns";
 import {
@@ -23,6 +22,7 @@ import {
   tenantApiFunctionRole,
   tenantRoles,
 } from "./iam";
+import * as lib from "./lib";
 import {
   appData,
   aws_,
@@ -43,7 +43,7 @@ import { vpc, vpcLink } from "./vpc";
 
 const infraFunctionDir = normalizePath("packages/python/functions/infra");
 
-const infraFunctionResourceCiphertext = new custom.Ciphertext(
+const infraFunctionResourceCiphertext = new lib.Ciphertext(
   "InfraFunctionResourceCiphertext",
   {
     plaintext: $jsonStringify(
@@ -97,7 +97,7 @@ export const infraFunctionImage = new awsx.ecr.Image(
   { dependsOn: [infraFunctionResourceCiphertext] },
 );
 
-const infraFunctionName = new custom.PhysicalName("InfraFunction", { max: 64 });
+const infraFunctionName = new lib.PhysicalName("InfraFunction", { max: 64 });
 
 export const infraFunctionRole = new aws.iam.Role("InfraFunctionRole", {
   assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({

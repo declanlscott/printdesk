@@ -1,14 +1,15 @@
-import { Data, Duration, Effect, Schema } from "effect";
+import { Data, Duration, Effect, Number, Schema } from "effect";
 
 import { Replicache } from ".";
 import { AccessControl } from "../access-control2";
 import { Auth } from "../auth2";
 import { ColumnsContract } from "../columns2/contract";
 import { DataAccess } from "../data-access2";
-import { Mutations } from "../data-access2/functions";
+import { DataAccessProcedures } from "../data-access2/procedures";
 import { Database } from "../database2";
 import { ReplicacheContract } from "./contract";
 import { ReplicacheClientGroupsModel, ReplicacheClientsModel } from "./models";
+import { ReplicacheNotifier } from "./notifier";
 
 export class PastMutationError extends Data.TaggedError("PastMutationError")<{
   readonly mutationId: typeof ReplicacheContract.Mutation.Type.id;
@@ -25,8 +26,8 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
       Database.TransactionManager.Default,
       Replicache.ClientGroupsRepository.Default,
       Replicache.ClientsRepository.Default,
-      Mutations.Default,
       DataAccess.ServerMutations.Default,
+      DataAccessProcedures.Mutations.Default,
     ],
     effect: Effect.gen(function* () {
       const { userId, tenantId } = yield* Auth.Session;
@@ -35,11 +36,160 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
       const clientGroupsRepository = yield* Replicache.ClientGroupsRepository;
       const clientsRepository = yield* Replicache.ClientsRepository;
 
-      const mutations = yield* Mutations;
       const dispatcher = yield* DataAccess.ServerMutations.dispatcher;
 
+      const decode = yield* DataAccessProcedures.Mutations.Replicache.pipe(
+        Effect.map(Schema.encodedSchema),
+        Effect.map(Schema.decodeUnknown),
+      );
+
+      const processMutation = (
+        clientGroupId: ReplicacheContract.PushRequestV1["clientGroupID"],
+        mutation: ReplicacheContract.MutationV1,
+        errorMode = false,
+      ) =>
+        decode(mutation).pipe(
+          Effect.flatMap((mutation) =>
+            // 2: Begin transaction
+            db.withTransaction(() =>
+              Effect.gen(function* () {
+                const [clientGroup, client] = yield* Effect.all(
+                  [
+                    // 3: Get client group
+                    clientGroupsRepository
+                      .findByIdForUpdate(clientGroupId, tenantId)
+                      .pipe(
+                        Effect.catchTag("NoSuchElementException", () =>
+                          Effect.succeed(
+                            ReplicacheClientGroupsModel.Record.make({
+                              id: clientGroupId,
+                              tenantId,
+                              userId,
+                            }),
+                          ),
+                        ),
+                      ),
+                    // 5: Get client
+                    clientsRepository
+                      .findByIdForUpdate(mutation.clientID, tenantId)
+                      .pipe(
+                        Effect.catchTag("NoSuchElementException", () =>
+                          Effect.succeed(
+                            ReplicacheClientsModel.Record.make({
+                              id: mutation.clientID,
+                              tenantId,
+                              clientGroupId,
+                            }),
+                          ),
+                        ),
+                      ),
+                  ],
+                  { concurrency: "unbounded" },
+                );
+
+                // 4: Verify requesting client group owns requested client
+                yield* Effect.succeed(clientGroup).pipe(
+                  AccessControl.enforce(
+                    AccessControl.policy(
+                      (principal) =>
+                        Effect.succeed(principal.userId === clientGroup.userId),
+                      "User does not own the requested client group.",
+                    ),
+                  ),
+                );
+
+                // 6: Verify requesting client group owns the client
+                yield* Effect.succeed(client).pipe(
+                  AccessControl.enforce(
+                    AccessControl.policy(
+                      () =>
+                        Effect.succeed(client.clientGroupId === clientGroupId),
+                      "Client group does not own the requested client.",
+                    ),
+                  ),
+                );
+
+                if (client.lastMutationId === 0 && mutation.id > 1)
+                  return yield* Effect.fail(
+                    new ReplicacheContract.ClientStateNotFoundError({
+                      response: { error: "ClientStateNotFound" },
+                    }),
+                  );
+
+                // 7: Next mutation ID
+                const nextMutationId = Number.increment(client.lastMutationId);
+
+                // 8: Rollback and skip if mutation is from the past (already processed)
+                if (Number.lessThan(mutation.id, nextMutationId))
+                  return yield* Effect.fail(
+                    new PastMutationError({ mutationId: mutation.id }),
+                  );
+
+                // 9: Rollback if mutation is from the future
+                if (Number.greaterThan(mutation.id, nextMutationId))
+                  return yield* Effect.fail(
+                    new FutureMutationError({ mutationId: mutation.id }),
+                  );
+
+                // 10: Perform mutation
+                if (!errorMode)
+                  // 10(i): Business logic
+                  // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
+                  yield* dispatcher
+                    .dispatch(mutation.name, { encoded: mutation.args })
+                    .pipe(
+                      // 10(ii)(a,b): Log and abort
+                      Effect.tapErrorCause((error) =>
+                        Effect.logError(
+                          `Error processing mutation "${mutation.id}"`,
+                          error,
+                        ),
+                      ),
+                    );
+
+                const nextClientVersion = ColumnsContract.Version.make(
+                  Number.increment(clientGroup.clientVersion),
+                );
+
+                yield* Effect.all(
+                  [
+                    // 11: Upsert client group
+                    clientGroupsRepository.upsert({
+                      ...clientGroup,
+                      clientVersion: nextClientVersion,
+                    }),
+                    // 12: Upsert client
+                    clientsRepository.upsert({
+                      ...client,
+                      version: nextClientVersion,
+                    }),
+                  ],
+                  { concurrency: "unbounded" },
+                );
+              }),
+            ),
+          ),
+          Effect.timed,
+          Effect.flatMap(([duration]) =>
+            Effect.log(
+              `Processed mutation "${mutation.id}" in ${duration.pipe(Duration.toMillis)}ms`,
+            ),
+          ),
+          Effect.catchTag("PastMutationError", (error) =>
+            Effect.log(
+              `Mutation "${error.mutationId}" already processed - skipping`,
+            ),
+          ),
+          Effect.tapErrorCause((error) =>
+            Effect.log(
+              `Encountered error during push on mutation "${mutation.id}"`,
+              error,
+            ),
+          ),
+        );
+
       const push = Effect.fn("ReplicachePusher.push")(
-        (pushRequest: typeof ReplicacheContract.PushRequest.Type) =>
+        (pushRequest: ReplicacheContract.PushRequest) =>
           Effect.gen(function* () {
             if (pushRequest.pushVersion !== 1)
               return yield* Effect.fail(
@@ -51,168 +201,17 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 }),
               );
 
-            yield* Effect.forEach(pushRequest.mutations, (mutation) =>
-              // 1: Error mode is initially false
-              processMutation(mutation).pipe(
-                // 10(ii)(c): Retry mutation in error mode
-                Effect.orElse(() => processMutation(mutation, true)),
-              ),
-            );
-
             const clientGroupId = pushRequest.clientGroupID;
 
-            const processMutation = (
-              mutation: ReplicacheContract.MutationV1,
-              errorMode = false,
-            ) =>
-              mutations.Replicache.pipe(
-                Effect.map(Schema.encodedSchema),
-                Effect.map(Schema.decodeUnknown),
-                Effect.flatMap((decode) => decode(mutation)),
-                Effect.flatMap((mutation) =>
-                  // 2: Begin transaction
-                  db.withTransaction(() =>
-                    Effect.gen(function* () {
-                      const [clientGroup, client] = yield* Effect.all(
-                        [
-                          // 3: Get client group
-                          clientGroupsRepository
-                            .findByIdForUpdate(clientGroupId, tenantId)
-                            .pipe(
-                              Effect.catchTag("NoSuchElementException", () =>
-                                Effect.succeed(
-                                  ReplicacheClientGroupsModel.Record.make({
-                                    id: clientGroupId,
-                                    tenantId,
-                                    userId,
-                                  }),
-                                ),
-                              ),
-                            ),
-                          // 5: Get client
-                          clientsRepository
-                            .findByIdForUpdate(mutation.clientID, tenantId)
-                            .pipe(
-                              Effect.catchTag("NoSuchElementException", () =>
-                                Effect.succeed(
-                                  ReplicacheClientsModel.Record.make({
-                                    id: mutation.clientID,
-                                    tenantId,
-                                    clientGroupId,
-                                  }),
-                                ),
-                              ),
-                            ),
-                        ],
-                        { concurrency: "unbounded" },
-                      );
-
-                      // 4: Verify requesting client group owns requested client
-                      yield* Effect.succeed(clientGroup).pipe(
-                        AccessControl.enforce(
-                          AccessControl.policy(
-                            (principal) =>
-                              Effect.succeed(
-                                principal.userId === clientGroup.userId,
-                              ),
-                            "User does not own the requested client group.",
-                          ),
-                        ),
-                      );
-
-                      // 6: Verify requesting client group owns the client
-                      yield* Effect.succeed(client).pipe(
-                        AccessControl.enforce(
-                          AccessControl.policy(
-                            () =>
-                              Effect.succeed(
-                                client.clientGroupId === clientGroupId,
-                              ),
-                            "Client group does not own the requested client.",
-                          ),
-                        ),
-                      );
-
-                      if (client.lastMutationId === 0 && mutation.id > 1)
-                        return yield* Effect.fail(
-                          new ReplicacheContract.ClientStateNotFoundError({
-                            response: { error: "ClientStateNotFound" },
-                          }),
-                        );
-
-                      // 7: Next mutation ID
-                      const nextMutationId = client.lastMutationId + 1;
-
-                      // 8: Rollback and skip if mutation is from the past (already processed)
-                      if (mutation.id < nextMutationId)
-                        return yield* Effect.fail(
-                          new PastMutationError({ mutationId: mutation.id }),
-                        );
-
-                      // 9: Rollback if mutation is from the future
-                      if (mutation.id > nextMutationId)
-                        return yield* Effect.fail(
-                          new FutureMutationError({ mutationId: mutation.id }),
-                        );
-
-                      // 10: Perform mutation
-                      if (!errorMode)
-                        // 10(i): Business logic
-                        // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
-                        yield* dispatcher
-                          .dispatch(mutation.name, { encoded: mutation.args })
-                          .pipe(
-                            // 10(ii)(a,b): Log and abort
-                            Effect.tapErrorCause((error) =>
-                              Effect.logError(
-                                `Error processing mutation "${mutation.id}"`,
-                                error,
-                              ),
-                            ),
-                          );
-
-                      const nextClientVersion = ColumnsContract.Version.make(
-                        clientGroup.clientVersion + 1,
-                      );
-
-                      yield* Effect.all(
-                        [
-                          // 11: Upsert client group
-                          clientGroupsRepository.upsert({
-                            ...clientGroup,
-                            clientVersion: nextClientVersion,
-                          }),
-                          // 12: Upsert client
-                          clientsRepository.upsert({
-                            ...client,
-                            version: nextClientVersion,
-                          }),
-                        ],
-                        { concurrency: "unbounded" },
-                      );
-                    }),
-                  ),
+            yield* Effect.forEach(pushRequest.mutations, (mutation) =>
+              // 1: Error mode is initially false
+              processMutation(clientGroupId, mutation).pipe(
+                // 10(ii)(c): Retry mutation in error mode
+                Effect.orElse(() =>
+                  processMutation(clientGroupId, mutation, true),
                 ),
-                Effect.timed,
-                Effect.flatMap(([duration]) =>
-                  Effect.log(
-                    `Processed mutation "${mutation.id}" in ${duration.pipe(Duration.toMillis)}ms`,
-                  ),
-                ),
-                Effect.catchTag("PastMutationError", (error) =>
-                  Effect.log(
-                    `Mutation "${error.mutationId}" already processed - skipping`,
-                  ),
-                ),
-                Effect.tapErrorCause((error) =>
-                  Effect.log(
-                    `Encountered error during push on mutation "${mutation.id}"`,
-                    error,
-                  ),
-                ),
-              );
-
-            return null;
+              ),
+            ).pipe(Effect.provide(ReplicacheNotifier.Default(clientGroupId)));
           }),
       );
 

@@ -34,7 +34,7 @@ export namespace LicensesContract {
     DataTransferObject,
   );
 
-  export const isAvailable = new DataAccessContract.Function({
+  export const isAvailable = new DataAccessContract.Procedure({
     name: "isLicenseAvailable",
     Args: DataTransferStruct.pick("key"),
     Returns: Schema.Void,
@@ -70,13 +70,13 @@ export namespace TenantsContract {
     ["read", "update"],
   );
 
-  export const isSubdomainAvailable = new DataAccessContract.Function({
+  export const isSubdomainAvailable = new DataAccessContract.Procedure({
     name: "isTenantSubdomainAvailable",
     Args: DataTransferStruct.pick("subdomain"),
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccessContract.Function({
+  export const update = new DataAccessContract.Procedure({
     name: "updateTenant",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),

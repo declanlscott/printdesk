@@ -54,11 +54,6 @@ export namespace Permissions {
   ).pipe(Effect.map(Array.flatten));
   export type Permissions = Effect.Effect.Success<typeof permissions>;
 
-  const Permission = permissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
-  export type Permission = Effect.Effect.Success<typeof Permission>["Type"];
-
   export const readPermissions = permissions.pipe(
     Effect.map(
       Array.filterMap((permission) =>
@@ -76,10 +71,31 @@ export namespace Permissions {
   );
   export type ReadPermissions = Effect.Effect.Success<typeof readPermissions>;
 
-  export const ReadPermission = readPermissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
+  export class Schemas extends Effect.Service<Schemas>()(
+    "@printdesk/core/permissions/Schemas",
+    {
+      accessors: true,
+      dependencies: [
+        Models.SyncTables.Default,
+        Models.NonSyncTables.Default,
+        Models.Views.Default,
+      ],
+      effect: Effect.all({
+        Permission: permissions.pipe(
+          Effect.map((permissions) => Schema.Literal(...permissions)),
+        ),
+        ReadPermission: readPermissions.pipe(
+          Effect.map((permissions) => Schema.Literal(...permissions)),
+        ),
+      }),
+    },
+  ) {}
+
+  export type Permission = Effect.Effect.Success<
+    typeof Schemas
+  >["Permission"]["Type"];
+
   export type ReadPermission = Effect.Effect.Success<
-    typeof ReadPermission
-  >["Type"];
+    typeof Schemas
+  >["ReadPermission"]["Type"];
 }

@@ -7,13 +7,17 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Match, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { Rooms } from "../rooms2";
 import { DeliveryOptionsContract } from "./contract";
 import { DeliveryOptionsSchema } from "./schema";
 
@@ -592,44 +596,107 @@ export namespace DeliveryOptions {
     "@printdesk/core/delivery-options/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [Repository.Default, Permissions.Schemas.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
+        const roomsRepository = yield* Rooms.Repository;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notify = (
+          deliveryOption: DeliveryOptionsContract.DataTransferObject,
+        ) =>
+          roomsRepository
+            .findById(deliveryOption.roomId, deliveryOption.tenantId)
+            .pipe(
+              Effect.map(Match.value),
+              Effect.map(
+                Match.whenAnd(
+                  { deletedAt: Match.null },
+                  { status: Match.is("published") },
+                  () =>
+                    Array.make(
+                      PullPermission.make({
+                        permission: "delivery_options:read",
+                      }),
+                      PullPermission.make({
+                        permission: "active_delivery_options:read",
+                      }),
+                      PullPermission.make({
+                        permission:
+                          "active_published_room_delivery_options:read",
+                      }),
+                    ),
+                ),
+              ),
+              Effect.map(
+                Match.whenAnd({ deletedAt: Match.null }, () =>
+                  Array.make(
+                    PullPermission.make({
+                      permission: "delivery_options:read",
+                    }),
+                    PullPermission.make({
+                      permission: "active_delivery_options:read",
+                    }),
+                  ),
+                ),
+              ),
+              Effect.map(
+                Match.orElse(() =>
+                  Array.make(
+                    PullPermission.make({
+                      permission: "delivery_options:read",
+                    }),
+                  ),
+                ),
+              ),
+              Effect.flatMap(notifier.notify),
+            );
 
         const create = DataAccessContract.makeMutation(
           DeliveryOptionsContract.create,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:create"),
-            mutator: (deliveryOption, { tenantId }) =>
-              repository
-                .create({ ...deliveryOption, tenantId })
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn(
+              "DeliveryOptions.Mutations.create.makePolicy",
+            )(() => AccessControl.permission("delivery_options:create")),
+            mutator: Effect.fn("DeliveryOptions.Mutations.create.mutator")(
+              (deliveryOption, { tenantId }) =>
+                repository
+                  .create({ ...deliveryOption, tenantId })
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         const update = DataAccessContract.makeMutation(
           DeliveryOptionsContract.update,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:update"),
-            mutator: ({ id, ...deliveryOption }, session) =>
-              repository
-                .updateById(id, deliveryOption, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn(
+              "DeliveryOptions.Mutations.update.makePolicy",
+            )(() => AccessControl.permission("delivery_options:update")),
+            mutator: Effect.fn("DeliveryOptions.Mutations.update.mutator")(
+              ({ id, ...deliveryOption }, session) =>
+                repository
+                  .updateById(id, deliveryOption, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           DeliveryOptionsContract.delete_,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:delete"),
-            mutator: ({ id, deletedAt }, session) =>
-              repository
-                .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn(
+              "DeliveryOptions.Mutations.delete.makePolicy",
+            )(() => AccessControl.permission("delivery_options:delete")),
+            mutator: Effect.fn("DeliveryOptions.Mutations.delete.mutator")(
+              ({ id, deletedAt }, session) =>
+                repository
+                  .updateById(id, { deletedAt }, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         return { create, update, delete: delete_ } as const;

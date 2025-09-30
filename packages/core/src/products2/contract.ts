@@ -157,13 +157,13 @@ export namespace ProductsContract {
       DataTransferObject,
     );
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createProduct",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Function({
+  export const edit = new DataAccessContract.Procedure({
     name: "editProduct",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -176,19 +176,19 @@ export namespace ProductsContract {
     Returns: DataTransferObject,
   });
 
-  export const publish = new DataAccessContract.Function({
+  export const publish = new DataAccessContract.Procedure({
     name: "publishProduct",
     Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 
-  export const draft = new DataAccessContract.Function({
+  export const draft = new DataAccessContract.Procedure({
     name: "draftProduct",
     Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteProduct",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,

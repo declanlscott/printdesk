@@ -13,7 +13,7 @@ import { Tenants } from "../tenants2/client";
 import { Users } from "../users2/client";
 import { SharedAccountWorkflows, WorkflowStatuses } from "../workflows2/client";
 import { DataAccessContract } from "./contract";
-import { Mutations, Policies } from "./functions";
+import { DataAccessProcedures } from "./procedures";
 
 export namespace DataAccess {
   export class ClientPolicies extends Effect.Service<ClientPolicies>()(
@@ -21,7 +21,7 @@ export namespace DataAccess {
     {
       accessors: true,
       dependencies: [
-        Policies.Default,
+        DataAccessProcedures.Policies.Default,
         SharedAccounts.Policies.Default,
         Comments.Policies.Default,
         Orders.Policies.Default,
@@ -30,7 +30,7 @@ export namespace DataAccess {
         WorkflowStatuses.Policies.Default,
       ],
       effect: Effect.gen(function* () {
-        const functions = yield* Policies.functions;
+        const procedures = yield* DataAccessProcedures.Policies.procedures;
 
         const sharedAccounts = yield* SharedAccounts.Policies;
         const comments = yield* Comments.Policies;
@@ -40,7 +40,7 @@ export namespace DataAccess {
         const workflowStatuses = yield* WorkflowStatuses.Policies;
 
         const dispatcher = yield* Effect.succeed(
-          new DataAccessContract.PolicyDispatcher({ functions })
+          new DataAccessContract.PolicyDispatcher({ procedures })
             .set(comments.isAuthor)
             .set(orders.isCustomer)
             .set(orders.isManager)
@@ -69,7 +69,7 @@ export namespace DataAccess {
     {
       accessors: true,
       dependencies: [
-        Mutations.Default,
+        DataAccessProcedures.Mutations.Default,
         Announcements.Mutations.Default,
         Comments.Mutations.Default,
         DeliveryOptions.Mutations.Default,
@@ -85,7 +85,7 @@ export namespace DataAccess {
       ],
       effect: Effect.gen(function* () {
         const session = yield* Auth.Session;
-        const functions = yield* Mutations.functions;
+        const procedures = yield* DataAccessProcedures.Mutations.procedures;
 
         const announcements = yield* Announcements.Mutations;
         const comments = yield* Comments.Mutations;
@@ -102,7 +102,10 @@ export namespace DataAccess {
         const workflowStatuses = yield* WorkflowStatuses.Mutations;
 
         const dispatcher = yield* Effect.succeed(
-          new DataAccessContract.MutationDispatcher({ session, functions })
+          new DataAccessContract.MutationDispatcher({
+            session,
+            procedures,
+          })
             .set(announcements.create)
             .set(announcements.update)
             .set(announcements.delete)

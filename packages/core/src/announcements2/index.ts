@@ -12,7 +12,10 @@ import { Array, Effect, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { AnnouncementsContract } from "./contract";
 import { AnnouncementsSchema } from "./schema";
@@ -386,45 +389,70 @@ export namespace Announcements {
     "@printdesk/core/announcements/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [Repository.Default, Permissions.Schemas.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notify = (
+          _announcement: AnnouncementsContract.DataTransferObject,
+        ) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "announcements:read" }),
+              PullPermission.make({ permission: "active_announcements:read" }),
+            ),
+          );
+
         const create = DataAccessContract.makeMutation(
           AnnouncementsContract.create,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("announcements:create"),
-            mutator: (announcement, session) =>
-              repository
-                .create({
-                  ...announcement,
-                  authorId: session.userId,
-                  tenantId: session.tenantId,
-                })
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Announcements.Mutations.create.makePolicy")(
+              () => AccessControl.permission("announcements:create"),
+            ),
+            mutator: Effect.fn("Announcements.Mutations.create.mutator")(
+              (announcement, session) =>
+                repository
+                  .create({
+                    ...announcement,
+                    authorId: session.userId,
+                    tenantId: session.tenantId,
+                  })
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         const update = DataAccessContract.makeMutation(
           AnnouncementsContract.update,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("announcements:update"),
-            mutator: ({ id, ...announcement }, session) =>
-              repository
-                .updateById(id, announcement, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Announcements.Mutations.update.makePolicy")(
+              () => AccessControl.permission("announcements:update"),
+            ),
+            mutator: Effect.fn("Announcements.Mutations.update.mutator")(
+              ({ id, ...announcement }, session) =>
+                repository
+                  .updateById(id, announcement, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           AnnouncementsContract.delete_,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("announcements:delete"),
-            mutator: ({ id, deletedAt }, session) =>
-              repository
-                .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Announcements.Mutations.delete.makePolicy")(
+              () => AccessControl.permission("announcements:delete"),
+            ),
+            mutator: Effect.fn("Announcements.Mutations.delete.mutator")(
+              ({ id, deletedAt }, session) =>
+                repository
+                  .updateById(id, { deletedAt }, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         return { create, update, delete: delete_ } as const;

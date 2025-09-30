@@ -162,7 +162,7 @@ export namespace SharedAccountWorkflows {
 
         const isManagerAuthorized = DataAccessContract.makePolicy(
           SharedAccountWorkflowsContract.isManagerAuthorized,
-          Effect.succeed({
+          {
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
@@ -174,7 +174,7 @@ export namespace SharedAccountWorkflows {
                     ),
                   ),
               ),
-          }),
+          },
         );
 
         return { isManagerAuthorized } as const;
@@ -317,7 +317,7 @@ export namespace WorkflowStatuses {
 
         const isEditable = DataAccessContract.makePolicy(
           WorkflowStatusesContract.isEditable,
-          Effect.succeed({
+          {
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository.findById(id).pipe(
@@ -343,26 +343,22 @@ export namespace WorkflowStatuses {
                   ),
                 ),
               ),
-          }),
+          },
         );
 
         const isDeletable = DataAccessContract.makePolicy(
           WorkflowStatusesContract.isDeletable,
-          isEditable.pipe(
-            Effect.flatMap((isEditable) =>
-              Effect.succeed({
-                make: ({ id }) =>
-                  AccessControl.every(
-                    AccessControl.policy(() =>
-                      ordersRepository
-                        .findByWorkflowStatusId(id)
-                        .pipe(Effect.map(Array.isEmptyArray)),
-                    ),
-                    isEditable.make({ id }),
-                  ),
-              }),
-            ),
-          ),
+          {
+            make: ({ id }) =>
+              AccessControl.every(
+                AccessControl.policy(() =>
+                  ordersRepository
+                    .findByWorkflowStatusId(id)
+                    .pipe(Effect.map(Array.isEmptyArray)),
+                ),
+                isEditable.make({ id }),
+              ),
+          },
         );
 
         return { isEditable, isDeletable } as const;
@@ -392,7 +388,7 @@ export namespace WorkflowStatuses {
 
         const append = DataAccessContract.makeMutation(
           WorkflowStatusesContract.append,
-          Effect.succeed({
+          {
             makePolicy: (args) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:create"),
@@ -436,12 +432,12 @@ export namespace WorkflowStatuses {
                     ),
                   ),
                 ),
-          }),
+          },
         );
 
         const edit = DataAccessContract.makeMutation(
           WorkflowStatusesContract.edit,
-          Effect.succeed({
+          {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:update"),
@@ -449,12 +445,12 @@ export namespace WorkflowStatuses {
               ),
             mutator: ({ id, ...workflowStatus }) =>
               writeRepository.updateById(id, () => workflowStatus),
-          }),
+          },
         );
 
         const reorder = DataAccessContract.makeMutation(
           WorkflowStatusesContract.reorder,
-          Effect.succeed({
+          {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:update"),
@@ -502,12 +498,12 @@ export namespace WorkflowStatuses {
                   { concurrency: "unbounded" },
                 );
               }),
-          }),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           WorkflowStatusesContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:delete"),
@@ -540,7 +536,7 @@ export namespace WorkflowStatuses {
 
                 return deleted;
               }),
-          }),
+          },
         );
 
         return { append, edit, reorder, delete: delete_ } as const;

@@ -47,7 +47,7 @@ export namespace DeliveryOptions {
 
         const create = DataAccessContract.makeMutation(
           DeliveryOptionsContract.create,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission("delivery_options:create"),
             mutator: (deliveryOption, { tenantId }) =>
@@ -57,22 +57,22 @@ export namespace DeliveryOptions {
                   tenantId,
                 }),
               ),
-          }),
+          },
         );
 
         const update = DataAccessContract.makeMutation(
           DeliveryOptionsContract.update,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission("delivery_options:update"),
             mutator: ({ id, ...deliveryOption }) =>
               repository.updateById(id, () => deliveryOption),
-          }),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           DeliveryOptionsContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission("delivery_options:delete"),
             mutator: ({ id, deletedAt }) =>
@@ -86,7 +86,7 @@ export namespace DeliveryOptions {
                     repository.deleteById(id),
                   ),
                 ),
-          }),
+          },
         );
 
         return { create, update, delete: delete_ } as const;

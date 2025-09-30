@@ -39,15 +39,12 @@ export namespace Users {
     {
       accessors: true,
       succeed: {
-        isSelf: DataAccessContract.makePolicy(
-          UsersContract.isSelf,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                Effect.succeed(Equal.equals(id, principal.userId)),
-              ),
-          }),
-        ),
+        isSelf: DataAccessContract.makePolicy(UsersContract.isSelf, {
+          make: ({ id }) =>
+            AccessControl.policy((principal) =>
+              Effect.succeed(Equal.equals(id, principal.userId)),
+            ),
+        }),
       },
     },
   ) {}
@@ -62,42 +59,33 @@ export namespace Users {
 
         const isSelf = yield* Policies.isSelf;
 
-        const update = DataAccessContract.makeMutation(
-          UsersContract.update,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("users:update"),
-            mutator: ({ id, ...user }) => repository.updateById(id, () => user),
-          }),
-        );
+        const update = DataAccessContract.makeMutation(UsersContract.update, {
+          makePolicy: () => AccessControl.permission("users:update"),
+          mutator: ({ id, ...user }) => repository.updateById(id, () => user),
+        });
 
-        const delete_ = DataAccessContract.makeMutation(
-          UsersContract.delete_,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("users:delete"),
-                isSelf.make({ id }),
-              ),
-            mutator: ({ id, deletedAt }) =>
-              repository
-                .updateById(id, () => ({ deletedAt }))
-                .pipe(
-                  AccessControl.enforce(AccessControl.permission("users:read")),
-                  Effect.catchTag("AccessDeniedError", () =>
-                    repository.deleteById(id),
-                  ),
+        const delete_ = DataAccessContract.makeMutation(UsersContract.delete_, {
+          makePolicy: ({ id }) =>
+            AccessControl.some(
+              AccessControl.permission("users:delete"),
+              isSelf.make({ id }),
+            ),
+          mutator: ({ id, deletedAt }) =>
+            repository
+              .updateById(id, () => ({ deletedAt }))
+              .pipe(
+                AccessControl.enforce(AccessControl.permission("users:read")),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
                 ),
-          }),
-        );
+              ),
+        });
 
-        const restore = DataAccessContract.makeMutation(
-          UsersContract.restore,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("users:delete"),
-            mutator: ({ id }) =>
-              repository.updateById(id, () => ({ deletedAt: null })),
-          }),
-        );
+        const restore = DataAccessContract.makeMutation(UsersContract.restore, {
+          makePolicy: () => AccessControl.permission("users:delete"),
+          mutator: ({ id }) =>
+            repository.updateById(id, () => ({ deletedAt: null })),
+        });
 
         return { update, delete: delete_, restore } as const;
       }),

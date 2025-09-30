@@ -22,6 +22,7 @@ export namespace ReplicacheContract {
   ) {}
 
   export const Mutation = Schema.Union(MutationV0, MutationV1);
+  export type Mutation = typeof Mutation.Type;
 
   export class PushRequestV0 extends Schema.Class<PushRequestV0>(
     "PushRequestV0",
@@ -44,6 +45,7 @@ export namespace ReplicacheContract {
   }) {}
 
   export const PushRequest = Schema.Union(PushRequestV0, PushRequestV1);
+  export type PushRequest = typeof PushRequest.Type;
 
   export class PullRequestV0 extends Schema.Class<PullRequestV0>(
     "PullRequestV0",
@@ -66,6 +68,7 @@ export namespace ReplicacheContract {
   }) {}
 
   export const PullRequest = Schema.Union(PullRequestV0, PullRequestV1);
+  export type PullRequest = typeof PullRequest.Type;
 
   export class VersionNotSupportedError extends Data.TaggedError(
     "VersionNotSupportedError",

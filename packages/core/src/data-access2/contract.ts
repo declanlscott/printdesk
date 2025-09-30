@@ -6,7 +6,7 @@ import { AccessControl } from "../access-control2";
 import type { AuthContract } from "../auth2/contract";
 
 export namespace DataAccessContract {
-  export class Function<
+  export class Procedure<
     TName extends string = string,
     TArgs extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
     TReturns extends Schema.Schema.AnyNoContext = Schema.Schema.AnyNoContext,
@@ -15,48 +15,51 @@ export namespace DataAccessContract {
     readonly Args: TArgs;
     readonly Returns: TReturns;
   }> {
-    makeInvocation = (args: Schema.Schema.Type<TArgs>) => ({
+    make = (args: Schema.Schema.Type<TArgs>) => ({
       name: this.name,
       args,
     });
   }
 
-  type FunctionRecord<TFunction extends Function = Function> = Record<
-    TFunction["name"],
-    TFunction
+  type ProcedureRecord<TProcedure extends Procedure = Procedure> = Record<
+    TProcedure["name"],
+    TProcedure
   >;
 
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  export class Functions<TRecord extends FunctionRecord = {}, TIsDone = false> {
+  export class Procedures<
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    TRecord extends ProcedureRecord = {},
+    TIsDone = false,
+  > {
     #isDone = false;
-    #map = HashMap.empty<Function["name"], Function>();
+    #map = HashMap.empty<Procedure["name"], Procedure>();
 
     readonly RecordType = {} as {
-      [TName in keyof TRecord]: Function<
+      [TName in keyof TRecord]: Procedure<
         TName & string,
         TRecord[TName]["Args"]
       >;
     };
 
-    set<TFunction extends Function>(
-      fn: TIsDone extends false ? TFunction : never,
+    set<TProcedure extends Procedure>(
+      fn: TIsDone extends false ? TProcedure : never,
     ) {
       if (!this.#isDone) this.#map = HashMap.set(this.#map, fn.name, fn);
 
-      return this as Functions<TRecord & FunctionRecord<TFunction>, TIsDone>;
+      return this as Procedures<TRecord & ProcedureRecord<TProcedure>, TIsDone>;
     }
 
-    done(this: TIsDone extends false ? Functions<TRecord, TIsDone> : never) {
+    done(this: TIsDone extends false ? Procedures<TRecord, TIsDone> : never) {
       this.#isDone = true;
 
-      return this as Functions<TRecord, true>;
+      return this as Procedures<TRecord, true>;
     }
 
     get map() {
       return this.#map;
     }
 
-    get Invocation() {
+    get Procedure() {
       return Schema.Union(
         ...this.#map.pipe(
           HashMap.values,
@@ -77,128 +80,57 @@ export namespace DataAccessContract {
     }
   }
 
-  export type MakePolicyShape<
+  export type Policy<
     TName extends string,
     TArgs extends Schema.Schema.AnyNoContext,
-    TPolicyError,
-    TPolicyContext,
-    TMakePolicyError,
-    TMakePolicyContext,
-  > = Effect.Effect<
-    {
-      readonly name: TName;
-      readonly make: AccessControl.MakePolicy<
-        TArgs,
-        TPolicyError,
-        TPolicyContext
-      >;
-    },
-    TMakePolicyError,
-    TMakePolicyContext
-  > & { readonly name: TName };
+    TError,
+    TContext,
+  > = {
+    readonly name: TName;
+    readonly make: AccessControl.MakePolicy<TArgs, TError, TContext>;
+  };
 
-  export const makePolicy = <
-    TFunction extends Function,
-    TPolicyError,
-    TPolicyContext,
-    TMakePolicyError,
-    TMakePolicyContext,
-  >(
-    fn: TFunction,
-    make: Effect.Effect<
-      Omit<
-        Effect.Effect.Success<
-          MakePolicyShape<
-            TFunction["name"],
-            TFunction["Args"],
-            TPolicyError,
-            TPolicyContext,
-            TMakePolicyError,
-            TMakePolicyContext
-          >
-        >,
-        "name"
-      >,
-      TMakePolicyError,
-      TMakePolicyContext
+  export const makePolicy = <TProcedure extends Procedure, TError, TContext>(
+    procedure: TProcedure,
+    properties: Omit<
+      Policy<TProcedure["name"], TProcedure["Args"], TError, TContext>,
+      "name"
     >,
-  ): MakePolicyShape<
-    TFunction["name"],
-    TFunction["Args"],
-    TPolicyError,
-    TPolicyContext,
-    TMakePolicyError,
-    TMakePolicyContext
-  > =>
-    Object.assign(
-      make.pipe(Effect.map((rest) => ({ name: fn.name, ...rest }))),
-      { name: fn.name },
-    );
+  ): Policy<TProcedure["name"], TProcedure["Args"], TError, TContext> =>
+    Object.assign(properties, { name: procedure.name });
 
   type PolicyRecord<
     TName extends string = string,
-    TPolicyError = any,
-    TPolicyContext = any,
-    TMakePolicyError = any,
-    TMakePolicyContext = any,
-  > = Record<
-    TName,
-    {
-      readonly PolicyError: TPolicyError;
-      readonly PolicyContext: TPolicyContext;
-      readonly MakePolicyError: TMakePolicyError;
-      readonly MakePolicyContext: TMakePolicyContext;
-    }
-  >;
+    TError = any,
+    TContext = any,
+  > = Record<TName, { readonly Error: TError; readonly Context: TContext }>;
 
   export class PolicyDispatcher<
-    TFunctionRecord extends FunctionRecord,
+    TProcedureRecord extends ProcedureRecord,
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    TPolicyRecord extends PolicyRecord = {},
+    TRecord extends PolicyRecord = {},
     TIsDone = false,
   > extends Data.Class<{
-    readonly functions: Functions<TFunctionRecord, true>;
+    readonly procedures: Procedures<TProcedureRecord, true>;
   }> {
     #isDone = false;
     #map = HashMap.empty<
-      keyof TFunctionRecord,
-      MakePolicyShape<
-        keyof TFunctionRecord & string,
-        TFunctionRecord[keyof TFunctionRecord]["Args"],
-        TPolicyRecord[keyof TPolicyRecord]["PolicyError"],
-        TPolicyRecord[keyof TPolicyRecord]["PolicyContext"],
-        TPolicyRecord[keyof TPolicyRecord]["MakePolicyError"],
-        TPolicyRecord[keyof TPolicyRecord]["MakePolicyContext"]
+      keyof TProcedureRecord,
+      Policy<
+        keyof TProcedureRecord & string,
+        TProcedureRecord[keyof TProcedureRecord]["Args"],
+        TRecord[keyof TRecord]["Error"],
+        TRecord[keyof TRecord]["Context"]
       >
     >();
 
-    set<
-      TName extends keyof TFunctionRecord & string,
-      TPolicyError,
-      TPolicyContext,
-      TMakePolicyError,
-      TMakePolicyContext,
-    >(
+    set<TName extends keyof TProcedureRecord & string, TError, TContext>(
       makePolicy: TIsDone extends false
-        ? MakePolicyShape<
-            TName,
-            TFunctionRecord[TName]["Args"],
-            TPolicyError,
-            TPolicyContext,
-            TMakePolicyError,
-            TMakePolicyContext
-          >
+        ? Policy<TName, TProcedureRecord[TName]["Args"], TError, TContext>
         : never,
     ): PolicyDispatcher<
-      TFunctionRecord,
-      TPolicyRecord &
-        PolicyRecord<
-          TName,
-          TPolicyError,
-          TPolicyContext,
-          TMakePolicyError,
-          TMakePolicyContext
-        >,
+      TProcedureRecord,
+      TRecord & PolicyRecord<TName, TError, TContext>,
       TIsDone
     > {
       if (!this.#isDone)
@@ -208,40 +140,36 @@ export namespace DataAccessContract {
     }
 
     done(
-      this: keyof TFunctionRecord extends keyof TPolicyRecord
-        ? PolicyDispatcher<TFunctionRecord, TPolicyRecord, TIsDone>
+      this: keyof TProcedureRecord extends keyof TRecord
+        ? PolicyDispatcher<TProcedureRecord, TRecord, TIsDone>
         : never,
     ) {
       this.#isDone = true;
 
-      return this as PolicyDispatcher<TFunctionRecord, TPolicyRecord, true>;
+      return this as PolicyDispatcher<TProcedureRecord, TRecord, true>;
     }
 
-    dispatch<TName extends keyof TPolicyRecord & string>(
+    dispatch<TName extends keyof TRecord & string>(
       name: TName,
       args:
-        | { encoded: Schema.Schema.Encoded<TFunctionRecord[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TFunctionRecord[TName]["Args"]> },
+        | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
     ) {
-      const functions = this.functions;
+      const astMap = this.procedures;
       const map = this.#map;
 
       return Effect.gen(function* () {
         const makePolicy = (yield* map.pipe(
           HashMap.get(name),
           Effect.orDie,
-        )) as MakePolicyShape<
+        )) as Policy<
           TName,
-          TFunctionRecord[TName]["Args"],
-          TPolicyRecord[TName]["PolicyError"],
-          TPolicyRecord[TName]["PolicyContext"],
-          TPolicyRecord[TName]["MakePolicyError"],
-          TPolicyRecord[TName]["MakePolicyContext"]
+          TProcedureRecord[TName]["Args"],
+          TRecord[TName]["Error"],
+          TRecord[TName]["Context"]
         >;
 
-        const { make } = yield* makePolicy;
-
-        const { Args } = yield* functions.map.pipe(
+        const { Args } = yield* astMap.map.pipe(
           HashMap.get(makePolicy.name),
           Effect.orDie,
         );
@@ -250,8 +178,8 @@ export namespace DataAccessContract {
           ? Effect.succeed(args.encoded).pipe(
               Effect.flatMap(
                 Schema.decode<
-                  Schema.Schema.Type<TFunctionRecord[TName]["Args"]>,
-                  Schema.Schema.Encoded<TFunctionRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                  Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]>,
                   never
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 >(Args),
@@ -260,14 +188,14 @@ export namespace DataAccessContract {
           : Effect.succeed(args.decoded).pipe(
               Effect.flatMap(
                 Schema.decode<
-                  Schema.Schema.Type<TFunctionRecord[TName]["Args"]>,
-                  Schema.Schema.Type<TFunctionRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
                   never
                 >(Schema.typeSchema(Args)),
               ),
             );
 
-        return yield* make(decodedArgs);
+        return yield* makePolicy.make(decodedArgs);
       });
     }
   }
@@ -282,7 +210,7 @@ export namespace DataAccessContract {
     session: AuthContract.Session,
   ) => Effect.Effect<TSuccess, TError, TContext>;
 
-  export type MutationShape<
+  export type Mutation<
     TName extends string,
     TArgs extends Schema.Schema.AnyNoContext,
     TMutatorSuccess,
@@ -290,73 +218,51 @@ export namespace DataAccessContract {
     TMutatorContext,
     TPolicyError,
     TPolicyContext,
-    TMutationError,
-    TMutationContext,
-  > = Effect.Effect<
-    {
-      readonly name: TName;
-      readonly makePolicy: AccessControl.MakePolicy<
-        TArgs,
-        TPolicyError,
-        TPolicyContext
-      >;
-      readonly mutator: Mutator<
-        TArgs,
-        TMutatorSuccess,
-        TMutatorError,
-        TMutatorContext
-      >;
-    },
-    TMutationError,
-    TMutationContext
-  > & { readonly name: TName };
+  > = {
+    readonly name: TName;
+    readonly makePolicy: AccessControl.MakePolicy<
+      TArgs,
+      TPolicyError,
+      TPolicyContext
+    >;
+    readonly mutator: Mutator<
+      TArgs,
+      TMutatorSuccess,
+      TMutatorError,
+      TMutatorContext
+    >;
+  };
 
   export const makeMutation = <
-    TFunction extends Function,
-    TMutatorSuccess extends Schema.Schema.Type<TFunction["Returns"]>,
+    TProcedure extends Procedure,
+    TMutatorSuccess extends Schema.Schema.Type<TProcedure["Returns"]>,
     TMutatorError,
     TMutatorContext,
     TPolicyError,
     TPolicyContext,
-    TMutationError,
-    TMutationContext,
   >(
-    fn: TFunction,
-    make: Effect.Effect<
-      Omit<
-        Effect.Effect.Success<
-          MutationShape<
-            TFunction["name"],
-            TFunction["Args"],
-            TMutatorSuccess,
-            TMutatorError,
-            TMutatorContext,
-            TPolicyError,
-            TPolicyContext,
-            TMutationError,
-            TMutationContext
-          >
-        >,
-        "name"
+    procedure: TProcedure,
+    properties: Omit<
+      Mutation<
+        TProcedure["name"],
+        TProcedure["Args"],
+        TMutatorSuccess,
+        TMutatorError,
+        TMutatorContext,
+        TPolicyError,
+        TPolicyContext
       >,
-      TMutationError,
-      TMutationContext
+      "name"
     >,
-  ): MutationShape<
-    TFunction["name"],
-    TFunction["Args"],
+  ): Mutation<
+    TProcedure["name"],
+    TProcedure["Args"],
     TMutatorSuccess,
     TMutatorError,
     TMutatorContext,
     TPolicyError,
-    TPolicyContext,
-    TMutationError,
-    TMutationContext
-  > =>
-    Object.assign(
-      make.pipe(Effect.map((rest) => ({ name: fn.name, ...rest }))),
-      { name: fn.name },
-    );
+    TPolicyContext
+  > => Object.assign(properties, { name: procedure.name });
 
   type MutationRecord<
     TName extends string = string,
@@ -365,8 +271,6 @@ export namespace DataAccessContract {
     TMutatorContext = any,
     TPolicyError = any,
     TPolicyContext = any,
-    TMutationError = any,
-    TMutationContext = any,
   > = Record<
     TName,
     {
@@ -375,59 +279,51 @@ export namespace DataAccessContract {
       readonly MutatorContext: TMutatorContext;
       readonly PolicyError: TPolicyError;
       readonly PolicyContext: TPolicyContext;
-      readonly MutationError: TMutationError;
-      readonly MutationContext: TMutationContext;
     }
   >;
 
   export class MutationDispatcher<
-    TFunctionRecord extends FunctionRecord,
+    TProcedureRecord extends ProcedureRecord,
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-    TMutationRecord extends MutationRecord = {},
+    TRecord extends MutationRecord = {},
     TIsDone = false,
   > extends Data.Class<{
     readonly session: AuthContract.Session;
-    readonly functions: Functions<TFunctionRecord, true>;
+    readonly procedures: Procedures<TProcedureRecord, true>;
   }> {
     #isDone = false;
     #map = HashMap.empty<
-      keyof TFunctionRecord,
-      MutationShape<
-        keyof TFunctionRecord & string,
-        TFunctionRecord[keyof TFunctionRecord]["Args"],
-        TFunctionRecord[keyof TFunctionRecord]["Returns"]["Type"],
-        TMutationRecord[keyof TMutationRecord]["MutatorError"],
-        TMutationRecord[keyof TMutationRecord]["MutatorContext"],
-        TMutationRecord[keyof TMutationRecord]["PolicyError"],
-        TMutationRecord[keyof TMutationRecord]["PolicyContext"],
-        TMutationRecord[keyof TMutationRecord]["MutationError"],
-        TMutationRecord[keyof TMutationRecord]["MutationContext"]
+      keyof TProcedureRecord,
+      Mutation<
+        keyof TProcedureRecord & string,
+        TProcedureRecord[keyof TProcedureRecord]["Args"],
+        TProcedureRecord[keyof TProcedureRecord]["Returns"]["Type"],
+        TRecord[keyof TRecord]["MutatorError"],
+        TRecord[keyof TRecord]["MutatorContext"],
+        TRecord[keyof TRecord]["PolicyError"],
+        TRecord[keyof TRecord]["PolicyContext"]
       >
     >();
 
     set<
-      TName extends keyof TFunctionRecord & string,
+      TName extends keyof TProcedureRecord & string,
       TMutatorSuccess extends Schema.Schema.Type<
-        TFunctionRecord[TName]["Returns"]
+        TProcedureRecord[TName]["Returns"]
       >,
       TMutatorError,
       TMutatorContext,
       TPolicyError,
       TPolicyContext,
-      TMutationError,
-      TMutationContext,
     >(
       mutation: TIsDone extends false
-        ? MutationShape<
+        ? Mutation<
             TName,
-            TFunctionRecord[TName]["Args"],
+            TProcedureRecord[TName]["Args"],
             TMutatorSuccess,
             TMutatorError,
             TMutatorContext,
             TPolicyError,
-            TPolicyContext,
-            TMutationError,
-            TMutationContext
+            TPolicyContext
           >
         : never,
     ) {
@@ -435,61 +331,55 @@ export namespace DataAccessContract {
         this.#map = HashMap.set(this.#map, mutation.name, mutation);
 
       return this as MutationDispatcher<
-        TFunctionRecord,
-        TMutationRecord &
+        TProcedureRecord,
+        TRecord &
           MutationRecord<
             TName,
             TMutatorSuccess,
             TMutatorError,
             TMutatorContext,
             TPolicyError,
-            TPolicyContext,
-            TMutationError,
-            TMutationContext
+            TPolicyContext
           >,
         TIsDone
       >;
     }
 
     done(
-      this: keyof TFunctionRecord extends keyof TMutationRecord
-        ? MutationDispatcher<TFunctionRecord, TMutationRecord, TIsDone>
+      this: keyof TProcedureRecord extends keyof TRecord
+        ? MutationDispatcher<TProcedureRecord, TRecord, TIsDone>
         : never,
     ) {
       this.#isDone = true;
 
-      return this as MutationDispatcher<TFunctionRecord, TMutationRecord, true>;
+      return this as MutationDispatcher<TProcedureRecord, TRecord, true>;
     }
 
-    dispatch<TName extends keyof TMutationRecord & string>(
+    dispatch<TName extends keyof TRecord & string>(
       name: TName,
       args:
-        | { encoded: Schema.Schema.Encoded<TFunctionRecord[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TFunctionRecord[TName]["Args"]> },
+        | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
+        | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
     ) {
       const session = this.session;
-      const functions = this.functions;
+      const procedures = this.procedures;
       const map = this.#map;
 
       return Effect.gen(function* () {
         const mutation = (yield* map.pipe(
           HashMap.get(name),
           Effect.orDie,
-        )) as MutationShape<
+        )) as Mutation<
           TName,
-          TFunctionRecord[TName]["Args"],
-          TMutationRecord[TName]["MutatorSuccess"],
-          TMutationRecord[TName]["MutatorError"],
-          TMutationRecord[TName]["MutatorContext"],
-          TMutationRecord[TName]["PolicyError"],
-          TMutationRecord[TName]["PolicyContext"],
-          TMutationRecord[TName]["MutationError"],
-          TMutationRecord[TName]["MutationContext"]
+          TProcedureRecord[TName]["Args"],
+          TRecord[TName]["MutatorSuccess"],
+          TRecord[TName]["MutatorError"],
+          TRecord[TName]["MutatorContext"],
+          TRecord[TName]["PolicyError"],
+          TRecord[TName]["PolicyContext"]
         >;
 
-        const { mutator, makePolicy } = yield* mutation;
-
-        const { Args, Returns } = yield* functions.map.pipe(
+        const { Args, Returns } = yield* procedures.map.pipe(
           HashMap.get(mutation.name),
           Effect.orDie,
         );
@@ -498,8 +388,8 @@ export namespace DataAccessContract {
           ? Effect.succeed(args.encoded).pipe(
               Effect.flatMap(
                 Schema.decode<
-                  Schema.Schema.Type<TFunctionRecord[TName]["Args"]>,
-                  Schema.Schema.Encoded<TFunctionRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                  Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]>,
                   never
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                 >(Args),
@@ -508,24 +398,26 @@ export namespace DataAccessContract {
           : Effect.succeed(args.decoded).pipe(
               Effect.flatMap(
                 Schema.decode<
-                  Schema.Schema.Type<TFunctionRecord[TName]["Args"]>,
-                  Schema.Schema.Type<TFunctionRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
                   never
                 >(Schema.typeSchema(Args)),
               ),
             );
 
         // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-        return yield* mutator(decodedArgs, session).pipe(
-          AccessControl.enforce(makePolicy(decodedArgs)),
-          Effect.flatMap(
-            Schema.decode<
-              Schema.Schema.Type<TFunctionRecord[TName]["Returns"]>,
-              Schema.Schema.Type<TFunctionRecord[TName]["Returns"]>,
-              never
-            >(Schema.typeSchema(Returns)),
-          ),
-        );
+        return yield* mutation
+          .mutator(decodedArgs, session)
+          .pipe(
+            AccessControl.enforce(mutation.makePolicy(decodedArgs)),
+            Effect.flatMap(
+              Schema.decode<
+                Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+                Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+                never
+              >(Schema.typeSchema(Returns)),
+            ),
+          );
       });
     }
   }

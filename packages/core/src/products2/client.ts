@@ -82,7 +82,7 @@ export namespace Products {
 
         const create = DataAccessContract.makeMutation(
           ProductsContract.create,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("products:create"),
             mutator: (product, { tenantId }) =>
               repository.create(
@@ -91,21 +91,18 @@ export namespace Products {
                   tenantId,
                 }),
               ),
-          }),
+          },
         );
 
-        const edit = DataAccessContract.makeMutation(
-          ProductsContract.edit,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, ...product }) =>
-              repository.updateById(id, () => product),
-          }),
-        );
+        const edit = DataAccessContract.makeMutation(ProductsContract.edit, {
+          makePolicy: () => AccessControl.permission("products:update"),
+          mutator: ({ id, ...product }) =>
+            repository.updateById(id, () => product),
+        });
 
         const publish = DataAccessContract.makeMutation(
           ProductsContract.publish,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("products:update"),
             mutator: ({ id, updatedAt }) =>
               repository.updateById(id, ({ config }) => ({
@@ -116,28 +113,25 @@ export namespace Products {
                 }),
                 updatedAt,
               })),
-          }),
+          },
         );
 
-        const draft = DataAccessContract.makeMutation(
-          ProductsContract.draft,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, updatedAt }) =>
-              repository.updateById(id, ({ config }) => ({
+        const draft = DataAccessContract.makeMutation(ProductsContract.draft, {
+          makePolicy: () => AccessControl.permission("products:update"),
+          mutator: ({ id, updatedAt }) =>
+            repository.updateById(id, ({ config }) => ({
+              status: "draft",
+              config: ProductsContract.Configuration.make({
+                ...config,
                 status: "draft",
-                config: ProductsContract.Configuration.make({
-                  ...config,
-                  status: "draft",
-                }),
-                updatedAt,
-              })),
-          }),
-        );
+              }),
+              updatedAt,
+            })),
+        });
 
         const delete_ = DataAccessContract.makeMutation(
           ProductsContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("products:delete"),
             mutator: ({ id, deletedAt }) =>
               repository
@@ -150,7 +144,7 @@ export namespace Products {
                     repository.deleteById(id),
                   ),
                 ),
-          }),
+          },
         );
 
         return { create, edit, publish, draft, delete: delete_ } as const;

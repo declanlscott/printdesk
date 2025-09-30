@@ -69,7 +69,7 @@ export namespace SharedAccountsContract {
       }),
     );
 
-  export const isCustomerAuthorized = new DataAccessContract.Function({
+  export const isCustomerAuthorized = new DataAccessContract.Procedure({
     name: "isCustomerAuthorizedSharedAccount",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
@@ -78,7 +78,7 @@ export namespace SharedAccountsContract {
     Returns: Schema.Void,
   });
 
-  export const isManagerAuthorized = new DataAccessContract.Function({
+  export const isManagerAuthorized = new DataAccessContract.Procedure({
     name: "isManagerAuthorizedSharedAccount",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
@@ -87,7 +87,7 @@ export namespace SharedAccountsContract {
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccessContract.Function({
+  export const update = new DataAccessContract.Procedure({
     name: "updateSharedAccount",
     Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
@@ -102,7 +102,7 @@ export namespace SharedAccountsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteSharedAccount",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -190,13 +190,13 @@ export namespace SharedAccountManagerAuthorizationsContract {
       }),
     );
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createSharedAccountManagerAuthorization",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteSharedAccountManagerAuthorization",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,

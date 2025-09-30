@@ -69,7 +69,7 @@ export namespace InvoicesContract {
       }),
     );
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createInvoice",
     Args: DataTransferStruct.omit(
       "status",

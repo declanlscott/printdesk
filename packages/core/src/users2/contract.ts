@@ -47,13 +47,13 @@ export namespace UsersContract {
     DataTransferObject,
   );
 
-  export const isSelf = new DataAccessContract.Function({
+  export const isSelf = new DataAccessContract.Procedure({
     name: "isUserSelf",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccessContract.Function({
+  export const update = new DataAccessContract.Procedure({
     name: "updateUser",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -70,7 +70,7 @@ export namespace UsersContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteUser",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -79,7 +79,7 @@ export namespace UsersContract {
     Returns: DataTransferObject,
   });
 
-  export const restore = new DataAccessContract.Function({
+  export const restore = new DataAccessContract.Procedure({
     name: "restoreUser",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,

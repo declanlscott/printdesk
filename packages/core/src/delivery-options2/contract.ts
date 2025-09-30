@@ -48,13 +48,13 @@ export namespace DeliveryOptionsContract {
       DataTransferObject,
     );
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createDeliveryOption",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Function({
+  export const update = new DataAccessContract.Procedure({
     name: "updateDeliveryOption",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -66,7 +66,7 @@ export namespace DeliveryOptionsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteDeliveryOption",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,

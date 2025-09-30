@@ -44,7 +44,7 @@ export namespace Invoices {
 
         const create = DataAccessContract.makeMutation(
           InvoicesContract.create,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("invoices:create"),
             mutator: (invoice, { tenantId }) =>
               repository.create(
@@ -53,7 +53,7 @@ export namespace Invoices {
                   tenantId,
                 }),
               ),
-          }),
+          },
         );
 
         return { create } as const;

@@ -43,7 +43,7 @@ export namespace RoomsContract {
       DataTransferObject,
     );
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createRoom",
     Args: Schema.Struct({
       ...DataTransferStruct.omit("deletedAt", "tenantId").fields,
@@ -54,7 +54,7 @@ export namespace RoomsContract {
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Function({
+  export const edit = new DataAccessContract.Procedure({
     name: "editRoom",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -66,19 +66,19 @@ export namespace RoomsContract {
     Returns: DataTransferObject,
   });
 
-  export const publish = new DataAccessContract.Function({
+  export const publish = new DataAccessContract.Procedure({
     name: "publishRoom",
     Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 
-  export const draft = new DataAccessContract.Function({
+  export const draft = new DataAccessContract.Procedure({
     name: "draftRoom",
     Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteRoom",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -87,7 +87,7 @@ export namespace RoomsContract {
     Returns: DataTransferStruct,
   });
 
-  export const restore = new DataAccessContract.Function({
+  export const restore = new DataAccessContract.Procedure({
     name: "restoreRoom",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferStruct,

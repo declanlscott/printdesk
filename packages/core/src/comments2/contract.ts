@@ -57,21 +57,21 @@ export namespace CommentsContract {
       }),
     );
 
-  export const isAuthor = new DataAccessContract.Function({
+  export const isAuthor = new DataAccessContract.Procedure({
     name: "isCommentAuthor",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createComment",
     Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Function({
+  export const update = new DataAccessContract.Procedure({
     name: "updateComment",
-    Args: DataTransferStruct.pick("id", "orderId", "updatedAt").pipe(
+    Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
         DataTransferStruct.omit(
           ...Struct.keys(ColumnsContract.Tenant.fields),
@@ -83,10 +83,10 @@ export namespace CommentsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteComment",
     Args: Schema.Struct({
-      ...DataTransferStruct.pick("id", "orderId").fields,
+      ...DataTransferStruct.pick("id").fields,
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: DataTransferObject,

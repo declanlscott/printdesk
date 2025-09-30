@@ -13,8 +13,11 @@ import { AccessControl } from "../access-control2";
 import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
 import { IdentityProvidersSchema } from "../identity-providers2/schemas";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { LicensesContract, TenantsContract } from "./contracts";
 import { LicensesSchema, TenantMetadataSchema, TenantsSchema } from "./schemas";
@@ -283,22 +286,24 @@ export namespace Tenants {
 
         const isSubdomainAvailable = DataAccessContract.makePolicy(
           TenantsContract.isSubdomainAvailable,
-          Effect.succeed({
-            make: ({ subdomain }) =>
-              AccessControl.policy(() =>
-                Effect.gen(function* () {
-                  if (["api", "auth", "backend", "www"].includes(subdomain))
-                    return false;
+          {
+            make: Effect.fn("Tenants.Policies.isSubdomainAvailable.make")(
+              ({ subdomain }) =>
+                AccessControl.policy(() =>
+                  Effect.gen(function* () {
+                    if (["api", "auth", "backend", "www"].includes(subdomain))
+                      return false;
 
-                  return yield* repository.findBySubdomain(subdomain).pipe(
-                    Effect.catchTag("NoSuchElementException", () =>
-                      Effect.succeed(null),
-                    ),
-                    Effect.map((tenant) => tenant?.status === "setup"),
-                  );
-                }),
-              ),
-          }),
+                    return yield* repository.findBySubdomain(subdomain).pipe(
+                      Effect.catchTag("NoSuchElementException", () =>
+                        Effect.succeed(null),
+                      ),
+                      Effect.map((tenant) => tenant?.status === "setup"),
+                    );
+                  }),
+                ),
+            ),
+          },
         );
 
         return { isSubdomainAvailable } as const;
@@ -310,20 +315,29 @@ export namespace Tenants {
     "@printdesk/core/tenants/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [Repository.Default, Permissions.Schemas.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const update = DataAccessContract.makeMutation(
-          TenantsContract.update,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("tenants:update"),
-            mutator: (tenant, session) =>
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notify = (_tenant: TenantsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(PullPermission.make({ permission: "tenants:read" })),
+          );
+
+        const update = DataAccessContract.makeMutation(TenantsContract.update, {
+          makePolicy: Effect.fn("Tenants.Mutations.update.makePolicy")(() =>
+            AccessControl.permission("tenants:update"),
+          ),
+          mutator: Effect.fn("Tenants.Mutations.update.mutator")(
+            (tenant, session) =>
               repository
                 .updateById(session.tenantId, tenant)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+                .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+          ),
+        });
 
         return { update } as const;
       }),
@@ -389,21 +403,23 @@ export namespace Tenants {
 
         const isAvailable = DataAccessContract.makePolicy(
           LicensesContract.isAvailable,
-          Effect.succeed({
-            make: ({ key }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findByKeyWithTenant(key)
-                  .pipe(
-                    Effect.map(
-                      ({ license, tenant }) =>
-                        license.status === "active" &&
-                        (license.tenantId === null ||
-                          tenant?.status === "setup"),
+          {
+            make: Effect.fn("Tenants.LicensesPolicies.isAvailable.make")(
+              ({ key }) =>
+                AccessControl.policy(() =>
+                  repository
+                    .findByKeyWithTenant(key)
+                    .pipe(
+                      Effect.map(
+                        ({ license, tenant }) =>
+                          license.status === "active" &&
+                          (license.tenantId === null ||
+                            tenant?.status === "setup"),
+                      ),
                     ),
-                  ),
-              ),
-          }),
+                ),
+            ),
+          },
         );
 
         return { isAvailable } as const;

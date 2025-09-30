@@ -47,7 +47,7 @@ export namespace Announcements {
 
         const create = DataAccessContract.makeMutation(
           AnnouncementsContract.create,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("announcements:create"),
             mutator: (announcement, session) =>
               repository.create(
@@ -57,21 +57,21 @@ export namespace Announcements {
                   tenantId: session.tenantId,
                 }),
               ),
-          }),
+          },
         );
 
         const update = DataAccessContract.makeMutation(
           AnnouncementsContract.update,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("announcements:update"),
             mutator: ({ id, ...announcement }) =>
               repository.updateById(id, () => announcement),
-          }),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           AnnouncementsContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: () => AccessControl.permission("announcements:delete"),
             mutator: ({ id, deletedAt }) =>
               repository
@@ -84,7 +84,7 @@ export namespace Announcements {
                     repository.deleteById(id),
                   ),
                 ),
-          }),
+          },
         );
 
         return { create, update, delete: delete_ } as const;

@@ -12,7 +12,9 @@ import { Array, Effect, Equal, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { UsersContract } from "./contract";
 import { UsersSchema } from "./schema";
@@ -460,15 +462,13 @@ export namespace Users {
     {
       accessors: true,
       succeed: {
-        isSelf: DataAccessContract.makePolicy(
-          UsersContract.isSelf,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                Effect.succeed(Equal.equals(id, principal.userId)),
-              ),
-          }),
-        ),
+        isSelf: DataAccessContract.makePolicy(UsersContract.isSelf, {
+          make: Effect.fn("Users.Policies.isSelf.make")(({ id }) =>
+            AccessControl.policy((principal) =>
+              Effect.succeed(Equal.equals(id, principal.userId)),
+            ),
+          ),
+        }),
       },
     },
   ) {}
@@ -477,48 +477,56 @@ export namespace Users {
     "@printdesk/core/users/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Policies.Default],
+      dependencies: [
+        Repository.Default,
+        Policies.Default,
+        Permissions.Schemas.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
         const isSelf = yield* Policies.isSelf;
 
-        const update = DataAccessContract.makeMutation(
-          UsersContract.update,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("users:update"),
-            mutator: (user, session) =>
+        const notifier = yield* ReplicacheNotifier;
+
+        const update = DataAccessContract.makeMutation(UsersContract.update, {
+          makePolicy: Effect.fn("Users.Mutations.update.makePolicy")(() =>
+            AccessControl.permission("users:update"),
+          ),
+          mutator: Effect.fn("Users.Mutations.update.mutator")(
+            (user, session) =>
               repository
                 .updateById(user.id, user, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+          ),
+        });
 
-        const delete_ = DataAccessContract.makeMutation(
-          UsersContract.delete_,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("users:delete"),
-                isSelf.make({ id }),
-              ),
-            mutator: ({ id, deletedAt }, session) =>
+        const delete_ = DataAccessContract.makeMutation(UsersContract.delete_, {
+          makePolicy: Effect.fn("Users.Mutations.delete.makePolicy")(({ id }) =>
+            AccessControl.some(
+              AccessControl.permission("users:delete"),
+              isSelf.make({ id }),
+            ),
+          ),
+          mutator: Effect.fn("Users.Mutations.delete.mutator")(
+            ({ id, deletedAt }, session) =>
               repository
                 .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+          ),
+        });
 
-        const restore = DataAccessContract.makeMutation(
-          UsersContract.restore,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("users:delete"),
-            mutator: ({ id }, session) =>
+        const restore = DataAccessContract.makeMutation(UsersContract.restore, {
+          makePolicy: Effect.fn("Users.Mutations.restore.makePolicy")(() =>
+            AccessControl.permission("users:delete"),
+          ),
+          mutator: Effect.fn("Users.Mutations.restore.mutator")(
+            ({ id }, session) =>
               repository
                 .updateById(id, { deletedAt: null }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+          ),
+        });
 
         return { update, delete: delete_, restore } as const;
       }),

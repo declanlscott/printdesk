@@ -47,129 +47,111 @@ export namespace Rooms {
         const workflowsRepository = yield* RoomWorkflows.WriteRepository;
         const productsRepository = yield* Products.WriteRepository;
 
-        const create = DataAccessContract.makeMutation(
-          RoomsContract.create,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:create"),
-            mutator: ({ workflowId, ...room }, { tenantId }) =>
-              Effect.all(
-                Tuple.make(
-                  repository.create(
-                    RoomsContract.DataTransferObject.make({
-                      ...room,
-                      tenantId,
-                    }),
-                  ),
-                  workflowsRepository.create(
-                    RoomWorkflowsContract.DataTransferObject.make({
-                      id: workflowId,
-                      roomId: room.id,
-                      createdAt: room.createdAt,
-                      updatedAt: room.updatedAt,
-                      tenantId,
-                    }),
-                  ),
-                ),
-                { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
-
-        const edit = DataAccessContract.makeMutation(
-          RoomsContract.edit,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, ...room }) => repository.updateById(id, () => room),
-          }),
-        );
-
-        const publish = DataAccessContract.makeMutation(
-          RoomsContract.publish,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, updatedAt }) =>
-              repository.updateById(id, () => ({
-                status: "published",
-                updatedAt,
-              })),
-          }),
-        );
-
-        const draft = DataAccessContract.makeMutation(
-          RoomsContract.draft,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, updatedAt }) =>
-              Effect.all(
-                Tuple.make(
-                  repository.updateById(id, () => ({
-                    status: "draft",
-                    updatedAt,
-                  })),
-                  productsRepository.updateByRoomId(id, {
-                    status: "draft",
-                    updatedAt,
+        const create = DataAccessContract.makeMutation(RoomsContract.create, {
+          makePolicy: () => AccessControl.permission("rooms:create"),
+          mutator: ({ workflowId, ...room }, { tenantId }) =>
+            Effect.all(
+              Tuple.make(
+                repository.create(
+                  RoomsContract.DataTransferObject.make({
+                    ...room,
+                    tenantId,
                   }),
                 ),
-                { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+                workflowsRepository.create(
+                  RoomWorkflowsContract.DataTransferObject.make({
+                    id: workflowId,
+                    roomId: room.id,
+                    createdAt: room.createdAt,
+                    updatedAt: room.updatedAt,
+                    tenantId,
+                  }),
+                ),
+              ),
+              { concurrency: "unbounded" },
+            ).pipe(Effect.map(Tuple.at(0))),
+        });
 
-        const delete_ = DataAccessContract.makeMutation(
-          RoomsContract.delete_,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:delete"),
-            mutator: ({ id, deletedAt }) =>
-              Effect.all(
-                Tuple.make(
-                  repository
-                    .updateById(id, () => ({ deletedAt }))
-                    .pipe(
-                      AccessControl.enforce(
-                        AccessControl.permission("rooms:read"),
-                      ),
-                      Effect.catchTag("AccessDeniedError", () =>
-                        repository.deleteById(id),
-                      ),
-                    ),
-                  workflowsRepository.updateByRoomId(id, { deletedAt }).pipe(
+        const edit = DataAccessContract.makeMutation(RoomsContract.edit, {
+          makePolicy: () => AccessControl.permission("rooms:update"),
+          mutator: ({ id, ...room }) => repository.updateById(id, () => room),
+        });
+
+        const publish = DataAccessContract.makeMutation(RoomsContract.publish, {
+          makePolicy: () => AccessControl.permission("rooms:update"),
+          mutator: ({ id, updatedAt }) =>
+            repository.updateById(id, () => ({
+              status: "published",
+              updatedAt,
+            })),
+        });
+
+        const draft = DataAccessContract.makeMutation(RoomsContract.draft, {
+          makePolicy: () => AccessControl.permission("rooms:update"),
+          mutator: ({ id, updatedAt }) =>
+            Effect.all(
+              Tuple.make(
+                repository.updateById(id, () => ({
+                  status: "draft",
+                  updatedAt,
+                })),
+                productsRepository.updateByRoomId(id, {
+                  status: "draft",
+                  updatedAt,
+                }),
+              ),
+              { concurrency: "unbounded" },
+            ).pipe(Effect.map(Tuple.at(0))),
+        });
+
+        const delete_ = DataAccessContract.makeMutation(RoomsContract.delete_, {
+          makePolicy: () => AccessControl.permission("rooms:delete"),
+          mutator: ({ id, deletedAt }) =>
+            Effect.all(
+              Tuple.make(
+                repository
+                  .updateById(id, () => ({ deletedAt }))
+                  .pipe(
                     AccessControl.enforce(
-                      AccessControl.permission("room_workflows:read"),
+                      AccessControl.permission("rooms:read"),
                     ),
                     Effect.catchTag("AccessDeniedError", () =>
-                      workflowsRepository.deleteByRoomId(id),
+                      repository.deleteById(id),
                     ),
                   ),
-                  productsRepository.updateByRoomId(id, { deletedAt }).pipe(
-                    AccessControl.enforce(
-                      AccessControl.permission("products:read"),
-                    ),
-                    Effect.catchTag("AccessDeniedError", () =>
-                      productsRepository.deleteByRoomId(id),
-                    ),
+                workflowsRepository.updateByRoomId(id, { deletedAt }).pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("room_workflows:read"),
+                  ),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    workflowsRepository.deleteByRoomId(id),
                   ),
                 ),
-                { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+                productsRepository.updateByRoomId(id, { deletedAt }).pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("products:read"),
+                  ),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    productsRepository.deleteByRoomId(id),
+                  ),
+                ),
+              ),
+              { concurrency: "unbounded" },
+            ).pipe(Effect.map(Tuple.at(0))),
+        });
 
-        const restore = DataAccessContract.makeMutation(
-          RoomsContract.restore,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:delete"),
-            mutator: ({ id }) =>
-              Effect.all(
-                Tuple.make(
-                  repository.updateById(id, () => ({ deletedAt: null })),
-                  workflowsRepository.updateByRoomId(id, { deletedAt: null }),
-                  productsRepository.updateByRoomId(id, { deletedAt: null }),
-                ),
-                { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+        const restore = DataAccessContract.makeMutation(RoomsContract.restore, {
+          makePolicy: () => AccessControl.permission("rooms:delete"),
+          mutator: ({ id }) =>
+            Effect.all(
+              Tuple.make(
+                repository.updateById(id, () => ({ deletedAt: null })),
+                workflowsRepository.updateByRoomId(id, { deletedAt: null }),
+                productsRepository.updateByRoomId(id, { deletedAt: null }),
+              ),
+              { concurrency: "unbounded" },
+            ).pipe(Effect.map(Tuple.at(0))),
+        });
 
         return {
           create,

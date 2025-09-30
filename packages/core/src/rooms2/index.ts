@@ -509,6 +509,18 @@ export namespace Rooms {
               ),
         );
 
+        const findById = Effect.fn("Rooms.Repository.findById")(
+          (id: RoomsSchema.Row["id"], tenantId: RoomsSchema.Row["tenantId"]) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const updateById = Effect.fn("Rooms.Repository.updateById")(
           (
             id: RoomsSchema.Row["id"],
@@ -540,6 +552,7 @@ export namespace Rooms {
           findFastForward,
           findActiveFastForward,
           findActivePublishedFastForward,
+          findById,
           updateById,
         } as const;
       }),
@@ -556,11 +569,12 @@ export namespace Rooms {
         const workflowsRepository = yield* RoomWorkflows.Repository;
         const productsRepository = yield* Products.Repository;
 
-        const create = DataAccessContract.makeMutation(
-          RoomsContract.create,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:create"),
-            mutator: ({ workflowId, ...room }, { tenantId }) =>
+        const create = DataAccessContract.makeMutation(RoomsContract.create, {
+          makePolicy: Effect.fn("Rooms.Mutations.create.makePolicy")(() =>
+            AccessControl.permission("rooms:create"),
+          ),
+          mutator: Effect.fn("Rooms.Mutations.create.mutator")(
+            ({ workflowId, ...room }, { tenantId }) =>
               Effect.all(
                 Tuple.make(
                   repository
@@ -576,25 +590,27 @@ export namespace Rooms {
                 ),
                 { concurrency: "unbounded" },
               ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+          ),
+        });
 
-        const edit = DataAccessContract.makeMutation(
-          RoomsContract.edit,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, ...room }, session) =>
+        const edit = DataAccessContract.makeMutation(RoomsContract.edit, {
+          makePolicy: Effect.fn("Rooms.Mutations.edit.makePolicy")(() =>
+            AccessControl.permission("rooms:update"),
+          ),
+          mutator: Effect.fn("Rooms.Mutations.edit.mutator")(
+            ({ id, ...room }, session) =>
               repository
                 .updateById(id, room, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+          ),
+        });
 
-        const publish = DataAccessContract.makeMutation(
-          RoomsContract.publish,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, updatedAt }, session) =>
+        const publish = DataAccessContract.makeMutation(RoomsContract.publish, {
+          makePolicy: Effect.fn("Rooms.Mutations.publish.makePolicy")(() =>
+            AccessControl.permission("rooms:update"),
+          ),
+          mutator: Effect.fn("Rooms.Mutations.publish.mutator")(
+            ({ id, updatedAt }, session) =>
               repository
                 .updateById(
                   id,
@@ -602,14 +618,15 @@ export namespace Rooms {
                   session.tenantId,
                 )
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+          ),
+        });
 
-        const draft = DataAccessContract.makeMutation(
-          RoomsContract.draft,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:update"),
-            mutator: ({ id, updatedAt }, session) =>
+        const draft = DataAccessContract.makeMutation(RoomsContract.draft, {
+          makePolicy: Effect.fn("Rooms.Mutations.draft.makePolicy")(() =>
+            AccessControl.permission("rooms:update"),
+          ),
+          mutator: Effect.fn("Rooms.Mutations.draft.mutator")(
+            ({ id, updatedAt }, session) =>
               Effect.all(
                 Tuple.make(
                   repository
@@ -627,14 +644,15 @@ export namespace Rooms {
                 ),
                 { concurrency: "unbounded" },
               ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+          ),
+        });
 
-        const delete_ = DataAccessContract.makeMutation(
-          RoomsContract.delete_,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:delete"),
-            mutator: ({ id, deletedAt }, session) =>
+        const delete_ = DataAccessContract.makeMutation(RoomsContract.delete_, {
+          makePolicy: Effect.fn("Rooms.Mutations.delete.makePolicy")(() =>
+            AccessControl.permission("rooms:delete"),
+          ),
+          mutator: Effect.fn("Rooms.Mutations.delete.mutator")(
+            ({ id, deletedAt }, session) =>
               Effect.all(
                 Tuple.make(
                   repository
@@ -653,14 +671,15 @@ export namespace Rooms {
                 ),
                 { concurrency: "unbounded" },
               ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+          ),
+        });
 
-        const restore = DataAccessContract.makeMutation(
-          RoomsContract.restore,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("rooms:delete"),
-            mutator: ({ id }, session) =>
+        const restore = DataAccessContract.makeMutation(RoomsContract.restore, {
+          makePolicy: Effect.fn("Rooms.Mutations.restore.makePolicy")(() =>
+            AccessControl.permission("rooms:delete"),
+          ),
+          mutator: Effect.fn("Rooms.Mutations.restore.mutator")(
+            ({ id }, session) =>
               Effect.all(
                 Tuple.make(
                   repository
@@ -679,8 +698,8 @@ export namespace Rooms {
                 ),
                 { concurrency: "unbounded" },
               ).pipe(Effect.map(Tuple.at(0))),
-          }),
-        );
+          ),
+        });
 
         return {
           create,

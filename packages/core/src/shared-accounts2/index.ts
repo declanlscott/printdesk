@@ -1013,8 +1013,10 @@ export namespace SharedAccounts {
 
         const isCustomerAuthorized = DataAccessContract.makePolicy(
           SharedAccountsContract.isCustomerAuthorized,
-          Effect.succeed({
-            make: ({ id, customerId }) =>
+          {
+            make: Effect.fn(
+              "SharedAccounts.Policies.isCustomerAuthorized.make",
+            )(({ id, customerId }) =>
               AccessControl.policy((principal) =>
                 repository
                   .findActiveAuthorizedCustomerIds(id, principal.tenantId)
@@ -1024,23 +1026,26 @@ export namespace SharedAccounts {
                     ),
                   ),
               ),
-          }),
+            ),
+          },
         );
 
         const isManagerAuthorized = DataAccessContract.makePolicy(
           SharedAccountsContract.isManagerAuthorized,
-          Effect.succeed({
-            make: ({ id, managerId }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findActiveAuthorizedManagerIds(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(
-                      Array.some(Equal.equals(managerId ?? principal.userId)),
+          {
+            make: Effect.fn("SharedAccounts.Policies.isManagerAuthorized.make")(
+              ({ id, managerId }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findActiveAuthorizedManagerIds(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(
+                        Array.some(Equal.equals(managerId ?? principal.userId)),
+                      ),
                     ),
-                  ),
-              ),
-          }),
+                ),
+            ),
+          },
         );
 
         return { isCustomerAuthorized, isManagerAuthorized } as const;
@@ -1058,26 +1063,32 @@ export namespace SharedAccounts {
 
         const update = DataAccessContract.makeMutation(
           SharedAccountsContract.update,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("shared_accounts:update"),
-            mutator: ({ id, ...sharedAccount }, session) =>
-              repository
-                .updateById(id, sharedAccount, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("SharedAccounts.Mutations.update.makePolicy")(
+              () => AccessControl.permission("shared_accounts:update"),
+            ),
+            mutator: Effect.fn("SharedAccounts.Mutations.update.mutator")(
+              ({ id, ...sharedAccount }, session) =>
+                repository
+                  .updateById(id, sharedAccount, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version"))),
+            ),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           SharedAccountsContract.delete_,
-          Effect.succeed({
-            makePolicy: () =>
-              AccessControl.permission("shared_accounts:delete"),
-            mutator: ({ id, deletedAt }, session) =>
-              repository
-                .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("SharedAccounts.Mutations.delete.makePolicy")(
+              () => AccessControl.permission("shared_accounts:delete"),
+            ),
+            mutator: Effect.fn("SharedAccounts.Mutations.delete.mutator")(
+              ({ id, deletedAt }, session) =>
+                repository
+                  .updateById(id, { deletedAt }, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version"))),
+            ),
+          },
         );
 
         return { update, delete: delete_ } as const;
@@ -2546,30 +2557,42 @@ export namespace SharedAccounts {
 
         const create = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.create,
-          Effect.succeed({
-            makePolicy: () =>
+          {
+            makePolicy: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationMutations.create.makePolicy",
+            )(() =>
               AccessControl.permission(
                 "shared_account_manager_authorizations:create",
               ),
-            mutator: (authorization, { tenantId }) =>
+            ),
+            mutator: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationMutations.create.mutator",
+            )((authorization, { tenantId }) =>
               repository
                 .create({ ...authorization, tenantId })
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
+            ),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.delete_,
-          Effect.succeed({
-            makePolicy: () =>
+          {
+            makePolicy: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationMutations.delete.makePolicy",
+            )(() =>
               AccessControl.permission(
                 "shared_account_manager_authorizations:delete",
               ),
-            mutator: ({ id, deletedAt }, session) =>
+            ),
+            mutator: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationMutations.delete.mutator",
+            )(({ id, deletedAt }, session) =>
               repository
                 .updateById(id, { deletedAt }, session.tenantId)
                 .pipe(Effect.map(Struct.omit("version"))),
-          }),
+            ),
+          },
         );
 
         return { create, delete: delete_ } as const;

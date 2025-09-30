@@ -13,8 +13,12 @@ import { Array, Effect, Equal, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
 import { Orders } from "../orders2";
+import { OrdersContract } from "../orders2/contract";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { CommentsContract } from "./contract";
 import { CommentsSchema } from "./schema";
@@ -970,8 +974,8 @@ export namespace Comments {
 
         const isAuthor = DataAccessContract.makePolicy(
           CommentsContract.isAuthor,
-          Effect.succeed({
-            make: ({ id }) =>
+          {
+            make: Effect.fn("Comments.Policies.isAuthor.make")(({ id }) =>
               AccessControl.policy((principal) =>
                 repository
                   .findById(id, principal.tenantId)
@@ -980,7 +984,8 @@ export namespace Comments {
                     Effect.map(Equal.equals(principal.userId)),
                   ),
               ),
-          }),
+            ),
+          },
         );
 
         return { isAuthor } as const;
@@ -996,6 +1001,7 @@ export namespace Comments {
         Repository.Default,
         Orders.Policies.Default,
         Policies.Default,
+        Permissions.Schemas.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -1005,54 +1011,87 @@ export namespace Comments {
 
         const isAuthor = yield* Policies.isAuthor;
 
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notify = (comment: CommentsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "comments:read" }),
+              PullPermission.make({ permission: "active_comments:read" }),
+              Events.makeReplicachePullPolicy(
+                OrdersContract.isCustomerOrManager.make({
+                  id: comment.orderId,
+                }),
+              ),
+              Events.makeReplicachePullPolicy(
+                OrdersContract.isManagerAuthorized.make({
+                  id: comment.orderId,
+                }),
+              ),
+            ),
+          );
+
         const create = DataAccessContract.makeMutation(
           CommentsContract.create,
-          Effect.succeed({
-            makePolicy: ({ orderId }) =>
-              AccessControl.some(
-                AccessControl.permission("comments:create"),
-                isCustomerOrManager.make({ id: orderId }),
-                isManagerAuthorized.make({ id: orderId }),
-              ),
-            mutator: (comment, session) =>
-              repository
-                .create({
-                  ...comment,
-                  authorId: session.userId,
-                  tenantId: session.tenantId,
-                })
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Comments.Mutations.create.makePolicy")(
+              ({ orderId }) =>
+                AccessControl.some(
+                  AccessControl.permission("comments:create"),
+                  isCustomerOrManager.make({ id: orderId }),
+                  isManagerAuthorized.make({ id: orderId }),
+                ),
+            ),
+            mutator: Effect.fn("Comments.Mutations.create.mutator")(
+              (comment, session) =>
+                repository
+                  .create({
+                    ...comment,
+                    authorId: session.userId,
+                    tenantId: session.tenantId,
+                  })
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         const update = DataAccessContract.makeMutation(
           CommentsContract.update,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("comments:update"),
-                isAuthor.make({ id }),
-              ),
-            mutator: ({ id, ...comment }, session) =>
-              repository
-                .updateById(id, comment, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Comments.Mutations.update.makePolicy")(
+              ({ id }) =>
+                AccessControl.some(
+                  AccessControl.permission("comments:update"),
+                  isAuthor.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("Comments.Mutations.update.mutator")(
+              ({ id, ...comment }, session) =>
+                repository
+                  .updateById(id, comment, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           CommentsContract.delete_,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("comments:delete"),
-                isAuthor.make({ id }),
-              ),
-            mutator: ({ id, deletedAt }, session) =>
-              repository
-                .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Comments.Mutations.delete.makePolicy")(
+              ({ id }) =>
+                AccessControl.some(
+                  AccessControl.permission("comments:delete"),
+                  isAuthor.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("Comments.Mutations.delete.mutator")(
+              ({ id, deletedAt }, session) =>
+                repository
+                  .updateById(id, { deletedAt }, session.tenantId)
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         return { create, update, delete: delete_ } as const;

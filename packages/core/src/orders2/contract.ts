@@ -217,49 +217,49 @@ export namespace OrdersContract {
       ),
     );
 
-  export const isCustomer = new DataAccessContract.Function({
+  export const isCustomer = new DataAccessContract.Procedure({
     name: "isOrderCustomer",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isManager = new DataAccessContract.Function({
+  export const isManager = new DataAccessContract.Procedure({
     name: "isOrderManager",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isCustomerOrManager = new DataAccessContract.Function({
+  export const isCustomerOrManager = new DataAccessContract.Procedure({
     name: "isOrderCustomerOrManager",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isAuthorizedManager = new DataAccessContract.Function({
-    name: "isOrderAuthorizedManager",
+  export const isManagerAuthorized = new DataAccessContract.Procedure({
+    name: "isOrderManagerAuthorized",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isEditable = new DataAccessContract.Function({
+  export const isEditable = new DataAccessContract.Procedure({
     name: "isOrderEditable",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isApprovable = new DataAccessContract.Function({
+  export const isApprovable = new DataAccessContract.Procedure({
     name: "isOrderApprovable",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isTransitionable = new DataAccessContract.Function({
+  export const isTransitionable = new DataAccessContract.Procedure({
     name: "isOrderTransitionable",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isDeletable = new DataAccessContract.Function({
+  export const isDeletable = new DataAccessContract.Procedure({
     name: "isOrderDeletable",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
@@ -272,7 +272,7 @@ export namespace OrdersContract {
     "deletedAt",
     "tenantId",
   ] as const;
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createOrder",
     Args: Schema.Union(
       SharedAccountWorkflowStatusDto.omit(...omittedOnCreate),
@@ -281,7 +281,7 @@ export namespace OrdersContract {
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Function({
+  export const edit = new DataAccessContract.Procedure({
     name: "editOrder",
     Args: Schema.extend(
       BaseDto.pick("id", "updatedAt"),
@@ -295,7 +295,7 @@ export namespace OrdersContract {
     Returns: DataTransferObject,
   });
 
-  export const approve = new DataAccessContract.Function({
+  export const approve = new DataAccessContract.Procedure({
     name: "approveOrder",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -305,14 +305,14 @@ export namespace OrdersContract {
     Returns: DataTransferObject,
   });
 
-  export const transitionRoomWorkflowStatus = new DataAccessContract.Function({
+  export const transitionRoomWorkflowStatus = new DataAccessContract.Procedure({
     name: "transitionOrderRoomWorkflowStatus",
     Args: RoomWorkflowStatusDto.pick("id", "updatedAt", "roomWorkflowStatusId"),
     Returns: DataTransferObject,
   });
 
   export const transitionSharedAccountWorkflowStatus =
-    new DataAccessContract.Function({
+    new DataAccessContract.Procedure({
       name: "transitionOrderSharedAccountWorkflowStatus",
       Args: SharedAccountWorkflowStatusDto.pick(
         "id",
@@ -322,7 +322,7 @@ export namespace OrdersContract {
       Returns: DataTransferObject,
     });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteOrder",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,

@@ -45,7 +45,7 @@ export namespace Comments {
 
         const isAuthor = DataAccessContract.makePolicy(
           CommentsContract.isAuthor,
-          Effect.succeed({
+          {
             make: ({ id }) =>
               AccessControl.policy((principal) =>
                 repository
@@ -55,7 +55,7 @@ export namespace Comments {
                     Effect.map(Equal.equals(principal.userId)),
                   ),
               ),
-          }),
+          },
         );
 
         return { isAuthor } as const;
@@ -82,7 +82,7 @@ export namespace Comments {
 
         const create = DataAccessContract.makeMutation(
           CommentsContract.create,
-          Effect.succeed({
+          {
             makePolicy: ({ orderId }) =>
               AccessControl.some(
                 AccessControl.permission("comments:create"),
@@ -97,12 +97,12 @@ export namespace Comments {
                   tenantId: session.tenantId,
                 }),
               ),
-          }),
+          },
         );
 
         const update = DataAccessContract.makeMutation(
           CommentsContract.update,
-          Effect.succeed({
+          {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("comments:update"),
@@ -110,12 +110,12 @@ export namespace Comments {
               ),
             mutator: ({ id, ...comment }) =>
               repository.updateById(id, () => comment),
-          }),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           CommentsContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("comments:delete"),
@@ -132,7 +132,7 @@ export namespace Comments {
                     repository.deleteById(id),
                   ),
                 ),
-          }),
+          },
         );
 
         return { create, update, delete: delete_ } as const;

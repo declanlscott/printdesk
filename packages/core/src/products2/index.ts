@@ -12,7 +12,10 @@ import { Array, Effect, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { ProductsContract } from "./contract";
 import { ProductsSchema } from "./schema";
@@ -593,63 +596,87 @@ export namespace Products {
     "@printdesk/core/products/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [Repository.Default, Permissions.Schemas.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notify = (_product: ProductsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "products:read" }),
+              PullPermission.make({ permission: "active_products:read" }),
+            ),
+          );
+
         const create = DataAccessContract.makeMutation(
           ProductsContract.create,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:create"),
-            mutator: (product, { tenantId }) =>
-              repository
-                .create({ ...product, tenantId })
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Products.Mutations.create.makePolicy")(() =>
+              AccessControl.permission("products:create"),
+            ),
+            mutator: Effect.fn("Products.Mutations.create.mutator")(
+              (product, { tenantId }) =>
+                repository
+                  .create({ ...product, tenantId })
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
-        const edit = DataAccessContract.makeMutation(
-          ProductsContract.edit,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, ...product }, session) =>
+        const edit = DataAccessContract.makeMutation(ProductsContract.edit, {
+          makePolicy: Effect.fn("Products.Mutations.edit.makePolicy")(() =>
+            AccessControl.permission("products:update"),
+          ),
+          mutator: Effect.fn("Products.Mutations.edit.mutator")(
+            ({ id, ...product }, session) =>
               repository
                 .updateById(id, product, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
-        );
+                .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+          ),
+        });
 
         const publish = DataAccessContract.makeMutation(
           ProductsContract.publish,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, updatedAt }, session) =>
-              repository.findByIdForUpdate(id, session.tenantId).pipe(
-                Effect.flatMap((prev) =>
-                  repository
-                    .updateById(
-                      id,
-                      {
-                        status: "published",
-                        config: ProductsContract.Configuration.make({
-                          ...prev.config,
+          {
+            makePolicy: Effect.fn("Products.Mutations.publish.makePolicy")(() =>
+              AccessControl.permission("products:update"),
+            ),
+            mutator: Effect.fn("Products.Mutations.publish.mutator")(
+              ({ id, updatedAt }, session) =>
+                repository.findByIdForUpdate(id, session.tenantId).pipe(
+                  Effect.flatMap((prev) =>
+                    repository
+                      .updateById(
+                        id,
+                        {
                           status: "published",
-                        }),
-                        updatedAt,
-                      },
-                      session.tenantId,
-                    )
-                    .pipe(Effect.map(Struct.omit("version"))),
+                          config: ProductsContract.Configuration.make({
+                            ...prev.config,
+                            status: "published",
+                          }),
+                          updatedAt,
+                        },
+                        session.tenantId,
+                      )
+                      .pipe(
+                        Effect.map(Struct.omit("version")),
+                        Effect.tap(notify),
+                      ),
+                  ),
                 ),
-              ),
-          }),
+            ),
+          },
         );
 
-        const draft = DataAccessContract.makeMutation(
-          ProductsContract.draft,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:update"),
-            mutator: ({ id, updatedAt }, session) =>
+        const draft = DataAccessContract.makeMutation(ProductsContract.draft, {
+          makePolicy: Effect.fn("Products.Mutations.draft.makePolicy")(() =>
+            AccessControl.permission("products:update"),
+          ),
+          mutator: Effect.fn("Products.Mutations.draft.mutator")(
+            ({ id, updatedAt }, session) =>
               repository.findByIdForUpdate(id, session.tenantId).pipe(
                 Effect.flatMap((prev) =>
                   repository
@@ -665,25 +692,32 @@ export namespace Products {
                       },
                       session.tenantId,
                     )
-                    .pipe(Effect.map(Struct.omit("version"))),
+                    .pipe(
+                      Effect.map(Struct.omit("version")),
+                      Effect.tap(notify),
+                    ),
                 ),
               ),
-          }),
-        );
+          ),
+        });
 
         const delete_ = DataAccessContract.makeMutation(
           ProductsContract.delete_,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("products:delete"),
-            mutator: ({ id, deletedAt }, session) =>
-              repository
-                .updateById(
-                  id,
-                  { deletedAt, status: "draft" },
-                  session.tenantId,
-                )
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Products.Mutations.delete.makePolicy")(() =>
+              AccessControl.permission("products:delete"),
+            ),
+            mutator: Effect.fn("Products.Mutations.delete.mutator")(
+              ({ id, deletedAt }, session) =>
+                repository
+                  .updateById(
+                    id,
+                    { deletedAt, status: "draft" },
+                    session.tenantId,
+                  )
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         return { create, edit, publish, draft, delete: delete_ } as const;

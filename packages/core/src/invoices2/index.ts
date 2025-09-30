@@ -13,7 +13,12 @@ import { Array, Effect, Struct } from "effect";
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
+import { Orders } from "../orders2";
+import { OrdersContract } from "../orders2/contract";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { InvoicesContract } from "./contract";
 import { InvoicesSchema } from "./schema";
@@ -869,19 +874,50 @@ export namespace Invoices {
     "@printdesk/core/invoices/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [
+        Repository.Default,
+        Orders.Repository.Default,
+        Permissions.Schemas.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notify = (invoice: InvoicesContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "invoices:read" }),
+              PullPermission.make({
+                permission: "active_invoices:read",
+              }),
+              Events.makeReplicachePullPolicy(
+                OrdersContract.isCustomerOrManager.make({
+                  id: invoice.orderId,
+                }),
+              ),
+              Events.makeReplicachePullPolicy(
+                OrdersContract.isManagerAuthorized.make({
+                  id: invoice.orderId,
+                }),
+              ),
+            ),
+          );
+
         const create = DataAccessContract.makeMutation(
           InvoicesContract.create,
-          Effect.succeed({
-            makePolicy: () => AccessControl.permission("invoices:create"),
-            mutator: (invoice, { tenantId }) =>
-              repository
-                .create({ ...invoice, tenantId })
-                .pipe(Effect.map(Struct.omit("version"))),
-          }),
+          {
+            makePolicy: Effect.fn("Invoices.Mutations.create.makePolicy")(() =>
+              AccessControl.permission("invoices:create"),
+            ),
+            mutator: Effect.fn("Invoices.Mutations.create.mutator")(
+              (invoice, { tenantId }) =>
+                repository
+                  .create({ ...invoice, tenantId })
+                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+            ),
+          },
         );
 
         return { create } as const;

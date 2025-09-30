@@ -31,13 +31,13 @@ export namespace AnnouncementsContract {
       DataTransferObject,
     );
 
-  export const create = new DataAccessContract.Function({
+  export const create = new DataAccessContract.Procedure({
     name: "createAnnouncement",
     Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Function({
+  export const update = new DataAccessContract.Procedure({
     name: "updateAnnouncement",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -50,7 +50,7 @@ export namespace AnnouncementsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteAnnouncement",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,

@@ -87,7 +87,7 @@ export namespace SharedAccountWorkflowsContract {
       ),
     );
 
-  export const isManagerAuthorized = new DataAccessContract.Function({
+  export const isManagerAuthorized = new DataAccessContract.Procedure({
     name: "isManagerAuthorizedSharedAccountWorkflow",
     Args: Schema.Struct({ id: ColumnsContract.EntityId }),
     Returns: Schema.Void,
@@ -166,7 +166,7 @@ export namespace WorkflowStatusesContract {
       ),
     );
 
-  export const append = new DataAccessContract.Function({
+  export const append = new DataAccessContract.Procedure({
     name: "appendWorkflowStatus",
     Args: Schema.Union(
       SharedAccountWorkflowDto.omit("index", "deletedAt", "tenantId"),
@@ -175,7 +175,7 @@ export namespace WorkflowStatusesContract {
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Function({
+  export const edit = new DataAccessContract.Procedure({
     name: "editWorkflowStatus",
     Args: Schema.extend(
       BaseDto.pick("id", "updatedAt"),
@@ -186,13 +186,13 @@ export namespace WorkflowStatusesContract {
     Returns: DataTransferObject,
   });
 
-  export const reorder = new DataAccessContract.Function({
+  export const reorder = new DataAccessContract.Procedure({
     name: "reorderWorkflowStatus",
     Args: BaseDto.pick("id", "index", "updatedAt"),
     Returns: DataTransferObject.pipe(Schema.Array),
   });
 
-  export const delete_ = new DataAccessContract.Function({
+  export const delete_ = new DataAccessContract.Procedure({
     name: "deleteWorkflowStatus",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -201,13 +201,13 @@ export namespace WorkflowStatusesContract {
     Returns: DataTransferObject,
   });
 
-  export const isEditable = new DataAccessContract.Function({
+  export const isEditable = new DataAccessContract.Procedure({
     name: "isWorkflowStatusEditable",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isDeletable = new DataAccessContract.Function({
+  export const isDeletable = new DataAccessContract.Procedure({
     name: "isWorkflowStatusDeletable",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,

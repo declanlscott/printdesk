@@ -103,7 +103,7 @@ export namespace SharedAccounts {
 
         const isCustomerAuthorized = DataAccessContract.makePolicy(
           SharedAccountsContract.isCustomerAuthorized,
-          Effect.succeed({
+          {
             make: ({ id, customerId }) =>
               AccessControl.policy((principal) =>
                 repository
@@ -114,12 +114,12 @@ export namespace SharedAccounts {
                     ),
                   ),
               ),
-          }),
+          },
         );
 
         const isManagerAuthorized = DataAccessContract.makePolicy(
           SharedAccountsContract.isManagerAuthorized,
-          Effect.succeed({
+          {
             make: ({ id, managerId }) =>
               AccessControl.policy((principal) =>
                 repository
@@ -130,7 +130,7 @@ export namespace SharedAccounts {
                     ),
                   ),
               ),
-          }),
+          },
         );
 
         return { isCustomerAuthorized, isManagerAuthorized } as const;
@@ -148,17 +148,17 @@ export namespace SharedAccounts {
 
         const update = DataAccessContract.makeMutation(
           SharedAccountsContract.update,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission("shared_accounts:update"),
             mutator: ({ id, ...sharedAccount }) =>
               repository.updateById(id, () => sharedAccount),
-          }),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           SharedAccountsContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission("shared_accounts:delete"),
             mutator: ({ id, deletedAt }) =>
@@ -172,7 +172,7 @@ export namespace SharedAccounts {
                     repository.deleteById(id),
                   ),
                 ),
-          }),
+          },
         );
 
         return { update, delete: delete_ } as const;
@@ -250,7 +250,7 @@ export namespace SharedAccounts {
 
         const create = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.create,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission(
                 "shared_account_manager_authorizations:create",
@@ -261,12 +261,12 @@ export namespace SharedAccounts {
                   { ...authorization, tenantId },
                 ),
               ),
-          }),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.delete_,
-          Effect.succeed({
+          {
             makePolicy: () =>
               AccessControl.permission(
                 "shared_account_manager_authorizations:delete",
@@ -284,7 +284,7 @@ export namespace SharedAccounts {
                     repository.deleteById(id),
                   ),
                 ),
-          }),
+          },
         );
 
         return { create, delete: delete_ } as const;

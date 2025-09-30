@@ -1526,8 +1526,10 @@ export namespace SharedAccountWorkflows {
 
         const isManagerAuthorized = DataAccessContract.makePolicy(
           SharedAccountWorkflowsContract.isManagerAuthorized,
-          Effect.succeed({
-            make: ({ id }) =>
+          {
+            make: Effect.fn(
+              "SharedAccountWorkflows.Policies.isManagerAuthorized.make",
+            )(({ id }) =>
               AccessControl.policy((principal) =>
                 repository
                   .findActiveManagerAuthorized(
@@ -1542,7 +1544,8 @@ export namespace SharedAccountWorkflows {
                     ),
                   ),
               ),
-          }),
+            ),
+          },
         );
 
         return { isManagerAuthorized } as const;
@@ -2926,53 +2929,53 @@ export namespace WorkflowStatuses {
 
         const isEditable = DataAccessContract.makePolicy(
           WorkflowStatusesContract.isEditable,
-          Effect.succeed({
-            make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                repository.findById(id, principal.tenantId).pipe(
-                  Effect.flatMap((workflowStatus) =>
-                    Match.value(workflowStatus).pipe(
-                      Match.when({ roomWorkflowId: Match.null }, (status) =>
-                        sharedAccountWorkflowRepository
-                          .findActiveManagerAuthorized(
-                            principal.userId,
-                            status.sharedAccountWorkflowId,
-                            principal.tenantId,
-                          )
-                          .pipe(
-                            Effect.andThen(true),
-                            Effect.catchTag("NoSuchElementException", () =>
-                              Effect.succeed(false),
+          {
+            make: Effect.fn("WorkflowStatuses.Policies.isEditable.make")(
+              ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository.findById(id, principal.tenantId).pipe(
+                    Effect.flatMap((workflowStatus) =>
+                      Match.value(workflowStatus).pipe(
+                        Match.when({ roomWorkflowId: Match.null }, (status) =>
+                          sharedAccountWorkflowRepository
+                            .findActiveManagerAuthorized(
+                              principal.userId,
+                              status.sharedAccountWorkflowId,
+                              principal.tenantId,
+                            )
+                            .pipe(
+                              Effect.andThen(true),
+                              Effect.catchTag("NoSuchElementException", () =>
+                                Effect.succeed(false),
+                              ),
                             ),
-                          ),
-                      ),
-                      Match.orElse(() =>
-                        Effect.succeed(principal.acl.has("rooms:update")),
+                        ),
+                        Match.orElse(() =>
+                          Effect.succeed(principal.acl.has("rooms:update")),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-          }),
+            ),
+          },
         );
 
         const isDeletable = DataAccessContract.makePolicy(
           WorkflowStatusesContract.isDeletable,
-          isEditable.pipe(
-            Effect.flatMap((isEditable) =>
-              Effect.succeed({
-                make: ({ id }) =>
-                  AccessControl.every(
-                    AccessControl.policy((principal) =>
-                      ordersRepository
-                        .findByWorkflowStatusId(id, principal.tenantId)
-                        .pipe(Effect.map(Array.isEmptyArray)),
-                    ),
-                    isEditable.make({ id }),
+          {
+            make: Effect.fn("WorkflowStatuses.Policies.isDeletable.make")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.policy((principal) =>
+                    ordersRepository
+                      .findByWorkflowStatusId(id, principal.tenantId)
+                      .pipe(Effect.map(Array.isEmptyArray)),
                   ),
-              }),
+                  isEditable.make({ id }),
+                ),
             ),
-          ),
+          },
         );
 
         return { isEditable, isDeletable } as const;
@@ -3000,153 +3003,174 @@ export namespace WorkflowStatuses {
 
         const append = DataAccessContract.makeMutation(
           WorkflowStatusesContract.append,
-          Effect.succeed({
-            makePolicy: (args) =>
+          {
+            makePolicy: Effect.fn(
+              "WorkflowStatuses.Mutations.append.makePolicy",
+            )((workflowStatus) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:create"),
-                Match.value(args).pipe(
-                  Match.when({ roomWorkflowId: Match.null }, (args) =>
+                Match.value(workflowStatus).pipe(
+                  Match.when({ roomWorkflowId: Match.null }, (workflowStatus) =>
                     isManagerAuthorizedSharedAccountWorkflow.make({
-                      id: args.sharedAccountWorkflowId,
+                      id: workflowStatus.sharedAccountWorkflowId,
                     }),
                   ),
                   Match.orElse(() => AccessControl.permission("rooms:update")),
                 ),
               ),
-            mutator: (workflowStatus, { tenantId }) =>
-              repository
-                .findLastByWorkflowId(
-                  workflowStatus.roomWorkflowId ??
-                    workflowStatus.sharedAccountWorkflowId,
-                  tenantId,
-                )
-                .pipe(
-                  Effect.map(Struct.get("index")),
-                  Effect.map(Number.increment),
-                  Effect.catchTag("NoSuchElementException", () =>
-                    Effect.succeed(0),
+            ),
+            mutator: Effect.fn("WorkflowStatuses.Mutation.append.mutator")(
+              (workflowStatus, { tenantId }) =>
+                repository
+                  .findLastByWorkflowId(
+                    workflowStatus.roomWorkflowId ??
+                      workflowStatus.sharedAccountWorkflowId,
+                    tenantId,
+                  )
+                  .pipe(
+                    Effect.map(Struct.get("index")),
+                    Effect.map(Number.increment),
+                    Effect.catchTag("NoSuchElementException", () =>
+                      Effect.succeed(0),
+                    ),
+                    Effect.flatMap((index) =>
+                      repository.create({ ...workflowStatus, index, tenantId }),
+                    ),
+                    Effect.map(({ version: _, ...dto }) => dto),
                   ),
-                  Effect.flatMap((index) =>
-                    repository.create({ ...workflowStatus, index, tenantId }),
-                  ),
-                  Effect.map(({ version: _, ...dto }) => dto),
-                ),
-          }),
+            ),
+          },
         );
 
         const edit = DataAccessContract.makeMutation(
           WorkflowStatusesContract.edit,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("workflow_statuses:update"),
-                isEditable.make({ id }),
-              ),
-            mutator: ({ id, ...workflowStatus }, session) =>
-              repository
-                .updateById(id, workflowStatus, session.tenantId)
-                .pipe(Effect.map(({ version: _, ...dto }) => dto)),
-          }),
+          {
+            makePolicy: Effect.fn("WorkflowStatuses.Mutations.edit.makePolicy")(
+              ({ id }) =>
+                AccessControl.some(
+                  AccessControl.permission("workflow_statuses:update"),
+                  isEditable.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("WorkflowStatuses.Mutations.edit.mutator")(
+              ({ id, ...workflowStatus }, session) =>
+                repository
+                  .updateById(id, workflowStatus, session.tenantId)
+                  .pipe(Effect.map(({ version: _, ...dto }) => dto)),
+            ),
+          },
         );
 
         const reorder = DataAccessContract.makeMutation(
           WorkflowStatusesContract.reorder,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
+          {
+            makePolicy: Effect.fn(
+              "WorkflowStatuses.Mutations.reorder.makePolicy",
+            )(({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:update"),
                 isEditable.make({ id }),
               ),
-            mutator: ({ id, index, updatedAt }, session) =>
-              Effect.gen(function* () {
-                const slice = yield* repository
-                  .findSliceForUpdate(id, session.tenantId, index)
-                  .pipe(
-                    Effect.flatMap((slice) =>
-                      Array.last(slice).pipe(
-                        Effect.map((status) =>
-                          status.id === id ? Array.reverse(slice) : slice,
+            ),
+            mutator: Effect.fn("WorkflowStatuses.Mutations.reorder.mutator")(
+              ({ id, index, updatedAt }, session) =>
+                Effect.gen(function* () {
+                  const slice = yield* repository
+                    .findSliceForUpdate(id, session.tenantId, index)
+                    .pipe(
+                      Effect.flatMap((slice) =>
+                        Array.last(slice).pipe(
+                          Effect.map((status) =>
+                            status.id === id ? Array.reverse(slice) : slice,
+                          ),
                         ),
                       ),
-                    ),
+                    );
+
+                  const delta = index - slice[0].index;
+                  const shift = Ordering.reverse(Number.sign(delta));
+
+                  if (!shift)
+                    return yield* Effect.fail(
+                      new Cause.IllegalArgumentException(
+                        `Invalid workflow status index, delta with existing index must be non-zero.`,
+                      ),
+                    );
+
+                  const actualDelta = (slice.length - 1) * -shift;
+                  if (delta !== actualDelta)
+                    return yield* Effect.fail(
+                      new Cause.IllegalArgumentException(
+                        `Invalid workflow status index, delta mismatch. Delta: ${delta}, actual delta: ${actualDelta}.`,
+                      ),
+                    );
+
+                  // Temporarily negate indexes to avoid uniqueness violations during upsert
+                  yield* repository.negateMany(
+                    Array.map(slice, Struct.get("id")),
+                    session.tenantId,
                   );
 
-                const delta = index - slice[0].index;
-                const shift = Ordering.reverse(Number.sign(delta));
-
-                if (!shift)
-                  return yield* Effect.fail(
-                    new Cause.IllegalArgumentException(
-                      `Invalid workflow status index, delta with existing index must be non-zero.`,
-                    ),
-                  );
-
-                const actualDelta = (slice.length - 1) * -shift;
-                if (delta !== actualDelta)
-                  return yield* Effect.fail(
-                    new Cause.IllegalArgumentException(
-                      `Invalid workflow status index, delta mismatch. Delta: ${delta}, actual delta: ${actualDelta}.`,
-                    ),
-                  );
-
-                // Temporarily negate indexes to avoid uniqueness violations during upsert
-                yield* repository.negateMany(
-                  Array.map(slice, Struct.get("id")),
-                  session.tenantId,
-                );
-
-                return yield* repository
-                  .upsertMany(
-                    Array.map(slice, (status, i) => ({
-                      ...status,
-                      index: status.index + (i === 0 ? delta : shift),
-                      updatedAt,
-                    })),
-                  )
-                  .pipe(Effect.map(Array.map(({ version: _, ...dto }) => dto)));
-              }),
-          }),
+                  return yield* repository
+                    .upsertMany(
+                      Array.map(slice, (status, i) => ({
+                        ...status,
+                        index: status.index + (i === 0 ? delta : shift),
+                        updatedAt,
+                      })),
+                    )
+                    .pipe(
+                      Effect.map(Array.map(({ version: _, ...dto }) => dto)),
+                    );
+                }),
+            ),
+          },
         );
 
         const delete_ = DataAccessContract.makeMutation(
           WorkflowStatusesContract.delete_,
-          Effect.succeed({
-            makePolicy: ({ id }) =>
+          {
+            makePolicy: Effect.fn(
+              "WorkflowStatuses.Mutations.delete.makePolicy",
+            )(({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:delete"),
                 isDeletable.make({ id }),
               ),
-            mutator: ({ id, deletedAt }, session) =>
-              Effect.gen(function* () {
-                const slice = yield* repository.findTailSliceByIdForUpdate(
-                  id,
-                  session.tenantId,
-                );
-
-                const deleted = yield* repository
-                  .deleteById(id, session.tenantId)
-                  .pipe(
-                    Effect.map(({ version: _, ...dto }) => ({
-                      ...dto,
-                      deletedAt,
-                    })),
+            ),
+            mutator: Effect.fn("WorkflowStatuses.Mutations.delete.mutator")(
+              ({ id, deletedAt }, session) =>
+                Effect.gen(function* () {
+                  const slice = yield* repository.findTailSliceByIdForUpdate(
+                    id,
+                    session.tenantId,
                   );
 
-                yield* repository.upsertMany(
-                  Array.filterMap(slice, (status, i) =>
-                    i === 0
-                      ? Option.none()
-                      : Option.some({
-                          ...status,
-                          index: Number.decrement(status.index),
-                          updatedAt: deletedAt,
-                        }),
-                  ),
-                );
+                  const deleted = yield* repository
+                    .deleteById(id, session.tenantId)
+                    .pipe(
+                      Effect.map(({ version: _, ...dto }) => ({
+                        ...dto,
+                        deletedAt,
+                      })),
+                    );
 
-                return deleted;
-              }),
-          }),
+                  yield* repository.upsertMany(
+                    Array.filterMap(slice, (status, i) =>
+                      i === 0
+                        ? Option.none()
+                        : Option.some({
+                            ...status,
+                            index: Number.decrement(status.index),
+                            updatedAt: deletedAt,
+                          }),
+                    ),
+                  );
+
+                  return deleted;
+                }),
+            ),
+          },
         );
 
         return { append, edit, reorder, delete: delete_ } as const;

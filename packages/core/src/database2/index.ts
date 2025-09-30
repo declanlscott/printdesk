@@ -191,8 +191,7 @@ export namespace Database {
 
           yield* Effect.addFinalizer(
             Effect.fn("Database.Transaction.finalizer")((exit) =>
-              afterEffectsRef.pipe(
-                Ref.get,
+              afterEffectsRef.get.pipe(
                 Effect.map(
                   Chunk.filterMap(({ onSuccessOnly, effect }) =>
                     onSuccessOnly && exit.pipe(Predicate.not(Exit.isSuccess))
@@ -201,7 +200,11 @@ export namespace Database {
                   ),
                 ),
                 Effect.flatMap(
-                  Effect.allWith({ concurrency: "unbounded", discard: true }),
+                  Effect.allWith({
+                    concurrency: "unbounded",
+                    batching: true,
+                    discard: true,
+                  }),
                 ),
               ),
             ),

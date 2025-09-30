@@ -62,7 +62,9 @@ export namespace Events {
   ]).pipe(
     Effect.map((members) => Schema.Union(...members)),
     Effect.map(Schema.Array),
-    Effect.map((data) => Schema.Struct({ clientGroupId: Schema.UUID, data })),
+    Effect.map((data) =>
+      Schema.Struct({ clientGroupId: Schema.UUID.pipe(Schema.optional), data }),
+    ),
   );
   export type ReplicacheNotification = Effect.Effect.Success<
     typeof ReplicacheNotification

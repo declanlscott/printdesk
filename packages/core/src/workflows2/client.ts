@@ -380,11 +380,9 @@ export namespace WorkflowStatuses {
         const readRepository = yield* ReadRepository;
         const writeRepository = yield* WriteRepository;
 
-        const isManagerAuthorizedSharedAccountWorkflow =
-          yield* SharedAccountWorkflows.Policies.isManagerAuthorized;
-
-        const isEditable = yield* Policies.isEditable;
-        const isDeletable = yield* Policies.isDeletable;
+        const sharedAccountWorkflowPolicies =
+          yield* SharedAccountWorkflows.Policies;
+        const policies = yield* Policies;
 
         const append = DataAccessContract.makeMutation(
           WorkflowStatusesContract.append,
@@ -394,7 +392,7 @@ export namespace WorkflowStatuses {
                 AccessControl.permission("workflow_statuses:create"),
                 Match.value(args).pipe(
                   Match.when({ roomWorkflowId: Match.null }, (args) =>
-                    isManagerAuthorizedSharedAccountWorkflow.make({
+                    sharedAccountWorkflowPolicies.isManagerAuthorized.make({
                       id: args.sharedAccountWorkflowId,
                     }),
                   ),
@@ -441,7 +439,7 @@ export namespace WorkflowStatuses {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:update"),
-                isEditable.make({ id }),
+                policies.isEditable.make({ id }),
               ),
             mutator: ({ id, ...workflowStatus }) =>
               writeRepository.updateById(id, () => workflowStatus),
@@ -454,7 +452,7 @@ export namespace WorkflowStatuses {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:update"),
-                isEditable.make({ id }),
+                policies.isEditable.make({ id }),
               ),
             mutator: ({ id, index, updatedAt }) =>
               Effect.gen(function* () {
@@ -507,7 +505,7 @@ export namespace WorkflowStatuses {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:delete"),
-                isDeletable.make({ id }),
+                policies.isDeletable.make({ id }),
               ),
             mutator: ({ id, deletedAt }) =>
               Effect.gen(function* () {

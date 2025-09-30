@@ -1006,10 +1006,8 @@ export namespace Comments {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isCustomerOrManager = yield* Orders.Policies.isCustomerOrManager;
-        const isManagerAuthorized = yield* Orders.Policies.isManagerAuthorized;
-
-        const isAuthor = yield* Policies.isAuthor;
+        const orderPolicies = yield* Orders.Policies;
+        const policies = yield* Policies;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
@@ -1039,8 +1037,8 @@ export namespace Comments {
               ({ orderId }) =>
                 AccessControl.some(
                   AccessControl.permission("comments:create"),
-                  isCustomerOrManager.make({ id: orderId }),
-                  isManagerAuthorized.make({ id: orderId }),
+                  orderPolicies.isCustomerOrManager.make({ id: orderId }),
+                  orderPolicies.isManagerAuthorized.make({ id: orderId }),
                 ),
             ),
             mutator: Effect.fn("Comments.Mutations.create.mutator")(
@@ -1063,7 +1061,7 @@ export namespace Comments {
               ({ id }) =>
                 AccessControl.some(
                   AccessControl.permission("comments:update"),
-                  isAuthor.make({ id }),
+                  policies.isAuthor.make({ id }),
                 ),
             ),
             mutator: Effect.fn("Comments.Mutations.update.mutator")(
@@ -1082,7 +1080,7 @@ export namespace Comments {
               ({ id }) =>
                 AccessControl.some(
                   AccessControl.permission("comments:delete"),
-                  isAuthor.make({ id }),
+                  policies.isAuthor.make({ id }),
                 ),
             ),
             mutator: Effect.fn("Comments.Mutations.delete.mutator")(

@@ -75,10 +75,8 @@ export namespace Comments {
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
 
-        const isCustomerOrManager = yield* Orders.Policies.isCustomerOrManager;
-        const isManagerAuthorized = yield* Orders.Policies.isManagerAuthorized;
-
-        const isAuthor = yield* Policies.isAuthor;
+        const orderPolicies = yield* Orders.Policies;
+        const policies = yield* Policies;
 
         const create = DataAccessContract.makeMutation(
           CommentsContract.create,
@@ -86,8 +84,8 @@ export namespace Comments {
             makePolicy: ({ orderId }) =>
               AccessControl.some(
                 AccessControl.permission("comments:create"),
-                isCustomerOrManager.make({ id: orderId }),
-                isManagerAuthorized.make({ id: orderId }),
+                orderPolicies.isCustomerOrManager.make({ id: orderId }),
+                orderPolicies.isManagerAuthorized.make({ id: orderId }),
               ),
             mutator: (comment, session) =>
               repository.create(
@@ -106,7 +104,7 @@ export namespace Comments {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("comments:update"),
-                isAuthor.make({ id }),
+                policies.isAuthor.make({ id }),
               ),
             mutator: ({ id, ...comment }) =>
               repository.updateById(id, () => comment),
@@ -119,7 +117,7 @@ export namespace Comments {
             makePolicy: ({ id }) =>
               AccessControl.some(
                 AccessControl.permission("comments:delete"),
-                isAuthor.make({ id }),
+                policies.isAuthor.make({ id }),
               ),
             mutator: ({ id, deletedAt }) =>
               repository

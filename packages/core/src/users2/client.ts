@@ -57,7 +57,7 @@ export namespace Users {
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
 
-        const isSelf = yield* Policies.isSelf;
+        const policies = yield* Policies;
 
         const update = DataAccessContract.makeMutation(UsersContract.update, {
           makePolicy: () => AccessControl.permission("users:update"),
@@ -68,7 +68,7 @@ export namespace Users {
           makePolicy: ({ id }) =>
             AccessControl.some(
               AccessControl.permission("users:delete"),
-              isSelf.make({ id }),
+              policies.isSelf.make({ id }),
             ),
           mutator: ({ id, deletedAt }) =>
             repository

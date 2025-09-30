@@ -1221,19 +1221,9 @@ export namespace Orders {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isSelf = yield* Users.Policies.isSelf;
-
-        const isSharedAccountCustomerAuthorized =
-          yield* SharedAccounts.Policies.isCustomerAuthorized;
-        const isSharedAccountManagerAuthorized =
-          yield* SharedAccounts.Policies.isManagerAuthorized;
-
-        const isCustomerOrManager = yield* Policies.isCustomerOrManager;
-        const isEditable = yield* Policies.isEditable;
-        const isManagerAuthorized = yield* Policies.isManagerAuthorized;
-        const isApprovable = yield* Policies.isApprovable;
-        const isTransitionable = yield* Policies.isTransitionable;
-        const isDeletable = yield* Policies.isDeletable;
+        const userPolicies = yield* Users.Policies;
+        const sharedAccountPolicies = yield* SharedAccounts.Policies;
+        const policies = yield* Policies;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
@@ -1260,18 +1250,20 @@ export namespace Orders {
                 Match.when({ sharedAccountId: Match.string }, (order) =>
                   AccessControl.every(
                     AccessControl.some(
-                      isSelf.make({ id: order.customerId }),
-                      isSharedAccountManagerAuthorized.make({
+                      userPolicies.isSelf.make({ id: order.customerId }),
+                      sharedAccountPolicies.isManagerAuthorized.make({
                         id: order.sharedAccountId,
                       }),
                     ),
-                    isSharedAccountCustomerAuthorized.make({
+                    sharedAccountPolicies.isCustomerAuthorized.make({
                       id: order.sharedAccountId,
                       customerId: order.customerId,
                     }),
                   ),
                 ),
-                Match.orElse((order) => isSelf.make({ id: order.customerId })),
+                Match.orElse((order) =>
+                  userPolicies.isSelf.make({ id: order.customerId }),
+                ),
               ),
             ),
           ),
@@ -1291,11 +1283,11 @@ export namespace Orders {
               AccessControl.some(
                 AccessControl.permission("orders:update"),
                 AccessControl.some(
-                  isCustomerOrManager.make({ id }),
-                  isManagerAuthorized.make({ id }),
+                  policies.isCustomerOrManager.make({ id }),
+                  policies.isManagerAuthorized.make({ id }),
                 ),
               ),
-              isEditable.make({ id }),
+              policies.isEditable.make({ id }),
             ),
           ),
           mutator: Effect.fn("Orders.Mutations.edit.mutator")(
@@ -1315,9 +1307,9 @@ export namespace Orders {
                 AccessControl.every(
                   AccessControl.some(
                     AccessControl.permission("orders:update"),
-                    isManagerAuthorized.make({ id }),
+                    policies.isManagerAuthorized.make({ id }),
                   ),
-                  isApprovable.make({ id }),
+                  policies.isApprovable.make({ id }),
                 ),
             ),
             mutator: Effect.fn("Orders.Mutations.approve.makePolicy")(
@@ -1348,7 +1340,7 @@ export namespace Orders {
             )(({ id }) =>
               AccessControl.every(
                 AccessControl.permission("orders:update"),
-                isTransitionable.make({ id }),
+                policies.isTransitionable.make({ id }),
               ),
             ),
             mutator: Effect.fn(
@@ -1378,9 +1370,9 @@ export namespace Orders {
                 AccessControl.every(
                   AccessControl.some(
                     AccessControl.permission("orders:update"),
-                    isManagerAuthorized.make({ id }),
+                    policies.isManagerAuthorized.make({ id }),
                   ),
-                  isTransitionable.make({ id }),
+                  policies.isTransitionable.make({ id }),
                 ),
               ),
               mutator: Effect.fn(
@@ -1409,11 +1401,11 @@ export namespace Orders {
                   AccessControl.some(
                     AccessControl.permission("orders:delete"),
                     AccessControl.some(
-                      isCustomerOrManager.make({ id }),
-                      isManagerAuthorized.make({ id }),
+                      policies.isCustomerOrManager.make({ id }),
+                      policies.isManagerAuthorized.make({ id }),
                     ),
                   ),
-                  isDeletable.make({ id }),
+                  policies.isDeletable.make({ id }),
                 ),
             ),
             mutator: Effect.fn("Orders.Mutations.delete.mutator")(

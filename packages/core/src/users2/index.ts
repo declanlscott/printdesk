@@ -485,7 +485,7 @@ export namespace Users {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isSelf = yield* Policies.isSelf;
+        const policies = yield* Policies;
 
         const notifier = yield* ReplicacheNotifier;
 
@@ -505,7 +505,7 @@ export namespace Users {
           makePolicy: Effect.fn("Users.Mutations.delete.makePolicy")(({ id }) =>
             AccessControl.some(
               AccessControl.permission("users:delete"),
-              isSelf.make({ id }),
+              policies.isSelf.make({ id }),
             ),
           ),
           mutator: Effect.fn("Users.Mutations.delete.mutator")(

@@ -1,12 +1,21 @@
 import { defineConfig } from "drizzle-kit";
-import { Resource } from "sst";
+import { Duration, Effect, ManagedRuntime } from "effect";
 
-export default defineConfig({
-  schema: "./src/**/sql.ts",
-  out: "./migrations/",
-  dialect: "postgresql",
-  dbCredentials: {
-    ...Resource.DsqlCluster,
-    password: process.env.DB_PASSWORD,
-  },
-});
+import { DsqlSigner } from "./src/aws2";
+import { Sst } from "./src/sst";
+
+const runtime = ManagedRuntime.make(
+  DsqlSigner.makeLayer({ expiresIn: Duration.hours(12) }),
+);
+
+export default Effect.gen(function* () {
+  const credentials = yield* Sst.Resource.DsqlCluster;
+  const password = yield* DsqlSigner.Tag.getDbConnectAdminAuthToken();
+
+  return defineConfig({
+    schema: ["./src/**/schema.ts", "./src/**/schemas.ts"],
+    out: "./migrations/",
+    dialect: "postgresql",
+    dbCredentials: { ...credentials, password },
+  });
+}).pipe(runtime.runSync);

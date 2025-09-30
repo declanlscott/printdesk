@@ -2,33 +2,39 @@ import { Sha256 } from "@aws-crypto/sha256-js";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { DsqlSigner as _DsqlSigner } from "@effect-aws/dsql";
 import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
-import { Effect, Layer, ManagedRuntime } from "effect";
+import { Duration, Effect, Layer, ManagedRuntime } from "effect";
 
 import { Sst } from "../sst";
-import { type PartialExcept } from "../utils/types";
 
 import type { SignatureV4Init } from "@smithy/signature-v4";
+import type { PartialExcept } from "../utils/types";
 
 export namespace DsqlSigner {
   export const Tag = _DsqlSigner;
 
-  export const layer = Layer.unwrapEffect(
-    Effect.gen(function* () {
-      const dsqlCluster = yield* Sst.Resource.DsqlCluster;
-      const aws = yield* Sst.Resource.Aws;
+  export const makeLayer = (
+    { expiresIn }: { expiresIn?: Duration.Duration } = {
+      expiresIn: Duration.minutes(15),
+    },
+  ) =>
+    Layer.unwrapEffect(
+      Effect.gen(function* () {
+        const dsqlCluster = yield* Sst.Resource.DsqlCluster;
+        const aws = yield* Sst.Resource.Aws;
 
-      return _DsqlSigner.layer({
-        credentials: fromNodeProviderChain(),
-        sha256: Sha256,
-        hostname: dsqlCluster.host,
-        region: aws.region,
-      });
-    }),
-  );
+        return _DsqlSigner.layer({
+          credentials: fromNodeProviderChain(),
+          sha256: Sha256,
+          hostname: dsqlCluster.host,
+          region: aws.region,
+          expiresIn: expiresIn?.pipe(Duration.toSeconds),
+        });
+      }),
+    ).pipe(Layer.provideMerge(Sst.Resource.layer));
 
-  export const runtime = ManagedRuntime.make(
-    layer.pipe(Layer.provide(Sst.Resource.layer)),
-  );
+  export const layer = makeLayer();
+
+  export const runtime = ManagedRuntime.make(layer);
 }
 
 export namespace SignatureV4 {

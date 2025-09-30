@@ -90,10 +90,7 @@ export namespace Database {
     "@printdesk/core/database/Database",
     {
       accessors: true,
-      dependencies: [
-        DsqlSigner.layer.pipe(Layer.provideMerge(Sst.Resource.layer)),
-        Logger.Default,
-      ],
+      dependencies: [DsqlSigner.layer, Logger.Default],
       scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster;
         const dsqlSigner = yield* DsqlSigner.Tag;
@@ -110,7 +107,7 @@ export namespace Database {
                 password: () =>
                   dsqlSigner
                     .getDbConnectAdminAuthToken()
-                    .pipe(DsqlSigner.runtime.runPromise),
+                    .pipe(DsqlSigner.runtime.runSync),
               }),
           ),
           (pool) => Effect.promise(() => pool.end()),

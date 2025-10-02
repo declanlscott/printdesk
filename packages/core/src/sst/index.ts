@@ -8,7 +8,7 @@ export namespace Sst {
     Sst.Resource,
     { readonly [TKey in keyof SstResource]: Effect.Effect<SstResource[TKey]> }
   >() {
-    static layer = Layer.succeed(
+    static readonly layer = Layer.succeed(
       this,
       new Proxy({} as Context.Tag.Service<Sst.Resource>, {
         get: (_, key: keyof SstResource) =>

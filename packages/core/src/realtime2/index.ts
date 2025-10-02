@@ -13,7 +13,7 @@ import {
 } from "effect";
 
 import { Auth } from "../auth2";
-import { SignatureV4 } from "../aws2";
+import { Signers } from "../aws2";
 import { DataAccessProcedures } from "../data-access2/procedures";
 import { Events } from "../events2";
 import { Permissions } from "../permissions2";
@@ -41,7 +41,7 @@ export namespace Realtime {
           Effect.map(Struct.get("realtime")),
           Effect.map(Struct.get("nameTemplate")),
         );
-        const sigv4 = yield* SignatureV4.Signer;
+        const signer = yield* Signers.AppsyncSigner;
         const httpClient = yield* HttpClient.HttpClient;
 
         const encode = yield* Events.Event.pipe(Effect.map(Schema.encode));
@@ -93,13 +93,11 @@ export namespace Realtime {
                   body,
                 }),
               (req) =>
-                Effect.promise(() =>
-                  expiresIn
-                    ? sigv4.presign(req, {
-                        expiresIn: expiresIn.pipe(Duration.toSeconds),
-                      })
-                    : sigv4.sign(req),
-                ),
+                expiresIn
+                  ? signer.presign(req, {
+                      expiresIn: expiresIn.pipe(Duration.toSeconds),
+                    })
+                  : signer.sign(req),
               Effect.map(Struct.get("headers")),
             ),
         );
@@ -128,8 +126,8 @@ export namespace Realtime {
                   Effect.map(Stream.map(Chunk.toArray)),
                   Effect.flatMap(
                     Stream.runForEach((events) =>
-                      Effect.promise(() =>
-                        sigv4.sign(
+                      signer
+                        .sign(
                           new HttpRequest({
                             method: "POST",
                             protocol: "https:",
@@ -141,15 +139,15 @@ export namespace Realtime {
                             },
                             body: JSON.stringify({ channel, events }),
                           }),
+                        )
+                        .pipe(
+                          Effect.flatMap((req) =>
+                            httpClient.post(formatUrl(req), {
+                              headers: req.headers,
+                              body: HttpBody.raw(req.body),
+                            }),
+                          ),
                         ),
-                      ).pipe(
-                        Effect.flatMap((req) =>
-                          httpClient.post(formatUrl(req), {
-                            headers: req.headers,
-                            body: HttpBody.raw(req.body),
-                          }),
-                        ),
-                      ),
                     ),
                   ),
                 ),

@@ -16,7 +16,7 @@ import {
 } from "effect";
 import { DatabaseError, Pool } from "pg";
 
-import { DsqlSigner } from "../aws2";
+import { Signers } from "../aws2";
 import { Sst } from "../sst";
 import { Constants } from "../utils/constants";
 
@@ -88,10 +88,9 @@ export namespace Database {
     "@printdesk/core/database/Database",
     {
       accessors: true,
-      dependencies: [DsqlSigner.layer, Logger.Default],
+      dependencies: [Logger.Default],
       scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster;
-        const dsqlSigner = yield* DsqlSigner.Tag;
 
         const pool = yield* Effect.acquireRelease(
           Effect.sync(
@@ -103,9 +102,12 @@ export namespace Database {
                 ssl: dsqlCluster.ssl,
                 user: dsqlCluster.user,
                 password: () =>
-                  dsqlSigner
-                    .getDbConnectAdminAuthToken()
-                    .pipe(DsqlSigner.runtime.runSync),
+                  Signers.DsqlSigner.DsqlSigner.pipe(
+                    Effect.flatMap((signer) =>
+                      signer.getDbConnectAdminAuthToken(),
+                    ),
+                    Signers.DsqlSigner.runtime.runSync,
+                  ),
               }),
           ),
           (pool) => Effect.promise(() => pool.end()),
@@ -310,10 +312,7 @@ export namespace Database {
               return yield* transaction.pipe(
                 Effect.retry({
                   while: (error) =>
-                    Predicate.isTagged(
-                      error,
-                      "@printdesk/core/database/TransactionError",
-                    ) &&
+                    Predicate.isTagged(error, "TransactionError") &&
                     error.cause instanceof DatabaseError &&
                     (error.cause.code ===
                       Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||

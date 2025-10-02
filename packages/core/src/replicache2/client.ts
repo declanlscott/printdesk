@@ -7,9 +7,9 @@ import type {
 import type { Models } from "../models2";
 
 export namespace Replicache {
-  export class ReplicacheError extends Data.TaggedError(
-    "@printdesk/core/replicache/client/ReplicacheError",
-  )<{ cause: unknown }> {}
+  export class ReplicacheError extends Data.TaggedError("ReplicacheError")<{
+    cause: unknown;
+  }> {}
 
   export class ReadTransaction extends Effect.Service<ReadTransaction>()(
     "@printdesk/core/replicache/client/ReadTransaction",

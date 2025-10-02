@@ -65,12 +65,12 @@ export namespace Database {
     },
   ) {}
 
-  export class PoolError extends Data.TaggedError(
-    "@printdesk/core/database/PoolError",
-  )<{ readonly cause: globalThis.Error }> {}
+  export class PoolError extends Data.TaggedError("PoolError")<{
+    readonly cause: globalThis.Error;
+  }> {}
 
   export class ConnectionTimeoutError extends Data.TaggedError(
-    "@printdesk/core/database/ConnectionTimeoutError",
+    "ConnectionTimeoutError",
   ) {}
 
   /**
@@ -80,9 +80,7 @@ export namespace Database {
    * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
    * https://stackoverflow.com/a/16409293/749644
    */
-  export class TransactionError extends Data.TaggedError(
-    "@printdesk/core/database/TransactionError",
-  )<{
+  export class TransactionError extends Data.TaggedError("TransactionError")<{
     readonly cause: globalThis.Error | DatabaseError;
   }> {}
 

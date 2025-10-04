@@ -467,11 +467,7 @@ export namespace Users {
             AccessControl.policy((principal) =>
               Effect.succeed(Equal.equals(id, principal.userId)),
             ),
-          ) as AccessControl.MakePolicy<
-            typeof UsersContract.isSelf.Args,
-            never,
-            never
-          >,
+          ),
         }),
       },
     },

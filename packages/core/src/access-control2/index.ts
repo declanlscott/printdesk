@@ -162,19 +162,19 @@ export namespace AccessControl {
     readonly message: string;
   }> {}
 
+  export type Policy<TError = never, TContext = never> = Effect.Effect<
+    void,
+    AccessDeniedError | TError,
+    Principal | TContext
+  >;
+
   export type MakePolicy<
     TArgs extends Schema.Schema.AnyNoContext,
     TError,
     TContext,
   > = (
     args: Schema.Schema.Type<TArgs>,
-  ) => AccessControl.Policy<TError, TContext>;
-
-  export type Policy<TError = never, TContext = never> = Effect.Effect<
-    void,
-    AccessDeniedError | TError,
-    Principal | TContext
-  >;
+  ) => Policy<Exclude<TError, AccessDeniedError>, Exclude<TContext, Principal>>;
 
   export const enforce =
     <TPolicyError, TPolicyContext>(
@@ -209,5 +209,8 @@ export namespace AccessControl {
     });
 
   export const permission = (permission: Permissions.Permission) =>
-    policy((principal) => Effect.succeed(principal.acl.has(permission)));
+    policy(
+      (principal) => Effect.succeed(principal.acl.has(permission)),
+      `Access denied: ${permission}`,
+    );
 }

@@ -7,7 +7,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Match, Struct } from "effect";
+import { Array, Effect, Match, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -529,6 +529,21 @@ export namespace DeliveryOptions {
               ),
         );
 
+        const findById = Effect.fn("DeliveryOptions.Repository.findById")(
+          (
+            id: DeliveryOptionsSchema.Row["id"],
+            tenantId: DeliveryOptionsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const updateById = Effect.fn("DeliveryOptions.Repository.updateById")(
           (
             id: DeliveryOptionsSchema.Row["id"],
@@ -558,17 +573,15 @@ export namespace DeliveryOptions {
             >,
             tenantId: DeliveryOptionsSchema.Row["tenantId"],
           ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set(deliveryOption)
-                  .where(
-                    and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
-                  )
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
+            db.useTransaction((tx) =>
+              tx
+                .update(table)
+                .set(deliveryOption)
+                .where(
+                  and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
+                )
+                .returning(),
+            ),
         );
 
         return {
@@ -585,9 +598,64 @@ export namespace DeliveryOptions {
           findFastForward,
           findActiveFastForward,
           findActivePublishedRoomFastForward,
+          findById,
           updateById,
           updateByRoomId,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/delivery-options/Policies",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const canEdit = DataAccessContract.makePolicy(
+          DeliveryOptionsContract.canEdit,
+          {
+            make: Effect.fn("DeliveryOptions.Policies.canEdit.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          DeliveryOptionsContract.canDelete,
+          {
+            make: Effect.fn("DeliveryOptions.Policies.canDelete.make")(
+              canEdit.make,
+            ),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          DeliveryOptionsContract.canRestore,
+          {
+            make: Effect.fn("DeliveryOptions.Policies.canRestore.make")(
+              ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findById(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
+                ),
+            ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
       }),
     },
   ) {}
@@ -596,26 +664,46 @@ export namespace DeliveryOptions {
     "@printdesk/core/delivery-options/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Permissions.Schemas.Default],
+      dependencies: [
+        Repository.Default,
+        Permissions.Schemas.Default,
+        Policies.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
         const roomsRepository = yield* Rooms.Repository;
 
+        const policies = yield* Policies;
+
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notify = (
+        const notifyCreate = (
           deliveryOption: DeliveryOptionsContract.DataTransferObject,
         ) =>
           roomsRepository
             .findById(deliveryOption.roomId, deliveryOption.tenantId)
             .pipe(
-              Effect.map(Match.value),
-              Effect.map(
-                Match.whenAnd(
-                  { deletedAt: Match.null },
-                  { status: Match.is("published") },
-                  () =>
+              Effect.map((room) =>
+                Match.value(room).pipe(
+                  Match.whenAnd(
+                    { deletedAt: Match.null },
+                    { status: Match.is("published") },
+                    () =>
+                      Array.make(
+                        PullPermission.make({
+                          permission: "delivery_options:read",
+                        }),
+                        PullPermission.make({
+                          permission: "active_delivery_options:read",
+                        }),
+                        PullPermission.make({
+                          permission:
+                            "active_published_room_delivery_options:read",
+                        }),
+                      ),
+                  ),
+                  Match.orElse(() =>
                     Array.make(
                       PullPermission.make({
                         permission: "delivery_options:read",
@@ -623,36 +711,15 @@ export namespace DeliveryOptions {
                       PullPermission.make({
                         permission: "active_delivery_options:read",
                       }),
-                      PullPermission.make({
-                        permission:
-                          "active_published_room_delivery_options:read",
-                      }),
                     ),
-                ),
-              ),
-              Effect.map(
-                Match.whenAnd({ deletedAt: Match.null }, () =>
-                  Array.make(
-                    PullPermission.make({
-                      permission: "delivery_options:read",
-                    }),
-                    PullPermission.make({
-                      permission: "active_delivery_options:read",
-                    }),
                   ),
                 ),
               ),
-              Effect.map(
-                Match.orElse(() =>
-                  Array.make(
-                    PullPermission.make({
-                      permission: "delivery_options:read",
-                    }),
-                  ),
-                ),
-              ),
-              Effect.flatMap(notifier.notify),
+              Effect.map(notifier.notify),
             );
+        const notifyEdit = notifyCreate;
+        const notifyDelete = notifyCreate;
+        const notifyRestore = notifyCreate;
 
         const create = DataAccessContract.makeMutation(
           DeliveryOptionsContract.create,
@@ -664,22 +731,32 @@ export namespace DeliveryOptions {
               (deliveryOption, { tenantId }) =>
                 repository
                   .create({ ...deliveryOption, tenantId })
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyCreate),
+                  ),
             ),
           },
         );
 
-        const update = DataAccessContract.makeMutation(
-          DeliveryOptionsContract.update,
+        const edit = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.edit,
           {
-            makePolicy: Effect.fn(
-              "DeliveryOptions.Mutations.update.makePolicy",
-            )(() => AccessControl.permission("delivery_options:update")),
-            mutator: Effect.fn("DeliveryOptions.Mutations.update.mutator")(
+            makePolicy: Effect.fn("DeliveryOptions.Mutations.edit.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("delivery_options:update"),
+                  policies.canEdit.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("DeliveryOptions.Mutations.edit.mutator")(
               ({ id, ...deliveryOption }, session) =>
                 repository
                   .updateById(id, deliveryOption, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyEdit),
+                  ),
             ),
           },
         );
@@ -689,17 +766,48 @@ export namespace DeliveryOptions {
           {
             makePolicy: Effect.fn(
               "DeliveryOptions.Mutations.delete.makePolicy",
-            )(() => AccessControl.permission("delivery_options:delete")),
+            )(({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("delivery_options:delete"),
+                policies.canDelete.make({ id }),
+              ),
+            ),
             mutator: Effect.fn("DeliveryOptions.Mutations.delete.mutator")(
               ({ id, deletedAt }, session) =>
                 repository
                   .updateById(id, { deletedAt }, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyDelete),
+                  ),
             ),
           },
         );
 
-        return { create, update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.restore,
+          {
+            makePolicy: Effect.fn(
+              "DeliveryOptions.Mutations.restore.makePolicy",
+            )(({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("delivery_options:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            ),
+            mutator: Effect.fn("DeliveryOptions.Mutations.restore.mutator")(
+              ({ id }, session) =>
+                repository
+                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyRestore),
+                  ),
+            ),
+          },
+        );
+
+        return { create, edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

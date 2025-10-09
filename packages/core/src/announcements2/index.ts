@@ -7,7 +7,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Match, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -17,6 +17,7 @@ import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { Rooms } from "../rooms2";
 import { AnnouncementsContract } from "./contract";
 import { AnnouncementsSchema } from "./schema";
 
@@ -350,6 +351,21 @@ export namespace Announcements {
               ),
         );
 
+        const findById = Effect.fn("Announcements.Repository.findById")(
+          (
+            id: AnnouncementsSchema.Row["id"],
+            tenantId: AnnouncementsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const updateById = Effect.fn("Announcements.Repository.updateById")(
           (
             id: AnnouncementsSchema.Row["id"],
@@ -369,6 +385,27 @@ export namespace Announcements {
               .pipe(Effect.flatMap(Array.head)),
         );
 
+        const updateByRoomId = Effect.fn(
+          "Announcements.Repository.updateByRoomId",
+        )(
+          (
+            roomId: AnnouncementsSchema.Row["roomId"],
+            announcement: Partial<
+              Omit<AnnouncementsSchema.Row, "id" | "roomId" | "tenantId">
+            >,
+            tenantId: AnnouncementsSchema.Row["tenantId"],
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .update(table)
+                .set(announcement)
+                .where(
+                  and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
+                )
+                .returning(),
+            ),
+        );
+
         return {
           create,
           findCreates,
@@ -379,8 +416,64 @@ export namespace Announcements {
           findActiveDeletes,
           findFastForward,
           findActiveFastForward,
+          findById,
           updateById,
+          updateByRoomId,
         };
+      }),
+    },
+  ) {}
+
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/announcements/Policies",
+    {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const canEdit = DataAccessContract.makePolicy(
+          AnnouncementsContract.canEdit,
+          {
+            make: Effect.fn("Announcements.Policies.canEdit.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          AnnouncementsContract.canDelete,
+          {
+            make: Effect.fn("Announcements.Policies.canDelete.make")(
+              canEdit.make,
+            ),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          AnnouncementsContract.canRestore,
+          {
+            make: Effect.fn("Announcements.Policies.canRestore.make")(
+              ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findById(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
+                ),
+            ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
       }),
     },
   ) {}
@@ -389,22 +482,63 @@ export namespace Announcements {
     "@printdesk/core/announcements/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Permissions.Schemas.Default],
+      dependencies: [
+        Repository.Default,
+        Rooms.Repository.Default,
+        Policies.Default,
+        Permissions.Schemas.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
+        const roomsRepository = yield* Rooms.Repository;
+
+        const policies = yield* Policies;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notify = (
-          _announcement: AnnouncementsContract.DataTransferObject,
+        const notifyCreate = (
+          announcement: AnnouncementsContract.DataTransferObject,
         ) =>
-          notifier.notify(
-            Array.make(
-              PullPermission.make({ permission: "announcements:read" }),
-              PullPermission.make({ permission: "active_announcements:read" }),
-            ),
-          );
+          roomsRepository
+            .findById(announcement.roomId, announcement.tenantId)
+            .pipe(
+              Effect.map((room) =>
+                Match.value(room).pipe(
+                  Match.whenAnd(
+                    { deletedAt: Match.null },
+                    { status: Match.is("published") },
+                    () =>
+                      Array.make(
+                        PullPermission.make({
+                          permission: "announcements:read",
+                        }),
+                        PullPermission.make({
+                          permission: "active_announcements:read",
+                        }),
+                        PullPermission.make({
+                          permission:
+                            "active_published_room_announcements:read",
+                        }),
+                      ),
+                  ),
+                  Match.orElse(() =>
+                    Array.make(
+                      PullPermission.make({
+                        permission: "announcements:read",
+                      }),
+                      PullPermission.make({
+                        permission: "active_announcements:read",
+                      }),
+                    ),
+                  ),
+                ),
+              ),
+              Effect.map(notifier.notify),
+            );
+        const notifyEdit = notifyCreate;
+        const notifyDelete = notifyCreate;
+        const notifyRestore = notifyCreate;
 
         const create = DataAccessContract.makeMutation(
           AnnouncementsContract.create,
@@ -420,22 +554,32 @@ export namespace Announcements {
                     authorId: session.userId,
                     tenantId: session.tenantId,
                   })
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyCreate),
+                  ),
             ),
           },
         );
 
-        const update = DataAccessContract.makeMutation(
-          AnnouncementsContract.update,
+        const edit = DataAccessContract.makeMutation(
+          AnnouncementsContract.edit,
           {
-            makePolicy: Effect.fn("Announcements.Mutations.update.makePolicy")(
-              () => AccessControl.permission("announcements:update"),
+            makePolicy: Effect.fn("Announcements.Mutations.edit.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("announcements:update"),
+                  policies.canEdit.make({ id }),
+                ),
             ),
-            mutator: Effect.fn("Announcements.Mutations.update.mutator")(
+            mutator: Effect.fn("Announcements.Mutations.edit.mutator")(
               ({ id, ...announcement }, session) =>
                 repository
                   .updateById(id, announcement, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyEdit),
+                  ),
             ),
           },
         );
@@ -444,18 +588,47 @@ export namespace Announcements {
           AnnouncementsContract.delete_,
           {
             makePolicy: Effect.fn("Announcements.Mutations.delete.makePolicy")(
-              () => AccessControl.permission("announcements:delete"),
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("announcements:delete"),
+                  policies.canDelete.make({ id }),
+                ),
             ),
             mutator: Effect.fn("Announcements.Mutations.delete.mutator")(
               ({ id, deletedAt }, session) =>
                 repository
                   .updateById(id, { deletedAt }, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyDelete),
+                  ),
             ),
           },
         );
 
-        return { create, update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          AnnouncementsContract.restore,
+          {
+            makePolicy: Effect.fn("Announcements.Mutations.restore.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("announcements:delete"),
+                  policies.canRestore.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("Announcements.Mutations.restore.mutator")(
+              ({ id }, session) =>
+                repository
+                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyRestore),
+                  ),
+            ),
+          },
+        );
+
+        return { create, edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

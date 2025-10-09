@@ -76,8 +76,8 @@ export namespace TenantsContract {
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccessContract.Procedure({
-    name: "updateTenant",
+  export const edit = new DataAccessContract.Procedure({
+    name: "editTenant",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(

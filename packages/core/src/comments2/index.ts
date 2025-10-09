@@ -8,7 +8,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Equal, Struct } from "effect";
+import { Array, Effect, Equal, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -988,7 +988,44 @@ export namespace Comments {
           },
         );
 
-        return { isAuthor } as const;
+        const canEdit = DataAccessContract.makePolicy(
+          CommentsContract.canEdit,
+          {
+            make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          CommentsContract.canDelete,
+          { make: Effect.fn("Comments.Policies.canDelete.make")(canEdit.make) },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          CommentsContract.canRestore,
+          {
+            make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        return { isAuthor, canEdit, canDelete, canRestore } as const;
       }),
     },
   ) {}
@@ -1012,7 +1049,7 @@ export namespace Comments {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notify = (comment: CommentsContract.DataTransferObject) =>
+        const notifyCreate = (comment: CommentsContract.DataTransferObject) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "comments:read" }),
@@ -1029,6 +1066,9 @@ export namespace Comments {
               ),
             ),
           );
+        const notifyEdit = notifyCreate;
+        const notifyDelete = notifyCreate;
+        const notifyRestore = notifyCreate;
 
         const create = DataAccessContract.makeMutation(
           CommentsContract.create,
@@ -1049,50 +1089,84 @@ export namespace Comments {
                     authorId: session.userId,
                     tenantId: session.tenantId,
                   })
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyCreate),
+                  ),
             ),
           },
         );
 
-        const update = DataAccessContract.makeMutation(
-          CommentsContract.update,
-          {
-            makePolicy: Effect.fn("Comments.Mutations.update.makePolicy")(
-              ({ id }) =>
+        const edit = DataAccessContract.makeMutation(CommentsContract.edit, {
+          makePolicy: Effect.fn("Comments.Mutations.edit.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
                 AccessControl.some(
                   AccessControl.permission("comments:update"),
                   policies.isAuthor.make({ id }),
                 ),
-            ),
-            mutator: Effect.fn("Comments.Mutations.update.mutator")(
-              ({ id, ...comment }, session) =>
-                repository
-                  .updateById(id, comment, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
-            ),
-          },
-        );
+                policies.canEdit.make({ id }),
+              ),
+          ),
+          mutator: Effect.fn("Comments.Mutations.edit.mutator")(
+            ({ id, ...comment }, session) =>
+              repository
+                .updateById(id, comment, session.tenantId)
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyEdit),
+                ),
+          ),
+        });
 
         const delete_ = DataAccessContract.makeMutation(
           CommentsContract.delete_,
           {
             makePolicy: Effect.fn("Comments.Mutations.delete.makePolicy")(
               ({ id }) =>
-                AccessControl.some(
-                  AccessControl.permission("comments:delete"),
-                  policies.isAuthor.make({ id }),
+                AccessControl.every(
+                  AccessControl.some(
+                    AccessControl.permission("comments:delete"),
+                    policies.isAuthor.make({ id }),
+                  ),
+                  policies.canDelete.make({ id }),
                 ),
             ),
             mutator: Effect.fn("Comments.Mutations.delete.mutator")(
               ({ id, deletedAt }, session) =>
                 repository
                   .updateById(id, { deletedAt }, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyDelete),
+                  ),
             ),
           },
         );
 
-        return { create, update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          CommentsContract.restore,
+          {
+            makePolicy: Effect.fn("Comments.Mutations.restore.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("comments:delete"),
+                  policies.canRestore.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("Comments.Mutations.restore.mutator")(
+              ({ id }, session) =>
+                repository
+                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyRestore),
+                  ),
+            ),
+          },
+        );
+
+        return { create, edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

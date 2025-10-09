@@ -43,6 +43,24 @@ export namespace RoomsContract {
       DataTransferObject,
     );
 
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditRoom",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteRoom",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreRoom",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const create = new DataAccessContract.Procedure({
     name: "createRoom",
     Args: Schema.Struct({

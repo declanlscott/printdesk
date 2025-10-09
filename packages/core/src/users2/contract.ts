@@ -53,8 +53,26 @@ export namespace UsersContract {
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccessContract.Procedure({
-    name: "updateUser",
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditUser",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteUser",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreUser",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const edit = new DataAccessContract.Procedure({
+    name: "editUser",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(

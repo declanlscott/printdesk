@@ -1,4 +1,4 @@
-import { Array, Effect, Equal, Match, Option, Struct } from "effect";
+import { Array, Effect, Equal, Match, Option, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -171,24 +171,46 @@ export namespace Orders {
           },
         );
 
-        const isEditable = DataAccessContract.makePolicy(
-          OrdersContract.isEditable,
+        const canEdit = DataAccessContract.makePolicy(OrdersContract.canEdit, {
+          make: ({ id }) =>
+            AccessControl.policy(() =>
+              repository.findByIdWithWorkflowStatus(id).pipe(
+                Effect.map(({ order, workflowStatus }) =>
+                  Match.value(order).pipe(
+                    Match.when({ deletedAt: Match.null }, (o) =>
+                      Match.value(o).pipe(
+                        Match.when(
+                          { sharedAccountWorkflowStatusId: Match.null },
+                          () =>
+                            !order.approvedAt &&
+                            !(
+                              workflowStatus.type === "InProgress" ||
+                              workflowStatus.type === "Completed"
+                            ),
+                        ),
+                        Match.orElse(() => true),
+                      ),
+                    ),
+                    Match.orElse(() => false),
+                  ),
+                ),
+              ),
+            ),
+        });
+
+        const canApprove = DataAccessContract.makePolicy(
+          OrdersContract.canApprove,
           {
             make: ({ id }) =>
               AccessControl.policy(() =>
                 repository.findByIdWithWorkflowStatus(id).pipe(
-                  Effect.map(({ order, workflowStatus }) =>
+                  Effect.map(({ order }) =>
                     Match.value(order).pipe(
                       Match.when(
-                        { sharedAccountWorkflowStatusId: Match.null },
-                        (order) =>
-                          !order.approvedAt &&
-                          !(
-                            workflowStatus.type === "InProgress" ||
-                            workflowStatus.type === "Completed"
-                          ),
+                        { deletedAt: Match.null },
+                        (o) => o.sharedAccountWorkflowStatusId !== null,
                       ),
-                      Match.orElse(() => true),
+                      Match.orElse(() => false),
                     ),
                   ),
                 ),
@@ -196,43 +218,44 @@ export namespace Orders {
           },
         );
 
-        const isApprovable = DataAccessContract.makePolicy(
-          OrdersContract.isApprovable,
+        const canTransition = DataAccessContract.makePolicy(
+          OrdersContract.canTransition,
           {
             make: ({ id }) =>
               AccessControl.policy(() =>
-                repository
-                  .findByIdWithWorkflowStatus(id)
-                  .pipe(
-                    Effect.map(
-                      ({ order }) =>
-                        order.sharedAccountWorkflowStatusId !== null,
+                repository.findByIdWithWorkflowStatus(id).pipe(
+                  Effect.map(({ order, workflowStatus }) =>
+                    Match.value(order).pipe(
+                      Match.when(
+                        { deletedAt: Match.null },
+                        () => workflowStatus.type !== "Completed",
+                      ),
+                      Match.orElse(() => false),
                     ),
                   ),
+                ),
               ),
           },
         );
 
-        const isTransitionable = DataAccessContract.makePolicy(
-          OrdersContract.isTransitionable,
+        const canDelete = DataAccessContract.makePolicy(
+          OrdersContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          OrdersContract.canRestore,
           {
             make: ({ id }) =>
               AccessControl.policy(() =>
                 repository
-                  .findByIdWithWorkflowStatus(id)
+                  .findById(id)
                   .pipe(
-                    Effect.map(
-                      ({ workflowStatus }) =>
-                        workflowStatus.type !== "Completed",
-                    ),
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
                   ),
               ),
           },
-        );
-
-        const isDeletable = DataAccessContract.makePolicy(
-          OrdersContract.isDeletable,
-          isEditable,
         );
 
         return {
@@ -240,10 +263,11 @@ export namespace Orders {
           isManager,
           isCustomerOrManager,
           isManagerAuthorized,
-          isEditable,
-          isApprovable,
-          isTransitionable,
-          isDeletable,
+          canEdit,
+          canApprove,
+          canTransition,
+          canDelete,
+          canRestore,
         } as const;
       }),
     },
@@ -321,7 +345,7 @@ export namespace Orders {
                   policies.isManagerAuthorized.make({ id }),
                 ),
               ),
-              policies.isEditable.make({ id }),
+              policies.canEdit.make({ id }),
             ),
           mutator: (order) => repository.updateById(order.id, () => order),
         });
@@ -335,7 +359,7 @@ export namespace Orders {
                   AccessControl.permission("orders:update"),
                   policies.isManagerAuthorized.make({ id }),
                 ),
-                policies.isApprovable.make({ id }),
+                policies.canApprove.make({ id }),
               ),
             mutator: ({ id, ...order }) =>
               repository.updateById(id, () => order),
@@ -348,7 +372,7 @@ export namespace Orders {
             makePolicy: ({ id }) =>
               AccessControl.every(
                 AccessControl.permission("orders:update"),
-                policies.isTransitionable.make({ id }),
+                policies.canTransition.make({ id }),
               ),
             mutator: ({ id, ...order }) =>
               repository.updateById(id, () => ({
@@ -368,7 +392,7 @@ export namespace Orders {
                     AccessControl.permission("orders:update"),
                     policies.isManagerAuthorized.make({ id }),
                   ),
-                  policies.isTransitionable.make({ id }),
+                  policies.canTransition.make({ id }),
                 ),
               mutator: ({ id, ...order }) =>
                 repository.updateById(id, () => ({
@@ -390,7 +414,7 @@ export namespace Orders {
                     policies.isManagerAuthorized.make({ id }),
                   ),
                 ),
-                policies.isDeletable.make({ id }),
+                policies.canDelete.make({ id }),
               ),
             mutator: ({ id, deletedAt }) =>
               repository
@@ -406,6 +430,19 @@ export namespace Orders {
           },
         );
 
+        const restore = DataAccessContract.makeMutation(
+          OrdersContract.restore,
+          {
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("orders:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            mutator: ({ id }) =>
+              repository.updateById(id, () => ({ deletedAt: null })),
+          },
+        );
+
         return {
           create,
           edit,
@@ -413,6 +450,7 @@ export namespace Orders {
           transitionRoomWorkflowStatus,
           transitionSharedAccountWorkflowStatus,
           delete: delete_,
+          restore,
         } as const;
       }),
     },

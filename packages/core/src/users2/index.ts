@@ -7,11 +7,12 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Equal, Struct } from "effect";
+import { Array, Effect, Equal, Match, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
 import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
@@ -461,15 +462,56 @@ export namespace Users {
     "@printdesk/core/users/Policies",
     {
       accessors: true,
-      succeed: {
-        isSelf: DataAccessContract.makePolicy(UsersContract.isSelf, {
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const isSelf = DataAccessContract.makePolicy(UsersContract.isSelf, {
           make: Effect.fn("Users.Policies.isSelf.make")(({ id }) =>
             AccessControl.policy((principal) =>
               Effect.succeed(Equal.equals(id, principal.userId)),
             ),
           ),
-        }),
-      },
+        });
+
+        const canEdit = DataAccessContract.makePolicy(UsersContract.canEdit, {
+          make: Effect.fn("Users.Policies.canEdit.make")(({ id }) =>
+            AccessControl.policy((principal) =>
+              repository
+                .findById(id, principal.tenantId)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+          ),
+        });
+
+        const canDelete = DataAccessContract.makePolicy(
+          UsersContract.canDelete,
+          {
+            make: Effect.fn("Users.Policies.canDelete.make")(canEdit.make),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          UsersContract.canRestore,
+          {
+            make: Effect.fn("Users.Policies.canRestore.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        return { isSelf, canEdit, canDelete, canRestore } as const;
+      }),
     },
   ) {}
 
@@ -488,47 +530,86 @@ export namespace Users {
         const policies = yield* Policies;
 
         const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const update = DataAccessContract.makeMutation(UsersContract.update, {
-          makePolicy: Effect.fn("Users.Mutations.update.makePolicy")(() =>
-            AccessControl.permission("users:update"),
+        const notifyEdit = (user: UsersContract.DataTransferObject) =>
+          Match.value(user).pipe(
+            Match.when({ deletedAt: Match.null }, () =>
+              Array.make(
+                PullPermission.make({ permission: "users:read" }),
+                PullPermission.make({ permission: "active_users:read" }),
+              ),
+            ),
+            Match.orElse(() =>
+              Array.make(PullPermission.make({ permission: "users:read" })),
+            ),
+            notifier.notify,
+          );
+
+        const notifyDelete = (_user: UsersContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "users:read" }),
+              PullPermission.make({ permission: "active_users:read" }),
+            ),
+          );
+        const notifyRestore = notifyDelete;
+
+        const edit = DataAccessContract.makeMutation(UsersContract.edit, {
+          makePolicy: Effect.fn("Users.Mutations.edit.makePolicy")(({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("users:update"),
+              policies.canEdit.make({ id }),
+            ),
           ),
-          mutator: Effect.fn("Users.Mutations.update.mutator")(
-            (user, session) =>
-              repository
-                .updateById(user.id, user, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+          mutator: Effect.fn("Users.Mutations.edit.mutator")((user, session) =>
+            repository
+              .updateById(user.id, user, session.tenantId)
+              .pipe(Effect.map(Struct.omit("version")), Effect.tap(notifyEdit)),
           ),
         });
 
         const delete_ = DataAccessContract.makeMutation(UsersContract.delete_, {
           makePolicy: Effect.fn("Users.Mutations.delete.makePolicy")(({ id }) =>
-            AccessControl.some(
-              AccessControl.permission("users:delete"),
-              policies.isSelf.make({ id }),
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permission("users:delete"),
+                policies.isSelf.make({ id }),
+              ),
+              policies.canDelete.make({ id }),
             ),
           ),
           mutator: Effect.fn("Users.Mutations.delete.mutator")(
             ({ id, deletedAt }, session) =>
               repository
                 .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyDelete),
+                ),
           ),
         });
 
         const restore = DataAccessContract.makeMutation(UsersContract.restore, {
-          makePolicy: Effect.fn("Users.Mutations.restore.makePolicy")(() =>
-            AccessControl.permission("users:delete"),
+          makePolicy: Effect.fn("Users.Mutations.restore.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("users:delete"),
+                policies.canRestore.make({ id }),
+              ),
           ),
           mutator: Effect.fn("Users.Mutations.restore.mutator")(
             ({ id }, session) =>
               repository
                 .updateById(id, { deletedAt: null }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyRestore),
+                ),
           ),
         });
 
-        return { update, delete: delete_, restore } as const;
+        return { edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

@@ -7,7 +7,7 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import { Array, Effect, Match, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -17,6 +17,7 @@ import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { Rooms } from "../rooms2";
 import { ProductsContract } from "./contract";
 import { ProductsSchema } from "./schema";
 
@@ -514,6 +515,21 @@ export namespace Products {
               ),
         );
 
+        const findById = Effect.fn("Products.Repository.findById")(
+          (
+            id: ProductsSchema.Row["id"],
+            tenantId: ProductsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const findByIdForUpdate = Effect.fn(
           "Products.Repository.findByIdForUpdate",
         )(
@@ -557,17 +573,15 @@ export namespace Products {
             >,
             tenantId: ProductsSchema.Row["tenantId"],
           ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .update(table)
-                  .set(product)
-                  .where(
-                    and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
-                  )
-                  .returning(),
-              )
-              .pipe(Effect.flatMap(Array.head)),
+            db.useTransaction((tx) =>
+              tx
+                .update(table)
+                .set(product)
+                .where(
+                  and(eq(table.roomId, roomId), eq(table.tenantId, tenantId)),
+                )
+                .returning(),
+            ),
         );
 
         return {
@@ -584,6 +598,7 @@ export namespace Products {
           findFastForward,
           findActiveFastForward,
           findActivePublishedFastForward,
+          findById,
           findByIdForUpdate,
           updateById,
           updateByRoomId,
@@ -592,24 +607,171 @@ export namespace Products {
     },
   ) {}
 
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/products/Policies",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const canEdit = DataAccessContract.makePolicy(
+          ProductsContract.canEdit,
+          {
+            make: Effect.fn("Products.Policies.canEdit.make")(({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("products:update"),
+                AccessControl.policy((principal) =>
+                  repository
+                    .findById(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNull),
+                    ),
+                ),
+              ),
+            ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          ProductsContract.canDelete,
+          {
+            make: Effect.fn("Products.Policies.canDelete.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          ProductsContract.canRestore,
+          {
+            make: Effect.fn("Products.Policies.canRestore.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
+
   export class Mutations extends Effect.Service<Mutations>()(
     "@printdesk/core/products/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Permissions.Schemas.Default],
+      dependencies: [
+        Repository.Default,
+        Rooms.Repository.Default,
+        Policies.Default,
+        Permissions.Schemas.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
+        const roomsRepository = yield* Rooms.Repository;
+
+        const policies = yield* Policies;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notify = (_product: ProductsContract.DataTransferObject) =>
-          notifier.notify(
-            Array.make(
-              PullPermission.make({ permission: "products:read" }),
-              PullPermission.make({ permission: "active_products:read" }),
+        const notifyCreate = (product: ProductsContract.DataTransferObject) =>
+          Match.value(product).pipe(
+            Match.when({ status: Match.is("published") }, () =>
+              roomsRepository.findById(product.roomId, product.tenantId).pipe(
+                Effect.map((room) =>
+                  Match.value(room).pipe(
+                    Match.whenAnd(
+                      { deletedAt: Match.null },
+                      { status: Match.is("published") },
+                      () =>
+                        Array.make(
+                          PullPermission.make({
+                            permission: "products:read",
+                          }),
+                          PullPermission.make({
+                            permission: "active_products:read",
+                          }),
+                          PullPermission.make({
+                            permission: "active_published_products:read",
+                          }),
+                        ),
+                    ),
+                    Match.orElse(() =>
+                      Array.make(
+                        PullPermission.make({ permission: "products:read" }),
+                        PullPermission.make({
+                          permission: "active_products:read",
+                        }),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
+            Match.orElse(() =>
+              Effect.succeed(
+                Array.make(
+                  PullPermission.make({ permission: "products:read" }),
+                  PullPermission.make({ permission: "active_products:read" }),
+                ),
+              ),
+            ),
+            Effect.map(notifier.notify),
           );
+        const notifyEdit = notifyCreate;
+
+        const notifyPublish = (product: ProductsContract.DataTransferObject) =>
+          roomsRepository.findById(product.roomId, product.tenantId).pipe(
+            Effect.map((room) =>
+              Match.value(room).pipe(
+                Match.whenAnd(
+                  { deletedAt: Match.null },
+                  { status: Match.is("published") },
+                  () =>
+                    Array.make(
+                      PullPermission.make({
+                        permission: "products:read",
+                      }),
+                      PullPermission.make({
+                        permission: "active_products:read",
+                      }),
+                      PullPermission.make({
+                        permission: "active_published_products:read",
+                      }),
+                    ),
+                ),
+                Match.orElse(() =>
+                  Array.make(
+                    PullPermission.make({ permission: "products:read" }),
+                    PullPermission.make({
+                      permission: "active_products:read",
+                    }),
+                  ),
+                ),
+              ),
+            ),
+            Effect.map(notifier.notify),
+          );
+        const notifyDraft = notifyPublish;
+
+        const notifyDelete = notifyCreate;
+        const notifyRestore = notifyCreate;
 
         const create = DataAccessContract.makeMutation(
           ProductsContract.create,
@@ -621,28 +783,42 @@ export namespace Products {
               (product, { tenantId }) =>
                 repository
                   .create({ ...product, tenantId })
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyCreate),
+                  ),
             ),
           },
         );
 
         const edit = DataAccessContract.makeMutation(ProductsContract.edit, {
-          makePolicy: Effect.fn("Products.Mutations.edit.makePolicy")(() =>
-            AccessControl.permission("products:update"),
+          makePolicy: Effect.fn("Products.Mutations.edit.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("products:update"),
+                policies.canEdit.make({ id }),
+              ),
           ),
           mutator: Effect.fn("Products.Mutations.edit.mutator")(
             ({ id, ...product }, session) =>
               repository
                 .updateById(id, product, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyEdit),
+                ),
           ),
         });
 
         const publish = DataAccessContract.makeMutation(
           ProductsContract.publish,
           {
-            makePolicy: Effect.fn("Products.Mutations.publish.makePolicy")(() =>
-              AccessControl.permission("products:update"),
+            makePolicy: Effect.fn("Products.Mutations.publish.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("products:update"),
+                  policies.canEdit.make({ id }),
+                ),
             ),
             mutator: Effect.fn("Products.Mutations.publish.mutator")(
               ({ id, updatedAt }, session) =>
@@ -663,7 +839,7 @@ export namespace Products {
                       )
                       .pipe(
                         Effect.map(Struct.omit("version")),
-                        Effect.tap(notify),
+                        Effect.tap(notifyPublish),
                       ),
                   ),
                 ),
@@ -672,8 +848,12 @@ export namespace Products {
         );
 
         const draft = DataAccessContract.makeMutation(ProductsContract.draft, {
-          makePolicy: Effect.fn("Products.Mutations.draft.makePolicy")(() =>
-            AccessControl.permission("products:update"),
+          makePolicy: Effect.fn("Products.Mutations.draft.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("products:update"),
+                policies.canEdit.make({ id }),
+              ),
           ),
           mutator: Effect.fn("Products.Mutations.draft.mutator")(
             ({ id, updatedAt }, session) =>
@@ -694,7 +874,7 @@ export namespace Products {
                     )
                     .pipe(
                       Effect.map(Struct.omit("version")),
-                      Effect.tap(notify),
+                      Effect.tap(notifyDraft),
                     ),
                 ),
               ),
@@ -704,8 +884,12 @@ export namespace Products {
         const delete_ = DataAccessContract.makeMutation(
           ProductsContract.delete_,
           {
-            makePolicy: Effect.fn("Products.Mutations.delete.makePolicy")(() =>
-              AccessControl.permission("products:delete"),
+            makePolicy: Effect.fn("Products.Mutations.delete.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("products:delete"),
+                  policies.canDelete.make({ id }),
+                ),
             ),
             mutator: Effect.fn("Products.Mutations.delete.mutator")(
               ({ id, deletedAt }, session) =>
@@ -715,12 +899,44 @@ export namespace Products {
                     { deletedAt, status: "draft" },
                     session.tenantId,
                   )
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyDelete),
+                  ),
             ),
           },
         );
 
-        return { create, edit, publish, draft, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          ProductsContract.restore,
+          {
+            makePolicy: Effect.fn("Products.Mutations.restore.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("products:delete"),
+                  policies.canRestore.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("Products.Mutations.restore.mutator")(
+              ({ id }, session) =>
+                repository
+                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyRestore),
+                  ),
+            ),
+          },
+        );
+
+        return {
+          create,
+          edit,
+          publish,
+          draft,
+          delete: delete_,
+          restore,
+        } as const;
       }),
     },
   ) {}

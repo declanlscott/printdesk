@@ -1,4 +1,4 @@
-import { Array, Effect, Equal, Option, Predicate } from "effect";
+import { Array, Effect, Equal, Option, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -133,7 +133,48 @@ export namespace SharedAccounts {
           },
         );
 
-        return { isCustomerAuthorized, isManagerAuthorized } as const;
+        const canEdit = DataAccessContract.makePolicy(
+          SharedAccountsContract.canEdit,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          SharedAccountsContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          SharedAccountsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return {
+          isCustomerAuthorized,
+          isManagerAuthorized,
+          canEdit,
+          canDelete,
+          canRestore,
+        } as const;
       }),
     },
   ) {}
@@ -142,15 +183,20 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/client/Mutations",
     {
       accessors: true,
-      dependencies: [WriteRepository.Default],
+      dependencies: [WriteRepository.Default, Policies.Default],
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
 
-        const update = DataAccessContract.makeMutation(
-          SharedAccountsContract.update,
+        const policies = yield* Policies;
+
+        const edit = DataAccessContract.makeMutation(
+          SharedAccountsContract.edit,
           {
-            makePolicy: () =>
-              AccessControl.permission("shared_accounts:update"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("shared_accounts:update"),
+                policies.canEdit.make({ id }),
+              ),
             mutator: ({ id, ...sharedAccount }) =>
               repository.updateById(id, () => sharedAccount),
           },
@@ -159,8 +205,13 @@ export namespace SharedAccounts {
         const delete_ = DataAccessContract.makeMutation(
           SharedAccountsContract.delete_,
           {
-            makePolicy: () =>
-              AccessControl.permission("shared_accounts:delete"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.every(
+                  AccessControl.permission("shared_accounts:delete"),
+                  policies.canDelete.make({ id }),
+                ),
+              ),
             mutator: ({ id, deletedAt }) =>
               repository
                 .updateById(id, () => ({ deletedAt }))
@@ -175,7 +226,20 @@ export namespace SharedAccounts {
           },
         );
 
-        return { update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          SharedAccountsContract.restore,
+          {
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("shared_accounts:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            mutator: ({ id }) =>
+              repository.updateById(id, () => ({ deletedAt: null })),
+          },
+        );
+
+        return { edit, delete: delete_, restore } as const;
       }),
     },
   ) {}
@@ -240,13 +304,61 @@ export namespace SharedAccounts {
     },
   ) {}
 
+  export class ManagerAuthorizationPolicies extends Effect.Service<ManagerAuthorizationPolicies>()(
+    "@printdesk/core/shared-accounts/ManagerAuthorizationPolicies",
+    {
+      accessors: true,
+      dependencies: [ManagerAuthorizationsReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ManagerAuthorizationsReadRepository;
+
+        const canDelete = DataAccessContract.makePolicy(
+          SharedAccountManagerAuthorizationsContract.canDelete,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          SharedAccountManagerAuthorizationsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
+
   export class ManagerAuthorizationMutations extends Effect.Service<ManagerAuthorizationMutations>()(
     "@printdesk/core/shared-accounts/client/ManagerAuthorizationMutations",
     {
       accessors: true,
-      dependencies: [ManagerAuthorizationsWriteRepository.Default],
+      dependencies: [
+        ManagerAuthorizationsWriteRepository.Default,
+        ManagerAuthorizationPolicies.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* ManagerAuthorizationsWriteRepository;
+
+        const policies = yield* ManagerAuthorizationPolicies;
 
         const create = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.create,
@@ -267,9 +379,12 @@ export namespace SharedAccounts {
         const delete_ = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.delete_,
           {
-            makePolicy: () =>
-              AccessControl.permission(
-                "shared_account_manager_authorizations:delete",
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission(
+                  "shared_account_manager_authorizations:delete",
+                ),
+                policies.canDelete.make({ id }),
               ),
             mutator: ({ id, deletedAt }) =>
               repository
@@ -287,7 +402,22 @@ export namespace SharedAccounts {
           },
         );
 
-        return { create, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          SharedAccountManagerAuthorizationsContract.restore,
+          {
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission(
+                  "shared_account_manager_authorizations:delete",
+                ),
+                policies.canRestore.make({ id }),
+              ),
+            mutator: ({ id }) =>
+              repository.updateById(id, () => ({ deletedAt: null })),
+          },
+        );
+
+        return { create, delete: delete_, restore } as const;
       }),
     },
   ) {}

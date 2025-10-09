@@ -885,7 +885,7 @@ export namespace Invoices {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notify = (invoice: InvoicesContract.DataTransferObject) =>
+        const notifyCreate = (invoice: InvoicesContract.DataTransferObject) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "invoices:read" }),
@@ -915,7 +915,10 @@ export namespace Invoices {
               (invoice, { tenantId }) =>
                 repository
                   .create({ ...invoice, tenantId })
-                  .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyCreate),
+                  ),
             ),
           },
         );

@@ -97,6 +97,8 @@ export namespace Models {
 
   export const views = {
     activeAnnouncements: AnnouncementsContract.activeView,
+    activePublishedRoomAnnouncements:
+      AnnouncementsContract.activePublishedRoomView,
     activeSharedAccounts: SharedAccountsContract.activeView,
     activeCustomerAuthorizedSharedAccounts:
       SharedAccountsContract.activeCustomerAuthorizedView,

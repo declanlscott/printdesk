@@ -241,26 +241,32 @@ export namespace OrdersContract {
     Returns: Schema.Void,
   });
 
-  export const isEditable = new DataAccessContract.Procedure({
-    name: "isOrderEditable",
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditOrder",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isApprovable = new DataAccessContract.Procedure({
-    name: "isOrderApprovable",
+  export const canApprove = new DataAccessContract.Procedure({
+    name: "canApproveOrder",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isTransitionable = new DataAccessContract.Procedure({
-    name: "isOrderTransitionable",
+  export const canTransition = new DataAccessContract.Procedure({
+    name: "canTransitionOrder",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const isDeletable = new DataAccessContract.Procedure({
-    name: "isOrderDeletable",
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteOrder",
+    Args: BaseDto.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreOrder",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
@@ -328,6 +334,12 @@ export namespace OrdersContract {
       id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreOrder",
+    Args: BaseDto.pick("id"),
     Returns: DataTransferObject,
   });
 }

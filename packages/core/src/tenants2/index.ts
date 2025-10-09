@@ -276,41 +276,6 @@ export namespace Tenants {
     },
   ) {}
 
-  export class Policies extends Effect.Service<Policies>()(
-    "@printdesk/core/tenants/Policies",
-    {
-      accessors: true,
-      dependencies: [Repository.Default],
-      effect: Effect.gen(function* () {
-        const repository = yield* Repository;
-
-        const isSubdomainAvailable = DataAccessContract.makePolicy(
-          TenantsContract.isSubdomainAvailable,
-          {
-            make: Effect.fn("Tenants.Policies.isSubdomainAvailable.make")(
-              ({ subdomain }) =>
-                AccessControl.policy(() =>
-                  Effect.gen(function* () {
-                    if (["api", "auth", "backend", "www"].includes(subdomain))
-                      return false;
-
-                    return yield* repository.findBySubdomain(subdomain).pipe(
-                      Effect.catchTag("NoSuchElementException", () =>
-                        Effect.succeed(null),
-                      ),
-                      Effect.map((tenant) => tenant?.status === "setup"),
-                    );
-                  }),
-                ),
-            ),
-          },
-        );
-
-        return { isSubdomainAvailable } as const;
-      }),
-    },
-  ) {}
-
   export class Mutations extends Effect.Service<Mutations>()(
     "@printdesk/core/tenants/Mutations",
     {
@@ -322,24 +287,27 @@ export namespace Tenants {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notify = (_tenant: TenantsContract.DataTransferObject) =>
+        const notifyEdit = (_tenant: TenantsContract.DataTransferObject) =>
           notifier.notify(
             Array.make(PullPermission.make({ permission: "tenants:read" })),
           );
 
-        const update = DataAccessContract.makeMutation(TenantsContract.update, {
-          makePolicy: Effect.fn("Tenants.Mutations.update.makePolicy")(() =>
+        const edit = DataAccessContract.makeMutation(TenantsContract.edit, {
+          makePolicy: Effect.fn("Tenants.Mutations.edit.makePolicy")(() =>
             AccessControl.permission("tenants:update"),
           ),
-          mutator: Effect.fn("Tenants.Mutations.update.mutator")(
+          mutator: Effect.fn("Tenants.Mutations.edit.mutator")(
             (tenant, session) =>
               repository
                 .updateById(session.tenantId, tenant)
-                .pipe(Effect.map(Struct.omit("version")), Effect.tap(notify)),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyEdit),
+                ),
           ),
         });
 
-        return { update } as const;
+        return { edit } as const;
       }),
     },
   ) {}

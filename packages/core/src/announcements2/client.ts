@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Array, Effect, Equal, Option, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -28,12 +28,94 @@ export namespace Announcements {
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([
-        Models.SyncTables.announcements,
-        ReadRepository,
-      ]).pipe(
-        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
-      ),
+      effect: Effect.gen(function* () {
+        const table = yield* Models.SyncTables.announcements;
+        const repository = yield* ReadRepository;
+        const base = yield* Replicache.makeWriteRepository(table, repository);
+
+        const updateByRoomId = (
+          roomId: AnnouncementsContract.DataTransferObject["roomId"],
+          announcement: Partial<
+            Omit<
+              AnnouncementsContract.DataTransferObject,
+              "id" | "roomId" | "tenantId"
+            >
+          >,
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((a) =>
+                Equal.equals(a.roomId, roomId)
+                  ? Option.some(base.updateById(a.id, () => announcement))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
+
+        const deleteByRoomId = (
+          roomId: AnnouncementsContract.DataTransferObject["roomId"],
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((a) =>
+                Equal.equals(a.roomId, roomId)
+                  ? Option.some(base.deleteById(a.id))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
+
+        return { ...base, updateByRoomId, deleteByRoomId } as const;
+      }),
+    },
+  ) {}
+
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/announcements/client/Policies",
+    {
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+
+        const canEdit = DataAccessContract.makePolicy(
+          AnnouncementsContract.canEdit,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          AnnouncementsContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          AnnouncementsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
+      }),
     },
   ) {}
 
@@ -41,9 +123,11 @@ export namespace Announcements {
     "@printdesk/core/announcements/client/Mutations",
     {
       accessors: true,
-      dependencies: [WriteRepository.Default],
+      dependencies: [WriteRepository.Default, Policies.Default],
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
+
+        const policies = yield* Policies;
 
         const create = DataAccessContract.makeMutation(
           AnnouncementsContract.create,
@@ -60,10 +144,14 @@ export namespace Announcements {
           },
         );
 
-        const update = DataAccessContract.makeMutation(
-          AnnouncementsContract.update,
+        const edit = DataAccessContract.makeMutation(
+          AnnouncementsContract.edit,
           {
-            makePolicy: () => AccessControl.permission("announcements:update"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("announcements:update"),
+                policies.canEdit.make({ id }),
+              ),
             mutator: ({ id, ...announcement }) =>
               repository.updateById(id, () => announcement),
           },
@@ -72,7 +160,11 @@ export namespace Announcements {
         const delete_ = DataAccessContract.makeMutation(
           AnnouncementsContract.delete_,
           {
-            makePolicy: () => AccessControl.permission("announcements:delete"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("announcements:delete"),
+                policies.canDelete.make({ id }),
+              ),
             mutator: ({ id, deletedAt }) =>
               repository
                 .updateById(id, () => ({ deletedAt }))
@@ -87,7 +179,26 @@ export namespace Announcements {
           },
         );
 
-        return { create, update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          AnnouncementsContract.restore,
+          {
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("announcements:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            mutator: ({ id }) =>
+              repository
+                .updateById(id, () => ({ deletedAt: null }))
+                .pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("announcements:read"),
+                  ),
+                ),
+          },
+        );
+
+        return { create, edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

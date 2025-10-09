@@ -42,13 +42,13 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
 
-        const update = DataAccessContract.makeMutation(TenantsContract.update, {
+        const edit = DataAccessContract.makeMutation(TenantsContract.edit, {
           makePolicy: () => AccessControl.permission("tenants:update"),
           mutator: ({ id, ...tenant }) =>
             repository.updateById(id, () => tenant),
         });
 
-        return { update } as const;
+        return { edit } as const;
       }),
     },
   ) {}

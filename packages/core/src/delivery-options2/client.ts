@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Array, Effect, Equal, Option, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -28,12 +28,94 @@ export namespace DeliveryOptions {
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([
-        Models.SyncTables.deliveryOptions,
-        ReadRepository,
-      ]).pipe(
-        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
-      ),
+      effect: Effect.gen(function* () {
+        const table = yield* Models.SyncTables.deliveryOptions;
+        const repository = yield* ReadRepository;
+        const base = yield* Replicache.makeWriteRepository(table, repository);
+
+        const updateByRoomId = (
+          roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
+          announcement: Partial<
+            Omit<
+              DeliveryOptionsContract.DataTransferObject,
+              "id" | "roomId" | "tenantId"
+            >
+          >,
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((o) =>
+                Equal.equals(o.roomId, roomId)
+                  ? Option.some(base.updateById(o.id, () => announcement))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
+
+        const deleteByRoomId = (
+          roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
+        ) =>
+          repository.findAll.pipe(
+            Effect.map(
+              Array.filterMap((o) =>
+                Equal.equals(o.roomId, roomId)
+                  ? Option.some(base.deleteById(o.id))
+                  : Option.none(),
+              ),
+            ),
+            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
+          );
+
+        return { ...base, updateByRoomId, deleteByRoomId } as const;
+      }),
+    },
+  ) {}
+
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/delivery-options/Policies",
+    {
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+
+        const canEdit = DataAccessContract.makePolicy(
+          DeliveryOptionsContract.canEdit,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          DeliveryOptionsContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          DeliveryOptionsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
+      }),
     },
   ) {}
 
@@ -41,9 +123,11 @@ export namespace DeliveryOptions {
     "@printdesk/core/delivery-options/client/Mutations",
     {
       accessors: true,
-      dependencies: [WriteRepository.Default],
+      dependencies: [WriteRepository.Default, Policies.Default],
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
+
+        const policies = yield* Policies;
 
         const create = DataAccessContract.makeMutation(
           DeliveryOptionsContract.create,
@@ -60,11 +144,14 @@ export namespace DeliveryOptions {
           },
         );
 
-        const update = DataAccessContract.makeMutation(
-          DeliveryOptionsContract.update,
+        const edit = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.edit,
           {
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:update"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("delivery_options:update"),
+                policies.canEdit.make({ id }),
+              ),
             mutator: ({ id, ...deliveryOption }) =>
               repository.updateById(id, () => deliveryOption),
           },
@@ -73,8 +160,11 @@ export namespace DeliveryOptions {
         const delete_ = DataAccessContract.makeMutation(
           DeliveryOptionsContract.delete_,
           {
-            makePolicy: () =>
-              AccessControl.permission("delivery_options:delete"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("delivery_options:delete"),
+                policies.canDelete.make({ id }),
+              ),
             mutator: ({ id, deletedAt }) =>
               repository
                 .updateById(id, () => ({ deletedAt }))
@@ -89,7 +179,26 @@ export namespace DeliveryOptions {
           },
         );
 
-        return { create, update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          DeliveryOptionsContract.restore,
+          {
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("delivery_options:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            mutator: ({ id }) =>
+              repository
+                .updateById(id, () => ({ deletedAt: null }))
+                .pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("delivery_options:read"),
+                  ),
+                ),
+          },
+        );
+
+        return { create, edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

@@ -7,13 +7,18 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct, Tuple } from "effect";
+import { Array, Effect, Match, Predicate, Struct, Tuple } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { Announcements } from "../announcements2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { DeliveryOptions } from "../delivery-options2";
+import { Events } from "../events2";
+import { Permissions } from "../permissions2";
 import { Products } from "../products2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import { RoomWorkflows } from "../workflows2";
 import { RoomsContract } from "./contract";
@@ -559,15 +564,199 @@ export namespace Rooms {
     },
   ) {}
 
-  export class Mutations extends Effect.Service<Mutations>()(
-    "@printdesk/core/rooms/Mutations",
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/rooms/Policies",
     {
       accessors: true,
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
-        const workflowsRepository = yield* RoomWorkflows.Repository;
+
+        const canEdit = DataAccessContract.makePolicy(RoomsContract.canEdit, {
+          make: Effect.fn("Rooms.Policies.canEdit.make")(({ id }) =>
+            AccessControl.policy((principal) =>
+              repository
+                .findById(id, principal.tenantId)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+          ),
+        });
+
+        const canDelete = DataAccessContract.makePolicy(
+          RoomsContract.canDelete,
+          { make: Effect.fn("Rooms.Policies.canDelete.make")(canEdit.make) },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          RoomsContract.canRestore,
+          {
+            make: Effect.fn("Rooms.Policies.canRestore.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
+
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/rooms/Mutations",
+    {
+      accessors: true,
+      dependencies: [
+        Repository.Default,
+        Announcements.Repository.Default,
+        DeliveryOptions.Repository.Default,
+        Products.Repository.Default,
+        RoomWorkflows.Repository.Default,
+        Policies.Default,
+        Permissions.Schemas.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+        const announcementsRepository = yield* Announcements.Repository;
+        const deliveryOptionsRepository = yield* DeliveryOptions.Repository;
         const productsRepository = yield* Products.Repository;
+        const workflowsRepository = yield* RoomWorkflows.Repository;
+
+        const policies = yield* Policies;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notifyCreate = (room: RoomsContract.DataTransferObject) =>
+          Match.value(room).pipe(
+            Match.when({ status: Match.is("published") }, () =>
+              Array.make(
+                PullPermission.make({ permission: "rooms:read" }),
+                PullPermission.make({ permission: "active_rooms:read" }),
+                PullPermission.make({
+                  permission: "active_published_rooms:read",
+                }),
+                PullPermission.make({ permission: "room_workflows:read" }),
+                PullPermission.make({
+                  permission: "active_room_workflows:read",
+                }),
+                PullPermission.make({
+                  permission: "active_published_room_workflows:read",
+                }),
+              ),
+            ),
+            Match.orElse(() =>
+              Array.make(
+                PullPermission.make({ permission: "rooms:read" }),
+                PullPermission.make({ permission: "active_rooms:read" }),
+                PullPermission.make({ permission: "room_workflows:read" }),
+                PullPermission.make({
+                  permission: "active_room_workflows:read",
+                }),
+              ),
+            ),
+            notifier.notify,
+          );
+
+        const notifyEdit = (room: RoomsContract.DataTransferObject) =>
+          Match.value(room).pipe(
+            Match.when({ status: Match.is("published") }, () =>
+              Array.make(
+                PullPermission.make({ permission: "rooms:read" }),
+                PullPermission.make({ permission: "active_rooms:read" }),
+                PullPermission.make({
+                  permission: "active_published_rooms:read",
+                }),
+              ),
+            ),
+            Match.orElse(() =>
+              Array.make(
+                PullPermission.make({ permission: "rooms:read" }),
+                PullPermission.make({ permission: "active_rooms:read" }),
+              ),
+            ),
+            notifier.notify,
+          );
+
+        const notifyPublish = (_room: RoomsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "rooms:read" }),
+              PullPermission.make({ permission: "active_rooms:read" }),
+              PullPermission.make({
+                permission: "active_published_rooms:read",
+              }),
+              PullPermission.make({
+                permission: "active_published_room_announcements:read",
+              }),
+              PullPermission.make({
+                permission: "active_published_room_delivery_options:read",
+              }),
+              PullPermission.make({
+                permission: "active_published_room_workflows:read",
+              }),
+              PullPermission.make({
+                permission: "active_published_products:read",
+              }),
+            ),
+          );
+        const notifyDraft = notifyPublish;
+
+        const notifyDelete = (_room: RoomsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "rooms:read" }),
+              PullPermission.make({ permission: "active_rooms:read" }),
+              PullPermission.make({
+                permission: "active_published_rooms:read",
+              }),
+              PullPermission.make({ permission: "announcements:read" }),
+              PullPermission.make({ permission: "active_announcements:read" }),
+              PullPermission.make({
+                permission: "active_published_room_announcements:read",
+              }),
+              PullPermission.make({ permission: "delivery_options:read" }),
+              PullPermission.make({
+                permission: "active_delivery_options:read",
+              }),
+              PullPermission.make({
+                permission: "active_published_room_delivery_options:read",
+              }),
+              PullPermission.make({ permission: "room_workflows:read" }),
+              PullPermission.make({
+                permission: "active_room_workflows:read",
+              }),
+              PullPermission.make({
+                permission: "active_published_room_workflows:read",
+              }),
+              PullPermission.make({ permission: "products:read" }),
+              PullPermission.make({ permission: "active_products:read" }),
+              PullPermission.make({
+                permission: "active_published_products:read",
+              }),
+            ),
+          );
+
+        const notifyRestore = (_room: RoomsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "rooms:read" }),
+              PullPermission.make({ permission: "active_rooms:read" }),
+              PullPermission.make({ permission: "room_workflows:read" }),
+              PullPermission.make({
+                permission: "active_room_workflows:read",
+              }),
+            ),
+          );
 
         const create = DataAccessContract.makeMutation(RoomsContract.create, {
           makePolicy: Effect.fn("Rooms.Mutations.create.makePolicy")(() =>
@@ -589,25 +778,35 @@ export namespace Rooms {
                   }),
                 ),
                 { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
+              ).pipe(Effect.map(Tuple.at(0)), Effect.tap(notifyCreate)),
           ),
         });
 
         const edit = DataAccessContract.makeMutation(RoomsContract.edit, {
-          makePolicy: Effect.fn("Rooms.Mutations.edit.makePolicy")(() =>
-            AccessControl.permission("rooms:update"),
+          makePolicy: Effect.fn("Rooms.Mutations.edit.makePolicy")(({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:update"),
+              policies.canEdit.make({ id }),
+            ),
           ),
           mutator: Effect.fn("Rooms.Mutations.edit.mutator")(
             ({ id, ...room }, session) =>
               repository
                 .updateById(id, room, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyEdit),
+                ),
           ),
         });
 
         const publish = DataAccessContract.makeMutation(RoomsContract.publish, {
-          makePolicy: Effect.fn("Rooms.Mutations.publish.makePolicy")(() =>
-            AccessControl.permission("rooms:update"),
+          makePolicy: Effect.fn("Rooms.Mutations.publish.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("rooms:update"),
+                policies.canEdit.make({ id }),
+              ),
           ),
           mutator: Effect.fn("Rooms.Mutations.publish.mutator")(
             ({ id, updatedAt }, session) =>
@@ -617,13 +816,19 @@ export namespace Rooms {
                   { status: "published", updatedAt },
                   session.tenantId,
                 )
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyPublish),
+                ),
           ),
         });
 
         const draft = DataAccessContract.makeMutation(RoomsContract.draft, {
-          makePolicy: Effect.fn("Rooms.Mutations.draft.makePolicy")(() =>
-            AccessControl.permission("rooms:update"),
+          makePolicy: Effect.fn("Rooms.Mutations.draft.makePolicy")(({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:update"),
+              policies.canEdit.make({ id }),
+            ),
           ),
           mutator: Effect.fn("Rooms.Mutations.draft.mutator")(
             ({ id, updatedAt }, session) =>
@@ -643,21 +848,38 @@ export namespace Rooms {
                   ),
                 ),
                 { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
+              ).pipe(Effect.map(Tuple.at(0)), Effect.tap(notifyDraft)),
           ),
         });
 
         const delete_ = DataAccessContract.makeMutation(RoomsContract.delete_, {
-          makePolicy: Effect.fn("Rooms.Mutations.delete.makePolicy")(() =>
-            AccessControl.permission("rooms:delete"),
+          makePolicy: Effect.fn("Rooms.Mutations.delete.makePolicy")(({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:delete"),
+              policies.canDelete.make({ id }),
+            ),
           ),
           mutator: Effect.fn("Rooms.Mutations.delete.mutator")(
             ({ id, deletedAt }, session) =>
               Effect.all(
                 Tuple.make(
                   repository
-                    .updateById(id, { deletedAt }, session.tenantId)
+                    .updateById(
+                      id,
+                      { deletedAt, status: "draft" },
+                      session.tenantId,
+                    )
                     .pipe(Effect.map(Struct.omit("version"))),
+                  announcementsRepository.updateByRoomId(
+                    id,
+                    { deletedAt },
+                    session.tenantId,
+                  ),
+                  deliveryOptionsRepository.updateByRoomId(
+                    id,
+                    { deletedAt },
+                    session.tenantId,
+                  ),
                   workflowsRepository.updateByRoomId(
                     id,
                     { deletedAt },
@@ -670,13 +892,17 @@ export namespace Rooms {
                   ),
                 ),
                 { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
+              ).pipe(Effect.map(Tuple.at(0)), Effect.tap(notifyDelete)),
           ),
         });
 
         const restore = DataAccessContract.makeMutation(RoomsContract.restore, {
-          makePolicy: Effect.fn("Rooms.Mutations.restore.makePolicy")(() =>
-            AccessControl.permission("rooms:delete"),
+          makePolicy: Effect.fn("Rooms.Mutations.restore.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("rooms:delete"),
+                policies.canRestore.make({ id }),
+              ),
           ),
           mutator: Effect.fn("Rooms.Mutations.restore.mutator")(
             ({ id }, session) =>
@@ -690,14 +916,9 @@ export namespace Rooms {
                     { deletedAt: null },
                     session.tenantId,
                   ),
-                  productsRepository.updateByRoomId(
-                    id,
-                    { deletedAt: null },
-                    session.tenantId,
-                  ),
                 ),
                 { concurrency: "unbounded" },
-              ).pipe(Effect.map(Tuple.at(0))),
+              ).pipe(Effect.map(Tuple.at(0)), Effect.tap(notifyRestore)),
           ),
         });
 

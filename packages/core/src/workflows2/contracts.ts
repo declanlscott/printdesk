@@ -87,6 +87,12 @@ export namespace SharedAccountWorkflowsContract {
       ),
     );
 
+  export const isCustomerAuthorized = new DataAccessContract.Procedure({
+    name: "isCustomerAuthorizedSharedAccountWorkflow",
+    Args: Schema.Struct({ id: ColumnsContract.EntityId }),
+    Returns: Schema.Void,
+  });
+
   export const isManagerAuthorized = new DataAccessContract.Procedure({
     name: "isManagerAuthorizedSharedAccountWorkflow",
     Args: Schema.Struct({ id: ColumnsContract.EntityId }),
@@ -166,6 +172,18 @@ export namespace WorkflowStatusesContract {
       ),
     );
 
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditWorkflowStatus",
+    Args: BaseDto.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteWorkflowStatus",
+    Args: BaseDto.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const append = new DataAccessContract.Procedure({
     name: "appendWorkflowStatus",
     Args: Schema.Union(
@@ -199,17 +217,5 @@ export namespace WorkflowStatusesContract {
       deletedAt: Schema.DateTimeUtc,
     }),
     Returns: DataTransferObject,
-  });
-
-  export const isEditable = new DataAccessContract.Procedure({
-    name: "isWorkflowStatusEditable",
-    Args: BaseDto.pick("id"),
-    Returns: Schema.Void,
-  });
-
-  export const isDeletable = new DataAccessContract.Procedure({
-    name: "isWorkflowStatusDeletable",
-    Args: BaseDto.pick("id"),
-    Returns: Schema.Void,
   });
 }

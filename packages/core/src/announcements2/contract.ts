@@ -31,14 +31,39 @@ export namespace AnnouncementsContract {
       DataTransferObject,
     );
 
+  export const activePublishedRoomViewName = `active_published_room_${tableName}`;
+  export const activePublishedRoomView =
+    TablesContract.makeView<AnnouncementsSchema.ActivePublishedRoomView>()(
+      activePublishedRoomViewName,
+      DataTransferObject,
+    );
+
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditAnnouncement",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteAnnouncement",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreAnnouncement",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const create = new DataAccessContract.Procedure({
     name: "createAnnouncement",
     Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Procedure({
-    name: "updateAnnouncement",
+  export const edit = new DataAccessContract.Procedure({
+    name: "editAnnouncement",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(
@@ -56,6 +81,12 @@ export namespace AnnouncementsContract {
       id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreAnnouncement",
+    Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
 }

@@ -87,8 +87,26 @@ export namespace SharedAccountsContract {
     Returns: Schema.Void,
   });
 
-  export const update = new DataAccessContract.Procedure({
-    name: "updateSharedAccount",
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditSharedAccount",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteSharedAccount",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreSharedAccount",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const edit = new DataAccessContract.Procedure({
+    name: "editSharedAccount",
     Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
         DataTransferStruct.omit(
@@ -108,6 +126,12 @@ export namespace SharedAccountsContract {
       id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreSharedAccount",
+    Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
 }
@@ -190,6 +214,18 @@ export namespace SharedAccountManagerAuthorizationsContract {
       }),
     );
 
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteSharedAccountManagerAuthorization",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreSharedAccountManagerAuthorization",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const create = new DataAccessContract.Procedure({
     name: "createSharedAccountManagerAuthorization",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
@@ -202,6 +238,12 @@ export namespace SharedAccountManagerAuthorizationsContract {
       id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreSharedAccountManagerAuthorization",
+    Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
 }

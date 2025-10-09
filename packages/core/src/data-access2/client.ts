@@ -22,22 +22,20 @@ export namespace DataAccess {
       accessors: true,
       dependencies: [
         DataAccessProcedures.Policies.Default,
-        SharedAccounts.Policies.Default,
         Comments.Policies.Default,
         Orders.Policies.Default,
-        Users.Policies.Default,
+        SharedAccounts.Policies.Default,
         SharedAccountWorkflows.Policies.Default,
-        WorkflowStatuses.Policies.Default,
+        Users.Policies.Default,
       ],
       effect: Effect.gen(function* () {
         const procedures = yield* DataAccessProcedures.Policies.procedures;
 
-        const sharedAccounts = yield* SharedAccounts.Policies;
         const comments = yield* Comments.Policies;
         const orders = yield* Orders.Policies;
-        const users = yield* Users.Policies;
+        const sharedAccounts = yield* SharedAccounts.Policies;
         const sharedAccountWorkflows = yield* SharedAccountWorkflows.Policies;
-        const workflowStatuses = yield* WorkflowStatuses.Policies;
+        const users = yield* Users.Policies;
 
         const dispatcher = yield* Effect.succeed(
           new DataAccessContract.PolicyDispatcher({ procedures })
@@ -46,16 +44,11 @@ export namespace DataAccess {
             .set(orders.isManager)
             .set(orders.isCustomerOrManager)
             .set(orders.isManagerAuthorized)
-            .set(orders.isEditable)
-            .set(orders.isApprovable)
-            .set(orders.isTransitionable)
-            .set(orders.isDeletable)
             .set(sharedAccounts.isCustomerAuthorized)
             .set(sharedAccounts.isManagerAuthorized)
-            .set(users.isSelf)
+            .set(sharedAccountWorkflows.isCustomerAuthorized)
             .set(sharedAccountWorkflows.isManagerAuthorized)
-            .set(workflowStatuses.isEditable)
-            .set(workflowStatuses.isDeletable)
+            .set(users.isSelf)
             .done(),
         ).pipe(Effect.cached);
 
@@ -107,14 +100,17 @@ export namespace DataAccess {
             procedures,
           })
             .set(announcements.create)
-            .set(announcements.update)
+            .set(announcements.edit)
             .set(announcements.delete)
+            .set(announcements.restore)
             .set(comments.create)
-            .set(comments.update)
+            .set(comments.edit)
             .set(comments.delete)
+            .set(comments.restore)
             .set(deliveryOptions.create)
-            .set(deliveryOptions.update)
+            .set(deliveryOptions.edit)
             .set(deliveryOptions.delete)
+            .set(deliveryOptions.restore)
             .set(invoices.create)
             .set(orders.create)
             .set(orders.edit)
@@ -122,23 +118,27 @@ export namespace DataAccess {
             .set(orders.transitionRoomWorkflowStatus)
             .set(orders.transitionSharedAccountWorkflowStatus)
             .set(orders.delete)
+            .set(orders.restore)
             .set(products.create)
             .set(products.edit)
             .set(products.publish)
             .set(products.draft)
             .set(products.delete)
+            .set(products.restore)
             .set(rooms.create)
             .set(rooms.edit)
             .set(rooms.publish)
             .set(rooms.draft)
             .set(rooms.delete)
             .set(rooms.restore)
-            .set(sharedAccounts.update)
+            .set(sharedAccounts.edit)
             .set(sharedAccounts.delete)
+            .set(sharedAccounts.restore)
             .set(sharedAccountManagerAuthorizations.create)
             .set(sharedAccountManagerAuthorizations.delete)
-            .set(tenants.update)
-            .set(users.update)
+            .set(sharedAccountManagerAuthorizations.restore)
+            .set(tenants.edit)
+            .set(users.edit)
             .set(users.delete)
             .set(users.restore)
             .set(workflowStatuses.append)

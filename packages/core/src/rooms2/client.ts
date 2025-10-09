@@ -1,7 +1,9 @@
-import { Effect, Tuple } from "effect";
+import { Effect, Predicate, Struct, Tuple } from "effect";
 
 import { AccessControl } from "../access-control2";
+import { Announcements } from "../announcements2/client";
 import { DataAccessContract } from "../data-access2/contract";
+import { DeliveryOptions } from "../delivery-options2/client";
 import { Models } from "../models2";
 import { Products } from "../products2/client";
 import { Replicache } from "../replicache2/client";
@@ -37,15 +39,72 @@ export namespace Rooms {
     },
   ) {}
 
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/rooms/Policies",
+    {
+      accessors: true,
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+
+        const canEdit = DataAccessContract.makePolicy(RoomsContract.canEdit, {
+          make: ({ id }) =>
+            AccessControl.policy(() =>
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+        });
+
+        const canDelete = DataAccessContract.makePolicy(
+          RoomsContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          RoomsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
+
   export class Mutations extends Effect.Service<Mutations>()(
     "@printdesk/core/rooms/client/Mutations",
     {
       accessors: true,
-      dependencies: [WriteRepository.Default],
+      dependencies: [
+        WriteRepository.Default,
+        RoomWorkflows.WriteRepository.Default,
+        Announcements.WriteRepository.Default,
+        DeliveryOptions.WriteRepository.Default,
+        Products.WriteRepository.Default,
+        Policies.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
+        const announcementsRepository = yield* Announcements.WriteRepository;
+        const deliveryOptionsRepository =
+          yield* DeliveryOptions.WriteRepository;
         const workflowsRepository = yield* RoomWorkflows.WriteRepository;
         const productsRepository = yield* Products.WriteRepository;
+
+        const policies = yield* Policies;
 
         const create = DataAccessContract.makeMutation(RoomsContract.create, {
           makePolicy: () => AccessControl.permission("rooms:create"),
@@ -73,12 +132,20 @@ export namespace Rooms {
         });
 
         const edit = DataAccessContract.makeMutation(RoomsContract.edit, {
-          makePolicy: () => AccessControl.permission("rooms:update"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:update"),
+              policies.canEdit.make({ id }),
+            ),
           mutator: ({ id, ...room }) => repository.updateById(id, () => room),
         });
 
         const publish = DataAccessContract.makeMutation(RoomsContract.publish, {
-          makePolicy: () => AccessControl.permission("rooms:update"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:update"),
+              policies.canEdit.make({ id }),
+            ),
           mutator: ({ id, updatedAt }) =>
             repository.updateById(id, () => ({
               status: "published",
@@ -87,7 +154,11 @@ export namespace Rooms {
         });
 
         const draft = DataAccessContract.makeMutation(RoomsContract.draft, {
-          makePolicy: () => AccessControl.permission("rooms:update"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:update"),
+              policies.canEdit.make({ id }),
+            ),
           mutator: ({ id, updatedAt }) =>
             Effect.all(
               Tuple.make(
@@ -105,18 +176,40 @@ export namespace Rooms {
         });
 
         const delete_ = DataAccessContract.makeMutation(RoomsContract.delete_, {
-          makePolicy: () => AccessControl.permission("rooms:delete"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:delete"),
+              policies.canDelete.make({ id }),
+            ),
           mutator: ({ id, deletedAt }) =>
             Effect.all(
               Tuple.make(
                 repository
-                  .updateById(id, () => ({ deletedAt }))
+                  .updateById(id, () => ({ deletedAt, status: "draft" }))
                   .pipe(
                     AccessControl.enforce(
                       AccessControl.permission("rooms:read"),
                     ),
                     Effect.catchTag("AccessDeniedError", () =>
                       repository.deleteById(id),
+                    ),
+                  ),
+                announcementsRepository.updateByRoomId(id, { deletedAt }).pipe(
+                  AccessControl.enforce(
+                    AccessControl.permission("announcements:read"),
+                  ),
+                  Effect.catchTag("AccessDeniedError", () =>
+                    announcementsRepository.deleteByRoomId(id),
+                  ),
+                ),
+                deliveryOptionsRepository
+                  .updateByRoomId(id, { deletedAt })
+                  .pipe(
+                    AccessControl.enforce(
+                      AccessControl.permission("delivery_options:read"),
+                    ),
+                    Effect.catchTag("AccessDeniedError", () =>
+                      deliveryOptionsRepository.deleteByRoomId(id),
                     ),
                   ),
                 workflowsRepository.updateByRoomId(id, { deletedAt }).pipe(
@@ -127,27 +220,32 @@ export namespace Rooms {
                     workflowsRepository.deleteByRoomId(id),
                   ),
                 ),
-                productsRepository.updateByRoomId(id, { deletedAt }).pipe(
-                  AccessControl.enforce(
-                    AccessControl.permission("products:read"),
+                productsRepository
+                  .updateByRoomId(id, { deletedAt, status: "draft" })
+                  .pipe(
+                    AccessControl.enforce(
+                      AccessControl.permission("products:read"),
+                    ),
+                    Effect.catchTag("AccessDeniedError", () =>
+                      productsRepository.deleteByRoomId(id),
+                    ),
                   ),
-                  Effect.catchTag("AccessDeniedError", () =>
-                    productsRepository.deleteByRoomId(id),
-                  ),
-                ),
               ),
               { concurrency: "unbounded" },
             ).pipe(Effect.map(Tuple.at(0))),
         });
 
         const restore = DataAccessContract.makeMutation(RoomsContract.restore, {
-          makePolicy: () => AccessControl.permission("rooms:delete"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("rooms:delete"),
+              policies.canRestore.make({ id }),
+            ),
           mutator: ({ id }) =>
             Effect.all(
               Tuple.make(
                 repository.updateById(id, () => ({ deletedAt: null })),
                 workflowsRepository.updateByRoomId(id, { deletedAt: null }),
-                productsRepository.updateByRoomId(id, { deletedAt: null }),
               ),
               { concurrency: "unbounded" },
             ).pipe(Effect.map(Tuple.at(0))),

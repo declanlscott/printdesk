@@ -48,14 +48,32 @@ export namespace DeliveryOptionsContract {
       DataTransferObject,
     );
 
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditDeliveryOption",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteDeliveryOption",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreDeliveryOption",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const create = new DataAccessContract.Procedure({
     name: "createDeliveryOption",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Procedure({
-    name: "updateDeliveryOption",
+  export const edit = new DataAccessContract.Procedure({
+    name: "editDeliveryOption",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
       DataTransferStruct.omit(
@@ -72,6 +90,12 @@ export namespace DeliveryOptionsContract {
       id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreDeliveryOption",
+    Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
 }

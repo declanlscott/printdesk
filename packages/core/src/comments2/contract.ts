@@ -63,14 +63,32 @@ export namespace CommentsContract {
     Returns: Schema.Void,
   });
 
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditComment",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteComment",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreComment",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const create = new DataAccessContract.Procedure({
     name: "createComment",
     Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const update = new DataAccessContract.Procedure({
-    name: "updateComment",
+  export const edit = new DataAccessContract.Procedure({
+    name: "editComment",
     Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
         DataTransferStruct.omit(
@@ -89,6 +107,12 @@ export namespace CommentsContract {
       ...DataTransferStruct.pick("id").fields,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreComment",
+    Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
 }

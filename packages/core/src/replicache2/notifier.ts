@@ -35,10 +35,10 @@ export class ReplicacheNotifier extends Effect.Service<ReplicacheNotifier>()(
                   events: Array.map(requests, Struct.get("notification")),
                 })
                 .pipe(
-                  Effect.andThen((result) =>
+                  Effect.andThen((success) =>
                     Effect.forEach(
                       requests,
-                      Request.completeEffect(Effect.succeed(result)),
+                      Request.completeEffect(Effect.succeed(success)),
                     ),
                   ),
                   Effect.catchAll((error) =>

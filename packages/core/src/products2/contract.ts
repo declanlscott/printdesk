@@ -157,6 +157,24 @@ export namespace ProductsContract {
       DataTransferObject,
     );
 
+  export const canEdit = new DataAccessContract.Procedure({
+    name: "canEditProduct",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canDelete = new DataAccessContract.Procedure({
+    name: "canDeleteProduct",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
+  export const canRestore = new DataAccessContract.Procedure({
+    name: "canRestoreProduct",
+    Args: DataTransferStruct.pick("id"),
+    Returns: Schema.Void,
+  });
+
   export const create = new DataAccessContract.Procedure({
     name: "createProduct",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
@@ -194,6 +212,12 @@ export namespace ProductsContract {
       id: ColumnsContract.EntityId,
       deletedAt: Schema.DateTimeUtc,
     }),
+    Returns: DataTransferObject,
+  });
+
+  export const restore = new DataAccessContract.Procedure({
+    name: "restoreProduct",
+    Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
 }

@@ -1,7 +1,8 @@
-import { eq, isNull } from "drizzle-orm";
+import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
 import { index, pgView } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns2";
+import { RoomsSchema } from "../rooms2/schema";
 import { Tables } from "../tables2";
 import { ProductsContract } from "./contract";
 
@@ -35,7 +36,17 @@ export namespace ProductsSchema {
   export const activePublishedView = pgView(
     ProductsContract.activePublishedViewName,
   ).as((qb) =>
-    qb.select().from(activeView).where(eq(activeView.status, "published")),
+    qb
+      .select(getViewSelectedFields(activeView))
+      .from(activeView)
+      .innerJoin(
+        RoomsSchema.activePublishedView,
+        and(
+          eq(activeView.roomId, RoomsSchema.activePublishedView.id),
+          eq(activeView.tenantId, RoomsSchema.activePublishedView.tenantId),
+        ),
+      )
+      .where(eq(activeView.status, "published")),
   );
   export type ActivePublishedView = typeof activePublishedView;
   export type ActivePublishedRow = InferSelectViewModel<ActivePublishedView>;

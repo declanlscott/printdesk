@@ -29,8 +29,11 @@ import {
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
 import { Orders } from "../orders2";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import {
   SharedAccountWorkflowsContract,
@@ -564,6 +567,28 @@ export namespace RoomWorkflows {
               .pipe(Effect.flatMap(Array.head)),
         );
 
+        const findActivePublishedById = Effect.fn(
+          "RoomsWorkflows.Repository.findActivePublishedById",
+        )(
+          (
+            id: RoomWorkflowsSchema.Row["id"],
+            tenantId: RoomWorkflowsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(activePublishedRoomView)
+                  .where(
+                    and(
+                      eq(activePublishedRoomView.id, id),
+                      eq(activePublishedRoomView.tenantId, tenantId),
+                    ),
+                  ),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const updateByRoomId = Effect.fn(
           "RoomWorkflows.Repository.updateByRoomId",
         )(
@@ -602,6 +627,7 @@ export namespace RoomWorkflows {
           findActiveFastForward,
           findActivePublishedRoomFastForward,
           findById,
+          findActivePublishedById,
           updateByRoomId,
         } as const;
       }),
@@ -1464,6 +1490,33 @@ export namespace SharedAccountWorkflows {
               .pipe(Effect.flatMap(Array.head)),
         );
 
+        const findActiveCustomerAuthorized = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveCustomerAuthorized",
+        )(
+          (
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            id: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["id"],
+            tenantId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(activeManagerAuthorizedView)
+                  .where(
+                    and(
+                      eq(
+                        activeManagerAuthorizedView.authorizedManagerId,
+                        customerId,
+                      ),
+                      eq(activeManagerAuthorizedView.id, id),
+                      eq(activeManagerAuthorizedView.tenantId, tenantId),
+                    ),
+                  ),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const findActiveManagerAuthorized = Effect.fn(
           "SharedAccountWorkflows.Repository.findActiveManagerAuthorized",
         )(
@@ -1510,6 +1563,7 @@ export namespace SharedAccountWorkflows {
           findActiveCustomerAuthorizedFastForward,
           findActiveManagerAuthorizedFastForward,
           findById,
+          findActiveCustomerAuthorized,
           findActiveManagerAuthorized,
         } as const;
       }),
@@ -1523,6 +1577,30 @@ export namespace SharedAccountWorkflows {
       dependencies: [Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
+
+        const isCustomerAuthorized = DataAccessContract.makePolicy(
+          SharedAccountWorkflowsContract.isCustomerAuthorized,
+          {
+            make: Effect.fn(
+              "SharedAccountWorkflows.Policies.isCustomerAuthorized",
+            )(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findActiveCustomerAuthorized(
+                    principal.userId,
+                    id,
+                    principal.tenantId,
+                  )
+                  .pipe(
+                    Effect.andThen(true),
+                    Effect.catchTag("NoSuchElementException", () =>
+                      Effect.succeed(false),
+                    ),
+                  ),
+              ),
+            ),
+          },
+        );
 
         const isManagerAuthorized = DataAccessContract.makePolicy(
           SharedAccountWorkflowsContract.isManagerAuthorized,
@@ -1548,7 +1626,7 @@ export namespace SharedAccountWorkflows {
           },
         );
 
-        return { isManagerAuthorized } as const;
+        return { isCustomerAuthorized, isManagerAuthorized } as const;
       }),
     },
   ) {}
@@ -2920,38 +2998,36 @@ export namespace WorkflowStatuses {
     "@printdesk/core/workflows/StatusesPolicies",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [
+        Repository.Default,
+        Orders.Repository.Default,
+        SharedAccountWorkflows.Policies.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
-        const sharedAccountWorkflowRepository =
-          yield* SharedAccountWorkflows.Repository;
         const ordersRepository = yield* Orders.Repository;
 
-        const isEditable = DataAccessContract.makePolicy(
-          WorkflowStatusesContract.isEditable,
+        const sharedAccountWorkflowPolicies =
+          yield* SharedAccountWorkflows.Policies;
+
+        const canEdit = DataAccessContract.makePolicy(
+          WorkflowStatusesContract.canEdit,
           {
-            make: Effect.fn("WorkflowStatuses.Policies.isEditable.make")(
+            make: Effect.fn("WorkflowStatuses.Policies.canEdit.make")(
               ({ id }) =>
-                AccessControl.policy((principal) =>
-                  repository.findById(id, principal.tenantId).pipe(
-                    Effect.flatMap((workflowStatus) =>
-                      Match.value(workflowStatus).pipe(
-                        Match.when({ roomWorkflowId: Match.null }, (status) =>
-                          sharedAccountWorkflowRepository
-                            .findActiveManagerAuthorized(
-                              principal.userId,
-                              status.sharedAccountWorkflowId,
-                              principal.tenantId,
-                            )
-                            .pipe(
-                              Effect.andThen(true),
-                              Effect.catchTag("NoSuchElementException", () =>
-                                Effect.succeed(false),
-                              ),
+                AccessControl.Principal.tenantId.pipe(
+                  Effect.flatMap((tenantId) =>
+                    repository.findById(id, tenantId).pipe(
+                      Effect.flatMap((workflowStatus) =>
+                        Match.value(workflowStatus).pipe(
+                          Match.when({ roomWorkflowId: Match.null }, (s) =>
+                            sharedAccountWorkflowPolicies.isManagerAuthorized.make(
+                              { id: s.sharedAccountWorkflowId },
                             ),
-                        ),
-                        Match.orElse(() =>
-                          Effect.succeed(principal.acl.has("rooms:update")),
+                          ),
+                          Match.orElse(() =>
+                            AccessControl.permission("rooms:update"),
+                          ),
                         ),
                       ),
                     ),
@@ -2961,10 +3037,10 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const isDeletable = DataAccessContract.makePolicy(
-          WorkflowStatusesContract.isDeletable,
+        const canDelete = DataAccessContract.makePolicy(
+          WorkflowStatusesContract.canDelete,
           {
-            make: Effect.fn("WorkflowStatuses.Policies.isDeletable.make")(
+            make: Effect.fn("WorkflowStatuses.Policies.canDelete.make")(
               ({ id }) =>
                 AccessControl.every(
                   AccessControl.policy((principal) =>
@@ -2972,13 +3048,13 @@ export namespace WorkflowStatuses {
                       .findByWorkflowStatusId(id, principal.tenantId)
                       .pipe(Effect.map(Array.isEmptyArray)),
                   ),
-                  isEditable.make({ id }),
+                  canEdit.make({ id }),
                 ),
             ),
           },
         );
 
-        return { isEditable, isDeletable } as const;
+        return { canEdit, canDelete } as const;
       }),
     },
   ) {}
@@ -2989,15 +3065,85 @@ export namespace WorkflowStatuses {
       accessors: true,
       dependencies: [
         Repository.Default,
+        RoomWorkflows.Repository.Default,
         SharedAccountWorkflows.Policies.Default,
         Policies.Default,
+        Permissions.Schemas.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
+        const roomWorkflowsRepository = yield* RoomWorkflows.Repository;
 
         const sharedAccountWorkflowPolicies =
           yield* SharedAccountWorkflows.Policies;
         const policies = yield* Policies;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notifyAppend = (
+          workflowStatus: WorkflowStatusesContract.DataTransferObject,
+        ) =>
+          Match.value(workflowStatus).pipe(
+            Match.when({ roomWorkflowId: Match.null }, (s) =>
+              Effect.succeed(
+                Array.make(
+                  PullPermission.make({
+                    permission: "workflow_statuses:read",
+                  }),
+                  PullPermission.make({
+                    permission: "active_workflow_statuses:read",
+                  }),
+                  Events.makeReplicachePullPolicy(
+                    SharedAccountWorkflowsContract.isCustomerAuthorized.make({
+                      id: s.sharedAccountWorkflowId,
+                    }),
+                  ),
+                  Events.makeReplicachePullPolicy(
+                    SharedAccountWorkflowsContract.isManagerAuthorized.make({
+                      id: s.sharedAccountWorkflowId,
+                    }),
+                  ),
+                ),
+              ),
+            ),
+            Match.orElse((s) =>
+              roomWorkflowsRepository
+                .findActivePublishedById(s.roomWorkflowId, s.tenantId)
+                .pipe(
+                  Effect.andThen(
+                    Array.make(
+                      PullPermission.make({
+                        permission: "workflow_statuses:read",
+                      }),
+                      PullPermission.make({
+                        permission: "active_workflow_statuses:read",
+                      }),
+                      PullPermission.make({
+                        permission:
+                          "active_published_room_workflow_statuses:read",
+                      }),
+                    ),
+                  ),
+                  Effect.catchTag("NoSuchElementException", () =>
+                    Effect.succeed(
+                      Array.make(
+                        PullPermission.make({
+                          permission: "workflow_statuses:read",
+                        }),
+                        PullPermission.make({
+                          permission: "active_workflow_statuses:read",
+                        }),
+                      ),
+                    ),
+                  ),
+                ),
+            ),
+            Effect.map(notifier.notify),
+          );
+        const notifyEdit = notifyAppend;
+        const notifyDelete = notifyAppend;
+        const notifyReorder = notifyAppend;
 
         const append = DataAccessContract.makeMutation(
           WorkflowStatusesContract.append,
@@ -3035,6 +3181,7 @@ export namespace WorkflowStatuses {
                       repository.create({ ...workflowStatus, index, tenantId }),
                     ),
                     Effect.map(({ version: _, ...dto }) => dto),
+                    Effect.tap(notifyAppend),
                   ),
             ),
           },
@@ -3047,14 +3194,17 @@ export namespace WorkflowStatuses {
               ({ id }) =>
                 AccessControl.some(
                   AccessControl.permission("workflow_statuses:update"),
-                  policies.isEditable.make({ id }),
+                  policies.canEdit.make({ id }),
                 ),
             ),
             mutator: Effect.fn("WorkflowStatuses.Mutations.edit.mutator")(
               ({ id, ...workflowStatus }, session) =>
                 repository
                   .updateById(id, workflowStatus, session.tenantId)
-                  .pipe(Effect.map(({ version: _, ...dto }) => dto)),
+                  .pipe(
+                    Effect.map(({ version: _, ...dto }) => dto),
+                    Effect.tap(notifyEdit),
+                  ),
             ),
           },
         );
@@ -3067,7 +3217,7 @@ export namespace WorkflowStatuses {
             )(({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:update"),
-                policies.isEditable.make({ id }),
+                policies.canEdit.make({ id }),
               ),
             ),
             mutator: Effect.fn("WorkflowStatuses.Mutations.reorder.mutator")(
@@ -3120,7 +3270,11 @@ export namespace WorkflowStatuses {
                     .pipe(
                       Effect.map(Array.map(({ version: _, ...dto }) => dto)),
                     );
-                }),
+                }).pipe(
+                  Effect.tap((changed) =>
+                    Array.head(changed).pipe(Effect.map(notifyReorder)),
+                  ),
+                ),
             ),
           },
         );
@@ -3133,7 +3287,7 @@ export namespace WorkflowStatuses {
             )(({ id }) =>
               AccessControl.some(
                 AccessControl.permission("workflow_statuses:delete"),
-                policies.isDeletable.make({ id }),
+                policies.canDelete.make({ id }),
               ),
             ),
             mutator: Effect.fn("WorkflowStatuses.Mutations.delete.mutator")(
@@ -3166,7 +3320,7 @@ export namespace WorkflowStatuses {
                   );
 
                   return deleted;
-                }),
+                }).pipe(Effect.tap(notifyDelete)),
             ),
           },
         );

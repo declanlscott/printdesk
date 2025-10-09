@@ -1,4 +1,4 @@
-import { Array, Effect, Equal, Option } from "effect";
+import { Array, Effect, Equal, Option, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -72,13 +72,63 @@ export namespace Products {
     },
   ) {}
 
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/products/client/Policies",
+    {
+      accessors: true,
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+
+        const canEdit = DataAccessContract.makePolicy(
+          ProductsContract.canEdit,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          ProductsContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          ProductsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { canEdit, canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
+
   export class Mutations extends Effect.Service<Mutations>()(
     "@printdesk/core/products/client/Mutations",
     {
       accessors: true,
-      dependencies: [WriteRepository.Default],
+      dependencies: [WriteRepository.Default, Policies.Default],
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
+
+        const policies = yield* Policies;
 
         const create = DataAccessContract.makeMutation(
           ProductsContract.create,
@@ -95,7 +145,11 @@ export namespace Products {
         );
 
         const edit = DataAccessContract.makeMutation(ProductsContract.edit, {
-          makePolicy: () => AccessControl.permission("products:update"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("products:update"),
+              policies.canEdit.make({ id }),
+            ),
           mutator: ({ id, ...product }) =>
             repository.updateById(id, () => product),
         });
@@ -103,7 +157,11 @@ export namespace Products {
         const publish = DataAccessContract.makeMutation(
           ProductsContract.publish,
           {
-            makePolicy: () => AccessControl.permission("products:update"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("products:update"),
+                policies.canEdit.make({ id }),
+              ),
             mutator: ({ id, updatedAt }) =>
               repository.updateById(id, ({ config }) => ({
                 status: "published",
@@ -117,7 +175,11 @@ export namespace Products {
         );
 
         const draft = DataAccessContract.makeMutation(ProductsContract.draft, {
-          makePolicy: () => AccessControl.permission("products:update"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("products:update"),
+              policies.canEdit.make({ id }),
+            ),
           mutator: ({ id, updatedAt }) =>
             repository.updateById(id, ({ config }) => ({
               status: "draft",
@@ -132,7 +194,11 @@ export namespace Products {
         const delete_ = DataAccessContract.makeMutation(
           ProductsContract.delete_,
           {
-            makePolicy: () => AccessControl.permission("products:delete"),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("products:delete"),
+                policies.canDelete.make({ id }),
+              ),
             mutator: ({ id, deletedAt }) =>
               repository
                 .updateById(id, () => ({ deletedAt }))
@@ -147,7 +213,27 @@ export namespace Products {
           },
         );
 
-        return { create, edit, publish, draft, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          ProductsContract.restore,
+          {
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("products:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            mutator: ({ id }) =>
+              repository.updateById(id, () => ({ deletedAt: null })),
+          },
+        );
+
+        return {
+          create,
+          edit,
+          publish,
+          draft,
+          delete: delete_,
+          restore,
+        } as const;
       }),
     },
   ) {}

@@ -1,4 +1,4 @@
-import { Context, Data, Effect } from "effect";
+import { Data, Effect, HashSet } from "effect";
 
 import type { Schema } from "effect";
 import type { NonEmptyReadonlyArray } from "effect/Array";
@@ -102,7 +102,7 @@ export namespace AccessControl {
       "active_workflow_statuses:read",
     ] as const,
     manager: [
-      "active_announcements:read",
+      "active_published_room_announcements:read",
       "active_manager_authorized_shared_accounts:read",
       "active_customer_authorized_shared_accounts:read",
       "active_authorized_shared_account_customer_authorizations:read",
@@ -128,7 +128,7 @@ export namespace AccessControl {
       "active_manager_authorized_shared_account_workflow_statuses:read",
     ] as const,
     customer: [
-      "active_announcements:read",
+      "active_published_room_announcements:read",
       "active_customer_authorized_shared_accounts:read",
       "active_authorized_shared_account_customer_authorizations:read",
       "active_customer_authorized_shared_account_manager_authorizations:read",
@@ -151,10 +151,10 @@ export namespace AccessControl {
   export type PrincipalShape = {
     readonly userId: ColumnsContract.EntityId;
     readonly tenantId: ColumnsContract.TenantId;
-    readonly acl: ReadonlySet<Permissions.Permission>;
+    readonly acl: HashSet.HashSet<Permissions.Permission>;
   };
 
-  export class Principal extends Context.Tag(
+  export class Principal extends Effect.Tag(
     "@printdesk/core/access-control/Principal",
   )<Principal, PrincipalShape>() {}
 
@@ -210,7 +210,8 @@ export namespace AccessControl {
 
   export const permission = (permission: Permissions.Permission) =>
     policy(
-      (principal) => Effect.succeed(principal.acl.has(permission)),
+      (principal) =>
+        principal.acl.pipe(HashSet.has(permission), Effect.succeed),
       `Access denied: ${permission}`,
     );
 }

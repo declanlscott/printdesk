@@ -1,4 +1,4 @@
-import { Effect, Equal, Struct } from "effect";
+import { Effect, Equal, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -58,7 +58,42 @@ export namespace Comments {
           },
         );
 
-        return { isAuthor } as const;
+        const canEdit = DataAccessContract.makePolicy(
+          CommentsContract.canEdit,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          CommentsContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          CommentsContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { isAuthor, canEdit, canDelete, canRestore } as const;
       }),
     },
   ) {}
@@ -98,27 +133,16 @@ export namespace Comments {
           },
         );
 
-        const update = DataAccessContract.makeMutation(
-          CommentsContract.update,
-          {
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("comments:update"),
-                policies.isAuthor.make({ id }),
-              ),
-            mutator: ({ id, ...comment }) =>
-              repository.updateById(id, () => comment),
-          },
-        );
+        const edit = DataAccessContract.makeMutation(CommentsContract.edit, {
+          makePolicy: ({ id }) => policies.canEdit.make({ id }),
+          mutator: ({ id, ...comment }) =>
+            repository.updateById(id, () => comment),
+        });
 
         const delete_ = DataAccessContract.makeMutation(
           CommentsContract.delete_,
           {
-            makePolicy: ({ id }) =>
-              AccessControl.some(
-                AccessControl.permission("comments:delete"),
-                policies.isAuthor.make({ id }),
-              ),
+            makePolicy: ({ id }) => policies.canDelete.make({ id }),
             mutator: ({ id, deletedAt }) =>
               repository
                 .updateById(id, () => ({ deletedAt }))
@@ -133,7 +157,16 @@ export namespace Comments {
           },
         );
 
-        return { create, update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          CommentsContract.restore,
+          {
+            makePolicy: ({ id }) => policies.canRestore.make({ id }),
+            mutator: ({ id }) =>
+              repository.updateById(id, () => ({ deletedAt: null })),
+          },
+        );
+
+        return { create, edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

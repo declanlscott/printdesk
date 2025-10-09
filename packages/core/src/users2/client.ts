@@ -1,4 +1,4 @@
-import { Effect, Equal } from "effect";
+import { Effect, Equal, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
@@ -38,14 +38,51 @@ export namespace Users {
     "@printdesk/core/users/client/Policies",
     {
       accessors: true,
-      succeed: {
-        isSelf: DataAccessContract.makePolicy(UsersContract.isSelf, {
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
+
+        const isSelf = DataAccessContract.makePolicy(UsersContract.isSelf, {
           make: ({ id }) =>
             AccessControl.policy((principal) =>
               Effect.succeed(Equal.equals(id, principal.userId)),
             ),
-        }),
-      },
+        });
+
+        const canEdit = DataAccessContract.makePolicy(UsersContract.canEdit, {
+          make: ({ id }) =>
+            AccessControl.policy(() =>
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+        });
+
+        const canDelete = DataAccessContract.makePolicy(
+          UsersContract.canDelete,
+          { make: canEdit.make },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          UsersContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
+        );
+
+        return { isSelf, canEdit, canDelete, canRestore } as const;
+      }),
     },
   ) {}
 
@@ -59,16 +96,23 @@ export namespace Users {
 
         const policies = yield* Policies;
 
-        const update = DataAccessContract.makeMutation(UsersContract.update, {
-          makePolicy: () => AccessControl.permission("users:update"),
+        const edit = DataAccessContract.makeMutation(UsersContract.edit, {
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("users:update"),
+              policies.canEdit.make({ id }),
+            ),
           mutator: ({ id, ...user }) => repository.updateById(id, () => user),
         });
 
         const delete_ = DataAccessContract.makeMutation(UsersContract.delete_, {
           makePolicy: ({ id }) =>
-            AccessControl.some(
-              AccessControl.permission("users:delete"),
-              policies.isSelf.make({ id }),
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permission("users:delete"),
+                policies.isSelf.make({ id }),
+              ),
+              policies.canDelete.make({ id }),
             ),
           mutator: ({ id, deletedAt }) =>
             repository
@@ -82,12 +126,16 @@ export namespace Users {
         });
 
         const restore = DataAccessContract.makeMutation(UsersContract.restore, {
-          makePolicy: () => AccessControl.permission("users:delete"),
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("users:delete"),
+              policies.canRestore.make({ id }),
+            ),
           mutator: ({ id }) =>
             repository.updateById(id, () => ({ deletedAt: null })),
         });
 
-        return { update, delete: delete_, restore } as const;
+        return { edit, delete: delete_, restore } as const;
       }),
     },
   ) {}

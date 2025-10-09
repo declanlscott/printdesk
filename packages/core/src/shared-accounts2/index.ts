@@ -8,12 +8,15 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Equal, Struct } from "effect";
+import { Array, Effect, Equal, Predicate, Struct } from "effect";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
+import { Events } from "../events2";
+import { Permissions } from "../permissions2";
 import { Replicache } from "../replicache2";
+import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
 import {
   SharedAccountCustomerAuthorizationsContract,
@@ -883,6 +886,21 @@ export namespace SharedAccounts {
               ),
         );
 
+        const findById = Effect.fn("SharedAccounts.Repository.findById")(
+          (
+            id: SharedAccountsSchema.Row["id"],
+            tenantId: SharedAccountsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const findByOrigin = Effect.fn(
           "SharedAccounts.Repository.findByOrigin",
         )(
@@ -994,6 +1012,7 @@ export namespace SharedAccounts {
           findActiveFastForward,
           findActiveCustomerAuthorizedFastForward,
           findActiveManagerAuthorizedFastForward,
+          findById,
           findByOrigin,
           findActiveAuthorizedCustomerIds,
           findActiveAuthorizedManagerIds,
@@ -1048,30 +1067,118 @@ export namespace SharedAccounts {
           },
         );
 
-        return { isCustomerAuthorized, isManagerAuthorized } as const;
+        const canEdit = DataAccessContract.makePolicy(
+          SharedAccountsContract.canEdit,
+          {
+            make: Effect.fn("SharedAccounts.Policies.canEdit.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        const canDelete = DataAccessContract.makePolicy(
+          SharedAccountsContract.canDelete,
+          {
+            make: Effect.fn("SharedAccounts.Policies.canDelete.make")(
+              canEdit.make,
+            ),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          SharedAccountsContract.canRestore,
+          {
+            make: Effect.fn("SharedAccounts.Policies.canRestore.make")(
+              ({ id }) =>
+                AccessControl.policy((principal) =>
+                  repository
+                    .findById(id, principal.tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
+                ),
+            ),
+          },
+        );
+
+        return {
+          isCustomerAuthorized,
+          isManagerAuthorized,
+          canEdit,
+          canDelete,
+          canRestore,
+        } as const;
       }),
     },
   ) {}
 
   export class Mutations extends Effect.Service<Mutations>()(
-    "@printdesk/core/shared-account/Mutations",
+    "@printdesk/core/shared-accounts/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [
+        Repository.Default,
+        Policies.Default,
+        Permissions.Schemas.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const update = DataAccessContract.makeMutation(
-          SharedAccountsContract.update,
-          {
-            makePolicy: Effect.fn("SharedAccounts.Mutations.update.makePolicy")(
-              () => AccessControl.permission("shared_accounts:update"),
+        const policies = yield* Policies;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notifyEdit = (
+          sharedAccount: SharedAccountsContract.DataTransferObject,
+        ) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "shared_accounts:read" }),
+              PullPermission.make({
+                permission: "active_shared_accounts:read",
+              }),
+              Events.makeReplicachePullPolicy(
+                SharedAccountsContract.isCustomerAuthorized.make({
+                  id: sharedAccount.id,
+                }),
+              ),
+              Events.makeReplicachePullPolicy(
+                SharedAccountsContract.isManagerAuthorized.make({
+                  id: sharedAccount.id,
+                }),
+              ),
             ),
-            mutator: Effect.fn("SharedAccounts.Mutations.update.mutator")(
+          );
+        const notifyDelete = notifyEdit;
+        const notifyRestore = notifyEdit;
+
+        const edit = DataAccessContract.makeMutation(
+          SharedAccountsContract.edit,
+          {
+            makePolicy: Effect.fn("SharedAccounts.Mutations.edit.makePolicy")(
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("shared_accounts:update"),
+                  policies.canEdit.make({ id }),
+                ),
+            ),
+            mutator: Effect.fn("SharedAccounts.Mutations.edit.mutator")(
               ({ id, ...sharedAccount }, session) =>
                 repository
                   .updateById(id, sharedAccount, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version"))),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyEdit),
+                  ),
             ),
           },
         );
@@ -1080,18 +1187,48 @@ export namespace SharedAccounts {
           SharedAccountsContract.delete_,
           {
             makePolicy: Effect.fn("SharedAccounts.Mutations.delete.makePolicy")(
-              () => AccessControl.permission("shared_accounts:delete"),
+              ({ id }) =>
+                AccessControl.every(
+                  AccessControl.permission("shared_accounts:delete"),
+                  policies.canDelete.make({ id }),
+                ),
             ),
             mutator: Effect.fn("SharedAccounts.Mutations.delete.mutator")(
               ({ id, deletedAt }, session) =>
                 repository
                   .updateById(id, { deletedAt }, session.tenantId)
-                  .pipe(Effect.map(Struct.omit("version"))),
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyDelete),
+                  ),
             ),
           },
         );
 
-        return { update, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          SharedAccountsContract.restore,
+          {
+            makePolicy: Effect.fn(
+              "SharedAccounts.Mutations.restore.makePolicy",
+            )(({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("shared_accounts:delete"),
+                policies.canRestore.make({ id }),
+              ),
+            ),
+            mutator: Effect.fn("SharedAccounts.Mutations.restore.mutator")(
+              ({ id }, session) =>
+                repository
+                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .pipe(
+                    Effect.map(Struct.omit("version")),
+                    Effect.tap(notifyRestore),
+                  ),
+            ),
+          },
+        );
+
+        return { edit, delete: delete_, restore } as const;
       }),
     },
   ) {}
@@ -2499,6 +2636,23 @@ export namespace SharedAccounts {
               ),
         );
 
+        const findById = Effect.fn(
+          "SharedAccounts.ManagerAuthorizationsRepository.findById",
+        )(
+          (
+            id: SharedAccountManagerAuthorizationsSchema.Row["id"],
+            tenantId: SharedAccountManagerAuthorizationsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         const updateById = Effect.fn(
           "SharedAccounts.ManagerAuthorizationsRepository.updateById",
         )(
@@ -2541,8 +2695,58 @@ export namespace SharedAccounts {
           findActiveFastForward,
           findActiveFastForwardByManagerId,
           findActiveFastForwardByCustomerId,
+          findById,
           updateById,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class ManagerAuthorizationPolicies extends Effect.Service<ManagerAuthorizationPolicies>()(
+    "@printdesk/core/shared-accounts/ManagerAuthorizationPolicies",
+    {
+      accessors: true,
+      dependencies: [ManagerAuthorizationsRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ManagerAuthorizationsRepository;
+
+        const canDelete = DataAccessContract.makePolicy(
+          SharedAccountManagerAuthorizationsContract.canDelete,
+          {
+            make: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationPolicies.canDelete.make",
+            )(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        const canRestore = DataAccessContract.makePolicy(
+          SharedAccountManagerAuthorizationsContract.canRestore,
+          {
+            make: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationPolicies.canRestore.make",
+            )(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+            ),
+          },
+        );
+
+        return { canDelete, canRestore } as const;
       }),
     },
   ) {}
@@ -2551,9 +2755,44 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/ManagerAuthorizationMutations",
     {
       accessors: true,
-      dependencies: [ManagerAuthorizationsRepository.Default],
+      dependencies: [
+        ManagerAuthorizationsRepository.Default,
+        ManagerAuthorizationPolicies.Default,
+        Permissions.Schemas.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* ManagerAuthorizationsRepository;
+
+        const policies = yield* ManagerAuthorizationPolicies;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notifyCreate = (
+          authorization: SharedAccountManagerAuthorizationsContract.DataTransferObject,
+        ) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({
+                permission: "shared_account_manager_authorizations:read",
+              }),
+              PullPermission.make({
+                permission: "active_shared_account_manager_authorizations:read",
+              }),
+              Events.makeReplicachePullPolicy(
+                SharedAccountsContract.isCustomerAuthorized.make({
+                  id: authorization.sharedAccountId,
+                }),
+              ),
+              Events.makeReplicachePullPolicy(
+                SharedAccountsContract.isManagerAuthorized.make({
+                  id: authorization.sharedAccountId,
+                }),
+              ),
+            ),
+          );
+        const notifyDelete = notifyCreate;
+        const notifyRestore = notifyCreate;
 
         const create = DataAccessContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.create,
@@ -2570,7 +2809,10 @@ export namespace SharedAccounts {
             )((authorization, { tenantId }) =>
               repository
                 .create({ ...authorization, tenantId })
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyCreate),
+                ),
             ),
           },
         );
@@ -2580,9 +2822,12 @@ export namespace SharedAccounts {
           {
             makePolicy: Effect.fn(
               "SharedAccounts.ManagerAuthorizationMutations.delete.makePolicy",
-            )(() =>
-              AccessControl.permission(
-                "shared_account_manager_authorizations:delete",
+            )(({ id }) =>
+              AccessControl.every(
+                AccessControl.permission(
+                  "shared_account_manager_authorizations:delete",
+                ),
+                policies.canDelete.make({ id }),
               ),
             ),
             mutator: Effect.fn(
@@ -2590,12 +2835,41 @@ export namespace SharedAccounts {
             )(({ id, deletedAt }, session) =>
               repository
                 .updateById(id, { deletedAt }, session.tenantId)
-                .pipe(Effect.map(Struct.omit("version"))),
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyDelete),
+                ),
             ),
           },
         );
 
-        return { create, delete: delete_ } as const;
+        const restore = DataAccessContract.makeMutation(
+          SharedAccountManagerAuthorizationsContract.restore,
+          {
+            makePolicy: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationMutations.restore.makePolicy",
+            )(({ id }) =>
+              AccessControl.every(
+                AccessControl.permission(
+                  "shared_account_manager_authorizations:delete",
+                ),
+                policies.canRestore.make({ id }),
+              ),
+            ),
+            mutator: Effect.fn(
+              "SharedAccounts.ManagerAuthorizationMutations.restore.mutator",
+            )(({ id }, session) =>
+              repository
+                .updateById(id, { deletedAt: null }, session.tenantId)
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyRestore),
+                ),
+            ),
+          },
+        );
+
+        return { create, delete: delete_, restore } as const;
       }),
     },
   ) {}

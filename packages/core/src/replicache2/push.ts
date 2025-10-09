@@ -8,9 +8,9 @@ import { Replicache } from ".";
 import { AccessControl } from "../access-control2";
 import { Auth } from "../auth2";
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccess } from "../data-access2";
-import { DataAccessProcedures } from "../data-access2/procedures";
 import { Database } from "../database2";
+import { Mutations } from "../mutations";
+import { Procedures } from "../procedures";
 import { ReplicacheContract } from "./contract";
 import { ReplicacheClientGroupsModel, ReplicacheClientsModel } from "./models";
 import { ReplicacheNotifier } from "./notifier";
@@ -30,8 +30,8 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
       Database.TransactionManager.Default,
       Replicache.ClientGroupsRepository.Default,
       Replicache.ClientsRepository.Default,
-      DataAccess.ServerMutations.Default,
-      DataAccessProcedures.Mutations.Default,
+      Mutations.Dispatcher.Default,
+      Procedures.Mutations.Default,
     ],
     effect: Effect.gen(function* () {
       const { userId, tenantId } = yield* Auth.Session;
@@ -40,14 +40,14 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
       const clientGroupsRepository = yield* Replicache.ClientGroupsRepository;
       const clientsRepository = yield* Replicache.ClientsRepository;
 
-      const dispatcher = yield* DataAccess.ServerMutations.dispatcher;
+      const dispatcher = yield* Mutations.Dispatcher.client;
 
-      const decode = yield* DataAccessProcedures.Mutations.Replicache.pipe(
+      const decode = yield* Procedures.Mutations.Replicache.pipe(
         Effect.map(Schema.encodedSchema),
         Effect.map(Schema.decodeUnknown),
       );
 
-      const processMutation = (
+      const process = (
         clientGroupId: ReplicacheContract.PushRequestV1["clientGroupID"],
         mutation: ReplicacheContract.MutationV1,
         errorMode = false,
@@ -209,11 +209,9 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
 
             yield* Effect.forEach(pushRequest.mutations, (mutation) =>
               // 1: Error mode is initially false
-              processMutation(clientGroupId, mutation).pipe(
+              process(clientGroupId, mutation).pipe(
                 // 10(ii)(c): Retry mutation in error mode
-                Effect.orElse(() =>
-                  processMutation(clientGroupId, mutation, true),
-                ),
+                Effect.orElse(() => process(clientGroupId, mutation, true)),
               ),
             ).pipe(Effect.provide(ReplicacheNotifier.Default(clientGroupId)));
           }),

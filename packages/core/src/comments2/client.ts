@@ -4,9 +4,10 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2/client";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import { CommentsContract } from "./contract";
 
@@ -46,7 +47,7 @@ export namespace Comments {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const isAuthor = DataAccessContract.makePolicy(
+        const isAuthor = PoliciesContract.makePolicy(
           CommentsContract.isAuthor,
           {
             make: ({ id }) =>
@@ -61,27 +62,24 @@ export namespace Comments {
           },
         );
 
-        const canEdit = DataAccessContract.makePolicy(
-          CommentsContract.canEdit,
-          {
-            make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
-          },
-        );
+        const canEdit = PoliciesContract.makePolicy(CommentsContract.canEdit, {
+          make: ({ id }) =>
+            AccessControl.policy(() =>
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+        });
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           CommentsContract.canDelete,
           { make: canEdit.make },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           CommentsContract.canRestore,
           {
             make: ({ id }) =>
@@ -116,33 +114,30 @@ export namespace Comments {
         const orderPolicies = yield* Orders.Policies;
         const policies = yield* Policies;
 
-        const create = DataAccessContract.makeMutation(
-          CommentsContract.create,
-          {
-            makePolicy: ({ orderId }) =>
-              AccessControl.some(
-                AccessControl.permission("comments:create"),
-                orderPolicies.isCustomerOrManager.make({ id: orderId }),
-                orderPolicies.isManagerAuthorized.make({ id: orderId }),
-              ),
-            mutator: (comment, session) =>
-              repository.create(
-                CommentsContract.DataTransferObject.make({
-                  ...comment,
-                  authorId: session.userId,
-                  tenantId: session.tenantId,
-                }),
-              ),
-          },
-        );
+        const create = MutationsContract.makeMutation(CommentsContract.create, {
+          makePolicy: ({ orderId }) =>
+            AccessControl.some(
+              AccessControl.permission("comments:create"),
+              orderPolicies.isCustomerOrManager.make({ id: orderId }),
+              orderPolicies.isManagerAuthorized.make({ id: orderId }),
+            ),
+          mutator: (comment, session) =>
+            repository.create(
+              CommentsContract.DataTransferObject.make({
+                ...comment,
+                authorId: session.userId,
+                tenantId: session.tenantId,
+              }),
+            ),
+        });
 
-        const edit = DataAccessContract.makeMutation(CommentsContract.edit, {
+        const edit = MutationsContract.makeMutation(CommentsContract.edit, {
           makePolicy: ({ id }) => policies.canEdit.make({ id }),
           mutator: ({ id, ...comment }) =>
             repository.updateById(id, () => comment),
         });
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           CommentsContract.delete_,
           {
             makePolicy: ({ id }) => policies.canDelete.make({ id }),
@@ -160,7 +155,7 @@ export namespace Comments {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           CommentsContract.restore,
           {
             makePolicy: ({ id }) => policies.canRestore.make({ id }),

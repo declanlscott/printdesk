@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 
 import type { UsersSchema } from "./schema";
@@ -48,31 +48,31 @@ export namespace UsersContract {
     DataTransferObject,
   );
 
-  export const isSelf = new DataAccessContract.Procedure({
+  export const isSelf = new ProceduresContract.Procedure({
     name: "isUserSelf",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canEdit = new DataAccessContract.Procedure({
+  export const canEdit = new ProceduresContract.Procedure({
     name: "canEditUser",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteUser",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canRestore = new DataAccessContract.Procedure({
+  export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreUser",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editUser",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -89,7 +89,7 @@ export namespace UsersContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteUser",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -98,7 +98,7 @@ export namespace UsersContract {
     Returns: DataTransferObject,
   });
 
-  export const restore = new DataAccessContract.Procedure({
+  export const restore = new ProceduresContract.Procedure({
     name: "restoreUser",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,

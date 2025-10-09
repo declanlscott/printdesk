@@ -1,8 +1,8 @@
 import * as Effect from "effect/Effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
 import { Replicache } from "../replicache2/client";
 import { InvoicesContract } from "./contract";
 
@@ -42,19 +42,16 @@ export namespace Invoices {
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
 
-        const create = DataAccessContract.makeMutation(
-          InvoicesContract.create,
-          {
-            makePolicy: () => AccessControl.permission("invoices:create"),
-            mutator: (invoice, { tenantId }) =>
-              repository.create(
-                InvoicesContract.DataTransferObject.make({
-                  ...invoice,
-                  tenantId,
-                }),
-              ),
-          },
-        );
+        const create = MutationsContract.makeMutation(InvoicesContract.create, {
+          makePolicy: () => AccessControl.permission("invoices:create"),
+          mutator: (invoice, { tenantId }) =>
+            repository.create(
+              InvoicesContract.DataTransferObject.make({
+                ...invoice,
+                tenantId,
+              }),
+            ),
+        });
 
         return { create } as const;
       }),

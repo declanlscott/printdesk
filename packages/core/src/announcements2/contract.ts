@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 
 import type { AnnouncementsSchema } from "./schema";
@@ -39,31 +39,31 @@ export namespace AnnouncementsContract {
       DataTransferObject,
     );
 
-  export const canEdit = new DataAccessContract.Procedure({
+  export const canEdit = new ProceduresContract.Procedure({
     name: "canEditAnnouncement",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteAnnouncement",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canRestore = new DataAccessContract.Procedure({
+  export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreAnnouncement",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const create = new DataAccessContract.Procedure({
+  export const create = new ProceduresContract.Procedure({
     name: "createAnnouncement",
     Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editAnnouncement",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -76,7 +76,7 @@ export namespace AnnouncementsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteAnnouncement",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -85,7 +85,7 @@ export namespace AnnouncementsContract {
     Returns: DataTransferObject,
   });
 
-  export const restore = new DataAccessContract.Procedure({
+  export const restore = new ProceduresContract.Procedure({
     name: "restoreAnnouncement",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,

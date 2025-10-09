@@ -6,63 +6,22 @@ import { Comments } from "../comments2/client";
 import { DeliveryOptions } from "../delivery-options2/client";
 import { Invoices } from "../invoices2/client";
 import { Orders } from "../orders2/client";
+import { Procedures } from "../procedures";
 import { Products } from "../products2/client";
 import { Rooms } from "../rooms2/client";
 import { SharedAccounts } from "../shared-accounts2/client";
 import { Tenants } from "../tenants2/client";
 import { Users } from "../users2/client";
-import { SharedAccountWorkflows, WorkflowStatuses } from "../workflows2/client";
-import { DataAccessContract } from "./contract";
-import { DataAccessProcedures } from "./procedures";
+import { WorkflowStatuses } from "../workflows2/client";
+import { MutationsContract } from "./contract";
 
-export namespace DataAccess {
-  export class ClientPolicies extends Effect.Service<ClientPolicies>()(
-    "@printdesk/core/data-access/ClientPolicies",
+export namespace Mutations {
+  export class Dispatcher extends Effect.Service<Dispatcher>()(
+    "@printdesk/core/mutations/client/Dispatcher",
     {
       accessors: true,
       dependencies: [
-        DataAccessProcedures.Policies.Default,
-        Comments.Policies.Default,
-        Orders.Policies.Default,
-        SharedAccounts.Policies.Default,
-        SharedAccountWorkflows.Policies.Default,
-        Users.Policies.Default,
-      ],
-      effect: Effect.gen(function* () {
-        const procedures = yield* DataAccessProcedures.Policies.procedures;
-
-        const comments = yield* Comments.Policies;
-        const orders = yield* Orders.Policies;
-        const sharedAccounts = yield* SharedAccounts.Policies;
-        const sharedAccountWorkflows = yield* SharedAccountWorkflows.Policies;
-        const users = yield* Users.Policies;
-
-        const dispatcher = yield* Effect.succeed(
-          new DataAccessContract.PolicyDispatcher({ procedures })
-            .set(comments.isAuthor)
-            .set(orders.isCustomer)
-            .set(orders.isManager)
-            .set(orders.isCustomerOrManager)
-            .set(orders.isManagerAuthorized)
-            .set(sharedAccounts.isCustomerAuthorized)
-            .set(sharedAccounts.isManagerAuthorized)
-            .set(sharedAccountWorkflows.isCustomerAuthorized)
-            .set(sharedAccountWorkflows.isManagerAuthorized)
-            .set(users.isSelf)
-            .done(),
-        ).pipe(Effect.cached);
-
-        return { dispatcher } as const;
-      }),
-    },
-  ) {}
-
-  export class ClientMutations extends Effect.Service<ClientMutations>()(
-    "@printdesk/core/data-access/ClientMutations",
-    {
-      accessors: true,
-      dependencies: [
-        DataAccessProcedures.Mutations.Default,
+        Procedures.Mutations.Default,
         Announcements.Mutations.Default,
         Comments.Mutations.Default,
         DeliveryOptions.Mutations.Default,
@@ -78,7 +37,7 @@ export namespace DataAccess {
       ],
       effect: Effect.gen(function* () {
         const session = yield* Auth.Session;
-        const procedures = yield* DataAccessProcedures.Mutations.procedures;
+        const procedures = yield* Procedures.Mutations.procedures;
 
         const announcements = yield* Announcements.Mutations;
         const comments = yield* Comments.Mutations;
@@ -94,8 +53,8 @@ export namespace DataAccess {
         const users = yield* Users.Mutations;
         const workflowStatuses = yield* WorkflowStatuses.Mutations;
 
-        const dispatcher = yield* Effect.succeed(
-          new DataAccessContract.MutationDispatcher({
+        const client = yield* Effect.succeed(
+          new MutationsContract.Dispatcher({
             session,
             procedures,
           })
@@ -148,7 +107,7 @@ export namespace DataAccess {
             .done(),
         ).pipe(Effect.cached);
 
-        return { dispatcher } as const;
+        return { client };
       }),
     },
   ) {}

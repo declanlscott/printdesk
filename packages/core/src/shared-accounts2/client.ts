@@ -6,8 +6,9 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import {
   SharedAccountManagerAuthorizationsContract,
@@ -106,7 +107,7 @@ export namespace SharedAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const isCustomerAuthorized = DataAccessContract.makePolicy(
+        const isCustomerAuthorized = PoliciesContract.makePolicy(
           SharedAccountsContract.isCustomerAuthorized,
           {
             make: ({ id, customerId }) =>
@@ -122,7 +123,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const isManagerAuthorized = DataAccessContract.makePolicy(
+        const isManagerAuthorized = PoliciesContract.makePolicy(
           SharedAccountsContract.isManagerAuthorized,
           {
             make: ({ id, managerId }) =>
@@ -138,7 +139,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const canEdit = DataAccessContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           SharedAccountsContract.canEdit,
           {
             make: ({ id }) =>
@@ -153,12 +154,12 @@ export namespace SharedAccounts {
           },
         );
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           SharedAccountsContract.canDelete,
           { make: canEdit.make },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           SharedAccountsContract.canRestore,
           {
             make: ({ id }) =>
@@ -194,7 +195,7 @@ export namespace SharedAccounts {
 
         const policies = yield* Policies;
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           SharedAccountsContract.edit,
           {
             makePolicy: ({ id }) =>
@@ -207,7 +208,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           SharedAccountsContract.delete_,
           {
             makePolicy: ({ id }) =>
@@ -231,7 +232,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           SharedAccountsContract.restore,
           {
             makePolicy: ({ id }) =>
@@ -317,7 +318,7 @@ export namespace SharedAccounts {
       effect: Effect.gen(function* () {
         const repository = yield* ManagerAuthorizationsReadRepository;
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           SharedAccountManagerAuthorizationsContract.canDelete,
           {
             make: ({ id }) =>
@@ -332,7 +333,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           SharedAccountManagerAuthorizationsContract.canRestore,
           {
             make: ({ id }) =>
@@ -365,7 +366,7 @@ export namespace SharedAccounts {
 
         const policies = yield* ManagerAuthorizationPolicies;
 
-        const create = DataAccessContract.makeMutation(
+        const create = MutationsContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.create,
           {
             makePolicy: () =>
@@ -381,7 +382,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.delete_,
           {
             makePolicy: ({ id }) =>
@@ -407,7 +408,7 @@ export namespace SharedAccounts {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           SharedAccountManagerAuthorizationsContract.restore,
           {
             makePolicy: ({ id }) =>

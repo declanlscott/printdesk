@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 import { Cost } from "../utils2";
 
@@ -70,7 +70,7 @@ export namespace SharedAccountsContract {
       }),
     );
 
-  export const isCustomerAuthorized = new DataAccessContract.Procedure({
+  export const isCustomerAuthorized = new ProceduresContract.Procedure({
     name: "isCustomerAuthorizedSharedAccount",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
@@ -79,7 +79,7 @@ export namespace SharedAccountsContract {
     Returns: Schema.Void,
   });
 
-  export const isManagerAuthorized = new DataAccessContract.Procedure({
+  export const isManagerAuthorized = new ProceduresContract.Procedure({
     name: "isManagerAuthorizedSharedAccount",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
@@ -88,25 +88,25 @@ export namespace SharedAccountsContract {
     Returns: Schema.Void,
   });
 
-  export const canEdit = new DataAccessContract.Procedure({
+  export const canEdit = new ProceduresContract.Procedure({
     name: "canEditSharedAccount",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteSharedAccount",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canRestore = new DataAccessContract.Procedure({
+  export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreSharedAccount",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editSharedAccount",
     Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
@@ -121,7 +121,7 @@ export namespace SharedAccountsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteSharedAccount",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -130,7 +130,7 @@ export namespace SharedAccountsContract {
     Returns: DataTransferObject,
   });
 
-  export const restore = new DataAccessContract.Procedure({
+  export const restore = new ProceduresContract.Procedure({
     name: "restoreSharedAccount",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
@@ -215,25 +215,25 @@ export namespace SharedAccountManagerAuthorizationsContract {
       }),
     );
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteSharedAccountManagerAuthorization",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canRestore = new DataAccessContract.Procedure({
+  export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreSharedAccountManagerAuthorization",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const create = new DataAccessContract.Procedure({
+  export const create = new ProceduresContract.Procedure({
     name: "createSharedAccountManagerAuthorization",
     Args: DataTransferStruct.omit("deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteSharedAccountManagerAuthorization",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -242,7 +242,7 @@ export namespace SharedAccountManagerAuthorizationsContract {
     Returns: DataTransferObject,
   });
 
-  export const restore = new DataAccessContract.Procedure({
+  export const restore = new ProceduresContract.Procedure({
     name: "restoreSharedAccountManagerAuthorization",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,

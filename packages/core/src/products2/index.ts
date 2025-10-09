@@ -14,10 +14,11 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
@@ -619,26 +620,23 @@ export namespace Products {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const canEdit = DataAccessContract.makePolicy(
-          ProductsContract.canEdit,
-          {
-            make: Effect.fn("Products.Policies.canEdit.make")(({ id }) =>
-              AccessControl.every(
-                AccessControl.permission("products:update"),
-                AccessControl.policy((principal) =>
-                  repository
-                    .findById(id, principal.tenantId)
-                    .pipe(
-                      Effect.map(Struct.get("deletedAt")),
-                      Effect.map(Predicate.isNull),
-                    ),
-                ),
+        const canEdit = PoliciesContract.makePolicy(ProductsContract.canEdit, {
+          make: Effect.fn("Products.Policies.canEdit.make")(({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("products:update"),
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
               ),
             ),
-          },
-        );
+          ),
+        });
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           ProductsContract.canDelete,
           {
             make: Effect.fn("Products.Policies.canDelete.make")(({ id }) =>
@@ -654,7 +652,7 @@ export namespace Products {
           },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           ProductsContract.canRestore,
           {
             make: Effect.fn("Products.Policies.canRestore.make")(({ id }) =>
@@ -777,25 +775,22 @@ export namespace Products {
         const notifyDelete = notifyCreate;
         const notifyRestore = notifyCreate;
 
-        const create = DataAccessContract.makeMutation(
-          ProductsContract.create,
-          {
-            makePolicy: Effect.fn("Products.Mutations.create.makePolicy")(() =>
-              AccessControl.permission("products:create"),
-            ),
-            mutator: Effect.fn("Products.Mutations.create.mutator")(
-              (product, { tenantId }) =>
-                repository
-                  .create({ ...product, tenantId })
-                  .pipe(
-                    Effect.map(Struct.omit("version")),
-                    Effect.tap(notifyCreate),
-                  ),
-            ),
-          },
-        );
+        const create = MutationsContract.makeMutation(ProductsContract.create, {
+          makePolicy: Effect.fn("Products.Mutations.create.makePolicy")(() =>
+            AccessControl.permission("products:create"),
+          ),
+          mutator: Effect.fn("Products.Mutations.create.mutator")(
+            (product, { tenantId }) =>
+              repository
+                .create({ ...product, tenantId })
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyCreate),
+                ),
+          ),
+        });
 
-        const edit = DataAccessContract.makeMutation(ProductsContract.edit, {
+        const edit = MutationsContract.makeMutation(ProductsContract.edit, {
           makePolicy: Effect.fn("Products.Mutations.edit.makePolicy")(
             ({ id }) =>
               AccessControl.every(
@@ -814,7 +809,7 @@ export namespace Products {
           ),
         });
 
-        const publish = DataAccessContract.makeMutation(
+        const publish = MutationsContract.makeMutation(
           ProductsContract.publish,
           {
             makePolicy: Effect.fn("Products.Mutations.publish.makePolicy")(
@@ -851,7 +846,7 @@ export namespace Products {
           },
         );
 
-        const draft = DataAccessContract.makeMutation(ProductsContract.draft, {
+        const draft = MutationsContract.makeMutation(ProductsContract.draft, {
           makePolicy: Effect.fn("Products.Mutations.draft.makePolicy")(
             ({ id }) =>
               AccessControl.every(
@@ -885,7 +880,7 @@ export namespace Products {
           ),
         });
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           ProductsContract.delete_,
           {
             makePolicy: Effect.fn("Products.Mutations.delete.makePolicy")(
@@ -911,7 +906,7 @@ export namespace Products {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           ProductsContract.restore,
           {
             makePolicy: Effect.fn("Products.Mutations.restore.makePolicy")(

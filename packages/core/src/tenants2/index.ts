@@ -13,11 +13,12 @@ import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
 import { IdentityProvidersSchema } from "../identity-providers2/schemas";
+import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
@@ -294,7 +295,7 @@ export namespace Tenants {
             Array.make(PullPermission.make({ permission: "tenants:read" })),
           );
 
-        const edit = DataAccessContract.makeMutation(TenantsContract.edit, {
+        const edit = MutationsContract.makeMutation(TenantsContract.edit, {
           makePolicy: Effect.fn("Tenants.Mutations.edit.makePolicy")(() =>
             AccessControl.permission("tenants:update"),
           ),
@@ -371,7 +372,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* LicensesRepository;
 
-        const isAvailable = DataAccessContract.makePolicy(
+        const isAvailable = PoliciesContract.makePolicy(
           LicensesContract.isAvailable,
           {
             make: Effect.fn("Tenants.LicensesPolicies.isAvailable.make")(

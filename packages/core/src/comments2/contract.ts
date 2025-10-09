@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { SharedAccountCustomerAuthorizationsContract } from "../shared-accounts2/contracts";
 import { TablesContract } from "../tables2/contract";
 
@@ -58,37 +58,37 @@ export namespace CommentsContract {
       }),
     );
 
-  export const isAuthor = new DataAccessContract.Procedure({
+  export const isAuthor = new ProceduresContract.Procedure({
     name: "isCommentAuthor",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canEdit = new DataAccessContract.Procedure({
+  export const canEdit = new ProceduresContract.Procedure({
     name: "canEditComment",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteComment",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canRestore = new DataAccessContract.Procedure({
+  export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreComment",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const create = new DataAccessContract.Procedure({
+  export const create = new ProceduresContract.Procedure({
     name: "createComment",
     Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editComment",
     Args: DataTransferStruct.pick("id", "updatedAt").pipe(
       Schema.extend(
@@ -102,7 +102,7 @@ export namespace CommentsContract {
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteComment",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
@@ -111,7 +111,7 @@ export namespace CommentsContract {
     Returns: DataTransferObject,
   });
 
-  export const restore = new DataAccessContract.Procedure({
+  export const restore = new ProceduresContract.Procedure({
     name: "restoreComment",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,

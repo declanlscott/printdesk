@@ -6,8 +6,9 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import { AnnouncementsContract } from "./contract";
 
@@ -84,7 +85,7 @@ export namespace Announcements {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const canEdit = DataAccessContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           AnnouncementsContract.canEdit,
           {
             make: ({ id }) =>
@@ -99,12 +100,12 @@ export namespace Announcements {
           },
         );
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           AnnouncementsContract.canDelete,
           { make: canEdit.make },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           AnnouncementsContract.canRestore,
           {
             make: ({ id }) =>
@@ -134,7 +135,7 @@ export namespace Announcements {
 
         const policies = yield* Policies;
 
-        const create = DataAccessContract.makeMutation(
+        const create = MutationsContract.makeMutation(
           AnnouncementsContract.create,
           {
             makePolicy: () => AccessControl.permission("announcements:create"),
@@ -149,7 +150,7 @@ export namespace Announcements {
           },
         );
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           AnnouncementsContract.edit,
           {
             makePolicy: ({ id }) =>
@@ -162,7 +163,7 @@ export namespace Announcements {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           AnnouncementsContract.delete_,
           {
             makePolicy: ({ id }) =>
@@ -184,7 +185,7 @@ export namespace Announcements {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           AnnouncementsContract.restore,
           {
             makePolicy: ({ id }) =>

@@ -25,11 +25,12 @@ import * as Ordering from "effect/Ordering";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
@@ -1576,7 +1577,7 @@ export namespace SharedAccountWorkflows {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isCustomerAuthorized = DataAccessContract.makePolicy(
+        const isCustomerAuthorized = PoliciesContract.makePolicy(
           SharedAccountWorkflowsContract.isCustomerAuthorized,
           {
             make: Effect.fn(
@@ -1600,7 +1601,7 @@ export namespace SharedAccountWorkflows {
           },
         );
 
-        const isManagerAuthorized = DataAccessContract.makePolicy(
+        const isManagerAuthorized = PoliciesContract.makePolicy(
           SharedAccountWorkflowsContract.isManagerAuthorized,
           {
             make: Effect.fn(
@@ -3008,7 +3009,7 @@ export namespace WorkflowStatuses {
         const sharedAccountWorkflowPolicies =
           yield* SharedAccountWorkflows.Policies;
 
-        const canEdit = DataAccessContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           WorkflowStatusesContract.canEdit,
           {
             make: Effect.fn("WorkflowStatuses.Policies.canEdit.make")(
@@ -3035,7 +3036,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           WorkflowStatusesContract.canDelete,
           {
             make: Effect.fn("WorkflowStatuses.Policies.canDelete.make")(
@@ -3143,7 +3144,7 @@ export namespace WorkflowStatuses {
         const notifyDelete = notifyAppend;
         const notifyReorder = notifyAppend;
 
-        const append = DataAccessContract.makeMutation(
+        const append = MutationsContract.makeMutation(
           WorkflowStatusesContract.append,
           {
             makePolicy: Effect.fn(
@@ -3185,7 +3186,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           WorkflowStatusesContract.edit,
           {
             makePolicy: Effect.fn("WorkflowStatuses.Mutations.edit.makePolicy")(
@@ -3207,7 +3208,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const reorder = DataAccessContract.makeMutation(
+        const reorder = MutationsContract.makeMutation(
           WorkflowStatusesContract.reorder,
           {
             makePolicy: Effect.fn(
@@ -3277,7 +3278,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           WorkflowStatusesContract.delete_,
           {
             makePolicy: Effect.fn(

@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 import { Constants } from "../utils/constants";
 import { HexColor } from "../utils2";
@@ -88,13 +88,13 @@ export namespace SharedAccountWorkflowsContract {
       ),
     );
 
-  export const isCustomerAuthorized = new DataAccessContract.Procedure({
+  export const isCustomerAuthorized = new ProceduresContract.Procedure({
     name: "isCustomerAuthorizedSharedAccountWorkflow",
     Args: Schema.Struct({ id: ColumnsContract.EntityId }),
     Returns: Schema.Void,
   });
 
-  export const isManagerAuthorized = new DataAccessContract.Procedure({
+  export const isManagerAuthorized = new ProceduresContract.Procedure({
     name: "isManagerAuthorizedSharedAccountWorkflow",
     Args: Schema.Struct({ id: ColumnsContract.EntityId }),
     Returns: Schema.Void,
@@ -173,19 +173,19 @@ export namespace WorkflowStatusesContract {
       ),
     );
 
-  export const canEdit = new DataAccessContract.Procedure({
+  export const canEdit = new ProceduresContract.Procedure({
     name: "canEditWorkflowStatus",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteWorkflowStatus",
     Args: BaseDto.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const append = new DataAccessContract.Procedure({
+  export const append = new ProceduresContract.Procedure({
     name: "appendWorkflowStatus",
     Args: Schema.Union(
       SharedAccountWorkflowDto.omit("index", "deletedAt", "tenantId"),
@@ -194,7 +194,7 @@ export namespace WorkflowStatusesContract {
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editWorkflowStatus",
     Args: Schema.extend(
       BaseDto.pick("id", "updatedAt"),
@@ -205,13 +205,13 @@ export namespace WorkflowStatusesContract {
     Returns: DataTransferObject,
   });
 
-  export const reorder = new DataAccessContract.Procedure({
+  export const reorder = new ProceduresContract.Procedure({
     name: "reorderWorkflowStatus",
     Args: BaseDto.pick("id", "index", "updatedAt"),
     Returns: DataTransferObject.pipe(Schema.Array),
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteWorkflowStatus",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,

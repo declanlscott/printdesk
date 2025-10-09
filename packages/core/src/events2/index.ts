@@ -1,8 +1,8 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
-import { DataAccessProcedures } from "../data-access2/procedures";
 import { Permissions } from "../permissions2";
+import { Procedures } from "../procedures";
 
 export namespace Events {
   export class InfraProvisionResult extends Schema.TaggedClass<InfraProvisionResult>(
@@ -31,7 +31,7 @@ export namespace Events {
   >["Type"];
 
   export const replicachePullPolicyTagName = "ReplicachePullPolicy" as const;
-  export const ReplicachePullPolicy = DataAccessProcedures.Policies.Policy.pipe(
+  export const ReplicachePullPolicy = Procedures.Policies.Policy.pipe(
     Effect.map(
       Schema.extend(
         Schema.Struct({
@@ -46,7 +46,7 @@ export namespace Events {
 
   export const makeReplicachePullPolicy = <
     TPolicy extends Effect.Effect.Success<
-      typeof DataAccessProcedures.Policies.Policy
+      typeof Procedures.Policies.Policy
     >["Type"],
   >(
     policy: TPolicy,

@@ -16,11 +16,12 @@ import * as Tuple from "effect/Tuple";
 
 import { AccessControl } from "../access-control2";
 import { Announcements } from "../announcements2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { DeliveryOptions } from "../delivery-options2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Products } from "../products2";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
@@ -577,7 +578,7 @@ export namespace Rooms {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const canEdit = DataAccessContract.makePolicy(RoomsContract.canEdit, {
+        const canEdit = PoliciesContract.makePolicy(RoomsContract.canEdit, {
           make: Effect.fn("Rooms.Policies.canEdit.make")(({ id }) =>
             AccessControl.policy((principal) =>
               repository
@@ -590,12 +591,11 @@ export namespace Rooms {
           ),
         });
 
-        const canDelete = DataAccessContract.makePolicy(
-          RoomsContract.canDelete,
-          { make: Effect.fn("Rooms.Policies.canDelete.make")(canEdit.make) },
-        );
+        const canDelete = PoliciesContract.makePolicy(RoomsContract.canDelete, {
+          make: Effect.fn("Rooms.Policies.canDelete.make")(canEdit.make),
+        });
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           RoomsContract.canRestore,
           {
             make: Effect.fn("Rooms.Policies.canRestore.make")(({ id }) =>
@@ -763,7 +763,7 @@ export namespace Rooms {
             ),
           );
 
-        const create = DataAccessContract.makeMutation(RoomsContract.create, {
+        const create = MutationsContract.makeMutation(RoomsContract.create, {
           makePolicy: Effect.fn("Rooms.Mutations.create.makePolicy")(() =>
             AccessControl.permission("rooms:create"),
           ),
@@ -787,7 +787,7 @@ export namespace Rooms {
           ),
         });
 
-        const edit = DataAccessContract.makeMutation(RoomsContract.edit, {
+        const edit = MutationsContract.makeMutation(RoomsContract.edit, {
           makePolicy: Effect.fn("Rooms.Mutations.edit.makePolicy")(({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:update"),
@@ -805,7 +805,7 @@ export namespace Rooms {
           ),
         });
 
-        const publish = DataAccessContract.makeMutation(RoomsContract.publish, {
+        const publish = MutationsContract.makeMutation(RoomsContract.publish, {
           makePolicy: Effect.fn("Rooms.Mutations.publish.makePolicy")(
             ({ id }) =>
               AccessControl.every(
@@ -828,7 +828,7 @@ export namespace Rooms {
           ),
         });
 
-        const draft = DataAccessContract.makeMutation(RoomsContract.draft, {
+        const draft = MutationsContract.makeMutation(RoomsContract.draft, {
           makePolicy: Effect.fn("Rooms.Mutations.draft.makePolicy")(({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:update"),
@@ -857,7 +857,7 @@ export namespace Rooms {
           ),
         });
 
-        const delete_ = DataAccessContract.makeMutation(RoomsContract.delete_, {
+        const delete_ = MutationsContract.makeMutation(RoomsContract.delete_, {
           makePolicy: Effect.fn("Rooms.Mutations.delete.makePolicy")(({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:delete"),
@@ -901,7 +901,7 @@ export namespace Rooms {
           ),
         });
 
-        const restore = DataAccessContract.makeMutation(RoomsContract.restore, {
+        const restore = MutationsContract.makeMutation(RoomsContract.restore, {
           makePolicy: Effect.fn("Rooms.Mutations.restore.makePolicy")(
             ({ id }) =>
               AccessControl.every(

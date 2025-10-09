@@ -6,8 +6,9 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import { DeliveryOptionsContract } from "./contract";
 
@@ -84,7 +85,7 @@ export namespace DeliveryOptions {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const canEdit = DataAccessContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           DeliveryOptionsContract.canEdit,
           {
             make: ({ id }) =>
@@ -99,12 +100,12 @@ export namespace DeliveryOptions {
           },
         );
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           DeliveryOptionsContract.canDelete,
           { make: canEdit.make },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           DeliveryOptionsContract.canRestore,
           {
             make: ({ id }) =>
@@ -134,7 +135,7 @@ export namespace DeliveryOptions {
 
         const policies = yield* Policies;
 
-        const create = DataAccessContract.makeMutation(
+        const create = MutationsContract.makeMutation(
           DeliveryOptionsContract.create,
           {
             makePolicy: () =>
@@ -149,7 +150,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           DeliveryOptionsContract.edit,
           {
             makePolicy: ({ id }) =>
@@ -162,7 +163,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           DeliveryOptionsContract.delete_,
           {
             makePolicy: ({ id }) =>
@@ -184,7 +185,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           DeliveryOptionsContract.restore,
           {
             makePolicy: ({ id }) =>

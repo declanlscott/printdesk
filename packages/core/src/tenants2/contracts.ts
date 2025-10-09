@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 import { Constants } from "../utils/constants";
 
@@ -35,7 +35,7 @@ export namespace LicensesContract {
     DataTransferObject,
   );
 
-  export const isAvailable = new DataAccessContract.Procedure({
+  export const isAvailable = new ProceduresContract.Procedure({
     name: "isLicenseAvailable",
     Args: DataTransferStruct.pick("key"),
     Returns: Schema.Void,
@@ -71,13 +71,13 @@ export namespace TenantsContract {
     ["read", "update"],
   );
 
-  export const isSubdomainAvailable = new DataAccessContract.Procedure({
+  export const isSubdomainAvailable = new ProceduresContract.Procedure({
     name: "isTenantSubdomainAvailable",
     Args: DataTransferStruct.pick("subdomain"),
     Returns: Schema.Void,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editTenant",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),

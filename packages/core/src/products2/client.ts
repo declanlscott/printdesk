@@ -6,8 +6,9 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import { ProductsContract } from "./contract";
 
@@ -85,27 +86,24 @@ export namespace Products {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const canEdit = DataAccessContract.makePolicy(
-          ProductsContract.canEdit,
-          {
-            make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
-          },
-        );
+        const canEdit = PoliciesContract.makePolicy(ProductsContract.canEdit, {
+          make: ({ id }) =>
+            AccessControl.policy(() =>
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+        });
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           ProductsContract.canDelete,
           { make: canEdit.make },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           ProductsContract.canRestore,
           {
             make: ({ id }) =>
@@ -135,21 +133,18 @@ export namespace Products {
 
         const policies = yield* Policies;
 
-        const create = DataAccessContract.makeMutation(
-          ProductsContract.create,
-          {
-            makePolicy: () => AccessControl.permission("products:create"),
-            mutator: (product, { tenantId }) =>
-              repository.create(
-                ProductsContract.DataTransferObject.make({
-                  ...product,
-                  tenantId,
-                }),
-              ),
-          },
-        );
+        const create = MutationsContract.makeMutation(ProductsContract.create, {
+          makePolicy: () => AccessControl.permission("products:create"),
+          mutator: (product, { tenantId }) =>
+            repository.create(
+              ProductsContract.DataTransferObject.make({
+                ...product,
+                tenantId,
+              }),
+            ),
+        });
 
-        const edit = DataAccessContract.makeMutation(ProductsContract.edit, {
+        const edit = MutationsContract.makeMutation(ProductsContract.edit, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("products:update"),
@@ -159,7 +154,7 @@ export namespace Products {
             repository.updateById(id, () => product),
         });
 
-        const publish = DataAccessContract.makeMutation(
+        const publish = MutationsContract.makeMutation(
           ProductsContract.publish,
           {
             makePolicy: ({ id }) =>
@@ -179,7 +174,7 @@ export namespace Products {
           },
         );
 
-        const draft = DataAccessContract.makeMutation(ProductsContract.draft, {
+        const draft = MutationsContract.makeMutation(ProductsContract.draft, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("products:update"),
@@ -196,7 +191,7 @@ export namespace Products {
             })),
         });
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           ProductsContract.delete_,
           {
             makePolicy: ({ id }) =>
@@ -218,7 +213,7 @@ export namespace Products {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           ProductsContract.restore,
           {
             makePolicy: ({ id }) =>

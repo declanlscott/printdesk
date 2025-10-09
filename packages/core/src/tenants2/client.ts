@@ -1,8 +1,8 @@
 import * as Effect from "effect/Effect";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
 import { Replicache } from "../replicache2/client";
 import { TenantsContract } from "./contracts";
 
@@ -42,7 +42,7 @@ export namespace Tenants {
       effect: Effect.gen(function* () {
         const repository = yield* WriteRepository;
 
-        const edit = DataAccessContract.makeMutation(TenantsContract.edit, {
+        const edit = MutationsContract.makeMutation(TenantsContract.edit, {
           makePolicy: () => AccessControl.permission("tenants:update"),
           mutator: ({ id, ...tenant }) =>
             repository.updateById(id, () => tenant),

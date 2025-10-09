@@ -13,9 +13,9 @@ import * as Effect from "effect/Effect";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { OrdersContract } from "../orders2/contract";
 import { Permissions } from "../permissions2";
@@ -907,23 +907,20 @@ export namespace Invoices {
             ),
           );
 
-        const create = DataAccessContract.makeMutation(
-          InvoicesContract.create,
-          {
-            makePolicy: Effect.fn("Invoices.Mutations.create.makePolicy")(() =>
-              AccessControl.permission("invoices:create"),
-            ),
-            mutator: Effect.fn("Invoices.Mutations.create.mutator")(
-              (invoice, { tenantId }) =>
-                repository
-                  .create({ ...invoice, tenantId })
-                  .pipe(
-                    Effect.map(Struct.omit("version")),
-                    Effect.tap(notifyCreate),
-                  ),
-            ),
-          },
-        );
+        const create = MutationsContract.makeMutation(InvoicesContract.create, {
+          makePolicy: Effect.fn("Invoices.Mutations.create.makePolicy")(() =>
+            AccessControl.permission("invoices:create"),
+          ),
+          mutator: Effect.fn("Invoices.Mutations.create.mutator")(
+            (invoice, { tenantId }) =>
+              repository
+                .create({ ...invoice, tenantId })
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyCreate),
+                ),
+          ),
+        });
 
         return { create } as const;
       }),

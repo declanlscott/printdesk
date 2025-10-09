@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 import { generateId } from "../utils/shared";
 
@@ -44,25 +44,25 @@ export namespace RoomsContract {
       DataTransferObject,
     );
 
-  export const canEdit = new DataAccessContract.Procedure({
+  export const canEdit = new ProceduresContract.Procedure({
     name: "canEditRoom",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canDelete = new DataAccessContract.Procedure({
+  export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteRoom",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const canRestore = new DataAccessContract.Procedure({
+  export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreRoom",
     Args: DataTransferStruct.pick("id"),
     Returns: Schema.Void,
   });
 
-  export const create = new DataAccessContract.Procedure({
+  export const create = new ProceduresContract.Procedure({
     name: "createRoom",
     Args: Schema.Struct({
       ...DataTransferStruct.omit("deletedAt", "tenantId").fields,
@@ -73,7 +73,7 @@ export namespace RoomsContract {
     Returns: DataTransferObject,
   });
 
-  export const edit = new DataAccessContract.Procedure({
+  export const edit = new ProceduresContract.Procedure({
     name: "editRoom",
     Args: Schema.extend(
       DataTransferStruct.pick("id", "updatedAt"),
@@ -85,19 +85,19 @@ export namespace RoomsContract {
     Returns: DataTransferObject,
   });
 
-  export const publish = new DataAccessContract.Procedure({
+  export const publish = new ProceduresContract.Procedure({
     name: "publishRoom",
     Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 
-  export const draft = new DataAccessContract.Procedure({
+  export const draft = new ProceduresContract.Procedure({
     name: "draftRoom",
     Args: DataTransferStruct.pick("id", "updatedAt"),
     Returns: DataTransferObject,
   });
 
-  export const delete_ = new DataAccessContract.Procedure({
+  export const delete_ = new ProceduresContract.Procedure({
     name: "deleteRoom",
     Args: Schema.Struct({
       id: ColumnsContract.EntityId,
@@ -106,7 +106,7 @@ export namespace RoomsContract {
     Returns: DataTransferStruct,
   });
 
-  export const restore = new DataAccessContract.Procedure({
+  export const restore = new ProceduresContract.Procedure({
     name: "restoreRoom",
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferStruct,

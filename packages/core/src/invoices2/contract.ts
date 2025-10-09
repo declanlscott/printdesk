@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { ColumnsContract } from "../columns2/contract";
-import { DataAccessContract } from "../data-access2/contract";
+import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables2/contract";
 
 import type { OrdersContract } from "../orders2/contract";
@@ -70,7 +70,7 @@ export namespace InvoicesContract {
       }),
     );
 
-  export const create = new DataAccessContract.Procedure({
+  export const create = new ProceduresContract.Procedure({
     name: "createInvoice",
     Args: DataTransferStruct.omit(
       "status",

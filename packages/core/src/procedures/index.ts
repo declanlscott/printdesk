@@ -20,16 +20,16 @@ import {
   SharedAccountWorkflowsContract,
   WorkflowStatusesContract,
 } from "../workflows2/contracts";
-import { DataAccessContract } from "./contract";
+import { ProceduresContract } from "./contract";
 
-export namespace DataAccessProcedures {
+export namespace Procedures {
   export class Policies extends Effect.Service<Policies>()(
-    "@printdesk/core/data-access/Policies",
+    "@printdesk/core/procedures/Policies",
     {
       accessors: true,
       effect: Effect.gen(function* () {
         const procedures = yield* Effect.succeed(
-          new DataAccessContract.Procedures()
+          new ProceduresContract.Procedures()
             .set(CommentsContract.isAuthor)
             .set(OrdersContract.isCustomer)
             .set(OrdersContract.isManager)
@@ -54,12 +54,12 @@ export namespace DataAccessProcedures {
   ) {}
 
   export class Mutations extends Effect.Service<Mutations>()(
-    "@printdesk/core/data-access/Mutations",
+    "@printdesk/core/procedures/Mutations",
     {
       accessors: true,
       effect: Effect.gen(function* () {
         const procedures = yield* Effect.succeed(
-          new DataAccessContract.Procedures()
+          new ProceduresContract.Procedures()
             .set(AnnouncementsContract.create)
             .set(AnnouncementsContract.edit)
             .set(AnnouncementsContract.delete_)

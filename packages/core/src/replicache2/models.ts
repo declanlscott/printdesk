@@ -76,8 +76,12 @@ export namespace ReplicacheClientsModel {
 export namespace ReplicacheClientViewsModel {
   export class Record extends Schema.Class<Record>("Record")({
     clientGroupId: Schema.UUID,
-    version: ColumnsContract.Version,
-    clientVersion: ColumnsContract.Version,
+    version: ColumnsContract.Version.pipe(
+      Schema.optionalWith({ default: () => ColumnsContract.Version.make(0) }),
+    ),
+    clientVersion: ColumnsContract.Version.pipe(
+      Schema.optionalWith({ default: () => ColumnsContract.Version.make(0) }),
+    ),
     tenantId: ColumnsContract.TenantId,
   }) {}
 

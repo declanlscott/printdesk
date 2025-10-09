@@ -12,9 +12,9 @@ import * as Struct from "effect/Struct";
 
 import { Auth } from "../auth2";
 import { Signers } from "../aws2";
-import { DataAccessProcedures } from "../data-access2/procedures";
 import { Events } from "../events2";
 import { Permissions } from "../permissions2";
+import { Procedures } from "../procedures";
 import { Sst } from "../sst";
 import { Utils } from "../utils";
 
@@ -28,7 +28,7 @@ export namespace Realtime {
         Sst.Resource.layer,
         FetchHttpClient.layer,
         Permissions.Schemas.Default,
-        DataAccessProcedures.Policies.Default,
+        Procedures.Policies.Default,
       ],
       effect: Effect.gen(function* () {
         const maybeSession = yield* Effect.serviceOption(Auth.Session);

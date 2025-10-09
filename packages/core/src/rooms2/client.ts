@@ -5,9 +5,10 @@ import * as Tuple from "effect/Tuple";
 
 import { AccessControl } from "../access-control2";
 import { Announcements } from "../announcements2/client";
-import { DataAccessContract } from "../data-access2/contract";
 import { DeliveryOptions } from "../delivery-options2/client";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
 import { Products } from "../products2/client";
 import { Replicache } from "../replicache2/client";
 import { RoomWorkflows } from "../workflows2/client";
@@ -50,7 +51,7 @@ export namespace Rooms {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const canEdit = DataAccessContract.makePolicy(RoomsContract.canEdit, {
+        const canEdit = PoliciesContract.makePolicy(RoomsContract.canEdit, {
           make: ({ id }) =>
             AccessControl.policy(() =>
               repository
@@ -62,12 +63,11 @@ export namespace Rooms {
             ),
         });
 
-        const canDelete = DataAccessContract.makePolicy(
-          RoomsContract.canDelete,
-          { make: canEdit.make },
-        );
+        const canDelete = PoliciesContract.makePolicy(RoomsContract.canDelete, {
+          make: canEdit.make,
+        });
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           RoomsContract.canRestore,
           {
             make: ({ id }) =>
@@ -109,7 +109,7 @@ export namespace Rooms {
 
         const policies = yield* Policies;
 
-        const create = DataAccessContract.makeMutation(RoomsContract.create, {
+        const create = MutationsContract.makeMutation(RoomsContract.create, {
           makePolicy: () => AccessControl.permission("rooms:create"),
           mutator: ({ workflowId, ...room }, { tenantId }) =>
             Effect.all(
@@ -134,7 +134,7 @@ export namespace Rooms {
             ).pipe(Effect.map(Tuple.at(0))),
         });
 
-        const edit = DataAccessContract.makeMutation(RoomsContract.edit, {
+        const edit = MutationsContract.makeMutation(RoomsContract.edit, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:update"),
@@ -143,7 +143,7 @@ export namespace Rooms {
           mutator: ({ id, ...room }) => repository.updateById(id, () => room),
         });
 
-        const publish = DataAccessContract.makeMutation(RoomsContract.publish, {
+        const publish = MutationsContract.makeMutation(RoomsContract.publish, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:update"),
@@ -156,7 +156,7 @@ export namespace Rooms {
             })),
         });
 
-        const draft = DataAccessContract.makeMutation(RoomsContract.draft, {
+        const draft = MutationsContract.makeMutation(RoomsContract.draft, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:update"),
@@ -178,7 +178,7 @@ export namespace Rooms {
             ).pipe(Effect.map(Tuple.at(0))),
         });
 
-        const delete_ = DataAccessContract.makeMutation(RoomsContract.delete_, {
+        const delete_ = MutationsContract.makeMutation(RoomsContract.delete_, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:delete"),
@@ -238,7 +238,7 @@ export namespace Rooms {
             ).pipe(Effect.map(Tuple.at(0))),
         });
 
-        const restore = DataAccessContract.makeMutation(RoomsContract.restore, {
+        const restore = MutationsContract.makeMutation(RoomsContract.restore, {
           makePolicy: ({ id }) =>
             AccessControl.every(
               AccessControl.permission("rooms:delete"),

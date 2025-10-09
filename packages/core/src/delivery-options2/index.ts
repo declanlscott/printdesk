@@ -14,10 +14,11 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
@@ -617,7 +618,7 @@ export namespace DeliveryOptions {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const canEdit = DataAccessContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           DeliveryOptionsContract.canEdit,
           {
             make: Effect.fn("DeliveryOptions.Policies.canEdit.make")(({ id }) =>
@@ -633,7 +634,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           DeliveryOptionsContract.canDelete,
           {
             make: Effect.fn("DeliveryOptions.Policies.canDelete.make")(
@@ -642,7 +643,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           DeliveryOptionsContract.canRestore,
           {
             make: Effect.fn("DeliveryOptions.Policies.canRestore.make")(
@@ -725,7 +726,7 @@ export namespace DeliveryOptions {
         const notifyDelete = notifyCreate;
         const notifyRestore = notifyCreate;
 
-        const create = DataAccessContract.makeMutation(
+        const create = MutationsContract.makeMutation(
           DeliveryOptionsContract.create,
           {
             makePolicy: Effect.fn(
@@ -743,7 +744,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           DeliveryOptionsContract.edit,
           {
             makePolicy: Effect.fn("DeliveryOptions.Mutations.edit.makePolicy")(
@@ -765,7 +766,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           DeliveryOptionsContract.delete_,
           {
             makePolicy: Effect.fn(
@@ -788,7 +789,7 @@ export namespace DeliveryOptions {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           DeliveryOptionsContract.restore,
           {
             makePolicy: Effect.fn(

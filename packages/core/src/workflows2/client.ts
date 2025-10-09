@@ -10,9 +10,10 @@ import * as Ordering from "effect/Ordering";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Models } from "../models2";
+import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2/client";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import {
   SharedAccountWorkflowsContract,
@@ -187,7 +188,7 @@ export namespace SharedAccountWorkflows {
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
 
-        const isCustomerAuthorized = DataAccessContract.makePolicy(
+        const isCustomerAuthorized = PoliciesContract.makePolicy(
           SharedAccountWorkflowsContract.isCustomerAuthorized,
           {
             make: ({ id }) =>
@@ -204,7 +205,7 @@ export namespace SharedAccountWorkflows {
           },
         );
 
-        const isManagerAuthorized = DataAccessContract.makePolicy(
+        const isManagerAuthorized = PoliciesContract.makePolicy(
           SharedAccountWorkflowsContract.isManagerAuthorized,
           {
             make: ({ id }) =>
@@ -360,7 +361,7 @@ export namespace WorkflowStatuses {
         const sharedAccountWorkflowPolicies =
           yield* SharedAccountWorkflows.Policies;
 
-        const isEditable = DataAccessContract.makePolicy(
+        const isEditable = PoliciesContract.makePolicy(
           WorkflowStatusesContract.canEdit,
           {
             make: ({ id }) =>
@@ -384,7 +385,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const isDeletable = DataAccessContract.makePolicy(
+        const isDeletable = PoliciesContract.makePolicy(
           WorkflowStatusesContract.canDelete,
           {
             make: ({ id }) =>
@@ -436,7 +437,7 @@ export namespace WorkflowStatuses {
           yield* SharedAccountWorkflows.Policies;
         const policies = yield* Policies;
 
-        const append = DataAccessContract.makeMutation(
+        const append = MutationsContract.makeMutation(
           WorkflowStatusesContract.append,
           {
             makePolicy: (args) =>
@@ -485,7 +486,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           WorkflowStatusesContract.edit,
           {
             makePolicy: ({ id }) => policies.isEditable.make({ id }),
@@ -494,7 +495,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const reorder = DataAccessContract.makeMutation(
+        const reorder = MutationsContract.makeMutation(
           WorkflowStatusesContract.reorder,
           {
             makePolicy: ({ id }) => policies.isEditable.make({ id }),
@@ -543,7 +544,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           WorkflowStatusesContract.delete_,
           {
             makePolicy: ({ id }) => policies.isDeletable.make({ id }),

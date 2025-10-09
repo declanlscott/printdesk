@@ -15,12 +15,13 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { OrdersContract } from "../orders2/contract";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
@@ -976,7 +977,7 @@ export namespace Comments {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const isAuthor = DataAccessContract.makePolicy(
+        const isAuthor = PoliciesContract.makePolicy(
           CommentsContract.isAuthor,
           {
             make: Effect.fn("Comments.Policies.isAuthor.make")(({ id }) =>
@@ -992,28 +993,25 @@ export namespace Comments {
           },
         );
 
-        const canEdit = DataAccessContract.makePolicy(
-          CommentsContract.canEdit,
-          {
-            make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findById(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
+        const canEdit = PoliciesContract.makePolicy(CommentsContract.canEdit, {
+          make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
+            AccessControl.policy((principal) =>
+              repository
+                .findById(id, principal.tenantId)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
             ),
-          },
-        );
+          ),
+        });
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           CommentsContract.canDelete,
           { make: Effect.fn("Comments.Policies.canDelete.make")(canEdit.make) },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           CommentsContract.canRestore,
           {
             make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
@@ -1074,34 +1072,31 @@ export namespace Comments {
         const notifyDelete = notifyCreate;
         const notifyRestore = notifyCreate;
 
-        const create = DataAccessContract.makeMutation(
-          CommentsContract.create,
-          {
-            makePolicy: Effect.fn("Comments.Mutations.create.makePolicy")(
-              ({ orderId }) =>
-                AccessControl.some(
-                  AccessControl.permission("comments:create"),
-                  orderPolicies.isCustomerOrManager.make({ id: orderId }),
-                  orderPolicies.isManagerAuthorized.make({ id: orderId }),
+        const create = MutationsContract.makeMutation(CommentsContract.create, {
+          makePolicy: Effect.fn("Comments.Mutations.create.makePolicy")(
+            ({ orderId }) =>
+              AccessControl.some(
+                AccessControl.permission("comments:create"),
+                orderPolicies.isCustomerOrManager.make({ id: orderId }),
+                orderPolicies.isManagerAuthorized.make({ id: orderId }),
+              ),
+          ),
+          mutator: Effect.fn("Comments.Mutations.create.mutator")(
+            (comment, session) =>
+              repository
+                .create({
+                  ...comment,
+                  authorId: session.userId,
+                  tenantId: session.tenantId,
+                })
+                .pipe(
+                  Effect.map(Struct.omit("version")),
+                  Effect.tap(notifyCreate),
                 ),
-            ),
-            mutator: Effect.fn("Comments.Mutations.create.mutator")(
-              (comment, session) =>
-                repository
-                  .create({
-                    ...comment,
-                    authorId: session.userId,
-                    tenantId: session.tenantId,
-                  })
-                  .pipe(
-                    Effect.map(Struct.omit("version")),
-                    Effect.tap(notifyCreate),
-                  ),
-            ),
-          },
-        );
+          ),
+        });
 
-        const edit = DataAccessContract.makeMutation(CommentsContract.edit, {
+        const edit = MutationsContract.makeMutation(CommentsContract.edit, {
           makePolicy: Effect.fn("Comments.Mutations.edit.makePolicy")(
             ({ id }) =>
               AccessControl.every(
@@ -1123,7 +1118,7 @@ export namespace Comments {
           ),
         });
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           CommentsContract.delete_,
           {
             makePolicy: Effect.fn("Comments.Mutations.delete.makePolicy")(
@@ -1148,7 +1143,7 @@ export namespace Comments {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           CommentsContract.restore,
           {
             makePolicy: Effect.fn("Comments.Mutations.restore.makePolicy")(

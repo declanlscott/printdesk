@@ -2,6 +2,8 @@ import * as Data from "effect/Data";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
+import { ColumnsContract } from "../columns2/contract";
+
 import type {
   ClientStateNotFoundResponse,
   VersionNotSupportedResponse,
@@ -65,7 +67,9 @@ export namespace ReplicacheContract {
     pullVersion: Schema.tag(1),
     schemaVersion: Schema.String,
     profileID: Schema.String,
-    cookie: Schema.Struct({ order: Schema.NonNegativeInt }).pipe(Schema.NullOr),
+    cookie: Schema.Struct({ order: ColumnsContract.Version }).pipe(
+      Schema.NullOr,
+    ),
     clientGroupID: Schema.UUID,
   }) {}
 

@@ -14,10 +14,11 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
-import { DataAccessContract } from "../data-access2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
+import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
@@ -435,7 +436,7 @@ export namespace Announcements {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const canEdit = DataAccessContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           AnnouncementsContract.canEdit,
           {
             make: Effect.fn("Announcements.Policies.canEdit.make")(({ id }) =>
@@ -451,7 +452,7 @@ export namespace Announcements {
           },
         );
 
-        const canDelete = DataAccessContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           AnnouncementsContract.canDelete,
           {
             make: Effect.fn("Announcements.Policies.canDelete.make")(
@@ -460,7 +461,7 @@ export namespace Announcements {
           },
         );
 
-        const canRestore = DataAccessContract.makePolicy(
+        const canRestore = PoliciesContract.makePolicy(
           AnnouncementsContract.canRestore,
           {
             make: Effect.fn("Announcements.Policies.canRestore.make")(
@@ -544,7 +545,7 @@ export namespace Announcements {
         const notifyDelete = notifyCreate;
         const notifyRestore = notifyCreate;
 
-        const create = DataAccessContract.makeMutation(
+        const create = MutationsContract.makeMutation(
           AnnouncementsContract.create,
           {
             makePolicy: Effect.fn("Announcements.Mutations.create.makePolicy")(
@@ -566,7 +567,7 @@ export namespace Announcements {
           },
         );
 
-        const edit = DataAccessContract.makeMutation(
+        const edit = MutationsContract.makeMutation(
           AnnouncementsContract.edit,
           {
             makePolicy: Effect.fn("Announcements.Mutations.edit.makePolicy")(
@@ -588,7 +589,7 @@ export namespace Announcements {
           },
         );
 
-        const delete_ = DataAccessContract.makeMutation(
+        const delete_ = MutationsContract.makeMutation(
           AnnouncementsContract.delete_,
           {
             makePolicy: Effect.fn("Announcements.Mutations.delete.makePolicy")(
@@ -610,7 +611,7 @@ export namespace Announcements {
           },
         );
 
-        const restore = DataAccessContract.makeMutation(
+        const restore = MutationsContract.makeMutation(
           AnnouncementsContract.restore,
           {
             makePolicy: Effect.fn("Announcements.Mutations.restore.makePolicy")(

@@ -1,4 +1,4 @@
-import { Duration } from "effect";
+import * as Duration from "effect/Duration";
 
 export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";

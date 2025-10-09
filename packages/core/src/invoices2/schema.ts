@@ -1,6 +1,6 @@
 import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
 import { index, pgView } from "drizzle-orm/pg-core";
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 
 import { Columns } from "../columns2";
 import { OrdersSchema } from "../orders2/schema";

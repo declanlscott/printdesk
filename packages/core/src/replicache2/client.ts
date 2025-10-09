@@ -1,4 +1,7 @@
-import { Cause, Data, Effect, Schema } from "effect";
+import * as Cause from "effect/Cause";
+import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 
 import type {
   ReadTransaction as ReadTx,

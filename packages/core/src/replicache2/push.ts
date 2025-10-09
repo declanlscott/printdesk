@@ -1,4 +1,8 @@
-import { Data, Duration, Effect, Number, Schema } from "effect";
+import * as Data from "effect/Data";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Number from "effect/Number";
+import * as Schema from "effect/Schema";
 
 import { Replicache } from ".";
 import { AccessControl } from "../access-control2";

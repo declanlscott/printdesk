@@ -1,9 +1,15 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
 import { Replicache } from "@printdesk/core/replicache2";
+import { Sst } from "@printdesk/core/sst";
 import { Constants } from "@printdesk/core/utils/constants";
 import { paginate } from "@printdesk/core/utils2";
-import { Array, Chunk, Effect, Layer, Stream, Struct } from "effect";
+import * as Array from "effect/Array";
+import * as Chunk from "effect/Chunk";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Stream from "effect/Stream";
+import * as Struct from "effect/Struct";
 
 const layer = Layer.mergeAll(
   Replicache.ClientGroupsRepository.Default,
@@ -11,7 +17,7 @@ const layer = Layer.mergeAll(
   Replicache.ClientViewsRepository.Default,
   Replicache.ClientViewMetadataRepository.Default,
   Logger.defaultLayer,
-);
+).pipe(Layer.provideMerge(Sst.Resource.layer));
 
 export const handler = LambdaHandler.make({
   layer,

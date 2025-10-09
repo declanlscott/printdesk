@@ -1,4 +1,6 @@
-import { Data, Effect, HashSet } from "effect";
+import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
+import * as HashSet from "effect/HashSet";
 
 import type { Schema } from "effect";
 import type { NonEmptyReadonlyArray } from "effect/Array";

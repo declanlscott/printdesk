@@ -1,9 +1,11 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
 import { Database } from "@printdesk/core/database2";
+import { Sst } from "@printdesk/core/sst";
 import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
-import { Effect, Layer } from "effect";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 
 import type { MigrationConfig } from "drizzle-orm/migrator";
 import type { PgSession } from "drizzle-orm/pg-core";
@@ -25,7 +27,9 @@ type DrizzleMigration = {
   created_at: string;
 };
 
-const layer = Layer.mergeAll(Database.DatabaseLive, Logger.defaultLayer);
+const layer = Layer.mergeAll(Database.DatabaseLive, Logger.defaultLayer).pipe(
+  Layer.provideMerge(Sst.Resource.layer),
+);
 
 export const handler = LambdaHandler.make({
   layer,

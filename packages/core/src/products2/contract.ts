@@ -1,4 +1,6 @@
-import { Either, Schema, Struct } from "effect";
+import * as Either from "effect/Either";
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
 import { DataAccessContract } from "../data-access2/contract";

@@ -1,4 +1,6 @@
-import { Effect, Schema, Struct } from "effect";
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { AnnouncementsContract } from "../announcements2/contract";
 import { CommentsContract } from "../comments2/contract";

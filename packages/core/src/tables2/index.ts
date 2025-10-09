@@ -1,6 +1,8 @@
 import { getTableColumns, getTableName, sql } from "drizzle-orm";
 import { pgTable, primaryKey } from "drizzle-orm/pg-core";
-import { Array, Match, Record } from "effect";
+import * as Array from "effect/Array";
+import * as Match from "effect/Match";
+import * as Record from "effect/Record";
 
 import { Columns } from "../columns2";
 

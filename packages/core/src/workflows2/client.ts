@@ -1,15 +1,13 @@
-import {
-  Array,
-  Cause,
-  Effect,
-  Equal,
-  Match,
-  Number,
-  Option,
-  Order,
-  Ordering,
-  Struct,
-} from "effect";
+import * as Array from "effect/Array";
+import * as Cause from "effect/Cause";
+import * as Effect from "effect/Effect";
+import * as Equal from "effect/Equal";
+import * as Match from "effect/Match";
+import * as Number from "effect/Number";
+import * as Option from "effect/Option";
+import * as Order from "effect/Order";
+import * as Ordering from "effect/Ordering";
+import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";

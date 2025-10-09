@@ -7,7 +7,12 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Match, Predicate, Struct, Tuple } from "effect";
+import * as Array from "effect/Array";
+import * as Effect from "effect/Effect";
+import * as Match from "effect/Match";
+import * as Predicate from "effect/Predicate";
+import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 
 import { AccessControl } from "../access-control2";
 import { Announcements } from "../announcements2";

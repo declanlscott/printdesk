@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import * as Effect from "effect/Effect";
 
 import { AnnouncementsContract } from "../announcements2/contract";
 import { CommentsContract } from "../comments2/contract";

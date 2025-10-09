@@ -3,7 +3,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
-import { Iterable, Record, Struct } from "effect";
+import * as Iterable from "effect/Iterable";
+import * as Record from "effect/Record";
+import * as Struct from "effect/Struct";
 
 import { Link } from "~/.sst/platform/src/components/link";
 

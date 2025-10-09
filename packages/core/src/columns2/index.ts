@@ -6,7 +6,9 @@ import {
   integer,
   varchar as pgVarchar,
 } from "drizzle-orm/pg-core";
-import { DateTime, ParseResult, Schema } from "effect";
+import * as DateTime from "effect/DateTime";
+import * as ParseResult from "effect/ParseResult";
+import * as Schema from "effect/Schema";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";

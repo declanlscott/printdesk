@@ -2,15 +2,13 @@ import { Sha256 } from "@aws-crypto/sha256-js";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { DsqlSigner as _DsqlSigner } from "@effect-aws/dsql";
 import { SignatureV4 } from "@smithy/signature-v4";
-import {
-  Context,
-  DateTime,
-  Duration,
-  Effect,
-  Layer,
-  ManagedRuntime,
-  Redacted,
-} from "effect";
+import * as Context from "effect/Context";
+import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as ManagedRuntime from "effect/ManagedRuntime";
+import * as Redacted from "effect/Redacted";
 
 import { Sst } from "../sst";
 

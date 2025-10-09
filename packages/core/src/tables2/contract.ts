@@ -1,4 +1,5 @@
-import { Array, Effect } from "effect";
+import * as Array from "effect/Array";
+import * as Effect from "effect/Effect";
 
 import type {
   InferSelectModel,

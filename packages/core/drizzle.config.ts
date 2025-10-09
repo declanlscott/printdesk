@@ -1,5 +1,8 @@
 import { defineConfig } from "drizzle-kit";
-import { Duration, Effect, Layer, ManagedRuntime } from "effect";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as ManagedRuntime from "effect/ManagedRuntime";
 
 import { Credentials, Signers } from "./src/aws2";
 import { Sst } from "./src/sst";

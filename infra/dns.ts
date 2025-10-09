@@ -1,5 +1,5 @@
 import { Constants } from "@printdesk/core/utils/constants";
-import { Record } from "effect";
+import * as Record from "effect/Record";
 
 export const rootDomain = new sst.Secret("RootDomain");
 

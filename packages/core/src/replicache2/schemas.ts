@@ -6,7 +6,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { Schema } from "effect";
+import * as Schema from "effect/Schema";
 
 import { Columns } from "../columns2";
 import { Tables } from "../tables2";

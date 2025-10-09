@@ -1,16 +1,14 @@
 import { formatUrl } from "@aws-sdk/util-format-url";
 import { FetchHttpClient, HttpBody, HttpClient } from "@effect/platform";
 import { HttpRequest } from "@smithy/protocol-http";
-import {
-  Array,
-  Chunk,
-  Duration,
-  Effect,
-  Option,
-  Schema,
-  Stream,
-  Struct,
-} from "effect";
+import * as Array from "effect/Array";
+import * as Chunk from "effect/Chunk";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
+import * as Struct from "effect/Struct";
 
 import { Auth } from "../auth2";
 import { Signers } from "../aws2";

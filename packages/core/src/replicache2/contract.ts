@@ -1,4 +1,6 @@
-import { Data, Schema, Struct } from "effect";
+import * as Data from "effect/Data";
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import type {
   ClientStateNotFoundResponse,

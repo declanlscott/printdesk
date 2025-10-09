@@ -1,4 +1,5 @@
-import { DateTime, Schema } from "effect";
+import * as DateTime from "effect/DateTime";
+import * as Schema from "effect/Schema";
 
 import { Constants } from "../utils/constants";
 import { generateId } from "../utils/shared";

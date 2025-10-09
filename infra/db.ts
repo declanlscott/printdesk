@@ -1,4 +1,5 @@
-import { Schema, Struct } from "effect";
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import * as lib from "./lib";
 import { aws_, isProdStage } from "./misc";

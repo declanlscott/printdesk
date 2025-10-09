@@ -1,19 +1,17 @@
 import { TransactionRollbackError } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
-import {
-  Cause,
-  Chunk,
-  Data,
-  Duration,
-  Effect,
-  Exit,
-  Layer,
-  Option,
-  Predicate,
-  Ref,
-  Runtime,
-  Schedule,
-} from "effect";
+import * as Cause from "effect/Cause";
+import * as Chunk from "effect/Chunk";
+import * as Data from "effect/Data";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Exit from "effect/Exit";
+import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
+import * as Ref from "effect/Ref";
+import * as Runtime from "effect/Runtime";
+import * as Schedule from "effect/Schedule";
 import { DatabaseError, Pool } from "pg";
 
 import { Signers } from "../aws2";

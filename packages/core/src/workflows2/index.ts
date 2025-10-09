@@ -15,16 +15,14 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import {
-  Array,
-  Cause,
-  Effect,
-  Match,
-  Number,
-  Option,
-  Ordering,
-  Struct,
-} from "effect";
+import * as Array from "effect/Array";
+import * as Cause from "effect/Cause";
+import * as Effect from "effect/Effect";
+import * as Match from "effect/Match";
+import * as Number from "effect/Number";
+import * as Option from "effect/Option";
+import * as Ordering from "effect/Ordering";
+import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";

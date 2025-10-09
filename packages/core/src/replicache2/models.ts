@@ -1,4 +1,6 @@
-import { Array, Record as EffectRecord, Schema } from "effect";
+import * as Array from "effect/Array";
+import * as EffectRecord from "effect/Record";
+import * as Schema from "effect/Schema";
 
 import { ColumnsContract } from "../columns2/contract";
 import { Models } from "../models2";

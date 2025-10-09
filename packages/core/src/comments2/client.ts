@@ -1,4 +1,7 @@
-import { Effect, Equal, Predicate, Struct } from "effect";
+import * as Effect from "effect/Effect";
+import * as Equal from "effect/Equal";
+import * as Predicate from "effect/Predicate";
+import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
 import { DataAccessContract } from "../data-access2/contract";

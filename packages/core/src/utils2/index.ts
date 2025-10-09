@@ -1,4 +1,10 @@
-import { Chunk, Effect, Option, Schema, Stream, String, Tuple } from "effect";
+import * as Chunk from "effect/Chunk";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
+import * as String from "effect/String";
+import * as Tuple from "effect/Tuple";
 
 import { Constants } from "../utils/constants";
 

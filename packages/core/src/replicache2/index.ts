@@ -11,7 +11,10 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import { Array, DateTime, Effect, Struct } from "effect";
+import * as Array from "effect/Array";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
+import * as Struct from "effect/Struct";
 
 import { Database } from "../database2";
 import { Constants } from "../utils/constants";

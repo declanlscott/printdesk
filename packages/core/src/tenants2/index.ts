@@ -7,7 +7,9 @@ import {
   not,
   notInArray,
 } from "drizzle-orm";
-import { Array, Effect, Struct } from "effect";
+import * as Array from "effect/Array";
+import * as Effect from "effect/Effect";
+import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control2";
 import { ColumnsContract } from "../columns2/contract";

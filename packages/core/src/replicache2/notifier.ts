@@ -1,4 +1,9 @@
-import { Array, Data, Effect, Request, RequestResolver, Struct } from "effect";
+import * as Array from "effect/Array";
+import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
+import * as Request from "effect/Request";
+import * as RequestResolver from "effect/RequestResolver";
+import * as Struct from "effect/Struct";
 
 import { Database } from "../database2";
 import { Realtime } from "../realtime2";

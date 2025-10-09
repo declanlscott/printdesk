@@ -1,4 +1,7 @@
-import { Effect, Predicate, Struct, Tuple } from "effect";
+import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
+import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 
 import { AccessControl } from "../access-control2";
 import { Announcements } from "../announcements2/client";

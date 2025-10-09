@@ -1,5 +1,6 @@
 import { and, eq, getTableColumns } from "drizzle-orm";
-import { Array, Effect } from "effect";
+import * as Array from "effect/Array";
+import * as Effect from "effect/Effect";
 
 import { Database } from "../database2";
 import { TenantsSchema } from "../tenants2/schemas";

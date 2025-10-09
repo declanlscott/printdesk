@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Data, Effect, HashMap, Iterable, Schema } from "effect";
+import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
+import * as HashMap from "effect/HashMap";
+import * as Iterable from "effect/Iterable";
+import * as Schema from "effect/Schema";
 
 import { AccessControl } from "../access-control2";
 

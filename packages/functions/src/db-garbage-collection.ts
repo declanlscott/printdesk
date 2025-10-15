@@ -1,9 +1,8 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
+import { Database } from "@printdesk/core/database2";
 import { Replicache } from "@printdesk/core/replicache2";
 import { Sst } from "@printdesk/core/sst";
-import { Constants } from "@printdesk/core/utils/constants";
-import { paginate } from "@printdesk/core/utils2";
 import * as Array from "effect/Array";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
@@ -22,41 +21,23 @@ const layer = Layer.mergeAll(
 export const handler = LambdaHandler.make({
   layer,
   handler: () =>
-    Replicache.ClientGroupsRepository.pipe(
-      Effect.flatMap((repository) =>
-        paginate(
-          repository.deleteExpired,
-          Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
-        ).pipe(Stream.runCollect),
-      ),
+    Database.paginateTransaction(
+      Replicache.ClientGroupsRepository.deleteExpired,
+    ).pipe(
+      Stream.runCollect,
       Effect.map(Chunk.map(Struct.get("id"))),
       Effect.map(Array.fromIterable),
       Effect.map((ids) =>
         Array.make(
-          Replicache.ClientsRepository.pipe(
-            Effect.flatMap((repository) =>
-              paginate(
-                repository.deleteByGroupIds(ids),
-                Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
-              ).pipe(Stream.runDrain),
-            ),
-          ),
-          Replicache.ClientViewsRepository.pipe(
-            Effect.flatMap((repository) =>
-              paginate(
-                repository.deleteByGroupIds(ids),
-                Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
-              ).pipe(Stream.runDrain),
-            ),
-          ),
-          Replicache.ClientViewMetadataRepository.pipe(
-            Effect.flatMap((repository) =>
-              paginate(
-                repository.deleteByGroupIds(ids),
-                Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT,
-              ).pipe(Stream.runDrain),
-            ),
-          ),
+          Database.paginateTransaction(
+            Replicache.ClientsRepository.deleteByGroupIds(ids),
+          ).pipe(Stream.runDrain),
+          Database.paginateTransaction(
+            Replicache.ClientViewsRepository.deleteByGroupIds(ids),
+          ).pipe(Stream.runDrain),
+          Database.paginateTransaction(
+            Replicache.ClientViewMetadataRepository.deleteByGroupIds(ids),
+          ).pipe(Stream.runDrain),
         ),
       ),
       Effect.flatMap(

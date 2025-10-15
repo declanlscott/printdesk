@@ -27,11 +27,11 @@ export const HexColor = Schema.String.pipe(
 );
 
 export const paginate = <TItem, TError, TContext>(
-  pageEffect: Effect.Effect<ReadonlyArray<TItem>, TError, TContext>,
+  page: Effect.Effect<ReadonlyArray<TItem>, TError, TContext>,
   size: number,
 ) =>
   Stream.paginateChunkEffect(undefined, () =>
-    pageEffect.pipe(
+    page.pipe(
       Effect.map((page) =>
         Tuple.make(
           Chunk.unsafeFromArray(page),

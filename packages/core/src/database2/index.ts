@@ -17,6 +17,7 @@ import { DatabaseError, Pool } from "pg";
 import { Signers } from "../aws2";
 import { Sst } from "../sst";
 import { Constants } from "../utils/constants";
+import { paginate } from "../utils2";
 
 import type {
   Logger as DrizzleLogger,
@@ -80,7 +81,16 @@ export namespace Database {
    */
   export class TransactionError extends Data.TaggedError("TransactionError")<{
     readonly cause: globalThis.Error | DatabaseError;
-  }> {}
+  }> {
+    get isRetryable() {
+      return (
+        this.cause instanceof DatabaseError &&
+        (this.cause.code ===
+          Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
+          this.cause.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE)
+      );
+    }
+  }
 
   export class Database extends Effect.Service<Database>()(
     "@printdesk/core/database/Database",
@@ -133,17 +143,15 @@ export namespace Database {
         const setupPoolListeners = Effect.async<void, PoolError>(
           (resume, signal) => {
             pool.on("error", (error) =>
-              resume(Effect.fail(new PoolError({ cause: error }))),
+              Effect.fail(new PoolError({ cause: error })).pipe(resume),
             );
 
             const abortListener = () =>
-              resume(
-                Effect.fail(
-                  new PoolError({
-                    cause: new globalThis.Error("Connection interrupted"),
-                  }),
-                ),
-              );
+              Effect.fail(
+                new PoolError({
+                  cause: new globalThis.Error("Connection interrupted"),
+                }),
+              ).pipe(resume);
 
             signal.addEventListener("abort", abortListener);
 
@@ -253,39 +261,42 @@ export namespace Database {
                 TError | TransactionError,
                 TContext
               >((resume, signal) => {
-                db.transaction(async (tx) => {
-                  const exit = await execute(tx).pipe(
-                    Effect.provide(Transaction.Default(tx)),
-                    Runtime.runPromiseExit(runtime),
-                  );
-
-                  Exit.match(exit, {
-                    onSuccess: (success) => resume(Effect.succeed(success)),
-                    onFailure: (cause) => {
-                      if (cause.pipe(Cause.isFailure)) {
-                        const ogError = cause.pipe(Cause.originalError);
-                        const txError = ogError.pipe(matchTxError);
-
-                        resume(Effect.fail(txError ?? (ogError as TError)));
-                      } else resume(Effect.die(cause));
-                    },
-                  });
-                }).catch((error) => {
-                  const txError = matchTxError(error);
-
-                  resume(txError ? Effect.fail(txError) : Effect.die(error));
-                });
-
                 const abortListener = () =>
-                  resume(
-                    Effect.fail(
-                      new TransactionError({
-                        cause: new globalThis.Error("Transaction interrupted"),
-                      }),
-                    ),
-                  );
+                  Effect.fail(
+                    new TransactionError({
+                      cause: new globalThis.Error("Transaction interrupted"),
+                    }),
+                  ).pipe(resume);
 
                 signal.addEventListener("abort", abortListener);
+
+                void db
+                  .transaction((tx) =>
+                    execute(tx).pipe(
+                      Effect.provide(Transaction.Default(tx)),
+                      Runtime.runPromiseExit(runtime),
+                    ),
+                  )
+                  .then(
+                    Exit.match({
+                      onSuccess: Effect.succeed,
+                      onFailure: (cause) =>
+                        cause.pipe(Cause.isFailure)
+                          ? cause.pipe(
+                              Cause.originalError,
+                              (error) =>
+                                matchTxError(error)?.pipe(Effect.fail) ??
+                                Effect.fail(error as TError),
+                            )
+                          : cause.pipe(Effect.die),
+                    }),
+                  )
+                  .catch(
+                    (error) =>
+                      matchTxError(error)?.pipe(Effect.fail) ??
+                      Effect.die(error),
+                  )
+                  .then(resume);
 
                 return Effect.sync(() =>
                   signal.removeEventListener("abort", abortListener),
@@ -311,11 +322,7 @@ export namespace Database {
                 Effect.retry({
                   while: (error) =>
                     Predicate.isTagged(error, "TransactionError") &&
-                    error.cause instanceof DatabaseError &&
-                    (error.cause.code ===
-                      Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
-                      error.cause.code ===
-                        Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE),
+                    error.isRetryable,
                   schedule,
                 }),
               );
@@ -326,34 +333,30 @@ export namespace Database {
           "Database.TransactionManager.useTransaction",
         )(<TReturn>(callback: (tx: Transaction["tx"]) => Promise<TReturn>) =>
           Effect.gen(function* () {
-            const execute = (...params: Parameters<typeof callback>) =>
+            const execute = (tx: Transaction["tx"]) =>
               Effect.async<TReturn, TransactionError>((resume, signal) => {
                 const abortListener = () =>
-                  resume(
-                    Effect.fail(
-                      new TransactionError({
-                        cause: new TransactionRollbackError(),
-                      }),
-                    ),
-                  );
+                  Effect.fail(
+                    new TransactionError({
+                      cause: new TransactionRollbackError(),
+                    }),
+                  ).pipe(resume);
 
                 signal.addEventListener("abort", abortListener);
 
-                resume(
-                  Effect.tryPromise({
-                    try: () => callback(...params),
-                    catch: (error) =>
-                      matchTxError(error) ??
-                      new TransactionError({
-                        cause:
-                          error instanceof globalThis.Error
-                            ? error
-                            : new globalThis.Error("Unknown error", {
-                                cause: error,
-                              }),
-                      }),
-                  }),
-                );
+                Effect.tryPromise({
+                  try: () => callback(tx),
+                  catch: (error) =>
+                    matchTxError(error) ??
+                    new TransactionError({
+                      cause:
+                        error instanceof globalThis.Error
+                          ? error
+                          : new globalThis.Error("Unknown error", {
+                              cause: error,
+                            }),
+                    }),
+                }).pipe(resume);
 
                 return Effect.sync(() =>
                   signal.removeEventListener("abort", abortListener),
@@ -384,7 +387,7 @@ export namespace Database {
                   onSome: ({ tx }) => Effect.succeed(callback(tx)),
                   onNone: () =>
                     Effect.dieMessage(
-                      `"useDynamic" called outside of transaction scope`,
+                      `"useDynamic" called outside of transaction scope.`,
                     ),
                 }),
               ),
@@ -421,4 +424,8 @@ export namespace Database {
       }),
     },
   ) {}
+
+  export const paginateTransaction = <TRow, TError, TContext>(
+    tx: Effect.Effect<ReadonlyArray<TRow>, TError, TContext>,
+  ) => paginate(tx, Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT);
 }

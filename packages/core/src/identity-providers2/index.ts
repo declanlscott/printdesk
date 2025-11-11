@@ -15,6 +15,7 @@ export namespace IdentityProviders {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/identity-providers/Repository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -81,6 +82,7 @@ export namespace IdentityProviders {
   export class UserGroupsRepository extends Effect.Service<UserGroupsRepository>()(
     "@printdesk/core/identity-providers/UserGroupsRepository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;

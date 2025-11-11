@@ -82,10 +82,10 @@ export namespace Constants {
   export const DEFAULT_DOCUMENTS_MIME_TYPES = ["application/pdf"] as const;
   export const DEFAULT_DOCUMENTS_SIZE_LIMIT = 1024 * 1024 * 10; // 10MB
 
-  export const NANOID_CUSTOM_ALPHABET = "2346789abcdefghijkmnpqrtwxyz";
+  export const NANOID_ALPHABET = "2346789abcdefghijkmnpqrtwxyz";
   export const NANOID_LENGTH = 20;
   export const NANOID_REGEX = new RegExp(
-    `^[${NANOID_CUSTOM_ALPHABET}]{${NANOID_LENGTH}}$`,
+    `^[${NANOID_ALPHABET}]{${NANOID_LENGTH}}$`,
   );
 
   export const TENANT_SUBDOMAIN_REGEX = new RegExp(/^[a-z0-9-]+$/);
@@ -93,6 +93,8 @@ export namespace Constants {
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 
   export const REPLICACHE_LIFETIME = Duration.weeks(2);
+
+  export const REPLICACHE_SYNC_STATE_KEY = "control/sync_state";
 
   export const SOFT_DELETE_LIFETIME = Duration.weeks(12);
 

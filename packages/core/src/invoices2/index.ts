@@ -19,21 +19,24 @@ import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { OrdersContract } from "../orders2/contract";
 import { Permissions } from "../permissions2";
+import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
-import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { ReplicacheClientViewEntriesSchema } from "../replicache2/schemas";
 import { InvoicesContract } from "./contract";
 import { InvoicesSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { ReplicacheClientViewsSchema } from "../replicache2/schemas";
 
 export namespace Invoices {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/invoices/Repository",
     {
+      accessors: true,
       dependencies: [
         Database.TransactionManager.Default,
-        Replicache.ClientViewMetadataQueryBuilder.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -44,9 +47,9 @@ export namespace Invoices {
         const activeCustomerPlacedOrderView =
           InvoicesSchema.activeCustomerPlacedOrderView;
 
-        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable =
-          ReplicacheClientViewMetadataSchema.table.definition;
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const create = Effect.fn("Invoices.Repository.create")(
           (invoice: InferInsertModel<InvoicesSchema.Table>) =>
@@ -58,505 +61,88 @@ export namespace Invoices {
         );
 
         const findCreates = Effect.fn("Invoices.Repository.findCreates")(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(table)
-                          .where(eq(table.tenantId, tenantId)),
-                      );
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_creates`)
+                    .as(
+                      tx
+                        .select()
+                        .from(table)
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
 
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
               ),
+            ),
         );
 
         const findActiveCreates = Effect.fn(
           "Invoices.Repository.findActiveCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activeView)
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findActiveCustomerPlacedOrderCreates = Effect.fn(
           "Invoices.Repository.findActiveCustomerPlacedOrderCreates",
         )(
           (
+            clientView: ReplicacheClientViewsSchema.Row,
             customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveCustomerPlacedOrderRow["tenantId"],
           ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeCustomerPlacedOrderView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .select(
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeCustomerPlacedOrderView,
-                              ),
-                              "customerId",
-                            ),
-                          )
-                          .from(activeCustomerPlacedOrderView)
-                          .where(
-                            and(
-                              eq(
-                                activeCustomerPlacedOrderView.customerId,
-                                customerId,
-                              ),
-                              eq(
-                                activeCustomerPlacedOrderView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveManagerAuthorizedSharedAccountOrderCreates = Effect.fn(
-          "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderCreates",
-        )(
-          (
-            managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagerAuthorizedSharedAccountOrderView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .selectDistinctOn(
-                            [
-                              activeManagerAuthorizedSharedAccountOrderView.id,
-                              activeManagerAuthorizedSharedAccountOrderView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeManagerAuthorizedSharedAccountOrderView,
-                              ),
-                              "authorizedManagerId",
-                            ),
-                          )
-                          .from(activeManagerAuthorizedSharedAccountOrderView)
-                          .where(
-                            and(
-                              eq(
-                                activeManagerAuthorizedSharedAccountOrderView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagerAuthorizedSharedAccountOrderView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
-        );
-
-        const findUpdates = Effect.fn("Invoices.Repository.findUpdates")(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            table,
-                            and(
-                              eq(metadataTable.entityId, table.id),
-                              not(
-                                eq(metadataTable.entityVersion, table.version),
-                              ),
-                              eq(metadataTable.tenantId, table.tenantId),
-                            ),
-                          )
-                          .where(eq(table.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getTableName(table)])
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveUpdates = Effect.fn(
-          "Invoices.Repository.findActiveUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeView.version,
-                                ),
-                              ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activeView)])
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveCustomerPlacedOrderUpdates = Effect.fn(
-          "Invoices.Repository.findActiveCustomerPlacedOrderUpdates",
-        )(
-          (
-            customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveCustomerPlacedOrderRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeCustomerPlacedOrderView)}_updates`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeCustomerPlacedOrderView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeCustomerPlacedOrderView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeCustomerPlacedOrderView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activeCustomerPlacedOrderView.tenantId,
-                              ),
-                            ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeCustomerPlacedOrderView.customerId,
-                                customerId,
-                              ),
-                              eq(activeView.tenantId, tenantId),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(
-                        Struct.omit(
-                          cte[getViewName(activeCustomerPlacedOrderView)],
-                          "customerId",
-                        ),
-                      )
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveManagerAuthorizedSharedAccountOrderUpdates = Effect.fn(
-          "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderUpdates",
-        )(
-          (
-            managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagerAuthorizedSharedAccountOrderView)}_updates`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeManagerAuthorizedSharedAccountOrderView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeManagerAuthorizedSharedAccountOrderView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeManagerAuthorizedSharedAccountOrderView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activeManagerAuthorizedSharedAccountOrderView.tenantId,
-                              ),
-                            ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeManagerAuthorizedSharedAccountOrderView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagerAuthorizedSharedAccountOrderView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(
-                        Struct.omit(
-                          cte[
-                            getViewName(
-                              activeManagerAuthorizedSharedAccountOrderView,
-                            )
-                          ],
-                          "authorizedManagerId",
-                        ),
-                      )
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findDeletes = Effect.fn("Invoices.Repository.findDeletes")(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeCustomerPlacedOrderView)}_creates`,
+                    )
+                    .as(
                       tx
-                        .select({ id: table.id })
-                        .from(table)
-                        .where(eq(table.tenantId, tenantId)),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveDeletes = Effect.fn(
-          "Invoices.Repository.findActiveDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .where(eq(activeView.tenantId, tenantId)),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveCustomerPlacedOrderDeletes = Effect.fn(
-          "Invoices.Repository.findActiveCustomerPlacedOrderDeletes",
-        )(
-          (
-            customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveCustomerPlacedOrderRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeCustomerPlacedOrderView.id })
+                        .select(
+                          Struct.omit(
+                            getViewSelectedFields(
+                              activeCustomerPlacedOrderView,
+                            ),
+                            "customerId",
+                          ),
+                        )
                         .from(activeCustomerPlacedOrderView)
                         .where(
                           and(
@@ -566,45 +152,54 @@ export namespace Invoices {
                             ),
                             eq(
                               activeCustomerPlacedOrderView.tenantId,
-                              tenantId,
+                              clientView.tenantId,
                             ),
                           ),
                         ),
-                    ),
-                  ),
-                ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
               ),
+            ),
         );
 
-        const findActiveManagerAuthorizedSharedAccountOrderDeletes = Effect.fn(
-          "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderDeletes",
+        const findActiveManagerAuthorizedSharedAccountOrderCreates = Effect.fn(
+          "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderCreates",
         )(
           (
+            clientView: ReplicacheClientViewsSchema.Row,
             managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["tenantId"],
           ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeManagerAuthorizedSharedAccountOrderView)}_creates`,
+                    )
+                    .as(
                       tx
                         .selectDistinctOn(
                           [
                             activeManagerAuthorizedSharedAccountOrderView.id,
                             activeManagerAuthorizedSharedAccountOrderView.tenantId,
                           ],
-                          {
-                            id: activeManagerAuthorizedSharedAccountOrderView.id,
-                          },
+                          Struct.omit(
+                            getViewSelectedFields(
+                              activeManagerAuthorizedSharedAccountOrderView,
+                            ),
+                            "authorizedManagerId",
+                          ),
                         )
                         .from(activeManagerAuthorizedSharedAccountOrderView)
                         .where(
@@ -615,32 +210,333 @@ export namespace Invoices {
                             ),
                             eq(
                               activeManagerAuthorizedSharedAccountOrderView.tenantId,
-                              tenantId,
+                              clientView.tenantId,
                             ),
                           ),
                         ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
+              ),
+            ),
+        );
+
+        const findUpdates = Effect.fn("Invoices.Repository.findUpdates")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          table,
+                          and(
+                            eq(entriesTable.entityId, table.id),
+                            not(eq(entriesTable.entityVersion, table.version)),
+                            eq(entriesTable.tenantId, table.tenantId),
+                          ),
+                        )
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select(cte[getTableName(table)])
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "Invoices.Repository.findActiveUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte);
+              }),
+            ),
+          ),
+        );
+
+        const findActiveCustomerPlacedOrderUpdates = Effect.fn(
+          "Invoices.Repository.findActiveCustomerPlacedOrderUpdates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
+          ) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeCustomerPlacedOrderView)}_updates`,
+                    )
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeCustomerPlacedOrderView,
+                          and(
+                            eq(
+                              entriesTable.entityId,
+                              activeCustomerPlacedOrderView.id,
+                            ),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeCustomerPlacedOrderView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeCustomerPlacedOrderView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeCustomerPlacedOrderView.customerId,
+                              customerId,
+                            ),
+                            eq(activeView.tenantId, clientView.tenantId),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select(
+                      Struct.omit(
+                        cte[getViewName(activeCustomerPlacedOrderView)],
+                        "customerId",
+                      ),
+                    )
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountOrderUpdates = Effect.fn(
+          "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderUpdates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
+          ) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeManagerAuthorizedSharedAccountOrderView)}_updates`,
+                    )
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeManagerAuthorizedSharedAccountOrderView,
+                          and(
+                            eq(
+                              entriesTable.entityId,
+                              activeManagerAuthorizedSharedAccountOrderView.id,
+                            ),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeManagerAuthorizedSharedAccountOrderView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeManagerAuthorizedSharedAccountOrderView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeManagerAuthorizedSharedAccountOrderView.authorizedManagerId,
+                              managerId,
+                            ),
+                            eq(
+                              activeManagerAuthorizedSharedAccountOrderView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select(
+                      Struct.omit(
+                        cte[
+                          getViewName(
+                            activeManagerAuthorizedSharedAccountOrderView,
+                          )
+                        ],
+                        "authorizedManagerId",
+                      ),
+                    )
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findDeletes = Effect.fn("Invoices.Repository.findDeletes")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder
+              .deletes(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.tenantId, clientView.tenantId)),
                     ),
                   ),
                 ),
               ),
         );
 
+        const findActiveDeletes = Effect.fn(
+          "Invoices.Repository.findActiveDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveCustomerPlacedOrderDeletes = Effect.fn(
+          "Invoices.Repository.findActiveCustomerPlacedOrderDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeCustomerPlacedOrderView.id })
+                      .from(activeCustomerPlacedOrderView)
+                      .where(
+                        and(
+                          eq(
+                            activeCustomerPlacedOrderView.customerId,
+                            customerId,
+                          ),
+                          eq(
+                            activeCustomerPlacedOrderView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountOrderDeletes = Effect.fn(
+          "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .selectDistinctOn(
+                        [
+                          activeManagerAuthorizedSharedAccountOrderView.id,
+                          activeManagerAuthorizedSharedAccountOrderView.tenantId,
+                        ],
+                        {
+                          id: activeManagerAuthorizedSharedAccountOrderView.id,
+                        },
+                      )
+                      .from(activeManagerAuthorizedSharedAccountOrderView)
+                      .where(
+                        and(
+                          eq(
+                            activeManagerAuthorizedSharedAccountOrderView.authorizedManagerId,
+                            managerId,
+                          ),
+                          eq(
+                            activeManagerAuthorizedSharedAccountOrderView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+        );
+
         const findFastForward = Effect.fn(
           "Invoices.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<InvoicesSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -651,11 +547,11 @@ export namespace Invoices {
                           .innerJoin(
                             table,
                             and(
-                              eq(metadataTable.entityId, table.id),
+                              eq(entriesTable.entityId, table.id),
                               notInArray(table.id, excludeIds),
                             ),
                           )
-                          .where(eq(table.tenantId, tenantId)),
+                          .where(eq(table.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -671,18 +567,11 @@ export namespace Invoices {
           "Invoices.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<InvoicesSchema.ActiveRow["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -693,11 +582,11 @@ export namespace Invoices {
                           .innerJoin(
                             activeView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(entriesTable.entityId, activeView.id),
                               notInArray(activeView.id, excludeIds),
                             ),
                           )
-                          .where(eq(activeView.tenantId, tenantId)),
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -713,21 +602,14 @@ export namespace Invoices {
           "Invoices.Repository.findActiveCustomerPlacedOrderFastForward",
         )(
           (
-            customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: InvoicesSchema.ActiveCustomerPlacedOrderRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
               InvoicesSchema.ActiveCustomerPlacedOrderRow["id"]
             >,
+            customerId: InvoicesSchema.ActiveCustomerPlacedOrderRow["customerId"],
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -741,7 +623,7 @@ export namespace Invoices {
                             activeCustomerPlacedOrderView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activeCustomerPlacedOrderView.id,
                               ),
                               notInArray(
@@ -756,7 +638,7 @@ export namespace Invoices {
                                 activeCustomerPlacedOrderView.customerId,
                                 customerId,
                               ),
-                              eq(activeView.tenantId, tenantId),
+                              eq(activeView.tenantId, clientView.tenantId),
                             ),
                           ),
                       );
@@ -780,21 +662,14 @@ export namespace Invoices {
             "Invoices.Repository.findActiveManagerAuthorizedSharedAccountOrderFastForward",
           )(
             (
-              managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
-              clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-              clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-              tenantId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["tenantId"],
+              clientView: ReplicacheClientViewsSchema.Row,
               excludeIds: Array<
                 InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["id"]
               >,
+              managerId: InvoicesSchema.ActiveManagerAuthorizedBillingAccountOrderRow["authorizedManagerId"],
             ) =>
-              metadataQb
-                .fastForward(
-                  getTableName(table),
-                  clientViewVersion,
-                  clientGroupId,
-                  tenantId,
-                )
+              entriesQueryBuilder
+                .fastForward(getTableName(table), clientView)
                 .pipe(
                   Effect.flatMap((qb) =>
                     db.useTransaction((tx) => {
@@ -808,7 +683,7 @@ export namespace Invoices {
                               activeManagerAuthorizedSharedAccountOrderView,
                               and(
                                 eq(
-                                  metadataTable.entityId,
+                                  entriesTable.entityId,
                                   activeManagerAuthorizedSharedAccountOrderView.id,
                                 ),
                                 notInArray(
@@ -825,7 +700,7 @@ export namespace Invoices {
                                 ),
                                 eq(
                                   activeManagerAuthorizedSharedAccountOrderView.tenantId,
-                                  tenantId,
+                                  clientView.tenantId,
                                 ),
                               ),
                             ),
@@ -868,6 +743,64 @@ export namespace Invoices {
           findActiveCustomerPlacedOrderFastForward,
           findActiveManagerAuthorizedSharedAccountOrderFastForward,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/invoices/Queries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder({
+            entity: getTableName(InvoicesSchema.table.definition),
+          })
+            .query(AccessControl.permission("invoices:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .query(AccessControl.permission("active_invoices:read"), {
+              findCreates: repository.findActiveCreates,
+              findUpdates: repository.findActiveUpdates,
+              findDeletes: repository.findActiveDeletes,
+              fastForward: repository.findActiveFastForward,
+            })
+            .query(
+              AccessControl.permission(
+                "active_customer_placed_order_invoices:read",
+              ),
+              {
+                findCreates: repository.findActiveCustomerPlacedOrderCreates,
+                findUpdates: repository.findActiveCustomerPlacedOrderUpdates,
+                findDeletes: repository.findActiveCustomerPlacedOrderDeletes,
+                fastForward:
+                  repository.findActiveCustomerPlacedOrderFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_manager_authorized_shared_account_order_invoices:read",
+              ),
+              {
+                findCreates:
+                  repository.findActiveManagerAuthorizedSharedAccountOrderCreates,
+                findUpdates:
+                  repository.findActiveManagerAuthorizedSharedAccountOrderUpdates,
+                findDeletes:
+                  repository.findActiveManagerAuthorizedSharedAccountOrderDeletes,
+                fastForward:
+                  repository.findActiveManagerAuthorizedSharedAccountOrderFastForward,
+              },
+            )
+            .build();
+
+        return { differenceResolver } as const;
       }),
     },
   ) {}
@@ -915,10 +848,7 @@ export namespace Invoices {
             (invoice, { tenantId }) =>
               repository
                 .create({ ...invoice, tenantId })
-                .pipe(
-                  Effect.map(Struct.omit("version")),
-                  Effect.tap(notifyCreate),
-                ),
+                .pipe(Effect.tap(notifyCreate)),
           ),
         });
 

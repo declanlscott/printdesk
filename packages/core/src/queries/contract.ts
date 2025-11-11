@@ -1,0 +1,577 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import * as Array from "effect/Array";
+import * as Cause from "effect/Cause";
+import * as Chunk from "effect/Chunk";
+import * as Effect from "effect/Effect";
+import * as HashMap from "effect/HashMap";
+import * as Iterable from "effect/Iterable";
+import * as Match from "effect/Match";
+import * as Option from "effect/Option";
+import * as Stream from "effect/Stream";
+import * as Tuple from "effect/Tuple";
+
+import { AccessControl } from "../access-control2";
+
+import type { AuthContract } from "../auth2/contract";
+import type { ColumnsContract } from "../columns2/contract";
+import type { Models } from "../models2";
+import type { ReplicacheClientViewsModel } from "../replicache2/models";
+
+export namespace QueriesContract {
+  export type VersionedDto<TEntity extends Models.SyncTableName> =
+    Models.SyncTableByName<TEntity>["DataTransferObject"]["Type"] & {
+      version: ColumnsContract.Version;
+    };
+
+  export interface DifferenceQuery<
+    TEntity extends Models.SyncTableName = Models.SyncTableName,
+    TPolicyError = any,
+    TPolicyContext = any,
+    TCreatesError = any,
+    TCreatesContext = any,
+    TUpdatesError = any,
+    TUpdatesContext = any,
+    TDeletesError = any,
+    TDeletesContext = any,
+    TFastForwardError = any,
+    TFastForwardContext = any,
+  > {
+    readonly entity: TEntity;
+    readonly policy: AccessControl.Policy<TPolicyError, TPolicyContext>;
+    readonly findCreates: (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) => Effect.Effect<
+      Array<VersionedDto<TEntity>>,
+      TCreatesError,
+      TCreatesContext
+    >;
+    readonly findUpdates: (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) => Effect.Effect<
+      Array<VersionedDto<TEntity>>,
+      TUpdatesError,
+      TUpdatesContext
+    >;
+    readonly findDeletes: (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) => Effect.Effect<
+      Array<Pick<VersionedDto<TEntity>, "id">>,
+      TDeletesError,
+      TDeletesContext
+    >;
+    readonly fastForward: (
+      clientView: ReplicacheClientViewsModel.Record,
+      excludeIds: Array<VersionedDto<TEntity>["id"]>,
+      userId: AuthContract.Session["userId"],
+    ) => Effect.Effect<
+      Array<VersionedDto<TEntity>>,
+      TFastForwardError,
+      TFastForwardContext
+    >;
+  }
+
+  export interface DifferenceResolver<
+    TEntity extends Models.SyncTableName = Models.SyncTableName,
+    TPolicyError = any,
+    TPolicyContext = any,
+    TCreatesError = any,
+    TCreatesContext = any,
+    TUpdatesError = any,
+    TUpdatesContext = any,
+    TDeletesError = any,
+    TDeletesContext = any,
+    TFastForwardError = any,
+    TFastForwardContext = any,
+  > {
+    readonly entity: TEntity;
+    readonly findCreates: (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) => Stream.Stream<
+      VersionedDto<TEntity>,
+      TCreatesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
+      TCreatesContext | TPolicyContext
+    >;
+    readonly findUpdates: (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) => Stream.Stream<
+      VersionedDto<TEntity>,
+      TUpdatesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
+      TUpdatesContext | TPolicyContext
+    >;
+    readonly findDeletes: (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) => Stream.Stream<
+      Pick<VersionedDto<TEntity>, "id">,
+      TDeletesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
+      TDeletesContext | TPolicyContext
+    >;
+    readonly fastForward: (
+      clientView: ReplicacheClientViewsModel.Record,
+      excludeIds: Chunk.Chunk<VersionedDto<TEntity>["id"]>,
+      userId: AuthContract.Session["userId"],
+    ) => Stream.Stream<
+      VersionedDto<TEntity>,
+      | TFastForwardError
+      | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
+      TFastForwardContext | TPolicyContext
+    >;
+  }
+
+  type DifferenceResolverMode = "some" | "every";
+
+  export class DifferenceResolverBuilder<
+    TEntity extends Models.SyncTableName,
+    TQuery extends DifferenceQuery<TEntity> | null = null,
+    TMode extends DifferenceResolverMode = "some",
+  > {
+    readonly entity: TEntity;
+    readonly mode: TMode;
+    #queries = Iterable.empty<Omit<DifferenceQuery<TEntity>, "entity">>();
+
+    readonly QueryType = {} as DifferenceQuery<
+      TEntity,
+      Effect.Effect.Error<NonNullable<TQuery>["policy"]>,
+      Effect.Effect.Context<NonNullable<TQuery>["policy"]>,
+      Effect.Effect.Error<ReturnType<NonNullable<TQuery>["findCreates"]>>,
+      Effect.Effect.Context<ReturnType<NonNullable<TQuery>["findCreates"]>>,
+      Effect.Effect.Error<ReturnType<NonNullable<TQuery>["findUpdates"]>>,
+      Effect.Effect.Context<ReturnType<NonNullable<TQuery>["findUpdates"]>>,
+      Effect.Effect.Error<ReturnType<NonNullable<TQuery>["findDeletes"]>>,
+      Effect.Effect.Context<ReturnType<NonNullable<TQuery>["findDeletes"]>>,
+      Effect.Effect.Error<ReturnType<NonNullable<TQuery>["fastForward"]>>,
+      Effect.Effect.Context<ReturnType<NonNullable<TQuery>["fastForward"]>>
+    >;
+
+    constructor({
+      entity,
+      mode = "some" as TMode,
+    }: {
+      entity: TEntity;
+      mode?: TMode;
+    }) {
+      this.entity = entity;
+      this.mode = mode;
+    }
+
+    query<
+      TPolicyError,
+      TPolicyContext,
+      TCreatesError,
+      TCreatesContext,
+      TUpdatesError,
+      TUpdatesContext,
+      TDeletesError,
+      TDeletesContext,
+      TFastForwardError,
+      TFastForwardContext,
+    >(
+      policy: AccessControl.Policy<TPolicyError, TPolicyContext>,
+      functions: Omit<
+        DifferenceQuery<
+          TEntity,
+          TPolicyError,
+          TPolicyContext,
+          TCreatesError,
+          TCreatesContext,
+          TUpdatesError,
+          TUpdatesContext,
+          TDeletesError,
+          TDeletesContext,
+          TFastForwardError,
+          TFastForwardContext
+        >,
+        "entity" | "policy"
+      >,
+    ) {
+      this.#queries = Iterable.append(this.#queries, {
+        policy,
+        ...functions,
+      });
+
+      return this as DifferenceResolverBuilder<
+        TEntity,
+        NonNullable<
+          | TQuery
+          | DifferenceQuery<
+              TEntity,
+              TPolicyError,
+              TPolicyContext,
+              TCreatesError,
+              TCreatesContext,
+              TUpdatesError,
+              TUpdatesContext,
+              TDeletesError,
+              TDeletesContext,
+              TFastForwardError,
+              TFastForwardContext
+            >
+        >,
+        TMode
+      >;
+    }
+
+    build = () =>
+      ({
+        findCreates: this.#findCreates,
+        findUpdates: this.#findUpdates,
+        findDeletes: this.#findDeletes,
+        fastForward: this.#fastForward,
+      }) as DifferenceResolver<
+        TEntity,
+        Effect.Effect.Error<NonNullable<TQuery>["policy"]>,
+        Effect.Effect.Context<NonNullable<TQuery>["policy"]>,
+        Effect.Effect.Error<ReturnType<NonNullable<TQuery>["findCreates"]>>,
+        Effect.Effect.Context<ReturnType<NonNullable<TQuery>["findCreates"]>>,
+        Effect.Effect.Error<ReturnType<NonNullable<TQuery>["findUpdates"]>>,
+        Effect.Effect.Context<ReturnType<NonNullable<TQuery>["findUpdates"]>>,
+        Effect.Effect.Error<ReturnType<NonNullable<TQuery>["findDeletes"]>>,
+        Effect.Effect.Context<ReturnType<NonNullable<TQuery>["findDeletes"]>>,
+        Effect.Effect.Error<ReturnType<NonNullable<TQuery>["fastForward"]>>,
+        Effect.Effect.Context<ReturnType<NonNullable<TQuery>["fastForward"]>>
+      >;
+
+    #some = <TData, TError, TContext>(
+      effects: Iterable<
+        Effect.Effect<
+          Array<TData>,
+          TError | AccessControl.AccessDeniedError,
+          TContext
+        >
+      >,
+    ) =>
+      Effect.suspend(() => {
+        const chunk = Chunk.fromIterable(effects);
+
+        if (!Chunk.isNonEmpty(chunk))
+          return Effect.dieSync(
+            () =>
+              new Cause.IllegalArgumentException(
+                "Received an empty collection of effects",
+              ),
+          );
+
+        return chunk.pipe(
+          Chunk.tailNonEmpty,
+          Array.reduce(chunk.pipe(Chunk.headNonEmpty), (left, right) =>
+            left.pipe(Effect.catchTag("AccessDeniedError", () => right)),
+          ),
+          Effect.catchTag("AccessDeniedError", () =>
+            Effect.succeed(Array.empty<TData>()),
+          ),
+        );
+      });
+
+    // TODO: Implement
+    #every = <TData, TError, TContext>(
+      effects: Iterable<Effect.Effect<Array<TData>, TError, TContext>>,
+    ) => this.#some(effects);
+
+    #resolve = <TData, TError, TContext>(
+      effects: Iterable<Effect.Effect<Array<TData>, TError, TContext>>,
+    ) =>
+      Match.type<DifferenceResolverMode>()
+        .pipe(
+          Match.when(Match.is("some"), () => this.#some(effects)),
+          Match.when(Match.is("every"), () => this.#every(effects)),
+          Match.exhaustive,
+        )(this.mode)
+        .pipe(Stream.fromIterableEffect);
+
+    #findCreates = (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) =>
+      this.#resolve(
+        Iterable.map(this.#queries, (q) => {
+          const query = q as typeof this.QueryType;
+
+          return query
+            .findCreates(clientView, userId)
+            .pipe(AccessControl.enforce(query.policy));
+        }),
+      );
+
+    #findUpdates = (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) =>
+      this.#resolve(
+        Iterable.map(this.#queries, (q) => {
+          const query = q as typeof this.QueryType;
+
+          return query
+            .findUpdates(clientView, userId)
+            .pipe(AccessControl.enforce(query.policy));
+        }),
+      );
+
+    #findDeletes = (
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) =>
+      this.#resolve(
+        Iterable.map(this.#queries, (q) => {
+          const query = q as typeof this.QueryType;
+
+          return query
+            .findDeletes(clientView, userId)
+            .pipe(AccessControl.enforce(query.policy));
+        }),
+      );
+
+    #fastForward = (
+      clientView: ReplicacheClientViewsModel.Record,
+      excludeIds: Chunk.Chunk<
+        Models.SyncTable["DataTransferObject"]["Type"]["id"]
+      >,
+      userId: AuthContract.Session["userId"],
+    ) =>
+      this.#resolve(
+        Iterable.map(this.#queries, (q) => {
+          const query = q as typeof this.QueryType;
+
+          return query
+            .fastForward(clientView, excludeIds.pipe(Chunk.toArray), userId)
+            .pipe(AccessControl.enforce(query.policy));
+        }),
+      );
+  }
+
+  export class Differentiator<
+    TRecord extends {
+      [TEntity in Models.SyncTableName]?: DifferenceResolver<TEntity>;
+      // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    } = {},
+    TIsFinal extends boolean = false,
+  > {
+    #isFinal = false;
+    #map = HashMap.empty<
+      DifferenceResolver["entity"],
+      DifferenceResolver<any>
+    >();
+
+    resolver<
+      TEntity extends Models.SyncTableName,
+      TPolicyError,
+      TPolicyContext,
+      TCreatesError,
+      TCreatesContext,
+      TUpdatesError,
+      TUpdatesContext,
+      TDeletesError,
+      TDeletesContext,
+      TFastForwardError,
+      TFastForwardContext,
+    >(
+      this: TIsFinal extends false ? Differentiator<TRecord, TIsFinal> : never,
+      resolver: DifferenceResolver<
+        TEntity,
+        TPolicyError,
+        TPolicyContext,
+        TCreatesError,
+        TCreatesContext,
+        TUpdatesError,
+        TUpdatesContext,
+        TDeletesError,
+        TDeletesContext,
+        TFastForwardError,
+        TFastForwardContext
+      >,
+    ) {
+      if (!this.#isFinal)
+        this.#map = HashMap.set(this.#map, resolver.entity, resolver);
+
+      return this as Differentiator<
+        TRecord &
+          Record<
+            TEntity,
+            DifferenceResolver<
+              TEntity,
+              TPolicyError,
+              TPolicyContext,
+              TCreatesError,
+              TCreatesContext,
+              TUpdatesError,
+              TUpdatesContext,
+              TDeletesError,
+              TDeletesContext,
+              TFastForwardError,
+              TFastForwardContext
+            >
+          >
+      >;
+    }
+
+    final(
+      this: TRecord extends {
+        [TEntity in Models.SyncTableName]: DifferenceResolver<TEntity>;
+      }
+        ? Differentiator<TRecord, TIsFinal>
+        : never,
+    ) {
+      this.#isFinal = true;
+
+      return this as Differentiator<TRecord, true>;
+    }
+
+    findCreates(
+      this: TRecord extends {
+        [TEntity in Models.SyncTableName]: DifferenceResolver<TEntity>;
+      }
+        ? Differentiator<TRecord, TIsFinal>
+        : never,
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) {
+      return this.#map.pipe(
+        HashMap.entries,
+        Iterable.map(([entity, resolver]) =>
+          resolver
+            .findCreates(clientView, userId)
+            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+        ),
+        Stream.mergeAll({ concurrency: "unbounded" }),
+      ) as Stream.Stream<
+        {
+          [TEntity in Models.SyncTableName]: [
+            TEntity,
+            Stream.Stream.Success<
+              ReturnType<NonNullable<TRecord[TEntity]>["findCreates"]>
+            >,
+          ];
+        }[Models.SyncTableName],
+        Stream.Stream.Error<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findCreates"]>
+        >,
+        Stream.Stream.Context<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findCreates"]>
+        >
+      >;
+    }
+
+    findUpdates(
+      this: TRecord extends {
+        [TEntity in Models.SyncTableName]: DifferenceResolver<TEntity>;
+      }
+        ? Differentiator<TRecord, TIsFinal>
+        : never,
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) {
+      return this.#map.pipe(
+        HashMap.entries,
+        Iterable.map(([entity, resolver]) =>
+          resolver
+            .findUpdates(clientView, userId)
+            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+        ),
+        Stream.mergeAll({ concurrency: "unbounded" }),
+      ) as Stream.Stream<
+        {
+          [TEntity in Models.SyncTableName]: [
+            TEntity,
+            Stream.Stream.Success<
+              ReturnType<NonNullable<TRecord[TEntity]>["findUpdates"]>
+            >,
+          ];
+        }[Models.SyncTableName],
+        Stream.Stream.Error<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findUpdates"]>
+        >,
+        Stream.Stream.Context<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findUpdates"]>
+        >
+      >;
+    }
+
+    findDeletes(
+      this: TRecord extends {
+        [TEntity in Models.SyncTableName]: DifferenceResolver<TEntity>;
+      }
+        ? Differentiator<TRecord, TIsFinal>
+        : never,
+      clientView: ReplicacheClientViewsModel.Record,
+      userId: AuthContract.Session["userId"],
+    ) {
+      return this.#map.pipe(
+        HashMap.entries,
+        Iterable.map(([entity, resolver]) =>
+          resolver
+            .findDeletes(clientView, userId)
+            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+        ),
+        Stream.mergeAll({ concurrency: "unbounded" }),
+      ) as Stream.Stream<
+        {
+          [TEntity in Models.SyncTableName]: [
+            TEntity,
+            Stream.Stream.Success<
+              ReturnType<NonNullable<TRecord[TEntity]>["findDeletes"]>
+            >,
+          ];
+        }[Models.SyncTableName],
+        Stream.Stream.Error<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findDeletes"]>
+        >,
+        Stream.Stream.Context<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findDeletes"]>
+        >
+      >;
+    }
+
+    fastForward(
+      this: TRecord extends {
+        [TEntity in Models.SyncTableName]: DifferenceResolver<TEntity>;
+      }
+        ? Differentiator<TRecord, TIsFinal>
+        : never,
+      clientView: ReplicacheClientViewsModel.Record,
+      excludeIds: Chunk.Chunk<
+        [
+          Models.SyncTableName,
+          Models.SyncTable["DataTransferObject"]["Type"]["id"],
+        ]
+      >,
+      userId: AuthContract.Session["userId"],
+    ) {
+      return this.#map.pipe(
+        HashMap.entries,
+        Iterable.map(([entity, resolver]) =>
+          resolver
+            .fastForward(
+              clientView,
+              excludeIds.pipe(
+                Chunk.filterMap((pair) =>
+                  pair[0] === entity ? Option.some(pair[1]) : Option.none(),
+                ),
+              ),
+              userId,
+            )
+            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+        ),
+        Stream.mergeAll({ concurrency: "unbounded" }),
+      ) as Stream.Stream<
+        {
+          [TEntity in Models.SyncTableName]: [
+            TEntity,
+            Stream.Stream.Success<
+              ReturnType<NonNullable<TRecord[TEntity]>["fastForward"]>
+            >,
+          ];
+        }[Models.SyncTableName],
+        Stream.Stream.Error<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["fastForward"]>
+        >,
+        Stream.Stream.Context<
+          ReturnType<NonNullable<TRecord[Models.SyncTableName]>["fastForward"]>
+        >
+      >;
+    }
+  }
+}

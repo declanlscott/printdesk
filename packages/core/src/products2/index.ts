@@ -19,22 +19,25 @@ import { Events } from "../events2";
 import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
 import { PoliciesContract } from "../policies/contract";
+import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
-import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { ReplicacheClientViewEntriesSchema } from "../replicache2/schemas";
 import { Rooms } from "../rooms2";
 import { ProductsContract } from "./contract";
 import { ProductsSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { ReplicacheClientViewsSchema } from "../replicache2/schemas";
 
 export namespace Products {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/products/Repository",
     {
+      accessors: true,
       dependencies: [
         Database.TransactionManager.Default,
-        Replicache.ClientViewMetadataQueryBuilder.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -42,9 +45,9 @@ export namespace Products {
         const activeView = ProductsSchema.activeView;
         const activePublishedView = ProductsSchema.activePublishedView;
 
-        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable =
-          ReplicacheClientViewMetadataSchema.table.definition;
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const create = Effect.fn("Products.Repository.create")(
           (product: InferInsertModel<ProductsSchema.Table>) =>
@@ -59,266 +62,201 @@ export namespace Products {
         );
 
         const findCreates = Effect.fn("Products.Repository.findCreates")(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(table)
-                          .where(eq(table.tenantId, tenantId)),
-                      );
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_creates`)
+                    .as(
+                      tx
+                        .select()
+                        .from(table)
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
 
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
               ),
+            ),
         );
 
         const findActiveCreates = Effect.fn(
           "Products.Repository.findActiveCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activeView)
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findActivePublishedCreates = Effect.fn(
           "Products.Repository.findActivePublishedCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activePublishedView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activePublishedView)
-                          .where(eq(activePublishedView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activePublishedView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
+                      .from(activePublishedView)
                       .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
+                        eq(activePublishedView.tenantId, clientView.tenantId),
+                      ),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findUpdates = Effect.fn("Products.Repository.findUpdates")(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            table,
-                            and(
-                              eq(metadataTable.entityId, table.id),
-                              not(
-                                eq(metadataTable.entityVersion, table.version),
-                              ),
-                              eq(metadataTable.tenantId, table.tenantId),
-                            ),
-                          )
-                          .where(eq(table.tenantId, tenantId)),
-                      );
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          table,
+                          and(
+                            eq(entriesTable.entityId, table.id),
+                            not(eq(entriesTable.entityVersion, table.version)),
+                            eq(entriesTable.tenantId, table.tenantId),
+                          ),
+                        )
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
 
-                    return tx
-                      .with(cte)
-                      .select(cte[getTableName(table)])
-                      .from(cte);
-                  }),
-                ),
+                  return tx
+                    .with(cte)
+                    .select(cte[getTableName(table)])
+                    .from(cte);
+                }),
               ),
+            ),
         );
 
         const findActiveUpdates = Effect.fn(
           "Products.Repository.findActiveUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeView.version,
-                                ),
-                              ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
 
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activeView)])
-                      .from(cte);
-                  }),
-                ),
-              ),
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte);
+              }),
+            ),
+          ),
         );
 
         const findActivePublishedUpdates = Effect.fn(
           "Products.Repository.findActivePublishedUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activePublishedView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activePublishedView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activePublishedView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activePublishedView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activePublishedView.tenantId,
-                              ),
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activePublishedView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activePublishedView,
+                        and(
+                          eq(entriesTable.entityId, activePublishedView.id),
+                          not(
+                            eq(
+                              entriesTable.entityVersion,
+                              activePublishedView.version,
                             ),
-                          )
-                          .where(eq(activePublishedView.tenantId, tenantId)),
-                      );
+                          ),
+                          eq(
+                            entriesTable.tenantId,
+                            activePublishedView.tenantId,
+                          ),
+                        ),
+                      )
+                      .where(
+                        eq(activePublishedView.tenantId, clientView.tenantId),
+                      ),
+                  );
 
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activePublishedView)])
-                      .from(cte);
-                  }),
-                ),
-              ),
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activePublishedView)])
+                  .from(cte);
+              }),
+            ),
+          ),
         );
 
         const findDeletes = Effect.fn("Products.Repository.findDeletes")(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder
+              .deletes(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) =>
@@ -326,7 +264,7 @@ export namespace Products {
                       tx
                         .select({ id: table.id })
                         .from(table)
-                        .where(eq(table.tenantId, tenantId)),
+                        .where(eq(table.tenantId, clientView.tenantId)),
                     ),
                   ),
                 ),
@@ -335,78 +273,53 @@ export namespace Products {
 
         const findActiveDeletes = Effect.fn(
           "Products.Repository.findActiveDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .where(eq(activeView.tenantId, tenantId)),
-                    ),
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
                   ),
                 ),
               ),
+            ),
         );
 
         const findActivePublishedDeletes = Effect.fn(
           "Products.Repository.findActivePublishedDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activePublishedView.id })
-                        .from(activePublishedView)
-                        .where(eq(activePublishedView.tenantId, tenantId)),
-                    ),
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activePublishedView.id })
+                      .from(activePublishedView)
+                      .where(
+                        eq(activePublishedView.tenantId, clientView.tenantId),
+                      ),
                   ),
                 ),
               ),
+            ),
         );
 
         const findFastForward = Effect.fn(
           "Products.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<ProductsSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -417,11 +330,11 @@ export namespace Products {
                           .innerJoin(
                             table,
                             and(
-                              eq(metadataTable.entityId, table.id),
+                              eq(entriesTable.entityId, table.id),
                               notInArray(table.id, excludeIds),
                             ),
                           )
-                          .where(eq(table.tenantId, tenantId)),
+                          .where(eq(table.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -437,18 +350,11 @@ export namespace Products {
           "Products.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActiveRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<ProductsSchema.ActiveRow["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -459,11 +365,11 @@ export namespace Products {
                           .innerJoin(
                             activeView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(entriesTable.entityId, activeView.id),
                               notInArray(activeView.id, excludeIds),
                             ),
                           )
-                          .where(eq(activeView.tenantId, tenantId)),
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -479,18 +385,11 @@ export namespace Products {
           "Products.Repository.findActivePublishedFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ProductsSchema.ActivePublishedRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<ProductsSchema.ActivePublishedRow["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -501,14 +400,16 @@ export namespace Products {
                           .innerJoin(
                             activePublishedView,
                             and(
-                              eq(
-                                metadataTable.entityId,
-                                activePublishedView.id,
-                              ),
+                              eq(entriesTable.entityId, activePublishedView.id),
                               notInArray(activePublishedView.id, excludeIds),
                             ),
                           )
-                          .where(eq(activePublishedView.tenantId, tenantId)),
+                          .where(
+                            eq(
+                              activePublishedView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
                       );
 
                     return tx
@@ -608,6 +509,43 @@ export namespace Products {
           updateById,
           updateByRoomId,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/products/Queries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder({
+            entity: getTableName(ProductsSchema.table.definition),
+          })
+            .query(AccessControl.permission("products:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .query(AccessControl.permission("active_products:read"), {
+              findCreates: repository.findActiveCreates,
+              findUpdates: repository.findActiveUpdates,
+              findDeletes: repository.findActiveDeletes,
+              fastForward: repository.findActiveFastForward,
+            })
+            .query(AccessControl.permission("active_published_products:read"), {
+              findCreates: repository.findActivePublishedCreates,
+              findUpdates: repository.findActivePublishedUpdates,
+              findDeletes: repository.findActivePublishedDeletes,
+              fastForward: repository.findActivePublishedFastForward,
+            })
+            .build();
+
+        return { differenceResolver } as const;
       }),
     },
   ) {}
@@ -783,10 +721,7 @@ export namespace Products {
             (product, { tenantId }) =>
               repository
                 .create({ ...product, tenantId })
-                .pipe(
-                  Effect.map(Struct.omit("version")),
-                  Effect.tap(notifyCreate),
-                ),
+                .pipe(Effect.tap(notifyCreate)),
           ),
         });
 
@@ -802,10 +737,7 @@ export namespace Products {
             ({ id, ...product }, session) =>
               repository
                 .updateById(id, product, session.tenantId)
-                .pipe(
-                  Effect.map(Struct.omit("version")),
-                  Effect.tap(notifyEdit),
-                ),
+                .pipe(Effect.tap(notifyEdit)),
           ),
         });
 
@@ -836,10 +768,7 @@ export namespace Products {
                         },
                         session.tenantId,
                       )
-                      .pipe(
-                        Effect.map(Struct.omit("version")),
-                        Effect.tap(notifyPublish),
-                      ),
+                      .pipe(Effect.tap(notifyPublish)),
                   ),
                 ),
             ),
@@ -871,10 +800,7 @@ export namespace Products {
                       },
                       session.tenantId,
                     )
-                    .pipe(
-                      Effect.map(Struct.omit("version")),
-                      Effect.tap(notifyDraft),
-                    ),
+                    .pipe(Effect.tap(notifyDraft)),
                 ),
               ),
           ),
@@ -898,10 +824,7 @@ export namespace Products {
                     { deletedAt, status: "draft" },
                     session.tenantId,
                   )
-                  .pipe(
-                    Effect.map(Struct.omit("version")),
-                    Effect.tap(notifyDelete),
-                  ),
+                  .pipe(Effect.tap(notifyDelete)),
             ),
           },
         );
@@ -920,10 +843,7 @@ export namespace Products {
               ({ id }, session) =>
                 repository
                   .updateById(id, { deletedAt: null }, session.tenantId)
-                  .pipe(
-                    Effect.map(Struct.omit("version")),
-                    Effect.tap(notifyRestore),
-                  ),
+                  .pipe(Effect.tap(notifyRestore)),
             ),
           },
         );

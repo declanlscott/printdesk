@@ -14,7 +14,7 @@ const layer = Layer.mergeAll(
   Replicache.ClientGroupsRepository.Default,
   Replicache.ClientsRepository.Default,
   Replicache.ClientViewsRepository.Default,
-  Replicache.ClientViewMetadataRepository.Default,
+  Replicache.ClientViewEntriesRepository.Default,
   Logger.defaultLayer,
 ).pipe(Layer.provideMerge(Sst.Resource.layer));
 
@@ -36,7 +36,7 @@ export const handler = LambdaHandler.make({
             Replicache.ClientViewsRepository.deleteByGroupIds(ids),
           ).pipe(Stream.runDrain),
           Database.paginateTransaction(
-            Replicache.ClientViewMetadataRepository.deleteByGroupIds(ids),
+            Replicache.ClientViewEntriesRepository.deleteByGroupIds(ids),
           ).pipe(Stream.runDrain),
         ),
       ),

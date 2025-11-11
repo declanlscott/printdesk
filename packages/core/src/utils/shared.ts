@@ -34,7 +34,7 @@ export function parseResource<TResource extends Record<string, unknown>>(
 }
 
 export const generateId = customAlphabet<TableContract.EntityId>(
-  Constants.NANOID_CUSTOM_ALPHABET,
+  Constants.NANOID_ALPHABET,
   Constants.NANOID_LENGTH,
 );
 

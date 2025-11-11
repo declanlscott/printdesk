@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { Permissions } from "../permissions2";
 import { Procedures } from "../procedures";
@@ -21,7 +22,7 @@ export namespace Events {
   }) {}
 
   export const ReplicachePullPermission =
-    Permissions.Schemas.ReadPermission.pipe(
+    Permissions.Schemas.SyncReadPermission.pipe(
       Effect.map((permission) =>
         Schema.TaggedStruct("ReplicachePullPermission", { permission }),
       ),
@@ -31,12 +32,12 @@ export namespace Events {
   >["Type"];
 
   export const replicachePullPolicyTagName = "ReplicachePullPolicy" as const;
-  export const ReplicachePullPolicy = Procedures.Policies.Policy.pipe(
+
+  export const ReplicachePullPolicy = Procedures.Policies.registry.pipe(
+    Effect.map(Struct.get("Schema")),
     Effect.map(
       Schema.extend(
-        Schema.Struct({
-          _tag: Schema.tag(replicachePullPolicyTagName),
-        }),
+        Schema.Struct({ _tag: Schema.tag(replicachePullPolicyTagName) }),
       ),
     ),
   );
@@ -46,16 +47,11 @@ export namespace Events {
 
   export const makeReplicachePullPolicy = <
     TPolicy extends Effect.Effect.Success<
-      typeof Procedures.Policies.Policy
-    >["Type"],
+      typeof Procedures.Policies.registry
+    >["Schema"]["Type"],
   >(
     policy: TPolicy,
-  ) =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    ({
-      ...policy,
-      _tag: replicachePullPolicyTagName,
-    }) as const;
+  ) => ({ ...policy, _tag: replicachePullPolicyTagName }) as const;
 
   export const ReplicacheNotification = Effect.all([
     ReplicachePullPermission,

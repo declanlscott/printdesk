@@ -13,7 +13,7 @@ import { Tables } from "../tables2";
 import {
   ReplicacheClientGroupsModel,
   ReplicacheClientsModel,
-  ReplicacheClientViewMetadataModel,
+  ReplicacheClientViewEntriesModel,
   ReplicacheClientViewsModel,
   ReplicacheMetaModel,
 } from "./models";
@@ -93,14 +93,14 @@ export namespace ReplicacheClientViewsSchema {
   export type Row = InferSelectModel<Table>;
 }
 
-export namespace ReplicacheClientViewMetadataSchema {
+export namespace ReplicacheClientViewEntriesSchema {
   export const table = new Tables.Table(
-    ReplicacheClientViewMetadataModel.tableName,
+    ReplicacheClientViewEntriesModel.tableName,
     {
       clientGroupId: uuid().notNull(),
       clientViewVersion: Columns.version.notNull(),
       entity: Columns.union(
-        ReplicacheClientViewMetadataModel.entities,
+        ReplicacheClientViewEntriesModel.entities,
       ).notNull(),
       entityId: Columns.entityId.notNull(),
       entityVersion: Columns.version,

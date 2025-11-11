@@ -31,9 +31,10 @@ import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { Permissions } from "../permissions2";
 import { PoliciesContract } from "../policies/contract";
+import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
-import { ReplicacheClientViewMetadataSchema } from "../replicache2/schemas";
+import { ReplicacheClientViewEntriesSchema } from "../replicache2/schemas";
 import {
   SharedAccountWorkflowsContract,
   WorkflowStatusesContract,
@@ -46,14 +47,16 @@ import {
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { ColumnsContract } from "../columns2/contract";
+import type { ReplicacheClientViewsSchema } from "../replicache2/schemas";
 
 export namespace RoomWorkflows {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/workflows/RoomsRepository",
     {
+      accessors: true,
       dependencies: [
         Database.TransactionManager.Default,
-        Replicache.ClientViewMetadataQueryBuilder.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -62,9 +65,9 @@ export namespace RoomWorkflows {
         const activePublishedRoomView =
           RoomWorkflowsSchema.activePublishedRoomView;
 
-        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable =
-          ReplicacheClientViewMetadataSchema.table.definition;
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const create = Effect.fn("RoomWorkflows.Repository.create")(
           (roomWorkflow: InferInsertModel<RoomWorkflowsSchema.Table>) =>
@@ -79,270 +82,207 @@ export namespace RoomWorkflows {
         );
 
         const findCreates = Effect.fn("RoomWorkflows.Repository.findCreates")(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(table)
-                          .where(eq(table.tenantId, tenantId)),
-                      );
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_creates`)
+                    .as(
+                      tx
+                        .select()
+                        .from(table)
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
 
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
               ),
+            ),
         );
 
         const findActiveCreates = Effect.fn(
           "RoomWorkflows.Repository.findActiveCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activeView)
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findActivePublishedRoomCreates = Effect.fn(
           "RoomWorkflows.Repository.findActivePublishedRoomCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activePublishedRoomView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activePublishedRoomView)
-                          .where(
-                            eq(activePublishedRoomView.tenantId, tenantId),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activePublishedRoomView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
+                      .from(activePublishedRoomView)
                       .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
+                        eq(
+                          activePublishedRoomView.tenantId,
+                          clientView.tenantId,
                         ),
-                      );
-                  }),
-                ),
-              ),
+                      ),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findUpdates = Effect.fn("RoomWorkflows.Repository.findUpdates")(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            table,
-                            and(
-                              eq(metadataTable.entityId, table.id),
-                              not(
-                                eq(metadataTable.entityVersion, table.version),
-                              ),
-                              eq(metadataTable.tenantId, table.tenantId),
-                            ),
-                          )
-                          .where(eq(table.tenantId, tenantId)),
-                      );
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          table,
+                          and(
+                            eq(entriesTable.entityId, table.id),
+                            not(eq(entriesTable.entityVersion, table.version)),
+                            eq(entriesTable.tenantId, table.tenantId),
+                          ),
+                        )
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
 
-                    return tx
-                      .with(cte)
-                      .select(cte[getTableName(table)])
-                      .from(cte);
-                  }),
-                ),
+                  return tx
+                    .with(cte)
+                    .select(cte[getTableName(table)])
+                    .from(cte);
+                }),
               ),
+            ),
         );
 
         const findActiveUpdates = Effect.fn(
           "RoomWorkflows.Repository.findActiveUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeView.version,
-                                ),
-                              ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
 
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activeView)])
-                      .from(cte);
-                  }),
-                ),
-              ),
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte);
+              }),
+            ),
+          ),
         );
 
         const findActivePublishedRoomUpdates = Effect.fn(
           "RoomWorkflows.Repository.findActivePublishedRoomUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activePublishedRoomView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activePublishedRoomView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activePublishedRoomView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activePublishedRoomView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activePublishedRoomView.tenantId,
-                              ),
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activePublishedRoomView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activePublishedRoomView,
+                        and(
+                          eq(entriesTable.entityId, activePublishedRoomView.id),
+                          not(
+                            eq(
+                              entriesTable.entityVersion,
+                              activePublishedRoomView.version,
                             ),
-                          )
-                          .where(
-                            eq(activePublishedRoomView.tenantId, tenantId),
                           ),
-                      );
+                          eq(
+                            entriesTable.tenantId,
+                            activePublishedRoomView.tenantId,
+                          ),
+                        ),
+                      )
+                      .where(
+                        eq(
+                          activePublishedRoomView.tenantId,
+                          clientView.tenantId,
+                        ),
+                      ),
+                  );
 
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activePublishedRoomView)])
-                      .from(cte);
-                  }),
-                ),
-              ),
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activePublishedRoomView)])
+                  .from(cte);
+              }),
+            ),
+          ),
         );
 
         const findDeletes = Effect.fn("RoomWorkflows.Repository.findDeletes")(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder
+              .deletes(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) =>
@@ -350,7 +290,7 @@ export namespace RoomWorkflows {
                       tx
                         .select({ id: table.id })
                         .from(table)
-                        .where(eq(table.tenantId, tenantId)),
+                        .where(eq(table.tenantId, clientView.tenantId)),
                     ),
                   ),
                 ),
@@ -359,78 +299,56 @@ export namespace RoomWorkflows {
 
         const findActiveDeletes = Effect.fn(
           "RoomWorkflows.Repository.findActiveDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .where(eq(activeView.tenantId, tenantId)),
-                    ),
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
                   ),
                 ),
               ),
+            ),
         );
 
         const findActivePublishedRoomDeletes = Effect.fn(
           "RoomWorkflows.Repository.findActivePublishedRoomDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activePublishedRoomView.id })
-                        .from(activePublishedRoomView)
-                        .where(eq(activePublishedRoomView.tenantId, tenantId)),
-                    ),
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activePublishedRoomView.id })
+                      .from(activePublishedRoomView)
+                      .where(
+                        eq(
+                          activePublishedRoomView.tenantId,
+                          clientView.tenantId,
+                        ),
+                      ),
                   ),
                 ),
               ),
+            ),
         );
 
         const findFastForward = Effect.fn(
           "RoomWorkflows.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<RoomWorkflowsSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -441,11 +359,11 @@ export namespace RoomWorkflows {
                           .innerJoin(
                             table,
                             and(
-                              eq(metadataTable.entityId, table.id),
+                              eq(entriesTable.entityId, table.id),
                               notInArray(table.id, excludeIds),
                             ),
                           )
-                          .where(eq(table.tenantId, tenantId)),
+                          .where(eq(table.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -461,18 +379,11 @@ export namespace RoomWorkflows {
           "RoomWorkflows.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<RoomWorkflowsSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -483,11 +394,11 @@ export namespace RoomWorkflows {
                           .innerJoin(
                             activeView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(entriesTable.entityId, activeView.id),
                               notInArray(activeView.id, excludeIds),
                             ),
                           )
-                          .where(eq(activeView.tenantId, tenantId)),
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -503,18 +414,11 @@ export namespace RoomWorkflows {
           "RoomWorkflows.Repository.findActivePublishedRoomFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: RoomWorkflowsSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<RoomWorkflowsSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -528,7 +432,7 @@ export namespace RoomWorkflows {
                             activePublishedRoomView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activePublishedRoomView.id,
                               ),
                               notInArray(
@@ -538,7 +442,10 @@ export namespace RoomWorkflows {
                             ),
                           )
                           .where(
-                            eq(activePublishedRoomView.tenantId, tenantId),
+                            eq(
+                              activePublishedRoomView.tenantId,
+                              clientView.tenantId,
+                            ),
                           ),
                       );
 
@@ -632,6 +539,46 @@ export namespace RoomWorkflows {
       }),
     },
   ) {}
+
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/workflows/RoomsQueries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder({
+            entity: getTableName(RoomWorkflowsSchema.table.definition),
+          })
+            .query(AccessControl.permission("room_workflows:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .query(AccessControl.permission("active_room_workflows:read"), {
+              findCreates: repository.findActiveCreates,
+              findUpdates: repository.findActiveUpdates,
+              findDeletes: repository.findActiveDeletes,
+              fastForward: repository.findActiveFastForward,
+            })
+            .query(
+              AccessControl.permission("active_published_room_workflows:read"),
+              {
+                findCreates: repository.findActivePublishedRoomCreates,
+                findUpdates: repository.findActivePublishedRoomUpdates,
+                findDeletes: repository.findActivePublishedRoomDeletes,
+                fastForward: repository.findActivePublishedRoomFastForward,
+              },
+            )
+            .build();
+
+        return { differenceResolver } as const;
+      }),
+    },
+  ) {}
 }
 
 export namespace SharedAccountWorkflows {
@@ -640,7 +587,7 @@ export namespace SharedAccountWorkflows {
     {
       dependencies: [
         Database.TransactionManager.Default,
-        Replicache.ClientViewMetadataQueryBuilder.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -651,9 +598,9 @@ export namespace SharedAccountWorkflows {
         const activeManagerAuthorizedView =
           SharedAccountWorkflowsSchema.activeManagerAuthorizedView;
 
-        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable =
-          ReplicacheClientViewMetadataSchema.table.definition;
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const create = Effect.fn("SharedAccountWorkflows.Repository.create")(
           (workflow: InferInsertModel<SharedAccountWorkflowsSchema.Table>) =>
@@ -669,523 +616,90 @@ export namespace SharedAccountWorkflows {
 
         const findCreates = Effect.fn(
           "SharedAccountWorkflows.Repository.findCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(table)
-                          .where(eq(table.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getTableName(table)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
+                      .from(table)
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findActiveCreates = Effect.fn(
           "SharedAccountWorkflows.Repository.findActiveCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activeView)
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
         );
 
         const findActiveCustomerAuthorizedCreates = Effect.fn(
           "SharedAccountWorkflows.Repository.findActiveCustomerAuthorizedCreates",
         )(
           (
+            clientView: ReplicacheClientViewsSchema.Row,
             customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["tenantId"],
           ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeCustomerAuthorizedView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .selectDistinctOn(
-                            [
-                              activeCustomerAuthorizedView.id,
-                              activeCustomerAuthorizedView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeCustomerAuthorizedView,
-                              ),
-                              "authorizedCustomerId",
-                            ),
-                          )
-                          .from(activeCustomerAuthorizedView)
-                          .where(
-                            and(
-                              eq(
-                                activeCustomerAuthorizedView.authorizedCustomerId,
-                                customerId,
-                              ),
-                              eq(
-                                activeCustomerAuthorizedView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveManagerAuthorizedCreates = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedCreates",
-        )(
-          (
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagerAuthorizedView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .selectDistinctOn(
-                            [
-                              activeManagerAuthorizedView.id,
-                              activeManagerAuthorizedView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeManagerAuthorizedView,
-                              ),
-                              "authorizedManagerId",
-                            ),
-                          )
-                          .from(activeManagerAuthorizedView)
-                          .where(
-                            and(
-                              eq(
-                                activeManagerAuthorizedView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagerAuthorizedView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      );
-                  }),
-                ),
-              ),
-        );
-
-        const findUpdates = Effect.fn(
-          "SharedAccountWorkflows.Repository.findUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            table,
-                            and(
-                              eq(metadataTable.entityId, table.id),
-                              not(
-                                eq(metadataTable.entityVersion, table.version),
-                              ),
-                              eq(metadataTable.tenantId, table.tenantId),
-                            ),
-                          )
-                          .where(eq(table.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getTableName(table)])
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveUpdates = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeView.version,
-                                ),
-                              ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activeView)])
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveCustomerAuthorizedUpdates = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveCustomerAuthorizedUpdates",
-        )(
-          (
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeCustomerAuthorizedView)}_updates`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeCustomerAuthorizedView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeCustomerAuthorizedView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeCustomerAuthorizedView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activeCustomerAuthorizedView.tenantId,
-                              ),
-                            ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeCustomerAuthorizedView.authorizedCustomerId,
-                                customerId,
-                              ),
-                              eq(
-                                activeCustomerAuthorizedView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .selectDistinctOn(
-                        [
-                          cte[getViewName(activeCustomerAuthorizedView)].id,
-                          cte[getViewName(activeCustomerAuthorizedView)]
-                            .tenantId,
-                        ],
-                        Struct.omit(
-                          cte[getViewName(activeCustomerAuthorizedView)],
-                          "authorizedCustomerId",
-                        ),
-                      )
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveManagerAuthorizedUpdates = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedUpdates",
-        )(
-          (
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagerAuthorizedView)}_updates`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeManagerAuthorizedView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeManagerAuthorizedView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeManagerAuthorizedView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activeManagerAuthorizedView.tenantId,
-                              ),
-                            ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeManagerAuthorizedView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagerAuthorizedView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .selectDistinctOn(
-                        [
-                          cte[getViewName(activeManagerAuthorizedView)].id,
-                          cte[getViewName(activeManagerAuthorizedView)]
-                            .tenantId,
-                        ],
-                        Struct.omit(
-                          cte[getViewName(activeManagerAuthorizedView)],
-                          "authorizedManagerId",
-                        ),
-                      )
-                      .from(cte);
-                  }),
-                ),
-              ),
-        );
-
-        const findDeletes = Effect.fn(
-          "SharedAccountWorkflows.Repository.findDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeCustomerAuthorizedView)}_creates`,
+                    )
+                    .as(
                       tx
-                        .select({ id: table.id })
-                        .from(table)
-                        .where(eq(table.tenantId, tenantId)),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveDeletes = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .where(eq(activeView.tenantId, tenantId)),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveCustomerAuthorizedDeletes = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveCustomerAuthorizedDeletes",
-        )(
-          (
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeCustomerAuthorizedView.id })
+                        .selectDistinctOn(
+                          [
+                            activeCustomerAuthorizedView.id,
+                            activeCustomerAuthorizedView.tenantId,
+                          ],
+                          Struct.omit(
+                            getViewSelectedFields(activeCustomerAuthorizedView),
+                            "authorizedCustomerId",
+                          ),
+                        )
                         .from(activeCustomerAuthorizedView)
                         .where(
                           and(
@@ -1193,37 +707,55 @@ export namespace SharedAccountWorkflows {
                               activeCustomerAuthorizedView.authorizedCustomerId,
                               customerId,
                             ),
-                            eq(activeCustomerAuthorizedView.tenantId, tenantId),
+                            eq(
+                              activeCustomerAuthorizedView.tenantId,
+                              clientView.tenantId,
+                            ),
                           ),
                         ),
-                    ),
-                  ),
-                ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
               ),
+            ),
         );
 
-        const findActiveManagerAuthorizedDeletes = Effect.fn(
-          "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedDeletes",
+        const findActiveManagerAuthorizedCreates = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedCreates",
         )(
           (
+            clientView: ReplicacheClientViewsSchema.Row,
             managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["tenantId"],
           ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeManagerAuthorizedView)}_creates`,
+                    )
+                    .as(
                       tx
-                        .select({ id: activeManagerAuthorizedView.id })
+                        .selectDistinctOn(
+                          [
+                            activeManagerAuthorizedView.id,
+                            activeManagerAuthorizedView.tenantId,
+                          ],
+                          Struct.omit(
+                            getViewSelectedFields(activeManagerAuthorizedView),
+                            "authorizedManagerId",
+                          ),
+                        )
                         .from(activeManagerAuthorizedView)
                         .where(
                           and(
@@ -1231,31 +763,333 @@ export namespace SharedAccountWorkflows {
                               activeManagerAuthorizedView.authorizedManagerId,
                               managerId,
                             ),
-                            eq(activeManagerAuthorizedView.tenantId, tenantId),
+                            eq(
+                              activeManagerAuthorizedView.tenantId,
+                              clientView.tenantId,
+                            ),
                           ),
                         ),
-                    ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
+              ),
+            ),
+        );
+
+        const findUpdates = Effect.fn(
+          "SharedAccountWorkflows.Repository.findUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getTableName(table)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        table,
+                        and(
+                          eq(entriesTable.entityId, table.id),
+                          not(eq(entriesTable.entityVersion, table.version)),
+                          eq(entriesTable.tenantId, table.tenantId),
+                        ),
+                      )
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  );
+
+                return tx.with(cte).select(cte[getTableName(table)]).from(cte);
+              }),
+            ),
+          ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte);
+              }),
+            ),
+          ),
+        );
+
+        const findActiveCustomerAuthorizedUpdates = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveCustomerAuthorizedUpdates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+          ) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeCustomerAuthorizedView)}_updates`,
+                    )
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeCustomerAuthorizedView,
+                          and(
+                            eq(
+                              entriesTable.entityId,
+                              activeCustomerAuthorizedView.id,
+                            ),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeCustomerAuthorizedView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeCustomerAuthorizedView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              customerId,
+                            ),
+                            eq(
+                              activeCustomerAuthorizedView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .selectDistinctOn(
+                      [
+                        cte[getViewName(activeCustomerAuthorizedView)].id,
+                        cte[getViewName(activeCustomerAuthorizedView)].tenantId,
+                      ],
+                      Struct.omit(
+                        cte[getViewName(activeCustomerAuthorizedView)],
+                        "authorizedCustomerId",
+                      ),
+                    )
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findActiveManagerAuthorizedUpdates = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedUpdates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+          ) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeManagerAuthorizedView)}_updates`,
+                    )
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeManagerAuthorizedView,
+                          and(
+                            eq(
+                              entriesTable.entityId,
+                              activeManagerAuthorizedView.id,
+                            ),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeManagerAuthorizedView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeManagerAuthorizedView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeManagerAuthorizedView.authorizedManagerId,
+                              managerId,
+                            ),
+                            eq(
+                              activeManagerAuthorizedView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .selectDistinctOn(
+                      [
+                        cte[getViewName(activeManagerAuthorizedView)].id,
+                        cte[getViewName(activeManagerAuthorizedView)].tenantId,
+                      ],
+                      Struct.omit(
+                        cte[getViewName(activeManagerAuthorizedView)],
+                        "authorizedManagerId",
+                      ),
+                    )
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findDeletes = Effect.fn(
+          "SharedAccountWorkflows.Repository.findDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: table.id })
+                      .from(table)
+                      .where(eq(table.tenantId, clientView.tenantId)),
                   ),
                 ),
               ),
+            ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveCustomerAuthorizedDeletes = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveCustomerAuthorizedDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeCustomerAuthorizedView.id })
+                      .from(activeCustomerAuthorizedView)
+                      .where(
+                        and(
+                          eq(
+                            activeCustomerAuthorizedView.authorizedCustomerId,
+                            customerId,
+                          ),
+                          eq(
+                            activeCustomerAuthorizedView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveManagerAuthorizedDeletes = Effect.fn(
+          "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeManagerAuthorizedView.id })
+                      .from(activeManagerAuthorizedView)
+                      .where(
+                        and(
+                          eq(
+                            activeManagerAuthorizedView.authorizedManagerId,
+                            managerId,
+                          ),
+                          eq(
+                            activeManagerAuthorizedView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
         );
 
         const findFastForward = Effect.fn(
           "SharedAccountWorkflows.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<SharedAccountWorkflowsSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -1266,11 +1100,11 @@ export namespace SharedAccountWorkflows {
                           .innerJoin(
                             table,
                             and(
-                              eq(metadataTable.entityId, table.id),
+                              eq(entriesTable.entityId, table.id),
                               notInArray(table.id, excludeIds),
                             ),
                           )
-                          .where(eq(table.tenantId, tenantId)),
+                          .where(eq(table.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -1286,18 +1120,11 @@ export namespace SharedAccountWorkflows {
           "SharedAccountWorkflows.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<SharedAccountWorkflowsSchema.ActiveRow["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -1308,11 +1135,11 @@ export namespace SharedAccountWorkflows {
                           .innerJoin(
                             activeView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(entriesTable.entityId, activeView.id),
                               notInArray(activeView.id, excludeIds),
                             ),
                           )
-                          .where(eq(activeView.tenantId, tenantId)),
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -1328,21 +1155,14 @@ export namespace SharedAccountWorkflows {
           "SharedAccountWorkflows.Repository.findActiveCustomerAuthorizedFastForward",
         )(
           (
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
               SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["id"]
             >,
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -1356,7 +1176,7 @@ export namespace SharedAccountWorkflows {
                             activeCustomerAuthorizedView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activeCustomerAuthorizedView.id,
                               ),
                               notInArray(
@@ -1373,7 +1193,7 @@ export namespace SharedAccountWorkflows {
                               ),
                               eq(
                                 activeCustomerAuthorizedView.tenantId,
-                                tenantId,
+                                clientView.tenantId,
                               ),
                             ),
                           ),
@@ -1402,21 +1222,14 @@ export namespace SharedAccountWorkflows {
           "SharedAccountWorkflows.Repository.findActiveManagerAuthorizedFastForward",
         )(
           (
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
               SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["id"]
             >,
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -1430,7 +1243,7 @@ export namespace SharedAccountWorkflows {
                             activeManagerAuthorizedView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activeManagerAuthorizedView.id,
                               ),
                               notInArray(
@@ -1447,7 +1260,7 @@ export namespace SharedAccountWorkflows {
                               ),
                               eq(
                                 activeManagerAuthorizedView.tenantId,
-                                tenantId,
+                                clientView.tenantId,
                               ),
                             ),
                           ),
@@ -1569,6 +1382,62 @@ export namespace SharedAccountWorkflows {
     },
   ) {}
 
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/workflows/SharedAccountsQueries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder({
+            entity: getTableName(SharedAccountWorkflowsSchema.table.definition),
+          })
+            .query(AccessControl.permission("shared_account_workflows:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .query(
+              AccessControl.permission("active_shared_account_workflows:read"),
+              {
+                findCreates: repository.findActiveCreates,
+                findUpdates: repository.findActiveUpdates,
+                findDeletes: repository.findActiveDeletes,
+                fastForward: repository.findActiveFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_customer_authorized_shared_account_workflows:read",
+              ),
+              {
+                findCreates: repository.findActiveCustomerAuthorizedCreates,
+                findUpdates: repository.findActiveCustomerAuthorizedUpdates,
+                findDeletes: repository.findActiveCustomerAuthorizedDeletes,
+                fastForward: repository.findActiveCustomerAuthorizedFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_manager_authorized_shared_account_workflows:read",
+              ),
+              {
+                findCreates: repository.findActiveManagerAuthorizedCreates,
+                findUpdates: repository.findActiveManagerAuthorizedUpdates,
+                findDeletes: repository.findActiveManagerAuthorizedDeletes,
+                fastForward: repository.findActiveManagerAuthorizedFastForward,
+              },
+            )
+            .build();
+
+        return { differenceResolver } as const;
+      }),
+    },
+  ) {}
+
   export class Policies extends Effect.Service<Policies>()(
     "@printdesk/core/workflows/SharedAccountPolicies",
     {
@@ -1647,9 +1516,9 @@ export namespace WorkflowStatuses {
         const activePublishedRoomView =
           WorkflowStatusesSchema.activePublishedRoomView;
 
-        const metadataQb = yield* Replicache.ClientViewMetadataQueryBuilder;
-        const metadataTable =
-          ReplicacheClientViewMetadataSchema.table.definition;
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const create = Effect.fn("WorkflowStatuses.Repository.create")(
           (workflowStatus: InferInsertModel<WorkflowStatusesSchema.Table>) =>
@@ -1688,674 +1557,92 @@ export namespace WorkflowStatuses {
 
         const findCreates = Effect.fn(
           "WorkflowStatuses.Repository.findCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(table)
-                          .where(eq(table.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getTableName(table)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      ) as Promise<Array<WorkflowStatusesSchema.Row>>;
-                  }),
-                ),
-              ),
+                      .from(table)
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  ) as Promise<Array<WorkflowStatusesSchema.Row>>;
+              }),
+            ),
+          ),
         );
 
         const findActiveCreates = Effect.fn(
           "WorkflowStatuses.Repository.findActiveCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activeView)
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
                       .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      ) as Promise<Array<WorkflowStatusesSchema.ActiveRow>>;
-                  }),
-                ),
-              ),
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  ) as Promise<Array<WorkflowStatusesSchema.ActiveRow>>;
+              }),
+            ),
+          ),
         );
 
         const findActiveCustomerAuthorizedSharedAccountCreates = Effect.fn(
           "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountCreates",
         )(
           (
+            clientView: ReplicacheClientViewsSchema.Row,
             customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.Row["tenantId"],
           ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeCustomerAuthorizedSharedAccountView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .selectDistinctOn(
-                            [
-                              activeCustomerAuthorizedSharedAccountView.id,
-                              activeCustomerAuthorizedSharedAccountView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeCustomerAuthorizedSharedAccountView,
-                              ),
-                              "authorizedCustomerId",
-                            ),
-                          )
-                          .from(activeCustomerAuthorizedSharedAccountView)
-                          .where(
-                            and(
-                              eq(
-                                activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
-                                customerId,
-                              ),
-                              eq(
-                                activeCustomerAuthorizedSharedAccountView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      ) as Promise<
-                      Array<
-                        Omit<
-                          WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
-                          "authorizedCustomerId"
-                        >
-                      >
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveManagerAuthorizedSharedAccountCreates = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountCreates",
-        )(
-          (
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagerAuthorizedSharedAccountView)}_creates`,
-                      )
-                      .as(
-                        tx
-                          .selectDistinctOn(
-                            [
-                              activeManagerAuthorizedSharedAccountView.id,
-                              activeManagerAuthorizedSharedAccountView.tenantId,
-                            ],
-                            Struct.omit(
-                              getViewSelectedFields(
-                                activeManagerAuthorizedSharedAccountView,
-                              ),
-                              "authorizedManagerId",
-                            ),
-                          )
-                          .from(activeManagerAuthorizedSharedAccountView)
-                          .where(
-                            and(
-                              eq(
-                                activeManagerAuthorizedSharedAccountView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagerAuthorizedSharedAccountView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      ) as Promise<
-                      Array<
-                        Omit<
-                          WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
-                          "authorizedManagerId"
-                        >
-                      >
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findActivePublishedRoomCreates = Effect.fn(
-          "WorkflowStatuses.Repository.findActivePublishedRoomCreates",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActivePublishedRoomRow["tenantId"],
-          ) =>
-            metadataQb
-              .creates(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activePublishedRoomView)}_creates`)
-                      .as(
-                        tx
-                          .select()
-                          .from(activePublishedRoomView)
-                          .where(
-                            eq(activePublishedRoomView.tenantId, tenantId),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select()
-                      .from(cte)
-                      .where(
-                        inArray(
-                          cte.id,
-                          tx.select({ id: cte.id }).from(cte).except(qb),
-                        ),
-                      ) as Promise<
-                      Array<WorkflowStatusesSchema.ActivePublishedRoomRow>
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findUpdates = Effect.fn(
-          "WorkflowStatuses.Repository.findUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getTableName(table)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            table,
-                            and(
-                              eq(metadataTable.entityId, table.id),
-                              not(
-                                eq(metadataTable.entityVersion, table.version),
-                              ),
-                              eq(metadataTable.tenantId, table.tenantId),
-                            ),
-                          )
-                          .where(eq(table.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getTableName(table)])
-                      .from(cte) as Promise<Array<WorkflowStatusesSchema.Row>>;
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveUpdates = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activeView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeView,
-                            and(
-                              eq(metadataTable.entityId, activeView.id),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeView.version,
-                                ),
-                              ),
-                              eq(metadataTable.tenantId, activeView.tenantId),
-                            ),
-                          )
-                          .where(eq(activeView.tenantId, tenantId)),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activeView)])
-                      .from(cte) as Promise<
-                      Array<WorkflowStatusesSchema.ActiveRow>
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveCustomerAuthorizedSharedAccountUpdates = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountUpdates",
-        )(
-          (
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeCustomerAuthorizedSharedAccountView)}_updates`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeCustomerAuthorizedSharedAccountView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeCustomerAuthorizedSharedAccountView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeCustomerAuthorizedSharedAccountView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activeCustomerAuthorizedSharedAccountView.tenantId,
-                              ),
-                            ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
-                                customerId,
-                              ),
-                              eq(
-                                activeCustomerAuthorizedSharedAccountView.tenantId,
-                                tenantId,
-                              ),
-                            ),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .selectDistinctOn(
-                        [
-                          cte[
-                            getViewName(
-                              activeCustomerAuthorizedSharedAccountView,
-                            )
-                          ].id,
-                          cte[
-                            getViewName(
-                              activeCustomerAuthorizedSharedAccountView,
-                            )
-                          ].tenantId,
-                        ],
-                        Struct.omit(
-                          cte[
-                            getViewName(
-                              activeCustomerAuthorizedSharedAccountView,
-                            )
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeCustomerAuthorizedSharedAccountView)}_creates`,
+                    )
+                    .as(
+                      tx
+                        .selectDistinctOn(
+                          [
+                            activeCustomerAuthorizedSharedAccountView.id,
+                            activeCustomerAuthorizedSharedAccountView.tenantId,
                           ],
-                          "authorizedCustomerId",
-                        ),
-                      )
-                      .from(cte) as Promise<
-                      Array<
-                        Omit<
-                          WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
-                          "authorizedCustomerId"
-                        >
-                      >
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findActiveManagerAuthorizedSharedAccountUpdates = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountUpdates",
-        )(
-          (
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(
-                        `${getViewName(activeManagerAuthorizedSharedAccountView)}_updates`,
-                      )
-                      .as(
-                        qb
-                          .innerJoin(
-                            activeManagerAuthorizedSharedAccountView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activeManagerAuthorizedSharedAccountView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activeManagerAuthorizedSharedAccountView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activeManagerAuthorizedSharedAccountView.tenantId,
-                              ),
+                          Struct.omit(
+                            getViewSelectedFields(
+                              activeCustomerAuthorizedSharedAccountView,
                             ),
-                          )
-                          .where(
-                            and(
-                              eq(
-                                activeManagerAuthorizedSharedAccountView.authorizedManagerId,
-                                managerId,
-                              ),
-                              eq(
-                                activeManagerAuthorizedSharedAccountView.tenantId,
-                                tenantId,
-                              ),
-                            ),
+                            "authorizedCustomerId",
                           ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .selectDistinctOn(
-                        [
-                          cte[
-                            getViewName(
-                              activeManagerAuthorizedSharedAccountView,
-                            )
-                          ].id,
-                          cte[
-                            getViewName(
-                              activeManagerAuthorizedSharedAccountView,
-                            )
-                          ].tenantId,
-                        ],
-                        Struct.omit(
-                          cte[
-                            getViewName(
-                              activeManagerAuthorizedSharedAccountView,
-                            )
-                          ],
-                          "authorizedManagerId",
-                        ),
-                      )
-                      .from(cte) as Promise<
-                      Array<
-                        Omit<
-                          WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
-                          "authorizedManagerId"
-                        >
-                      >
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findActivePublishedRoomUpdates = Effect.fn(
-          "WorkflowStatuses.Repository.findActivePublishedRoomUpdates",
-        )(
-          (
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActivePublishedRoomRow["tenantId"],
-          ) =>
-            metadataQb
-              .updates(getTableName(table), clientGroupId, tenantId)
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) => {
-                    const cte = tx
-                      .$with(`${getViewName(activePublishedRoomView)}_updates`)
-                      .as(
-                        qb
-                          .innerJoin(
-                            activePublishedRoomView,
-                            and(
-                              eq(
-                                metadataTable.entityId,
-                                activePublishedRoomView.id,
-                              ),
-                              not(
-                                eq(
-                                  metadataTable.entityVersion,
-                                  activePublishedRoomView.version,
-                                ),
-                              ),
-                              eq(
-                                metadataTable.tenantId,
-                                activePublishedRoomView.tenantId,
-                              ),
-                            ),
-                          )
-                          .where(
-                            eq(activePublishedRoomView.tenantId, tenantId),
-                          ),
-                      );
-
-                    return tx
-                      .with(cte)
-                      .select(cte[getViewName(activePublishedRoomView)])
-                      .from(cte) as Promise<
-                      Array<WorkflowStatusesSchema.ActivePublishedRoomRow>
-                    >;
-                  }),
-                ),
-              ),
-        );
-
-        const findDeletes = Effect.fn(
-          "WorkflowStatuses.Repository.findDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.Row["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: table.id })
-                        .from(table)
-                        .where(eq(table.tenantId, tenantId)),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveDeletes = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveDeletes",
-        )(
-          (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activeView.id })
-                        .from(activeView)
-                        .where(eq(activeView.tenantId, tenantId)),
-                    ),
-                  ),
-                ),
-              ),
-        );
-
-        const findActiveCustomerAuthorizedSharedAccountDeletes = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountDeletes",
-        )(
-          (
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["tenantId"],
-          ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({
-                          id: activeCustomerAuthorizedSharedAccountView.id,
-                        })
+                        )
                         .from(activeCustomerAuthorizedSharedAccountView)
                         .where(
                           and(
@@ -2365,40 +1652,62 @@ export namespace WorkflowStatuses {
                             ),
                             eq(
                               activeCustomerAuthorizedSharedAccountView.tenantId,
-                              tenantId,
+                              clientView.tenantId,
                             ),
                           ),
                         ),
-                    ),
-                  ),
-                ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    ) as Promise<
+                    Array<
+                      Omit<
+                        WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
+                        "authorizedCustomerId"
+                      >
+                    >
+                  >;
+                }),
               ),
+            ),
         );
 
-        const findActiveManagerAuthorizedSharedAccountDeletes = Effect.fn(
-          "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountDeletes",
+        const findActiveManagerAuthorizedSharedAccountCreates = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountCreates",
         )(
           (
+            clientView: ReplicacheClientViewsSchema.Row,
             managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
           ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeManagerAuthorizedSharedAccountView)}_creates`,
+                    )
+                    .as(
                       tx
-                        .select({
-                          id: activeManagerAuthorizedSharedAccountView.id,
-                        })
+                        .selectDistinctOn(
+                          [
+                            activeManagerAuthorizedSharedAccountView.id,
+                            activeManagerAuthorizedSharedAccountView.tenantId,
+                          ],
+                          Struct.omit(
+                            getViewSelectedFields(
+                              activeManagerAuthorizedSharedAccountView,
+                            ),
+                            "authorizedManagerId",
+                          ),
+                        )
                         .from(activeManagerAuthorizedSharedAccountView)
                         .where(
                           and(
@@ -2408,61 +1717,479 @@ export namespace WorkflowStatuses {
                             ),
                             eq(
                               activeManagerAuthorizedSharedAccountView.tenantId,
-                              tenantId,
+                              clientView.tenantId,
                             ),
                           ),
                         ),
-                    ),
-                  ),
-                ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    ) as Promise<
+                    Array<
+                      Omit<
+                        WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
+                        "authorizedManagerId"
+                      >
+                    >
+                  >;
+                }),
               ),
+            ),
         );
 
-        const findPublishedRoomDeletes = Effect.fn(
-          "WorkflowStatuses.Repository.findPublishedRoomDeletes",
+        const findActivePublishedRoomCreates = Effect.fn(
+          "WorkflowStatuses.Repository.findActivePublishedRoomCreates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activePublishedRoomView)}_creates`)
+                  .as(
+                    tx
+                      .select()
+                      .from(activePublishedRoomView)
+                      .where(
+                        eq(
+                          activePublishedRoomView.tenantId,
+                          clientView.tenantId,
+                        ),
+                      ),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  ) as Promise<
+                  Array<WorkflowStatusesSchema.ActivePublishedRoomRow>
+                >;
+              }),
+            ),
+          ),
+        );
+
+        const findUpdates = Effect.fn(
+          "WorkflowStatuses.Repository.findUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getTableName(table)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        table,
+                        and(
+                          eq(entriesTable.entityId, table.id),
+                          not(eq(entriesTable.entityVersion, table.version)),
+                          eq(entriesTable.tenantId, table.tenantId),
+                        ),
+                      )
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getTableName(table)])
+                  .from(cte) as Promise<Array<WorkflowStatusesSchema.Row>>;
+              }),
+            ),
+          ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte) as Promise<
+                  Array<WorkflowStatusesSchema.ActiveRow>
+                >;
+              }),
+            ),
+          ),
+        );
+
+        const findActiveCustomerAuthorizedSharedAccountUpdates = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountUpdates",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActivePublishedRoomRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
           ) =>
-            metadataQb
-              .deletes(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
-              .pipe(
-                Effect.flatMap((qb) =>
-                  db.useTransaction((tx) =>
-                    qb.except(
-                      tx
-                        .select({ id: activePublishedRoomView.id })
-                        .from(activePublishedRoomView)
-                        .where(eq(activePublishedRoomView.tenantId, tenantId)),
-                    ),
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeCustomerAuthorizedSharedAccountView)}_updates`,
+                    )
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeCustomerAuthorizedSharedAccountView,
+                          and(
+                            eq(
+                              entriesTable.entityId,
+                              activeCustomerAuthorizedSharedAccountView.id,
+                            ),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeCustomerAuthorizedSharedAccountView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeCustomerAuthorizedSharedAccountView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
+                              customerId,
+                            ),
+                            eq(
+                              activeCustomerAuthorizedSharedAccountView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .selectDistinctOn(
+                      [
+                        cte[
+                          getViewName(activeCustomerAuthorizedSharedAccountView)
+                        ].id,
+                        cte[
+                          getViewName(activeCustomerAuthorizedSharedAccountView)
+                        ].tenantId,
+                      ],
+                      Struct.omit(
+                        cte[
+                          getViewName(activeCustomerAuthorizedSharedAccountView)
+                        ],
+                        "authorizedCustomerId",
+                      ),
+                    )
+                    .from(cte) as Promise<
+                    Array<
+                      Omit<
+                        WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
+                        "authorizedCustomerId"
+                      >
+                    >
+                  >;
+                }),
+              ),
+            ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountUpdates = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountUpdates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+          ) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(
+                      `${getViewName(activeManagerAuthorizedSharedAccountView)}_updates`,
+                    )
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeManagerAuthorizedSharedAccountView,
+                          and(
+                            eq(
+                              entriesTable.entityId,
+                              activeManagerAuthorizedSharedAccountView.id,
+                            ),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeManagerAuthorizedSharedAccountView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeManagerAuthorizedSharedAccountView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(
+                              activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                              managerId,
+                            ),
+                            eq(
+                              activeManagerAuthorizedSharedAccountView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .selectDistinctOn(
+                      [
+                        cte[
+                          getViewName(activeManagerAuthorizedSharedAccountView)
+                        ].id,
+                        cte[
+                          getViewName(activeManagerAuthorizedSharedAccountView)
+                        ].tenantId,
+                      ],
+                      Struct.omit(
+                        cte[
+                          getViewName(activeManagerAuthorizedSharedAccountView)
+                        ],
+                        "authorizedManagerId",
+                      ),
+                    )
+                    .from(cte) as Promise<
+                    Array<
+                      Omit<
+                        WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
+                        "authorizedManagerId"
+                      >
+                    >
+                  >;
+                }),
+              ),
+            ),
+        );
+
+        const findActivePublishedRoomUpdates = Effect.fn(
+          "WorkflowStatuses.Repository.findActivePublishedRoomUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activePublishedRoomView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activePublishedRoomView,
+                        and(
+                          eq(entriesTable.entityId, activePublishedRoomView.id),
+                          not(
+                            eq(
+                              entriesTable.entityVersion,
+                              activePublishedRoomView.version,
+                            ),
+                          ),
+                          eq(
+                            entriesTable.tenantId,
+                            activePublishedRoomView.tenantId,
+                          ),
+                        ),
+                      )
+                      .where(
+                        eq(
+                          activePublishedRoomView.tenantId,
+                          clientView.tenantId,
+                        ),
+                      ),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activePublishedRoomView)])
+                  .from(cte) as Promise<
+                  Array<WorkflowStatusesSchema.ActivePublishedRoomRow>
+                >;
+              }),
+            ),
+          ),
+        );
+
+        const findDeletes = Effect.fn(
+          "WorkflowStatuses.Repository.findDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: table.id })
+                      .from(table)
+                      .where(eq(table.tenantId, clientView.tenantId)),
                   ),
                 ),
               ),
+            ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveCustomerAuthorizedSharedAccountDeletes = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({
+                        id: activeCustomerAuthorizedSharedAccountView.id,
+                      })
+                      .from(activeCustomerAuthorizedSharedAccountView)
+                      .where(
+                        and(
+                          eq(
+                            activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
+                            customerId,
+                          ),
+                          eq(
+                            activeCustomerAuthorizedSharedAccountView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveManagerAuthorizedSharedAccountDeletes = Effect.fn(
+          "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({
+                        id: activeManagerAuthorizedSharedAccountView.id,
+                      })
+                      .from(activeManagerAuthorizedSharedAccountView)
+                      .where(
+                        and(
+                          eq(
+                            activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                            managerId,
+                          ),
+                          eq(
+                            activeManagerAuthorizedSharedAccountView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActivePublishedRoomDeletes = Effect.fn(
+          "WorkflowStatuses.Repository.findActivePublishedRoomDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activePublishedRoomView.id })
+                      .from(activePublishedRoomView)
+                      .where(
+                        eq(
+                          activePublishedRoomView.tenantId,
+                          clientView.tenantId,
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
         );
 
         const findFastForward = Effect.fn(
           "WorkflowStatuses.Repository.findFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<WorkflowStatusesSchema.Row["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -2473,11 +2200,11 @@ export namespace WorkflowStatuses {
                           .innerJoin(
                             table,
                             and(
-                              eq(metadataTable.entityId, table.id),
+                              eq(entriesTable.entityId, table.id),
                               notInArray(table.id, excludeIds),
                             ),
                           )
-                          .where(eq(table.tenantId, tenantId)),
+                          .where(eq(table.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -2493,18 +2220,11 @@ export namespace WorkflowStatuses {
           "WorkflowStatuses.Repository.findActiveFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<WorkflowStatusesSchema.ActiveRow["id"]>,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -2515,11 +2235,11 @@ export namespace WorkflowStatuses {
                           .innerJoin(
                             activeView,
                             and(
-                              eq(metadataTable.entityId, activeView.id),
+                              eq(entriesTable.entityId, activeView.id),
                               notInArray(activeView.id, excludeIds),
                             ),
                           )
-                          .where(eq(activeView.tenantId, tenantId)),
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
                       );
 
                     return tx
@@ -2537,21 +2257,14 @@ export namespace WorkflowStatuses {
           "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountFastForward",
         )(
           (
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
               WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["id"]
             >,
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -2565,7 +2278,7 @@ export namespace WorkflowStatuses {
                             activeCustomerAuthorizedSharedAccountView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activeCustomerAuthorizedSharedAccountView.id,
                               ),
                               notInArray(
@@ -2582,7 +2295,7 @@ export namespace WorkflowStatuses {
                               ),
                               eq(
                                 activeCustomerAuthorizedSharedAccountView.tenantId,
-                                tenantId,
+                                clientView.tenantId,
                               ),
                             ),
                           ),
@@ -2629,21 +2342,14 @@ export namespace WorkflowStatuses {
           "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountFastForward",
         )(
           (
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
               WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["id"]
             >,
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -2657,7 +2363,7 @@ export namespace WorkflowStatuses {
                             activeManagerAuthorizedSharedAccountView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activeManagerAuthorizedSharedAccountView.id,
                               ),
                               notInArray(
@@ -2674,7 +2380,7 @@ export namespace WorkflowStatuses {
                               ),
                               eq(
                                 activeManagerAuthorizedSharedAccountView.tenantId,
-                                tenantId,
+                                clientView.tenantId,
                               ),
                             ),
                           ),
@@ -2721,20 +2427,13 @@ export namespace WorkflowStatuses {
           "WorkflowStatuses.Repository.findActivePublishedRoomFastForward",
         )(
           (
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: WorkflowStatusesSchema.ActivePublishedRoomRow["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
               WorkflowStatusesSchema.ActivePublishedRoomRow["id"]
             >,
           ) =>
-            metadataQb
-              .fastForward(
-                getTableName(table),
-                clientViewVersion,
-                clientGroupId,
-                tenantId,
-              )
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
               .pipe(
                 Effect.flatMap((qb) =>
                   db.useTransaction((tx) => {
@@ -2748,7 +2447,7 @@ export namespace WorkflowStatuses {
                             activePublishedRoomView,
                             and(
                               eq(
-                                metadataTable.entityId,
+                                entriesTable.entityId,
                                 activePublishedRoomView.id,
                               ),
                               notInArray(
@@ -2758,7 +2457,10 @@ export namespace WorkflowStatuses {
                             ),
                           )
                           .where(
-                            eq(activePublishedRoomView.tenantId, tenantId),
+                            eq(
+                              activePublishedRoomView.tenantId,
+                              clientView.tenantId,
+                            ),
                           ),
                       );
 
@@ -2975,7 +2677,7 @@ export namespace WorkflowStatuses {
           findActiveDeletes,
           findActiveCustomerAuthorizedSharedAccountDeletes,
           findActiveManagerAuthorizedSharedAccountDeletes,
-          findPublishedRoomDeletes,
+          findActivePublishedRoomDeletes,
           findFastForward,
           findActiveFastForward,
           findActiveCustomerAuthorizedSharedAccountFastForward,
@@ -2989,6 +2691,78 @@ export namespace WorkflowStatuses {
           updateById,
           deleteById,
         } as const;
+      }),
+    },
+  ) {}
+
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/workflows/StatusesQueries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder({
+            entity: getTableName(WorkflowStatusesSchema.table.definition),
+          })
+            .query(AccessControl.permission("workflow_statuses:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .query(AccessControl.permission("active_workflow_statuses:read"), {
+              findCreates: repository.findActiveCreates,
+              findUpdates: repository.findActiveUpdates,
+              findDeletes: repository.findActiveDeletes,
+              fastForward: repository.findActiveFastForward,
+            })
+            .query(
+              AccessControl.permission(
+                "active_customer_authorized_shared_account_workflow_statuses:read",
+              ),
+              {
+                findCreates:
+                  repository.findActiveCustomerAuthorizedSharedAccountCreates,
+                findUpdates:
+                  repository.findActiveCustomerAuthorizedSharedAccountUpdates,
+                findDeletes:
+                  repository.findActiveCustomerAuthorizedSharedAccountDeletes,
+                fastForward:
+                  repository.findActiveCustomerAuthorizedSharedAccountFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_manager_authorized_shared_account_workflow_statuses:read",
+              ),
+              {
+                findCreates:
+                  repository.findActiveManagerAuthorizedSharedAccountCreates,
+                findUpdates:
+                  repository.findActiveManagerAuthorizedSharedAccountUpdates,
+                findDeletes:
+                  repository.findActiveManagerAuthorizedSharedAccountDeletes,
+                fastForward:
+                  repository.findActiveManagerAuthorizedSharedAccountFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_published_room_workflow_statuses:read",
+              ),
+              {
+                findCreates: repository.findActivePublishedRoomCreates,
+                findUpdates: repository.findActivePublishedRoomUpdates,
+                findDeletes: repository.findActivePublishedRoomDeletes,
+                fastForward: repository.findActivePublishedRoomFastForward,
+              },
+            )
+            .build();
+
+        return { differenceResolver } as const;
       }),
     },
   ) {}
@@ -3179,7 +2953,6 @@ export namespace WorkflowStatuses {
                     Effect.flatMap((index) =>
                       repository.create({ ...workflowStatus, index, tenantId }),
                     ),
-                    Effect.map(({ version: _, ...dto }) => dto),
                     Effect.tap(notifyAppend),
                   ),
             ),
@@ -3200,10 +2973,7 @@ export namespace WorkflowStatuses {
               ({ id, ...workflowStatus }, session) =>
                 repository
                   .updateById(id, workflowStatus, session.tenantId)
-                  .pipe(
-                    Effect.map(({ version: _, ...dto }) => dto),
-                    Effect.tap(notifyEdit),
-                  ),
+                  .pipe(Effect.tap(notifyEdit)),
             ),
           },
         );
@@ -3258,17 +3028,13 @@ export namespace WorkflowStatuses {
                     session.tenantId,
                   );
 
-                  return yield* repository
-                    .upsertMany(
-                      Array.map(slice, (status, i) => ({
-                        ...status,
-                        index: status.index + (i === 0 ? delta : shift),
-                        updatedAt,
-                      })),
-                    )
-                    .pipe(
-                      Effect.map(Array.map(({ version: _, ...dto }) => dto)),
-                    );
+                  return yield* repository.upsertMany(
+                    Array.map(slice, (status, i) => ({
+                      ...status,
+                      index: status.index + (i === 0 ? delta : shift),
+                      updatedAt,
+                    })),
+                  );
                 }).pipe(
                   Effect.tap((changed) =>
                     Array.head(changed).pipe(Effect.map(notifyReorder)),
@@ -3297,14 +3063,10 @@ export namespace WorkflowStatuses {
                     session.tenantId,
                   );
 
-                  const deleted = yield* repository
-                    .deleteById(id, session.tenantId)
-                    .pipe(
-                      Effect.map(({ version: _, ...dto }) => ({
-                        ...dto,
-                        deletedAt,
-                      })),
-                    );
+                  const deleted = yield* repository.deleteById(
+                    id,
+                    session.tenantId,
+                  );
 
                   yield* repository.upsertMany(
                     Array.filterMap(slice, (status, i) =>
@@ -3312,7 +3074,7 @@ export namespace WorkflowStatuses {
                         ? Option.none()
                         : Option.some({
                             ...status,
-                            index: Number.decrement(status.index),
+                            index: status.index - 1,
                             updatedAt: deletedAt,
                           }),
                     ),

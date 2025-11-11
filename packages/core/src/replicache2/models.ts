@@ -1,6 +1,6 @@
 import * as Array from "effect/Array";
-import * as EffectRecord from "effect/Record";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
 import { Models } from "../models2";
@@ -9,7 +9,7 @@ import { TablesContract } from "../tables2/contract";
 import type {
   ReplicacheClientGroupsSchema,
   ReplicacheClientsSchema,
-  ReplicacheClientViewMetadataSchema,
+  ReplicacheClientViewEntriesSchema,
   ReplicacheClientViewsSchema,
   ReplicacheMetaSchema,
 } from "./schemas";
@@ -93,11 +93,8 @@ export namespace ReplicacheClientViewsModel {
     );
 }
 
-export namespace ReplicacheClientViewMetadataModel {
-  export const entities = Array.map(
-    EffectRecord.values(Models.syncTables),
-    (table) => table.name,
-  );
+export namespace ReplicacheClientViewEntriesModel {
+  export const entities = Array.map(Models.syncTables, Struct.get("name"));
   export type Entity = (typeof entities)[number];
 
   export class Record extends Schema.Class<Record>("Record")({
@@ -109,9 +106,9 @@ export namespace ReplicacheClientViewMetadataModel {
     tenantId: ColumnsContract.TenantId,
   }) {}
 
-  export const tableName = "replicache_client_view_metadata";
+  export const tableName = "replicache_client_view_entry";
   export const table =
-    TablesContract.makeInternalTable<ReplicacheClientViewMetadataSchema.Table>()(
+    TablesContract.makeInternalTable<ReplicacheClientViewEntriesSchema.Table>()(
       tableName,
       Record,
     );

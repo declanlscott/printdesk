@@ -14,14 +14,13 @@ import {
 import * as Array from "effect/Array";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
-import * as Struct from "effect/Struct";
 
 import { Database } from "../database2";
 import { Constants } from "../utils/constants";
 import {
   ReplicacheClientGroupsSchema,
   ReplicacheClientsSchema,
-  ReplicacheClientViewMetadataSchema,
+  ReplicacheClientViewEntriesSchema,
   ReplicacheClientViewsSchema,
 } from "./schemas";
 
@@ -32,6 +31,7 @@ export namespace Replicache {
   export class ClientGroupsRepository extends Effect.Service<ClientGroupsRepository>()(
     "@printdesk/core/replicache/ClientGroupsRepository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -115,6 +115,7 @@ export namespace Replicache {
   export class ClientsRepository extends Effect.Service<ClientsRepository>()(
     "@printdesk/core/replicache/ClientsRepository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -224,6 +225,7 @@ export namespace Replicache {
   export class ClientViewsRepository extends Effect.Service<ClientViewsRepository>()(
     "@printdesk/core/replicache/ClientViewsRepository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -299,7 +301,7 @@ export namespace Replicache {
               )
               .pipe(
                 Effect.flatMap(Array.head),
-                Effect.map(Struct.get("version")),
+                Effect.map((row) => row.version!),
               ),
         );
 
@@ -338,43 +340,43 @@ export namespace Replicache {
     },
   ) {}
 
-  export class ClientViewMetadataRepository extends Effect.Service<ClientViewMetadataRepository>()(
-    "@printdesk/core/replicache/ClientViewMetadataRepository",
+  export class ClientViewEntriesRepository extends Effect.Service<ClientViewEntriesRepository>()(
+    "@printdesk/core/replicache/ClientViewEntriesRepository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientViewMetadataSchema.table.definition;
+        const table = ReplicacheClientViewEntriesSchema.table.definition;
 
-        const upsertMany = Effect.fn(
-          "Replicache.ClientViewMetadata.upsertMany",
-        )((values: Array<InferInsertModel<typeof table>>) =>
-          db.useTransaction((tx) =>
-            tx
-              .insert(table)
-              .values(values)
-              .onConflictDoUpdate({
-                target: [
-                  table.clientGroupId,
-                  table.entity,
-                  table.entityId,
-                  table.tenantId,
-                ],
-                set: {
-                  entityVersion: sql`EXCLUDED.${table.entityVersion}`,
-                  clientViewVersion: sql`EXCLUDED.${table.clientViewVersion}`,
-                },
-              })
-              .returning(),
-          ),
+        const upsertMany = Effect.fn("Replicache.ClientViewEntries.upsertMany")(
+          (values: Array<InferInsertModel<typeof table>>) =>
+            db.useTransaction((tx) =>
+              tx
+                .insert(table)
+                .values(values)
+                .onConflictDoUpdate({
+                  target: [
+                    table.clientGroupId,
+                    table.entity,
+                    table.entityId,
+                    table.tenantId,
+                  ],
+                  set: {
+                    entityVersion: sql`EXCLUDED.${table.entityVersion}`,
+                    clientViewVersion: sql`EXCLUDED.${table.clientViewVersion}`,
+                  },
+                })
+                .returning(),
+            ),
         );
 
         const deleteByGroupIds = Effect.fn(
-          "Replicache.ClientViewMetadata.deleteByGroupIds",
+          "Replicache.ClientViewEntries.deleteByGroupIds",
         )(
           (
             clientGroupIds: ReadonlyArray<
-              ReplicacheClientViewMetadataSchema.Row["clientGroupId"]
+              ReplicacheClientViewEntriesSchema.Row["clientGroupId"]
             >,
           ) =>
             db.useTransaction((tx) =>
@@ -399,22 +401,20 @@ export namespace Replicache {
     },
   ) {}
 
-  export class ClientViewMetadataQueryBuilder extends Effect.Service<ClientViewMetadataQueryBuilder>()(
-    "@printdesk/core/replicache/ClientViewMetadataQueryBuilder",
+  export class ClientViewEntriesQueryBuilder extends Effect.Service<ClientViewEntriesQueryBuilder>()(
+    "@printdesk/core/replicache/ClientViewEntriesQueryBuilder",
     {
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = ReplicacheClientViewMetadataSchema.table.definition;
+        const table = ReplicacheClientViewEntriesSchema.table.definition;
 
         const creates = Effect.fn(
-          "Replicache.ClientViewMetadataQueryBuilder.creates",
+          "Replicache.ClientViewEntriesQueryBuilder.creates",
         )(
           <TEntity extends Models.SyncTableName>(
             entity: TEntity,
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ReplicacheClientViewMetadataSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
           ) =>
             db.useDynamic((tx) =>
               tx
@@ -423,9 +423,9 @@ export namespace Replicache {
                 .where(
                   and(
                     eq(table.entity, entity),
-                    eq(table.clientGroupId, clientGroupId),
-                    lte(table.clientViewVersion, clientViewVersion),
-                    eq(table.tenantId, tenantId),
+                    lte(table.clientViewVersion, clientView.clientVersion),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
                   ),
                 )
                 .$dynamic(),
@@ -433,12 +433,11 @@ export namespace Replicache {
         );
 
         const updates = Effect.fn(
-          "Replicache.ClientViewMetadataQueryBuilder.updates",
+          "Replicache.ClientViewEntriesQueryBuilder.updates",
         )(
           <TEntity extends Models.SyncTableName>(
             entity: TEntity,
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ReplicacheClientViewMetadataSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
           ) =>
             db.useDynamic((tx) =>
               tx
@@ -447,8 +446,8 @@ export namespace Replicache {
                 .where(
                   and(
                     eq(table.entity, entity),
-                    eq(table.clientGroupId, clientGroupId),
-                    eq(table.tenantId, tenantId),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
                   ),
                 )
                 .$dynamic(),
@@ -456,13 +455,11 @@ export namespace Replicache {
         );
 
         const deletes = Effect.fn(
-          "Replicache.ClientViewMetadataQueryBuilder.deletes",
+          "Replicache.ClientViewEntriesQueryBuilder.deletes",
         )(
           <TEntity extends Models.SyncTableName>(
             entity: TEntity,
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ReplicacheClientViewMetadataSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
           ) =>
             db.useDynamic((tx) =>
               tx
@@ -473,13 +470,13 @@ export namespace Replicache {
                     eq(table.entity, entity),
                     or(
                       and(
-                        lte(table.clientViewVersion, clientViewVersion),
+                        lte(table.clientViewVersion, clientView.clientVersion),
                         isNotNull(table.entityVersion),
                       ),
-                      gt(table.clientViewVersion, clientViewVersion),
+                      gt(table.clientViewVersion, clientView.clientVersion),
                     ),
-                    eq(table.clientGroupId, clientGroupId),
-                    eq(table.tenantId, tenantId),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
                   ),
                 )
                 .$dynamic(),
@@ -487,13 +484,11 @@ export namespace Replicache {
         );
 
         const fastForward = Effect.fn(
-          "Replicache.ClientViewMetadataQueryBuilder.fastForward",
+          "Replicache.ClientViewEntriesQueryBuilder.fastForward",
         )(
           <TEntity extends Models.SyncTableName>(
             entity: TEntity,
-            clientViewVersion: ReplicacheClientViewMetadataSchema.Row["clientViewVersion"],
-            clientGroupId: ReplicacheClientViewMetadataSchema.Row["clientGroupId"],
-            tenantId: ReplicacheClientViewMetadataSchema.Row["tenantId"],
+            clientView: ReplicacheClientViewsSchema.Row,
           ) =>
             db.useDynamic((tx) =>
               tx
@@ -502,9 +497,9 @@ export namespace Replicache {
                 .where(
                   and(
                     eq(table.entity, entity),
-                    gt(table.clientViewVersion, clientViewVersion),
-                    eq(table.clientGroupId, clientGroupId),
-                    eq(table.tenantId, tenantId),
+                    gt(table.clientViewVersion, clientView.clientVersion),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
                   ),
                 )
                 .$dynamic(),

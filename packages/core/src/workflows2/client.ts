@@ -1,7 +1,6 @@
 import * as Array from "effect/Array";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
-import * as Equal from "effect/Equal";
 import * as Match from "effect/Match";
 import * as Number from "effect/Number";
 import * as Option from "effect/Option";
@@ -15,16 +14,19 @@ import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2/client";
 import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
+import { SharedAccounts } from "../shared-accounts2/client";
 import {
+  RoomWorkflowsContract,
   SharedAccountWorkflowsContract,
   WorkflowStatusesContract,
 } from "./contracts";
 
 import type { ColumnsContract } from "../columns2/contract";
 import type { SharedAccountManagerAuthorizationsContract } from "../shared-accounts2/contracts";
-import type { RoomWorkflowsContract } from "./contracts";
 
 export namespace RoomWorkflows {
+  const table = Models.SyncTables[RoomWorkflowsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/RoomsReadRepository",
     {
@@ -32,24 +34,26 @@ export namespace RoomWorkflows {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.roomWorkflows.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/workflows/client/RoomsWriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
-        const table = yield* Models.SyncTables.roomWorkflows;
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* table.pipe(
+          Effect.flatMap((table) =>
+            Replicache.makeWriteRepository(table, repository),
+          ),
+        );
 
         const updateByRoomId = (
           roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
@@ -60,30 +64,28 @@ export namespace RoomWorkflows {
             >
           >,
         ) =>
-          repository.findAll.pipe(
-            Effect.map(
+          repository
+            .findWhere(
               Array.filterMap((w) =>
-                Equal.equals(w.roomId, roomId)
+                w.roomId === roomId
                   ? Option.some(base.updateById(w.id, () => roomWorkflow))
                   : Option.none(),
               ),
-            ),
-            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-          );
+            )
+            .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
           roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
         ) =>
-          repository.findAll.pipe(
-            Effect.map(
+          repository
+            .findWhere(
               Array.filterMap((w) =>
-                Equal.equals(w.roomId, roomId)
+                w.roomId === roomId
                   ? Option.some(base.deleteById(w.id))
                   : Option.none(),
               ),
-            ),
-            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-          );
+            )
+            .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         return { ...base, updateByRoomId, deleteByRoomId } as const;
       }),
@@ -92,22 +94,26 @@ export namespace RoomWorkflows {
 }
 
 export namespace SharedAccountWorkflows {
+  const table = Models.SyncTables[SharedAccountWorkflowsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/SharedAccountsReadRepository",
     {
       dependencies: [
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
+        SharedAccounts.CustomerAuthorizationsReadRepository.Default,
+        SharedAccounts.ManagerAuthorizationsReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const table = yield* Models.syncTables.sharedAccountWorkflows;
-        const base = yield* Replicache.makeReadRepository(table);
-        const { scan } = yield* Replicache.ReadTransactionManager;
+        const base = yield* table.pipe(
+          Effect.flatMap(Replicache.makeReadRepository),
+        );
 
-        const sharedAccountCustomerAuthorizationsTable =
-          yield* Models.SyncTables.sharedAccountCustomerAuthorizations;
-        const sharedAccountManagerAuthorizationsTable =
-          yield* Models.SyncTables.sharedAccountManagerAuthorizations;
+        const sharedAccountCustomerAuthorizationsRepository =
+          yield* SharedAccounts.CustomerAuthorizationsReadRepository;
+        const sharedAccountManagerAuthorizationsRepository =
+          yield* SharedAccounts.ManagerAuthorizationsReadRepository;
 
         const findActiveCustomerAuthorized = (
           customerId: ColumnsContract.EntityId,
@@ -117,16 +123,13 @@ export namespace SharedAccountWorkflows {
             .findById(id)
             .pipe(
               Effect.flatMap((workflow) =>
-                scan(sharedAccountCustomerAuthorizationsTable).pipe(
-                  Effect.map(
-                    Array.filterMap((authorization) =>
-                      Equal.equals(
-                        authorization.sharedAccountId,
-                        workflow.sharedAccountId,
-                      ) && Equal.equals(authorization.customerId, customerId)
-                        ? Option.some(workflow)
-                        : Option.none(),
-                    ),
+                sharedAccountCustomerAuthorizationsRepository.findWhere(
+                  Array.filterMap((authorization) =>
+                    authorization.sharedAccountId ===
+                      workflow.sharedAccountId &&
+                    authorization.customerId === customerId
+                      ? Option.some(workflow)
+                      : Option.none(),
                   ),
                 ),
               ),
@@ -138,16 +141,12 @@ export namespace SharedAccountWorkflows {
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflow) =>
-              scan(sharedAccountManagerAuthorizationsTable).pipe(
-                Effect.map(
-                  Array.filterMap((authorization) =>
-                    Equal.equals(
-                      authorization.sharedAccountId,
-                      workflow.sharedAccountId,
-                    ) && Equal.equals(authorization.managerId, managerId)
-                      ? Option.some(workflow)
-                      : Option.none(),
-                  ),
+              sharedAccountManagerAuthorizationsRepository.findWhere(
+                Array.filterMap((authorization) =>
+                  authorization.sharedAccountId === workflow.sharedAccountId &&
+                  authorization.managerId === managerId
+                    ? Option.some(workflow)
+                    : Option.none(),
                 ),
               ),
             ),
@@ -166,15 +165,13 @@ export namespace SharedAccountWorkflows {
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/workflows/client/SharedAccountsWriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([
-        Models.SyncTables.sharedAccountWorkflows,
-        ReadRepository,
-      ]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
@@ -229,6 +226,8 @@ export namespace SharedAccountWorkflows {
 }
 
 export namespace WorkflowStatuses {
+  const table = Models.SyncTables[WorkflowStatusesContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/StatusesReadRepository",
     {
@@ -237,24 +236,26 @@ export namespace WorkflowStatuses {
         Replicache.ReadTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
-        const table = yield* Models.syncTables.workflowStatuses;
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* table.pipe(
+          Effect.flatMap(Replicache.makeReadRepository),
+        );
 
         const findLastByWorkflowId = (workflowId: ColumnsContract.EntityId) =>
-          base.findAll.pipe(
-            Effect.map(
+          base
+            .findWhere(
               Array.filterMap((ws) =>
-                Equal.equals(ws.roomWorkflowId, workflowId) ||
-                Equal.equals(ws.sharedAccountWorkflowId, workflowId)
+                ws.roomWorkflowId === workflowId ||
+                ws.sharedAccountWorkflowId === workflowId
                   ? Option.some(ws)
                   : Option.none(),
               ),
-            ),
-            Effect.map(
-              Array.sortBy(Order.mapInput(Order.number, Struct.get("index"))),
-            ),
-            Effect.flatMap(Array.last),
-          );
+            )
+            .pipe(
+              Effect.map(
+                Array.sortBy(Order.mapInput(Order.number, Struct.get("index"))),
+              ),
+              Effect.flatMap(Array.last),
+            );
 
         const findSlice = (
           id: WorkflowStatusesContract.DataTransferObject["id"],
@@ -262,24 +263,17 @@ export namespace WorkflowStatuses {
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflowStatus) =>
-              base.findAll.pipe(
-                Effect.map(
-                  Array.filterMap((ws) =>
-                    (Equal.equals(
-                      ws.roomWorkflowId,
-                      workflowStatus.roomWorkflowId,
-                    ) ||
-                      Equal.equals(
-                        ws.sharedAccountWorkflowId,
-                        workflowStatus.sharedAccountWorkflowId,
-                      )) &&
-                    Number.between(ws.index, {
-                      minimum: Number.min(workflowStatus.index, index),
-                      maximum: Number.max(workflowStatus.index, index),
-                    })
-                      ? Option.some(ws)
-                      : Option.none(),
-                  ),
+              base.findWhere(
+                Array.filterMap((ws) =>
+                  (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
+                    ws.sharedAccountWorkflowId ===
+                      workflowStatus.sharedAccountWorkflowId) &&
+                  Number.between(ws.index, {
+                    minimum: Number.min(workflowStatus.index, index),
+                    maximum: Number.max(workflowStatus.index, index),
+                  })
+                    ? Option.some(ws)
+                    : Option.none(),
                 ),
               ),
             ),
@@ -295,24 +289,14 @@ export namespace WorkflowStatuses {
             .findById(id)
             .pipe(
               Effect.flatMap((workflowStatus) =>
-                base.findAll.pipe(
-                  Effect.map(
-                    Array.filterMap((ws) =>
-                      (Equal.equals(
-                        ws.roomWorkflowId,
-                        workflowStatus.roomWorkflowId,
-                      ) ||
-                        Equal.equals(
-                          ws.sharedAccountWorkflowId,
-                          workflowStatus.sharedAccountWorkflowId,
-                        )) &&
-                      Number.greaterThanOrEqualTo(
-                        ws.index,
-                        workflowStatus.index,
-                      )
-                        ? Option.some(ws)
-                        : Option.none(),
-                    ),
+                base.findWhere(
+                  Array.filterMap((ws) =>
+                    (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
+                      ws.sharedAccountWorkflowId ===
+                        workflowStatus.sharedAccountWorkflowId) &&
+                    ws.index >= workflowStatus.index
+                      ? Option.some(ws)
+                      : Option.none(),
                   ),
                 ),
               ),
@@ -331,15 +315,13 @@ export namespace WorkflowStatuses {
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/workflows/client/StatusesWriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([
-        Models.SyncTables.workflowStatuses,
-        ReadRepository,
-      ]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
@@ -565,7 +547,7 @@ export namespace WorkflowStatuses {
                       ? Option.none()
                       : Option.some(
                           writeRepository.updateById(status.id, () => ({
-                            index: Number.decrement(status.index),
+                            index: status.index - 1,
                             updatedAt: deletedAt,
                           })),
                         ),

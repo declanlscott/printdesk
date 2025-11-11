@@ -7,6 +7,8 @@ import { Replicache } from "../replicache2/client";
 import { TenantsContract } from "./contracts";
 
 export namespace Tenants {
+  const table = Models.SyncTables[TenantsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/tenants/client/ReadRepository",
     {
@@ -14,21 +16,20 @@ export namespace Tenants {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.tenants.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/tenants/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([Models.SyncTables.tenants, ReadRepository]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },

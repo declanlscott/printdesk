@@ -12,6 +12,8 @@ import { Replicache } from "../replicache2/client";
 import { CommentsContract } from "./contract";
 
 export namespace Comments {
+  const table = Models.SyncTables[CommentsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/comments/client/ReadRepository",
     {
@@ -19,21 +21,20 @@ export namespace Comments {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.comments.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/comments/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([Models.SyncTables.comments, ReadRepository]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },

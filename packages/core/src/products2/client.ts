@@ -1,6 +1,5 @@
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
-import * as Equal from "effect/Equal";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
@@ -13,6 +12,8 @@ import { Replicache } from "../replicache2/client";
 import { ProductsContract } from "./contract";
 
 export namespace Products {
+  const table = Models.SyncTables[ProductsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/products/client/ReadRepository",
     {
@@ -20,24 +21,26 @@ export namespace Products {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.products.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/products/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
-        const table = yield* Models.SyncTables.products;
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* table.pipe(
+          Effect.flatMap((table) =>
+            Replicache.makeWriteRepository(table, repository),
+          ),
+        );
 
         const updateByRoomId = (
           roomId: ProductsContract.DataTransferObject["roomId"],
@@ -48,30 +51,28 @@ export namespace Products {
             >
           >,
         ) =>
-          repository.findAll.pipe(
-            Effect.map(
+          repository
+            .findWhere(
               Array.filterMap((p) =>
-                Equal.equals(p.roomId, roomId)
+                p.roomId === roomId
                   ? Option.some(base.updateById(p.id, () => product))
                   : Option.none(),
               ),
-            ),
-            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-          );
+            )
+            .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
           roomId: ProductsContract.DataTransferObject["roomId"],
         ) =>
-          repository.findAll.pipe(
-            Effect.map(
+          repository
+            .findWhere(
               Array.filterMap((p) =>
-                Equal.equals(p.roomId, roomId)
+                p.roomId === roomId
                   ? Option.some(base.deleteById(p.id))
                   : Option.none(),
               ),
-            ),
-            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-          );
+            )
+            .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         return { ...base, updateByRoomId, deleteByRoomId } as const;
       }),

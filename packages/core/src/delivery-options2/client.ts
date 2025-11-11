@@ -1,6 +1,5 @@
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
-import * as Equal from "effect/Equal";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
@@ -13,6 +12,8 @@ import { Replicache } from "../replicache2/client";
 import { DeliveryOptionsContract } from "./contract";
 
 export namespace DeliveryOptions {
+  const table = Models.SyncTables[DeliveryOptionsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/delivery-options/client/ReadRepository",
     {
@@ -20,58 +21,58 @@ export namespace DeliveryOptions {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.deliveryOptions.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/delivery-options/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
-        const table = yield* Models.SyncTables.deliveryOptions;
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* table.pipe(
+          Effect.flatMap((table) =>
+            Replicache.makeWriteRepository(table, repository),
+          ),
+        );
 
         const updateByRoomId = (
           roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
-          announcement: Partial<
+          deliveryOption: Partial<
             Omit<
               DeliveryOptionsContract.DataTransferObject,
               "id" | "roomId" | "tenantId"
             >
           >,
         ) =>
-          repository.findAll.pipe(
-            Effect.map(
+          repository
+            .findWhere(
               Array.filterMap((o) =>
-                Equal.equals(o.roomId, roomId)
-                  ? Option.some(base.updateById(o.id, () => announcement))
+                o.roomId === roomId
+                  ? Option.some(base.updateById(o.id, () => deliveryOption))
                   : Option.none(),
               ),
-            ),
-            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-          );
+            )
+            .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
           roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
         ) =>
-          repository.findAll.pipe(
-            Effect.map(
+          repository
+            .findWhere(
               Array.filterMap((o) =>
-                Equal.equals(o.roomId, roomId)
+                o.roomId === roomId
                   ? Option.some(base.deleteById(o.id))
                   : Option.none(),
               ),
-            ),
-            Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
-          );
+            )
+            .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         return { ...base, updateByRoomId, deleteByRoomId } as const;
       }),
@@ -81,6 +82,7 @@ export namespace DeliveryOptions {
   export class Policies extends Effect.Service<Policies>()(
     "@printdesk/core/delivery-options/Policies",
     {
+      accessors: true,
       dependencies: [ReadRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;

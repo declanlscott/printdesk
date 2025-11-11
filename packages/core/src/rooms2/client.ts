@@ -16,6 +16,8 @@ import { RoomWorkflowsContract } from "../workflows2/contracts";
 import { RoomsContract } from "./contract";
 
 export namespace Rooms {
+  const table = Models.SyncTables[RoomsContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/rooms/client/ReadRepository",
     {
@@ -23,21 +25,20 @@ export namespace Rooms {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.rooms.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/rooms/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([Models.SyncTables.rooms, ReadRepository]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
@@ -131,7 +132,7 @@ export namespace Rooms {
                 ),
               ),
               { concurrency: "unbounded" },
-            ).pipe(Effect.map(Tuple.at(0))),
+            ).pipe(Effect.map(Tuple.getFirst)),
         });
 
         const edit = MutationsContract.makeMutation(RoomsContract.edit, {
@@ -175,7 +176,7 @@ export namespace Rooms {
                 }),
               ),
               { concurrency: "unbounded" },
-            ).pipe(Effect.map(Tuple.at(0))),
+            ).pipe(Effect.map(Tuple.getFirst)),
         });
 
         const delete_ = MutationsContract.makeMutation(RoomsContract.delete_, {
@@ -251,7 +252,7 @@ export namespace Rooms {
                 workflowsRepository.updateByRoomId(id, { deletedAt: null }),
               ),
               { concurrency: "unbounded" },
-            ).pipe(Effect.map(Tuple.at(0))),
+            ).pipe(Effect.map(Tuple.getFirst)),
         });
 
         return {

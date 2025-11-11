@@ -131,7 +131,13 @@ export namespace Replicache {
       const findById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>
         get(table, id);
 
-      return { findAll, findById } as const;
+      const findWhere = <TSuccess>(
+        filter: (
+          all: ReadonlyArray<TTable["DataTransferObject"]["Type"]>,
+        ) => TSuccess,
+      ) => findAll.pipe(Effect.map(filter));
+
+      return { findAll, findById, findWhere } as const;
     });
 
   export const makeWriteRepository = <TTable extends Models.SyncTable>(

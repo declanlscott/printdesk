@@ -13,36 +13,40 @@ import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import { SharedAccounts } from "../shared-accounts2/client";
 import { Users } from "../users2/client";
+import { WorkflowStatuses } from "../workflows2/client";
 import { OrdersContract } from "./contract";
 
 import type { ColumnsContract } from "../columns2/contract";
 
 export namespace Orders {
+  const table = Models.SyncTables[OrdersContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/orders/client/ReadRepository",
     {
       dependencies: [
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
+        WorkflowStatuses.ReadRepository.Default,
+        SharedAccounts.ManagerAuthorizationsReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const table = yield* Models.SyncTables.orders;
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* table.pipe(
+          Effect.flatMap(Replicache.makeReadRepository),
+        );
 
-        const workflowStatusesTable = yield* Models.SyncTables.workflowStatuses;
-        const sharedAccountManagerAuthorizationsTable =
-          yield* Models.SyncTables.sharedAccountManagerAuthorizations;
-
-        const { get, scan } = yield* Replicache.ReadTransactionManager;
+        const workflowStatusesRepository =
+          yield* WorkflowStatuses.ReadRepository;
+        const sharedAccountManagerAuthorizationsRepository =
+          yield* SharedAccounts.ManagerAuthorizationsReadRepository;
 
         const findByIdWithWorkflowStatus = (
           id: OrdersContract.DataTransferObject["id"],
         ) =>
           Effect.gen(function* () {
-            const order = yield* get(table, id);
+            const order = yield* base.findById(id);
 
-            const workflowStatus = yield* get(
-              workflowStatusesTable,
+            const workflowStatus = yield* workflowStatusesRepository.findById(
               order.roomWorkflowStatusId ?? order.sharedAccountWorkflowStatusId,
             );
 
@@ -52,39 +56,32 @@ export namespace Orders {
         const findByWorkflowStatusId = (
           workflowStatusId: ColumnsContract.EntityId,
         ) =>
-          base.findAll.pipe(
-            Effect.map(
-              Array.filterMap((order) =>
-                Equal.equals(order.roomWorkflowStatusId, workflowStatusId) ||
-                Equal.equals(
-                  order.sharedAccountWorkflowStatusId,
-                  workflowStatusId,
-                )
-                  ? Option.some(order)
-                  : Option.none(),
-              ),
+          base.findWhere(
+            Array.filterMap((order) =>
+              order.roomWorkflowStatusId === workflowStatusId ||
+              order.sharedAccountWorkflowStatusId === workflowStatusId
+                ? Option.some(order)
+                : Option.none(),
             ),
           );
 
         const findActiveManagerIds = (
           id: OrdersContract.DataTransferObject["id"],
         ) =>
-          get(table, id).pipe(
-            Effect.flatMap((order) =>
-              scan(sharedAccountManagerAuthorizationsTable).pipe(
-                Effect.map(
+          base
+            .findById(id)
+            .pipe(
+              Effect.flatMap((order) =>
+                sharedAccountManagerAuthorizationsRepository.findWhere(
                   Array.filterMap((authorization) =>
-                    Equal.equals(
-                      authorization.sharedAccountId,
-                      order.sharedAccountId,
-                    ) && Equal.equals(authorization.deletedAt, null)
+                    authorization.sharedAccountId === order.sharedAccountId &&
+                    authorization.deletedAt === null
                       ? Option.some(authorization.managerId)
                       : Option.none(),
                   ),
                 ),
               ),
-            ),
-          );
+            );
 
         return {
           ...base,
@@ -99,12 +96,13 @@ export namespace Orders {
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/orders/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([Models.SyncTables.orders, ReadRepository]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
@@ -158,8 +156,8 @@ export namespace Orders {
                   .pipe(
                     Effect.map(
                       (order) =>
-                        Equal.equals(order.customerId, principal.userId) ||
-                        Equal.equals(order.managerId, principal.userId),
+                        order.customerId === principal.userId ||
+                        order.managerId === principal.userId,
                     ),
                   ),
               ),

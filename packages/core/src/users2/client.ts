@@ -1,5 +1,4 @@
 import * as Effect from "effect/Effect";
-import * as Equal from "effect/Equal";
 import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
@@ -11,6 +10,8 @@ import { Replicache } from "../replicache2/client";
 import { UsersContract } from "./contract";
 
 export namespace Users {
+  const table = Models.SyncTables[UsersContract.tableName];
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/users/client/ReadRepository",
     {
@@ -18,21 +19,20 @@ export namespace Users {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: Models.SyncTables.users.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
     },
   ) {}
 
   export class WriteRepository extends Effect.Service<WriteRepository>()(
     "@printdesk/core/users/client/WriteRepository",
     {
+      accessors: true,
       dependencies: [
         Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([Models.SyncTables.users, ReadRepository]).pipe(
+      effect: Effect.all([table, ReadRepository]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
@@ -49,7 +49,7 @@ export namespace Users {
         const isSelf = PoliciesContract.makePolicy(UsersContract.isSelf, {
           make: ({ id }) =>
             AccessControl.policy((principal) =>
-              Effect.succeed(Equal.equals(id, principal.userId)),
+              Effect.succeed(id === principal.userId),
             ),
         });
 

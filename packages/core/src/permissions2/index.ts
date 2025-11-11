@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
+import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 
 import { Models } from "../models2";
@@ -31,19 +32,19 @@ export namespace Permissions {
   const syncTable = Models.SyncTables.pipe(
     Effect.map(Struct.omit("_tag")),
     Effect.map(Record.values),
-    Effect.map(Array.flatMap((table) => table.permissions)),
+    Effect.map(Array.flatMap(Struct.get("permissions"))),
   );
 
   const nonSyncTable = Models.NonSyncTables.pipe(
     Effect.map(Struct.omit("_tag")),
     Effect.map(Record.values),
-    Effect.map(Array.flatMap((table) => table.permissions)),
+    Effect.map(Array.flatMap(Struct.get("permissions"))),
   );
 
-  const view = Models.Views.pipe(
+  const syncView = Models.SyncViews.pipe(
     Effect.map(Struct.omit("_tag")),
     Effect.map(Record.values),
-    Effect.map(Array.map((view) => view.permission)),
+    Effect.map(Array.map(Struct.get("permission"))),
   );
 
   const external = makeFromConfig({
@@ -54,27 +55,62 @@ export namespace Permissions {
     tailscale_oauth_client: ["update"],
   } as const);
 
+  export const syncPermissions = Effect.all(
+    Array.make(syncTable, syncView),
+  ).pipe(Effect.map(Array.flatten));
+  export type SyncPermissions = Effect.Effect.Success<typeof syncPermissions>;
+  export type SyncPermission = SyncPermissions[number];
+
+  export const nonSyncPermissions = Effect.all(
+    Array.make(nonSyncTable, external),
+  ).pipe(Effect.map(Array.flatten));
+  export type NonSyncPermissions = Effect.Effect.Success<
+    typeof nonSyncPermissions
+  >;
+  export type NonSyncPermission = NonSyncPermissions[number];
+
   export const permissions = Effect.all(
-    Array.make(syncTable, nonSyncTable, view, external),
+    Array.make(syncPermissions, nonSyncPermissions),
   ).pipe(Effect.map(Array.flatten));
   export type Permissions = Effect.Effect.Success<typeof permissions>;
+  export type Permission = Permissions[number];
 
-  export const readPermissions = permissions.pipe(
-    Effect.map(
-      Array.filterMap((permission) =>
-        permission.endsWith(":read")
-          ? Option.some(
-              permission as {
-                [TPermission in Permissions[number]]: TPermission extends `${string}:read`
-                  ? TPermission
-                  : never;
-              }[Permissions[number]],
-            )
-          : Option.none(),
-      ),
-    ),
+  const makeReadPermissions = <TPermissions extends Permissions>(
+    permissions: TPermissions,
+  ) =>
+    Array.filterMap(permissions, (permission) =>
+      String.endsWith(":read")(permission)
+        ? Option.some(
+            permission as {
+              [TPermission in TPermissions[number]]: TPermission extends `${string}:read`
+                ? TPermission
+                : never;
+            }[TPermissions[number]],
+          )
+        : Option.none(),
+    );
+
+  export const syncReadPermissions = syncPermissions.pipe(
+    Effect.map(makeReadPermissions),
   );
+  export type SyncReadPermissions = Effect.Effect.Success<
+    typeof syncReadPermissions
+  >;
+  export type SyncReadPermission = SyncReadPermissions[number];
+
+  export const nonSyncReadPermissions = nonSyncPermissions.pipe(
+    Effect.map(makeReadPermissions),
+  );
+  export type NonSyncReadPermissions = Effect.Effect.Success<
+    typeof nonSyncReadPermissions
+  >;
+  export type NonSyncReadPermission = NonSyncReadPermissions[number];
+
+  export const readPermissions = Effect.all(
+    Array.make(syncReadPermissions, nonSyncReadPermissions),
+  ).pipe(Effect.map(Array.flatten));
   export type ReadPermissions = Effect.Effect.Success<typeof readPermissions>;
+  export type ReadPermission = ReadPermissions[number];
 
   export class Schemas extends Effect.Service<Schemas>()(
     "@printdesk/core/permissions/Schemas",
@@ -83,10 +119,22 @@ export namespace Permissions {
       dependencies: [
         Models.SyncTables.Default,
         Models.NonSyncTables.Default,
-        Models.Views.Default,
+        Models.SyncViews.Default,
       ],
       effect: Effect.all({
+        SyncPermission: syncPermissions.pipe(
+          Effect.map((permissions) => Schema.Literal(...permissions)),
+        ),
+        NonSyncPermission: nonSyncPermissions.pipe(
+          Effect.map((permissions) => Schema.Literal(...permissions)),
+        ),
         Permission: permissions.pipe(
+          Effect.map((permissions) => Schema.Literal(...permissions)),
+        ),
+        SyncReadPermission: syncReadPermissions.pipe(
+          Effect.map((permissions) => Schema.Literal(...permissions)),
+        ),
+        NonSyncReadPermission: nonSyncReadPermissions.pipe(
           Effect.map((permissions) => Schema.Literal(...permissions)),
         ),
         ReadPermission: readPermissions.pipe(
@@ -95,12 +143,4 @@ export namespace Permissions {
       }),
     },
   ) {}
-
-  export type Permission = Effect.Effect.Success<
-    typeof Schemas
-  >["Permission"]["Type"];
-
-  export type ReadPermission = Effect.Effect.Success<
-    typeof Schemas
-  >["ReadPermission"]["Type"];
 }

@@ -150,15 +150,16 @@ export namespace AccessControl {
     ] as const,
   } satisfies UserRoleAcls;
 
-  export type PrincipalShape = {
-    readonly userId: ColumnsContract.EntityId;
-    readonly tenantId: ColumnsContract.TenantId;
-    readonly acl: HashSet.HashSet<Permissions.Permission>;
-  };
-
   export class Principal extends Effect.Tag(
     "@printdesk/core/access-control/Principal",
-  )<Principal, PrincipalShape>() {}
+  )<
+    Principal,
+    {
+      readonly userId: ColumnsContract.EntityId;
+      readonly tenantId: ColumnsContract.TenantId;
+      readonly acl: HashSet.HashSet<Permissions.Permission>;
+    }
+  >() {}
 
   export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
     readonly message: string;

@@ -2,6 +2,8 @@
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
+import * as Option from "effect/Option";
+import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
 import type { AccessControl } from "../access-control2";
@@ -41,11 +43,14 @@ export namespace PoliciesContract {
     TProcedureRecord extends ProceduresContract.ProcedureRecord,
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     TRecord extends PolicyRecord = {},
-    TIsDone = false,
+    TIsFinal extends boolean = false,
   > extends Data.Class<{
-    readonly procedures: ProceduresContract.Procedures<TProcedureRecord, true>;
+    readonly procedureRegistry: ProceduresContract.Registry<
+      TProcedureRecord,
+      true
+    >;
   }> {
-    #isDone = false;
+    #isFinal = false;
     #map = HashMap.empty<
       keyof TProcedureRecord,
       Policy<
@@ -56,79 +61,77 @@ export namespace PoliciesContract {
       >
     >();
 
-    set<TName extends keyof TProcedureRecord & string, TError, TContext>(
-      makePolicy: TIsDone extends false
-        ? Policy<TName, TProcedureRecord[TName]["Args"], TError, TContext>
+    policy<TName extends keyof TProcedureRecord & string, TError, TContext>(
+      this: TIsFinal extends false
+        ? Dispatcher<TProcedureRecord, TRecord, TIsFinal>
         : never,
+      policy: Policy<TName, TProcedureRecord[TName]["Args"], TError, TContext>,
     ): Dispatcher<
       TProcedureRecord,
       TRecord & PolicyRecord<TName, TError, TContext>,
-      TIsDone
+      TIsFinal
     > {
-      if (!this.#isDone)
-        this.#map = HashMap.set(this.#map, makePolicy.name, makePolicy);
+      if (!this.#isFinal)
+        this.#map = HashMap.set(this.#map, policy.name, policy);
 
       return this;
     }
 
-    done(
+    final(
       this: keyof TProcedureRecord extends keyof TRecord
-        ? Dispatcher<TProcedureRecord, TRecord, TIsDone>
+        ? Dispatcher<TProcedureRecord, TRecord, TIsFinal>
         : never,
     ) {
-      this.#isDone = true;
+      this.#isFinal = true;
 
       return this as Dispatcher<TProcedureRecord, TRecord, true>;
     }
 
     dispatch<TName extends keyof TRecord & string>(
+      this: TIsFinal extends true
+        ? Dispatcher<TProcedureRecord, TRecord, TIsFinal>
+        : never,
       name: TName,
       args:
         | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
         | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
     ) {
-      const astMap = this.procedures;
-      const map = this.#map;
-
-      return Effect.gen(function* () {
-        const makePolicy = (yield* map.pipe(
-          HashMap.get(name),
-          Effect.orDie,
-        )) as Policy<
-          TName,
-          TProcedureRecord[TName]["Args"],
-          TRecord[TName]["Error"],
-          TRecord[TName]["Context"]
-        >;
-
-        const { Args } = yield* astMap.map.pipe(
-          HashMap.get(makePolicy.name),
-          Effect.orDie,
-        );
-
-        const decodedArgs = yield* "encoded" in args
-          ? Effect.succeed(args.encoded).pipe(
-              Effect.flatMap(
-                Schema.decode<
-                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                  Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]>,
-                  never
-                  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-                >(Args),
-              ),
-            )
-          : Effect.succeed(args.decoded).pipe(
-              Effect.flatMap(
-                Schema.decode<
-                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                  Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                  never
-                >(Schema.typeSchema(Args)),
-              ),
-            );
-
-        return yield* makePolicy.make(decodedArgs);
-      });
+      return this.#map.pipe(
+        HashMap.get(name),
+        Effect.orDie,
+        Effect.map(
+          (p) =>
+            p as Policy<
+              TName,
+              TProcedureRecord[TName]["Args"],
+              TRecord[TName]["Error"],
+              TRecord[TName]["Context"]
+            >,
+        ),
+        Effect.flatMap((policy) =>
+          Record.get(this.procedureRegistry.record, policy.name).pipe(
+            Option.match({
+              onNone: () =>
+                Effect.dieMessage(
+                  `Procedure "${policy.name}" missing from record.`,
+                ),
+              onSome: ({ Args }) =>
+                ("encoded" in args
+                  ? Schema.decode<
+                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                      Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]>,
+                      never
+                    >(Args)(args.encoded)
+                  : Schema.decode<
+                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+                      never
+                    >(Schema.typeSchema(Args))(args.decoded)
+                ).pipe(Effect.flatMap(policy.make)),
+            }),
+          ),
+        ),
+      );
     }
   }
 }

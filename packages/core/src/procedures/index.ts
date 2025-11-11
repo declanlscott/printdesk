@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
 
 import { AnnouncementsContract } from "../announcements2/contract";
 import { CommentsContract } from "../comments2/contract";
@@ -27,29 +26,20 @@ export namespace Procedures {
     "@printdesk/core/procedures/Policies",
     {
       accessors: true,
-      effect: Effect.gen(function* () {
-        const procedures = yield* Effect.succeed(
-          new ProceduresContract.Procedures()
-            .set(CommentsContract.isAuthor)
-            .set(OrdersContract.isCustomer)
-            .set(OrdersContract.isManager)
-            .set(OrdersContract.isCustomerOrManager)
-            .set(OrdersContract.isManagerAuthorized)
-            .set(SharedAccountsContract.isCustomerAuthorized)
-            .set(SharedAccountsContract.isManagerAuthorized)
-            .set(SharedAccountWorkflowsContract.isCustomerAuthorized)
-            .set(SharedAccountWorkflowsContract.isManagerAuthorized)
-            .set(UsersContract.isSelf)
-            .done(),
-        ).pipe(Effect.cached);
-
-        const Policy = yield* procedures.pipe(
-          Effect.map(Struct.get("Procedure")),
-          Effect.cached,
-        );
-
-        return { procedures, Policy } as const;
-      }),
+      succeed: {
+        registry: new ProceduresContract.Registry()
+          .procedure(CommentsContract.isAuthor)
+          .procedure(OrdersContract.isCustomer)
+          .procedure(OrdersContract.isManager)
+          .procedure(OrdersContract.isCustomerOrManager)
+          .procedure(OrdersContract.isManagerAuthorized)
+          .procedure(SharedAccountsContract.isCustomerAuthorized)
+          .procedure(SharedAccountsContract.isManagerAuthorized)
+          .procedure(SharedAccountWorkflowsContract.isCustomerAuthorized)
+          .procedure(SharedAccountWorkflowsContract.isManagerAuthorized)
+          .procedure(UsersContract.isSelf)
+          .final(),
+      } as const,
     },
   ) {}
 
@@ -57,73 +47,67 @@ export namespace Procedures {
     "@printdesk/core/procedures/Mutations",
     {
       accessors: true,
-      effect: Effect.gen(function* () {
-        const procedures = yield* Effect.succeed(
-          new ProceduresContract.Procedures()
-            .set(AnnouncementsContract.create)
-            .set(AnnouncementsContract.edit)
-            .set(AnnouncementsContract.delete_)
-            .set(AnnouncementsContract.restore)
-            .set(CommentsContract.create)
-            .set(CommentsContract.edit)
-            .set(CommentsContract.delete_)
-            .set(CommentsContract.restore)
-            .set(DeliveryOptionsContract.create)
-            .set(DeliveryOptionsContract.edit)
-            .set(DeliveryOptionsContract.delete_)
-            .set(DeliveryOptionsContract.restore)
-            .set(InvoicesContract.create)
-            .set(OrdersContract.create)
-            .set(OrdersContract.edit)
-            .set(OrdersContract.approve)
-            .set(OrdersContract.transitionRoomWorkflowStatus)
-            .set(OrdersContract.transitionSharedAccountWorkflowStatus)
-            .set(OrdersContract.delete_)
-            .set(OrdersContract.restore)
-            .set(ProductsContract.create)
-            .set(ProductsContract.edit)
-            .set(ProductsContract.publish)
-            .set(ProductsContract.draft)
-            .set(ProductsContract.delete_)
-            .set(ProductsContract.restore)
-            .set(RoomsContract.create)
-            .set(RoomsContract.edit)
-            .set(RoomsContract.publish)
-            .set(RoomsContract.draft)
-            .set(RoomsContract.delete_)
-            .set(RoomsContract.restore)
-            .set(SharedAccountsContract.edit)
-            .set(SharedAccountsContract.delete_)
-            .set(SharedAccountsContract.restore)
-            .set(SharedAccountManagerAuthorizationsContract.create)
-            .set(SharedAccountManagerAuthorizationsContract.delete_)
-            .set(SharedAccountManagerAuthorizationsContract.restore)
-            .set(TenantsContract.edit)
-            .set(UsersContract.edit)
-            .set(UsersContract.delete_)
-            .set(UsersContract.restore)
-            .set(WorkflowStatusesContract.append)
-            .set(WorkflowStatusesContract.edit)
-            .set(WorkflowStatusesContract.reorder)
-            .set(WorkflowStatusesContract.delete_)
-            .done(),
-        ).pipe(Effect.cached);
+      sync: () => {
+        const registry = new ProceduresContract.Registry()
+          .procedure(AnnouncementsContract.create)
+          .procedure(AnnouncementsContract.edit)
+          .procedure(AnnouncementsContract.delete_)
+          .procedure(AnnouncementsContract.restore)
+          .procedure(CommentsContract.create)
+          .procedure(CommentsContract.edit)
+          .procedure(CommentsContract.delete_)
+          .procedure(CommentsContract.restore)
+          .procedure(DeliveryOptionsContract.create)
+          .procedure(DeliveryOptionsContract.edit)
+          .procedure(DeliveryOptionsContract.delete_)
+          .procedure(DeliveryOptionsContract.restore)
+          .procedure(InvoicesContract.create)
+          .procedure(OrdersContract.create)
+          .procedure(OrdersContract.edit)
+          .procedure(OrdersContract.approve)
+          .procedure(OrdersContract.transitionRoomWorkflowStatus)
+          .procedure(OrdersContract.transitionSharedAccountWorkflowStatus)
+          .procedure(OrdersContract.delete_)
+          .procedure(OrdersContract.restore)
+          .procedure(ProductsContract.create)
+          .procedure(ProductsContract.edit)
+          .procedure(ProductsContract.publish)
+          .procedure(ProductsContract.draft)
+          .procedure(ProductsContract.delete_)
+          .procedure(ProductsContract.restore)
+          .procedure(RoomsContract.create)
+          .procedure(RoomsContract.edit)
+          .procedure(RoomsContract.publish)
+          .procedure(RoomsContract.draft)
+          .procedure(RoomsContract.delete_)
+          .procedure(RoomsContract.restore)
+          .procedure(SharedAccountsContract.edit)
+          .procedure(SharedAccountsContract.delete_)
+          .procedure(SharedAccountsContract.restore)
+          .procedure(SharedAccountManagerAuthorizationsContract.create)
+          .procedure(SharedAccountManagerAuthorizationsContract.delete_)
+          .procedure(SharedAccountManagerAuthorizationsContract.restore)
+          .procedure(TenantsContract.edit)
+          .procedure(UsersContract.edit)
+          .procedure(UsersContract.delete_)
+          .procedure(UsersContract.restore)
+          .procedure(WorkflowStatusesContract.append)
+          .procedure(WorkflowStatusesContract.edit)
+          .procedure(WorkflowStatusesContract.reorder)
+          .procedure(WorkflowStatusesContract.delete_)
+          .final();
 
-        const Replicache = yield* procedures.pipe(
-          Effect.map(Struct.get("Procedure")),
-          Effect.map(
-            Schema.extend(
-              Schema.Struct(ReplicacheContract.MutationV1.fields).omit(
-                "name",
-                "args",
-              ),
+        const ReplicacheSchema = registry.Schema.pipe(
+          Schema.extend(
+            Schema.Struct(ReplicacheContract.MutationV1.fields).omit(
+              "name",
+              "args",
             ),
           ),
-          Effect.cached,
         );
 
-        return { procedures, Replicache };
-      }),
+        return { registry, ReplicacheSchema } as const;
+      },
     },
   ) {}
 }

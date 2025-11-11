@@ -1,6 +1,7 @@
 import * as Data from "effect/Data";
 import * as HashMap from "effect/HashMap";
 import * as Iterable from "effect/Iterable";
+import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
 export namespace ProceduresContract {
@@ -22,56 +23,56 @@ export namespace ProceduresContract {
   export type ProcedureRecord<TProcedure extends Procedure = Procedure> =
     Record<TProcedure["name"], TProcedure>;
 
-  export class Procedures<
+  export class Registry<
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     TRecord extends ProcedureRecord = {},
-    TIsDone = false,
+    TIsFinal extends boolean = false,
   > {
-    #isDone = false;
+    #isFinal = false;
     #map = HashMap.empty<Procedure["name"], Procedure>();
 
-    readonly RecordType = {} as {
-      [TName in keyof TRecord]: Procedure<
-        TName & string,
-        TRecord[TName]["Args"]
-      >;
-    };
-
-    set<TProcedure extends Procedure>(
-      fn: TIsDone extends false ? TProcedure : never,
+    procedure<TProcedure extends Procedure>(
+      this: TIsFinal extends false ? Registry<TRecord, TIsFinal> : never,
+      procedure: TProcedure,
     ) {
-      if (!this.#isDone) this.#map = HashMap.set(this.#map, fn.name, fn);
+      if (!this.#isFinal)
+        this.#map = HashMap.set(this.#map, procedure.name, procedure);
 
-      return this as Procedures<TRecord & ProcedureRecord<TProcedure>, TIsDone>;
+      return this as Registry<TRecord & ProcedureRecord<TProcedure>, TIsFinal>;
     }
 
-    done(this: TIsDone extends false ? Procedures<TRecord, TIsDone> : never) {
-      this.#isDone = true;
+    final(this: TIsFinal extends false ? Registry<TRecord, TIsFinal> : never) {
+      this.#isFinal = true;
 
-      return this as Procedures<TRecord, true>;
+      return this as Registry<TRecord, true>;
     }
 
-    get map() {
-      return this.#map;
+    get record() {
+      return this.#map.pipe(HashMap.entries, Record.fromEntries) as {
+        [TName in keyof TRecord]: TName extends string
+          ? Procedure<TName, TRecord[TName]["Args"]>
+          : never;
+      };
     }
 
-    get Procedure() {
-      return Schema.Union(
-        ...this.#map.pipe(
-          HashMap.values,
-          Iterable.map(
-            (fn) =>
-              Schema.Struct({
-                name: Schema.tag(fn.name),
-                args: fn.Args,
-              }) as {
-                [TName in keyof TRecord]: Schema.Struct<{
-                  name: Schema.tag<TName & string>;
-                  args: TRecord[TName]["Args"];
-                }>;
-              }[keyof TRecord],
-          ),
+    get Schema() {
+      return this.#map.pipe(
+        HashMap.values,
+        Iterable.map(
+          (procedure) =>
+            Schema.Struct({
+              name: Schema.tag(procedure.name),
+              args: procedure.Args,
+            }) as {
+              [TName in keyof TRecord]: TName extends string
+                ? Schema.Struct<{
+                    name: Schema.tag<TName>;
+                    args: TRecord[TName]["Args"];
+                  }>
+                : never;
+            }[keyof TRecord],
         ),
+        (members) => Schema.Union(...members),
       );
     }
   }

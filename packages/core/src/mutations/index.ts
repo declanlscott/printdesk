@@ -1,7 +1,6 @@
 import * as Effect from "effect/Effect";
 
 import { Announcements } from "../announcements2";
-import { Auth } from "../auth2";
 import { Comments } from "../comments2";
 import { DeliveryOptions } from "../delivery-options2";
 import { Invoices } from "../invoices2";
@@ -36,8 +35,7 @@ export namespace Mutations {
         WorkflowStatuses.Mutations.Default,
       ],
       effect: Effect.gen(function* () {
-        const session = yield* Auth.Session;
-        const procedures = yield* Procedures.Mutations.procedures;
+        const procedureRegistry = yield* Procedures.Mutations.registry;
 
         const announcements = yield* Announcements.Mutations;
         const comments = yield* Comments.Mutations;
@@ -53,59 +51,54 @@ export namespace Mutations {
         const users = yield* Users.Mutations;
         const workflowStatuses = yield* WorkflowStatuses.Mutations;
 
-        const client = yield* Effect.succeed(
-          new MutationsContract.Dispatcher({
-            session,
-            procedures,
-          })
-            .set(announcements.create)
-            .set(announcements.edit)
-            .set(announcements.delete)
-            .set(announcements.restore)
-            .set(comments.create)
-            .set(comments.edit)
-            .set(comments.delete)
-            .set(comments.restore)
-            .set(deliveryOptions.create)
-            .set(deliveryOptions.edit)
-            .set(deliveryOptions.delete)
-            .set(deliveryOptions.restore)
-            .set(invoices.create)
-            .set(orders.create)
-            .set(orders.edit)
-            .set(orders.approve)
-            .set(orders.transitionRoomWorkflowStatus)
-            .set(orders.transitionSharedAccountWorkflowStatus)
-            .set(orders.delete)
-            .set(orders.restore)
-            .set(products.create)
-            .set(products.edit)
-            .set(products.publish)
-            .set(products.draft)
-            .set(products.delete)
-            .set(products.restore)
-            .set(rooms.create)
-            .set(rooms.edit)
-            .set(rooms.publish)
-            .set(rooms.draft)
-            .set(rooms.delete)
-            .set(rooms.restore)
-            .set(sharedAccounts.edit)
-            .set(sharedAccounts.delete)
-            .set(sharedAccounts.restore)
-            .set(sharedAccountManagerAuthorizations.create)
-            .set(sharedAccountManagerAuthorizations.delete)
-            .set(sharedAccountManagerAuthorizations.restore)
-            .set(tenants.edit)
-            .set(users.edit)
-            .set(users.delete)
-            .set(users.restore)
-            .set(workflowStatuses.append)
-            .set(workflowStatuses.edit)
-            .set(workflowStatuses.reorder)
-            .set(workflowStatuses.delete)
-            .done(),
-        ).pipe(Effect.cached);
+        const client = new MutationsContract.Dispatcher({ procedureRegistry })
+          .mutation(announcements.create)
+          .mutation(announcements.edit)
+          .mutation(announcements.delete)
+          .mutation(announcements.restore)
+          .mutation(comments.create)
+          .mutation(comments.edit)
+          .mutation(comments.delete)
+          .mutation(comments.restore)
+          .mutation(deliveryOptions.create)
+          .mutation(deliveryOptions.edit)
+          .mutation(deliveryOptions.delete)
+          .mutation(deliveryOptions.restore)
+          .mutation(invoices.create)
+          .mutation(orders.create)
+          .mutation(orders.edit)
+          .mutation(orders.approve)
+          .mutation(orders.transitionRoomWorkflowStatus)
+          .mutation(orders.transitionSharedAccountWorkflowStatus)
+          .mutation(orders.delete)
+          .mutation(orders.restore)
+          .mutation(products.create)
+          .mutation(products.edit)
+          .mutation(products.publish)
+          .mutation(products.draft)
+          .mutation(products.delete)
+          .mutation(products.restore)
+          .mutation(rooms.create)
+          .mutation(rooms.edit)
+          .mutation(rooms.publish)
+          .mutation(rooms.draft)
+          .mutation(rooms.delete)
+          .mutation(rooms.restore)
+          .mutation(sharedAccounts.edit)
+          .mutation(sharedAccounts.delete)
+          .mutation(sharedAccounts.restore)
+          .mutation(sharedAccountManagerAuthorizations.create)
+          .mutation(sharedAccountManagerAuthorizations.delete)
+          .mutation(sharedAccountManagerAuthorizations.restore)
+          .mutation(tenants.edit)
+          .mutation(users.edit)
+          .mutation(users.delete)
+          .mutation(users.restore)
+          .mutation(workflowStatuses.append)
+          .mutation(workflowStatuses.edit)
+          .mutation(workflowStatuses.reorder)
+          .mutation(workflowStatuses.delete)
+          .final();
 
         return { client } as const;
       }),

@@ -94,26 +94,26 @@ export namespace Tables {
       return Array.reduce(
         Record.values(getTableColumns(this.definition)),
         Record.empty<string, SQL>(),
-        (set, { name }) => {
-          set[name] = sql.raw(
-            Match.value(name).pipe(
-              Match.when(
-                "updated_at",
-                (name) => `COALESCE(EXCLUDED."${name}", NOW())`,
-              ),
-              Match.when(
-                "version",
-                (name) => `"${getTableName(this.definition)}"."${name}" + 1`,
-              ),
-              Match.orElse(
-                (name) =>
-                  `COALESCE(EXCLUDED."${name}", "${getTableName(this.definition)}"."${name}")`,
+        (set, { name }) =>
+          Record.set(
+            name,
+            sql.raw(
+              Match.value(name).pipe(
+                Match.when(
+                  "updated_at",
+                  (name) => `COALESCE(EXCLUDED."${name}", NOW())`,
+                ),
+                Match.when(
+                  "version",
+                  (name) => `"${getTableName(this.definition)}"."${name}" + 1`,
+                ),
+                Match.orElse(
+                  (name) =>
+                    `COALESCE(EXCLUDED."${name}", "${getTableName(this.definition)}"."${name}")`,
+                ),
               ),
             ),
-          );
-
-          return set;
-        },
+          )(set),
       );
     }
   }

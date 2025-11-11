@@ -41,7 +41,7 @@ export namespace TablesContract {
       actions: TActions,
     ) =>
       Object.assign(
-        Effect.succeed({
+        Effect.sync(() => ({
           name,
           DataTransferObject,
           permissions: Array.map(
@@ -49,7 +49,7 @@ export namespace TablesContract {
             (action) =>
               `${name}:${action}` as InferPermissions<TTable, TActions>,
           ),
-        }),
+        })),
         { name },
       );
 
@@ -62,11 +62,11 @@ export namespace TablesContract {
         : never,
     ) =>
       Object.assign(
-        Effect.succeed({
+        Effect.sync(() => ({
           name,
           DataTransferObject,
           permission: `${name}:read` as const,
-        }),
+        })),
         { name },
       );
 
@@ -82,11 +82,11 @@ export namespace TablesContract {
         : never,
     ) =>
       Object.assign(
-        Effect.succeed({
+        Effect.sync(() => ({
           name,
           DataTransferObject,
           permission: `${name}:read` as const,
-        }),
+        })),
         { name },
       );
 
@@ -98,5 +98,8 @@ export namespace TablesContract {
         ? TRow
         : never,
     ) =>
-      Object.assign(Effect.succeed({ name, Record }), { name });
+      Object.assign(
+        Effect.sync(() => ({ name, Record })),
+        { name },
+      );
 }

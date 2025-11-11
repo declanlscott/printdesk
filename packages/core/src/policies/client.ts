@@ -22,7 +22,7 @@ export namespace Policies {
         Users.Policies.Default,
       ],
       effect: Effect.gen(function* () {
-        const procedures = yield* Procedures.Policies.procedures;
+        const procedureRegistry = yield* Procedures.Policies.registry;
 
         const comments = yield* Comments.Policies;
         const orders = yield* Orders.Policies;
@@ -30,20 +30,18 @@ export namespace Policies {
         const sharedAccountWorkflows = yield* SharedAccountWorkflows.Policies;
         const users = yield* Users.Policies;
 
-        const client = yield* Effect.succeed(
-          new PoliciesContract.Dispatcher({ procedures })
-            .set(comments.isAuthor)
-            .set(orders.isCustomer)
-            .set(orders.isManager)
-            .set(orders.isCustomerOrManager)
-            .set(orders.isManagerAuthorized)
-            .set(sharedAccounts.isCustomerAuthorized)
-            .set(sharedAccounts.isManagerAuthorized)
-            .set(sharedAccountWorkflows.isCustomerAuthorized)
-            .set(sharedAccountWorkflows.isManagerAuthorized)
-            .set(users.isSelf)
-            .done(),
-        ).pipe(Effect.cached);
+        const client = new PoliciesContract.Dispatcher({ procedureRegistry })
+          .policy(comments.isAuthor)
+          .policy(orders.isCustomer)
+          .policy(orders.isManager)
+          .policy(orders.isCustomerOrManager)
+          .policy(orders.isManagerAuthorized)
+          .policy(sharedAccounts.isCustomerAuthorized)
+          .policy(sharedAccounts.isManagerAuthorized)
+          .policy(sharedAccountWorkflows.isCustomerAuthorized)
+          .policy(sharedAccountWorkflows.isManagerAuthorized)
+          .policy(users.isSelf)
+          .final();
 
         return { client } as const;
       }),

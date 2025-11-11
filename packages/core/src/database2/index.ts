@@ -239,9 +239,9 @@ export namespace Database {
             return matchTxError(error.cause);
 
           if (error instanceof DatabaseError)
-            return new TransactionError({ cause: error });
+            return Option.some(new TransactionError({ cause: error }));
 
-          return null;
+          return Option.none();
         };
 
         const withTransaction = Effect.fn(
@@ -251,7 +251,7 @@ export namespace Database {
             execute: (
               tx: Transaction["tx"],
             ) => Effect.Effect<TSuccess, TError, TContext>,
-            { shouldRetry = false }: { shouldRetry?: boolean } = {},
+            { retry = false }: { retry?: boolean } = {},
           ) =>
             Effect.gen(function* () {
               const runtime = yield* Effect.runtime<TContext>();
@@ -282,19 +282,24 @@ export namespace Database {
                       onSuccess: Effect.succeed,
                       onFailure: (cause) =>
                         cause.pipe(Cause.isFailure)
-                          ? cause.pipe(
-                              Cause.originalError,
-                              (error) =>
-                                matchTxError(error)?.pipe(Effect.fail) ??
-                                Effect.fail(error as TError),
+                          ? cause.pipe(Cause.originalError, (error) =>
+                              matchTxError(error).pipe(
+                                Option.match({
+                                  onSome: Effect.fail,
+                                  onNone: () => Effect.fail(error as TError),
+                                }),
+                              ),
                             )
                           : cause.pipe(Effect.die),
                     }),
                   )
-                  .catch(
-                    (error) =>
-                      matchTxError(error)?.pipe(Effect.fail) ??
-                      Effect.die(error),
+                  .catch((error) =>
+                    matchTxError(error).pipe(
+                      Option.match({
+                        onSome: Effect.fail,
+                        onNone: () => Effect.die(error),
+                      }),
+                    ),
                   )
                   .then(resume);
 
@@ -303,7 +308,7 @@ export namespace Database {
                 );
               });
 
-              if (!shouldRetry) return yield* transaction;
+              if (!retry) return yield* transaction;
 
               const schedule = Schedule.recurs(
                 Constants.DB_TRANSACTION_MAX_RETRIES,
@@ -347,15 +352,19 @@ export namespace Database {
                 Effect.tryPromise({
                   try: () => callback(tx),
                   catch: (error) =>
-                    matchTxError(error) ??
-                    new TransactionError({
-                      cause:
-                        error instanceof globalThis.Error
-                          ? error
-                          : new globalThis.Error("Unknown error", {
-                              cause: error,
-                            }),
-                    }),
+                    matchTxError(error).pipe(
+                      Option.getOrElse(
+                        () =>
+                          new TransactionError({
+                            cause:
+                              error instanceof globalThis.Error
+                                ? error
+                                : new globalThis.Error("Unknown error", {
+                                    cause: error,
+                                  }),
+                          }),
+                      ),
+                    ),
                 }).pipe(resume);
 
                 return Effect.sync(() =>
@@ -427,5 +436,10 @@ export namespace Database {
 
   export const paginateTransaction = <TRow, TError, TContext>(
     tx: Effect.Effect<ReadonlyArray<TRow>, TError, TContext>,
-  ) => paginate(tx, Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT);
+    offset = 0,
+  ) =>
+    paginate(
+      tx,
+      Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT - Math.abs(offset),
+    );
 }

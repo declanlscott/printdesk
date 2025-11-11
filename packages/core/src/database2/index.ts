@@ -1,4 +1,3 @@
-import { TransactionRollbackError } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import * as Cause from "effect/Cause";
 import * as Chunk from "effect/Chunk";
@@ -65,23 +64,23 @@ export namespace Database {
   ) {}
 
   export class PoolError extends Data.TaggedError("PoolError")<{
-    readonly cause: globalThis.Error;
+    readonly cause: unknown;
   }> {}
 
   export class ConnectionTimeoutError extends Data.TaggedError(
     "ConnectionTimeoutError",
   ) {}
 
-  /**
-   * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
-   *
-   * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
-   * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
-   * https://stackoverflow.com/a/16409293/749644
-   */
   export class TransactionError extends Data.TaggedError("TransactionError")<{
-    readonly cause: globalThis.Error | DatabaseError;
+    readonly cause: unknown;
   }> {
+    /**
+     * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
+     *
+     * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
+     * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
+     * https://stackoverflow.com/a/16409293/749644
+     */
     get isRetryable() {
       return (
         this.cause instanceof DatabaseError &&
@@ -123,13 +122,7 @@ export namespace Database {
 
         yield* Effect.tryPromise({
           try: () => pool.query("SELECT 1"),
-          catch: (error) =>
-            new PoolError({
-              cause:
-                error instanceof globalThis.Error
-                  ? error
-                  : new globalThis.Error("Unknown error", { cause: error }),
-            }),
+          catch: (error) => new PoolError({ cause: error }),
         }).pipe(
           Effect.timeoutFail({
             duration: Duration.seconds(5),
@@ -149,7 +142,7 @@ export namespace Database {
             const abortListener = () =>
               Effect.fail(
                 new PoolError({
-                  cause: new globalThis.Error("Connection interrupted"),
+                  cause: new globalThis.Error("Connection aborted"),
                 }),
               ).pipe(resume);
 
@@ -254,7 +247,9 @@ export namespace Database {
             { retry = false }: { retry?: boolean } = {},
           ) =>
             Effect.gen(function* () {
-              const runtime = yield* Effect.runtime<TContext>();
+              const runPromise = yield* Effect.runtime<TContext>().pipe(
+                Effect.map((runtime) => Runtime.runPromise(runtime)),
+              );
 
               const transaction = Effect.async<
                 TSuccess,
@@ -273,34 +268,51 @@ export namespace Database {
                 void db
                   .transaction((tx) =>
                     execute(tx).pipe(
-                      Effect.provide(Transaction.Default(tx)),
-                      Runtime.runPromiseExit(runtime),
-                    ),
-                  )
-                  .then(
-                    Exit.match({
-                      onSuccess: Effect.succeed,
-                      onFailure: (cause) =>
-                        cause.pipe(Cause.isFailure)
-                          ? cause.pipe(Cause.originalError, (error) =>
-                              matchTxError(error).pipe(
-                                Option.match({
-                                  onSome: Effect.fail,
-                                  onNone: () => Effect.fail(error as TError),
-                                }),
-                              ),
-                            )
-                          : cause.pipe(Effect.die),
-                    }),
-                  )
-                  .catch((error) =>
-                    matchTxError(error).pipe(
-                      Option.match({
-                        onSome: Effect.fail,
-                        onNone: () => Effect.die(error),
+                      // Throw on any error so drizzle rolls back the transaction
+                      Effect.catchAllCause((cause) => {
+                        throw new TransactionError({ cause });
+                        return Effect.never;
                       }),
+                      Effect.provide(Transaction.Default(tx)),
+                      (transaction) => runPromise(transaction, { signal }),
                     ),
                   )
+                  .then(Effect.succeed)
+                  // Propagate transaction error back into effect
+                  .catch((exception) => {
+                    if (Runtime.isFiberFailure(exception)) {
+                      const cause = exception[Runtime.FiberFailureCauseId];
+
+                      if (
+                        Cause.isDie(cause) &&
+                        Cause.isDieType(cause) &&
+                        cause.defect instanceof TransactionError
+                      ) {
+                        const txCause = cause.defect
+                          .cause as Cause.Cause<unknown>;
+
+                        if (
+                          Cause.isFailure(txCause) &&
+                          Cause.isFailType(txCause)
+                        ) {
+                          const error = txCause.error as TError;
+
+                          return matchTxError(error).pipe(
+                            Option.match({
+                              onSome: Effect.fail,
+                              onNone: () => Effect.fail(error),
+                            }),
+                          );
+                        }
+
+                        return Effect.die(txCause);
+                      }
+
+                      return Effect.die(cause);
+                    }
+
+                    return Effect.die(exception);
+                  })
                   .then(resume);
 
                 return Effect.sync(() =>
@@ -343,7 +355,9 @@ export namespace Database {
                 const abortListener = () =>
                   Effect.fail(
                     new TransactionError({
-                      cause: new TransactionRollbackError(),
+                      cause: new globalThis.Error(
+                        "Transaction execution interrupted",
+                      ),
                     }),
                   ).pipe(resume);
 
@@ -354,15 +368,7 @@ export namespace Database {
                   catch: (error) =>
                     matchTxError(error).pipe(
                       Option.getOrElse(
-                        () =>
-                          new TransactionError({
-                            cause:
-                              error instanceof globalThis.Error
-                                ? error
-                                : new globalThis.Error("Unknown error", {
-                                    cause: error,
-                                  }),
-                          }),
+                        () => new TransactionError({ cause: error }),
                       ),
                     ),
                 }).pipe(resume);

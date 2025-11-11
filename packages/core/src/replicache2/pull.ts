@@ -64,7 +64,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                 }),
               );
 
-            const clientGroupId = pullRequest.clientGroupId;
+            const { cookie, clientGroupId } = pullRequest;
 
             return yield* db
               // 3: Begin transaction
@@ -78,13 +78,9 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                     ] = yield* Effect.all(
                       [
                         // 1: Find previous client view
-                        pullRequest.cookie
+                        cookie
                           ? clientViewsRepository
-                              .findById(
-                                clientGroupId,
-                                pullRequest.cookie.order,
-                                tenantId,
-                              )
+                              .findById(clientGroupId, cookie.order, tenantId)
                               .pipe(
                                 Effect.catchTag("NoSuchElementException", () =>
                                   Effect.fail(
@@ -159,7 +155,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                     // 13: Increment client view version
                     const nextClientViewVersion = ColumnsContract.Version.make(
                       Math.max(
-                        pullRequest.cookie?.order ?? 0,
+                        cookie?.order ?? 0,
                         clientGroup.clientViewVersion ?? 0,
                       ) + 1,
                     );
@@ -244,7 +240,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                     // 10: If diff is empty, return no-op
                     onNone: () =>
                       ResponseOk.make({
-                        cookie: pullRequest.cookie,
+                        cookie,
                         lastMutationIdChanges: Record.empty(),
                         patch: Chunk.empty(),
                       }),
@@ -294,10 +290,10 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
             }),
             Effect.flatMap(Schema.encode(Response)),
             Effect.timed,
-            Effect.flatMap(([duration, result]) =>
+            Effect.flatMap(([duration, response]) =>
               Effect.log(
                 `Processed pull in ${duration.pipe(Duration.toMillis)}ms`,
-              ).pipe(Effect.as(result)),
+              ).pipe(Effect.as(response)),
             ),
             Effect.tapErrorCause((error) =>
               Effect.log("Encountered error during pull", error),

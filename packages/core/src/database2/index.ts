@@ -434,12 +434,14 @@ export namespace Database {
     },
   ) {}
 
-  export const paginateTransaction = <TRow, TError, TContext>(
-    tx: Effect.Effect<ReadonlyArray<TRow>, TError, TContext>,
-    offset = 0,
-  ) =>
-    paginate(
-      tx,
-      Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT - Math.abs(offset),
-    );
+  export const paginateTransaction =
+    (offset = 0) =>
+    <TRow, TError, TContext>(
+      self: Effect.Effect<ReadonlyArray<TRow>, TError, TContext>,
+    ) =>
+      self.pipe(
+        paginate(
+          Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT - Math.abs(offset),
+        ),
+      );
 }

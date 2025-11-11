@@ -26,20 +26,21 @@ export const HexColor = Schema.String.pipe(
   Schema.pattern(Constants.HEX_COLOR_REGEX),
 );
 
-export const paginate = <TItem, TError, TContext>(
-  page: Effect.Effect<ReadonlyArray<TItem>, TError, TContext>,
-  size: number,
-) =>
-  Stream.paginateChunkEffect(undefined, () =>
-    page.pipe(
-      Effect.map((page) =>
-        Tuple.make(
-          Chunk.unsafeFromArray(page),
-          page.length >= size ? Option.some(undefined) : Option.none(),
+export const paginate =
+  (size: number) =>
+  <TItem, TError, TContext>(
+    self: Effect.Effect<ReadonlyArray<TItem>, TError, TContext>,
+  ) =>
+    Stream.paginateChunkEffect(undefined, () =>
+      self.pipe(
+        Effect.map((page) =>
+          Tuple.make(
+            Chunk.unsafeFromArray(page),
+            page.length >= size ? Option.some(undefined) : Option.none(),
+          ),
         ),
       ),
-    ),
-  );
+    );
 
 export type SnakeToCamel<TSnake extends Lowercase<string>> =
   TSnake extends `${infer First}_${infer Rest}`

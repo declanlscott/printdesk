@@ -49,10 +49,7 @@ export const subdomains = {
 export const domains = new sst.Linkable("Domains", {
   properties: {
     root: rootDomain.value,
-    ...Record.mapEntries(
-      subdomains,
-      (subdomain, name) => [name, buildFqdn(subdomain)] as const,
-    ),
+    ...Record.map(subdomains, buildFqdn),
   },
 });
 
@@ -63,9 +60,7 @@ export const tenantSubdomainTemplates = {
 };
 
 export const tenantDomains = new sst.Linkable("TenantDomains", {
-  properties: Record.mapEntries(
-    tenantSubdomainTemplates,
-    (subdomainTemplate, name) =>
-      [name, { nameTemplate: buildFqdn(subdomainTemplate) }] as const,
-  ),
+  properties: Record.map(tenantSubdomainTemplates, (subdomainTemplate) => ({
+    nameTemplate: buildFqdn(subdomainTemplate),
+  })),
 });

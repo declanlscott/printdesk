@@ -522,9 +522,9 @@ export namespace Products {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(ProductsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(ProductsSchema.table.definition),
+          )
             .query(AccessControl.permission("products:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

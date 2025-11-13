@@ -910,9 +910,9 @@ export namespace SharedAccounts {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(SharedAccountsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(SharedAccountsSchema.table.definition),
+          )
             .query(AccessControl.permission("shared_accounts:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,
@@ -1686,11 +1686,11 @@ export namespace SharedAccounts {
         const repository = yield* CustomerAuthorizationsRepository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(
               SharedAccountCustomerAuthorizationsSchema.table.definition,
             ),
-          })
+          )
             .query(
               AccessControl.permission(
                 "shared_account_customer_authorizations:read",
@@ -2457,11 +2457,11 @@ export namespace SharedAccounts {
         const repository = yield* ManagerAuthorizationsRepository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(
               SharedAccountManagerAuthorizationsSchema.table.definition,
             ),
-          })
+          )
             .query(
               AccessControl.permission(
                 "shared_account_manager_authorizations:read",

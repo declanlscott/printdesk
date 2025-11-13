@@ -837,9 +837,9 @@ export namespace Comments {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(CommentsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(CommentsSchema.table.definition),
+          )
             .query(AccessControl.permission("comments:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

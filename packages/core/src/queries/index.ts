@@ -4,8 +4,6 @@ import * as Match from "effect/Match";
 import * as Number from "effect/Number";
 import * as Option from "effect/Option";
 import * as Stream from "effect/Stream";
-import * as Struct from "effect/Struct";
-import * as Tuple from "effect/Tuple";
 
 import { Announcements } from "../announcements2";
 import { Comments } from "../comments2";
@@ -113,7 +111,7 @@ export namespace Queries {
                 Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT -
                 Math.abs(limitOffset);
 
-              const { clientViewEntries, patch, limit, excludeIds } =
+              const { clientViewEntries, patch, limit, excludes } =
                 yield* Stream.mergeWithTag(
                   {
                     update: client.findUpdates(clientView, userId),
@@ -134,9 +132,9 @@ export namespace Queries {
                                 ReplicacheClientViewEntriesModel.Record.make({
                                   clientGroupId: clientView.clientGroupId,
                                   clientViewVersion: clientViewVersion.next,
-                                  entity: update.value[0],
-                                  entityId: update.value[1].id,
-                                  entityVersion: update.value[1].version,
+                                  entity: update.value.entity,
+                                  entityId: update.value.data.id,
+                                  entityVersion: update.value.data.version,
                                   tenantId: clientView.tenantId,
                                 }),
                               ),
@@ -144,8 +142,8 @@ export namespace Queries {
                                 ReplicacheClientViewEntriesModel.Record.make({
                                   clientGroupId: clientView.clientGroupId,
                                   clientViewVersion: clientViewVersion.next,
-                                  entity: delete_.value[0],
-                                  entityId: delete_.value[1].id,
+                                  entity: delete_.value.entity,
+                                  entityId: delete_.value.id,
                                   entityVersion: null,
                                   tenantId: clientView.tenantId,
                                 }),
@@ -162,14 +160,14 @@ export namespace Queries {
                             >().pipe(
                               Match.tag("update", (update) =>
                                 ReplicacheContract.makePutTableOperation({
-                                  table: syncTables[update.value[0]],
-                                  value: update.value[1],
+                                  table: syncTables[update.value.entity],
+                                  value: update.value.data,
                                 }),
                               ),
                               Match.tag("delete", (delete_) =>
                                 ReplicacheContract.makeDeleteTableOperation({
-                                  table: syncTables[delete_.value[0]],
-                                  id: delete_.value[1].id,
+                                  table: syncTables[delete_.value.entity],
+                                  id: delete_.value.id,
                                 }),
                               ),
                               Match.exhaustive,
@@ -184,9 +182,18 @@ export namespace Queries {
                         limit: third.pipe(
                           Stream.runFold(baseLimit, Number.decrement),
                         ),
-                        excludeIds: fourth.pipe(
-                          Stream.map((item) =>
-                            Tuple.mapSecond(item.value, Struct.get("id")),
+                        excludes: fourth.pipe(
+                          Stream.map(
+                            Match.type<
+                              Stream.Stream.Success<typeof fourth>
+                            >().pipe(
+                              Match.tag("update", (update) => ({
+                                entity: update.value.entity,
+                                id: update.value.data.id,
+                              })),
+                              Match.tag("delete", (delete_) => delete_.value),
+                              Match.exhaustive,
+                            ),
                           ),
                           Stream.runCollect,
                         ),
@@ -206,13 +213,13 @@ export namespace Queries {
                       {
                         clientViewEntries: first.pipe(
                           Stream.take(baseLimit),
-                          Stream.map(([entity, value]) =>
+                          Stream.map(({ entity, data }) =>
                             ReplicacheClientViewEntriesModel.Record.make({
                               clientGroupId: clientView.clientGroupId,
                               clientViewVersion: clientViewVersion.next,
                               entity,
-                              entityId: value.id,
-                              entityVersion: value.version,
+                              entityId: data.id,
+                              entityVersion: data.version,
                               tenantId: clientView.tenantId,
                             }),
                           ),
@@ -220,10 +227,10 @@ export namespace Queries {
                         ),
                         patch: second.pipe(
                           Stream.take(baseLimit),
-                          Stream.map(([entity, value]) =>
+                          Stream.map(({ entity, data }) =>
                             ReplicacheContract.makePutTableOperation({
                               table: syncTables[entity],
-                              value,
+                              value: data,
                             }),
                           ),
                           Stream.runCollect<
@@ -262,14 +269,14 @@ export namespace Queries {
               // Fast-forward
               if (clientView.version < clientViewVersion.max)
                 return yield* client
-                  .fastForward(clientView, excludeIds, userId)
+                  .fastForward(clientView, excludes, userId)
                   .pipe(
-                    Stream.runFold(patch, (patch, [entity, value]) =>
+                    Stream.runFold(patch, (patch, { entity, data }) =>
                       patch.pipe(
                         Chunk.append(
                           ReplicacheContract.makePutTableOperation({
                             table: syncTables[entity],
-                            value,
+                            value: data,
                           }),
                         ),
                       ),
@@ -286,15 +293,15 @@ export namespace Queries {
                         Stream.take(limit),
                         Stream.runFold(
                           { clientViewEntries, patch },
-                          (result, [entity, value]) => ({
+                          (result, { entity, data }) => ({
                             clientViewEntries: result.clientViewEntries.pipe(
                               Chunk.append(
                                 ReplicacheClientViewEntriesModel.Record.make({
                                   clientGroupId: clientView.clientGroupId,
                                   clientViewVersion: clientViewVersion.next,
                                   entity,
-                                  entityId: value.id,
-                                  entityVersion: value.version,
+                                  entityId: data.id,
+                                  entityVersion: data.version,
                                   tenantId: clientView.tenantId,
                                 }),
                               ),
@@ -303,7 +310,7 @@ export namespace Queries {
                               Chunk.append(
                                 ReplicacheContract.makePutTableOperation({
                                   table: syncTables[entity],
-                                  value,
+                                  value: data,
                                 }),
                               ),
                             ),

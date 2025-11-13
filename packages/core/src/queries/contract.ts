@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as Array from "effect/Array";
-import * as Cause from "effect/Cause";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
+import * as HashSet from "effect/HashSet";
 import * as Iterable from "effect/Iterable";
-import * as Match from "effect/Match";
 import * as Option from "effect/Option";
 import * as Stream from "effect/Stream";
-import * as Tuple from "effect/Tuple";
 
 import { AccessControl } from "../access-control2";
 
@@ -107,7 +105,7 @@ export namespace QueriesContract {
       clientView: ReplicacheClientViewsModel.Record,
       userId: AuthContract.Session["userId"],
     ) => Stream.Stream<
-      Pick<VersionedDto<TEntity>, "id">,
+      VersionedDto<TEntity>["id"],
       TDeletesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
       TDeletesContext | TPolicyContext
     >;
@@ -123,15 +121,12 @@ export namespace QueriesContract {
     >;
   }
 
-  type DifferenceResolverMode = "some" | "every";
-
   export class DifferenceResolverBuilder<
     TEntity extends Models.SyncTableName,
     TQuery extends DifferenceQuery<TEntity> | null = null,
-    TMode extends DifferenceResolverMode = "some",
   > {
-    readonly entity: TEntity;
-    readonly mode: TMode;
+    constructor(readonly entity: TEntity) {}
+
     #queries = Iterable.empty<Omit<DifferenceQuery<TEntity>, "entity">>();
 
     readonly QueryType = {} as DifferenceQuery<
@@ -147,17 +142,6 @@ export namespace QueriesContract {
       Effect.Effect.Error<ReturnType<NonNullable<TQuery>["fastForward"]>>,
       Effect.Effect.Context<ReturnType<NonNullable<TQuery>["fastForward"]>>
     >;
-
-    constructor({
-      entity,
-      mode = "some" as TMode,
-    }: {
-      entity: TEntity;
-      mode?: TMode;
-    }) {
-      this.entity = entity;
-      this.mode = mode;
-    }
 
     query<
       TPolicyError,
@@ -211,8 +195,7 @@ export namespace QueriesContract {
               TFastForwardError,
               TFastForwardContext
             >
-        >,
-        TMode
+        >
       >;
     }
 
@@ -236,7 +219,7 @@ export namespace QueriesContract {
         Effect.Effect.Context<ReturnType<NonNullable<TQuery>["fastForward"]>>
       >;
 
-    #some = <TData, TError, TContext>(
+    #resolveData = <TData extends VersionedDto<TEntity>, TError, TContext>(
       effects: Iterable<
         Effect.Effect<
           Array<TData>,
@@ -245,49 +228,64 @@ export namespace QueriesContract {
         >
       >,
     ) =>
-      Effect.suspend(() => {
-        const chunk = Chunk.fromIterable(effects);
-
-        if (!Chunk.isNonEmpty(chunk))
-          return Effect.dieSync(
-            () =>
-              new Cause.IllegalArgumentException(
-                "Received an empty collection of effects",
+      Effect.suspend(() =>
+        HashMap.empty<TData["id"], TData>().pipe(HashMap.beginMutation, (map) =>
+          Effect.all(
+            Iterable.map(effects, (effect) =>
+              effect.pipe(
+                Effect.catchTag("AccessDeniedError", () =>
+                  Effect.sync(Array.empty<TData>),
+                ),
+                Effect.map(
+                  Array.map((data) => map.pipe(HashMap.set(data.id, data))),
+                ),
               ),
-          );
-
-        return chunk.pipe(
-          Chunk.tailNonEmpty,
-          Array.reduce(chunk.pipe(Chunk.headNonEmpty), (left, right) =>
-            left.pipe(Effect.catchTag("AccessDeniedError", () => right)),
+            ),
+            { concurrency: "unbounded", discard: true },
+          ).pipe(
+            Effect.map(() => map.pipe(HashMap.endMutation)),
+            Effect.map(HashMap.values),
           ),
-          Effect.catchTag("AccessDeniedError", () =>
-            Effect.succeed(Array.empty<TData>()),
-          ),
-        );
-      });
+        ),
+      ).pipe(Stream.fromIterableEffect);
 
-    // TODO: Implement
-    #every = <TData, TError, TContext>(
-      effects: Iterable<Effect.Effect<Array<TData>, TError, TContext>>,
-    ) => this.#some(effects);
-
-    #resolve = <TData, TError, TContext>(
-      effects: Iterable<Effect.Effect<Array<TData>, TError, TContext>>,
+    #resolveIds = <
+      TData extends Pick<VersionedDto<TEntity>, "id">,
+      TError,
+      TContext,
+    >(
+      effects: Iterable<
+        Effect.Effect<
+          Array<TData>,
+          TError | AccessControl.AccessDeniedError,
+          TContext
+        >
+      >,
     ) =>
-      Match.type<DifferenceResolverMode>()
-        .pipe(
-          Match.when(Match.is("some"), () => this.#some(effects)),
-          Match.when(Match.is("every"), () => this.#every(effects)),
-          Match.exhaustive,
-        )(this.mode)
-        .pipe(Stream.fromIterableEffect);
+      Effect.suspend(() =>
+        HashSet.empty<TData["id"]>().pipe(HashSet.beginMutation, (set) =>
+          Effect.all(
+            Iterable.map(effects, (effect) =>
+              effect.pipe(
+                Effect.catchTag("AccessDeniedError", () =>
+                  Effect.sync(Array.empty<TData>),
+                ),
+                Effect.map(Array.map((data) => set.pipe(HashSet.add(data.id)))),
+              ),
+            ),
+            { concurrency: "unbounded", discard: true },
+          ).pipe(
+            Effect.map(() => set.pipe(HashSet.endMutation)),
+            Effect.map(HashSet.values),
+          ),
+        ),
+      ).pipe(Stream.fromIterableEffect);
 
     #findCreates = (
       clientView: ReplicacheClientViewsModel.Record,
       userId: AuthContract.Session["userId"],
     ) =>
-      this.#resolve(
+      this.#resolveData(
         Iterable.map(this.#queries, (q) => {
           const query = q as typeof this.QueryType;
 
@@ -301,7 +299,7 @@ export namespace QueriesContract {
       clientView: ReplicacheClientViewsModel.Record,
       userId: AuthContract.Session["userId"],
     ) =>
-      this.#resolve(
+      this.#resolveData(
         Iterable.map(this.#queries, (q) => {
           const query = q as typeof this.QueryType;
 
@@ -315,7 +313,7 @@ export namespace QueriesContract {
       clientView: ReplicacheClientViewsModel.Record,
       userId: AuthContract.Session["userId"],
     ) =>
-      this.#resolve(
+      this.#resolveIds(
         Iterable.map(this.#queries, (q) => {
           const query = q as typeof this.QueryType;
 
@@ -332,7 +330,7 @@ export namespace QueriesContract {
       >,
       userId: AuthContract.Session["userId"],
     ) =>
-      this.#resolve(
+      this.#resolveData(
         Iterable.map(this.#queries, (q) => {
           const query = q as typeof this.QueryType;
 
@@ -434,17 +432,17 @@ export namespace QueriesContract {
         Iterable.map(([entity, resolver]) =>
           resolver
             .findCreates(clientView, userId)
-            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+            .pipe(Stream.map((data) => ({ entity, data }))),
         ),
         Stream.mergeAll({ concurrency: "unbounded" }),
       ) as Stream.Stream<
         {
-          [TEntity in Models.SyncTableName]: [
-            TEntity,
-            Stream.Stream.Success<
+          [TEntity in Models.SyncTableName]: {
+            entity: TEntity;
+            data: Stream.Stream.Success<
               ReturnType<NonNullable<TRecord[TEntity]>["findCreates"]>
-            >,
-          ];
+            >;
+          };
         }[Models.SyncTableName],
         Stream.Stream.Error<
           ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findCreates"]>
@@ -469,17 +467,17 @@ export namespace QueriesContract {
         Iterable.map(([entity, resolver]) =>
           resolver
             .findUpdates(clientView, userId)
-            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+            .pipe(Stream.map((data) => ({ entity, data }))),
         ),
         Stream.mergeAll({ concurrency: "unbounded" }),
       ) as Stream.Stream<
         {
-          [TEntity in Models.SyncTableName]: [
-            TEntity,
-            Stream.Stream.Success<
+          [TEntity in Models.SyncTableName]: {
+            entity: TEntity;
+            data: Stream.Stream.Success<
               ReturnType<NonNullable<TRecord[TEntity]>["findUpdates"]>
-            >,
-          ];
+            >;
+          };
         }[Models.SyncTableName],
         Stream.Stream.Error<
           ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findUpdates"]>
@@ -504,17 +502,17 @@ export namespace QueriesContract {
         Iterable.map(([entity, resolver]) =>
           resolver
             .findDeletes(clientView, userId)
-            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+            .pipe(Stream.map((id) => ({ entity, id }))),
         ),
         Stream.mergeAll({ concurrency: "unbounded" }),
       ) as Stream.Stream<
         {
-          [TEntity in Models.SyncTableName]: [
-            TEntity,
-            Stream.Stream.Success<
+          [TEntity in Models.SyncTableName]: {
+            entity: TEntity;
+            id: Stream.Stream.Success<
               ReturnType<NonNullable<TRecord[TEntity]>["findDeletes"]>
-            >,
-          ];
+            >;
+          };
         }[Models.SyncTableName],
         Stream.Stream.Error<
           ReturnType<NonNullable<TRecord[Models.SyncTableName]>["findDeletes"]>
@@ -532,12 +530,10 @@ export namespace QueriesContract {
         ? Differentiator<TRecord, TIsFinal>
         : never,
       clientView: ReplicacheClientViewsModel.Record,
-      excludeIds: Chunk.Chunk<
-        [
-          Models.SyncTableName,
-          Models.SyncTable["DataTransferObject"]["Type"]["id"],
-        ]
-      >,
+      excludes: Chunk.Chunk<{
+        entity: Models.SyncTableName;
+        id: Models.SyncTable["DataTransferObject"]["Type"]["id"];
+      }>,
       userId: AuthContract.Session["userId"],
     ) {
       return this.#map.pipe(
@@ -546,24 +542,26 @@ export namespace QueriesContract {
           resolver
             .fastForward(
               clientView,
-              excludeIds.pipe(
-                Chunk.filterMap((pair) =>
-                  pair[0] === entity ? Option.some(pair[1]) : Option.none(),
+              excludes.pipe(
+                Chunk.filterMap((exclude) =>
+                  exclude.entity === entity
+                    ? Option.some(exclude.id)
+                    : Option.none(),
                 ),
               ),
               userId,
             )
-            .pipe(Stream.map((value) => Tuple.make(entity, value))),
+            .pipe(Stream.map((data) => ({ entity, data }))),
         ),
         Stream.mergeAll({ concurrency: "unbounded" }),
       ) as Stream.Stream<
         {
-          [TEntity in Models.SyncTableName]: [
-            TEntity,
-            Stream.Stream.Success<
+          [TEntity in Models.SyncTableName]: {
+            entity: TEntity;
+            data: Stream.Stream.Success<
               ReturnType<NonNullable<TRecord[TEntity]>["fastForward"]>
-            >,
-          ];
+            >;
+          };
         }[Models.SyncTableName],
         Stream.Stream.Error<
           ReturnType<NonNullable<TRecord[Models.SyncTableName]>["fastForward"]>

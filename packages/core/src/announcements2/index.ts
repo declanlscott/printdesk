@@ -525,9 +525,9 @@ export namespace Announcements {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(AnnouncementsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(AnnouncementsSchema.table.definition),
+          )
             .query(AccessControl.permission("announcements:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

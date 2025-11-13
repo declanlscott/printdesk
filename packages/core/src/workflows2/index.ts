@@ -549,9 +549,9 @@ export namespace RoomWorkflows {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(RoomWorkflowsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(RoomWorkflowsSchema.table.definition),
+          )
             .query(AccessControl.permission("room_workflows:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,
@@ -1391,9 +1391,9 @@ export namespace SharedAccountWorkflows {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(SharedAccountWorkflowsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(SharedAccountWorkflowsSchema.table.definition),
+          )
             .query(AccessControl.permission("shared_account_workflows:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,
@@ -2704,9 +2704,9 @@ export namespace WorkflowStatuses {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(WorkflowStatusesSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(WorkflowStatusesSchema.table.definition),
+          )
             .query(AccessControl.permission("workflow_statuses:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

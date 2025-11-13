@@ -256,9 +256,9 @@ export namespace Tenants {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(TenantsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(TenantsSchema.table.definition),
+          )
             .query(AccessControl.permission("tenants:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

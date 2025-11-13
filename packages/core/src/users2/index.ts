@@ -402,9 +402,9 @@ export namespace Users {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(UsersSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(UsersSchema.table.definition),
+          )
             .query(AccessControl.permission("users:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

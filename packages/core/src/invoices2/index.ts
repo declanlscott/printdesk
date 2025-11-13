@@ -756,9 +756,9 @@ export namespace Invoices {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(InvoicesSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(InvoicesSchema.table.definition),
+          )
             .query(AccessControl.permission("invoices:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

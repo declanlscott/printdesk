@@ -910,9 +910,9 @@ export namespace Orders {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(OrdersSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(OrdersSchema.table.definition),
+          )
             .query(AccessControl.permission("orders:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

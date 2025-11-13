@@ -527,9 +527,9 @@ export namespace DeliveryOptions {
         const repository = yield* Repository;
 
         const differenceResolver =
-          new QueriesContract.DifferenceResolverBuilder({
-            entity: getTableName(DeliveryOptionsSchema.table.definition),
-          })
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(DeliveryOptionsSchema.table.definition),
+          )
             .query(AccessControl.permission("delivery_options:read"), {
               findCreates: repository.findCreates,
               findUpdates: repository.findUpdates,

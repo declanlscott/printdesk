@@ -1,4 +1,5 @@
 import * as Chunk from "effect/Chunk";
+import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
 import * as Number from "effect/Number";
@@ -31,6 +32,10 @@ import type { ColumnsContract } from "../columns2/contract";
 import type { ReplicacheClientViewsModel } from "../replicache2/models";
 
 export namespace Queries {
+  export class DifferenceLimitExceededError extends Data.TaggedError(
+    "DifferenceLimitExceededError",
+  ) {}
+
   export class Differentiator extends Effect.Service<Differentiator>()(
     "@printdesk/core/queries/Differentiator",
     {
@@ -128,25 +133,29 @@ export namespace Queries {
                             Match.type<
                               Stream.Stream.Success<typeof first>
                             >().pipe(
-                              Match.tag("update", (update) =>
-                                ReplicacheClientViewEntriesModel.Record.make({
-                                  clientGroupId: clientView.clientGroupId,
-                                  clientViewVersion: clientViewVersion.next,
-                                  entity: update.value.entity,
-                                  entityId: update.value.data.id,
-                                  entityVersion: update.value.data.version,
-                                  tenantId: clientView.tenantId,
-                                }),
+                              Match.tag(
+                                "update",
+                                (update) =>
+                                  new ReplicacheClientViewEntriesModel.Record({
+                                    clientGroupId: clientView.clientGroupId,
+                                    clientViewVersion: clientViewVersion.next,
+                                    entity: update.value.entity,
+                                    entityId: update.value.data.id,
+                                    entityVersion: update.value.data.version,
+                                    tenantId: clientView.tenantId,
+                                  }),
                               ),
-                              Match.tag("delete", (delete_) =>
-                                ReplicacheClientViewEntriesModel.Record.make({
-                                  clientGroupId: clientView.clientGroupId,
-                                  clientViewVersion: clientViewVersion.next,
-                                  entity: delete_.value.entity,
-                                  entityId: delete_.value.id,
-                                  entityVersion: null,
-                                  tenantId: clientView.tenantId,
-                                }),
+                              Match.tag(
+                                "delete",
+                                (delete_) =>
+                                  new ReplicacheClientViewEntriesModel.Record({
+                                    clientGroupId: clientView.clientGroupId,
+                                    clientViewVersion: clientViewVersion.next,
+                                    entity: delete_.value.entity,
+                                    entityId: delete_.value.id,
+                                    entityVersion: null,
+                                    tenantId: clientView.tenantId,
+                                  }),
                               ),
                               Match.exhaustive,
                             ),
@@ -204,67 +213,9 @@ export namespace Queries {
                   Effect.scoped,
                 );
 
-              // Reset
               if (limit < 0)
-                return yield* client.findCreates(clientView, userId).pipe(
-                  Stream.broadcast(3, 1),
-                  Effect.flatMap(([first, second, third]) =>
-                    Effect.all(
-                      {
-                        clientViewEntries: first.pipe(
-                          Stream.take(baseLimit),
-                          Stream.map(({ entity, data }) =>
-                            ReplicacheClientViewEntriesModel.Record.make({
-                              clientGroupId: clientView.clientGroupId,
-                              clientViewVersion: clientViewVersion.next,
-                              entity,
-                              entityId: data.id,
-                              entityVersion: data.version,
-                              tenantId: clientView.tenantId,
-                            }),
-                          ),
-                          Stream.runCollect,
-                        ),
-                        patch: second.pipe(
-                          Stream.take(baseLimit),
-                          Stream.map(({ entity, data }) =>
-                            ReplicacheContract.makePutTableOperation({
-                              table: syncTables[entity],
-                              value: data,
-                            }),
-                          ),
-                          Stream.runCollect<
-                            ReplicacheContract.PatchOperation,
-                            Stream.Stream.Error<typeof second>,
-                            Stream.Stream.Context<typeof second>
-                          >,
-                          Effect.map(
-                            Chunk.prepend(
-                              ReplicacheContract.ClearOperation.make(),
-                            ),
-                          ),
-                        ),
-                        isPartial: third.pipe(
-                          Stream.drop(baseLimit),
-                          Stream.runHead,
-                          Effect.map(Option.isSome),
-                        ),
-                      },
-                      { concurrency: "unbounded" },
-                    ),
-                  ),
-                  Effect.scoped,
-                  Effect.map(({ clientViewEntries, patch, isPartial }) => ({
-                    clientViewEntries,
-                    patch: patch.pipe(
-                      Chunk.append(
-                        ReplicacheContract.PutSyncStateOperation.make({
-                          value: isPartial ? "PARTIAL" : "COMPLETE",
-                        }),
-                      ),
-                    ),
-                  })),
-                );
+                // TODO: Handle this in puller?
+                return yield* Effect.fail(new DifferenceLimitExceededError());
 
               // Fast-forward
               if (clientView.version < clientViewVersion.max)
@@ -296,7 +247,7 @@ export namespace Queries {
                           (result, { entity, data }) => ({
                             clientViewEntries: result.clientViewEntries.pipe(
                               Chunk.append(
-                                ReplicacheClientViewEntriesModel.Record.make({
+                                new ReplicacheClientViewEntriesModel.Record({
                                   clientGroupId: clientView.clientGroupId,
                                   clientViewVersion: clientViewVersion.next,
                                   entity,
@@ -331,7 +282,7 @@ export namespace Queries {
                   ...result,
                   patch: result.patch.pipe(
                     Chunk.append(
-                      ReplicacheContract.PutSyncStateOperation.make({
+                      new ReplicacheContract.PutSyncStateOperation({
                         value: isPartial ? "PARTIAL" : "COMPLETE",
                       }),
                     ),

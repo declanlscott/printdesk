@@ -50,6 +50,211 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
 
       const ResponseOk = yield* ReplicacheContract.PullResponseOkV1;
 
+      const process = (
+        clientGroupId: ReplicacheContract.PullRequestV1["clientGroupId"],
+        cookie: ReplicacheContract.PullRequestV1["cookie"],
+      ) =>
+        // 3: Begin transaction
+        db
+          .withTransaction(
+            () =>
+              Effect.gen(function* () {
+                const [previousClientView, clientGroup, maxClientViewVersion] =
+                  yield* Effect.all(
+                    [
+                      // 1: Find previous client view
+                      cookie
+                        ? clientViewsRepository
+                            .findById(clientGroupId, cookie.order, tenantId)
+                            .pipe(
+                              Effect.catchTag("NoSuchElementException", () =>
+                                Effect.fail(
+                                  new ReplicacheContract.ClientStateNotFoundError(),
+                                ),
+                              ),
+                              Effect.map(Option.some),
+                            )
+                        : Effect.succeedNone,
+
+                      // 4: Get client group
+                      clientGroupsRepository
+                        .findByIdForUpdate(clientGroupId, tenantId)
+                        .pipe(
+                          Effect.catchTag("NoSuchElementException", () =>
+                            Effect.succeed(
+                              ReplicacheClientGroupsModel.Record.make({
+                                id: clientGroupId,
+                                tenantId,
+                                userId,
+                              }),
+                            ),
+                          ),
+                        ),
+
+                      clientViewsRepository
+                        .findMaxVersionByGroupId(clientGroupId, tenantId)
+                        .pipe(
+                          Effect.catchTag("NoSuchElementException", () =>
+                            Effect.fail(
+                              new ReplicacheContract.ClientStateNotFoundError(),
+                            ),
+                          ),
+                        ),
+                    ],
+                    { concurrency: "unbounded" },
+                  );
+
+                // 2: Initialize client view
+                const clientView = previousClientView.pipe(
+                  Option.getOrElse(() =>
+                    ReplicacheClientViewsModel.Record.make({
+                      clientGroupId,
+                      tenantId,
+                    }),
+                  ),
+                );
+
+                // 5: Verify requesting client group owns requested client
+                yield* Effect.succeed(clientGroup).pipe(
+                  AccessControl.enforce(
+                    AccessControl.policy(
+                      (principal) =>
+                        Effect.succeed(principal.userId === clientGroup.userId),
+                      "Requesting client group does not own requested client.",
+                    ),
+                  ),
+                );
+
+                // 13: Increment client view version
+                const nextClientViewVersion = ColumnsContract.Version.make(
+                  Math.max(
+                    cookie?.order ?? 0,
+                    clientGroup.clientViewVersion ?? 0,
+                  ) + 1,
+                );
+
+                const baseWrites = Tuple.make(
+                  clientGroupsRepository.upsert({
+                    id: clientGroupId,
+                    tenantId,
+                    userId,
+                    clientVersion: clientGroup.clientVersion,
+                    clientViewVersion: nextClientViewVersion,
+                  }),
+                  clientViewsRepository.upsert({
+                    clientGroupId,
+                    clientVersion: clientGroup.clientVersion,
+                    version: nextClientViewVersion,
+                    tenantId,
+                  }),
+                );
+
+                const { diff, clients } = yield* Effect.all(
+                  {
+                    // 6, 8, 9, 11: Compute patch and client view entries
+                    diff: differentiator.differentiate(
+                      clientView,
+                      userId,
+                      baseWrites.length,
+                      {
+                        next: nextClientViewVersion,
+                        max: maxClientViewVersion,
+                      },
+                    ),
+
+                    // 7, 12: Find clients that have changed since the base client view
+                    clients: clientsRepository.findSinceVersionByGroupId(
+                      clientView.clientVersion,
+                      clientGroupId,
+                      tenantId,
+                    ),
+                  },
+                  { concurrency: "unbounded" },
+                );
+
+                // 10: If diff is empty, return no-op
+                if (
+                  previousClientView.pipe(Option.isSome) &&
+                  diff.patch.pipe(Chunk.isEmpty)
+                )
+                  return Option.none();
+
+                const [, nextClientView] = yield* Effect.all(
+                  Tuple.appendElement(
+                    // 14, 16: Write client group and client view
+                    baseWrites,
+
+                    // 17: Write client view entries
+                    diff.clientViewEntries.pipe(Chunk.isNonEmpty)
+                      ? diff.clientViewEntries.pipe(
+                          Chunk.toArray,
+                          clientViewEntriesRepository.upsertMany,
+                        )
+                      : Effect.void,
+                  ),
+                  { concurrency: "unbounded" },
+                );
+
+                // 15: Commit transaction
+                return Option.some({
+                  patch: diff.patch,
+                  clients,
+                  clientView: {
+                    previous: previousClientView,
+                    next: nextClientView,
+                  },
+                });
+              }),
+            { retry: true },
+          )
+          .pipe(
+            Effect.map(
+              Option.match({
+                // 10: If diff is empty, return no-op
+                onNone: () =>
+                  ResponseOk.make({
+                    cookie,
+                    lastMutationIdChanges: Record.empty(),
+                    patch: Chunk.empty(),
+                  }),
+                onSome: (result) => {
+                  // 18(i): Build patch
+                  const patch = result.clientView.previous.pipe(
+                    Option.match({
+                      onNone: () =>
+                        result.patch.pipe(
+                          Chunk.prepend(
+                            new ReplicacheContract.ClearOperation(),
+                          ),
+                        ),
+                      onSome: () => result.patch,
+                    }),
+                  );
+
+                  // 18(ii): Construct cookie
+                  const cookie = { order: result.clientView.next.version };
+
+                  // 18(iii): Last mutation ID changes
+                  const lastMutationIdChanges = Array.reduce(
+                    result.clients,
+                    Record.empty<
+                      ReplicacheClientsModel.Record["id"],
+                      ReplicacheClientsModel.Record["version"]
+                    >(),
+                    (changes, client) =>
+                      Record.set(changes, client.id, client.version),
+                  );
+
+                  return ResponseOk.make({
+                    cookie,
+                    lastMutationIdChanges,
+                    patch,
+                  });
+                },
+              }),
+            ),
+          );
+
       const pull = Effect.fn("ReplicachePuller.pull")(
         (pullRequest: ReplicacheContract.PullRequest) =>
           Effect.gen(function* () {
@@ -58,213 +263,10 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                 new ReplicacheContract.VersionNotSupportedError("pull"),
               );
 
-            const { cookie, clientGroupId } = pullRequest;
-
-            return yield* db
-              // 3: Begin transaction
-              .withTransaction(
-                () =>
-                  Effect.gen(function* () {
-                    const [
-                      previousClientView,
-                      clientGroup,
-                      maxClientViewVersion,
-                    ] = yield* Effect.all(
-                      [
-                        // 1: Find previous client view
-                        cookie
-                          ? clientViewsRepository
-                              .findById(clientGroupId, cookie.order, tenantId)
-                              .pipe(
-                                Effect.catchTag("NoSuchElementException", () =>
-                                  Effect.fail(
-                                    new ReplicacheContract.ClientStateNotFoundError(),
-                                  ),
-                                ),
-                                Effect.map(Option.some),
-                              )
-                          : Effect.succeedNone,
-
-                        // 4: Get client group
-                        clientGroupsRepository
-                          .findByIdForUpdate(clientGroupId, tenantId)
-                          .pipe(
-                            Effect.catchTag("NoSuchElementException", () =>
-                              Effect.succeed(
-                                ReplicacheClientGroupsModel.Record.make({
-                                  id: clientGroupId,
-                                  tenantId,
-                                  userId,
-                                }),
-                              ),
-                            ),
-                          ),
-
-                        clientViewsRepository
-                          .findMaxVersionByGroupId(clientGroupId, tenantId)
-                          .pipe(
-                            Effect.catchTag("NoSuchElementException", () =>
-                              Effect.fail(
-                                new ReplicacheContract.ClientStateNotFoundError(),
-                              ),
-                            ),
-                          ),
-                      ],
-                      { concurrency: "unbounded" },
-                    );
-
-                    // 2: Initialize client view
-                    const clientView = previousClientView.pipe(
-                      Option.getOrElse(() =>
-                        ReplicacheClientViewsModel.Record.make({
-                          clientGroupId,
-                          tenantId,
-                        }),
-                      ),
-                    );
-
-                    // 5: Verify requesting client group owns requested client
-                    yield* Effect.succeed(clientGroup).pipe(
-                      AccessControl.enforce(
-                        AccessControl.policy(
-                          (principal) =>
-                            Effect.succeed(
-                              principal.userId === clientGroup.userId,
-                            ),
-                          "Requesting client group does not own requested client.",
-                        ),
-                      ),
-                    );
-
-                    // 13: Increment client view version
-                    const nextClientViewVersion = ColumnsContract.Version.make(
-                      Math.max(
-                        cookie?.order ?? 0,
-                        clientGroup.clientViewVersion ?? 0,
-                      ) + 1,
-                    );
-
-                    const baseWrites = Tuple.make(
-                      clientGroupsRepository.upsert({
-                        id: clientGroupId,
-                        tenantId,
-                        userId,
-                        clientVersion: clientGroup.clientVersion,
-                        clientViewVersion: nextClientViewVersion,
-                      }),
-                      clientViewsRepository.upsert({
-                        clientGroupId,
-                        clientVersion: clientGroup.clientVersion,
-                        version: nextClientViewVersion,
-                        tenantId,
-                      }),
-                    );
-
-                    const { diff, clients } = yield* Effect.all(
-                      {
-                        // 6, 8, 9, 11: Compute patch and client view entries
-                        diff: differentiator.differentiate(
-                          clientView,
-                          userId,
-                          baseWrites.length,
-                          {
-                            next: nextClientViewVersion,
-                            max: maxClientViewVersion,
-                          },
-                        ),
-
-                        // 7, 12: Find clients that have changed since the base client view
-                        clients: clientsRepository.findSinceVersionByGroupId(
-                          clientView.clientVersion,
-                          clientGroupId,
-                          tenantId,
-                        ),
-                      },
-                      { concurrency: "unbounded" },
-                    );
-
-                    // 10: If diff is empty, return no-op
-                    if (
-                      previousClientView.pipe(Option.isSome) &&
-                      diff.patch.pipe(Chunk.isEmpty)
-                    )
-                      return Option.none();
-
-                    const [, nextClientView] = yield* Effect.all(
-                      Tuple.appendElement(
-                        // 14, 16: Write client group and client view
-                        baseWrites,
-
-                        // 17: Write client view entries
-                        diff.clientViewEntries.pipe(Chunk.isNonEmpty)
-                          ? diff.clientViewEntries.pipe(
-                              Chunk.toArray,
-                              clientViewEntriesRepository.upsertMany,
-                            )
-                          : Effect.void,
-                      ),
-                      { concurrency: "unbounded" },
-                    );
-
-                    // 15: Commit transaction
-                    return Option.some({
-                      patch: diff.patch,
-                      clients,
-                      clientView: {
-                        previous: previousClientView,
-                        next: nextClientView,
-                      },
-                    });
-                  }),
-                { retry: true },
-              )
-              .pipe(
-                Effect.map(
-                  Option.match({
-                    // 10: If diff is empty, return no-op
-                    onNone: () =>
-                      ResponseOk.make({
-                        cookie,
-                        lastMutationIdChanges: Record.empty(),
-                        patch: Chunk.empty(),
-                      }),
-                    onSome: (result) => {
-                      // 18(i): Build patch
-                      const patch = result.clientView.previous.pipe(
-                        Option.match({
-                          onNone: () =>
-                            result.patch.pipe(
-                              Chunk.prepend(
-                                ReplicacheContract.ClearOperation.make(),
-                              ),
-                            ),
-                          onSome: () => result.patch,
-                        }),
-                      );
-
-                      // 18(ii): Construct cookie
-                      const cookie = { order: result.clientView.next.version };
-
-                      // 18(iii): Last mutation ID changes
-                      const lastMutationIdChanges = Array.reduce(
-                        result.clients,
-                        Record.empty<
-                          ReplicacheClientsModel.Record["id"],
-                          ReplicacheClientsModel.Record["version"]
-                        >(),
-                        (changes, client) =>
-                          Record.set(changes, client.id, client.version),
-                      );
-
-                      return ResponseOk.make({
-                        cookie,
-                        lastMutationIdChanges,
-                        patch,
-                      });
-                    },
-                  }),
-                ),
-              );
+            return yield* process(
+              pullRequest.clientGroupId,
+              pullRequest.cookie,
+            );
           }).pipe(
             Effect.timed,
             Effect.flatMap(([duration, response]) =>

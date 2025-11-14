@@ -4,7 +4,6 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
-import * as Schema from "effect/Schema";
 import * as Tuple from "effect/Tuple";
 
 import { Replicache } from ".";
@@ -50,18 +49,13 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
       const differentiator = yield* Queries.Differentiator;
 
       const ResponseOk = yield* ReplicacheContract.PullResponseOkV1;
-      const Response = yield* ReplicacheContract.PullResponseV1;
 
       const pull = Effect.fn("ReplicachePuller.pull")(
         (pullRequest: ReplicacheContract.PullRequest) =>
           Effect.gen(function* () {
             if (pullRequest.pullVersion !== 1)
               return yield* Effect.fail(
-                new ReplicacheContract.VersionNotSupportedError({
-                  response: ReplicacheContract.VersionNotSupportedResponse.make(
-                    { versionType: "pull" },
-                  ),
-                }),
+                new ReplicacheContract.VersionNotSupportedError("pull"),
               );
 
             const { cookie, clientGroupId } = pullRequest;
@@ -84,12 +78,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                               .pipe(
                                 Effect.catchTag("NoSuchElementException", () =>
                                   Effect.fail(
-                                    new ReplicacheContract.ClientStateNotFoundError(
-                                      {
-                                        response:
-                                          ReplicacheContract.ClientStateNotFoundResponse.make(),
-                                      },
-                                    ),
+                                    new ReplicacheContract.ClientStateNotFoundError(),
                                   ),
                                 ),
                                 Effect.map(Option.some),
@@ -116,12 +105,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                           .pipe(
                             Effect.catchTag("NoSuchElementException", () =>
                               Effect.fail(
-                                new ReplicacheContract.ClientStateNotFoundError(
-                                  {
-                                    response:
-                                      ReplicacheContract.ClientStateNotFoundResponse.make(),
-                                  },
-                                ),
+                                new ReplicacheContract.ClientStateNotFoundError(),
                               ),
                             ),
                           ),
@@ -282,17 +266,10 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                 ),
               );
           }).pipe(
-            Effect.catchTags({
-              VersionNotSupportedError: (error) =>
-                Effect.succeed(error.response),
-              ClientStateNotFoundError: (error) =>
-                Effect.succeed(error.response),
-            }),
-            Effect.flatMap(Schema.encode(Response)),
             Effect.timed,
             Effect.flatMap(([duration, response]) =>
               Effect.log(
-                `Processed pull in ${duration.pipe(Duration.toMillis)}ms`,
+                `Processed pull request in ${duration.pipe(Duration.toMillis)}ms`,
               ).pipe(Effect.as(response)),
             ),
             Effect.tapErrorCause((error) =>

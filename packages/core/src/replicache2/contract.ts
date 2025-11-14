@@ -10,6 +10,41 @@ import { Models } from "../models2";
 import { Constants } from "../utils/constants";
 
 export namespace ReplicacheContract {
+  export class ClientStateNotFoundResponse extends Schema.Class<ClientStateNotFoundResponse>(
+    "ClientStateNotFoundResponse",
+  )({ error: Schema.tag("ClientStateNotFound") }) {}
+
+  export class ClientStateNotFoundError extends Data.TaggedError(
+    "ClientStateNotFoundError",
+  ) {
+    readonly response: ClientStateNotFoundResponse;
+
+    constructor() {
+      super();
+      this.response = new ClientStateNotFoundResponse();
+    }
+  }
+
+  export class VersionNotSupportedResponse extends Schema.Class<VersionNotSupportedResponse>(
+    "VersionNotSupportedResponse",
+  )({
+    error: Schema.tag("VersionNotSupported"),
+    versionType: Schema.Literal("push", "pull", "schema").pipe(Schema.optional),
+  }) {}
+
+  export class VersionNotSupportedError extends Data.TaggedError(
+    "VersionNotSupportedError",
+  ) {
+    readonly response: VersionNotSupportedResponse;
+
+    constructor(
+      versionType: NonNullable<VersionNotSupportedResponse["versionType"]>,
+    ) {
+      super();
+      this.response = new VersionNotSupportedResponse({ versionType });
+    }
+  }
+
   export class MutationV0 extends Schema.TaggedClass<MutationV0>("MutationV0")(
     "MutationV0",
     {
@@ -55,6 +90,13 @@ export namespace ReplicacheContract {
   export const PushRequest = Schema.Union(PushRequestV0, PushRequestV1);
   export type PushRequest = typeof PushRequest.Type;
 
+  export const PushResponse = Schema.Union(
+    Schema.Undefined,
+    ClientStateNotFoundResponse,
+    VersionNotSupportedResponse,
+  );
+  export type PushResponse = typeof PushResponse.Type;
+
   export const Cookie = Schema.Struct({ order: ColumnsContract.Version }).pipe(
     Schema.NullOr,
   );
@@ -83,25 +125,6 @@ export namespace ReplicacheContract {
 
   export const PullRequest = Schema.Union(PullRequestV0, PullRequestV1);
   export type PullRequest = typeof PullRequest.Type;
-
-  export class VersionNotSupportedResponse extends Schema.Class<VersionNotSupportedResponse>(
-    "VersionNotSupportedResponse",
-  )({
-    error: Schema.tag("VersionNotSupported"),
-    versionType: Schema.Literal("push", "pull", "schema").pipe(Schema.optional),
-  }) {}
-
-  export class ClientStateNotFoundResponse extends Schema.Class<ClientStateNotFoundResponse>(
-    "ClientStateNotFoundResponse",
-  )({ error: Schema.tag("ClientStateNotFound") }) {}
-
-  export class VersionNotSupportedError extends Data.TaggedError(
-    "VersionNotSupportedError",
-  )<{ readonly response: VersionNotSupportedResponse }> {}
-
-  export class ClientStateNotFoundError extends Data.TaggedError(
-    "ClientStateNotFoundError",
-  )<{ readonly response: ClientStateNotFoundResponse }> {}
 
   const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
     Schema.String.pipe(

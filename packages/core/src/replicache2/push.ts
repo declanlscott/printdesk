@@ -117,9 +117,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
 
                 if (client.lastMutationId === 0 && mutation.id > 1)
                   return yield* Effect.fail(
-                    new ReplicacheContract.ClientStateNotFoundError({
-                      response: { error: "ClientStateNotFound" },
-                    }),
+                    new ReplicacheContract.ClientStateNotFoundError(),
                   );
 
                 // 7: Next mutation ID
@@ -192,15 +190,15 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
               `Processed mutation "${mutation.id}" in ${duration.pipe(Duration.toMillis)}ms`,
             ),
           ),
-          Effect.catchTag("PastMutationError", (error) =>
-            Effect.log(
-              `Mutation "${error.mutationId}" already processed - skipping`,
-            ),
-          ),
           Effect.tapErrorCause((error) =>
             Effect.log(
               `Encountered error during push on mutation "${mutation.id}"`,
               error,
+            ),
+          ),
+          Effect.catchTag("PastMutationError", (error) =>
+            Effect.log(
+              `Mutation "${error.mutationId}" already processed - skipping`,
             ),
           ),
         );
@@ -210,12 +208,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
           Effect.gen(function* () {
             if (pushRequest.pushVersion !== 1)
               return yield* Effect.fail(
-                new ReplicacheContract.VersionNotSupportedError({
-                  response: {
-                    error: "VersionNotSupported",
-                    versionType: "push",
-                  },
-                }),
+                new ReplicacheContract.VersionNotSupportedError("push"),
               );
 
             yield* Effect.forEach(pushRequest.mutations, (mutation) =>
@@ -231,7 +224,17 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 ReplicacheNotifier.Default(pushRequest.clientGroupId),
               ),
             );
-          }),
+          }).pipe(
+            Effect.timed,
+            Effect.flatMap(([duration, response]) =>
+              Effect.log(
+                `Processed push request in ${duration.pipe(Duration.toMillis)}ms`,
+              ).pipe(Effect.as(response)),
+            ),
+            Effect.tapErrorCause((error) =>
+              Effect.log("Encountered error during push", error),
+            ),
+          ),
       );
 
       return { push } as const;

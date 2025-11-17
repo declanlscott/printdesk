@@ -94,25 +94,16 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 );
 
                 // 4: Verify requesting user owns specified client group
-                yield* Effect.succeed(clientGroup).pipe(
-                  AccessControl.enforce(
-                    AccessControl.policy(
-                      (principal) =>
-                        Effect.succeed(principal.userId === clientGroup.userId),
-                      "User does not own specified client group.",
-                    ),
-                  ),
+                yield* AccessControl.policy(
+                  (principal) =>
+                    Effect.succeed(principal.userId === clientGroup.userId),
+                  "User does not own specified client group.",
                 );
 
                 // 6: Verify requesting client group owns requested client
-                yield* Effect.succeed(client).pipe(
-                  AccessControl.enforce(
-                    AccessControl.policy(
-                      () =>
-                        Effect.succeed(clientGroupId === client.clientGroupId),
-                      "Requesting client group does not own requested client.",
-                    ),
-                  ),
+                yield* AccessControl.policy(
+                  () => Effect.succeed(clientGroupId === client.clientGroupId),
+                  "Requesting client group does not own requested client.",
                 );
 
                 if (client.lastMutationId === 0 && mutation.id > 1)
@@ -149,7 +140,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                       // 10(ii)(a,b): Log and abort
                       Effect.tapErrorCause((error) =>
                         Effect.logError(
-                          `Error processing mutation "${mutation.id}"`,
+                          `[ReplicachePusher]: Error processing mutation "${mutation.id}"`,
                           error,
                         ),
                       ),
@@ -187,18 +178,18 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
           Effect.timed,
           Effect.flatMap(([duration]) =>
             Effect.log(
-              `Processed mutation "${mutation.id}" in ${duration.pipe(Duration.toMillis)}ms`,
+              `[ReplicachePusher]: Processed mutation "${mutation.id}" in ${duration.pipe(Duration.toMillis)}ms`,
             ),
           ),
           Effect.tapErrorCause((error) =>
             Effect.log(
-              `Encountered error during push on mutation "${mutation.id}"`,
+              `[ReplicachePusher]: Encountered error during push on mutation "${mutation.id}"`,
               error,
             ),
           ),
           Effect.catchTag("PastMutationError", (error) =>
             Effect.log(
-              `Mutation "${error.mutationId}" already processed - skipping`,
+              `[ReplicachePusher]: Mutation "${error.mutationId}" already processed - skipping`,
             ),
           ),
         );
@@ -228,11 +219,14 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
             Effect.timed,
             Effect.flatMap(([duration, response]) =>
               Effect.log(
-                `Processed push request in ${duration.pipe(Duration.toMillis)}ms`,
+                `[ReplicachePusher]: Processed push request in ${duration.pipe(Duration.toMillis)}ms`,
               ).pipe(Effect.as(response)),
             ),
             Effect.tapErrorCause((error) =>
-              Effect.log("Encountered error during push", error),
+              Effect.log(
+                "[ReplicachePusher]: Encountered error during push",
+                error,
+              ),
             ),
           ),
       );

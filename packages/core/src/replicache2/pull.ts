@@ -106,23 +106,20 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
 
                 // 2: Initialize client view
                 const clientView = previousClientView.pipe(
-                  Option.getOrElse(() =>
-                    ReplicacheClientViewsModel.Record.make({
-                      clientGroupId,
-                      tenantId,
-                    }),
+                  Option.getOrElse(
+                    () =>
+                      new ReplicacheClientViewsModel.Record({
+                        clientGroupId,
+                        tenantId,
+                      }),
                   ),
                 );
 
                 // 5: Verify requesting client group owns requested client
-                yield* Effect.succeed(clientGroup).pipe(
-                  AccessControl.enforce(
-                    AccessControl.policy(
-                      (principal) =>
-                        Effect.succeed(principal.userId === clientGroup.userId),
-                      "Requesting client group does not own requested client.",
-                    ),
-                  ),
+                yield* AccessControl.policy(
+                  (principal) =>
+                    Effect.succeed(principal.userId === clientGroup.userId),
+                  "Requesting client group does not own requested client.",
                 );
 
                 // 13: Increment client view version
@@ -133,7 +130,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                   ) + 1,
                 );
 
-                const baseWrites = Tuple.make(
+                const upserts = Tuple.make(
                   clientGroupsRepository.upsert({
                     id: clientGroupId,
                     tenantId,
@@ -155,14 +152,14 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                     diff: differentiator.differentiate(
                       clientView,
                       userId,
-                      baseWrites.length,
+                      upserts.length,
                       {
                         next: nextClientViewVersion,
                         max: maxClientViewVersion,
                       },
                     ),
 
-                    // 7, 12: Find clients that have changed since the base client view
+                    // 7, 12: Find clients that have changed since the client view
                     clients: clientsRepository.findSinceVersionByGroupId(
                       clientView.clientVersion,
                       clientGroupId,
@@ -182,7 +179,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                 const [, nextClientView] = yield* Effect.all(
                   Tuple.appendElement(
                     // 14, 16: Write client group and client view
-                    baseWrites,
+                    upserts,
 
                     // 17: Write client view entries
                     diff.clientViewEntries.pipe(Chunk.isNonEmpty)
@@ -279,11 +276,14 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
             Effect.timed,
             Effect.flatMap(([duration, response]) =>
               Effect.log(
-                `Processed pull request in ${duration.pipe(Duration.toMillis)}ms`,
+                `[ReplicachePuller]: Processed pull request in ${duration.pipe(Duration.toMillis)}ms`,
               ).pipe(Effect.as(response)),
             ),
             Effect.tapErrorCause((error) =>
-              Effect.log("Encountered error during pull", error),
+              Effect.log(
+                "[ReplicachePuller]: Encountered error during pull",
+                error,
+              ),
             ),
           ),
       );

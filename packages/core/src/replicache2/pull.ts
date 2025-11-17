@@ -266,6 +266,14 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
             return yield* process(
               pullRequest.clientGroupId,
               pullRequest.cookie,
+            ).pipe(
+              Effect.catchTag("DifferenceLimitExceededError", () =>
+                Effect.log(
+                  "[ReplicachePuller]: Difference limit exceeded, trying again with client view reset ...",
+                ).pipe(
+                  Effect.andThen(process(pullRequest.clientGroupId, null)),
+                ),
+              ),
             );
           }).pipe(
             Effect.timed,

@@ -214,7 +214,6 @@ export namespace Queries {
                 );
 
               if (limit < 0)
-                // TODO: Handle this in puller?
                 return yield* Effect.fail(new DifferenceLimitExceededError());
 
               // Fast-forward

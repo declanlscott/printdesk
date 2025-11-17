@@ -274,6 +274,12 @@ export namespace Database {
                         return Effect.never;
                       }),
                       Effect.provide(Transaction.Default(tx)),
+                      Effect.timed,
+                      Effect.flatMap(([duration, success]) =>
+                        Effect.log(
+                          `[Database]: Transaction completed successfully in ${duration.pipe(Duration.toMillis)}ms`,
+                        ).pipe(Effect.as(success)),
+                      ),
                       (transaction) => runPromise(transaction, { signal }),
                     ),
                   )

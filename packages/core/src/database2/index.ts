@@ -33,33 +33,28 @@ export namespace Database {
   export class Logger extends Effect.Service<Logger>()(
     "@printdesk/core/database/Logger",
     {
-      effect: Effect.runtime().pipe(
-        Effect.map((runtime) => Runtime.runSync(runtime)),
-        Effect.map(
-          (runSync): DrizzleLogger => ({
-            logQuery: (query, params) =>
-              runSync(
-                Effect.gen(function* () {
-                  const stringifiedParams = params.map((p) => {
-                    try {
-                      return JSON.stringify(p);
-                    } catch {
-                      return String(p);
-                    }
-                  });
+      effect: Effect.gen(function* () {
+        const runtime = yield* Effect.runtime();
 
-                  const paramsStr = stringifiedParams.length
-                    ? ` -- params: [${stringifiedParams.join(", ")}]`
-                    : "";
+        const logQuery: DrizzleLogger["logQuery"] = (query, params) =>
+          Effect.gen(function* () {
+            const stringifiedParams = params.map((p) => {
+              try {
+                return JSON.stringify(p);
+              } catch {
+                return String(p);
+              }
+            });
 
-                  yield* Effect.logInfo(
-                    `[Database]: Query: ${query}${paramsStr}`,
-                  );
-                }),
-              ),
-          }),
-        ),
-      ),
+            const paramsStr = stringifiedParams.length
+              ? ` -- params: [${stringifiedParams.join(", ")}]`
+              : "";
+
+            yield* Effect.logInfo(`[Database]: Query: ${query}${paramsStr}`);
+          }).pipe(Runtime.runSync(runtime));
+
+        return { logQuery };
+      }),
     },
   ) {}
 

@@ -3,7 +3,7 @@ import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns2/contract";
 import { ProceduresContract } from "../procedures/contract";
-import { SharedAccountCustomerAuthorizationsContract } from "../shared-accounts2/contracts";
+import { SharedAccountCustomerAccessContract } from "../shared-accounts2/contracts";
 import { TablesContract } from "../tables2/contract";
 
 import type { CommentsSchema } from "./schema";
@@ -42,7 +42,7 @@ export namespace CommentsContract {
       activeCustomerPlacedOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        ...SharedAccountCustomerAuthorizationsContract.DataTransferStruct.pick(
+        ...SharedAccountCustomerAccessContract.DataTransferStruct.pick(
           "customerId",
         ).fields,
       }),

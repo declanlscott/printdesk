@@ -28,7 +28,7 @@ export namespace Orders {
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
         WorkflowStatuses.ReadRepository.Default,
-        SharedAccounts.ManagerAuthorizationsReadRepository.Default,
+        SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
         const base = yield* table.pipe(
@@ -37,8 +37,8 @@ export namespace Orders {
 
         const workflowStatusesRepository =
           yield* WorkflowStatuses.ReadRepository;
-        const sharedAccountManagerAuthorizationsRepository =
-          yield* SharedAccounts.ManagerAuthorizationsReadRepository;
+        const sharedAccountManagerAccessRepository =
+          yield* SharedAccounts.ManagerAccessReadRepository;
 
         const findByIdWithWorkflowStatus = (
           id: OrdersContract.DataTransferObject["id"],
@@ -72,11 +72,11 @@ export namespace Orders {
             .findById(id)
             .pipe(
               Effect.flatMap((order) =>
-                sharedAccountManagerAuthorizationsRepository.findWhere(
-                  Array.filterMap((authorization) =>
-                    authorization.sharedAccountId === order.sharedAccountId &&
-                    authorization.deletedAt === null
-                      ? Option.some(authorization.managerId)
+                sharedAccountManagerAccessRepository.findWhere(
+                  Array.filterMap((access) =>
+                    access.sharedAccountId === order.sharedAccountId &&
+                    access.deletedAt === null
+                      ? Option.some(access.managerId)
                       : Option.none(),
                   ),
                 ),

@@ -11,8 +11,8 @@ import {
 import { Columns } from "../columns2";
 import { Tables } from "../tables2";
 import {
-  SharedAccountCustomerAuthorizationsContract,
-  SharedAccountManagerAuthorizationsContract,
+  SharedAccountCustomerAccessContract,
+  SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "./contracts";
 
@@ -62,20 +62,19 @@ export namespace SharedAccountsSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedCustomerId:
-          SharedAccountCustomerAuthorizationsSchema.activeView.customerId,
+          SharedAccountCustomerAccessSchema.activeView.customerId,
       })
       .from(activeView)
       .innerJoin(
-        SharedAccountCustomerAuthorizationsSchema.activeView,
+        SharedAccountCustomerAccessSchema.activeView,
         and(
           eq(
             activeView.id,
-            SharedAccountCustomerAuthorizationsSchema.activeView
-              .sharedAccountId,
+            SharedAccountCustomerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            SharedAccountCustomerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountCustomerAccessSchema.activeView.tenantId,
           ),
         ),
       ),
@@ -92,19 +91,19 @@ export namespace SharedAccountsSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
+          SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
-        SharedAccountManagerAuthorizationsSchema.activeView,
+        SharedAccountManagerAccessSchema.activeView,
         and(
           eq(
             activeView.id,
-            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
+            SharedAccountManagerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountManagerAccessSchema.activeView.tenantId,
           ),
         ),
       ),
@@ -114,9 +113,9 @@ export namespace SharedAccountsSchema {
     InferSelectViewModel<ActiveManagerAuthorizedView>;
 }
 
-export namespace SharedAccountCustomerAuthorizationsSchema {
+export namespace SharedAccountCustomerAccessSchema {
   export const table = new Tables.Sync(
-    SharedAccountCustomerAuthorizationsContract.tableName,
+    SharedAccountCustomerAccessContract.tableName,
     {
       customerId: Columns.entityId.notNull(),
       sharedAccountId: Columns.entityId.notNull(),
@@ -130,7 +129,7 @@ export namespace SharedAccountCustomerAuthorizationsSchema {
   export type Row = InferSelectModel<Table>;
 
   export const activeView = pgView(
-    SharedAccountCustomerAuthorizationsContract.activeViewName,
+    SharedAccountCustomerAccessContract.activeViewName,
   ).as((qb) =>
     qb
       .select()
@@ -145,9 +144,9 @@ export namespace SharedAccountCustomerAuthorizationsSchema {
   export type ActiveAuthorizedRow = InferSelectViewModel<ActiveAuthorizedView>;
 }
 
-export namespace SharedAccountManagerAuthorizationsSchema {
+export namespace SharedAccountManagerAccessSchema {
   export const table = new Tables.Sync(
-    SharedAccountManagerAuthorizationsContract.tableName,
+    SharedAccountManagerAccessContract.tableName,
     {
       managerId: Columns.entityId.notNull(),
       sharedAccountId: Columns.entityId.notNull(),
@@ -161,7 +160,7 @@ export namespace SharedAccountManagerAuthorizationsSchema {
   export type Row = InferSelectModel<Table>;
 
   export const activeView = pgView(
-    SharedAccountManagerAuthorizationsContract.activeViewName,
+    SharedAccountManagerAccessContract.activeViewName,
   ).as((qb) =>
     qb
       .select()
@@ -176,26 +175,25 @@ export namespace SharedAccountManagerAuthorizationsSchema {
   export type ActiveAuthorizedRow = InferSelectViewModel<ActiveAuthorizedView>;
 
   export const activeCustomerAuthorizedView = pgView(
-    SharedAccountManagerAuthorizationsContract.activeCustomerAuthorizedViewName,
+    SharedAccountManagerAccessContract.activeCustomerAuthorizedViewName,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
         authorizedCustomerId:
-          SharedAccountCustomerAuthorizationsSchema.activeView.customerId,
+          SharedAccountCustomerAccessSchema.activeView.customerId,
       })
       .from(activeView)
       .innerJoin(
-        SharedAccountCustomerAuthorizationsSchema.activeView,
+        SharedAccountCustomerAccessSchema.activeView,
         and(
           eq(
             activeView.sharedAccountId,
-            SharedAccountCustomerAuthorizationsSchema.activeView
-              .sharedAccountId,
+            SharedAccountCustomerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            SharedAccountCustomerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountCustomerAccessSchema.activeView.tenantId,
           ),
         ),
       ),

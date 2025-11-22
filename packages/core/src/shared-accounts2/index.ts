@@ -25,13 +25,13 @@ import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
 import { ReplicacheClientViewEntriesSchema } from "../replicache2/schemas";
 import {
-  SharedAccountCustomerAuthorizationsContract,
-  SharedAccountManagerAuthorizationsContract,
+  SharedAccountCustomerAccessContract,
+  SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "./contracts";
 import {
-  SharedAccountCustomerAuthorizationsSchema,
-  SharedAccountManagerAuthorizationsSchema,
+  SharedAccountCustomerAccessSchema,
+  SharedAccountManagerAccessSchema,
   SharedAccountsSchema,
 } from "./schemas";
 
@@ -1156,8 +1156,8 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class CustomerAuthorizationsRepository extends Effect.Service<CustomerAuthorizationsRepository>()(
-    "@printdesk/core/shared-accounts/CustomerAuthorizationsRepository",
+  export class CustomerAccessRepository extends Effect.Service<CustomerAccessRepository>()(
+    "@printdesk/core/shared-accounts/CustomerAccessRepository",
     {
       dependencies: [
         Database.TransactionManager.Default,
@@ -1165,22 +1165,21 @@ export namespace SharedAccounts {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table =
-          SharedAccountCustomerAuthorizationsSchema.table.definition;
-        const activeView = SharedAccountCustomerAuthorizationsSchema.activeView;
+        const table = SharedAccountCustomerAccessSchema.table.definition;
+        const activeView = SharedAccountCustomerAccessSchema.activeView;
         const activeAuthorizedView =
-          SharedAccountCustomerAuthorizationsSchema.activeAuthorizedView;
+          SharedAccountCustomerAccessSchema.activeAuthorizedView;
 
         const entriesQueryBuilder =
           yield* Replicache.ClientViewEntriesQueryBuilder;
         const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const upsertMany = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.upsertMany",
+          "SharedAccounts.CustomerAccessRepository.upsertMany",
         )(
           (
             values: Array<
-              InferInsertModel<SharedAccountCustomerAuthorizationsSchema.Table>
+              InferInsertModel<SharedAccountCustomerAccessSchema.Table>
             >,
           ) =>
             db.useTransaction((tx) =>
@@ -1193,15 +1192,14 @@ export namespace SharedAccounts {
                     table.sharedAccountId,
                     table.tenantId,
                   ],
-                  set: SharedAccountCustomerAuthorizationsSchema.table
-                    .conflictSet,
+                  set: SharedAccountCustomerAccessSchema.table.conflictSet,
                 })
                 .returning(),
             ),
         );
 
         const findCreates = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findCreates",
+          "SharedAccounts.CustomerAccessRepository.findCreates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1231,7 +1229,7 @@ export namespace SharedAccounts {
         );
 
         const findActiveCreates = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findActiveCreates",
+          "SharedAccounts.CustomerAccessRepository.findActiveCreates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1261,18 +1259,18 @@ export namespace SharedAccounts {
         );
 
         const findActiveAuthorizedCreates = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findActiveAuthorizedCreates",
+          "SharedAccounts.CustomerAccessRepository.findActiveAuthorizedCreates",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountCustomerAuthorizationsSchema.ActiveAuthorizedRow["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.ActiveAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountCustomerAuthorizationsContract.activeAuthorizedViewName}_creates`,
+                      `${SharedAccountCustomerAccessContract.activeAuthorizedViewName}_creates`,
                     )
                     .as(
                       tx
@@ -1305,7 +1303,7 @@ export namespace SharedAccounts {
         );
 
         const findUpdates = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findUpdates",
+          "SharedAccounts.CustomerAccessRepository.findUpdates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1332,7 +1330,7 @@ export namespace SharedAccounts {
         );
 
         const findActiveUpdates = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findActiveUpdates",
+          "SharedAccounts.CustomerAccessRepository.findActiveUpdates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1364,18 +1362,18 @@ export namespace SharedAccounts {
         );
 
         const findActiveAuthorizedUpdates = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findActiveAuthorizedUpdates",
+          "SharedAccounts.CustomerAccessRepository.findActiveAuthorizedUpdates",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountCustomerAuthorizationsSchema.ActiveAuthorizedRow["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.ActiveAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountCustomerAuthorizationsContract.activeAuthorizedViewName}_updates`,
+                      `${SharedAccountCustomerAccessContract.activeAuthorizedViewName}_updates`,
                     )
                     .as(
                       qb
@@ -1416,7 +1414,7 @@ export namespace SharedAccounts {
         );
 
         const findDeletes = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findDeletes",
+          "SharedAccounts.CustomerAccessRepository.findDeletes",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder
             .deletes(getTableName(table), clientView)
@@ -1435,7 +1433,7 @@ export namespace SharedAccounts {
         );
 
         const findActiveDeletes = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findActiveDeletes",
+          "SharedAccounts.CustomerAccessRepository.findActiveDeletes",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder
             .deletes(getTableName(table), clientView)
@@ -1458,7 +1456,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountCustomerAuthorizationsSchema.ActiveAuthorizedRow["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.ActiveAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1487,9 +1485,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            excludeIds: Array<
-              SharedAccountCustomerAuthorizationsSchema.Row["id"]
-            >,
+            excludeIds: Array<SharedAccountCustomerAccessSchema.Row["id"]>,
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -1525,7 +1521,7 @@ export namespace SharedAccounts {
           (
             clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
-              SharedAccountCustomerAuthorizationsSchema.ActiveRow["id"]
+              SharedAccountCustomerAccessSchema.ActiveRow["id"]
             >,
           ) =>
             entriesQueryBuilder
@@ -1562,9 +1558,9 @@ export namespace SharedAccounts {
           (
             clientView: ReplicacheClientViewsSchema.Row,
             excludeIds: Array<
-              SharedAccountCustomerAuthorizationsSchema.ActiveAuthorizedRow["id"]
+              SharedAccountCustomerAccessSchema.ActiveAuthorizedRow["id"]
             >,
-            customerId: SharedAccountCustomerAuthorizationsSchema.ActiveAuthorizedRow["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.ActiveAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -1573,7 +1569,7 @@ export namespace SharedAccounts {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${SharedAccountCustomerAuthorizationsContract.activeAuthorizedViewName}_fast_forward`,
+                        `${SharedAccountCustomerAccessContract.activeAuthorizedViewName}_fast_forward`,
                       )
                       .as(
                         qb
@@ -1608,16 +1604,16 @@ export namespace SharedAccounts {
         );
 
         const findByOrigin = Effect.fn(
-          "SharedAccounts.CustomerAuthorizationsRepository.findByOrigin",
+          "SharedAccounts.CustomerAccessRepository.findByOrigin",
         )(
           <TSharedAccountOrigin extends SharedAccountsSchema.Row["origin"]>(
             origin: TSharedAccountOrigin,
-            tenantId: SharedAccountCustomerAuthorizationsSchema.Row["tenantId"],
+            tenantId: SharedAccountCustomerAccessSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
                 tx
-                  .select({ customerAuthorization: table })
+                  .select({ customerAccess: table })
                   .from(table)
                   .innerJoin(
                     SharedAccountsSchema.table.definition,
@@ -1648,13 +1644,7 @@ export namespace SharedAccounts {
                     ),
                   ),
               )
-              .pipe(
-                Effect.map(
-                  Array.map(
-                    ({ customerAuthorization }) => customerAuthorization,
-                  ),
-                ),
-              ),
+              .pipe(Effect.map(Array.map(Struct.get("customerAccess")))),
         );
 
         return {
@@ -1677,24 +1667,20 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class CustomerAuthorizationsQueries extends Effect.Service<CustomerAuthorizationsQueries>()(
-    "@printdesk/core/shared-accounts/CustomerAuthorizationsQueries",
+  export class CustomerAccessQueries extends Effect.Service<CustomerAccessQueries>()(
+    "@printdesk/core/shared-accounts/CustomerAccessQueries",
     {
       accessors: true,
-      dependencies: [CustomerAuthorizationsRepository.Default],
+      dependencies: [CustomerAccessRepository.Default],
       effect: Effect.gen(function* () {
-        const repository = yield* CustomerAuthorizationsRepository;
+        const repository = yield* CustomerAccessRepository;
 
         const differenceResolver =
           new QueriesContract.DifferenceResolverBuilder(
-            getTableName(
-              SharedAccountCustomerAuthorizationsSchema.table.definition,
-            ),
+            getTableName(SharedAccountCustomerAccessSchema.table.definition),
           )
             .query(
-              AccessControl.permission(
-                "shared_account_customer_authorizations:read",
-              ),
+              AccessControl.permission("shared_account_customer_access:read"),
               {
                 findCreates: repository.findCreates,
                 findUpdates: repository.findUpdates,
@@ -1704,7 +1690,7 @@ export namespace SharedAccounts {
             )
             .query(
               AccessControl.permission(
-                "active_shared_account_customer_authorizations:read",
+                "active_shared_account_customer_access:read",
               ),
               {
                 findCreates: repository.findActiveCreates,
@@ -1715,7 +1701,7 @@ export namespace SharedAccounts {
             )
             .query(
               AccessControl.permission(
-                "active_authorized_shared_account_customer_authorizations:read",
+                "active_authorized_shared_account_customer_access:read",
               ),
               {
                 findCreates: repository.findActiveAuthorizedCreates,
@@ -1731,8 +1717,8 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class ManagerAuthorizationsRepository extends Effect.Service<ManagerAuthorizationsRepository>()(
-    "@printdesk/core/shared-accounts/ManagerAuthorizationsRepository",
+  export class ManagerAccessRepository extends Effect.Service<ManagerAccessRepository>()(
+    "@printdesk/core/shared-accounts/ManagerAccessRepository",
     {
       dependencies: [
         Database.TransactionManager.Default,
@@ -1740,33 +1726,28 @@ export namespace SharedAccounts {
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
-        const table = SharedAccountManagerAuthorizationsSchema.table.definition;
-        const activeView = SharedAccountManagerAuthorizationsSchema.activeView;
+        const table = SharedAccountManagerAccessSchema.table.definition;
+        const activeView = SharedAccountManagerAccessSchema.activeView;
         const activeCustomerAuthorizedView =
-          SharedAccountManagerAuthorizationsSchema.activeCustomerAuthorizedView;
+          SharedAccountManagerAccessSchema.activeCustomerAuthorizedView;
 
         const entriesQueryBuilder =
           yield* Replicache.ClientViewEntriesQueryBuilder;
         const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
         const create = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.create",
-        )(
-          (
-            authorization: InferInsertModel<SharedAccountManagerAuthorizationsSchema.Table>,
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx.insert(table).values(authorization).returning(),
-              )
-              .pipe(
-                Effect.flatMap(Array.head),
-                Effect.catchTag("NoSuchElementException", Effect.die),
-              ),
+          "SharedAccounts.ManagerAccessRepository.create",
+        )((access: InferInsertModel<SharedAccountManagerAccessSchema.Table>) =>
+          db
+            .useTransaction((tx) => tx.insert(table).values(access).returning())
+            .pipe(
+              Effect.flatMap(Array.head),
+              Effect.catchTag("NoSuchElementException", Effect.die),
+            ),
         );
 
         const findCreates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findCreates",
+          "SharedAccounts.ManagerAccessRepository.findCreates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1796,7 +1777,7 @@ export namespace SharedAccounts {
         );
 
         const findActiveCreates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveCreates",
+          "SharedAccounts.ManagerAccessRepository.findActiveCreates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1826,18 +1807,18 @@ export namespace SharedAccounts {
         );
 
         const findActiveAuthorizedCreates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveAuthorizedCreates",
+          "SharedAccounts.ManagerAccessRepository.findActiveAuthorizedCreates",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountManagerAuthorizationsSchema.Row["managerId"],
+            managerId: SharedAccountManagerAccessSchema.Row["managerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountManagerAuthorizationsContract.activeAuthorizedViewName}_creates`,
+                      `${SharedAccountManagerAccessContract.activeAuthorizedViewName}_creates`,
                     )
                     .as(
                       tx
@@ -1867,11 +1848,11 @@ export namespace SharedAccounts {
         );
 
         const findActiveCustomerAuthorizedCreates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveCustomerAuthorizedCreates",
+          "SharedAccounts.ManagerAccessRepository.findActiveCustomerAuthorizedCreates",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountCustomerAuthorizationsSchema.Row["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.Row["customerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1923,7 +1904,7 @@ export namespace SharedAccounts {
         );
 
         const findUpdates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findUpdates",
+          "SharedAccounts.ManagerAccessRepository.findUpdates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1950,7 +1931,7 @@ export namespace SharedAccounts {
         );
 
         const findActiveUpdates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveUpdates",
+          "SharedAccounts.ManagerAccessRepository.findActiveUpdates",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
             Effect.flatMap((qb) =>
@@ -1982,18 +1963,18 @@ export namespace SharedAccounts {
         );
 
         const findActiveAuthorizedUpdates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveAuthorizedUpdates",
+          "SharedAccounts.ManagerAccessRepository.findActiveAuthorizedUpdates",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountManagerAuthorizationsSchema.Row["managerId"],
+            managerId: SharedAccountManagerAccessSchema.Row["managerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountManagerAuthorizationsContract.activeAuthorizedViewName}_updates`,
+                      `${SharedAccountManagerAccessContract.activeAuthorizedViewName}_updates`,
                     )
                     .as(
                       qb
@@ -2028,11 +2009,11 @@ export namespace SharedAccounts {
         );
 
         const findActiveCustomerAuthorizedUpdates = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveCustomerAuthorizedUpdates",
+          "SharedAccounts.ManagerAccessRepository.findActiveCustomerAuthorizedUpdates",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountCustomerAuthorizationsSchema.Row["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.Row["customerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -2095,7 +2076,7 @@ export namespace SharedAccounts {
         );
 
         const findDeletes = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findDeletes",
+          "SharedAccounts.ManagerAccessRepository.findDeletes",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder
             .deletes(getTableName(table), clientView)
@@ -2114,7 +2095,7 @@ export namespace SharedAccounts {
         );
 
         const findActiveDeletes = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveDeletes",
+          "SharedAccounts.ManagerAccessRepository.findActiveDeletes",
         )((clientView: ReplicacheClientViewsSchema.Row) =>
           entriesQueryBuilder
             .deletes(getTableName(table), clientView)
@@ -2133,11 +2114,11 @@ export namespace SharedAccounts {
         );
 
         const findActiveAuthorizedDeletes = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveAuthorizedDeletes",
+          "SharedAccounts.ManagerAccessRepository.findActiveAuthorizedDeletes",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountManagerAuthorizationsSchema.Row["managerId"],
+            managerId: SharedAccountManagerAccessSchema.Row["managerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -2159,11 +2140,11 @@ export namespace SharedAccounts {
         );
 
         const findActiveCustomerAuthorizedDeletes = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveCustomerAuthorizedDeletes",
+          "SharedAccounts.ManagerAccessRepository.findActiveCustomerAuthorizedDeletes",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountCustomerAuthorizationsSchema.Row["customerId"],
+            customerId: SharedAccountCustomerAccessSchema.Row["customerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -2197,13 +2178,11 @@ export namespace SharedAccounts {
         );
 
         const findFastForward = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findFastForward",
+          "SharedAccounts.ManagerAccessRepository.findFastForward",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            excludeIds: Array<
-              SharedAccountManagerAuthorizationsSchema.Row["id"]
-            >,
+            excludeIds: Array<SharedAccountManagerAccessSchema.Row["id"]>,
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -2234,13 +2213,11 @@ export namespace SharedAccounts {
         );
 
         const findActiveFastForward = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveFastForward",
+          "SharedAccounts.ManagerAccessRepository.findActiveFastForward",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            excludeIds: Array<
-              SharedAccountManagerAuthorizationsSchema.Row["id"]
-            >,
+            excludeIds: Array<SharedAccountManagerAccessSchema.Row["id"]>,
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -2271,14 +2248,12 @@ export namespace SharedAccounts {
         );
 
         const findActiveAuthorizedFastForward = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveAuthorizedFastForward",
+          "SharedAccounts.ManagerAccessRepository.findActiveAuthorizedFastForward",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            excludeIds: Array<
-              SharedAccountManagerAuthorizationsSchema.Row["id"]
-            >,
-            managerId: SharedAccountManagerAuthorizationsSchema.Row["managerId"],
+            excludeIds: Array<SharedAccountManagerAccessSchema.Row["id"]>,
+            managerId: SharedAccountManagerAccessSchema.Row["managerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -2287,7 +2262,7 @@ export namespace SharedAccounts {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${SharedAccountManagerAuthorizationsContract.activeAuthorizedViewName}_fast_forward`,
+                        `${SharedAccountManagerAccessContract.activeAuthorizedViewName}_fast_forward`,
                       )
                       .as(
                         qb
@@ -2316,14 +2291,12 @@ export namespace SharedAccounts {
         );
 
         const findActiveCustomerAuthorizedFastForward = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findActiveCustomerAuthorizedFastForward",
+          "SharedAccounts.ManagerAccessRepository.findActiveCustomerAuthorizedFastForward",
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            excludeIds: Array<
-              SharedAccountManagerAuthorizationsSchema.Row["id"]
-            >,
-            customerId: SharedAccountCustomerAuthorizationsSchema.Row["customerId"],
+            excludeIds: Array<SharedAccountManagerAccessSchema.Row["id"]>,
+            customerId: SharedAccountCustomerAccessSchema.Row["customerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -2383,11 +2356,11 @@ export namespace SharedAccounts {
         );
 
         const findById = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.findById",
+          "SharedAccounts.ManagerAccessRepository.findById",
         )(
           (
-            id: SharedAccountManagerAuthorizationsSchema.Row["id"],
-            tenantId: SharedAccountManagerAuthorizationsSchema.Row["tenantId"],
+            id: SharedAccountManagerAccessSchema.Row["id"],
+            tenantId: SharedAccountManagerAccessSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
@@ -2400,23 +2373,20 @@ export namespace SharedAccounts {
         );
 
         const updateById = Effect.fn(
-          "SharedAccounts.ManagerAuthorizationsRepository.updateById",
+          "SharedAccounts.ManagerAccessRepository.updateById",
         )(
           (
-            id: SharedAccountManagerAuthorizationsSchema.Row["id"],
-            authorization: Partial<
-              Omit<
-                SharedAccountManagerAuthorizationsSchema.Row,
-                "id" | "tenantId"
-              >
+            id: SharedAccountManagerAccessSchema.Row["id"],
+            access: Partial<
+              Omit<SharedAccountManagerAccessSchema.Row, "id" | "tenantId">
             >,
-            tenantId: SharedAccountManagerAuthorizationsSchema.Row["tenantId"],
+            tenantId: SharedAccountManagerAccessSchema.Row["tenantId"],
           ) =>
             db
               .useTransaction((tx) =>
                 tx
                   .update(table)
-                  .set(authorization)
+                  .set(access)
                   .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
                   .returning(),
               )
@@ -2448,24 +2418,20 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class ManagerAuthorizationsQueries extends Effect.Service<ManagerAuthorizationsQueries>()(
-    "@printdesk/core/shared-accounts/ManagerAuthorizationsQueries",
+  export class ManagerAccessQueries extends Effect.Service<ManagerAccessQueries>()(
+    "@printdesk/core/shared-accounts/ManagerAccessQueries",
     {
       accessors: true,
-      dependencies: [ManagerAuthorizationsRepository.Default],
+      dependencies: [ManagerAccessRepository.Default],
       effect: Effect.gen(function* () {
-        const repository = yield* ManagerAuthorizationsRepository;
+        const repository = yield* ManagerAccessRepository;
 
         const differenceResolver =
           new QueriesContract.DifferenceResolverBuilder(
-            getTableName(
-              SharedAccountManagerAuthorizationsSchema.table.definition,
-            ),
+            getTableName(SharedAccountManagerAccessSchema.table.definition),
           )
             .query(
-              AccessControl.permission(
-                "shared_account_manager_authorizations:read",
-              ),
+              AccessControl.permission("shared_account_manager_access:read"),
               {
                 findCreates: repository.findCreates,
                 findUpdates: repository.findUpdates,
@@ -2475,7 +2441,7 @@ export namespace SharedAccounts {
             )
             .query(
               AccessControl.permission(
-                "active_shared_account_manager_authorizations:read",
+                "active_shared_account_manager_access:read",
               ),
               {
                 findCreates: repository.findActiveCreates,
@@ -2486,7 +2452,7 @@ export namespace SharedAccounts {
             )
             .query(
               AccessControl.permission(
-                "active_shared_account_manager_authorizations:read",
+                "active_shared_account_manager_access:read",
               ),
               {
                 findCreates: repository.findActiveAuthorizedCreates,
@@ -2497,7 +2463,7 @@ export namespace SharedAccounts {
             )
             .query(
               AccessControl.permission(
-                "active_authorized_shared_account_manager_authorizations:read",
+                "active_authorized_shared_account_manager_access:read",
               ),
               {
                 findCreates: repository.findActiveCustomerAuthorizedCreates,
@@ -2513,19 +2479,19 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class ManagerAuthorizationPolicies extends Effect.Service<ManagerAuthorizationPolicies>()(
-    "@printdesk/core/shared-accounts/ManagerAuthorizationPolicies",
+  export class ManagerAccessPolicies extends Effect.Service<ManagerAccessPolicies>()(
+    "@printdesk/core/shared-accounts/ManagerAccessPolicies",
     {
       accessors: true,
-      dependencies: [ManagerAuthorizationsRepository.Default],
+      dependencies: [ManagerAccessRepository.Default],
       effect: Effect.gen(function* () {
-        const repository = yield* ManagerAuthorizationsRepository;
+        const repository = yield* ManagerAccessRepository;
 
         const canDelete = PoliciesContract.makePolicy(
-          SharedAccountManagerAuthorizationsContract.canDelete,
+          SharedAccountManagerAccessContract.canDelete,
           {
             make: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationPolicies.canDelete.make",
+              "SharedAccounts.ManagerAccessPolicies.canDelete.make",
             )(({ id }) =>
               AccessControl.policy((principal) =>
                 repository
@@ -2540,10 +2506,10 @@ export namespace SharedAccounts {
         );
 
         const canRestore = PoliciesContract.makePolicy(
-          SharedAccountManagerAuthorizationsContract.canRestore,
+          SharedAccountManagerAccessContract.canRestore,
           {
             make: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationPolicies.canRestore.make",
+              "SharedAccounts.ManagerAccessPolicies.canRestore.make",
             )(({ id }) =>
               AccessControl.policy((principal) =>
                 repository
@@ -2562,42 +2528,42 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class ManagerAuthorizationMutations extends Effect.Service<ManagerAuthorizationMutations>()(
-    "@printdesk/core/shared-accounts/ManagerAuthorizationMutations",
+  export class ManagerAccessMutations extends Effect.Service<ManagerAccessMutations>()(
+    "@printdesk/core/shared-accounts/ManagerAccessMutations",
     {
       accessors: true,
       dependencies: [
-        ManagerAuthorizationsRepository.Default,
-        ManagerAuthorizationPolicies.Default,
+        ManagerAccessRepository.Default,
+        ManagerAccessPolicies.Default,
         Permissions.Schemas.Default,
       ],
       effect: Effect.gen(function* () {
-        const repository = yield* ManagerAuthorizationsRepository;
+        const repository = yield* ManagerAccessRepository;
 
-        const policies = yield* ManagerAuthorizationPolicies;
+        const policies = yield* ManagerAccessPolicies;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
         const notifyCreate = (
-          authorization: SharedAccountManagerAuthorizationsContract.DataTransferObject,
+          access: SharedAccountManagerAccessContract.DataTransferObject,
         ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({
-                permission: "shared_account_manager_authorizations:read",
+                permission: "shared_account_manager_access:read",
               }),
               PullPermission.make({
-                permission: "active_shared_account_manager_authorizations:read",
+                permission: "active_shared_account_manager_access:read",
               }),
               Events.makeReplicachePullPolicy(
                 SharedAccountsContract.isCustomerAuthorized.make({
-                  id: authorization.sharedAccountId,
+                  id: access.sharedAccountId,
                 }),
               ),
               Events.makeReplicachePullPolicy(
                 SharedAccountsContract.isManagerAuthorized.make({
-                  id: authorization.sharedAccountId,
+                  id: access.sharedAccountId,
                 }),
               ),
             ),
@@ -2606,40 +2572,38 @@ export namespace SharedAccounts {
         const notifyRestore = notifyCreate;
 
         const create = MutationsContract.makeMutation(
-          SharedAccountManagerAuthorizationsContract.create,
+          SharedAccountManagerAccessContract.create,
           {
             makePolicy: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationMutations.create.makePolicy",
+              "SharedAccounts.ManagerAccessMutations.create.makePolicy",
             )(() =>
-              AccessControl.permission(
-                "shared_account_manager_authorizations:create",
-              ),
+              AccessControl.permission("shared_account_manager_access:create"),
             ),
             mutator: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationMutations.create.mutator",
-            )((authorization, { tenantId }) =>
+              "SharedAccounts.ManagerAccessMutations.create.mutator",
+            )((access, { tenantId }) =>
               repository
-                .create({ ...authorization, tenantId })
+                .create({ ...access, tenantId })
                 .pipe(Effect.tap(notifyCreate)),
             ),
           },
         );
 
         const delete_ = MutationsContract.makeMutation(
-          SharedAccountManagerAuthorizationsContract.delete_,
+          SharedAccountManagerAccessContract.delete_,
           {
             makePolicy: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationMutations.delete.makePolicy",
+              "SharedAccounts.ManagerAccessMutations.delete.makePolicy",
             )(({ id }) =>
               AccessControl.every(
                 AccessControl.permission(
-                  "shared_account_manager_authorizations:delete",
+                  "shared_account_manager_access:delete",
                 ),
                 policies.canDelete.make({ id }),
               ),
             ),
             mutator: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationMutations.delete.mutator",
+              "SharedAccounts.ManagerAccessMutations.delete.mutator",
             )(({ id, deletedAt }, session) =>
               repository
                 .updateById(id, { deletedAt }, session.tenantId)
@@ -2649,20 +2613,20 @@ export namespace SharedAccounts {
         );
 
         const restore = MutationsContract.makeMutation(
-          SharedAccountManagerAuthorizationsContract.restore,
+          SharedAccountManagerAccessContract.restore,
           {
             makePolicy: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationMutations.restore.makePolicy",
+              "SharedAccounts.ManagerAccessMutations.restore.makePolicy",
             )(({ id }) =>
               AccessControl.every(
                 AccessControl.permission(
-                  "shared_account_manager_authorizations:delete",
+                  "shared_account_manager_access:delete",
                 ),
                 policies.canRestore.make({ id }),
               ),
             ),
             mutator: Effect.fn(
-              "SharedAccounts.ManagerAuthorizationMutations.restore.mutator",
+              "SharedAccounts.ManagerAccessMutations.restore.mutator",
             )(({ id }, session) =>
               repository
                 .updateById(id, { deletedAt: null }, session.tenantId)

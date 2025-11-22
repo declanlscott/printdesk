@@ -18,8 +18,8 @@ import {
 import { Columns } from "../columns2";
 import { RoomsSchema } from "../rooms2/schema";
 import {
-  SharedAccountCustomerAuthorizationsSchema,
-  SharedAccountManagerAuthorizationsSchema,
+  SharedAccountCustomerAccessSchema,
+  SharedAccountManagerAccessSchema,
 } from "../shared-accounts2/schemas";
 import { Tables } from "../tables2";
 import { Constants } from "../utils/constants";
@@ -100,20 +100,19 @@ export namespace SharedAccountWorkflowsSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedCustomerId:
-          SharedAccountCustomerAuthorizationsSchema.activeView.customerId,
+          SharedAccountCustomerAccessSchema.activeView.customerId,
       })
-      .from(SharedAccountCustomerAuthorizationsSchema.activeView)
+      .from(SharedAccountCustomerAccessSchema.activeView)
       .innerJoin(
-        SharedAccountCustomerAuthorizationsSchema.activeView,
+        SharedAccountCustomerAccessSchema.activeView,
         and(
           eq(
             activeView.sharedAccountId,
-            SharedAccountCustomerAuthorizationsSchema.activeView
-              .sharedAccountId,
+            SharedAccountCustomerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            SharedAccountCustomerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountCustomerAccessSchema.activeView.tenantId,
           ),
         ),
       ),
@@ -130,19 +129,19 @@ export namespace SharedAccountWorkflowsSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
+          SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
-        SharedAccountManagerAuthorizationsSchema.activeView,
+        SharedAccountManagerAccessSchema.activeView,
         and(
           eq(
             activeView.sharedAccountId,
-            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
+            SharedAccountManagerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountManagerAccessSchema.activeView.tenantId,
           ),
         ),
       ),

@@ -29,7 +29,7 @@ export namespace Mutations {
         Products.Mutations.Default,
         Rooms.Mutations.Default,
         SharedAccounts.Mutations.Default,
-        SharedAccounts.ManagerAuthorizationMutations.Default,
+        SharedAccounts.ManagerAccessMutations.Default,
         Tenants.Mutations.Default,
         Users.Mutations.Default,
         WorkflowStatuses.Mutations.Default,
@@ -45,8 +45,8 @@ export namespace Mutations {
         const products = yield* Products.Mutations;
         const rooms = yield* Rooms.Mutations;
         const sharedAccounts = yield* SharedAccounts.Mutations;
-        const sharedAccountManagerAuthorizations =
-          yield* SharedAccounts.ManagerAuthorizationMutations;
+        const sharedAccountManagerAccess =
+          yield* SharedAccounts.ManagerAccessMutations;
         const tenants = yield* Tenants.Mutations;
         const users = yield* Users.Mutations;
         const workflowStatuses = yield* WorkflowStatuses.Mutations;
@@ -89,9 +89,9 @@ export namespace Mutations {
           .mutation(sharedAccounts.edit)
           .mutation(sharedAccounts.delete)
           .mutation(sharedAccounts.restore)
-          .mutation(sharedAccountManagerAuthorizations.create)
-          .mutation(sharedAccountManagerAuthorizations.delete)
-          .mutation(sharedAccountManagerAuthorizations.restore)
+          .mutation(sharedAccountManagerAccess.create)
+          .mutation(sharedAccountManagerAccess.delete)
+          .mutation(sharedAccountManagerAccess.restore)
           .mutation(tenants.edit)
           .mutation(users.edit)
           .mutation(users.delete)

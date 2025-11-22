@@ -10,7 +10,7 @@ import { ProductsContract } from "../products2/contract";
 import { ReplicacheContract } from "../replicache2/contract";
 import { RoomsContract } from "../rooms2/contract";
 import {
-  SharedAccountManagerAuthorizationsContract,
+  SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "../shared-accounts2/contracts";
 import { TenantsContract } from "../tenants2/contracts";
@@ -84,9 +84,9 @@ export namespace Procedures {
           .procedure(SharedAccountsContract.edit)
           .procedure(SharedAccountsContract.delete_)
           .procedure(SharedAccountsContract.restore)
-          .procedure(SharedAccountManagerAuthorizationsContract.create)
-          .procedure(SharedAccountManagerAuthorizationsContract.delete_)
-          .procedure(SharedAccountManagerAuthorizationsContract.restore)
+          .procedure(SharedAccountManagerAccessContract.create)
+          .procedure(SharedAccountManagerAccessContract.delete_)
+          .procedure(SharedAccountManagerAccessContract.restore)
           .procedure(TenantsContract.edit)
           .procedure(UsersContract.edit)
           .procedure(UsersContract.delete_)

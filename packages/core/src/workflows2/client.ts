@@ -22,7 +22,7 @@ import {
 } from "./contracts";
 
 import type { ColumnsContract } from "../columns2/contract";
-import type { SharedAccountManagerAuthorizationsContract } from "../shared-accounts2/contracts";
+import type { SharedAccountManagerAccessContract } from "../shared-accounts2/contracts";
 
 export namespace RoomWorkflows {
   const table = Models.SyncTables[RoomWorkflowsContract.tableName];
@@ -102,18 +102,18 @@ export namespace SharedAccountWorkflows {
       dependencies: [
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
-        SharedAccounts.CustomerAuthorizationsReadRepository.Default,
-        SharedAccounts.ManagerAuthorizationsReadRepository.Default,
+        SharedAccounts.CustomerAccessReadRepository.Default,
+        SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
         const base = yield* table.pipe(
           Effect.flatMap(Replicache.makeReadRepository),
         );
 
-        const sharedAccountCustomerAuthorizationsRepository =
-          yield* SharedAccounts.CustomerAuthorizationsReadRepository;
-        const sharedAccountManagerAuthorizationsRepository =
-          yield* SharedAccounts.ManagerAuthorizationsReadRepository;
+        const sharedAccountCustomerAccessRepository =
+          yield* SharedAccounts.CustomerAccessReadRepository;
+        const sharedAccountManagerAccessRepository =
+          yield* SharedAccounts.ManagerAccessReadRepository;
 
         const findActiveCustomerAuthorized = (
           customerId: ColumnsContract.EntityId,
@@ -123,11 +123,10 @@ export namespace SharedAccountWorkflows {
             .findById(id)
             .pipe(
               Effect.flatMap((workflow) =>
-                sharedAccountCustomerAuthorizationsRepository.findWhere(
-                  Array.filterMap((authorization) =>
-                    authorization.sharedAccountId ===
-                      workflow.sharedAccountId &&
-                    authorization.customerId === customerId
+                sharedAccountCustomerAccessRepository.findWhere(
+                  Array.filterMap((access) =>
+                    access.sharedAccountId === workflow.sharedAccountId &&
+                    access.customerId === customerId
                       ? Option.some(workflow)
                       : Option.none(),
                   ),
@@ -136,15 +135,15 @@ export namespace SharedAccountWorkflows {
             );
 
         const findActiveManagerAuthorized = (
-          managerId: SharedAccountManagerAuthorizationsContract.DataTransferObject["managerId"],
+          managerId: SharedAccountManagerAccessContract.DataTransferObject["managerId"],
           id: SharedAccountWorkflowsContract.DataTransferObject["id"],
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflow) =>
-              sharedAccountManagerAuthorizationsRepository.findWhere(
-                Array.filterMap((authorization) =>
-                  authorization.sharedAccountId === workflow.sharedAccountId &&
-                  authorization.managerId === managerId
+              sharedAccountManagerAccessRepository.findWhere(
+                Array.filterMap((access) =>
+                  access.sharedAccountId === workflow.sharedAccountId &&
+                  access.managerId === managerId
                     ? Option.some(workflow)
                     : Option.none(),
                 ),

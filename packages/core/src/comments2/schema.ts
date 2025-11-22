@@ -4,7 +4,7 @@ import { boolean, index, pgView, text } from "drizzle-orm/pg-core";
 import { Columns } from "../columns2";
 import { OrdersSchema } from "../orders2/schema";
 import {
-  SharedAccountManagerAuthorizationsSchema,
+  SharedAccountManagerAccessSchema,
   SharedAccountsSchema,
 } from "../shared-accounts2/schemas";
 import { Tables } from "../tables2";
@@ -64,7 +64,7 @@ export namespace CommentsSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
+          SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
@@ -75,15 +75,15 @@ export namespace CommentsSchema {
         ),
       )
       .innerJoin(
-        SharedAccountManagerAuthorizationsSchema.activeView,
+        SharedAccountManagerAccessSchema.activeView,
         and(
           eq(
             OrdersSchema.activeView.sharedAccountId,
-            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
+            SharedAccountManagerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             SharedAccountsSchema.activeView.tenantId,
-            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountManagerAccessSchema.activeView.tenantId,
           ),
         ),
       ),

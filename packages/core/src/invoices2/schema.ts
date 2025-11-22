@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema";
 
 import { Columns } from "../columns2";
 import { OrdersSchema } from "../orders2/schema";
-import { SharedAccountManagerAuthorizationsSchema } from "../shared-accounts2/schemas";
+import { SharedAccountManagerAccessSchema } from "../shared-accounts2/schemas";
 import { Tables } from "../tables2";
 import { InvoicesContract } from "./contract";
 
@@ -66,7 +66,7 @@ export namespace InvoicesSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
+          SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
@@ -77,15 +77,15 @@ export namespace InvoicesSchema {
         ),
       )
       .innerJoin(
-        SharedAccountManagerAuthorizationsSchema.activeView,
+        SharedAccountManagerAccessSchema.activeView,
         and(
           eq(
             OrdersSchema.activeView.sharedAccountId,
-            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
+            SharedAccountManagerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             OrdersSchema.activeView.tenantId,
-            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountManagerAccessSchema.activeView.tenantId,
           ),
         ),
       ),

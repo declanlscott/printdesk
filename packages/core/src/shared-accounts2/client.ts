@@ -11,90 +11,90 @@ import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import {
-  SharedAccountCustomerAuthorizationsContract,
-  SharedAccountManagerAuthorizationsContract,
+  SharedAccountCustomerAccessContract,
+  SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "./contracts";
 
 export namespace SharedAccounts {
-  const customerAuthorizationsTable =
-    Models.SyncTables[SharedAccountCustomerAuthorizationsContract.tableName];
-  const managerAuthorizationsTable =
-    Models.SyncTables[SharedAccountManagerAuthorizationsContract.tableName];
+  const customerAccessTable =
+    Models.SyncTables[SharedAccountCustomerAccessContract.tableName];
+  const managerAccessTable =
+    Models.SyncTables[SharedAccountManagerAccessContract.tableName];
   const table = Models.SyncTables[SharedAccountsContract.tableName];
 
-  export class CustomerAuthorizationsReadRepository extends Effect.Service<CustomerAuthorizationsReadRepository>()(
-    "@printdesk/core/shared-accounts/client/CustomerAuthorizationsReadRepository",
+  export class CustomerAccessReadRepository extends Effect.Service<CustomerAccessReadRepository>()(
+    "@printdesk/core/shared-accounts/client/CustomerAccessReadRepository",
     {
       dependencies: [
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: customerAuthorizationsTable.pipe(
+      effect: customerAccessTable.pipe(
         Effect.flatMap(Replicache.makeReadRepository),
       ),
     },
   ) {}
 
-  export class CustomerAuthorizationsWriteRepository extends Effect.Service<CustomerAuthorizationsWriteRepository>()(
-    "@printdesk/core/shared-accounts/client/CustomerAuthorizationsWriteRepository",
+  export class CustomerAccessWriteRepository extends Effect.Service<CustomerAccessWriteRepository>()(
+    "@printdesk/core/shared-accounts/client/CustomerAccessWriteRepository",
     {
       accessors: true,
       dependencies: [
         Models.SyncTables.Default,
-        CustomerAuthorizationsReadRepository.Default,
+        CustomerAccessReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.all([
-        customerAuthorizationsTable,
-        CustomerAuthorizationsReadRepository,
+        customerAccessTable,
+        CustomerAccessReadRepository,
       ]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}
 
-  export class ManagerAuthorizationsReadRepository extends Effect.Service<ManagerAuthorizationsReadRepository>()(
-    "@printdesk/core/shared-accounts/client/ManagerAuthorizationsReadRepository",
+  export class ManagerAccessReadRepository extends Effect.Service<ManagerAccessReadRepository>()(
+    "@printdesk/core/shared-accounts/client/ManagerAccessReadRepository",
     {
       dependencies: [
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
       ],
-      effect: managerAuthorizationsTable.pipe(
+      effect: managerAccessTable.pipe(
         Effect.flatMap(Replicache.makeReadRepository),
       ),
     },
   ) {}
 
-  export class ManagerAuthorizationsWriteRepository extends Effect.Service<ManagerAuthorizationsWriteRepository>()(
-    "@printdesk/core/shared-accounts/client/ManagerAuthorizationsWriteRepository",
+  export class ManagerAccessWriteRepository extends Effect.Service<ManagerAccessWriteRepository>()(
+    "@printdesk/core/shared-accounts/client/ManagerAccessWriteRepository",
     {
       accessors: true,
       dependencies: [
         Models.SyncTables.Default,
-        ManagerAuthorizationsReadRepository.Default,
+        ManagerAccessReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.all([
-        managerAuthorizationsTable,
-        ManagerAuthorizationsReadRepository,
+        managerAccessTable,
+        ManagerAccessReadRepository,
       ]).pipe(
         Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
       ),
     },
   ) {}
 
-  export class ManagerAuthorizationPolicies extends Effect.Service<ManagerAuthorizationPolicies>()(
-    "@printdesk/core/shared-accounts/ManagerAuthorizationPolicies",
+  export class ManagerAccessPolicies extends Effect.Service<ManagerAccessPolicies>()(
+    "@printdesk/core/shared-accounts/ManagerAccessPolicies",
     {
       accessors: true,
-      dependencies: [ManagerAuthorizationsReadRepository.Default],
+      dependencies: [ManagerAccessReadRepository.Default],
       effect: Effect.gen(function* () {
-        const repository = yield* ManagerAuthorizationsReadRepository;
+        const repository = yield* ManagerAccessReadRepository;
 
         const canDelete = PoliciesContract.makePolicy(
-          SharedAccountManagerAuthorizationsContract.canDelete,
+          SharedAccountManagerAccessContract.canDelete,
           {
             make: ({ id }) =>
               AccessControl.policy(() =>
@@ -109,7 +109,7 @@ export namespace SharedAccounts {
         );
 
         const canRestore = PoliciesContract.makePolicy(
-          SharedAccountManagerAuthorizationsContract.canRestore,
+          SharedAccountManagerAccessContract.canRestore,
           {
             make: ({ id }) =>
               AccessControl.policy(() =>
@@ -128,42 +128,41 @@ export namespace SharedAccounts {
     },
   ) {}
 
-  export class ManagerAuthorizationMutations extends Effect.Service<ManagerAuthorizationMutations>()(
-    "@printdesk/core/shared-accounts/client/ManagerAuthorizationMutations",
+  export class ManagerAccessMutations extends Effect.Service<ManagerAccessMutations>()(
+    "@printdesk/core/shared-accounts/client/ManagerAccessMutations",
     {
       accessors: true,
       dependencies: [
-        ManagerAuthorizationsWriteRepository.Default,
-        ManagerAuthorizationPolicies.Default,
+        ManagerAccessWriteRepository.Default,
+        ManagerAccessPolicies.Default,
       ],
       effect: Effect.gen(function* () {
-        const repository = yield* ManagerAuthorizationsWriteRepository;
+        const repository = yield* ManagerAccessWriteRepository;
 
-        const policies = yield* ManagerAuthorizationPolicies;
+        const policies = yield* ManagerAccessPolicies;
 
         const create = MutationsContract.makeMutation(
-          SharedAccountManagerAuthorizationsContract.create,
+          SharedAccountManagerAccessContract.create,
           {
             makePolicy: () =>
-              AccessControl.permission(
-                "shared_account_manager_authorizations:create",
-              ),
-            mutator: (authorization, { tenantId }) =>
+              AccessControl.permission("shared_account_manager_access:create"),
+            mutator: (access, { tenantId }) =>
               repository.create(
-                SharedAccountManagerAuthorizationsContract.DataTransferObject.make(
-                  { ...authorization, tenantId },
-                ),
+                SharedAccountManagerAccessContract.DataTransferObject.make({
+                  ...access,
+                  tenantId,
+                }),
               ),
           },
         );
 
         const delete_ = MutationsContract.makeMutation(
-          SharedAccountManagerAuthorizationsContract.delete_,
+          SharedAccountManagerAccessContract.delete_,
           {
             makePolicy: ({ id }) =>
               AccessControl.every(
                 AccessControl.permission(
-                  "shared_account_manager_authorizations:delete",
+                  "shared_account_manager_access:delete",
                 ),
                 policies.canDelete.make({ id }),
               ),
@@ -173,7 +172,7 @@ export namespace SharedAccounts {
                 .pipe(
                   AccessControl.enforce(
                     AccessControl.permission(
-                      "shared_account_manager_authorizations:read",
+                      "shared_account_manager_access:read",
                     ),
                   ),
                   Effect.catchTag("AccessDeniedError", () =>
@@ -184,12 +183,12 @@ export namespace SharedAccounts {
         );
 
         const restore = MutationsContract.makeMutation(
-          SharedAccountManagerAuthorizationsContract.restore,
+          SharedAccountManagerAccessContract.restore,
           {
             makePolicy: ({ id }) =>
               AccessControl.every(
                 AccessControl.permission(
-                  "shared_account_manager_authorizations:delete",
+                  "shared_account_manager_access:delete",
                 ),
                 policies.canRestore.make({ id }),
               ),
@@ -209,18 +208,16 @@ export namespace SharedAccounts {
       dependencies: [
         Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
-        CustomerAuthorizationsReadRepository.Default,
-        ManagerAuthorizationsReadRepository.Default,
+        CustomerAccessReadRepository.Default,
+        ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
         const base = yield* table.pipe(
           Effect.flatMap(Replicache.makeReadRepository),
         );
 
-        const customerAuthorizationsRepository =
-          yield* CustomerAuthorizationsReadRepository;
-        const managerAuthorizationsRepository =
-          yield* ManagerAuthorizationsReadRepository;
+        const customerAccessRepository = yield* CustomerAccessReadRepository;
+        const managerAccessRepository = yield* ManagerAccessReadRepository;
 
         const findActiveAuthorizedCustomerIds = (
           id: SharedAccountsContract.DataTransferObject["id"],
@@ -229,11 +226,11 @@ export namespace SharedAccounts {
             .findById(id)
             .pipe(
               Effect.flatMap((sharedAccount) =>
-                customerAuthorizationsRepository.findWhere(
-                  Array.filterMap((authorization) =>
-                    authorization.sharedAccountId === sharedAccount.id &&
-                    authorization.deletedAt === null
-                      ? Option.some(authorization.customerId)
+                customerAccessRepository.findWhere(
+                  Array.filterMap((access) =>
+                    access.sharedAccountId === sharedAccount.id &&
+                    access.deletedAt === null
+                      ? Option.some(access.customerId)
                       : Option.none(),
                   ),
                 ),
@@ -247,11 +244,11 @@ export namespace SharedAccounts {
             .findById(id)
             .pipe(
               Effect.flatMap((sharedAccount) =>
-                managerAuthorizationsRepository.findWhere(
-                  Array.filterMap((authorization) =>
-                    authorization.sharedAccountId === sharedAccount.id &&
-                    authorization.deletedAt === null
-                      ? Option.some(authorization.managerId)
+                managerAccessRepository.findWhere(
+                  Array.filterMap((access) =>
+                    access.sharedAccountId === sharedAccount.id &&
+                    access.deletedAt === null
+                      ? Option.some(access.managerId)
                       : Option.none(),
                   ),
                 ),

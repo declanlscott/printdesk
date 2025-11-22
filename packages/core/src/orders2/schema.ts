@@ -2,7 +2,7 @@ import { and, eq, getViewSelectedFields, isNull, ne } from "drizzle-orm";
 import { check, index, pgView } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns2";
-import { SharedAccountManagerAuthorizationsSchema } from "../shared-accounts2/schemas";
+import { SharedAccountManagerAccessSchema } from "../shared-accounts2/schemas";
 import { Tables } from "../tables2";
 import { OrdersContract } from "./contract";
 
@@ -78,19 +78,19 @@ export namespace OrdersSchema {
       .select({
         ...getViewSelectedFields(activeView),
         authorizedManagerId:
-          SharedAccountManagerAuthorizationsSchema.activeView.managerId,
+          SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
-        SharedAccountManagerAuthorizationsSchema.activeView,
+        SharedAccountManagerAccessSchema.activeView,
         and(
           eq(
             activeView.sharedAccountId,
-            SharedAccountManagerAuthorizationsSchema.activeView.sharedAccountId,
+            SharedAccountManagerAccessSchema.activeView.sharedAccountId,
           ),
           eq(
             activeView.tenantId,
-            SharedAccountManagerAuthorizationsSchema.activeView.tenantId,
+            SharedAccountManagerAccessSchema.activeView.tenantId,
           ),
         ),
       ),

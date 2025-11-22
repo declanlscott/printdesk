@@ -10,7 +10,9 @@ import { Realtime } from "../realtime2";
 
 import type { Events } from "../events2";
 
-class NotifyError extends Data.TaggedError("NotifyError")<{ cause: unknown }> {}
+class NotifyError extends Data.TaggedError("NotifyError")<{
+  readonly cause: unknown;
+}> {}
 
 interface Notify extends Request.Request<void, NotifyError> {
   readonly _tag: "Notify";

@@ -11,7 +11,7 @@ import type { Models } from "../models2";
 
 export namespace Replicache {
   export class ReplicacheError extends Data.TaggedError("ReplicacheError")<{
-    cause: unknown;
+    readonly cause: unknown;
   }> {}
 
   export class ReadTransaction extends Effect.Service<ReadTransaction>()(

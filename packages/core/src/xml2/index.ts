@@ -7,8 +7,8 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import type { X2jOptions, XmlBuilderOptions } from "fast-xml-parser";
 
 export namespace Xml {
-  export class BuildError extends Data.TaggedError("BuildError")<{
-    cause: unknown;
+  export class BuildError extends Data.TaggedError("XmlBuildError")<{
+    readonly cause: unknown;
   }> {}
 
   export class Builder extends Effect.Service<Builder>()(
@@ -37,8 +37,8 @@ export namespace Xml {
     },
   ) {}
 
-  export class ParseError extends Data.TaggedClass("ParseError")<{
-    cause: unknown;
+  export class ParseError extends Data.TaggedClass("XmlParseError")<{
+    readonly cause: unknown;
   }> {}
 
   export class Parser extends Effect.Service<Parser>()(

@@ -9,6 +9,7 @@ import * as Stream from "effect/Stream";
 import { Announcements } from "../announcements2";
 import { Comments } from "../comments2";
 import { DeliveryOptions } from "../delivery-options2";
+import { Groups } from "../groups2";
 import { Invoices } from "../invoices2";
 import { Models } from "../models2";
 import { Orders } from "../orders2";
@@ -44,6 +45,7 @@ export namespace Queries {
         Announcements.Queries.Default,
         Comments.Queries.Default,
         DeliveryOptions.Queries.Default,
+        Groups.Queries.Default,
         Invoices.Queries.Default,
         Orders.Queries.Default,
         Products.Queries.Default,
@@ -63,6 +65,7 @@ export namespace Queries {
         const comments = yield* Comments.Queries.differenceResolver;
         const deliveryOptions =
           yield* DeliveryOptions.Queries.differenceResolver;
+        const groups = yield* Groups.Queries.differenceResolver;
         const invoices = yield* Invoices.Queries.differenceResolver;
         const orders = yield* Orders.Queries.differenceResolver;
         const products = yield* Products.Queries.differenceResolver;
@@ -86,6 +89,7 @@ export namespace Queries {
           .resolver(announcements)
           .resolver(comments)
           .resolver(deliveryOptions)
+          .resolver(groups)
           .resolver(invoices)
           .resolver(orders)
           .resolver(products)

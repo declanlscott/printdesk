@@ -4,10 +4,8 @@ import * as Effect from "effect/Effect";
 
 import { Database } from "../database2";
 import { TenantsSchema } from "../tenants2/schemas";
-import {
-  IdentityProvidersSchema,
-  IdentityProviderUserGroupsSchema,
-} from "./schemas";
+import { UsersSchema } from "../users2/schema";
+import { IdentityProvidersSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
 
@@ -74,78 +72,58 @@ export namespace IdentityProviders {
           ),
         );
 
-        return { upsert, findAll, findById, findBySubdomain } as const;
-      }),
-    },
-  ) {}
-
-  export class UserGroupsRepository extends Effect.Service<UserGroupsRepository>()(
-    "@printdesk/core/identity-providers/UserGroupsRepository",
-    {
-      accessors: true,
-      dependencies: [Database.TransactionManager.Default],
-      effect: Effect.gen(function* () {
-        const db = yield* Database.TransactionManager;
-        const table = IdentityProviderUserGroupsSchema.table.definition;
-
-        const create = Effect.fn(
-          "IdentityProviders.UserGroupsRepository.create",
+        const findWithTenantAndUserByExternalIds = Effect.fn(
+          "IdentityProviders.Repository.findWithTenantAndUserByExternalIds",
         )(
           (
-            identityProviderUserGroup: InferInsertModel<IdentityProviderUserGroupsSchema.Table>,
+            kind: IdentityProvidersSchema.Row["kind"],
+            externalTenantId: IdentityProvidersSchema.Row["externalTenantId"],
+            externalUserId: UsersSchema.Row["externalId"],
           ) =>
             db
               .useTransaction((tx) =>
-                tx.insert(table).values(identityProviderUserGroup).returning(),
+                tx
+                  .select({
+                    identityProvider: getTableColumns(table),
+                    tenant: getTableColumns(TenantsSchema.table.definition),
+                    user: getTableColumns(UsersSchema.table.definition),
+                  })
+                  .from(table)
+                  .innerJoin(
+                    TenantsSchema.table.definition,
+                    eq(table.tenantId, TenantsSchema.table.definition.id),
+                  )
+                  .leftJoin(
+                    UsersSchema.table.definition,
+                    and(
+                      eq(
+                        table.id,
+                        UsersSchema.table.definition.identityProviderId,
+                      ),
+                      eq(table.tenantId, UsersSchema.table.definition.tenantId),
+                      eq(
+                        UsersSchema.table.definition.externalId,
+                        externalUserId,
+                      ),
+                    ),
+                  )
+                  .where(
+                    and(
+                      eq(table.kind, kind),
+                      eq(table.externalTenantId, externalTenantId),
+                    ),
+                  ),
               )
-              .pipe(
-                Effect.flatMap(Array.head),
-                Effect.catchTag("NoSuchElementException", Effect.die),
-              ),
+              .pipe(Effect.flatMap(Array.head)),
         );
 
-        const findByIdentityProvider = Effect.fn(
-          "IdentityProviders.UserGroupsRepository.findByIdentityProvider",
-        )(
-          (
-            identityProviderId: IdentityProviderUserGroupsSchema.Row["identityProviderId"],
-            tenantId: IdentityProviderUserGroupsSchema.Row["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select()
-                .from(table)
-                .where(
-                  and(
-                    eq(table.identityProviderId, identityProviderId),
-                    eq(table.tenantId, tenantId),
-                  ),
-                ),
-            ),
-        );
-
-        const deleteById = Effect.fn(
-          "IdentityProviders.UserGroupsRepository.deleteById",
-        )(
-          (
-            id: IdentityProviderUserGroupsSchema.Row["id"],
-            identityProviderId: IdentityProviderUserGroupsSchema.Row["identityProviderId"],
-            tenantId: IdentityProviderUserGroupsSchema.Row["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .delete(table)
-                .where(
-                  and(
-                    eq(table.id, id),
-                    eq(table.identityProviderId, identityProviderId),
-                    eq(table.tenantId, tenantId),
-                  ),
-                ),
-            ),
-        );
-
-        return { create, findByIdentityProvider, deleteById } as const;
+        return {
+          upsert,
+          findAll,
+          findById,
+          findBySubdomain,
+          findWithTenantAndUserByExternalIds,
+        } as const;
       }),
     },
   ) {}

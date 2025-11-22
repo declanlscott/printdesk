@@ -47,8 +47,18 @@ export namespace Users {
           yield* Replicache.ClientViewEntriesQueryBuilder;
         const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
+        const create = Effect.fn("Users.Repository.create")(
+          (user: InferInsertModel<UsersSchema.Table>) =>
+            db
+              .useTransaction((tx) => tx.insert(table).values(user).returning())
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
+        );
+
         const upsertMany = Effect.fn("Users.Repository.upsertMany")(
-          (users: Array<InferInsertModel<UsersSchema.Table>>) =>
+          (users: Array.NonEmptyArray<InferInsertModel<UsersSchema.Table>>) =>
             db.useTransaction((tx) =>
               tx
                 .insert(table)
@@ -316,28 +326,6 @@ export namespace Users {
             ),
         );
 
-        const findByIdentityProvider = Effect.fn(
-          "Users.Repository.findByIdentityProvider",
-        )(
-          (
-            subjectId: UsersSchema.Row["subjectId"],
-            identityProviderId: UsersSchema.Row["identityProviderId"],
-            tenantId: UsersSchema.Row["tenantId"],
-          ) =>
-            db.useTransaction((tx) =>
-              tx
-                .select()
-                .from(table)
-                .where(
-                  and(
-                    eq(table.subjectId, subjectId),
-                    eq(table.identityProviderId, identityProviderId),
-                    eq(table.tenantId, tenantId),
-                  ),
-                ),
-            ),
-        );
-
         const findByUsernames = Effect.fn("Users.Repository.findByUsernames")(
           (
             usernames: ReadonlyArray<UsersSchema.Row["username"]>,
@@ -374,6 +362,7 @@ export namespace Users {
         );
 
         return {
+          create,
           upsertMany,
           findCreates,
           findActiveCreates,
@@ -385,7 +374,6 @@ export namespace Users {
           findActiveFastForward,
           findById,
           findByOrigin,
-          findByIdentityProvider,
           findByUsernames,
           updateById,
         } as const;

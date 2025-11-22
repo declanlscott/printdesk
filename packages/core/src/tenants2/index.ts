@@ -1,12 +1,4 @@
-import {
-  and,
-  eq,
-  getTableColumns,
-  getTableName,
-  inArray,
-  not,
-  notInArray,
-} from "drizzle-orm";
+import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 
@@ -14,7 +6,6 @@ import { AccessControl } from "../access-control2";
 import { ColumnsContract } from "../columns2/contract";
 import { Database } from "../database2";
 import { Events } from "../events2";
-import { IdentityProvidersSchema } from "../identity-providers2/schemas";
 import { MutationsContract } from "../mutations/contract";
 import { Permissions } from "../permissions2";
 import { PoliciesContract } from "../policies/contract";
@@ -178,35 +169,6 @@ export namespace Tenants {
               .pipe(Effect.flatMap(Array.head)),
         );
 
-        const findByIdentityProvider = Effect.fn(
-          "Tenants.Repository.findByIdentityProvider",
-        )(
-          (
-            kind: IdentityProvidersSchema.Row["kind"],
-            id: IdentityProvidersSchema.Row["id"],
-          ) =>
-            db
-              .useTransaction((tx) =>
-                tx
-                  .select(getTableColumns(table))
-                  .from(table)
-                  .innerJoin(
-                    IdentityProvidersSchema.table.definition,
-                    eq(
-                      IdentityProvidersSchema.table.definition.tenantId,
-                      table.id,
-                    ),
-                  )
-                  .where(
-                    and(
-                      eq(IdentityProvidersSchema.table.definition.kind, kind),
-                      eq(IdentityProvidersSchema.table.definition.id, id),
-                    ),
-                  ),
-              )
-              .pipe(Effect.flatMap(Array.head)),
-        );
-
         const findBySubdomain = Effect.fn("Tenants.Repository.findBySubdomain")(
           (subdomain: TenantsSchema.Row["subdomain"]) =>
             db
@@ -239,7 +201,6 @@ export namespace Tenants {
           findDeletes,
           findFastForward,
           findById,
-          findByIdentityProvider,
           findBySubdomain,
           updateById,
         } as const;

@@ -1,3 +1,4 @@
+import * as Array from "effect/Array";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
@@ -49,3 +50,15 @@ export type SnakeToCamel<TSnake extends Lowercase<string>> =
 
 export const snakeToCamel = <TSnake extends Lowercase<string>>(snake: TSnake) =>
   String.snakeToCamel(snake) as SnakeToCamel<TSnake>;
+
+export const delimitToken = (...segments: Array<string>) =>
+  Array.join(segments, Constants.TOKEN_DELIMITER);
+
+export const splitToken = (token: string) =>
+  String.split(token, Constants.TOKEN_DELIMITER);
+
+export const buildName = (nameTemplate: string, tenantId: string) =>
+  nameTemplate.replace(
+    new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"),
+    tenantId,
+  );

@@ -9,7 +9,6 @@
     "@effect-aws/powertools-logger": "^1.5.1",
     "@hono/trpc-server": "^0.4.0",
     "@hono/valibot-validator": "^0.5.3",
-    "@oslojs/jwt": "^0.3.0",
     "@printdesk/core": "workspace:*",
     "@trpc/server": "^11.7.1"
   },

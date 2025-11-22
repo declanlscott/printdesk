@@ -22,6 +22,7 @@
     "@effect-aws/dsql": "^0.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@msgpack/msgpack": "^3.1.2",
+    "@oslojs/jwt": "^0.3.0",
     "@smithy/protocol-http": "^5.3.5",
     "@smithy/signature-v4": "^5.3.5",
     "fast-xml-parser": "^4.5.3",

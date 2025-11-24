@@ -104,11 +104,11 @@ export namespace Database {
                 ssl: dsqlCluster.ssl,
                 user: dsqlCluster.user,
                 password: () =>
-                  Signers.DsqlSigner.DsqlSigner.pipe(
+                  Signers.Dsql.Signer.pipe(
                     Effect.flatMap((signer) =>
                       signer.getDbConnectAdminAuthToken(),
                     ),
-                    Signers.DsqlSigner.runtime.runSync,
+                    Signers.Dsql.runtime.runSync,
                   ),
               }),
           ),

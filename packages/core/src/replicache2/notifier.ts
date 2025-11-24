@@ -1,4 +1,4 @@
-import * as Array from "effect/Array";
+import * as Chunk from "effect/Chunk";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Request from "effect/Request";
@@ -7,7 +7,9 @@ import * as Struct from "effect/Struct";
 
 import { Database } from "../database2";
 import { Realtime } from "../realtime2";
+import { RealtimeContract } from "../realtime2/contract";
 
+import type * as Array from "effect/Array";
 import type { Events } from "../events2";
 
 class NotifyError extends Data.TaggedError("NotifyError")<{
@@ -35,12 +37,14 @@ export class ReplicacheNotifier extends Effect.Service<ReplicacheNotifier>()(
 
         const resolver = RequestResolver.makeBatched(
           Effect.fn("ReplicacheNotifier.batchedRun")(
-            (requests: ReadonlyArray<Notify>) =>
+            (requests: Array.NonEmptyArray<Notify>) =>
               realtime
-                .publish({
-                  channel: "/replicache",
-                  events: Array.map(requests, Struct.get("notification")),
-                })
+                .publish(
+                  RealtimeContract.makeChannel("/replicache"),
+                  Chunk.fromIterable(requests).pipe(
+                    Chunk.map(Struct.get("notification")),
+                  ),
+                )
                 .pipe(
                   Effect.andThen((success) =>
                     Effect.forEach(

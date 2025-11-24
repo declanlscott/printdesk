@@ -1,20 +1,27 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
-import { DsqlSigner as _DsqlSigner } from "@effect-aws/dsql";
+import { DsqlSigner } from "@effect-aws/dsql";
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
+import { HttpRequest } from "@smithy/protocol-http";
 import { SignatureV4 } from "@smithy/signature-v4";
 import * as Context from "effect/Context";
+import * as Data from "effect/Data";
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
+import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 
 import { Sst } from "../sst";
 
+import type * as HttpBody from "@effect/platform/HttpBody";
 import type {
   AwsCredentialIdentity,
   AwsCredentialIdentityProvider,
+  RequestPresigningArguments as SmithyRequestPresigningArguments,
+  RequestSigningArguments as SmithyRequestSigningArguments,
 } from "@smithy/types";
 
 export namespace Credentials {
@@ -69,8 +76,8 @@ export namespace Credentials {
 }
 
 export namespace Signers {
-  export namespace DsqlSigner {
-    export const DsqlSigner = _DsqlSigner;
+  export namespace Dsql {
+    export const Signer = DsqlSigner;
 
     export const makeLayer = (
       { expiresIn }: { expiresIn?: Duration.Duration } = {
@@ -83,7 +90,7 @@ export namespace Signers {
           const dsqlCluster = yield* Sst.Resource.DsqlCluster;
           const aws = yield* Sst.Resource.Aws;
 
-          return _DsqlSigner.layer({
+          return DsqlSigner.layer({
             credentials,
             sha256: Sha256,
             hostname: dsqlCluster.host,
@@ -100,30 +107,125 @@ export namespace Signers {
     );
   }
 
-  export const makeSigv4Signer = (service: string) =>
+  export class SignatureV4Error extends Data.TaggedError("SignatureV4Error")<{
+    readonly cause: unknown;
+  }> {}
+
+  export interface RequestPresigningArguments
+    extends Omit<
+      SmithyRequestPresigningArguments,
+      "expiresIn" | "signingDate"
+    > {
+    expiresIn?: Duration.Duration;
+    signingDate?: DateTime.Utc;
+  }
+
+  export interface RequestSigningArguments
+    extends Omit<SmithyRequestSigningArguments, "signingDate"> {
+    signingDate?: DateTime.Utc;
+  }
+
+  export const makeSignatureV4Signer = (service: string) =>
     Effect.gen(function* () {
       const credentials = yield* Credentials.values;
       const aws = yield* Sst.Resource.Aws;
 
-      const sigv4 = new SignatureV4({
-        credentials,
-        sha256: Sha256,
-        region: aws.region,
-        service,
+      const signatureV4 = yield* Effect.try({
+        try: () =>
+          new SignatureV4({
+            credentials,
+            sha256: Sha256,
+            region: aws.region,
+            service,
+          }),
+        catch: (cause) => new SignatureV4Error({ cause }),
       });
 
-      return {
-        presign: (...args: Parameters<SignatureV4["presign"]>) =>
-          Effect.promise(() => sigv4.presign(...args)),
-        sign: (...args: Parameters<SignatureV4["sign"]>) =>
-          Effect.promise(() => sigv4.sign(...args)),
-        signMessage: (...args: Parameters<SignatureV4["signMessage"]>) =>
-          Effect.promise(() => sigv4.signMessage(...args)),
-      } as const;
+      const matchBody = Match.type<HttpBody.HttpBody>().pipe(
+        Match.tag("Empty", () => undefined),
+        Match.tag("Raw", (body) => body.body),
+        Match.tag("Uint8Array", (body) => body.body),
+        Match.tag("FormData", (body) => body.formData),
+        Match.tag("Stream", (body) => body.stream),
+        Match.exhaustive,
+      );
+
+      const presign = (...args: Parameters<SignatureV4["presign"]>) =>
+        Effect.tryPromise({
+          try: () => signatureV4.presign(...args),
+          catch: (cause) => new SignatureV4Error({ cause }),
+        }).pipe(Effect.withSpan(`Signers.${service}.presign`));
+
+      const sign = (...args: Parameters<SignatureV4["sign"]>) =>
+        Effect.tryPromise({
+          try: () => signatureV4.sign(...args),
+          catch: (cause) => new SignatureV4Error({ cause }),
+        }).pipe(Effect.withSpan(`Signers.${service}.sign`));
+
+      const presignRequest = (
+        request: HttpClientRequest.HttpClientRequest,
+        args: RequestPresigningArguments = {},
+      ) =>
+        Effect.gen(function* () {
+          const { protocol, hostname, pathname: path } = new URL(request.url);
+
+          const presigned = yield* presign(
+            new HttpRequest({
+              method: request.method,
+              protocol,
+              hostname,
+              path,
+              headers: { ...request.headers, host: hostname },
+              body: matchBody(request.body),
+            }),
+            {
+              ...args,
+              expiresIn: args.expiresIn?.pipe(Duration.toSeconds),
+              signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
+            },
+          );
+
+          return request.pipe(
+            HttpClientRequest.setHeaders(presigned.headers),
+            HttpClientRequest.setUrlParams(presigned.query ?? {}),
+          );
+        }).pipe(Effect.withSpan(`Signers.${service}.presignRequest`));
+
+      const signRequest = (
+        request: HttpClientRequest.HttpClientRequest,
+        args: RequestSigningArguments = {},
+      ) =>
+        Effect.gen(function* () {
+          const { protocol, hostname, pathname: path } = new URL(request.url);
+
+          const signed = yield* sign(
+            new HttpRequest({
+              method: request.method,
+              protocol,
+              hostname,
+              path,
+              headers: { ...request.headers, host: hostname },
+              body: matchBody(request.body),
+            }),
+            {
+              ...args,
+              signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
+            },
+          );
+
+          return request.pipe(HttpClientRequest.setHeaders(signed.headers));
+        }).pipe(Effect.withSpan(`Signers.${service}.signRequest`));
+
+      return { signRequest, presignRequest } as const;
     });
 
-  export class AppsyncSigner extends Effect.Service<AppsyncSigner>()(
+  export class Appsync extends Effect.Service<Appsync>()(
     "@printdesk/core/aws/AppsyncSigner",
-    { effect: makeSigv4Signer("appsync") },
+    { effect: makeSignatureV4Signer("appsync") },
+  ) {}
+
+  export class ExecuteApi extends Effect.Service<ExecuteApi>()(
+    "@printdesk/core/aws/ExecuteApiSigner",
+    { effect: makeSignatureV4Signer("execute-api") },
   ) {}
 }

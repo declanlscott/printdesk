@@ -48,6 +48,9 @@ export namespace RealtimeContract {
   );
   export type Channel<TChannel extends string> = typeof Channel.Type &
     StartsWith<"/", TChannel>;
+  export const makeChannel = <TChannel extends string>(
+    channel: StartsWith<"/", TChannel>,
+  ) => Channel.make(channel) as Channel<TChannel>;
 
   export class Subscribe extends Schema.Class<Subscribe>("Subscribe")({
     type: Schema.tag("subscribe"),

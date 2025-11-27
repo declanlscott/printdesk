@@ -66,10 +66,70 @@ export namespace Papercut {
             ),
         );
 
+        const CommaSeparatedString = Schema.String.pipe(
+          Schema.transform(Schema.Array(Schema.String), {
+            strict: true,
+            decode: (csv) => csv.split(", "),
+            encode: (array) => array.join(", "),
+          }),
+        );
+
+        const SharedAccountPropertySchemas = {
+          "access-groups": CommaSeparatedString,
+          "access-users": CommaSeparatedString,
+          "account-id": Schema.NonNegativeInt,
+          balance: Schema.Number,
+          "comment-option": Schema.Literal(
+            "NO_COMMENT",
+            "COMMENT_REQUIRED",
+            "COMMENT_OPTIONAL",
+          ),
+          disabled: Schema.Boolean,
+          "invoice-option": Schema.Literal(
+            "ALWAYS_INVOICE",
+            "NEVER_INVOICE",
+            "USER_CHOICE_ON",
+            "USER_CHOICE_OFF",
+          ),
+          notes: Schema.String,
+          "overdraft-amount": Schema.Number,
+          pin: Schema.Union(Schema.String, Schema.Number, Schema.Boolean),
+          restricted: Schema.Boolean,
+        };
+        type SharedAccountPropertySchemas = typeof SharedAccountPropertySchemas;
+
+        const getSharedAccountProperties = <
+          TPropertyKeys extends Array<keyof SharedAccountPropertySchemas>,
+        >(
+          sharedAccountName: string,
+          ...propertyKeys: TPropertyKeys
+        ) =>
+          xmlRpc
+            .request("api.getSharedAccountProperties", [
+              Xml.ExplicitString.with(sharedAccountName),
+              Xml.ExplicitStringArray.with(propertyKeys),
+            ])
+            .pipe(
+              Effect.map(injectAuthHeader),
+              Effect.flatMap(httpClient.execute),
+              Effect.flatMap(
+                xmlRpc.response(
+                  Xml.Rpc.tupleResponse(
+                    ...(propertyKeys.map(
+                      (key) => SharedAccountPropertySchemas[key],
+                    ) as {
+                      [TKey in keyof TPropertyKeys]: SharedAccountPropertySchemas[TPropertyKeys[TKey]];
+                    }),
+                  ),
+                ),
+              ),
+            );
+
         return {
           setTailnetUri,
           setAuthToken,
           adjustSharedAccountAccountBalance,
+          getSharedAccountProperties,
         } as const;
       }),
     },

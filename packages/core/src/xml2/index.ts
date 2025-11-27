@@ -11,6 +11,15 @@ import type { HttpClientResponse } from "@effect/platform/HttpClientResponse";
 import type { ParseOptions } from "effect/SchemaAST";
 
 export namespace Xml {
+  export const implicitValue = <TValue extends Schema.Schema.Any>(
+    Value: TValue,
+  ) => Schema.Struct({ value: Value });
+  export type ImplicitValue<TValue extends Schema.Schema.Any> = ReturnType<
+    typeof implicitValue<TValue>
+  >;
+
+  export const ImplicitString = implicitValue(Schema.String);
+
   export class ExplicitString extends Schema.Class<ExplicitString>(
     "ExplicitString",
   )({
@@ -26,10 +35,6 @@ export namespace Xml {
     }
   }
 
-  export class ImplicitString extends Schema.Class<ImplicitString>(
-    "ImplicitString",
-  )({ value: Schema.String }) {}
-
   export class ExplicitInt extends Schema.Class<ExplicitInt>("ExplicitInt")({
     value: Schema.Struct({ int: Schema.Int }),
   }) {
@@ -42,10 +47,6 @@ export namespace Xml {
       };
     }
   }
-
-  export class ImplicitInt extends Schema.Class<ImplicitInt>("ImplicitInt")({
-    value: Schema.Int,
-  }) {}
 
   export class ExplicitDouble extends Schema.Class<ExplicitDouble>(
     "ExplicitDouble",
@@ -61,10 +62,6 @@ export namespace Xml {
       };
     }
   }
-
-  export class ImplicitDouble extends Schema.Class<ImplicitDouble>(
-    "ImplicitDouble",
-  )({ value: Schema.Number }) {}
 
   export class ExplicitBoolean extends Schema.Class<ExplicitBoolean>(
     "ExplicitBoolean",
@@ -245,6 +242,56 @@ export namespace Xml {
       }),
     );
 
+    export const tuple = <TValues extends Array<Schema.Schema.Any>>(
+      ...Values: TValues
+    ) =>
+      Schema.TaggedStruct("Tuple", {
+        values: Schema.Tuple(
+          ...(Values as {
+            [TKey in keyof TValues]: TValues[TKey];
+          }),
+        ),
+      });
+    export const tupleResponse = <TValues extends Array<Schema.Schema.Any>>(
+      ...Values: TValues
+    ) => {
+      const Tuple = tuple(...Values);
+
+      return methodResponse({
+        params: Schema.Struct({
+          param: Schema.Struct({
+            value: Schema.Struct({
+              array: Schema.Struct({
+                data: Schema.Struct({
+                  value: Schema.Tuple(
+                    ...(Values.map(Schema.encodedSchema) as {
+                      [TKey in keyof TValues]: Schema.SchemaClass<
+                        TValues[TKey]["Encoded"]
+                      >;
+                    }),
+                  ),
+                }),
+              }),
+            }),
+          }),
+        }),
+      }).pipe(
+        Schema.transformOrFail(Tuple, {
+          strict: false,
+          decode: (response) =>
+            ParseResult.succeed(
+              Tuple.make({
+                values: response.params.param.value.array.data.value,
+              }),
+            ),
+          encode: (tuple, _, ast) =>
+            ParseResult.fail(
+              new ParseResult.Forbidden(ast, tuple, "Not implemented"),
+            ),
+        }),
+      );
+    };
+
     export class Client extends Effect.Service<Client>()(
       "@printdesk/core/xml/RpcClient",
       {
@@ -256,7 +303,7 @@ export namespace Xml {
 
             const request = <
               TMethodName extends string,
-              TValues extends ReadonlyArray<Schema.Schema.Any>,
+              TValues extends Array<Schema.Schema.Any>,
             >(
               methodName: TMethodName,
               values: {

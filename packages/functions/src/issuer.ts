@@ -91,9 +91,9 @@ class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
                     const accessToken =
                       yield* decodeAccessToken(rawAccessToken);
 
-                    const userSubjectEffect = Graph.Graph.me.pipe(
+                    const userSubjectEffect = Graph.Client.me.pipe(
                       Effect.provide(
-                        Graph.Graph.Default({
+                        Graph.Client.Default({
                           authProvider: {
                             getAccessToken: async () => result.tokenset.access,
                           },

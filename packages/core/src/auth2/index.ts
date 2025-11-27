@@ -1,5 +1,6 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
+import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
 import { decodeJWT } from "@oslojs/jwt";
 import * as Cause from "effect/Cause";
@@ -7,6 +8,7 @@ import * as Context from "effect/Context";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
 import { IdentityProviders } from "../identity-providers2";
@@ -35,6 +37,65 @@ export namespace Auth {
           token: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
         },
       });
+
+    export class ClientError extends Data.TaggedError("ClientError")<{
+      readonly cause: unknown;
+    }> {}
+
+    export class Client extends Effect.Service<Client>()(
+      "@printdesk/core/auth/EntraIdClient",
+      {
+        accessors: true,
+        dependencies: [Sst.Resource.layer],
+        effect: (
+          externalTenantId: IdentityProvidersContract.DataTransferObject["externalTenantId"],
+        ) =>
+          Effect.gen(function* () {
+            const resource = yield* Sst.Resource;
+
+            const { clientId, clientSecret } =
+              yield* resource.IdentityProviders.pipe(
+                Effect.map(Struct.get(Constants.ENTRA_ID)),
+                Effect.map(
+                  Struct.evolve({
+                    clientId: Redacted.make<string>,
+                    clientSecret: Redacted.make<string>,
+                  }),
+                ),
+              );
+
+            const client = new ConfidentialClientApplication({
+              auth: {
+                clientId: Redacted.value(clientId),
+                clientSecret: Redacted.value(clientSecret),
+                authority: `https://login.microsoftonline.com/${externalTenantId}`,
+              },
+            });
+
+            const accessToken = Effect.tryPromise({
+              try: () =>
+                client.acquireTokenByClientCredential({
+                  scopes: ["https://graph.microsoft.com/.default"],
+                }),
+              catch: (cause) => new ClientError({ cause }),
+            }).pipe(
+              Effect.flatMap((result) =>
+                result === null
+                  ? Effect.fail(
+                      new ClientError({
+                        cause: new globalThis.Error(
+                          "Missing authentication result",
+                        ),
+                      }),
+                    )
+                  : Effect.succeed(result.accessToken),
+              ),
+            );
+
+            return { accessToken } as const;
+          }),
+      },
+    ) {}
   }
 
   export namespace Google {

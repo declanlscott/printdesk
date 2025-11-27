@@ -1,0 +1,39 @@
+import * as FetchHttpClient from "@effect/platform/FetchHttpClient";
+import * as HttpClient from "@effect/platform/HttpClient";
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
+import * as Effect from "effect/Effect";
+
+import { Auth } from "../auth2";
+import { Signers } from "../aws2";
+import { Sst } from "../sst";
+import { buildName } from "../utils2";
+
+export namespace Api {
+  export class Http extends Effect.Service<Http>()("@printdesk/core/api/Http", {
+    accessors: true,
+    dependencies: [
+      Sst.Resource.layer,
+      Signers.ExecuteApi.Default,
+      FetchHttpClient.layer,
+    ],
+    effect: Effect.gen(function* () {
+      const session = yield* Auth.Session;
+      const baseUrl = yield* Sst.Resource.TenantDomains.pipe(
+        Effect.map(
+          (domains) =>
+            `https://${buildName(domains.api.nameTemplate, session.tenantId)}`,
+        ),
+      );
+
+      const signer = yield* Signers.ExecuteApi;
+      const client = yield* HttpClient.HttpClient.pipe(
+        Effect.map(
+          HttpClient.mapRequest(HttpClientRequest.prependUrl(baseUrl)),
+        ),
+        Effect.map(HttpClient.mapRequestEffect(signer.signRequest)),
+      );
+
+      return { client } as const;
+    }),
+  }) {}
+}

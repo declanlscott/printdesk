@@ -1,6 +1,7 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { DsqlSigner } from "@effect-aws/dsql";
+import * as HttpClientError from "@effect/platform/HttpClientError";
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
 import { HttpRequest } from "@smithy/protocol-http";
 import { SignatureV4 } from "@smithy/signature-v4";
@@ -169,7 +170,7 @@ export namespace Signers {
         Effect.gen(function* () {
           const { protocol, hostname, pathname: path } = new URL(request.url);
 
-          const presigned = yield* presign(
+          const { headers, query } = yield* presign(
             new HttpRequest({
               method: request.method,
               protocol,
@@ -183,11 +184,20 @@ export namespace Signers {
               expiresIn: args.expiresIn?.pipe(Duration.toSeconds),
               signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
             },
+          ).pipe(
+            Effect.mapError(
+              (cause) =>
+                new HttpClientError.RequestError({
+                  reason: "Encode",
+                  request,
+                  cause,
+                }),
+            ),
           );
 
           return request.pipe(
-            HttpClientRequest.setHeaders(presigned.headers),
-            HttpClientRequest.setUrlParams(presigned.query ?? {}),
+            HttpClientRequest.setHeaders(headers),
+            HttpClientRequest.setUrlParams(query ?? {}),
           );
         }).pipe(Effect.withSpan(`Signers.${service}.presignRequest`));
 
@@ -198,7 +208,7 @@ export namespace Signers {
         Effect.gen(function* () {
           const { protocol, hostname, pathname: path } = new URL(request.url);
 
-          const signed = yield* sign(
+          const { headers } = yield* sign(
             new HttpRequest({
               method: request.method,
               protocol,
@@ -211,9 +221,18 @@ export namespace Signers {
               ...args,
               signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
             },
+          ).pipe(
+            Effect.mapError(
+              (cause) =>
+                new HttpClientError.RequestError({
+                  reason: "Encode",
+                  request,
+                  cause,
+                }),
+            ),
           );
 
-          return request.pipe(HttpClientRequest.setHeaders(signed.headers));
+          return request.pipe(HttpClientRequest.setHeaders(headers));
         }).pipe(Effect.withSpan(`Signers.${service}.signRequest`));
 
       return { signRequest, presignRequest } as const;

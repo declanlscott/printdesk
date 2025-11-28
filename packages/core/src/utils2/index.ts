@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import * as String from "effect/String";
+import * as String_ from "effect/String";
 import * as Tuple from "effect/Tuple";
 
 import { Constants } from "../utils/constants";
@@ -25,6 +25,22 @@ export const IsoDate = Schema.String.pipe(
 
 export const HexColor = Schema.String.pipe(
   Schema.pattern(Constants.HEX_COLOR_REGEX),
+);
+
+export const StringFromUnknown = Schema.Unknown.pipe(
+  Schema.transform(Schema.String, {
+    strict: true,
+    decode: String,
+    encode: String,
+  }),
+);
+
+export const CommaSeparatedString = Schema.String.pipe(
+  Schema.transform(Schema.Array(Schema.String), {
+    strict: true,
+    decode: (csv) => csv.split(", "),
+    encode: (array) => array.join(", "),
+  }),
 );
 
 export const paginate =
@@ -49,13 +65,13 @@ export type SnakeToCamel<TSnake extends Lowercase<string>> =
     : TSnake;
 
 export const snakeToCamel = <TSnake extends Lowercase<string>>(snake: TSnake) =>
-  String.snakeToCamel(snake) as SnakeToCamel<TSnake>;
+  String_.snakeToCamel(snake) as SnakeToCamel<TSnake>;
 
 export const delimitToken = (...segments: Array<string>) =>
   Array.join(segments, Constants.TOKEN_DELIMITER);
 
 export const splitToken = (token: string) =>
-  String.split(token, Constants.TOKEN_DELIMITER);
+  String_.split(token, Constants.TOKEN_DELIMITER);
 
 export const buildName = (nameTemplate: string, tenantId: string) =>
   nameTemplate.replace(

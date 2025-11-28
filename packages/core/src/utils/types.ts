@@ -1,3 +1,5 @@
+import type * as Schema from "effect/Schema";
+
 export type Prettify<TObject> = {
   [TKey in keyof TObject]: TObject[TKey];
 } & {};
@@ -42,3 +44,8 @@ export type Discriminate<
   TKey extends keyof TEntity,
   TValue extends TEntity[TKey],
 > = Omit<TEntity, TKey> & Record<TKey, TValue>;
+
+export interface SchemaAndValue<TValue extends Schema.Schema.Any> {
+  schema: TValue;
+  value: TValue["Type"];
+}

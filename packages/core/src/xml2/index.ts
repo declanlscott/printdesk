@@ -11,6 +11,7 @@ import { StringFromUnknown } from "../utils2";
 
 import type { HttpClientResponse } from "@effect/platform/HttpClientResponse";
 import type { ParseOptions } from "effect/SchemaAST";
+import type { SchemaAndValue } from "../utils/types";
 
 export namespace Xml {
   export const implicitValue = <TValue extends Schema.Schema.Any>(
@@ -24,15 +25,13 @@ export namespace Xml {
 
   export class ExplicitString extends Schema.Class<ExplicitString>(
     "ExplicitString",
-  )({
-    value: Schema.Struct({ string: Schema.String }),
-  }) {
+  )({ value: Schema.Struct({ string: Schema.String }) }) {
     static with(string: string) {
       const schema = Schema.Struct(this.fields);
 
       return {
         schema,
-        fields: schema.make({ value: { string } }),
+        value: schema.make({ value: { string } }),
       };
     }
   }
@@ -45,22 +44,20 @@ export namespace Xml {
 
       return {
         schema,
-        fields: schema.make({ value: { int } }),
+        value: schema.make({ value: { int } }),
       };
     }
   }
 
   export class ExplicitDouble extends Schema.Class<ExplicitDouble>(
     "ExplicitDouble",
-  )({
-    value: Schema.Struct({ double: Schema.Number }),
-  }) {
+  )({ value: Schema.Struct({ double: Schema.Number }) }) {
     static with(double: number) {
       const schema = Schema.Struct(this.fields);
 
       return {
         schema,
-        fields: schema.make({ value: { double } }),
+        value: schema.make({ value: { double } }),
       };
     }
   }
@@ -83,7 +80,7 @@ export namespace Xml {
 
       return {
         schema,
-        fields: schema.make({ value: { boolean } }),
+        value: schema.make({ value: { boolean } }),
       };
     }
   }
@@ -104,7 +101,7 @@ export namespace Xml {
 
       return {
         schema,
-        fields: schema.make({
+        value: schema.make({
           value: {
             array: { data: { value: strings.map((string) => ({ string })) } },
           },
@@ -395,10 +392,7 @@ export namespace Xml {
             >(
               methodName: TMethodName,
               values: {
-                [TKey in keyof TValues]: {
-                  schema: TValues[TKey];
-                  fields: TValues[TKey]["Type"];
-                };
+                [TKey in keyof TValues]: SchemaAndValue<TValues[TKey]>;
               },
               parseOptions?: ParseOptions,
             ) => {
@@ -442,7 +436,7 @@ export namespace Xml {
               return encode({
                 methodCall: {
                   methodName,
-                  params: { param: values.map(Struct.get("fields")) },
+                  params: { param: values.map(Struct.get("value")) },
                 },
               }).pipe(
                 Effect.mapError((error) =>

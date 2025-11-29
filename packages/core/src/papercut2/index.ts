@@ -91,6 +91,25 @@ export namespace Papercut {
             ),
         );
 
+        const getGroupMembers = Effect.fn("Papercut.Client.getGroupMembers")(
+          (groupName: string, offset: number, limit: number) =>
+            xmlRpc
+              .request("api.getGroupMembers", [
+                Xml.ExplicitString.with(groupName),
+                Xml.ExplicitInt.with(offset),
+                Xml.ExplicitInt.with(limit),
+              ])
+              .pipe(
+                Effect.map(injectAuthHeader),
+                Effect.flatMap(httpClient.execute),
+                Effect.flatMap(
+                  xmlRpc.response(
+                    Xml.Rpc.arrayResponse(Xml.ImplicitString.fields.value),
+                  ),
+                ),
+              ),
+        );
+
         const getSharedAccountProperties = <
           TPropertyKeys extends Array<keyof SharedAccountPropertySchemas>,
         >(
@@ -162,10 +181,10 @@ export namespace Papercut {
             ),
         );
 
-        const listUserAccounts = Effect.fn("Papercut.Client.listUserAccounts")(
+        const listUserGroups = Effect.fn("Papercut.Client.listUserGroups")(
           (offset: number, limit: number) =>
             xmlRpc
-              .request("api.listUserAccounts", [
+              .request("api.listUserGroups", [
                 Xml.ExplicitInt.with(offset),
                 Xml.ExplicitInt.with(limit),
               ])
@@ -180,43 +199,26 @@ export namespace Papercut {
               ),
         );
 
-        const listUserSharedAccounts = Effect.fn(
-          "Papercut.Client.listUserSharedAccounts",
-        )(
-          (
-            username: string,
-            offset: number,
-            limit: number,
-            ignoreUserAccountSelectionConfig: boolean,
-          ) =>
-            xmlRpc
-              .request("api.listUserSharedAccounts", [
-                Xml.ExplicitString.with(username),
-                Xml.ExplicitInt.with(offset),
-                Xml.ExplicitInt.with(limit),
-                Xml.ExplicitBoolean.with(ignoreUserAccountSelectionConfig),
-              ])
-              .pipe(
-                Effect.map(injectAuthHeader),
-                Effect.flatMap(httpClient.execute),
-                Effect.flatMap(
-                  xmlRpc.response(
-                    Xml.Rpc.arrayResponse(Xml.ImplicitString.fields.value),
-                  ),
-                ),
-              ),
-        );
+        const performUserAndGroupSync = xmlRpc
+          .request("api.performUserAndGroupSync", [])
+          .pipe(
+            Effect.map(injectAuthHeader),
+            Effect.flatMap(httpClient.execute),
+            Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
+            Effect.withSpan("Papercut.Client.performUserAndGroupSync"),
+          );
 
         return {
           setTailnetUri,
           setAuthToken,
           adjustSharedAccountAccountBalance,
+          getGroupMembers,
           getSharedAccountProperties,
           getTaskStatus,
           getTotalUsers,
           listSharedAccounts,
-          listUserAccounts,
-          listUserSharedAccounts,
+          listUserGroups,
+          performUserAndGroupSync,
         } as const;
       }),
     },

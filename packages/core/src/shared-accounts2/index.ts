@@ -146,7 +146,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -164,14 +164,14 @@ export namespace SharedAccounts {
                           ],
                           Struct.omit(
                             getViewSelectedFields(activeCustomerAuthorizedView),
-                            "authorizedCustomerId",
+                            "customerId",
                           ),
                         )
                         .from(activeCustomerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              activeCustomerAuthorizedView.customerId,
                               customerId,
                             ),
                             eq(
@@ -202,7 +202,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -220,14 +220,14 @@ export namespace SharedAccounts {
                           ],
                           Struct.omit(
                             getViewSelectedFields(activeManagerAuthorizedView),
-                            "authorizedManagerId",
+                            "managerId",
                           ),
                         )
                         .from(activeManagerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeManagerAuthorizedView.authorizedManagerId,
+                              activeManagerAuthorizedView.managerId,
                               managerId,
                             ),
                             eq(
@@ -319,7 +319,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -352,7 +352,7 @@ export namespace SharedAccounts {
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              activeCustomerAuthorizedView.customerId,
                               customerId,
                             ),
                             eq(
@@ -372,7 +372,7 @@ export namespace SharedAccounts {
                       ],
                       Struct.omit(
                         cte[getViewName(activeCustomerAuthorizedView)],
-                        "authorizedCustomerId",
+                        "customerId",
                       ),
                     )
                     .from(cte);
@@ -386,7 +386,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -419,7 +419,7 @@ export namespace SharedAccounts {
                         .where(
                           and(
                             eq(
-                              activeManagerAuthorizedView.authorizedManagerId,
+                              activeManagerAuthorizedView.managerId,
                               managerId,
                             ),
                             eq(
@@ -439,7 +439,7 @@ export namespace SharedAccounts {
                       ],
                       Struct.omit(
                         cte[getViewName(activeManagerAuthorizedView)],
-                        "authorizedManagerId",
+                        "managerId",
                       ),
                     )
                     .from(cte);
@@ -490,7 +490,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -508,7 +508,7 @@ export namespace SharedAccounts {
                       .where(
                         and(
                           eq(
-                            activeCustomerAuthorizedView.authorizedCustomerId,
+                            activeCustomerAuthorizedView.customerId,
                             customerId,
                           ),
                           eq(
@@ -528,7 +528,7 @@ export namespace SharedAccounts {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -545,10 +545,7 @@ export namespace SharedAccounts {
                       .from(activeManagerAuthorizedView)
                       .where(
                         and(
-                          eq(
-                            activeManagerAuthorizedView.authorizedManagerId,
-                            managerId,
-                          ),
+                          eq(activeManagerAuthorizedView.managerId, managerId),
                           eq(
                             activeManagerAuthorizedView.tenantId,
                             clientView.tenantId,
@@ -639,7 +636,7 @@ export namespace SharedAccounts {
             excludeIds: Array<
               SharedAccountsSchema.ActiveCustomerAuthorizedRow["id"]
             >,
-            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -656,7 +653,7 @@ export namespace SharedAccounts {
                             activeCustomerAuthorizedView,
                             and(
                               eq(
-                                entriesTable.entity,
+                                entriesTable.entityId,
                                 activeCustomerAuthorizedView.id,
                               ),
                               notInArray(
@@ -668,7 +665,7 @@ export namespace SharedAccounts {
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizedView.authorizedCustomerId,
+                                activeCustomerAuthorizedView.customerId,
                                 customerId,
                               ),
                               eq(
@@ -689,7 +686,7 @@ export namespace SharedAccounts {
                         ],
                         Struct.omit(
                           cte[getViewName(activeCustomerAuthorizedView)],
-                          "authorizedCustomerId",
+                          "customerId",
                         ),
                       )
                       .from(cte);
@@ -706,7 +703,7 @@ export namespace SharedAccounts {
             excludeIds: Array<
               SharedAccountsSchema.ActiveManagerAuthorizedRow["id"]
             >,
-            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -735,7 +732,7 @@ export namespace SharedAccounts {
                           .where(
                             and(
                               eq(
-                                activeManagerAuthorizedView.authorizedManagerId,
+                                activeManagerAuthorizedView.managerId,
                                 managerId,
                               ),
                               eq(
@@ -756,7 +753,7 @@ export namespace SharedAccounts {
                         ],
                         Struct.omit(
                           cte[getViewName(activeManagerAuthorizedView)],
-                          "authorizedManagerId",
+                          "managerId",
                         ),
                       )
                       .from(cte);
@@ -816,8 +813,7 @@ export namespace SharedAccounts {
               .useTransaction((tx) =>
                 tx
                   .select({
-                    customerId:
-                      activeCustomerAuthorizedView.authorizedCustomerId,
+                    customerId: activeCustomerAuthorizedView.customerId,
                   })
                   .from(activeCustomerAuthorizedView)
                   .where(
@@ -841,7 +837,7 @@ export namespace SharedAccounts {
               .useTransaction((tx) =>
                 tx
                   .select({
-                    managerId: activeManagerAuthorizedView.authorizedManagerId,
+                    managerId: activeManagerAuthorizedView.managerId,
                   })
                   .from(activeManagerAuthorizedView)
                   .where(
@@ -1870,14 +1866,14 @@ export namespace SharedAccounts {
                           ],
                           Struct.omit(
                             getViewSelectedFields(activeCustomerAuthorizedView),
-                            "authorizedCustomerId",
+                            "customerId",
                           ),
                         )
                         .from(activeCustomerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              activeCustomerAuthorizedView.customerId,
                               customerId,
                             ),
                             eq(
@@ -2046,7 +2042,7 @@ export namespace SharedAccounts {
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              activeCustomerAuthorizedView.customerId,
                               customerId,
                             ),
                             eq(
@@ -2066,7 +2062,7 @@ export namespace SharedAccounts {
                       ],
                       Struct.omit(
                         cte[getViewName(activeCustomerAuthorizedView)],
-                        "authorizedCustomerId",
+                        "customerId",
                       ),
                     )
                     .from(cte);
@@ -2162,7 +2158,7 @@ export namespace SharedAccounts {
                       .where(
                         and(
                           eq(
-                            activeCustomerAuthorizedView.authorizedCustomerId,
+                            activeCustomerAuthorizedView.customerId,
                             customerId,
                           ),
                           eq(
@@ -2325,7 +2321,7 @@ export namespace SharedAccounts {
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizedView.authorizedCustomerId,
+                                activeCustomerAuthorizedView.customerId,
                                 customerId,
                               ),
                               eq(
@@ -2346,7 +2342,7 @@ export namespace SharedAccounts {
                         ],
                         Struct.omit(
                           cte[getViewName(activeCustomerAuthorizedView)],
-                          "authorizedCustomerId",
+                          "customerId",
                         ),
                       )
                       .from(cte);

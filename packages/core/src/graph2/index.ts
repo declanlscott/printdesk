@@ -7,8 +7,6 @@ import * as Effect from "effect/Effect";
 
 import type { ClientOptions } from "@microsoft/microsoft-graph-client";
 import type { Group, User } from "@microsoft/microsoft-graph-types";
-import type { GroupsContract } from "../groups2/contract";
-import type { UsersContract } from "../users2/contract";
 
 export namespace Graph {
   export class ClientError extends Data.TaggedError("ClientError")<{
@@ -37,10 +35,7 @@ export namespace Graph {
             catch: (cause) => new ClientError({ cause }),
           });
 
-          const users = (
-            groupId: GroupsContract.DataTransferObject["externalId"],
-            transitive = true,
-          ) =>
+          const users = (groupId: string, transitive = true) =>
             Effect.tryPromise<Array<User>, ClientError>({
               try: () =>
                 client
@@ -52,7 +47,7 @@ export namespace Graph {
               catch: (cause) => new ClientError({ cause }),
             });
 
-          const user = (id: UsersContract.DataTransferObject["externalId"]) =>
+          const user = (id: string) =>
             Effect.tryPromise<User, ClientError>({
               try: () =>
                 client
@@ -62,9 +57,7 @@ export namespace Graph {
               catch: (cause) => new ClientError({ cause }),
             });
 
-          const userPhotoBlob = (
-            id: UsersContract.DataTransferObject["externalId"],
-          ) =>
+          const userPhotoBlob = (id: string) =>
             Effect.tryPromise<Blob, ClientError>({
               try: () =>
                 client

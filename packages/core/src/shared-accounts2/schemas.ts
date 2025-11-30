@@ -61,8 +61,7 @@ export namespace SharedAccountsSchema {
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedCustomerId:
-          SharedAccountCustomerAccessSchema.activeView.customerId,
+        customerId: SharedAccountCustomerAccessSchema.activeView.customerId,
       })
       .from(activeView)
       .innerJoin(
@@ -90,8 +89,7 @@ export namespace SharedAccountsSchema {
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedManagerId:
-          SharedAccountManagerAccessSchema.activeView.managerId,
+        managerId: SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
@@ -180,8 +178,7 @@ export namespace SharedAccountManagerAccessSchema {
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedCustomerId:
-          SharedAccountCustomerAccessSchema.activeView.customerId,
+        customerId: SharedAccountCustomerAccessSchema.activeView.customerId,
       })
       .from(activeView)
       .innerJoin(

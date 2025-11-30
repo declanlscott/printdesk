@@ -45,7 +45,8 @@ export namespace Queries {
         Announcements.Queries.Default,
         Comments.Queries.Default,
         DeliveryOptions.Queries.Default,
-        Groups.Queries.Default,
+        Groups.CustomersQueries.Default,
+        Groups.CustomerMembershipsQueries.Default,
         Invoices.Queries.Default,
         Orders.Queries.Default,
         Products.Queries.Default,
@@ -63,9 +64,12 @@ export namespace Queries {
       effect: Effect.gen(function* () {
         const announcements = yield* Announcements.Queries.differenceResolver;
         const comments = yield* Comments.Queries.differenceResolver;
+        const customerGroups =
+          yield* Groups.CustomersQueries.differenceResolver;
+        const customerGroupMemberships =
+          yield* Groups.CustomerMembershipsQueries.differenceResolver;
         const deliveryOptions =
           yield* DeliveryOptions.Queries.differenceResolver;
-        const groups = yield* Groups.Queries.differenceResolver;
         const invoices = yield* Invoices.Queries.differenceResolver;
         const orders = yield* Orders.Queries.differenceResolver;
         const products = yield* Products.Queries.differenceResolver;
@@ -88,8 +92,9 @@ export namespace Queries {
         const client = new QueriesContract.Differentiator()
           .resolver(announcements)
           .resolver(comments)
+          .resolver(customerGroups)
+          .resolver(customerGroupMemberships)
           .resolver(deliveryOptions)
-          .resolver(groups)
           .resolver(invoices)
           .resolver(orders)
           .resolver(products)

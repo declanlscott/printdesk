@@ -6,7 +6,10 @@ import * as Tuple from "effect/Tuple";
 import { AnnouncementsContract } from "../announcements2/contract";
 import { CommentsContract } from "../comments2/contract";
 import { DeliveryOptionsContract } from "../delivery-options2/contract";
-import { GroupsContract } from "../groups2/contract";
+import {
+  CustomerGroupMembershipsContract,
+  CustomerGroupsContract,
+} from "../groups2/contracts";
 import { IdentityProvidersContract } from "../identity-providers2/contract";
 import { InvoicesContract } from "../invoices2/contract";
 import { OrdersContract } from "../orders2/contract";
@@ -54,8 +57,9 @@ export namespace Models {
   export const syncTables = Array.make(
     AnnouncementsContract.table,
     CommentsContract.table,
+    CustomerGroupsContract.table,
+    CustomerGroupMembershipsContract.table,
     DeliveryOptionsContract.table,
-    GroupsContract.table,
     InvoicesContract.table,
     OrdersContract.table,
     ProductsContract.table,
@@ -127,9 +131,11 @@ export namespace Models {
     CommentsContract.activeView,
     CommentsContract.activeManagerAuthorizedSharedAccountOrderView,
     CommentsContract.activeCustomerPlacedOrderView,
+    CustomerGroupsContract.activeView,
+    CustomerGroupsContract.activeMembershipView,
+    CustomerGroupMembershipsContract.activeView,
     DeliveryOptionsContract.activeView,
     DeliveryOptionsContract.activePublishedRoomView,
-    GroupsContract.activeView,
     InvoicesContract.activeView,
     InvoicesContract.activeManagerAuthorizedSharedAccountOrderView,
     InvoicesContract.activeCustomerPlacedOrderView,

@@ -56,7 +56,7 @@ export namespace SharedAccountsContract {
       activeCustomerAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedCustomerId: ColumnsContract.EntityId,
+        customerId: ColumnsContract.EntityId,
       }),
     );
 
@@ -66,7 +66,7 @@ export namespace SharedAccountsContract {
       activeManagerAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedManagerId: ColumnsContract.EntityId,
+        managerId: ColumnsContract.EntityId,
       }),
     );
 
@@ -211,7 +211,7 @@ export namespace SharedAccountManagerAccessContract {
       activeCustomerAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedCustomerId: ColumnsContract.EntityId,
+        customerId: ColumnsContract.EntityId,
       }),
     );
 

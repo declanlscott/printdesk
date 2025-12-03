@@ -9,9 +9,11 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns2";
+import { CustomerGroupMembershipsSchema } from "../groups2/schemas";
 import { Tables } from "../tables2";
 import {
   SharedAccountCustomerAccessContract,
+  SharedAccountCustomerGroupAccessContract,
   SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "./contracts";
@@ -199,4 +201,61 @@ export namespace SharedAccountManagerAccessSchema {
     typeof activeCustomerAuthorizedView;
   export type ActiveCustomerAuthorizedRow =
     InferSelectViewModel<ActiveCustomerAuthorizedView>;
+}
+
+export namespace SharedAccountCustomerGroupAccessSchema {
+  export const table = new Tables.Sync(
+    SharedAccountCustomerGroupAccessContract.tableName,
+    {
+      customerGroupId: Columns.entityId.notNull(),
+      sharedAccountId: Columns.entityId.notNull(),
+    },
+    (table) => [
+      uniqueIndex().on(
+        table.customerGroupId,
+        table.sharedAccountId,
+        table.tenantId,
+      ),
+      index().on(table.customerGroupId),
+    ],
+  );
+  export type Table = typeof table.definition;
+  export type Row = InferSelectModel<Table>;
+
+  export const activeView = pgView(
+    SharedAccountCustomerGroupAccessContract.activeViewName,
+  ).as((qb) =>
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
+  );
+  export type ActiveView = typeof activeView;
+  export type ActiveRow = InferSelectViewModel<ActiveView>;
+
+  export const activeAuthorizedView = pgView(
+    SharedAccountCustomerGroupAccessContract.activeAuthorizedViewName,
+  ).as((qb) =>
+    qb
+      .select({
+        ...getViewSelectedFields(activeView),
+        memberId: CustomerGroupMembershipsSchema.activeView.memberId,
+      })
+      .from(activeView)
+      .innerJoin(
+        CustomerGroupMembershipsSchema.activeView,
+        and(
+          eq(
+            activeView.customerGroupId,
+            CustomerGroupMembershipsSchema.activeView.customerGroupId,
+          ),
+          eq(
+            activeView.tenantId,
+            CustomerGroupMembershipsSchema.activeView.tenantId,
+          ),
+        ),
+      ),
+  );
+  export type ActiveAuthorizedView = typeof activeAuthorizedView;
+  export type ActiveAuthorizedRow = InferSelectViewModel<ActiveAuthorizedView>;
 }

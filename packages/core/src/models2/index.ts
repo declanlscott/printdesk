@@ -17,6 +17,7 @@ import { ProductsContract } from "../products2/contract";
 import { RoomsContract } from "../rooms2/contract";
 import {
   SharedAccountCustomerAccessContract,
+  SharedAccountCustomerGroupAccessContract,
   SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "../shared-accounts2/contracts";
@@ -67,6 +68,7 @@ export namespace Models {
     SharedAccountsContract.table,
     SharedAccountCustomerAccessContract.table,
     SharedAccountManagerAccessContract.table,
+    SharedAccountCustomerGroupAccessContract.table,
     TenantsContract.table,
     UsersContract.table,
     RoomWorkflowsContract.table,
@@ -128,6 +130,8 @@ export namespace Models {
     SharedAccountManagerAccessContract.activeView,
     SharedAccountManagerAccessContract.activeAuthorizedView,
     SharedAccountManagerAccessContract.activeCustomerAuthorizedView,
+    SharedAccountCustomerGroupAccessContract.activeView,
+    SharedAccountCustomerGroupAccessContract.activeAuthorizedView,
     CommentsContract.activeView,
     CommentsContract.activeManagerAuthorizedSharedAccountOrderView,
     CommentsContract.activeCustomerPlacedOrderView,

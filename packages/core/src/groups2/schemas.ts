@@ -50,7 +50,10 @@ export namespace CustomerGroupsSchema {
       .innerJoin(
         CustomerGroupMembershipsSchema.activeView,
         and(
-          eq(activeView.id, CustomerGroupMembershipsSchema.activeView.groupId),
+          eq(
+            activeView.id,
+            CustomerGroupMembershipsSchema.activeView.customerGroupId,
+          ),
           eq(
             activeView.tenantId,
             CustomerGroupMembershipsSchema.activeView.tenantId,
@@ -66,7 +69,7 @@ export namespace CustomerGroupMembershipsSchema {
   export const table = new Tables.Sync(
     CustomerGroupMembershipsContract.tableName,
     {
-      groupId: Columns.entityId.notNull(),
+      customerGroupId: Columns.entityId.notNull(),
       memberId: Columns.entityId.notNull(),
     },
   );

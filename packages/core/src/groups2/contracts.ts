@@ -59,7 +59,7 @@ export namespace CustomerGroupMembershipsContract {
     "DataTransferObject",
   )({
     ...ColumnsContract.Tenant.fields,
-    groupId: ColumnsContract.EntityId,
+    customerGroupId: ColumnsContract.EntityId,
     memberId: ColumnsContract.EntityId,
   }) {}
 

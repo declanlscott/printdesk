@@ -8,6 +8,7 @@ import { Cost } from "../utils2";
 
 import type {
   SharedAccountCustomerAccessSchema,
+  SharedAccountCustomerGroupAccessSchema,
   SharedAccountManagerAccessSchema,
   SharedAccountsSchema,
 } from "./schemas";
@@ -168,7 +169,7 @@ export namespace SharedAccountCustomerAccessContract {
       activeAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedCustomerId: ColumnsContract.EntityId,
+        customerId: ColumnsContract.EntityId,
       }),
     );
 }
@@ -247,4 +248,40 @@ export namespace SharedAccountManagerAccessContract {
     Args: DataTransferStruct.pick("id"),
     Returns: DataTransferObject,
   });
+}
+
+export namespace SharedAccountCustomerGroupAccessContract {
+  export class DataTransferObject extends Schema.Class<DataTransferObject>(
+    "DataTransferObject",
+  )({
+    ...ColumnsContract.Tenant.fields,
+    customerGroupId: ColumnsContract.EntityId,
+    sharedAccountId: ColumnsContract.EntityId,
+  }) {}
+  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
+
+  export const tableName = "shared_account_customer_group_access";
+  export const table =
+    TablesContract.makeTable<SharedAccountCustomerGroupAccessSchema.Table>()(
+      tableName,
+      DataTransferObject,
+      ["read"],
+    );
+
+  export const activeViewName = `active_${tableName}`;
+  export const activeView =
+    TablesContract.makeView<SharedAccountCustomerGroupAccessSchema.ActiveView>()(
+      activeViewName,
+      DataTransferObject,
+    );
+
+  export const activeAuthorizedViewName = `active_authorized_${tableName}`;
+  export const activeAuthorizedView =
+    TablesContract.makeView<SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedView>()(
+      activeAuthorizedViewName,
+      Schema.Struct({
+        ...DataTransferObject.fields,
+        memberId: ColumnsContract.EntityId,
+      }),
+    );
 }

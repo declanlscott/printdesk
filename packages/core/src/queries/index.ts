@@ -54,6 +54,7 @@ export namespace Queries {
         SharedAccounts.Queries.Default,
         SharedAccounts.ManagerAccessQueries.Default,
         SharedAccounts.CustomerAccessQueries.Default,
+        SharedAccounts.CustomerGroupAccessQueries.Default,
         Tenants.Queries.Default,
         Users.Queries.Default,
         RoomWorkflows.Queries.Default,
@@ -79,6 +80,8 @@ export namespace Queries {
           yield* SharedAccounts.ManagerAccessQueries.differenceResolver;
         const sharedAccountCustomerAccess =
           yield* SharedAccounts.CustomerAccessQueries.differenceResolver;
+        const sharedAccountCustomerGroupAccess =
+          yield* SharedAccounts.CustomerGroupAccessQueries.differenceResolver;
         const tenants = yield* Tenants.Queries.differenceResolver;
         const users = yield* Users.Queries.differenceResolver;
         const roomWorkflows = yield* RoomWorkflows.Queries.differenceResolver;
@@ -102,6 +105,7 @@ export namespace Queries {
           .resolver(sharedAccounts)
           .resolver(sharedAccountManagerAccess)
           .resolver(sharedAccountCustomerAccess)
+          .resolver(sharedAccountCustomerGroupAccess)
           .resolver(tenants)
           .resolver(users)
           .resolver(roomWorkflows)

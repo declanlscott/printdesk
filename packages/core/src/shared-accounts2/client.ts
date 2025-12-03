@@ -12,6 +12,7 @@ import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache2/client";
 import {
   SharedAccountCustomerAccessContract,
+  SharedAccountCustomerGroupAccessContract,
   SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "./contracts";
@@ -21,6 +22,8 @@ export namespace SharedAccounts {
     Models.SyncTables[SharedAccountCustomerAccessContract.tableName];
   const managerAccessTable =
     Models.SyncTables[SharedAccountManagerAccessContract.tableName];
+  const customerGroupAccessTable =
+    Models.SyncTables[SharedAccountCustomerGroupAccessContract.tableName];
   const table = Models.SyncTables[SharedAccountsContract.tableName];
 
   export class CustomerAccessReadRepository extends Effect.Service<CustomerAccessReadRepository>()(
@@ -202,6 +205,37 @@ export namespace SharedAccounts {
     },
   ) {}
 
+  export class CustomerGroupAccessReadRepository extends Effect.Service<CustomerGroupAccessReadRepository>()(
+    "@printdesk/core/shared-accounts/client/CustomerGroupAccessReadRepository",
+    {
+      dependencies: [
+        Models.SyncTables.Default,
+        Replicache.ReadTransactionManager.Default,
+      ],
+      effect: customerGroupAccessTable.pipe(
+        Effect.flatMap(Replicache.makeReadRepository),
+      ),
+    },
+  ) {}
+
+  export class CustomerGroupAccessWriteRepository extends Effect.Service<CustomerGroupAccessWriteRepository>()(
+    "@printdesk/core/shared-accounts/client/CustomerGroupAccessWriteRepository",
+    {
+      accessors: true,
+      dependencies: [
+        Models.SyncTables.Default,
+        CustomerGroupAccessReadRepository.Default,
+        Replicache.WriteTransactionManager.Default,
+      ],
+      effect: Effect.all([
+        customerGroupAccessTable,
+        CustomerGroupAccessReadRepository,
+      ]).pipe(
+        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
+      ),
+    },
+  ) {}
+
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/shared-accounts/client/ReadRepository",
     {
@@ -218,6 +252,8 @@ export namespace SharedAccounts {
 
         const customerAccessRepository = yield* CustomerAccessReadRepository;
         const managerAccessRepository = yield* ManagerAccessReadRepository;
+        const customerGroupAccessRepository =
+          yield* CustomerGroupAccessReadRepository;
 
         const findActiveAuthorizedCustomerIds = (
           id: SharedAccountsContract.DataTransferObject["id"],
@@ -255,10 +291,29 @@ export namespace SharedAccounts {
               ),
             );
 
+        const findActiveAuthorizedCustomerGroupIds = (
+          id: SharedAccountsContract.DataTransferObject["id"],
+        ) =>
+          base
+            .findById(id)
+            .pipe(
+              Effect.flatMap((sharedAccount) =>
+                customerGroupAccessRepository.findWhere(
+                  Array.filterMap((access) =>
+                    access.sharedAccountId === sharedAccount.id &&
+                    access.deletedAt === null
+                      ? Option.some(access.customerGroupId)
+                      : Option.none(),
+                  ),
+                ),
+              ),
+            );
+
         return {
           ...base,
           findActiveAuthorizedCustomerIds,
           findActiveAuthorizedManagerIds,
+          findActiveAuthorizedCustomerGroupIds,
         };
       }),
     },

@@ -54,7 +54,7 @@ export namespace Groups {
               Effect.flatMap((group) =>
                 membershipsRepository.findWhere(
                   Array.filterMap((membership) =>
-                    membership.groupId === group.id &&
+                    membership.customerGroupId === group.id &&
                     membership.deletedAt === null
                       ? Option.some(membership.memberId)
                       : Option.none(),

@@ -31,6 +31,7 @@ import {
 } from "./contracts";
 import {
   SharedAccountCustomerAccessSchema,
+  SharedAccountCustomerGroupAccessSchema,
   SharedAccountManagerAccessSchema,
   SharedAccountsSchema,
 } from "./schemas";
@@ -2632,6 +2633,523 @@ export namespace SharedAccounts {
         );
 
         return { create, delete: delete_, restore } as const;
+      }),
+    },
+  ) {}
+
+  export class CustomerGroupAccessRepository extends Effect.Service<CustomerGroupAccessRepository>()(
+    "@printdesk/core/shared-accounts/CustomerGroupAccessRepository",
+    {
+      accessors: true,
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = SharedAccountCustomerGroupAccessSchema.table.definition;
+        const activeView = SharedAccountCustomerGroupAccessSchema.activeView;
+        const activeAuthorizedView =
+          SharedAccountCustomerGroupAccessSchema.activeAuthorizedView;
+
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
+
+        const upsertMany = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.upsertMany",
+        )(
+          (
+            values: Array<
+              InferInsertModel<SharedAccountCustomerGroupAccessSchema.Table>
+            >,
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .insert(table)
+                .values(values)
+                .onConflictDoUpdate({
+                  target: [
+                    table.customerGroupId,
+                    table.sharedAccountId,
+                    table.tenantId,
+                  ],
+                  set: SharedAccountCustomerGroupAccessSchema.table.conflictSet,
+                })
+                .returning(),
+            ),
+        );
+
+        const findCreates = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findCreates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getTableName(table)}_creates`)
+                  .as(
+                    tx
+                      .select()
+                      .from(table)
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
+        );
+
+        const findActiveCreates = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveCreates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
+                      .select()
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
+        );
+
+        const findActiveAuthorizedCreates = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveAuthorizedCreates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            memberId: SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedRow["memberId"],
+          ) =>
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getViewName(activeAuthorizedView)}_creates`)
+                    .as(
+                      tx
+                        .select()
+                        .from(activeAuthorizedView)
+                        .where(
+                          and(
+                            eq(activeAuthorizedView.memberId, memberId),
+                            eq(
+                              activeAuthorizedView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
+              ),
+            ),
+        );
+
+        const findUpdates = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getTableName(table)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        table,
+                        and(
+                          eq(entriesTable.entityId, table.id),
+                          not(eq(entriesTable.entityVersion, table.version)),
+                          eq(entriesTable.tenantId, table.tenantId),
+                        ),
+                      )
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  );
+
+                return tx.with(cte).select(cte[getTableName(table)]).from(cte);
+              }),
+            ),
+          ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte);
+              }),
+            ),
+          ),
+        );
+
+        const findActiveAuthorizedUpdates = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveAuthorizedUpdates",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            memberId: SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedRow["memberId"],
+          ) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getViewName(activeAuthorizedView)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          activeAuthorizedView,
+                          and(
+                            eq(entriesTable.entityId, activeAuthorizedView.id),
+                            not(
+                              eq(
+                                entriesTable.entityVersion,
+                                activeAuthorizedView.version,
+                              ),
+                            ),
+                            eq(
+                              entriesTable.tenantId,
+                              activeAuthorizedView.tenantId,
+                            ),
+                          ),
+                        )
+                        .where(
+                          and(
+                            eq(activeAuthorizedView.memberId, memberId),
+                            eq(
+                              activeAuthorizedView.tenantId,
+                              clientView.tenantId,
+                            ),
+                          ),
+                        ),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select(cte[getViewName(activeAuthorizedView)])
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findDeletes = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: table.id })
+                      .from(table)
+                      .where(eq(table.tenantId, clientView.tenantId)),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findActiveAuthorizedDeletes = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveAuthorizedDeletes",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            memberId: SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedRow["memberId"],
+          ) =>
+            entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeAuthorizedView.id })
+                      .from(activeAuthorizedView)
+                      .where(
+                        and(
+                          eq(activeAuthorizedView.memberId, memberId),
+                          eq(
+                            activeAuthorizedView.tenantId,
+                            clientView.tenantId,
+                          ),
+                        ),
+                      ),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findFastForward = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findFastForward",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            excludeIds: Array<SharedAccountCustomerGroupAccessSchema.Row["id"]>,
+          ) =>
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(entriesTable.entityId, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.tenantId, clientView.tenantId)),
+                      );
+
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForward = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveFastForward",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            excludeIds: Array<
+              SharedAccountCustomerGroupAccessSchema.ActiveRow["id"]
+            >,
+          ) =>
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(entriesTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
+                      );
+
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveAuthorizedFastForward = Effect.fn(
+          "SharedAccounts.CustomerGroupAccessRepository.findActiveAuthorizedFastForward",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            excludeIds: Array<
+              SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedRow["id"]
+            >,
+            memberId: SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedRow["memberId"],
+          ) =>
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(
+                        `${getViewName(activeAuthorizedView)}_fast_forward`,
+                      )
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeAuthorizedView,
+                            and(
+                              eq(
+                                entriesTable.entityId,
+                                activeAuthorizedView.id,
+                              ),
+                              notInArray(activeAuthorizedView.id, excludeIds),
+                            ),
+                          )
+                          .where(
+                            and(
+                              eq(activeAuthorizedView.memberId, memberId),
+                              eq(
+                                activeAuthorizedView.tenantId,
+                                clientView.tenantId,
+                              ),
+                            ),
+                          ),
+                      );
+
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeAuthorizedView)])
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        return {
+          upsertMany,
+          findCreates,
+          findActiveCreates,
+          findActiveAuthorizedCreates,
+          findUpdates,
+          findActiveUpdates,
+          findActiveAuthorizedUpdates,
+          findDeletes,
+          findActiveDeletes,
+          findActiveAuthorizedDeletes,
+          findFastForward,
+          findActiveFastForward,
+          findActiveAuthorizedFastForward,
+        } as const;
+      }),
+    },
+  ) {}
+
+  export class CustomerGroupAccessQueries extends Effect.Service<CustomerGroupAccessQueries>()(
+    "@printdesk/core/shared-accounts/CustomerGroupAccessQueries",
+    {
+      accessors: true,
+      dependencies: [CustomerGroupAccessRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* CustomerGroupAccessRepository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(
+              SharedAccountCustomerGroupAccessSchema.table.definition,
+            ),
+          )
+            .query(
+              AccessControl.permission(
+                "shared_account_customer_group_access:read",
+              ),
+              {
+                findCreates: repository.findCreates,
+                findUpdates: repository.findUpdates,
+                findDeletes: repository.findDeletes,
+                fastForward: repository.findFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_shared_account_customer_group_access:read",
+              ),
+              {
+                findCreates: repository.findActiveCreates,
+                findUpdates: repository.findActiveUpdates,
+                findDeletes: repository.findActiveDeletes,
+                fastForward: repository.findActiveFastForward,
+              },
+            )
+            .query(
+              AccessControl.permission(
+                "active_authorized_shared_account_customer_group_access:read",
+              ),
+              {
+                findCreates: repository.findActiveAuthorizedCreates,
+                findUpdates: repository.findActiveAuthorizedUpdates,
+                findDeletes: repository.findActiveAuthorizedDeletes,
+                fastForward: repository.findActiveAuthorizedFastForward,
+              },
+            )
+            .build();
+
+        return { differenceResolver } as const;
       }),
     },
   ) {}

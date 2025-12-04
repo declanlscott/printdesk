@@ -1,519 +1,513 @@
-import { sub } from "date-fns";
-import { and, eq, getTableName, lt } from "drizzle-orm";
-import * as R from "remeda";
-import { deserialize, serialize } from "superjson";
-import * as v from "valibot";
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  inArray,
+  isNotNull,
+  lt,
+  lte,
+  max,
+  or,
+  sql,
+} from "drizzle-orm";
+import * as Array from "effect/Array";
+import * as DateTime from "effect/DateTime";
+import * as Effect from "effect/Effect";
 
-import { AccessControl } from "../access-control";
-import { commandRepository, queryRepository, syncedTables } from "../data";
-import { useTransaction } from "../database/context";
-import { ServerErrors } from "../errors";
-import { SharedErrors } from "../errors/shared";
-import { useTenant } from "../tenants/context";
-import { useUser } from "../users/context";
-import { Utils } from "../utils";
+import { Database } from "../database";
 import { Constants } from "../utils/constants";
-import { fn } from "../utils/shared";
-import { buildCvr, diffCvr, isCvrDiffEmpty } from "./client-view-record";
 import {
-  isSerialized,
-  mutationV1Schema,
-  replicacheClientGroupsTableName,
-  replicacheClientsTableName,
-} from "./shared";
-import {
-  replicacheClientGroupsTable,
-  replicacheClientsTable,
-  replicacheClientViewsTable,
-} from "./sql";
+  ReplicacheClientGroupsSchema,
+  ReplicacheClientsSchema,
+  ReplicacheClientViewEntriesSchema,
+  ReplicacheClientViewsSchema,
+} from "./schemas";
 
-import type {
-  ClientGroupID,
-  PatchOperation,
-  PullResponseV1,
-  PushResponse,
-} from "replicache";
-import type {
-  NonSyncedTableMetadata,
-  SyncedTable,
-  SyncedTableMetadata,
-  TableData,
-  TableMetadata,
-  TablePatchData,
-} from "../data";
-import type { OmitTimestamps } from "../database/columns";
-import type {
-  ClientViewRecord,
-  ClientViewRecordEntries,
-} from "./client-view-record";
-import type { PullRequest, PushRequest, Serialized } from "./shared";
-import type { ReplicacheClient, ReplicacheClientGroup } from "./sql";
+import type { InferInsertModel } from "drizzle-orm";
+import type { Models } from "../models";
 
 export namespace Replicache {
-  export const clientGroupFromId = async (id: ClientGroupID) =>
-    useTransaction(async (tx) =>
-      tx
-        .select({
-          id: replicacheClientGroupsTable.id,
-          tenantId: replicacheClientGroupsTable.tenantId,
-          cvrVersion: replicacheClientGroupsTable.cvrVersion,
-          userId: replicacheClientGroupsTable.userId,
-        })
-        .from(replicacheClientGroupsTable)
-        .where(
-          and(
-            eq(replicacheClientGroupsTable.id, id),
-            eq(replicacheClientGroupsTable.tenantId, useTenant().id),
-          ),
-        )
-        .then(R.first()),
-    );
+  export class ClientGroupsRepository extends Effect.Service<ClientGroupsRepository>()(
+    "@printdesk/core/replicache/ClientGroupsRepository",
+    {
+      accessors: true,
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = ReplicacheClientGroupsSchema.table.definition;
 
-  export const clientMetadataFromGroupId = async (
-    groupId: ReplicacheClientGroup["id"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select({
-          id: replicacheClientsTable.id,
-          version: replicacheClientsTable.lastMutationId,
-        })
-        .from(replicacheClientsTable)
-        .where(eq(replicacheClientsTable.clientGroupId, groupId)),
-    );
-
-  export const clientFromId = async (id: ReplicacheClient["id"]) =>
-    useTransaction((tx) =>
-      tx
-        .select({
-          id: replicacheClientsTable.id,
-          tenantId: replicacheClientsTable.tenantId,
-          clientGroupId: replicacheClientsTable.clientGroupId,
-          lastMutationId: replicacheClientsTable.lastMutationId,
-        })
-        .from(replicacheClientsTable)
-        .where(eq(replicacheClientsTable.id, id))
-        .then(R.first()),
-    );
-
-  export const putClientGroup = async (
-    clientGroup: OmitTimestamps<ReplicacheClientGroup>,
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .insert(replicacheClientGroupsTable)
-        .values(clientGroup)
-        .onConflictDoUpdate({
-          target: [
-            replicacheClientGroupsTable.id,
-            replicacheClientGroupsTable.tenantId,
-          ],
-          set: { ...clientGroup, updatedAt: new Date() },
-        }),
-    );
-
-  export const deleteExpiredClientGroups = async () =>
-    useTransaction((tx) =>
-      tx
-        .delete(replicacheClientGroupsTable)
-        .where(
-          lt(
-            replicacheClientGroupsTable.updatedAt,
-            sub(new Date(), Constants.REPLICACHE_LIFETIME),
-          ),
-        ),
-    );
-
-  export const putClient = async (client: OmitTimestamps<ReplicacheClient>) =>
-    useTransaction((tx) =>
-      tx
-        .insert(replicacheClientsTable)
-        .values(client)
-        .onConflictDoUpdate({
-          target: [replicacheClientsTable.id, replicacheClientsTable.tenantId],
-          set: { ...client, updatedAt: new Date() },
-        }),
-    );
-
-  export const deleteExpiredClients = async () =>
-    useTransaction((tx) =>
-      tx
-        .delete(replicacheClientsTable)
-        .where(
-          lt(
-            replicacheClientsTable.updatedAt,
-            sub(new Date(), Constants.REPLICACHE_LIFETIME),
-          ),
-        ),
-    );
-
-  type PullTransactionResult = {
-    data: Array<TableData>;
-    clients: ClientViewRecordEntries<typeof replicacheClientsTable>;
-    cvr: {
-      prev: {
-        value?: ClientViewRecord;
-      };
-      next: {
-        value: ClientViewRecord;
-        version: number;
-      };
-    };
-  } | null;
-
-  /**
-   * Implements the row version strategy pull algorithm from the [Replicache docs](https://doc.replicache.dev/strategies/row-version#pull).
-   */
-  export async function pull(
-    pullRequest: PullRequest,
-  ): Promise<PullResponseV1> {
-    if (pullRequest.pullVersion !== 1)
-      throw new ServerErrors.ReplicacheVersionNotSupported("pull");
-
-    const cookieOrder = pullRequest.cookie?.order ?? 0;
-
-    // 3: Begin transaction
-    const result = await useTransaction(
-      async (tx): Promise<PullTransactionResult> => {
-        // 1: Fetch previous client view record
-        const prevClientView = pullRequest.cookie
-          ? await tx
-              .select({ record: replicacheClientViewsTable.record })
-              .from(replicacheClientViewsTable)
-              .where(
-                and(
-                  eq(
-                    replicacheClientViewsTable.clientGroupId,
-                    pullRequest.clientGroupID,
-                  ),
-                  eq(replicacheClientViewsTable.version, cookieOrder),
-                  eq(replicacheClientViewsTable.tenantId, useTenant().id),
-                ),
+        const upsert = Effect.fn("Replicache.ClientGroupsRepository.upsert")(
+          (clientGroup: InferInsertModel<typeof table>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(clientGroup)
+                  .onConflictDoUpdate({
+                    target: [table.id, table.tenantId],
+                    set: {
+                      clientVersion: sql.raw(
+                        `EXCLUDED."${table.clientVersion.name}"`,
+                      ),
+                      clientViewVersion: sql.raw(
+                        `COALESCE(EXCLUDED."${table.clientViewVersion.name}", NULL)`,
+                      ),
+                      updatedAt: sql.raw(
+                        `COALESCE(EXCLUDED."${table.updatedAt.name}", NOW())`,
+                      ),
+                    },
+                  })
+                  .returning(),
               )
-              .then(R.first())
-          : undefined;
-
-        // 2: Initialize base client view record
-        const baseCvr = buildCvr({
-          variant: "base",
-          prev: prevClientView?.record,
-        });
-
-        // 4: Get client group
-        const baseClientGroup =
-          (await clientGroupFromId(pullRequest.clientGroupID)) ??
-          ({
-            id: pullRequest.clientGroupID,
-            tenantId: useTenant().id,
-            cvrVersion: 0,
-            userId: useUser().id,
-          } satisfies OmitTimestamps<ReplicacheClientGroup>);
-
-        // 5: Verify requesting client group owns requested client
-        if (baseClientGroup.userId !== useUser().id)
-          throw new SharedErrors.AccessDenied({
-            name: replicacheClientGroupsTableName,
-            id: baseClientGroup.id,
-          });
-
-        const metadata = (await Promise.all([
-          ...syncedTables.map(async (table) => {
-            const name = getTableName(table);
-
-            // 6: Read all id/version pairs from the database that should be in the client view
-            const metadata = R.uniqueBy(
-              await AccessControl.syncedTableMetadata[useUser().role][name](),
-              R.prop("id"),
-            );
-
-            return [name, metadata] satisfies SyncedTableMetadata;
-          }),
-          [
-            replicacheClientsTableName,
-            // 7: Read all clients in the client group
-            await clientMetadataFromGroupId(baseClientGroup.id),
-          ] satisfies NonSyncedTableMetadata,
-        ])) satisfies Array<TableMetadata>;
-
-        // 8: Build next client view record
-        const nextCvr = buildCvr({ variant: "next", metadata });
-
-        // 9: Calculate diff
-        const diff = diffCvr(baseCvr, nextCvr);
-
-        // 10: If diff is empty, return no-op
-        if (prevClientView && isCvrDiffEmpty(diff)) return null;
-
-        // 11: Read only the data that changed
-        const data = await Promise.all(
-          syncedTables.map(async (table) => {
-            const name = getTableName(table);
-
-            if (R.isEmpty(diff[name].puts))
-              return [
-                name,
-                { puts: [], dels: diff[name].dels },
-              ] as const satisfies TableData;
-
-            const puts: TablePatchData<SyncedTable>["puts"] = [];
-            for (const ids of R.chunk(
-              diff[name].puts,
-              Constants.REPLICACHE_PULL_CHUNK_SIZE,
-            ))
-              await queryRepository.dispatch(name, ids).then(R.concat(puts));
-
-            return [
-              name,
-              { puts, dels: diff[name].dels },
-            ] as const satisfies TableData;
-          }),
-        );
-
-        // 12: Changed clients - no need to re-read clients from database,
-        // we already have their versions.
-        const clients = diff[replicacheClientsTableName].puts.reduce(
-          (clients, clientId) => {
-            clients[clientId] = nextCvr[replicacheClientsTableName][clientId];
-            return clients;
-          },
-          {} as ClientViewRecordEntries<typeof replicacheClientsTable>,
-        );
-
-        // 13: new client view record version
-        const nextCvrVersion =
-          Math.max(cookieOrder, baseClientGroup.cvrVersion) + 1;
-
-        const nextClientGroup = {
-          ...baseClientGroup,
-          cvrVersion: nextCvrVersion,
-        };
-
-        await Promise.all([
-          // 14: Write client group record
-          putClientGroup(nextClientGroup),
-          // 16-17: Generate client view record id, store client view record
-          tx.insert(replicacheClientViewsTable).values({
-            clientGroupId: baseClientGroup.id,
-            tenantId: useTenant().id,
-            version: nextCvrVersion,
-            record: nextCvr,
-          }),
-          // Delete old client view records
-          tx
-            .delete(replicacheClientViewsTable)
-            .where(
-              and(
-                eq(
-                  replicacheClientViewsTable.clientGroupId,
-                  baseClientGroup.id,
-                ),
-                eq(replicacheClientViewsTable.tenantId, useTenant().id),
-                lt(
-                  replicacheClientViewsTable.updatedAt,
-                  sub(new Date(), Constants.REPLICACHE_LIFETIME),
-                ),
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
               ),
+        );
+
+        const findByIdForUpdate = Effect.fn(
+          "Replicache.ClientGroupsRepository.findByIdForUpdate",
+        )(
+          (
+            id: ReplicacheClientGroupsSchema.Row["id"],
+            tenantId: ReplicacheClientGroupsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .for("update"),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const deleteExpired = DateTime.now.pipe(
+          Effect.map(DateTime.subtractDuration(Constants.REPLICACHE_LIFETIME)),
+          Effect.flatMap((expiredAt) =>
+            db.useTransaction((tx) =>
+              tx
+                .delete(table)
+                .where(
+                  inArray(
+                    table.id,
+                    tx
+                      .select({ id: table.id })
+                      .from(table)
+                      .where(lt(table.updatedAt, expiredAt))
+                      .orderBy(asc(table.updatedAt))
+                      .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                  ),
+                )
+                .returning(),
             ),
-        ]);
-
-        // 15: Commit transaction
-        return {
-          data,
-          clients,
-          cvr: {
-            prev: {
-              value: prevClientView?.record,
-            },
-            next: {
-              value: nextCvr,
-              version: nextCvrVersion,
-            },
-          },
-        };
-      },
-    );
-
-    // 10: If transaction result returns empty diff, return no-op
-    if (!result)
-      return {
-        patch: [],
-        cookie: pullRequest.cookie,
-        lastMutationIDChanges: {},
-      };
-
-    // 18(i): Build patch
-    const patch: Array<PatchOperation> = [];
-    if (result.cvr.prev.value === undefined) patch.push({ op: "clear" });
-    for (const [name, { puts, dels }] of result.data) {
-      for (const value of puts)
-        patch.push({
-          op: "put",
-          key: `${name}/${value.id}`,
-          value: serialize(value) as Serialized,
-        });
-
-      for (const id of dels) patch.push({ op: "del", key: `${name}/${id}` });
-    }
-
-    // 18(ii): Construct cookie
-    const cookie = result.cvr.next.version;
-
-    // 18(iii): Last mutation ID changes
-    const lastMutationIDChanges = result.clients;
-
-    return {
-      patch,
-      cookie,
-      lastMutationIDChanges,
-    };
-  }
-
-  /**
-   * Implements the row version strategy push algorithm from the [Replicache docs](https://doc.replicache.dev/strategies/row-version#push).
-   */
-  export async function push(
-    pushRequest: PushRequest,
-  ): Promise<PushResponse | null> {
-    if (pushRequest.pushVersion !== 1)
-      throw new ServerErrors.ReplicacheVersionNotSupported("push");
-
-    const context = Utils.createContext<{ errorMode: boolean }>("Push");
-
-    for (const mutation of pushRequest.mutations) {
-      try {
-        // 1: Error mode is initially false
-        await context.with(
-          () => ({ errorMode: false }),
-          async () => processMutation(mutation),
-        );
-      } catch (error) {
-        console.error(error);
-
-        console.log(
-          `Encountered error during push on mutation "${mutation.id}"`,
+          ),
+          Effect.withSpan("Replicache.ClientGroupsRepository.deleteExpired"),
         );
 
-        if (error instanceof ServerErrors.ReplicacheClientStateNotFound)
-          throw error;
-
-        console.log(`Retrying mutation "${mutation.id}" in error mode`);
-
-        // retry in error mode
-        await context.with(
-          () => ({ errorMode: true }),
-          async () => processMutation(mutation),
-        );
-      }
-    }
-
-    const processMutation = fn(
-      v.object({
-        ...mutationV1Schema.entries,
-        name: v.picklist(commandRepository.names()),
+        return { upsert, findByIdForUpdate, deleteExpired } as const;
       }),
-      async (mutation) =>
-        // 2: Begin transaction
-        useTransaction(async () => {
-          const clientGroupId = pushRequest.clientGroupID;
+    },
+  ) {}
 
-          // 3: Get client group
-          const clientGroup =
-            (await clientGroupFromId(clientGroupId)) ??
-            ({
-              id: clientGroupId,
-              tenantId: useTenant().id,
-              cvrVersion: 0,
-              userId: useUser().id,
-            } satisfies OmitTimestamps<ReplicacheClientGroup>);
+  export class ClientsRepository extends Effect.Service<ClientsRepository>()(
+    "@printdesk/core/replicache/ClientsRepository",
+    {
+      accessors: true,
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = ReplicacheClientsSchema.table.definition;
 
-          // 4: Verify requesting user owns the client group
-          if (clientGroup.userId !== useUser().id)
-            throw new SharedErrors.AccessDenied({
-              name: replicacheClientGroupsTableName,
-              id: clientGroupId,
-            });
+        const upsert = Effect.fn("Replicache.ClientsRepository.upsert")(
+          (client: InferInsertModel<typeof table>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(client)
+                  .onConflictDoUpdate({
+                    target: [table.id, table.tenantId],
+                    set: {
+                      lastMutationId: client.lastMutationId,
+                      version: client.version,
+                      updatedAt: sql.raw(
+                        `COALESCE(EXCLUDED."${table.updatedAt.name}", NOW())`,
+                      ),
+                    },
+                  })
+                  .returning(),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
+        );
 
-          // 5: Get client
-          const client =
-            (await clientFromId(mutation.clientID)) ??
-            ({
-              id: mutation.clientID,
-              tenantId: useTenant().id,
-              clientGroupId: clientGroupId,
-              lastMutationId: 0,
-            } satisfies OmitTimestamps<ReplicacheClient>);
+        const findByIdForUpdate = Effect.fn(
+          "Replicache.ClientsRepository.findByIdForUpdate",
+        )(
+          (
+            id: ReplicacheClientsSchema.Row["id"],
+            tenantId: ReplicacheClientsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .for("update"),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
 
-          // 6: Verify requesting client group owns the client
-          if (client.clientGroupId !== clientGroupId)
-            throw new SharedErrors.AccessDenied({
-              name: replicacheClientsTableName,
-              id: mutation.clientID,
-            });
+        const findSinceVersionByGroupId = Effect.fn(
+          "Replicache.ClientsRepository.findSinceVersionByGroupId",
+        )(
+          (
+            version: ReplicacheClientsSchema.Row["version"],
+            clientGroupId: ReplicacheClientsSchema.Row["clientGroupId"],
+            tenantId: ReplicacheClientsSchema.Row["tenantId"],
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .select()
+                .from(table)
+                .where(
+                  and(
+                    gt(table.version, version),
+                    eq(table.clientGroupId, clientGroupId),
+                    eq(table.tenantId, tenantId),
+                  ),
+                ),
+            ),
+        );
 
-          if (client.lastMutationId === 0 && mutation.id > 1)
-            throw new ServerErrors.ReplicacheClientStateNotFound();
+        const deleteByGroupIds = Effect.fn(
+          "Replicache.ClientsRepository.deleteByGroupIds",
+        )(
+          (
+            clientGroupIds: ReadonlyArray<
+              ReplicacheClientsSchema.Row["clientGroupId"]
+            >,
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .delete(table)
+                .where(
+                  inArray(
+                    table.clientGroupId,
+                    tx
+                      .select({ id: table.clientGroupId })
+                      .from(table)
+                      .where(inArray(table.clientGroupId, clientGroupIds))
+                      .orderBy(asc(table.updatedAt))
+                      .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                  ),
+                )
+                .returning(),
+            ),
+        );
 
-          // 7: Next mutation ID
-          const nextMutationId = client.lastMutationId + 1;
+        return {
+          upsert,
+          findByIdForUpdate,
+          findSinceVersionByGroupId,
+          deleteByGroupIds,
+        } as const;
+      }),
+    },
+  ) {}
 
-          // 8: Rollback and skip if mutation already processed
-          if (mutation.id < nextMutationId)
-            return console.log(
-              `Mutation "${mutation.id}" already processed - skipping`,
-            );
+  export class ClientViewsRepository extends Effect.Service<ClientViewsRepository>()(
+    "@printdesk/core/replicache/ClientViewsRepository",
+    {
+      accessors: true,
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = ReplicacheClientViewsSchema.table.definition;
 
-          // 9: Rollback and throw if mutation is from the future
-          if (mutation.id > nextMutationId)
-            throw new ServerErrors.MutationConflict(
-              `Mutation "${mutation.id}" is from the future - aborting`,
-            );
+        const upsert = Effect.fn("Replicache.ClientViewsRepository.upsert")(
+          (clientView: InferInsertModel<typeof table>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(clientView)
+                  .onConflictDoUpdate({
+                    target: [
+                      table.clientGroupId,
+                      table.version,
+                      table.tenantId,
+                    ],
+                    set: {
+                      clientVersion: sql.raw(
+                        `EXCLUDED."${table.clientVersion.name}"`,
+                      ),
+                    },
+                  })
+                  .returning(),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
+        );
 
-          const start = Date.now();
+        const findById = Effect.fn("Replicache.ClientViewsRepository.findById")(
+          (
+            clientGroupId: ReplicacheClientViewsSchema.Row["clientGroupId"],
+            version: ReplicacheClientViewsSchema.Row["version"],
+            tenantId: ReplicacheClientViewsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(
+                    and(
+                      eq(table.clientGroupId, clientGroupId),
+                      eq(table.version, version),
+                      eq(table.tenantId, tenantId),
+                    ),
+                  ),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
 
-          // 10. Perform mutation
-          if (!context.use().errorMode) {
-            try {
-              if (!isSerialized(mutation.args))
-                throw new ServerErrors.BadRequest(
-                  "Mutation args not serialized",
-                );
+        const findMaxVersionByGroupId = Effect.fn(
+          "Replicache.ClientViewsRepository.findMaxVersionByGroupId",
+        )(
+          (
+            clientGroupId: ReplicacheClientViewsSchema.Row["clientGroupId"],
+            tenantId: ReplicacheClientViewsSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({ version: max(table.version) })
+                  .from(table)
+                  .where(
+                    and(
+                      eq(table.clientGroupId, clientGroupId),
+                      eq(table.tenantId, tenantId),
+                    ),
+                  ),
+              )
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.map((row) => row.version!),
+              ),
+        );
 
-              // 10(i): Business logic
-              // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
-              await commandRepository.dispatch(
-                mutation.name,
-                deserialize(mutation.args),
-              );
-            } catch (e) {
-              // 10(ii)(a-c): Log, abort, and retry
-              console.log(`Error processing mutation "${mutation.id}"`);
+        const deleteByGroupIds = Effect.fn(
+          "Replicache.ClientViewsRepository.deleteByGroupIds",
+        )(
+          (
+            clientGroupIds: ReadonlyArray<
+              ReplicacheClientViewsSchema.Row["clientGroupId"]
+            >,
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .delete(table)
+                .where(
+                  inArray(
+                    table.clientGroupId,
+                    tx
+                      .select({ id: table.clientGroupId })
+                      .from(table)
+                      .where(inArray(table.clientGroupId, clientGroupIds))
+                      .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                  ),
+                )
+                .returning(),
+            ),
+        );
 
-              throw e;
-            }
-          }
+        return {
+          upsert,
+          findById,
+          findMaxVersionByGroupId,
+          deleteByGroupIds,
+        } as const;
+      }),
+    },
+  ) {}
 
-          const nextClient = {
-            id: client.id,
-            tenantId: client.tenantId,
-            clientGroupId,
-            lastMutationId: nextMutationId,
-          } satisfies OmitTimestamps<ReplicacheClient>;
+  export class ClientViewEntriesRepository extends Effect.Service<ClientViewEntriesRepository>()(
+    "@printdesk/core/replicache/ClientViewEntriesRepository",
+    {
+      accessors: true,
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = ReplicacheClientViewEntriesSchema.table.definition;
 
-          await Promise.all([
-            // 11. Upsert client group
-            await putClientGroup(clientGroup),
+        const upsertMany = Effect.fn("Replicache.ClientViewEntries.upsertMany")(
+          (values: Array<InferInsertModel<typeof table>>) =>
+            db.useTransaction((tx) =>
+              tx
+                .insert(table)
+                .values(values)
+                .onConflictDoUpdate({
+                  target: [
+                    table.clientGroupId,
+                    table.entity,
+                    table.entityId,
+                    table.tenantId,
+                  ],
+                  set: {
+                    entityVersion: sql`EXCLUDED.${table.entityVersion}`,
+                    clientViewVersion: sql`EXCLUDED.${table.clientViewVersion}`,
+                  },
+                })
+                .returning(),
+            ),
+        );
 
-            // 12. Upsert client
-            await putClient(nextClient),
-          ]);
+        const deleteByGroupIds = Effect.fn(
+          "Replicache.ClientViewEntries.deleteByGroupIds",
+        )(
+          (
+            clientGroupIds: ReadonlyArray<
+              ReplicacheClientViewEntriesSchema.Row["clientGroupId"]
+            >,
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .delete(table)
+                .where(
+                  inArray(
+                    table.clientGroupId,
+                    tx
+                      .select({ id: table.clientGroupId })
+                      .from(table)
+                      .where(inArray(table.clientGroupId, clientGroupIds))
+                      .limit(Constants.DB_TRANSACTION_ROW_MODIFICATION_LIMIT),
+                  ),
+                )
+                .returning(),
+            ),
+        );
 
-          const end = Date.now();
-          console.log(
-            `Processed mutation "${mutation.id}" in ${end - start}ms`,
-          );
-        }),
-    );
+        return { upsertMany, deleteByGroupIds } as const;
+      }),
+    },
+  ) {}
 
-    return null;
-  }
+  export class ClientViewEntriesQueryBuilder extends Effect.Service<ClientViewEntriesQueryBuilder>()(
+    "@printdesk/core/replicache/ClientViewEntriesQueryBuilder",
+    {
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = ReplicacheClientViewEntriesSchema.table.definition;
+
+        const creates = Effect.fn(
+          "Replicache.ClientViewEntriesQueryBuilder.creates",
+        )(
+          <TEntity extends Models.SyncTableName>(
+            entity: TEntity,
+            clientView: ReplicacheClientViewsSchema.Row,
+          ) =>
+            db.useDynamic((tx) =>
+              tx
+                .select({ id: table.entityId })
+                .from(table)
+                .where(
+                  and(
+                    eq(table.entity, entity),
+                    lte(table.clientViewVersion, clientView.clientVersion),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
+                  ),
+                )
+                .$dynamic(),
+            ),
+        );
+
+        const updates = Effect.fn(
+          "Replicache.ClientViewEntriesQueryBuilder.updates",
+        )(
+          <TEntity extends Models.SyncTableName>(
+            entity: TEntity,
+            clientView: ReplicacheClientViewsSchema.Row,
+          ) =>
+            db.useDynamic((tx) =>
+              tx
+                .select()
+                .from(table)
+                .where(
+                  and(
+                    eq(table.entity, entity),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
+                  ),
+                )
+                .$dynamic(),
+            ),
+        );
+
+        const deletes = Effect.fn(
+          "Replicache.ClientViewEntriesQueryBuilder.deletes",
+        )(
+          <TEntity extends Models.SyncTableName>(
+            entity: TEntity,
+            clientView: ReplicacheClientViewsSchema.Row,
+          ) =>
+            db.useDynamic((tx) =>
+              tx
+                .select({ id: table.entityId })
+                .from(table)
+                .where(
+                  and(
+                    eq(table.entity, entity),
+                    or(
+                      and(
+                        lte(table.clientViewVersion, clientView.clientVersion),
+                        isNotNull(table.entityVersion),
+                      ),
+                      gt(table.clientViewVersion, clientView.clientVersion),
+                    ),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
+                  ),
+                )
+                .$dynamic(),
+            ),
+        );
+
+        const fastForward = Effect.fn(
+          "Replicache.ClientViewEntriesQueryBuilder.fastForward",
+        )(
+          <TEntity extends Models.SyncTableName>(
+            entity: TEntity,
+            clientView: ReplicacheClientViewsSchema.Row,
+          ) =>
+            db.useDynamic((tx) =>
+              tx
+                .select()
+                .from(table)
+                .where(
+                  and(
+                    eq(table.entity, entity),
+                    gt(table.clientViewVersion, clientView.clientVersion),
+                    eq(table.clientGroupId, clientView.clientGroupId),
+                    eq(table.tenantId, clientView.tenantId),
+                  ),
+                )
+                .$dynamic(),
+            ),
+        );
+
+        return { creates, updates, deletes, fastForward } as const;
+      }),
+    },
+  ) {}
 }

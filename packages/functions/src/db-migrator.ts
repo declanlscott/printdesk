@@ -1,7 +1,11 @@
+import { LambdaHandler } from "@effect-aws/lambda";
+import * as Logger from "@effect-aws/powertools-logger";
 import { Database } from "@printdesk/core/database";
+import { Sst } from "@printdesk/core/sst";
 import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
-import * as R from "remeda";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 
 import type { MigrationConfig } from "drizzle-orm/migrator";
 import type { PgSession } from "drizzle-orm/pg-core";
@@ -23,96 +27,111 @@ type DrizzleMigration = {
   created_at: string;
 };
 
-export async function migrate(config: MigrationConfig) {
-  const migrations = readMigrationFiles(config);
+const layer = Layer.mergeAll(Database.DatabaseLive, Logger.defaultLayer).pipe(
+  Layer.provideMerge(Sst.Resource.layer),
+);
 
-  // @ts-expect-error - session is not typed
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const session: PgSession = Database.initialize().session;
+export const handler = LambdaHandler.make({
+  layer,
+  handler: () =>
+    Logger.logInfo("Running database migrations ...").pipe(
+      Effect.andThen(() =>
+        Effect.orElseSucceed(
+          migrate({ migrationsFolder: "migrations" }).pipe(
+            Effect.tapBoth({
+              onSuccess: () => Logger.logInfo("✅ Migration completed!"),
+              onFailure: (e) =>
+                Logger.logError(`❌ Error during migration: ${e.toString()}`),
+            }),
+            Effect.andThen({ success: true }),
+          ),
+          () => ({ success: false }),
+        ),
+      ),
+    ),
+});
 
-  await session.execute(sql`
-    CREATE SCHEMA IF NOT EXISTS ${drizzleSchema}
-  `);
+const migrate = (config: MigrationConfig) =>
+  Effect.gen(function* () {
+    const db = yield* Database.Database;
 
-  await session.execute(sql`
-    CREATE TABLE IF NOT EXISTS ${drizzleSchema}.${drizzleMigrationsTable.name} (
-      ${drizzleMigrationsTable.columns.id} SMALLINT PRIMARY KEY,
-      ${drizzleMigrationsTable.columns.hash} TEXT NOT NULL,
-      ${drizzleMigrationsTable.columns.createdAt} BIGINT NOT NULL
-    )
-  `);
+    // @ts-expect-error - session is not typed
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const session: PgSession = db.client.session;
 
-  let lastMigration = await session
-    .all<DrizzleMigration>(
-      sql`
-        SELECT
-          ${drizzleMigrationsTable.columns.id},
-          ${drizzleMigrationsTable.columns.hash},
-          ${drizzleMigrationsTable.columns.createdAt}
-        FROM ${drizzleSchema}.${drizzleMigrationsTable.name}
-        ORDER BY ${drizzleMigrationsTable.columns.createdAt} DESC LIMIT 1
-      `,
-    )
-    .then(R.first());
+    yield* Effect.tryPromise(async () => {
+      const migrations = readMigrationFiles(config);
 
-  const isFirstRun = !lastMigration;
+      await session.execute(sql`
+          CREATE SCHEMA IF NOT EXISTS ${drizzleSchema}
+        `);
 
-  for (const migration of migrations) {
-    if (
-      isFirstRun ||
-      !lastMigration ||
-      Number(lastMigration.created_at) < migration.folderMillis
-    ) {
-      for (const statement of migration.sql)
-        await session.execute(sql.raw(statement)).then(console.log);
-
-      lastMigration = await session
-        .all<{ row: string }>(
-          sql`
-            INSERT INTO ${drizzleSchema}.${drizzleMigrationsTable.name} (
-              ${drizzleMigrationsTable.columns.id},
-              ${drizzleMigrationsTable.columns.hash},
-              ${drizzleMigrationsTable.columns.createdAt}
-            )
-            VALUES(${(lastMigration?.id ?? 0) + 1}, ${migration.hash}, ${migration.folderMillis})
-            RETURNING (
-              ${drizzleMigrationsTable.columns.id},
-              ${drizzleMigrationsTable.columns.hash},
-              ${drizzleMigrationsTable.columns.createdAt}
-            )
-        `,
+      await session.execute(sql`
+        CREATE TABLE IF NOT EXISTS ${drizzleSchema}.${drizzleMigrationsTable.name} (
+          ${drizzleMigrationsTable.columns.id} SMALLINT PRIMARY KEY,
+          ${drizzleMigrationsTable.columns.hash} TEXT NOT NULL,
+          ${drizzleMigrationsTable.columns.createdAt} BIGINT NOT NULL
         )
-        .then((result) => {
-          const returned = result.at(0);
-          if (!returned)
-            throw new Error(
-              "Failed to insert drizzle migration, nothing returned.",
-            );
+      `);
 
-          const [id, hash, createdAt] = returned.row.slice(1, -1).split(",");
+      let lastMigration = await session
+        .all<DrizzleMigration>(
+          sql`
+            SELECT
+              ${drizzleMigrationsTable.columns.id},
+              ${drizzleMigrationsTable.columns.hash},
+              ${drizzleMigrationsTable.columns.createdAt}
+            FROM ${drizzleSchema}.${drizzleMigrationsTable.name}
+            ORDER BY ${drizzleMigrationsTable.columns.createdAt} DESC LIMIT 1
+          `,
+        )
+        .then((all) => all.at(0));
 
-          return {
-            id: Number(id),
-            hash,
-            created_at: createdAt,
-          } satisfies DrizzleMigration;
-        });
-    }
-  }
-}
+      const isFirstRun = !lastMigration;
 
-export const handler = async () => {
-  console.log("Running database migrations ...");
+      for (const migration of migrations) {
+        if (
+          isFirstRun ||
+          !lastMigration ||
+          Number(lastMigration.created_at) < migration.folderMillis
+        ) {
+          for (const statement of migration.sql)
+            await session.execute(sql.raw(statement)).then(console.log);
 
-  try {
-    await migrate({ migrationsFolder: "migrations" });
+          lastMigration = await session
+            .all<{ row: string }>(
+              sql`
+                INSERT INTO ${drizzleSchema}.${drizzleMigrationsTable.name} (
+                  ${drizzleMigrationsTable.columns.id},
+                  ${drizzleMigrationsTable.columns.hash},
+                  ${drizzleMigrationsTable.columns.createdAt}
+                )
+                VALUES(${(lastMigration?.id ?? 0) + 1}, ${migration.hash}, ${migration.folderMillis})
+                RETURNING (
+                  ${drizzleMigrationsTable.columns.id},
+                  ${drizzleMigrationsTable.columns.hash},
+                  ${drizzleMigrationsTable.columns.createdAt}
+                )
+              `,
+            )
+            .then((all) => {
+              const returned = all.at(0);
+              if (!returned)
+                throw new Error(
+                  "Failed to insert drizzle migration, nothing returned.",
+                );
 
-    console.log("✅ Migration completed!");
+              const [id, hash, createdAt] = returned.row
+                .slice(1, -1)
+                .split(",");
 
-    return { success: true };
-  } catch (e) {
-    console.error("❌ Error during migration:", e);
-
-    return { success: false };
-  }
-};
+              return {
+                id: Number(id),
+                hash,
+                created_at: createdAt,
+              } satisfies DrizzleMigration;
+            });
+        }
+      }
+    });
+  });

@@ -2,10 +2,10 @@ import { Constants } from "@printdesk/core/utils/constants";
 
 import { identityProviders } from "./auth";
 import { cloudfrontPrivateKey, cloudfrontPublicKey } from "./cdn";
-import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import { tenantRoles } from "./iam";
+import * as lib from "./lib";
 import {
   appData,
   aws_,
@@ -29,7 +29,7 @@ const papercutTailgatePath = normalizePath(
   "packages/go/services/papercut-tailgate",
 );
 
-export const papercutTailgateResourceCiphertext = new custom.Ciphertext(
+export const papercutTailgateResourceCiphertext = new lib.Ciphertext(
   "PapercutTailgateResourceCiphertext",
   {
     plaintext: $jsonStringify(
@@ -66,7 +66,7 @@ export const papercutTailgateImage = new awsx.ecr.Image(
   { dependsOn: [papercutTailgateResourceCiphertext] },
 );
 
-export const papercutSync = new custom.aws.Function("PapercutSync", {
+export const papercutSync = new lib.aws.Function("PapercutSync", {
   handler: "packages/functions/src/papercut-sync.handler",
   timeout: "20 seconds",
   link: [
@@ -82,7 +82,7 @@ export const papercutSync = new custom.aws.Function("PapercutSync", {
   ],
 });
 
-export const invoicesProcessor = new custom.aws.Function("InvoicesProcessor", {
+export const invoicesProcessor = new lib.aws.Function("InvoicesProcessor", {
   handler: "packages/functions/src/invoices-processor.handler",
   timeout: "20 seconds",
   link: [

@@ -203,6 +203,18 @@ declare module "sst" {
       "name": string
       "type": "sst.aws.Bucket"
     }
+    "TenantDomains": {
+      "api": {
+        "nameTemplate": string
+      },
+      "files": {
+        "nameTemplate": string
+      },
+      "realtime": {
+        "nameTemplate": string
+      },
+      "type": "sst.sst.Linkable"
+    },
     "TenantRoles": {
       "apiAccess": {
         "nameTemplate": string

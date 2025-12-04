@@ -9,7 +9,8 @@
     "paths": {
       "@printdesk/core/*": ["../core/src/*"],
       "~/api/*": ["./src/api/*"]
-    }
+    },
+    "plugins": [{ "name": "@effect/language-service" }]
   },
   "references": [{ "path": "../core" }]
 }

@@ -1,40 +1,74 @@
 import {
-  Client as GraphClient,
+  Client as Client_,
   ResponseType,
 } from "@microsoft/microsoft-graph-client";
+import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
 
-import { useGraph } from "./context";
-
+import type { ClientOptions } from "@microsoft/microsoft-graph-client";
 import type { Group, User } from "@microsoft/microsoft-graph-types";
 
 export namespace Graph {
-  export const Client = GraphClient;
-  export type Client = GraphClient;
+  export class ClientError extends Data.TaggedError("ClientError")<{
+    readonly cause: unknown;
+  }> {}
 
-  export const me = async () => useGraph().api("/me").get() as Promise<User>;
+  export class Client extends Effect.Service<Client>()(
+    "@printdesk/core/graph/Client",
+    {
+      accessors: true,
+      effect: (opts: ClientOptions) =>
+        Effect.gen(function* () {
+          const client = yield* Effect.try({
+            try: () => Client_.initWithMiddleware(opts),
+            catch: (cause) => new ClientError({ cause }),
+          });
 
-  export const groups = async () =>
-    useGraph().api("/groups").responseType(ResponseType.JSON).get() as Promise<
-      Array<Group>
-    >;
+          const me = Effect.tryPromise<User, ClientError>({
+            try: () => client.api("/me").responseType(ResponseType.JSON).get(),
+            catch: (cause) => new ClientError({ cause }),
+          });
 
-  export const users = async (groupId: string, transitive = true) =>
-    useGraph()
-      .api(
-        `/groups/${groupId}/${transitive ? "transitiveMembers" : "members"}/microsoft.graph.user`,
-      )
-      .responseType(ResponseType.JSON)
-      .get() as Promise<Array<User>>;
+          const groups = Effect.tryPromise<Array<Group>, ClientError>({
+            try: () =>
+              client.api("/groups").responseType(ResponseType.JSON).get(),
+            catch: (cause) => new ClientError({ cause }),
+          });
 
-  export const user = async (userId: string) =>
-    useGraph()
-      .api(`/users/${userId}`)
-      .responseType(ResponseType.JSON)
-      .get() as Promise<User>;
+          const users = (groupId: string, transitive = true) =>
+            Effect.tryPromise<Array<User>, ClientError>({
+              try: () =>
+                client
+                  .api(
+                    `/groups/${groupId}/${transitive ? "transitiveMembers" : "members"}/microsoft.graph.user`,
+                  )
+                  .responseType(ResponseType.JSON)
+                  .get(),
+              catch: (cause) => new ClientError({ cause }),
+            });
 
-  export const userPhotoBlob = async (userId: string) =>
-    useGraph()
-      .api(`/users/${userId}/photo/$value`)
-      .responseType(ResponseType.BLOB)
-      .get() as Promise<Blob>;
+          const user = (id: string) =>
+            Effect.tryPromise<User, ClientError>({
+              try: () =>
+                client
+                  .api(`/users/${id}`)
+                  .responseType(ResponseType.JSON)
+                  .get(),
+              catch: (cause) => new ClientError({ cause }),
+            });
+
+          const userPhotoBlob = (id: string) =>
+            Effect.tryPromise<Blob, ClientError>({
+              try: () =>
+                client
+                  .api(`/users/${id}/photo/$value`)
+                  .responseType(ResponseType.BLOB)
+                  .get(),
+              catch: (cause) => new ClientError({ cause }),
+            });
+
+          return { me, groups, users, user, userPhotoBlob } as const;
+        }),
+    },
+  ) {}
 }

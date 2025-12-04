@@ -1,4 +1,4 @@
-import type { Duration } from "date-fns";
+import * as Duration from "effect/Duration";
 
 export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
@@ -50,17 +50,25 @@ export namespace Constants {
   export const ENTRA_ID = "entra_id";
   export const GOOGLE = "google";
 
+  /**
+   * - A transaction can modify up to 3,000 rows, regardless of the number of secondary indexes
+   * - The 3,000-row limit applies to all DML statements (INSERT, UPDATE, DELETE)
+   *
+   * See: https://docs.aws.amazon.com/aurora-dsql/latest/userguide/working-with-postgresql-compatibility-unsupported-features.html#working-with-postgresql-compatibility-unsupported-limitations
+   */
+  export const DB_TRANSACTION_ROW_MODIFICATION_LIMIT = 3_000;
+
   export const DB_SCHEMA_VERSION = 1;
   export const DB_TRANSACTION_MAX_RETRIES = 10;
   export const POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE = "40001";
   export const POSTGRES_DEADLOCK_DETECTED_ERROR_CODE = "40P01";
 
-  export const VARCHAR_LENGTH = 40;
+  export const VARCHAR_LENGTH = 50;
 
   export const PAPERCUT_SERVER_PATH_PREFIX = "/papercut/server";
   export const PAPERCUT_WEB_SERVICES_API_PATH = "/rpc/api/xmlrpc";
 
-  export const PAPERCUT_API_PAGINATION_LIMIT = 1000;
+  export const PAPERCUT_API_PAGINATION_LIMIT = 1_000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
 
   export const ASSETS_MIME_TYPES = [
@@ -74,23 +82,35 @@ export namespace Constants {
   export const DEFAULT_DOCUMENTS_MIME_TYPES = ["application/pdf"] as const;
   export const DEFAULT_DOCUMENTS_SIZE_LIMIT = 1024 * 1024 * 10; // 10MB
 
-  export const NANOID_CUSTOM_ALPHABET = "2346789abcdefghijkmnpqrtwxyz";
+  export const NANOID_ALPHABET = "2346789abcdefghijkmnpqrtwxyz";
   export const NANOID_LENGTH = 20;
   export const NANOID_REGEX = new RegExp(
-    `^[${NANOID_CUSTOM_ALPHABET}]{${NANOID_LENGTH}}$`,
+    `^[${NANOID_ALPHABET}]{${NANOID_LENGTH}}$`,
   );
 
-  export const TENANT_SUBDOMAIN_PATTERN = new RegExp(/^[a-z0-9-]+$/);
+  export const TENANT_SUBDOMAIN_REGEX = new RegExp(/^[a-z0-9-]+$/);
 
   export const REPLICACHE_PULL_CHUNK_SIZE = 200;
 
-  export const REPLICACHE_LIFETIME = {
-    weeks: 2,
-  } as const satisfies Duration;
+  export const REPLICACHE_LIFETIME = Duration.weeks(2);
 
-  export const WORKFLOW_REVIEW_STATUS = "Review";
+  export const REPLICACHE_SYNC_STATE_KEY = "control/sync_state";
+
+  export const SOFT_DELETE_LIFETIME = Duration.weeks(12);
 
   export const MONTH_TRUNCATED_ISO_DATE_REGEX = new RegExp(
     /^\d{4}-(?:0[1-9]|1[0-2])$/u,
+  );
+
+  export const ISO_TIMESTAMP_REGEX = new RegExp(
+    /^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])[T ](?:0\d|1\d|2[0-3])(?::[0-5]\d){2}(?:\.\d{1,9})?(?:Z|[+-](?:0\d|1\d|2[0-3])(?::?[0-5]\d)?)$/u,
+  );
+
+  export const ISO_DATE_REGEX = new RegExp(
+    /^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])$/u,
+  );
+
+  export const HEX_COLOR_REGEX = new RegExp(
+    /^#(?:[\da-fA-F]{3,4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/u,
   );
 }

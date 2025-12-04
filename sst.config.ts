@@ -15,9 +15,10 @@ export default $config({
         aws: {
           profile: input?.stage === "production" ? "prod" : "dev",
           region: AWS_REGION as aws.Region,
+          version: "6.83.0",
         },
         awsx: true,
-        cloudflare: true,
+        cloudflare: { version: "6.9.1" },
         azuread: true,
         "@pulumiverse/time": true,
         tls: true,
@@ -39,7 +40,7 @@ export default $config({
 
     const dir = readdirSync("./infra");
     for (const file of dir) {
-      if (file === "custom") continue;
+      if (file === "lib") continue;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const infra = await import(`./infra/${file}`);
 

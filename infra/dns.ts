@@ -1,5 +1,5 @@
 import { Constants } from "@printdesk/core/utils/constants";
-import * as R from "remeda";
+import * as Record from "effect/Record";
 
 export const rootDomain = new sst.Secret("RootDomain");
 
@@ -49,11 +49,7 @@ export const subdomains = {
 export const domains = new sst.Linkable("Domains", {
   properties: {
     root: rootDomain.value,
-    ...R.pipe(
-      subdomains,
-      R.entries(),
-      R.mapToObj(([name, subdomain]) => [name, buildFqdn(subdomain)]),
-    ),
+    ...Record.map(subdomains, buildFqdn),
   },
 });
 
@@ -64,12 +60,7 @@ export const tenantSubdomainTemplates = {
 };
 
 export const tenantDomains = new sst.Linkable("TenantDomains", {
-  properties: R.pipe(
-    tenantSubdomainTemplates,
-    R.entries(),
-    R.mapToObj(([name, subdomainTemplate]) => [
-      name,
-      { nameTemplate: buildFqdn(subdomainTemplate) },
-    ]),
-  ),
+  properties: Record.map(tenantSubdomainTemplates, (subdomainTemplate) => ({
+    nameTemplate: buildFqdn(subdomainTemplate),
+  })),
 });

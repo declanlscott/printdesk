@@ -1,0 +1,39 @@
+import type { Link } from "~/.sst/platform/src/components/link";
+
+export class DsqlCluster extends aws.dsql.Cluster implements Link.Linkable {
+  constructor(
+    name: string,
+    args?: aws.dsql.ClusterArgs,
+    opts?: $util.CustomResourceOptions,
+  ) {
+    super(name, args, opts);
+  }
+
+  get endpoint() {
+    return $interpolate`${this.id}.dsql.${aws.getRegionOutput().name}.on.aws`;
+  }
+
+  getSSTLink(): Link.Definition<{
+    host: $util.Output<string>;
+    port: $util.Output<number>;
+    database: $util.Output<string>;
+    user: $util.Output<string>;
+    ssl: $util.Output<boolean>;
+  }> {
+    return {
+      properties: {
+        host: this.endpoint,
+        port: $output(5432),
+        database: $output("postgres"),
+        user: $output("admin"),
+        ssl: $output(true),
+      },
+      include: [
+        sst.aws.permission({
+          actions: ["dsql:DbConnectAdmin"],
+          resources: [this.arn],
+        }),
+      ],
+    };
+  }
+}

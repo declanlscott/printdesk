@@ -1,5 +1,5 @@
 module core
 
-go 1.24.4
+go 1.25.1
 
-require github.com/sst/sst/v3 v3.17.10
+require github.com/sst/sst/v3 v3.17.14

@@ -42,5 +42,7 @@ module.exports = {
 
     "@typescript-eslint/prefer-namespace-keyword": "off",
     "@typescript-eslint/no-namespace": "off",
+
+    "drizzle/enforce-delete-with-where": "off",
   },
 };

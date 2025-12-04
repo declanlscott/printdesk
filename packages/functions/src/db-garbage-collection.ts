@@ -1,10 +1,46 @@
+import { LambdaHandler } from "@effect-aws/lambda";
+import * as Logger from "@effect-aws/powertools-logger";
+import { Database } from "@printdesk/core/database";
 import { Replicache } from "@printdesk/core/replicache";
+import { Sst } from "@printdesk/core/sst";
+import * as Chunk from "effect/Chunk";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Stream from "effect/Stream";
+import * as Struct from "effect/Struct";
 
-import type { EventBridgeHandler } from "aws-lambda";
+const layer = Layer.mergeAll(
+  Replicache.ClientGroupsRepository.Default,
+  Replicache.ClientsRepository.Default,
+  Replicache.ClientViewsRepository.Default,
+  Replicache.ClientViewEntriesRepository.Default,
+  Logger.defaultLayer,
+).pipe(Layer.provideMerge(Sst.Resource.layer));
 
-export const handler: EventBridgeHandler<string, unknown, void> = async () => {
-  await Promise.all([
-    Replicache.deleteExpiredClientGroups(),
-    Replicache.deleteExpiredClients(),
-  ]);
-};
+export const handler = LambdaHandler.make({
+  layer,
+  handler: () =>
+    Replicache.ClientGroupsRepository.deleteExpired.pipe(
+      Database.paginateTransaction(),
+      Stream.map(Struct.get("id")),
+      Stream.runCollect,
+      Effect.map(Chunk.toArray),
+      Effect.map((ids) => [
+        Replicache.ClientsRepository.deleteByGroupIds(ids).pipe(
+          Database.paginateTransaction(),
+          Stream.runDrain,
+        ),
+        Replicache.ClientViewsRepository.deleteByGroupIds(ids).pipe(
+          Database.paginateTransaction(),
+          Stream.runDrain,
+        ),
+        Replicache.ClientViewEntriesRepository.deleteByGroupIds(ids).pipe(
+          Database.paginateTransaction(),
+          Stream.runDrain,
+        ),
+      ]),
+      Effect.flatMap(
+        Effect.allWith({ concurrency: "unbounded", discard: true }),
+      ),
+    ),
+});

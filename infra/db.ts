@@ -1,13 +1,19 @@
-import { DsqlSigner } from "@aws-sdk/dsql-signer";
-import * as v from "valibot";
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
-import * as custom from "./custom";
+import * as lib from "./lib";
 import { aws_, isProdStage } from "./misc";
 import { calculateHash, normalizePath } from "./utils";
 
-export const dsqlCluster = new custom.aws.Dsql.Cluster(
+export const dsqlCluster = new lib.aws.DsqlCluster(
   "DsqlCluster",
-  { deletionProtectionEnabled: isProdStage },
+  {
+    tags: {
+      "sst:app": $app.name,
+      "sst:stage": $app.stage,
+    },
+    deletionProtectionEnabled: isProdStage,
+  },
   { retainOnDelete: isProdStage },
 );
 
@@ -31,14 +37,23 @@ export const dbMigratorInvocation = new aws.lambda.Invocation(
 );
 
 export const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
-  (result) =>
-    v.parse(
-      v.object(
-        { success: v.literal(true, "Database migration failed") },
-        "Invalid database migration result",
+  Schema.decodeSync(
+    Schema.transform(
+      Schema.parseJson(
+        Schema.Struct({
+          success: Schema.Literal(true).annotations({
+            message: () => "Database migration failed",
+          }),
+        }).annotations({ message: () => "Invalid database migration result" }),
       ),
-      JSON.parse(result),
-    ).success,
+      Schema.Literal(true),
+      {
+        decode: Struct.get("success"),
+        encode: (success) => ({ success }),
+        strict: true,
+      },
+    ),
+  ),
 );
 
 export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
@@ -59,18 +74,6 @@ new sst.x.DevCommand("Studio", {
     command: "pnpm drizzle:studio",
     directory: "packages/core",
     autostart: true,
-  },
-  environment: {
-    DB_PASSWORD: $resolve([
-      dsqlCluster.endpoint,
-      aws.getRegionOutput().name,
-    ]).apply(([hostname, region]) =>
-      new DsqlSigner({
-        hostname,
-        region,
-        expiresIn: 43200, // 12 hours
-      }).getDbConnectAdminAuthToken(),
-    ),
   },
 });
 

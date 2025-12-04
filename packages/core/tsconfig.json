@@ -4,6 +4,7 @@
     "lib": ["ES2023", "ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "composite": true
+    "composite": true,
+    "plugins": [{ "name": "@effect/language-service" }]
   }
 }

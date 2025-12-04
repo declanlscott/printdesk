@@ -1,337 +1,226 @@
-import { Resource } from "sst";
-import * as v from "valibot";
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
+import * as Effect from "effect/Effect";
+import * as Schema from "effect/Schema";
 
-import { Ssm } from "../aws";
-import { Api } from "../backend/api";
-import { ServerErrors } from "../errors";
-import { useTenant } from "../tenants/context";
+import { Api } from "../api";
+import { CommaSeparatedString, StringFromUnknown } from "../utils";
 import { Constants } from "../utils/constants";
-import { useXml } from "../xml/context";
-import {
-  xmlRpcAdjustSharedAccountAccountBalanceResponseSchema,
-  xmlRpcGetSharedAccountPropertiesResponseSchema,
-  xmlRpcGetTaskStatusResponseSchema,
-  xmlRpcGetTotalUsersResponseSchema,
-  xmlRpcListSharedAccountsResponseSchema,
-  xmlRpcListUserAccountsResponseSchema,
-  xmlRpcListUserSharedAccountsResponseSchema,
-} from "./shared";
-
-import type { SharedAccountPropertyTypeMap } from "./shared";
+import { Xml } from "../xml";
+import { PapercutContract } from "./contract";
 
 export namespace Papercut {
-  export const setTailnetServerUri = async (uri: string) =>
-    Ssm.putParameter({
-      Name: Ssm.buildName(
-        Resource.TenantParameters.tailnetPapercutServerUri.nameTemplate,
-        useTenant().id,
-      ),
-      Value: uri,
-      Type: "String",
-      Overwrite: true,
-    });
-
-  export async function setServerAuthToken(token: string) {
-    const name = Ssm.buildName(
-      Resource.TenantParameters.papercutServerAuthToken.nameTemplate,
-      useTenant().id,
-    );
-
-    await Ssm.putParameter({
-      Name: name,
-      Value: token,
-      Type: "SecureString",
-      Overwrite: true,
-    });
-
-    await Api.invalidateCache([`/parameters${name}`]);
-  }
-
-  export const getServerAuthToken = async () =>
-    Api.getParameter(
-      Ssm.buildName(
-        Resource.TenantParameters.papercutServerAuthToken.nameTemplate,
-        useTenant().id,
-      ),
-    );
-
-  const xmlRpcPath = `${Constants.PAPERCUT_SERVER_PATH_PREFIX}${Constants.PAPERCUT_WEB_SERVICES_API_PATH}`;
-
-  export async function adjustSharedAccountAccountBalance(
-    sharedAccountName: string,
-    amount: number,
-    comment: string,
-  ) {
-    const authToken = await getServerAuthToken();
-
-    const res = await Api.send(xmlRpcPath, {
-      method: "POST",
-      body: useXml().builder.build({
-        methodCall: {
-          methodName: "api.adjustSharedAccountAccountBalance",
-          params: {
-            param: [
-              { value: { string: authToken } },
-              { value: { string: sharedAccountName } },
-              { value: { double: amount } },
-              { value: { string: comment } },
-            ],
-          },
-        },
-      }) as string,
-    });
-
-    const text = await res.text();
-
-    if (!res.ok)
-      throw new ServerErrors.InternalServerError(
-        "Failed to adjust account balance",
-        { cause: text },
-      );
-
-    const success = v.parse(
-      xmlRpcAdjustSharedAccountAccountBalanceResponseSchema,
-      useXml().parser.parse(text),
-    );
-
-    return success;
-  }
-
-  export async function getSharedAccountProperties<
-    const TPropertyNames extends Array<keyof SharedAccountPropertyTypeMap>,
-  >(sharedAccountName: string, ...propertyNames: TPropertyNames) {
-    const authToken = await getServerAuthToken();
-
-    const res = await Api.send(xmlRpcPath, {
-      method: "POST",
-      body: useXml().builder.build({
-        methodCall: {
-          methodName: "api.getSharedAccountProperties",
-          params: {
-            param: [
-              { value: { string: authToken } },
-              { value: { string: sharedAccountName } },
-              {
-                value: {
-                  array: {
-                    data: {
-                      value: propertyNames.map((name) => ({ string: name })),
-                    },
-                  },
-                },
-              },
-            ],
-          },
-        },
-      }) as string,
-    });
-
-    const text = await res.text();
-
-    if (!res.ok)
-      throw new ServerErrors.InternalServerError(
-        "Failed to get shared account properties",
-        { cause: text },
-      );
-
-    const properties = v.parse(
-      xmlRpcGetSharedAccountPropertiesResponseSchema<TPropertyNames>(),
-      useXml().parser.parse(text),
-    );
-
-    return properties;
-  }
-
-  export async function getTaskStatus() {
-    const res = await Api.send(xmlRpcPath, {
-      method: "POST",
-      body: useXml().builder.build({
-        methodCall: { methodName: "api.getTaskStatus" },
-      }) as string,
-    });
-
-    const text = await res.text();
-
-    if (!res.ok)
-      throw new ServerErrors.InternalServerError("Failed to get task status", {
-        cause: text,
-      });
-
-    const taskStatus = v.parse(
-      xmlRpcGetTaskStatusResponseSchema,
-      useXml().parser.parse(text),
-    );
-
-    return taskStatus;
-  }
-
-  export async function getTotalUsers() {
-    const authToken = await getServerAuthToken();
-
-    const res = await Api.send(xmlRpcPath, {
-      method: "POST",
-      body: useXml().builder.build({
-        methodCall: { methodName: "api.getTotalUsers" },
-        params: { param: [{ value: { string: authToken } }] },
-      }) as string,
-    });
-
-    const text = await res.text();
-
-    if (!res.ok)
-      throw new ServerErrors.InternalServerError("Failed to get total users", {
-        cause: text,
-      });
-
-    const totalUsers = v.parse(
-      xmlRpcGetTotalUsersResponseSchema,
-      useXml().parser.parse(text),
-    );
-
-    return totalUsers;
-  }
-
-  export async function listSharedAccounts() {
-    const authToken = await getServerAuthToken();
-
-    const all: Array<string> = [];
-    let offset = 0;
-    let hasMore: boolean;
-    do {
-      const res = await Api.send(xmlRpcPath, {
-        method: "POST",
-        body: useXml().builder.build({
-          methodCall: {
-            methodName: "api.listSharedAccounts",
-            params: {
-              param: [
-                { value: { string: authToken } },
-                { value: { int: offset } },
-                { value: { int: Constants.PAPERCUT_API_PAGINATION_LIMIT } },
-              ],
-            },
-          },
-        }) as string,
-      });
-
-      const text = await res.text();
-
-      if (!res.ok)
-        throw new ServerErrors.InternalServerError(
-          "Failed to list shared accounts",
-          { cause: text },
-        );
-
-      const sharedAccounts = v.parse(
-        xmlRpcListSharedAccountsResponseSchema,
-        useXml().parser.parse(text),
-      );
-
-      all.push(...sharedAccounts);
-
-      offset += Constants.PAPERCUT_API_PAGINATION_LIMIT;
-      hasMore =
-        sharedAccounts.length === Constants.PAPERCUT_API_PAGINATION_LIMIT;
-    } while (hasMore);
-
-    return all;
-  }
-
-  export async function listUserAccounts() {
-    const authToken = await getServerAuthToken();
-
-    const all: Array<string> = [];
-    let offset = 0;
-    let hasMore: boolean;
-    do {
-      const res = await Api.send(xmlRpcPath, {
-        method: "POST",
-        body: useXml().builder.build({
-          methodCall: {
-            methodName: "api.listUserAccounts",
-            params: {
-              param: [
-                { value: { string: authToken } },
-                { value: { int: offset } },
-                { value: { int: Constants.PAPERCUT_API_PAGINATION_LIMIT } },
-              ],
-            },
-          },
-        }) as string,
-      });
-
-      const text = await res.text();
-
-      if (!res.ok)
-        throw new ServerErrors.InternalServerError(
-          "Failed to list user accounts",
-          { cause: text },
-        );
-
-      const userAccounts = v.parse(
-        xmlRpcListUserAccountsResponseSchema,
-        useXml().parser.parse(text),
-      );
-
-      all.push(...userAccounts);
-
-      offset += Constants.PAPERCUT_API_PAGINATION_LIMIT;
-      hasMore = userAccounts.length === Constants.PAPERCUT_API_PAGINATION_LIMIT;
-    } while (hasMore);
-
-    return all;
-  }
-
-  export async function listUserSharedAccounts(
-    username: string,
-    ignoreUserAccountSelectionConfig: boolean,
-  ) {
-    const authToken = await getServerAuthToken();
-
-    const all: Array<string> = [];
-    let offset = 0;
-    let hasMore: boolean;
-    do {
-      const res = await Api.send(xmlRpcPath, {
-        method: "POST",
-        body: useXml().builder.build({
-          methodCall: {
-            methodName: "api.listUserSharedAccounts",
-            params: [
-              { value: { string: authToken } },
-              { value: { string: username } },
-              { value: { int: offset } },
-              { value: { int: Constants.PAPERCUT_API_PAGINATION_LIMIT } },
-              { value: { boolean: ignoreUserAccountSelectionConfig ? 1 : 0 } },
-            ],
-          },
-        }) as string,
-      });
-
-      const text = await res.text();
-
-      if (!res.ok)
-        throw new ServerErrors.InternalServerError(
-          "Failed to list user shared accounts",
-          { cause: text },
-        );
-
-      const userSharedAccounts = v.parse(
-        xmlRpcListUserSharedAccountsResponseSchema,
-        useXml().parser.parse(text),
-      );
-
-      all.push(...userSharedAccounts);
-
-      offset += Constants.PAPERCUT_API_PAGINATION_LIMIT;
-      hasMore =
-        userSharedAccounts.length === Constants.PAPERCUT_API_PAGINATION_LIMIT;
-    } while (hasMore);
-
-    return all;
-  }
-
-  export const testConnection = async () => {
-    await getTotalUsers();
+  const SharedAccountPropertySchemas = {
+    "access-groups": CommaSeparatedString,
+    "access-users": CommaSeparatedString,
+    "account-id": Schema.NonNegativeInt,
+    balance: Schema.Number,
+    "comment-option": Schema.Literal(
+      "NO_COMMENT",
+      "COMMENT_REQUIRED",
+      "COMMENT_OPTIONAL",
+    ),
+    disabled: Schema.Boolean,
+    "invoice-option": Schema.Literal(
+      "ALWAYS_INVOICE",
+      "NEVER_INVOICE",
+      "USER_CHOICE_ON",
+      "USER_CHOICE_OFF",
+    ),
+    notes: Schema.String,
+    "overdraft-amount": Schema.Number,
+    pin: StringFromUnknown,
+    restricted: Schema.Boolean,
   };
+  type SharedAccountPropertySchemas = typeof SharedAccountPropertySchemas;
+
+  export class Client extends Effect.Service<Client>()(
+    "@printdesk/core/papercut/Client",
+    {
+      dependencies: [
+        Api.Http.Default,
+        Xml.Rpc.Client.Default(
+          `${Constants.PAPERCUT_SERVER_PATH_PREFIX}${Constants.PAPERCUT_WEB_SERVICES_API_PATH}`,
+        ),
+      ],
+      effect: Effect.gen(function* () {
+        const httpClient = yield* Api.Http.client;
+        const xmlRpc = yield* Xml.Rpc.Client;
+
+        const setTailnetUri = Effect.fn("Papercut.Client.setTailnetUri")(
+          (value: PapercutContract.TailnetUri) =>
+            HttpClientRequest.put(
+              `${Constants.PAPERCUT_SERVER_PATH_PREFIX}/tailnet-uri`,
+            ).pipe(
+              HttpClientRequest.schemaBodyJson(
+                Schema.Struct({ value: PapercutContract.TailnetUri }),
+              )({ value }),
+              Effect.flatMap(httpClient.execute),
+            ),
+        );
+
+        const setAuthToken = Effect.fn("Papercut.Client.setAuthToken")(
+          (value: PapercutContract.AuthToken) =>
+            HttpClientRequest.put(
+              `${Constants.PAPERCUT_SERVER_PATH_PREFIX}/auth-token`,
+            ).pipe(
+              HttpClientRequest.schemaBodyJson(
+                Schema.Struct({ value: PapercutContract.AuthToken }),
+              )({ value }),
+              Effect.flatMap(httpClient.execute),
+            ),
+        );
+
+        const injectAuthHeader = HttpClientRequest.setHeader(
+          Constants.HEADER_KEYS.PAPERCUT_INJECT_AUTH,
+          "true",
+        );
+
+        const adjustSharedAccountAccountBalance = Effect.fn(
+          "Papercut.Client.adjustSharedAccountAccountBalance",
+        )((sharedAccountName: string, amount: number, comment: string) =>
+          xmlRpc
+            .request("api.adjustSharedAccountAccountBalance", [
+              Xml.ExplicitString.with(sharedAccountName),
+              Xml.ExplicitDouble.with(amount),
+              Xml.ExplicitString.with(comment),
+            ])
+            .pipe(
+              Effect.map(injectAuthHeader),
+              Effect.flatMap(httpClient.execute),
+              Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
+            ),
+        );
+
+        const getGroupMembers = Effect.fn("Papercut.Client.getGroupMembers")(
+          (groupName: string, offset: number, limit: number) =>
+            xmlRpc
+              .request("api.getGroupMembers", [
+                Xml.ExplicitString.with(groupName),
+                Xml.ExplicitInt.with(offset),
+                Xml.ExplicitInt.with(limit),
+              ])
+              .pipe(
+                Effect.map(injectAuthHeader),
+                Effect.flatMap(httpClient.execute),
+                Effect.flatMap(
+                  xmlRpc.response(
+                    Xml.Rpc.arrayResponse(Xml.ImplicitString.fields.value),
+                  ),
+                ),
+              ),
+        );
+
+        const getSharedAccountProperties = <
+          TPropertyKeys extends Array<keyof SharedAccountPropertySchemas>,
+        >(
+          sharedAccountName: string,
+          ...propertyKeys: TPropertyKeys
+        ) =>
+          xmlRpc
+            .request("api.getSharedAccountProperties", [
+              Xml.ExplicitString.with(sharedAccountName),
+              Xml.ExplicitStringArray.with(propertyKeys),
+            ])
+            .pipe(
+              Effect.map(injectAuthHeader),
+              Effect.flatMap(httpClient.execute),
+              Effect.flatMap(
+                xmlRpc.response(
+                  Xml.Rpc.tupleResponse(
+                    ...(propertyKeys.map(
+                      (key) => SharedAccountPropertySchemas[key],
+                    ) as {
+                      [TKey in keyof TPropertyKeys]: SharedAccountPropertySchemas[TPropertyKeys[TKey]];
+                    }),
+                  ),
+                ),
+              ),
+              Effect.withSpan("Papercut.Client.getSharedAccountProperties"),
+            );
+
+        const getTaskStatus = xmlRpc
+          .request("api.getTaskStatus", [])
+          .pipe(
+            Effect.flatMap(httpClient.execute),
+            Effect.flatMap(
+              xmlRpc.response(
+                Xml.Rpc.structResponse(
+                  Xml.member("completed", Xml.ExplicitBoolean.fields.value),
+                  Xml.member("message", Xml.ImplicitString.fields.value),
+                ),
+              ),
+            ),
+            Effect.withSpan("Papercut.Client.getTaskStatus"),
+          );
+
+        const getTotalUsers = xmlRpc
+          .request("api.getTotalUsers", [])
+          .pipe(
+            Effect.map(injectAuthHeader),
+            Effect.flatMap(httpClient.execute),
+            Effect.flatMap(xmlRpc.response(Xml.Rpc.IntResponse)),
+            Effect.withSpan("Papercut.Client.getTotalUsers"),
+          );
+
+        const listSharedAccounts = Effect.fn(
+          "Papercut.Client.listSharedAccounts",
+        )((offset: number, limit: number) =>
+          xmlRpc
+            .request("api.listSharedAccounts", [
+              Xml.ExplicitInt.with(offset),
+              Xml.ExplicitInt.with(limit),
+            ])
+            .pipe(
+              Effect.map(injectAuthHeader),
+              Effect.flatMap(httpClient.execute),
+              Effect.flatMap(
+                xmlRpc.response(
+                  Xml.Rpc.arrayResponse(Xml.ImplicitString.fields.value),
+                ),
+              ),
+            ),
+        );
+
+        const listUserGroups = Effect.fn("Papercut.Client.listUserGroups")(
+          (offset: number, limit: number) =>
+            xmlRpc
+              .request("api.listUserGroups", [
+                Xml.ExplicitInt.with(offset),
+                Xml.ExplicitInt.with(limit),
+              ])
+              .pipe(
+                Effect.map(injectAuthHeader),
+                Effect.flatMap(httpClient.execute),
+                Effect.flatMap(
+                  xmlRpc.response(
+                    Xml.Rpc.arrayResponse(Xml.ImplicitString.fields.value),
+                  ),
+                ),
+              ),
+        );
+
+        const performUserAndGroupSync = xmlRpc
+          .request("api.performUserAndGroupSync", [])
+          .pipe(
+            Effect.map(injectAuthHeader),
+            Effect.flatMap(httpClient.execute),
+            Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
+            Effect.withSpan("Papercut.Client.performUserAndGroupSync"),
+          );
+
+        return {
+          setTailnetUri,
+          setAuthToken,
+          adjustSharedAccountAccountBalance,
+          getGroupMembers,
+          getSharedAccountProperties,
+          getTaskStatus,
+          getTotalUsers,
+          listSharedAccounts,
+          listUserGroups,
+          performUserAndGroupSync,
+        } as const;
+      }),
+    },
+  ) {}
 }

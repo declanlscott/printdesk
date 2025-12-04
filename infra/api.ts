@@ -5,7 +5,6 @@ import {
   router,
   routerSecret,
 } from "./cdn";
-import * as custom from "./custom";
 import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import {
@@ -15,12 +14,13 @@ import {
   realtimeSubscriberRoleExternalId,
   tenantRoles,
 } from "./iam";
+import * as lib from "./lib";
 import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
 import { appsyncEventApi } from "./realtime";
 import { infraQueue, repository, temporaryBucket } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 
-export const api = new custom.aws.Function("Api", {
+export const api = new lib.aws.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
   url: {
     router: {
@@ -60,7 +60,7 @@ export const api = new custom.aws.Function("Api", {
 
 const tenantApiFunctionDir = normalizePath("packages/go/functions/tenant-api");
 
-export const tenantApiFunctionResourceCiphertext = new custom.Ciphertext(
+export const tenantApiFunctionResourceCiphertext = new lib.Ciphertext(
   "TenantApiFunctionResourceCiphertext",
   {
     plaintext: $jsonStringify(

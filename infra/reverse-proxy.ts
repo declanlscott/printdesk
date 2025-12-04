@@ -1,8 +1,8 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { issuer } from "./auth";
-import * as custom from "./custom";
 import { domains, zone } from "./dns";
+import * as lib from "./lib";
 
 export const reverseProxyWorker = new sst.cloudflare.Worker(
   "ReverseProxyWorker",
@@ -14,21 +14,17 @@ export const reverseProxyWorker = new sst.cloudflare.Worker(
 );
 
 export const reverseProxyWorkerAuxiliaryBindings =
-  new custom.cloudflare.Workers.AuxiliaryBindings(
+  new lib.cloudflare.Workers.AuxiliaryBindings(
     "ReverseProxyWorkerAuxiliaryBindings",
     {
       scriptName: reverseProxyWorker.nodes.worker.scriptName,
-      bindings: [
-        {
-          name: Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER,
+      bindings: {
+        [Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER]: {
           type: "ratelimit",
           namespace_id: "1001",
-          simple: {
-            limit: 100,
-            period: 60,
-          },
+          simple: { limit: 100, period: 60 },
         },
-      ],
+      },
     },
   );
 

@@ -1,20 +1,17 @@
 import { useProvider } from "~/.sst/platform/src/components/aws/helpers/provider";
-import * as custom from "./custom";
 import { domains } from "./dns";
+import * as lib from "./lib";
 
-export const appsyncEventApi = new custom.aws.Appsync.EventApi(
-  "AppsyncEventApi",
-  {
-    eventConfig: {
-      authProviders: [{ authType: "AWS_IAM" }],
-      connectionAuthModes: [{ authType: "AWS_IAM" }],
-      defaultPublishAuthModes: [{ authType: "AWS_IAM" }],
-      defaultSubscribeAuthModes: [{ authType: "AWS_IAM" }],
-    },
+export const appsyncEventApi = new lib.aws.Appsync.EventApi("AppsyncEventApi", {
+  eventConfig: {
+    authProviders: [{ authType: "AWS_IAM" }],
+    connectionAuthModes: [{ authType: "AWS_IAM" }],
+    defaultPublishAuthModes: [{ authType: "AWS_IAM" }],
+    defaultSubscribeAuthModes: [{ authType: "AWS_IAM" }],
   },
-);
+});
 
-export const eventsChannelNamespace = new custom.aws.Appsync.ChannelNamespace(
+export const eventsChannelNamespace = new lib.aws.Appsync.ChannelNamespace(
   "EventsChannelNamespace",
   {
     apiId: appsyncEventApi.apiId,

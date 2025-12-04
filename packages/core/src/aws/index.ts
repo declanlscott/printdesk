@@ -1,201 +1,250 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {
-  DeleteObjectCommand,
-  GetObjectCommand,
-  PutObjectCommand,
-  S3Client,
-} from "@aws-sdk/client-s3";
-import {
-  SendMessageBatchCommand,
-  SendMessageCommand,
-  SQSClient,
-} from "@aws-sdk/client-sqs";
-import {
-  DeleteParameterCommand,
-  GetParameterCommand,
-  PutParameterCommand,
-  SSMClient,
-} from "@aws-sdk/client-ssm";
-import { getSignedUrl as _getSignedUrl } from "@aws-sdk/cloudfront-signer";
-import {
-  fromNodeProviderChain,
-  fromTemporaryCredentials,
-} from "@aws-sdk/credential-providers";
-import { DsqlSigner } from "@aws-sdk/dsql-signer";
-import { DynamoDBDocument } from "@aws-sdk/lib-dynamodb";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { formatUrl as _formatUrl } from "@aws-sdk/util-format-url";
-import { SignatureV4 as _SignatureV4 } from "@smithy/signature-v4";
-import { Resource } from "sst";
-import * as v from "valibot";
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+import { DsqlSigner } from "@effect-aws/dsql";
+import * as HttpClientError from "@effect/platform/HttpClientError";
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
+import { HttpRequest } from "@smithy/protocol-http";
+import { SignatureV4 } from "@smithy/signature-v4";
+import * as Context from "effect/Context";
+import * as Data from "effect/Data";
+import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as ManagedRuntime from "effect/ManagedRuntime";
+import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
 
-import { useTenant } from "../tenants/context";
-import { Utils } from "../utils";
-import { Constants } from "../utils/constants";
-import { delimitToken, splitToken } from "../utils/shared";
-import { useAws } from "./context";
+import { Sst } from "../sst";
 
+import type * as HttpBody from "@effect/platform/HttpBody";
 import type {
-  DeleteObjectCommandInput,
-  GetObjectCommandInput,
-  PutObjectCommandInput,
-} from "@aws-sdk/client-s3";
-import type {
-  SendMessageBatchCommandInput,
-  SendMessageCommandInput,
-} from "@aws-sdk/client-sqs";
-import type {
-  DeleteParameterCommandInput,
-  GetParameterCommandInput,
-  PutParameterCommandInput,
-} from "@aws-sdk/client-ssm";
-import type { AssumeRoleCommandInput } from "@aws-sdk/client-sts";
-import type { DsqlSignerConfig } from "@aws-sdk/dsql-signer";
-import type { SignatureV4Init } from "@smithy/signature-v4";
-import type { AwsCredentialIdentityProvider } from "@smithy/types";
-import type { NonNullableProperties, PartialExcept } from "../utils/types";
-
-export namespace Cloudfront {
-  export const getSignedUrl = (...args: Parameters<typeof _getSignedUrl>) =>
-    new URL(_getSignedUrl(...args));
-}
+  AwsCredentialIdentity,
+  AwsCredentialIdentityProvider,
+  RequestPresigningArguments as SmithyRequestPresigningArguments,
+  RequestSigningArguments as SmithyRequestSigningArguments,
+} from "@smithy/types";
 
 export namespace Credentials {
-  export const buildRoleArn = (
-    roleNameTemplate: string,
-    accountId = Resource.Aws.account.id,
-    tenantId = useTenant().id,
-  ) =>
-    `arn:aws:iam::${accountId}:role/${Utils.buildName(roleNameTemplate, tenantId)}`;
-
-  export function fromRoleChain(
-    ...chain: Array<AssumeRoleCommandInput>
-  ): AwsCredentialIdentityProvider {
-    switch (chain.length) {
-      case 0:
-        throw new Error("Empty role chain");
-      case 1: // base case
-        return fromTemporaryCredentials({ params: chain[0] });
-      default: // recursive case
-        return fromTemporaryCredentials({
-          masterCredentials: fromRoleChain(...chain.slice(1)),
-          params: chain[0],
-        });
+  export class Credentials extends Context.Tag(
+    "@printdesk/core/aws/Credentials",
+  )<
+    Credentials,
+    {
+      readonly accessKeyId: Redacted.Redacted<string>;
+      readonly secretAccessKey: Redacted.Redacted<string>;
+      readonly sessionToken: Redacted.Redacted<string | undefined>;
+      readonly credentialScope: Redacted.Redacted<string | undefined>;
+      readonly accountId: Redacted.Redacted<string | undefined>;
+      readonly expiration: Redacted.Redacted<DateTime.Utc | undefined>;
     }
-  }
-}
-
-export namespace Dsql {
-  export const buildSigner = ({
-    credentials = fromNodeProviderChain(),
-    sha256 = Sha256,
-    ...props
-  }: DsqlSignerConfig) => new DsqlSigner({ credentials, sha256, ...props });
-
-  export const generateToken = () =>
-    useAws("dsql").signer.getDbConnectAdminAuthToken();
-}
-
-export namespace DynamoDb {
-  export const Client = DynamoDBClient;
-  export type Client = DynamoDBClient;
-
-  export const DocumentClient = DynamoDBDocument;
-  export type DocumentClient = DynamoDBDocument;
-
-  export const documentClient = () => useAws("dynamoDb").documentClient;
-
-  export const delimitKey = (...segments: Array<string>) =>
-    delimitToken(...segments) + Constants.TOKEN_DELIMITER;
-
-  export const splitKey = (key: string) => splitToken(key).slice(0, -1);
-}
-
-export namespace S3 {
-  export const Client = S3Client;
-  export type Client = S3Client;
-
-  export const getPresignedPutUrl = (
-    input: NonNullableProperties<PutObjectCommandInput>,
-    args?: Parameters<typeof getSignedUrl>[2],
-  ) => getSignedUrl(useAws("s3").client, new PutObjectCommand(input), args);
-
-  export const getPresignedGetUrl = (
-    input: NonNullableProperties<GetObjectCommandInput>,
-    args?: Parameters<typeof getSignedUrl>[2],
-  ) => getSignedUrl(useAws("s3").client, new GetObjectCommand(input), args);
-
-  export const putObject = async (
-    input: NonNullableProperties<PutObjectCommandInput>,
-  ) => useAws("s3").client.send(new PutObjectCommand(input));
-
-  export const deleteObject = async (
-    input: NonNullableProperties<DeleteObjectCommandInput>,
-  ) => useAws("s3").client.send(new DeleteObjectCommand(input));
-}
-
-export namespace SignatureV4 {
-  export const buildSigner = ({
-    credentials = fromNodeProviderChain(),
-    sha256 = Sha256,
-    region,
-    service,
-  }: PartialExcept<SignatureV4Init, "region" | "service">) =>
-    new _SignatureV4({ credentials, sha256, region, service });
-
-  export const sign = (
-    service: string,
-    ...args: Parameters<_SignatureV4["sign"]>
-  ) => useAws("sigv4").signers[service].sign(...args);
-
-  export const presign = (
-    service: string,
-    ...args: Parameters<_SignatureV4["presign"]>
-  ) => useAws("sigv4").signers[service].presign(...args);
-}
-
-export namespace Sqs {
-  export const Client = SQSClient;
-  export type Client = SQSClient;
-
-  export const sendMessage = async (
-    input: NonNullableProperties<SendMessageCommandInput>,
-  ) => useAws("sqs").client.send(new SendMessageCommand(input));
-
-  export const sendMessageBatch = async (
-    input: NonNullableProperties<SendMessageBatchCommandInput>,
-  ) => useAws("sqs").client.send(new SendMessageBatchCommand(input));
-}
-
-export namespace Ssm {
-  export const Client = SSMClient;
-  export type Client = SSMClient;
-
-  export const buildName = (...args: Parameters<typeof Utils.buildName>) =>
-    v.parse(
-      v.pipe(
-        v.string(),
-        v.transform(
-          (name) => (name.startsWith("/") ? name : `/${name}`) as `/${string}`,
+  >() {
+    static readonly make = (identity: AwsCredentialIdentity) =>
+      this.of({
+        accessKeyId: Redacted.make(identity.accessKeyId),
+        secretAccessKey: Redacted.make(identity.secretAccessKey),
+        sessionToken: Redacted.make(identity.sessionToken),
+        credentialScope: Redacted.make(identity.credentialScope),
+        accountId: Redacted.make(identity.accountId),
+        expiration: Redacted.make(
+          identity.expiration !== undefined
+            ? DateTime.unsafeMake(identity.expiration)
+            : undefined,
         ),
+      });
+
+    static readonly layer = (provider: () => AwsCredentialIdentityProvider) =>
+      Layer.effect(
+        this,
+        Effect.promise(provider()).pipe(Effect.map(this.make)),
+      );
+  }
+
+  export const fromChain = () => Credentials.layer(fromNodeProviderChain);
+
+  export const values = Credentials.pipe(
+    Effect.map((credentials) => ({
+      accessKeyId: credentials.accessKeyId.pipe(Redacted.value),
+      secretAccessKey: credentials.secretAccessKey.pipe(Redacted.value),
+      sessionToken: credentials.sessionToken.pipe(Redacted.value),
+      credentialScope: credentials.credentialScope.pipe(Redacted.value),
+      accountId: credentials.accountId.pipe(Redacted.value),
+      expiration: credentials.expiration.pipe(Redacted.value, (expiration) =>
+        expiration?.pipe(DateTime.toDate),
       ),
-      Utils.buildName(...args),
-    );
-
-  export const putParameter = async (
-    input: NonNullableProperties<PutParameterCommandInput>,
-  ) => useAws("ssm").client.send(new PutParameterCommand(input));
-
-  export const getParameter = async (
-    input: NonNullableProperties<GetParameterCommandInput>,
-  ) => useAws("ssm").client.send(new GetParameterCommand(input));
-
-  export const deleteParameter = async (
-    input: NonNullableProperties<DeleteParameterCommandInput>,
-  ) => useAws("ssm").client.send(new DeleteParameterCommand(input));
+    })),
+  );
 }
 
-export namespace Util {
-  export const formatUrl = _formatUrl;
+export namespace Signers {
+  export namespace Dsql {
+    export const Signer = DsqlSigner;
+
+    export const makeLayer = (
+      { expiresIn }: { expiresIn?: Duration.Duration } = {
+        expiresIn: Duration.minutes(15),
+      },
+    ) =>
+      Layer.unwrapEffect(
+        Effect.gen(function* () {
+          const credentials = yield* Credentials.values;
+          const dsqlCluster = yield* Sst.Resource.DsqlCluster;
+          const aws = yield* Sst.Resource.Aws;
+
+          return DsqlSigner.layer({
+            credentials,
+            sha256: Sha256,
+            hostname: dsqlCluster.host,
+            region: aws.region,
+            expiresIn: expiresIn?.pipe(Duration.toSeconds),
+          });
+        }),
+      ).pipe(Layer.provideMerge(Sst.Resource.layer));
+
+    export const layer = makeLayer();
+
+    export const runtime = ManagedRuntime.make(
+      layer.pipe(Layer.provide(Credentials.fromChain())),
+    );
+  }
+
+  export class SignatureV4Error extends Data.TaggedError("SignatureV4Error")<{
+    readonly cause: unknown;
+  }> {}
+
+  export interface RequestPresigningArguments
+    extends Omit<
+      SmithyRequestPresigningArguments,
+      "expiresIn" | "signingDate"
+    > {
+    expiresIn?: Duration.Duration;
+    signingDate?: DateTime.Utc;
+  }
+
+  export interface RequestSigningArguments
+    extends Omit<SmithyRequestSigningArguments, "signingDate"> {
+    signingDate?: DateTime.Utc;
+  }
+
+  export const makeSignatureV4Signer = (service: string) =>
+    Effect.gen(function* () {
+      const credentials = yield* Credentials.values;
+      const aws = yield* Sst.Resource.Aws;
+
+      const signatureV4 = yield* Effect.try({
+        try: () =>
+          new SignatureV4({
+            credentials,
+            sha256: Sha256,
+            region: aws.region,
+            service,
+          }),
+        catch: (cause) => new SignatureV4Error({ cause }),
+      });
+
+      const matchBody = Match.type<HttpBody.HttpBody>().pipe(
+        Match.tag("Empty", () => undefined),
+        Match.tag("Raw", (body) => body.body),
+        Match.tag("Uint8Array", (body) => body.body),
+        Match.tag("FormData", (body) => body.formData),
+        Match.tag("Stream", (body) => body.stream),
+        Match.exhaustive,
+      );
+
+      const presign = (...args: Parameters<SignatureV4["presign"]>) =>
+        Effect.tryPromise({
+          try: () => signatureV4.presign(...args),
+          catch: (cause) => new SignatureV4Error({ cause }),
+        }).pipe(Effect.withSpan(`Signers.${service}.presign`));
+
+      const sign = (...args: Parameters<SignatureV4["sign"]>) =>
+        Effect.tryPromise({
+          try: () => signatureV4.sign(...args),
+          catch: (cause) => new SignatureV4Error({ cause }),
+        }).pipe(Effect.withSpan(`Signers.${service}.sign`));
+
+      const presignRequest = (
+        request: HttpClientRequest.HttpClientRequest,
+        args: RequestPresigningArguments = {},
+      ) =>
+        Effect.gen(function* () {
+          const { protocol, hostname, pathname: path } = new URL(request.url);
+
+          const { headers, query } = yield* presign(
+            new HttpRequest({
+              method: request.method,
+              protocol,
+              hostname,
+              path,
+              headers: { ...request.headers, host: hostname },
+              body: matchBody(request.body),
+            }),
+            {
+              ...args,
+              expiresIn: args.expiresIn?.pipe(Duration.toSeconds),
+              signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
+            },
+          ).pipe(
+            Effect.mapError(
+              (cause) =>
+                new HttpClientError.RequestError({
+                  reason: "Encode",
+                  request,
+                  cause,
+                }),
+            ),
+          );
+
+          return request.pipe(
+            HttpClientRequest.setHeaders(headers),
+            HttpClientRequest.setUrlParams(query ?? {}),
+          );
+        }).pipe(Effect.withSpan(`Signers.${service}.presignRequest`));
+
+      const signRequest = (
+        request: HttpClientRequest.HttpClientRequest,
+        args: RequestSigningArguments = {},
+      ) =>
+        Effect.gen(function* () {
+          const { protocol, hostname, pathname: path } = new URL(request.url);
+
+          const { headers } = yield* sign(
+            new HttpRequest({
+              method: request.method,
+              protocol,
+              hostname,
+              path,
+              headers: { ...request.headers, host: hostname },
+              body: matchBody(request.body),
+            }),
+            {
+              ...args,
+              signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
+            },
+          ).pipe(
+            Effect.mapError(
+              (cause) =>
+                new HttpClientError.RequestError({
+                  reason: "Encode",
+                  request,
+                  cause,
+                }),
+            ),
+          );
+
+          return request.pipe(HttpClientRequest.setHeaders(headers));
+        }).pipe(Effect.withSpan(`Signers.${service}.signRequest`));
+
+      return { signRequest, presignRequest } as const;
+    });
+
+  export class Appsync extends Effect.Service<Appsync>()(
+    "@printdesk/core/aws/AppsyncSigner",
+    { effect: makeSignatureV4Signer("appsync") },
+  ) {}
+
+  export class ExecuteApi extends Effect.Service<ExecuteApi>()(
+    "@printdesk/core/aws/ExecuteApiSigner",
+    { effect: makeSignatureV4Signer("execute-api") },
+  ) {}
 }

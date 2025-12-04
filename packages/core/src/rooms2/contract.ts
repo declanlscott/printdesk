@@ -25,21 +25,22 @@ export namespace RoomsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "rooms";
-  export const table = TablesContract.makeTable<RoomsSchema.Table>()(
+  export const table = new (TablesContract.makeClass<RoomsSchema.Table>())(
     tableName,
     DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TablesContract.makeView<RoomsSchema.ActiveView>()(
-    activeViewName,
-    DataTransferObject,
-  );
+  export const activeView =
+    new (TablesContract.makeViewClass<RoomsSchema.ActiveView>())(
+      activeViewName,
+      DataTransferObject,
+    );
 
   export const activePublishedViewName = `active_published_${tableName}`;
   export const activePublishedView =
-    TablesContract.makeView<RoomsSchema.ActivePublishedView>()(
+    new (TablesContract.makeViewClass<RoomsSchema.ActivePublishedView>())(
       activePublishedViewName,
       DataTransferObject,
     );

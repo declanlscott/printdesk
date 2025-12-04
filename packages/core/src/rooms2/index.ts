@@ -20,7 +20,6 @@ import { Database } from "../database2";
 import { DeliveryOptions } from "../delivery-options2";
 import { Events } from "../events2";
 import { MutationsContract } from "../mutations/contract";
-import { Permissions } from "../permissions2";
 import { PoliciesContract } from "../policies/contract";
 import { Products } from "../products2";
 import { QueriesContract } from "../queries/contract";
@@ -564,7 +563,6 @@ export namespace Rooms {
         Products.Repository.Default,
         RoomWorkflows.Repository.Default,
         Policies.Default,
-        Permissions.Schemas.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;

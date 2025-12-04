@@ -11,7 +11,6 @@ import { AccessControl } from "../access-control2";
 import { Auth } from "../auth2";
 import { ColumnsContract } from "../columns2/contract";
 import { Database } from "../database2";
-import { Models } from "../models2";
 import { Queries } from "../queries";
 import { ReplicacheContract } from "./contract";
 import {
@@ -34,7 +33,6 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
       Replicache.ClientViewsRepository.Default,
       Replicache.ClientViewEntriesRepository.Default,
       Queries.Differentiator.Default,
-      Models.SyncTables.Default,
     ],
     effect: Effect.gen(function* () {
       const { userId, tenantId } = yield* Auth.Session;
@@ -47,8 +45,6 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
         yield* Replicache.ClientViewEntriesRepository;
 
       const differentiator = yield* Queries.Differentiator;
-
-      const ResponseOk = yield* ReplicacheContract.PullResponseOkV1;
 
       const process = (
         clientGroupId: ReplicacheContract.PullRequestV1["clientGroupId"],
@@ -209,7 +205,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
               Option.match({
                 // 10: If diff is empty, return no-op
                 onNone: () =>
-                  ResponseOk.make({
+                  ReplicacheContract.PullResponseOkV1.make({
                     cookie,
                     lastMutationIdChanges: Record.empty(),
                     patch: Chunk.empty(),
@@ -242,7 +238,7 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                       Record.set(changes, client.id, client.version),
                   );
 
-                  return ResponseOk.make({
+                  return ReplicacheContract.PullResponseOkV1.make({
                     cookie,
                     lastMutationIdChanges,
                     patch,

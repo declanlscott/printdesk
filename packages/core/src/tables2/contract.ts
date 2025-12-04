@@ -1,5 +1,4 @@
 import * as Array from "effect/Array";
-import * as Effect from "effect/Effect";
 
 import type {
   InferSelectModel,
@@ -23,83 +22,97 @@ export namespace TablesContract {
     TTable extends PgTable,
     TActions extends ReadonlyArray<Permissions.Action>,
   > = {
-    [TIndex in keyof TActions]: TActions[TIndex] extends Permissions.Action
-      ? `${TTable["_"]["name"]}:${TActions[TIndex]}`
+    [TKey in keyof TActions]: TActions[TKey] extends Permissions.Action
+      ? `${TTable["_"]["name"]}:${TActions[TKey]}`
       : never;
   }[number];
 
-  export const makeTable =
-    <TTable extends PgTable>() =>
-    <
+  export const makeClass = <TTable extends PgTable>() =>
+    class<
       TDataTransferObject extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<Permissions.Action>,
-    >(
-      name: TTable["_"]["name"],
-      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TTable>
-        ? TDataTransferObject
-        : never,
-      actions: TActions,
-    ) =>
-      Object.assign(
-        Effect.sync(() => ({
-          name,
-          DataTransferObject,
-          permissions: Array.map(
-            actions,
-            (action) =>
-              `${name}:${action}` as InferPermissions<TTable, TActions>,
-          ),
-        })),
-        { name },
-      );
+    > {
+      readonly name: TTable["_"]["name"];
+      readonly DataTransferObject: TDataTransferObject;
+      readonly #actions: TActions;
 
-  export const makeView =
-    <TView extends PgView>() =>
-    <TDataTransferObject extends Schema.Schema.AnyNoContext>(
-      name: TView["_"]["name"],
-      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
-        ? TDataTransferObject
-        : never,
-    ) =>
-      Object.assign(
-        Effect.sync(() => ({
-          name,
-          DataTransferObject,
-          permission: `${name}:read` as const,
-        })),
-        { name },
-      );
+      constructor(
+        name: TTable["_"]["name"],
+        DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TTable>
+          ? TDataTransferObject
+          : never,
+        actions: TActions,
+      ) {
+        this.name = name;
+        this.DataTransferObject = DataTransferObject;
+        this.#actions = actions;
+      }
 
-  export const makeVirtualView =
-    <TView extends PgView>() =>
-    <
+      get permissions() {
+        return Array.map(
+          this.#actions,
+          (action) =>
+            `${this.name}:${action}` as InferPermissions<TTable, TActions>,
+        );
+      }
+    };
+
+  export const makeViewClass = <TView extends PgView>() =>
+    class<TDataTransferObject extends Schema.Schema.AnyNoContext> {
+      readonly name: TView["_"]["name"];
+      readonly DataTransferObject: TDataTransferObject;
+
+      constructor(
+        name: TView["_"]["name"],
+        DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
+          ? TDataTransferObject
+          : never,
+      ) {
+        this.name = name;
+        this.DataTransferObject = DataTransferObject;
+      }
+
+      get permission() {
+        return `${this.name}:read` as const;
+      }
+    };
+
+  export const makeVirtualViewClass = <TView extends PgView>() =>
+    class<
       TName extends string,
       TDataTransferObject extends Schema.Schema.AnyNoContext,
-    >(
-      name: TName,
-      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
-        ? TDataTransferObject
-        : never,
-    ) =>
-      Object.assign(
-        Effect.sync(() => ({
-          name,
-          DataTransferObject,
-          permission: `${name}:read` as const,
-        })),
-        { name },
-      );
+    > {
+      readonly name: TName;
+      readonly DataTransferObject: TDataTransferObject;
 
-  export const makeInternalTable =
-    <TTable extends PgTable>() =>
-    <TRow extends Schema.Schema.AnyNoContext>(
-      name: TTable["_"]["name"],
-      Record: Schema.Schema.Type<TRow> extends InferSelectModel<TTable>
-        ? TRow
-        : never,
-    ) =>
-      Object.assign(
-        Effect.sync(() => ({ name, Record })),
-        { name },
-      );
+      constructor(
+        name: TName,
+        DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
+          ? TDataTransferObject
+          : never,
+      ) {
+        this.name = name;
+        this.DataTransferObject = DataTransferObject;
+      }
+
+      get permission() {
+        return `${this.name}:read` as const;
+      }
+    };
+
+  export const makeInternalClass = <TTable extends PgTable>() =>
+    class<TRow extends Schema.Schema.AnyNoContext> {
+      readonly name: TTable["_"]["name"];
+      readonly Record: TRow;
+
+      constructor(
+        name: TTable["_"]["name"],
+        Record: Schema.Schema.Type<TRow> extends InferSelectModel<TTable>
+          ? TRow
+          : never,
+      ) {
+        this.name = name;
+        this.Record = Record;
+      }
+    };
 }

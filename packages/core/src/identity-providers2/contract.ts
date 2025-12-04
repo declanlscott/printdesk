@@ -73,7 +73,7 @@ export namespace IdentityProvidersContract {
 
   export const tableName = "identity_providers";
   export const table =
-    TablesContract.makeTable<IdentityProvidersSchema.Table>()(
+    new (TablesContract.makeClass<IdentityProvidersSchema.Table>())(
       tableName,
       DataTransferObject,
       ["create", "read", "delete"],

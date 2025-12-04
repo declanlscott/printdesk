@@ -25,16 +25,13 @@ import type { ColumnsContract } from "../columns2/contract";
 import type { SharedAccountManagerAccessContract } from "../shared-accounts2/contracts";
 
 export namespace RoomWorkflows {
-  const table = Models.SyncTables[RoomWorkflowsContract.tableName];
+  const table = Models.syncTables[RoomWorkflowsContract.tableName];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/RoomsReadRepository",
     {
-      dependencies: [
-        Models.SyncTables.Default,
-        Replicache.ReadTransactionManager.Default,
-      ],
-      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
+      dependencies: [Replicache.ReadTransactionManager.Default],
+      effect: Replicache.makeReadRepository(table),
     },
   ) {}
 
@@ -43,17 +40,12 @@ export namespace RoomWorkflows {
     {
       accessors: true,
       dependencies: [
-        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* table.pipe(
-          Effect.flatMap((table) =>
-            Replicache.makeWriteRepository(table, repository),
-          ),
-        );
+        const base = yield* Replicache.makeWriteRepository(table, repository);
 
         const updateByRoomId = (
           roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
@@ -94,21 +86,18 @@ export namespace RoomWorkflows {
 }
 
 export namespace SharedAccountWorkflows {
-  const table = Models.SyncTables[SharedAccountWorkflowsContract.tableName];
+  const table = Models.syncTables[SharedAccountWorkflowsContract.tableName];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/SharedAccountsReadRepository",
     {
       dependencies: [
-        Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
         SharedAccounts.CustomerAccessReadRepository.Default,
         SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* table.pipe(
-          Effect.flatMap(Replicache.makeReadRepository),
-        );
+        const base = yield* Replicache.makeReadRepository(table);
 
         const sharedAccountCustomerAccessRepository =
           yield* SharedAccounts.CustomerAccessReadRepository;
@@ -166,12 +155,13 @@ export namespace SharedAccountWorkflows {
     {
       accessors: true,
       dependencies: [
-        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([table, ReadRepository]).pipe(
-        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
+      effect: ReadRepository.pipe(
+        Effect.flatMap((repository) =>
+          Replicache.makeWriteRepository(table, repository),
+        ),
       ),
     },
   ) {}
@@ -225,19 +215,14 @@ export namespace SharedAccountWorkflows {
 }
 
 export namespace WorkflowStatuses {
-  const table = Models.SyncTables[WorkflowStatusesContract.tableName];
+  const table = Models.syncTables[WorkflowStatusesContract.tableName];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/StatusesReadRepository",
     {
-      dependencies: [
-        Models.SyncTables.Default,
-        Replicache.ReadTransactionManager.Default,
-      ],
+      dependencies: [Replicache.ReadTransactionManager.Default],
       effect: Effect.gen(function* () {
-        const base = yield* table.pipe(
-          Effect.flatMap(Replicache.makeReadRepository),
-        );
+        const base = yield* Replicache.makeReadRepository(table);
 
         const findLastByWorkflowId = (workflowId: ColumnsContract.EntityId) =>
           base
@@ -316,12 +301,13 @@ export namespace WorkflowStatuses {
     {
       accessors: true,
       dependencies: [
-        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([table, ReadRepository]).pipe(
-        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
+      effect: ReadRepository.pipe(
+        Effect.flatMap((repository) =>
+          Replicache.makeWriteRepository(table, repository),
+        ),
       ),
     },
   ) {}

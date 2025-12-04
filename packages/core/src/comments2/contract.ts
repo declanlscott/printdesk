@@ -23,7 +23,7 @@ export namespace CommentsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "comments";
-  export const table = TablesContract.makeTable<CommentsSchema.Table>()(
+  export const table = new (TablesContract.makeClass<CommentsSchema.Table>())(
     tableName,
     DataTransferObject,
     ["create", "read", "update", "delete"],
@@ -31,14 +31,14 @@ export namespace CommentsContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<CommentsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<CommentsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeCustomerPlacedOrderViewName = `active_customer_placed_order_${tableName}`;
   export const activeCustomerPlacedOrderView =
-    TablesContract.makeView<CommentsSchema.ActiveCustomerPlacedOrderView>()(
+    new (TablesContract.makeViewClass<CommentsSchema.ActiveCustomerPlacedOrderView>())(
       activeCustomerPlacedOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -50,7 +50,7 @@ export namespace CommentsContract {
 
   export const activeManagerAuthorizedSharedAccountOrderViewName = `active_manager_authorized_shared_account_order_${tableName}`;
   export const activeManagerAuthorizedSharedAccountOrderView =
-    TablesContract.makeView<CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderView>()(
+    new (TablesContract.makeViewClass<CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderView>())(
       activeManagerAuthorizedSharedAccountOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,

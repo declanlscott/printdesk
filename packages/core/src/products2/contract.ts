@@ -139,7 +139,7 @@ export namespace ProductsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "products";
-  export const table = TablesContract.makeTable<ProductsSchema.Table>()(
+  export const table = new (TablesContract.makeClass<ProductsSchema.Table>())(
     tableName,
     DataTransferObject,
     ["create", "read", "update", "delete"],
@@ -147,14 +147,14 @@ export namespace ProductsContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<ProductsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<ProductsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activePublishedViewName = `active_published_${tableName}`;
   export const activePublishedView =
-    TablesContract.makeView<ProductsSchema.ActivePublishedView>()(
+    new (TablesContract.makeViewClass<ProductsSchema.ActivePublishedView>())(
       activePublishedViewName,
       DataTransferObject,
     );

@@ -29,22 +29,23 @@ export namespace DeliveryOptionsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "delivery_options";
-  export const table = TablesContract.makeTable<DeliveryOptionsSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["create", "read", "update", "delete"],
-  );
+  export const table =
+    new (TablesContract.makeClass<DeliveryOptionsSchema.Table>())(
+      tableName,
+      DataTransferObject,
+      ["create", "read", "update", "delete"],
+    );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<DeliveryOptionsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<DeliveryOptionsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    TablesContract.makeView<DeliveryOptionsSchema.ActivePublishedRoomView>()(
+    new (TablesContract.makeViewClass<DeliveryOptionsSchema.ActivePublishedRoomView>())(
       activePublishedRoomViewName,
       DataTransferObject,
     );

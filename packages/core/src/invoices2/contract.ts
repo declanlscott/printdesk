@@ -37,7 +37,7 @@ export namespace InvoicesContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "invoices";
-  export const table = TablesContract.makeTable<InvoicesSchema.Table>()(
+  export const table = new (TablesContract.makeClass<InvoicesSchema.Table>())(
     tableName,
     DataTransferObject,
     ["create", "read"],
@@ -45,14 +45,14 @@ export namespace InvoicesContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<InvoicesSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<InvoicesSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeManagerAuthorizedSharedAccountOrderViewName = `active_manager_authorized_shared_account_order_${tableName}`;
   export const activeManagerAuthorizedSharedAccountOrderView =
-    TablesContract.makeView<InvoicesSchema.ActiveManagerAuthorizedSharedAccountOrderView>()(
+    new (TablesContract.makeViewClass<InvoicesSchema.ActiveManagerAuthorizedSharedAccountOrderView>())(
       activeManagerAuthorizedSharedAccountOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -62,7 +62,7 @@ export namespace InvoicesContract {
 
   export const activeCustomerPlacedOrderViewName = `active_customer_placed_order_${tableName}`;
   export const activeCustomerPlacedOrderView =
-    TablesContract.makeView<InvoicesSchema.ActiveCustomerPlacedOrderView>()(
+    new (TablesContract.makeViewClass<InvoicesSchema.ActiveCustomerPlacedOrderView>())(
       activeCustomerPlacedOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,

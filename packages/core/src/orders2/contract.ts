@@ -189,28 +189,29 @@ export namespace OrdersContract {
   export type DataTransferObject = typeof DataTransferObject.Type;
 
   export const tableName = "orders";
-  export const table = TablesContract.makeTable<OrdersSchema.Table>()(
+  export const table = new (TablesContract.makeClass<OrdersSchema.Table>())(
     tableName,
     DataTransferObject,
     ["create", "read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TablesContract.makeView<OrdersSchema.ActiveView>()(
-    activeViewName,
-    DataTransferObject,
-  );
+  export const activeView =
+    new (TablesContract.makeViewClass<OrdersSchema.ActiveView>())(
+      activeViewName,
+      DataTransferObject,
+    );
 
   export const activeCustomerPlacedViewName = `active_customer_placed_${tableName}`;
   export const activeCustomerPlacedView =
-    TablesContract.makeVirtualView<OrdersSchema.ActiveCustomerPlacedView>()(
+    new (TablesContract.makeVirtualViewClass<OrdersSchema.ActiveCustomerPlacedView>())(
       activeCustomerPlacedViewName,
       DataTransferObject,
     );
 
   export const activeManagerAuthorizedSharedAccountViewName = `active_manager_authorized_shared_account_${tableName}`;
   export const activeManagerAuthorizedSharedAccountView =
-    TablesContract.makeVirtualView<OrdersSchema.ActiveManagerAuthorizedSharedAccountView>()(
+    new (TablesContract.makeVirtualViewClass<OrdersSchema.ActiveManagerAuthorizedSharedAccountView>())(
       activeManagerAuthorizedSharedAccountViewName,
       Schema.extend(
         DataTransferObject,

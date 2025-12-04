@@ -22,7 +22,7 @@ export namespace ReplicacheMetaModel {
 
   export const tableName = "replicache_meta";
   export const table =
-    TablesContract.makeInternalTable<ReplicacheMetaSchema.Table>()(
+    new (TablesContract.makeInternalClass<ReplicacheMetaSchema.Table>())(
       tableName,
       Record,
     );
@@ -45,7 +45,7 @@ export namespace ReplicacheClientGroupsModel {
 
   export const tableName = "replicache_client_groups";
   export const table =
-    TablesContract.makeInternalTable<ReplicacheClientGroupsSchema.Table>()(
+    new (TablesContract.makeInternalClass<ReplicacheClientGroupsSchema.Table>())(
       tableName,
       Record,
     );
@@ -67,7 +67,7 @@ export namespace ReplicacheClientsModel {
 
   export const tableName = "replicache_clients";
   export const table =
-    TablesContract.makeInternalTable<ReplicacheClientsSchema.Table>()(
+    new (TablesContract.makeInternalClass<ReplicacheClientsSchema.Table>())(
       tableName,
       Record,
     );
@@ -87,14 +87,14 @@ export namespace ReplicacheClientViewsModel {
 
   export const tableName = "replicache_client_views";
   export const table =
-    TablesContract.makeInternalTable<ReplicacheClientViewsSchema.Table>()(
+    new (TablesContract.makeInternalClass<ReplicacheClientViewsSchema.Table>())(
       tableName,
       Record,
     );
 }
 
 export namespace ReplicacheClientViewEntriesModel {
-  export const entities = Array.map(Models.syncTables, Struct.get("name"));
+  export const entities = Array.map(Models.allSyncTables, Struct.get("name"));
   export type Entity = (typeof entities)[number];
 
   export class Record extends Schema.Class<Record>("Record")({
@@ -108,7 +108,7 @@ export namespace ReplicacheClientViewEntriesModel {
 
   export const tableName = "replicache_client_view_entry";
   export const table =
-    TablesContract.makeInternalTable<ReplicacheClientViewEntriesSchema.Table>()(
+    new (TablesContract.makeInternalClass<ReplicacheClientViewEntriesSchema.Table>())(
       tableName,
       Record,
     );

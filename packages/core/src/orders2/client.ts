@@ -19,21 +19,18 @@ import { OrdersContract } from "./contract";
 import type { ColumnsContract } from "../columns2/contract";
 
 export namespace Orders {
-  const table = Models.SyncTables[OrdersContract.tableName];
+  const table = Models.syncTables[OrdersContract.tableName];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/orders/client/ReadRepository",
     {
       dependencies: [
-        Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
         WorkflowStatuses.ReadRepository.Default,
         SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* table.pipe(
-          Effect.flatMap(Replicache.makeReadRepository),
-        );
+        const base = yield* Replicache.makeReadRepository(table);
 
         const workflowStatusesRepository =
           yield* WorkflowStatuses.ReadRepository;
@@ -98,12 +95,13 @@ export namespace Orders {
     {
       accessors: true,
       dependencies: [
-        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
-      effect: Effect.all([table, ReadRepository]).pipe(
-        Effect.flatMap((args) => Replicache.makeWriteRepository(...args)),
+      effect: ReadRepository.pipe(
+        Effect.flatMap((repository) =>
+          Replicache.makeWriteRepository(table, repository),
+        ),
       ),
     },
   ) {}

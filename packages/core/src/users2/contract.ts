@@ -36,17 +36,18 @@ export namespace UsersContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "users";
-  export const table = TablesContract.makeTable<UsersSchema.Table>()(
+  export const table = new (TablesContract.makeClass<UsersSchema.Table>())(
     tableName,
     DataTransferObject,
     ["read", "update", "delete"],
   );
 
   export const activeViewName = `active_${tableName}`;
-  export const activeView = TablesContract.makeView<UsersSchema.ActiveView>()(
-    activeViewName,
-    DataTransferObject,
-  );
+  export const activeView =
+    new (TablesContract.makeViewClass<UsersSchema.ActiveView>())(
+      activeViewName,
+      DataTransferObject,
+    );
 
   export const isSelf = new ProceduresContract.Procedure({
     name: "isUserSelf",

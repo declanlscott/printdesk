@@ -20,7 +20,6 @@ import { Events } from "../events2";
 import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { OrdersContract } from "../orders2/contract";
-import { Permissions } from "../permissions2";
 import { PoliciesContract } from "../policies/contract";
 import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache2";
@@ -957,7 +956,6 @@ export namespace Comments {
         Repository.Default,
         Orders.Policies.Default,
         Policies.Default,
-        Permissions.Schemas.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;

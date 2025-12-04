@@ -30,10 +30,11 @@ export namespace LicensesContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "licenses";
-  export const table = TablesContract.makeInternalTable<LicensesSchema.Table>()(
-    tableName,
-    DataTransferObject,
-  );
+  export const table =
+    new (TablesContract.makeInternalClass<LicensesSchema.Table>())(
+      tableName,
+      DataTransferObject,
+    );
 
   export const isAvailable = new ProceduresContract.Procedure({
     name: "isLicenseAvailable",
@@ -65,7 +66,7 @@ export namespace TenantsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "tenants";
-  export const table = TablesContract.makeTable<TenantsSchema.Table>()(
+  export const table = new (TablesContract.makeClass<TenantsSchema.Table>())(
     tableName,
     DataTransferObject,
     ["read", "update"],
@@ -111,7 +112,7 @@ export namespace TenantMetadataContract {
 
   export const tableName = "tenant_metadata";
   export const table =
-    TablesContract.makeInternalTable<TenantMetadataSchema.Table>()(
+    new (TablesContract.makeInternalClass<TenantMetadataSchema.Table>())(
       tableName,
       DataTransferObject,
     );

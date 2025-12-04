@@ -17,7 +17,6 @@ import { AccessControl } from "../access-control2";
 import { Database } from "../database2";
 import { Events } from "../events2";
 import { MutationsContract } from "../mutations/contract";
-import { Permissions } from "../permissions2";
 import { PoliciesContract } from "../policies/contract";
 import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache2";
@@ -619,11 +618,7 @@ export namespace DeliveryOptions {
     "@printdesk/core/delivery-options/Mutations",
     {
       accessors: true,
-      dependencies: [
-        Repository.Default,
-        Permissions.Schemas.Default,
-        Policies.Default,
-      ],
+      dependencies: [Repository.Default, Policies.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
         const roomsRepository = yield* Rooms.Repository;

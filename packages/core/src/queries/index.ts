@@ -60,7 +60,6 @@ export namespace Queries {
         RoomWorkflows.Queries.Default,
         SharedAccountWorkflows.Queries.Default,
         WorkflowStatuses.Queries.Default,
-        Models.SyncTables.Default,
       ],
       effect: Effect.gen(function* () {
         const announcements = yield* Announcements.Queries.differenceResolver;
@@ -89,8 +88,6 @@ export namespace Queries {
           yield* SharedAccountWorkflows.Queries.differenceResolver;
         const workflowStatuses =
           yield* WorkflowStatuses.Queries.differenceResolver;
-
-        const syncTables = yield* Models.SyncTables;
 
         const client = new QueriesContract.Differentiator()
           .resolver(announcements)
@@ -181,13 +178,14 @@ export namespace Queries {
                             >().pipe(
                               Match.tag("update", (update) =>
                                 ReplicacheContract.makePutTableOperation({
-                                  table: syncTables[update.value.entity],
+                                  table: Models.syncTables[update.value.entity],
                                   value: update.value.data,
                                 }),
                               ),
                               Match.tag("delete", (delete_) =>
                                 ReplicacheContract.makeDeleteTableOperation({
-                                  table: syncTables[delete_.value.entity],
+                                  table:
+                                    Models.syncTables[delete_.value.entity],
                                   id: delete_.value.id,
                                 }),
                               ),
@@ -237,7 +235,7 @@ export namespace Queries {
                       patch.pipe(
                         Chunk.append(
                           ReplicacheContract.makePutTableOperation({
-                            table: syncTables[entity],
+                            table: Models.syncTables[entity],
                             value: data,
                           }),
                         ),
@@ -271,7 +269,7 @@ export namespace Queries {
                             patch: result.patch.pipe(
                               Chunk.append(
                                 ReplicacheContract.makePutTableOperation({
-                                  table: syncTables[entity],
+                                  table: Models.syncTables[entity],
                                   value: data,
                                 }),
                               ),

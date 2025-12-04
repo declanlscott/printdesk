@@ -21,22 +21,23 @@ export namespace CustomerGroupsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "customer_groups";
-  export const table = TablesContract.makeTable<CustomerGroupsSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["read"],
-  );
+  export const table =
+    new (TablesContract.makeClass<CustomerGroupsSchema.Table>())(
+      tableName,
+      DataTransferObject,
+      ["create", "read", "update", "delete"],
+    );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<CustomerGroupsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<CustomerGroupsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeMembershipViewName = `active_membership_${tableName}`;
   export const activeMembershipView =
-    TablesContract.makeView<CustomerGroupsSchema.ActiveMembershipView>()(
+    new (TablesContract.makeViewClass<CustomerGroupsSchema.ActiveMembershipView>())(
       activeMembershipViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -65,7 +66,7 @@ export namespace CustomerGroupMembershipsContract {
 
   export const tableName = "customer_group_memberships";
   export const table =
-    TablesContract.makeTable<CustomerGroupMembershipsSchema.Table>()(
+    new (TablesContract.makeClass<CustomerGroupMembershipsSchema.Table>())(
       tableName,
       DataTransferObject,
       ["read"],
@@ -73,7 +74,7 @@ export namespace CustomerGroupMembershipsContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<CustomerGroupMembershipsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<CustomerGroupMembershipsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );

@@ -1,6 +1,4 @@
 import * as Data from "effect/Data";
-import * as Effect from "effect/Effect";
-import * as Iterable from "effect/Iterable";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
@@ -126,14 +124,11 @@ export namespace ReplicacheContract {
   export const PullRequest = Schema.Union(PullRequestV0, PullRequestV1);
   export type PullRequest = typeof PullRequest.Type;
 
-  const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
-    Schema.String.pipe(
-      Schema.pattern(
-        new RegExp(
-          `^${name}/[${Constants.NANOID_ALPHABET}]{${Constants.NANOID_LENGTH}}$`,
-        ),
-      ),
-    );
+  export const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
+    Schema.TemplateLiteral(Schema.Literal(name), "/", ColumnsContract.EntityId);
+  export type TableKey<TName extends Models.SyncTableName> = ReturnType<
+    typeof tableKey<TName>
+  >["Type"];
 
   export class PutSyncStateOperation extends Schema.Class<PutSyncStateOperation>(
     "PutSyncStateOperation",
@@ -143,51 +138,70 @@ export namespace ReplicacheContract {
     value: Schema.Literal("PARTIAL", "COMPLETE"),
   }) {}
 
-  export const PutTableOperation = Models.SyncTables.pipe(
-    Effect.map(Struct.omit("_tag")),
-    Effect.map(Record.values),
-    Effect.map(
-      Iterable.map((table) =>
-        Schema.Struct({
-          op: Schema.tag("put"),
-          key: tableKey(table.name),
-          value: table.DataTransferObject,
-        }),
-      ),
-    ),
-    Effect.map((members) => Schema.Union(...members)),
-  );
-  export type PutTableOperation = Effect.Effect.Success<
-    typeof PutTableOperation
-  >["Type"];
+  const makePutTableOperationSchema = <TTable extends Models.SyncTable>(
+    table: TTable,
+  ) =>
+    Schema.Struct({
+      op: Schema.tag("put"),
+      key: tableKey(table.name),
+      value: table.DataTransferObject,
+    });
 
-  export const PutOperation = PutTableOperation.pipe(
-    Effect.map((PutTableOperation) =>
-      Schema.Union(PutTableOperation, PutSyncStateOperation),
-    ),
-  );
-  export type PutOperation = Effect.Effect.Success<typeof PutOperation>["Type"];
+  type PutTableOperationStruct<TName extends Models.SyncTableName> =
+    Schema.Struct<{
+      op: Schema.tag<"put">;
+      key: Schema.TemplateLiteral<`${TName}/${ColumnsContract.EntityId}`>;
+      value: Models.SyncTableByName<TName>["DataTransferObject"];
+    }>;
 
+  export const putTableOperationSchemas = Record.map(
+    Models.syncTables,
+    makePutTableOperationSchema,
+  ) as { [TName in Models.SyncTableName]: PutTableOperationStruct<TName> };
+
+  export const PutTableOperation = Schema.Union(
+    ...Record.values(putTableOperationSchemas),
+  );
+  export type PutTableOperation = typeof PutTableOperation.Type;
+
+  // TODO: Figure out the types
   export const makePutTableOperation = <TTable extends Models.SyncTable>({
     table,
     value,
   }: {
     table: TTable;
     value: TTable["DataTransferObject"]["Type"];
-  }): PutTableOperation =>
-    Schema.Struct({
-      op: Schema.tag("put"),
-      key: tableKey(table.name),
-      value: table.DataTransferObject,
-    }).make({ key: `${table.name}/${value.id}`, value });
+  }) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    putTableOperationSchemas[table.name].make({
+      key: `${table.name}/${value.id}`,
+      value,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any) as Extract<PutTableOperation, { key: TableKey<TTable["name"]> }>;
+
+  export const PutOperation = Schema.Union(
+    PutTableOperation,
+    PutSyncStateOperation,
+  );
+  export type PutOperation = typeof PutOperation.Type;
+
+  const makeDeleteTableOperationSchema = <TTable extends Models.SyncTable>(
+    table: TTable,
+  ) => Schema.Struct({ op: Schema.tag("del"), key: tableKey(table.name) });
+
+  type DeleteTableOperationStruct<TName extends Models.SyncTableName> =
+    Schema.Struct<{
+      op: Schema.tag<"del">;
+      key: Schema.TemplateLiteral<`${TName}/${ColumnsContract.EntityId}`>;
+    }>;
+
+  export const deleteTableOperationSchemas = Record.map(
+    Models.syncTables,
+    makeDeleteTableOperationSchema,
+  ) as { [TName in Models.SyncTableName]: DeleteTableOperationStruct<TName> };
 
   export const DeleteTableOperation = Schema.Union(
-    ...Iterable.map(Models.syncTables, (table) =>
-      Schema.Struct({
-        op: Schema.tag("del"),
-        key: tableKey(table.name),
-      }),
-    ),
+    ...Record.values(deleteTableOperationSchemas),
   );
   export type DeleteTableOperation = typeof DeleteTableOperation.Type;
 
@@ -197,10 +211,15 @@ export namespace ReplicacheContract {
   }: {
     table: TTable;
     id: TTable["DataTransferObject"]["Type"]["id"];
-  }): DeleteTableOperation =>
-    Schema.Struct({ op: Schema.tag("del"), key: tableKey(table.name) }).make({
-      key: `${table.name}/${id}`,
-    });
+  }) =>
+    (
+      deleteTableOperationSchemas[table.name] as DeleteTableOperationStruct<
+        TTable["name"]
+      >
+    ).make({ key: `${table.name}/${id}` }) as Extract<
+      DeleteTableOperation,
+      { key: TableKey<TTable["name"]> }
+    >;
 
   export const DeleteOperation = DeleteTableOperation;
   export type DeleteOperation = typeof DeleteOperation.Type;
@@ -209,74 +228,48 @@ export namespace ReplicacheContract {
     op: Schema.tag("clear"),
   }) {}
 
-  export const PatchOperation = PutOperation.pipe(
-    Effect.map((PutOperation) =>
-      Schema.Union(PutOperation, DeleteOperation, ClearOperation),
-    ),
+  export const PatchOperation = Schema.Union(
+    PutOperation,
+    DeleteOperation,
+    ClearOperation,
   );
-  export type PatchOperation = Effect.Effect.Success<
-    typeof PatchOperation
-  >["Type"];
+  export type PatchOperation = typeof PatchOperation.Type;
 
-  export const PullResponseOkV0 = PatchOperation.pipe(
-    Effect.map((PatchOperation) =>
-      Schema.Struct({
-        cookie: Cookie,
-        lastMutationID: Schema.Int,
-        patch: PatchOperation.pipe(Schema.Chunk),
+  export class PullResponseOkV0 extends Schema.Class<PullResponseOkV0>(
+    "PullResponseOkV0",
+  )({
+    cookie: Cookie,
+    lastMutationID: Schema.Int,
+    patch: PatchOperation.pipe(Schema.Chunk),
+  }) {}
+
+  export const PullResponseV0 = Schema.Union(
+    PullResponseOkV0,
+    ClientStateNotFoundResponse,
+    VersionNotSupportedResponse,
+  );
+  export type PullResponseV0 = typeof PullResponseV0.Type;
+
+  export class PullResponseOkV1 extends Schema.Class<PullResponseOkV1>(
+    "PullResponseOkV1",
+  )({
+    cookie: Cookie,
+    lastMutationIdChanges: Schema.propertySignature(
+      Schema.Record({
+        key: Schema.UUID,
+        value: ColumnsContract.Version,
       }),
-    ),
-  );
-  export type PullResponseOkV0 = Effect.Effect.Success<
-    typeof PullResponseOkV0
-  >["Type"];
+    ).pipe(Schema.fromKey("lastMutationIDChanges")),
+    patch: PatchOperation.pipe(Schema.Chunk),
+  }) {}
 
-  export const PullResponseV0 = PullResponseOkV0.pipe(
-    Effect.map((PullResponseOk) =>
-      Schema.Union(
-        PullResponseOk,
-        ClientStateNotFoundResponse,
-        VersionNotSupportedResponse,
-      ),
-    ),
+  export const PullResponseV1 = Schema.Union(
+    PullResponseOkV1,
+    ClientStateNotFoundResponse,
+    VersionNotSupportedResponse,
   );
-  export type PullResponseV0 = Effect.Effect.Success<
-    typeof PullResponseV0
-  >["Type"];
+  export type PullResponseV1 = typeof PullResponseV1.Type;
 
-  export const PullResponseOkV1 = PatchOperation.pipe(
-    Effect.map((PatchOperation) =>
-      Schema.Struct({
-        cookie: Cookie,
-        lastMutationIdChanges: Schema.propertySignature(
-          Schema.Record({
-            key: Schema.UUID,
-            value: ColumnsContract.Version,
-          }),
-        ).pipe(Schema.fromKey("lastMutationIDChanges")),
-        patch: PatchOperation.pipe(Schema.Chunk),
-      }),
-    ),
-  );
-  export type PullResponseOkV1 = Effect.Effect.Success<
-    typeof PullResponseOkV1
-  >["Type"];
-
-  export const PullResponseV1 = PullResponseOkV1.pipe(
-    Effect.map((PullResponseOk) =>
-      Schema.Union(
-        PullResponseOk,
-        ClientStateNotFoundResponse,
-        VersionNotSupportedResponse,
-      ),
-    ),
-  );
-  export type PullResponseV1 = Effect.Effect.Success<
-    typeof PullResponseV1
-  >["Type"];
-
-  export const PullResponse = Effect.all([PullResponseV0, PullResponseV1]).pipe(
-    Effect.map((members) => Schema.Union(...members)),
-  );
-  export type PullResponse = Effect.Effect.Success<typeof PullResponse>["Type"];
+  export const PullResponse = Schema.Union(PullResponseV0, PullResponseV1);
+  export type PullResponse = typeof PullResponse.Type;
 }

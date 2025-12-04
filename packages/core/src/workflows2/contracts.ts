@@ -23,22 +23,23 @@ export namespace RoomWorkflowsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "room_workflows";
-  export const table = TablesContract.makeTable<RoomWorkflowsSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["read"],
-  );
+  export const table =
+    new (TablesContract.makeClass<RoomWorkflowsSchema.Table>())(
+      tableName,
+      DataTransferObject,
+      ["read"],
+    );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<RoomWorkflowsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<RoomWorkflowsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activePublishedRoomViewName = `active_published_${tableName}`;
   export const activePublishedRoomView =
-    TablesContract.makeView<RoomWorkflowsSchema.ActivePublishedRoomView>()(
+    new (TablesContract.makeViewClass<RoomWorkflowsSchema.ActivePublishedRoomView>())(
       activePublishedRoomViewName,
       DataTransferObject,
     );
@@ -55,7 +56,7 @@ export namespace SharedAccountWorkflowsContract {
 
   export const tableName = "shared_account_workflows";
   export const table =
-    TablesContract.makeTable<SharedAccountWorkflowsSchema.Table>()(
+    new (TablesContract.makeClass<SharedAccountWorkflowsSchema.Table>())(
       tableName,
       DataTransferObject,
       ["read"],
@@ -63,14 +64,14 @@ export namespace SharedAccountWorkflowsContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<SharedAccountWorkflowsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<SharedAccountWorkflowsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    TablesContract.makeView<SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedView>()(
+    new (TablesContract.makeViewClass<SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedView>())(
       activeCustomerAuthorizedViewName,
       Schema.extend(
         DataTransferObject,
@@ -80,7 +81,7 @@ export namespace SharedAccountWorkflowsContract {
 
   export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
   export const activeManagerAuthorizedView =
-    TablesContract.makeView<SharedAccountWorkflowsSchema.ActiveManagerAuthorizedView>()(
+    new (TablesContract.makeViewClass<SharedAccountWorkflowsSchema.ActiveManagerAuthorizedView>())(
       activeManagerAuthorizedViewName,
       Schema.extend(
         DataTransferObject,
@@ -133,29 +134,30 @@ export namespace WorkflowStatusesContract {
   export type DataTransferObject = typeof DataTransferObject.Type;
 
   export const tableName = "workflow_statuses";
-  export const table = TablesContract.makeTable<WorkflowStatusesSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["create", "read", "update", "delete"],
-  );
+  export const table =
+    new (TablesContract.makeClass<WorkflowStatusesSchema.Table>())(
+      tableName,
+      DataTransferObject,
+      ["create", "read", "update", "delete"],
+    );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<WorkflowStatusesSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    TablesContract.makeView<WorkflowStatusesSchema.ActivePublishedRoomView>()(
+    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActivePublishedRoomView>())(
       activePublishedRoomViewName,
       RoomWorkflowDto,
     );
 
   export const activeCustomerAuthorizedSharedAccountViewName = `active_customer_authorized_shared_account_${tableName}`;
   export const activeCustomerAuthorizedSharedAccountView =
-    TablesContract.makeView<WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountView>()(
+    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountView>())(
       activeCustomerAuthorizedSharedAccountViewName,
       Schema.extend(
         SharedAccountWorkflowDto,
@@ -165,7 +167,7 @@ export namespace WorkflowStatusesContract {
 
   export const activeManagerAuthorizedSharedAccountViewName = `active_manager_authorized_shared_account_${tableName}`;
   export const activeManagerAuthorizedSharedAccountView =
-    TablesContract.makeView<WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountView>()(
+    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountView>())(
       activeManagerAuthorizedSharedAccountViewName,
       Schema.extend(
         SharedAccountWorkflowDto,

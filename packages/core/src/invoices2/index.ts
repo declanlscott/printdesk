@@ -18,7 +18,6 @@ import { Events } from "../events2";
 import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders2";
 import { OrdersContract } from "../orders2/contract";
-import { Permissions } from "../permissions2";
 import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache2";
 import { ReplicacheNotifier } from "../replicache2/notifier";
@@ -809,11 +808,7 @@ export namespace Invoices {
     "@printdesk/core/invoices/Mutations",
     {
       accessors: true,
-      dependencies: [
-        Repository.Default,
-        Orders.Repository.Default,
-        Permissions.Schemas.Default,
-      ],
+      dependencies: [Repository.Default, Orders.Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 

@@ -13,20 +13,15 @@ import {
 } from "./contracts";
 
 export namespace Groups {
-  const table = Models.SyncTables[CustomerGroupsContract.tableName];
+  const table = Models.syncTables[CustomerGroupsContract.tableName];
   const membershipsTable =
-    Models.SyncTables[CustomerGroupMembershipsContract.tableName];
+    Models.syncTables[CustomerGroupMembershipsContract.tableName];
 
   export class CustomerMembershipsReadRepository extends Effect.Service<CustomerMembershipsReadRepository>()(
     "@printdesk/core/groups/client/CustomerMembershipsReadRepository",
     {
-      dependencies: [
-        Models.SyncTables.Default,
-        Replicache.ReadTransactionManager.Default,
-      ],
-      effect: membershipsTable.pipe(
-        Effect.flatMap(Replicache.makeReadRepository),
-      ),
+      dependencies: [Replicache.ReadTransactionManager.Default],
+      effect: Replicache.makeReadRepository(membershipsTable),
     },
   ) {}
 
@@ -34,14 +29,11 @@ export namespace Groups {
     "@printdesk/core/groups/client/CustomersReadRepository",
     {
       dependencies: [
-        Models.SyncTables.Default,
         Replicache.ReadTransactionManager.Default,
         CustomerMembershipsReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* table.pipe(
-          Effect.flatMap(Replicache.makeReadRepository),
-        );
+        const base = yield* Replicache.makeReadRepository(table);
 
         const membershipsRepository = yield* CustomerMembershipsReadRepository;
 

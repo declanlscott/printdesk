@@ -38,22 +38,23 @@ export namespace SharedAccountsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "shared_accounts";
-  export const table = TablesContract.makeTable<SharedAccountsSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["read", "update", "delete"],
-  );
+  export const table =
+    new (TablesContract.makeClass<SharedAccountsSchema.Table>())(
+      tableName,
+      DataTransferObject,
+      ["read", "update", "delete"],
+    );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<SharedAccountsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<SharedAccountsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    TablesContract.makeView<SharedAccountsSchema.ActiveCustomerAuthorizedView>()(
+    new (TablesContract.makeViewClass<SharedAccountsSchema.ActiveCustomerAuthorizedView>())(
       activeCustomerAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -63,7 +64,7 @@ export namespace SharedAccountsContract {
 
   export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
   export const activeManagerAuthorizedView =
-    TablesContract.makeView<SharedAccountsSchema.ActiveManagerAuthorizedView>()(
+    new (TablesContract.makeViewClass<SharedAccountsSchema.ActiveManagerAuthorizedView>())(
       activeManagerAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -150,7 +151,7 @@ export namespace SharedAccountCustomerAccessContract {
 
   export const tableName = "shared_account_customer_access";
   export const table =
-    TablesContract.makeTable<SharedAccountCustomerAccessSchema.Table>()(
+    new (TablesContract.makeClass<SharedAccountCustomerAccessSchema.Table>())(
       tableName,
       DataTransferObject,
       ["read"],
@@ -158,14 +159,14 @@ export namespace SharedAccountCustomerAccessContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<SharedAccountCustomerAccessSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<SharedAccountCustomerAccessSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    TablesContract.makeVirtualView<SharedAccountCustomerAccessSchema.ActiveAuthorizedView>()(
+    new (TablesContract.makeVirtualViewClass<SharedAccountCustomerAccessSchema.ActiveAuthorizedView>())(
       activeAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -186,7 +187,7 @@ export namespace SharedAccountManagerAccessContract {
 
   export const tableName = "shared_account_manager_access";
   export const table =
-    TablesContract.makeTable<SharedAccountManagerAccessSchema.Table>()(
+    new (TablesContract.makeClass<SharedAccountManagerAccessSchema.Table>())(
       tableName,
       DataTransferObject,
       ["create", "read", "delete"],
@@ -194,21 +195,21 @@ export namespace SharedAccountManagerAccessContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<SharedAccountManagerAccessSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<SharedAccountManagerAccessSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    TablesContract.makeVirtualView<SharedAccountManagerAccessSchema.ActiveAuthorizedView>()(
+    new (TablesContract.makeVirtualViewClass<SharedAccountManagerAccessSchema.ActiveAuthorizedView>())(
       activeAuthorizedViewName,
       DataTransferObject,
     );
 
   export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
   export const activeCustomerAuthorizedView =
-    TablesContract.makeView<SharedAccountManagerAccessSchema.ActiveCustomerAuthorizedView>()(
+    new (TablesContract.makeViewClass<SharedAccountManagerAccessSchema.ActiveCustomerAuthorizedView>())(
       activeCustomerAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
@@ -262,7 +263,7 @@ export namespace SharedAccountCustomerGroupAccessContract {
 
   export const tableName = "shared_account_customer_group_access";
   export const table =
-    TablesContract.makeTable<SharedAccountCustomerGroupAccessSchema.Table>()(
+    new (TablesContract.makeClass<SharedAccountCustomerGroupAccessSchema.Table>())(
       tableName,
       DataTransferObject,
       ["read"],
@@ -270,14 +271,14 @@ export namespace SharedAccountCustomerGroupAccessContract {
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<SharedAccountCustomerGroupAccessSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<SharedAccountCustomerGroupAccessSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activeAuthorizedViewName = `active_authorized_${tableName}`;
   export const activeAuthorizedView =
-    TablesContract.makeView<SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedView>()(
+    new (TablesContract.makeViewClass<SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedView>())(
       activeAuthorizedViewName,
       Schema.Struct({
         ...DataTransferObject.fields,

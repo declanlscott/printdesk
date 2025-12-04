@@ -10,7 +10,6 @@ import * as Struct from "effect/Struct";
 import { Auth } from "../auth2";
 import { Signers } from "../aws2";
 import { Events } from "../events2";
-import { Permissions } from "../permissions2";
 import { Procedures } from "../procedures";
 import { Sst } from "../sst";
 import { buildName } from "../utils2";
@@ -27,7 +26,6 @@ export namespace Realtime {
         Sst.Resource.layer,
         Signers.Appsync.Default,
         FetchHttpClient.layer,
-        Permissions.Schemas.Default,
         Procedures.Policies.Default,
       ],
       effect: Effect.gen(function* () {

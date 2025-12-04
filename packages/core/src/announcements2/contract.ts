@@ -19,22 +19,23 @@ export namespace AnnouncementsContract {
   export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "announcements";
-  export const table = TablesContract.makeTable<AnnouncementsSchema.Table>()(
-    tableName,
-    DataTransferObject,
-    ["create", "read", "update", "delete"],
-  );
+  export const table =
+    new (TablesContract.makeClass<AnnouncementsSchema.Table>())(
+      tableName,
+      DataTransferObject,
+      ["create", "read", "update", "delete"],
+    );
 
   export const activeViewName = `active_${tableName}`;
   export const activeView =
-    TablesContract.makeView<AnnouncementsSchema.ActiveView>()(
+    new (TablesContract.makeViewClass<AnnouncementsSchema.ActiveView>())(
       activeViewName,
       DataTransferObject,
     );
 
   export const activePublishedRoomViewName = `active_published_room_${tableName}`;
   export const activePublishedRoomView =
-    TablesContract.makeView<AnnouncementsSchema.ActivePublishedRoomView>()(
+    new (TablesContract.makeViewClass<AnnouncementsSchema.ActivePublishedRoomView>())(
       activePublishedRoomViewName,
       DataTransferObject,
     );

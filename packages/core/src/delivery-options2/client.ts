@@ -12,16 +12,13 @@ import { Replicache } from "../replicache2/client";
 import { DeliveryOptionsContract } from "./contract";
 
 export namespace DeliveryOptions {
-  const table = Models.SyncTables[DeliveryOptionsContract.tableName];
+  const table = Models.syncTables[DeliveryOptionsContract.tableName];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/delivery-options/client/ReadRepository",
     {
-      dependencies: [
-        Models.SyncTables.Default,
-        Replicache.ReadTransactionManager.Default,
-      ],
-      effect: table.pipe(Effect.flatMap(Replicache.makeReadRepository)),
+      dependencies: [Replicache.ReadTransactionManager.Default],
+      effect: Replicache.makeReadRepository(table),
     },
   ) {}
 
@@ -30,17 +27,12 @@ export namespace DeliveryOptions {
     {
       accessors: true,
       dependencies: [
-        Models.SyncTables.Default,
         ReadRepository.Default,
         Replicache.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* table.pipe(
-          Effect.flatMap((table) =>
-            Replicache.makeWriteRepository(table, repository),
-          ),
-        );
+        const base = yield* Replicache.makeWriteRepository(table, repository);
 
         const updateByRoomId = (
           roomId: DeliveryOptionsContract.DataTransferObject["roomId"],

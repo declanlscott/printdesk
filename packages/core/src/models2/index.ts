@@ -1,5 +1,4 @@
 import * as Array from "effect/Array";
-import * as Effect from "effect/Effect";
 import * as Record from "effect/Record";
 import * as Tuple from "effect/Tuple";
 
@@ -39,10 +38,10 @@ import {
 export namespace Models {
   const record = <
     TTables extends
-      | typeof syncTables
-      | typeof nonSyncTables
-      | typeof internalTables
-      | typeof syncViews,
+      | typeof allSyncTables
+      | typeof allNonSyncTables
+      | typeof allInternalTables
+      | typeof allSyncViews,
   >(
     tables: TTables,
   ) =>
@@ -55,7 +54,7 @@ export namespace Models {
       >;
     };
 
-  export const syncTables = Array.make(
+  export const allSyncTables = Array.make(
     AnnouncementsContract.table,
     CommentsContract.table,
     CustomerGroupsContract.table,
@@ -75,51 +74,37 @@ export namespace Models {
     SharedAccountWorkflowsContract.table,
     WorkflowStatusesContract.table,
   );
-  export const syncTablesRecord = record(syncTables);
-  export class SyncTables extends Effect.Service<SyncTables>()(
-    "@printdesk/core/models/SyncTables",
-    { accessors: true, effect: Effect.all(syncTablesRecord) },
-  ) {}
-  export type SyncTable = SyncTables[keyof Omit<SyncTables, "_tag">];
+  export const syncTables = record(allSyncTables);
+  export type SyncTable = (typeof syncTables)[keyof typeof syncTables];
   export type SyncTableName = SyncTable["name"];
   export type SyncTableByName<TName extends SyncTableName> = Extract<
     SyncTable,
     { name: TName }
   >;
 
-  export const nonSyncTables = Array.make(IdentityProvidersContract.table);
-  export const nonSyncTablesRecord = record(nonSyncTables);
-  export class NonSyncTables extends Effect.Service<NonSyncTables>()(
-    "@printdesk/core/models/NonSyncTables",
-    { accessors: true, effect: Effect.all(nonSyncTablesRecord) },
-  ) {}
-  export type NonSyncTable = NonSyncTables[keyof Omit<NonSyncTables, "_tag">];
+  export const allNonSyncTables = Array.make(IdentityProvidersContract.table);
+  export const nonSyncTables = record(allNonSyncTables);
+  export type NonSyncTable = (typeof nonSyncTables)[keyof typeof nonSyncTables];
   export type NonSyncTableName = NonSyncTable["name"];
   export type NonSyncTableByName<TName extends NonSyncTableName> = Extract<
     NonSyncTable,
     { name: TName }
   >;
 
-  export const internalTables = Array.make(
+  export const allInternalTables = Array.make(
     LicensesContract.table,
     TenantMetadataContract.table,
   );
-  export const internalTablesRecord = record(internalTables);
-  export class InternalTables extends Effect.Service<InternalTables>()(
-    "@printdesk/core/models/InternalTables",
-    { accessors: true, effect: Effect.all(internalTablesRecord) },
-  ) {}
-  export type InternalTable = InternalTables[keyof Omit<
-    InternalTables,
-    "_tag"
-  >];
+  export const internalTables = record(allInternalTables);
+  export type InternalTable =
+    (typeof internalTables)[keyof typeof internalTables];
   export type InternalTableName = InternalTable["name"];
   export type InternalTableByName<TName extends InternalTableName> = Extract<
     InternalTable,
     { name: TName }
   >;
 
-  export const syncViews = Array.make(
+  export const allSyncViews = Array.make(
     AnnouncementsContract.activeView,
     AnnouncementsContract.activePublishedRoomView,
     SharedAccountsContract.activeView,
@@ -161,12 +146,8 @@ export namespace Models {
     WorkflowStatusesContract.activeCustomerAuthorizedSharedAccountView,
     WorkflowStatusesContract.activeManagerAuthorizedSharedAccountView,
   );
-  export const syncViewsRecord = record(syncViews);
-  export class SyncViews extends Effect.Service<SyncViews>()(
-    "@printdesk/core/models/SyncViews",
-    { accessors: true, effect: Effect.all(syncViewsRecord) },
-  ) {}
-  export type SyncView = SyncViews[keyof Omit<SyncViews, "_tag">];
+  export const syncViews = record(allSyncViews);
+  export type SyncView = (typeof syncViews)[keyof typeof syncViews];
   export type SyncViewName = SyncView["name"];
   export type SyncViewByName<TName extends SyncViewName> = Extract<
     SyncView,

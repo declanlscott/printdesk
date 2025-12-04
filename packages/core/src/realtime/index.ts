@@ -1,98 +1,126 @@
-import { HttpRequest } from "@smithy/protocol-http";
-import * as R from "remeda";
-import { Resource } from "sst";
-import * as v from "valibot";
+import * as FetchHttpClient from "@effect/platform/FetchHttpClient";
+import * as HttpClient from "@effect/platform/HttpClient";
+import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
+import * as Struct from "effect/Struct";
 
-import { SignatureV4, Util } from "../aws";
-import { Backend } from "../backend";
-import { Api } from "../backend/api";
-import { ServerErrors } from "../errors";
+import { Auth } from "../auth";
+import { Signers } from "../aws";
+import { Events } from "../events";
+import { Procedures } from "../procedures";
+import { Sst } from "../sst";
+import { buildName } from "../utils";
 
-import type { StartsWith } from "../utils/types";
-import type { Event } from "./shared";
+import type * as Chunk from "effect/Chunk";
+import type * as Duration from "effect/Duration";
+import type { RealtimeContract } from "./contract";
 
 export namespace Realtime {
-  export async function getDns() {
-    const res = await Api.send(
-      `/.well-known/appspecific/${Backend.getReverseDns()}.realtime.json`,
-    );
-    if (!res.ok)
-      throw new ServerErrors.InternalServerError("Failed to get realtime DNS", {
-        cause: await res.text(),
-      });
+  export class Realtime extends Effect.Service<Realtime>()(
+    "@printdesk/core/realtime/Realtime",
+    {
+      dependencies: [
+        Sst.Resource.layer,
+        Signers.Appsync.Default,
+        FetchHttpClient.layer,
+        Procedures.Policies.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const maybeSession = yield* Effect.serviceOption(Auth.Session);
+        const dns = yield* Sst.Resource.AppsyncEventApi.pipe(
+          Effect.map(Struct.get("dns")),
+        );
+        const nameTemplate = yield* Sst.Resource.TenantDomains.pipe(
+          Effect.map(Struct.get("realtime")),
+          Effect.map(Struct.get("nameTemplate")),
+        );
+        const signer = yield* Signers.Appsync;
+        const httpClient = yield* HttpClient.HttpClient;
 
-    return v.parse(
-      v.object({
-        http: v.string(),
-        realtime: v.string(),
+        const Event = yield* Events.Event;
+
+        const url = maybeSession.pipe(
+          Option.match({
+            onSome: (session) => buildName(nameTemplate, session.tenantId),
+            onNone: () => dns.realtime,
+          }),
+          (domain) =>
+            HttpClientRequest.get(`wss://${domain}`).pipe(
+              HttpClientRequest.appendUrl("/event/realtime"),
+              Struct.get("url"),
+              Effect.succeed,
+              Effect.withSpan("Realtime.Realtime.url"),
+            ),
+        );
+
+        const getAuth = <TChannel extends string>(
+          channel?: RealtimeContract.Channel<TChannel>,
+          expiresIn?: Duration.Duration,
+        ) =>
+          maybeSession.pipe(
+            Option.match({
+              onSome: (session) => buildName(nameTemplate, session.tenantId),
+              onNone: () => dns.http,
+            }),
+            (domain) =>
+              HttpClientRequest.post(`https://${domain}`).pipe(
+                HttpClientRequest.appendUrl("/event"),
+                HttpClientRequest.setHeaders({
+                  accept: "application/json, text/javascript",
+                  "content-encoding": "amz-1.0",
+                }),
+                HttpClientRequest.schemaBodyJson(
+                  Schema.Struct({
+                    channel: Schema.String.pipe(
+                      Schema.startsWith("/"),
+                      Schema.optional,
+                    ),
+                  }),
+                )({ channel }),
+                Effect.flatMap((request) =>
+                  expiresIn
+                    ? signer.presignRequest(request, { expiresIn })
+                    : signer.signRequest(request),
+                ),
+                Effect.map(Struct.get("headers")),
+              ),
+          );
+
+        const publish = Effect.fn("Realtime.Realtime.publish")(
+          <TChannel extends string>(
+            channel: RealtimeContract.Channel<TChannel>,
+            events: Chunk.Chunk<Events.Event>,
+          ) =>
+            maybeSession.pipe(
+              Option.match({
+                onSome: (session) => buildName(nameTemplate, session.tenantId),
+                onNone: () => dns.http,
+              }),
+              (domain) =>
+                Stream.fromChunk(events).pipe(
+                  Stream.grouped(5),
+                  Stream.runForEach((events) =>
+                    HttpClientRequest.post(`https://${domain}`).pipe(
+                      HttpClientRequest.appendUrl("/event"),
+                      HttpClientRequest.schemaBodyJson(
+                        Schema.Struct({
+                          channel: Schema.String.pipe(Schema.startsWith("/")),
+                          events: Schema.Chunk(Event),
+                        }),
+                      )({ channel, events }),
+                      Effect.flatMap(signer.signRequest),
+                      Effect.flatMap(httpClient.execute),
+                    ),
+                  ),
+                ),
+            ),
+        );
+
+        return { url, getAuth, publish } as const;
       }),
-      await res.json(),
-    );
-  }
-
-  export const getUrl = (hostname = Resource.AppsyncEventApi.dns.realtime) =>
-    Util.formatUrl(
-      new HttpRequest({
-        protocol: "wss:",
-        hostname,
-        path: "/event/realtime",
-      }),
-    );
-
-  export async function getAuth(
-    expiresIn?: number,
-    body = "{}",
-    hostname = Resource.AppsyncEventApi.dns.http,
-  ) {
-    const args = [
-      "appsync",
-      new HttpRequest({
-        method: "POST",
-        protocol: "https:",
-        hostname,
-        path: "/event",
-        headers: {
-          accept: "application/json, text/javascript",
-          "content-encoding": "amz-1.0",
-          "content-type": "application/json; charset=UTF-8",
-          host: hostname,
-        },
-        body,
-      }),
-    ] as const;
-
-    return (
-      expiresIn
-        ? SignatureV4.presign(...args, { expiresIn })
-        : SignatureV4.sign(...args)
-    ).then(R.prop("headers"));
-  }
-
-  export async function publish<TChannel extends string>(
-    channel: StartsWith<"/", TChannel>,
-    events: Array<Event>,
-    hostname = Resource.AppsyncEventApi.dns.http,
-  ) {
-    const req = await SignatureV4.sign(
-      "appsync",
-      new HttpRequest({
-        method: "POST",
-        protocol: "https:",
-        hostname,
-        path: "/event",
-        headers: { "Content-Type": "application/json", host: hostname },
-        body: JSON.stringify({
-          channel,
-          events: JSON.stringify(events),
-        }),
-      }),
-    );
-
-    await fetch(Util.formatUrl(req), {
-      method: req.method,
-      headers: req.headers,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      body: req.body,
-    });
-  }
+    },
+  ) {}
 }

@@ -1,57 +1,126 @@
-import { AsyncLocalStorage } from "node:async_hooks";
+import * as Array from "effect/Array";
+import * as Chunk from "effect/Chunk";
+import * as Effect from "effect/Effect";
+import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
+import * as String_ from "effect/String";
+import * as Tuple from "effect/Tuple";
+import { customAlphabet } from "nanoid";
 
-import * as R from "remeda";
+import { Constants } from "../utils/constants";
 
-import { ServerErrors } from "../errors";
-import { Constants } from "./constants";
+import type { ColumnsContract } from "../columns/contract";
 
-export namespace Utils {
-  export function createContext<TContext extends object>(name: string) {
-    const storage = new AsyncLocalStorage<TContext>();
+export const generateId = customAlphabet<ColumnsContract.EntityId>(
+  Constants.NANOID_ALPHABET,
+  Constants.NANOID_LENGTH,
+);
 
-    function useContext() {
-      const context = storage.getStore();
-      if (!context) throw new ServerErrors.MissingContext(name);
+export const NanoId = Schema.String.pipe(
+  Schema.pattern(Constants.NANOID_REGEX),
+);
 
-      return context;
-    }
+export const Cost = Schema.Union(Schema.Number, Schema.NumberFromString);
 
-    async function withContext<
-      TGetContext extends () => TContext | Promise<TContext>,
-      TCallback extends () => ReturnType<TCallback>,
-    >(getContext: TGetContext, callback: TCallback, opts = { merge: false }) {
-      let context: TContext | undefined;
-      try {
-        context = useContext();
-      } catch (e) {
-        if (!isMissing(e)) throw e;
-      }
+export const IsoTimestamp = Schema.String.pipe(
+  Schema.pattern(Constants.ISO_TIMESTAMP_REGEX),
+);
 
-      if (context) {
-        if (!opts.merge) return storage.run(context, callback);
+export const IsoDate = Schema.String.pipe(
+  Schema.pattern(Constants.ISO_DATE_REGEX),
+);
 
-        return storage.run(
-          R.mergeDeep(context, await Promise.resolve(getContext())) as TContext,
-          callback,
-        );
-      }
+export const HexColor = Schema.String.pipe(
+  Schema.pattern(Constants.HEX_COLOR_REGEX),
+);
 
-      return storage.run(await Promise.resolve(getContext()), callback);
-    }
+export const StringFromUnknown = Schema.Unknown.pipe(
+  Schema.transform(Schema.String, {
+    strict: true,
+    decode: String,
+    encode: String,
+  }),
+);
 
-    const isMissing = <TError>(error: TError) =>
-      error instanceof ServerErrors.MissingContext &&
-      error.contextName === name;
+export const CommaSeparatedString = Schema.String.pipe(
+  Schema.transform(Schema.Array(Schema.String), {
+    strict: true,
+    decode: (csv) => csv.split(", "),
+    encode: (array) => array.join(", "),
+  }),
+);
 
-    return { use: useContext, with: withContext, isMissing };
-  }
-
-  export const reverseDns = (domainName: string) =>
-    domainName.split(".").reverse().join(".");
-
-  export const buildName = (nameTemplate: string, tenantId: string) =>
-    nameTemplate.replace(
-      new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"),
-      tenantId,
+export const paginate =
+  (size: number) =>
+  <TItem, TError, TContext>(
+    self: Effect.Effect<ReadonlyArray<TItem>, TError, TContext>,
+  ) =>
+    Stream.paginateChunkEffect(undefined, () =>
+      self.pipe(
+        Effect.map((page) =>
+          Tuple.make(
+            Chunk.unsafeFromArray(page),
+            page.length >= size ? Option.some(undefined) : Option.none(),
+          ),
+        ),
+      ),
     );
+
+export type SnakeToCamel<TSnake extends Lowercase<string>> =
+  TSnake extends `${infer First}_${infer Rest}`
+    ? `${First}${Capitalize<SnakeToCamel<Lowercase<Rest>>>}`
+    : TSnake;
+
+export const snakeToCamel = <TSnake extends Lowercase<string>>(snake: TSnake) =>
+  String_.snakeToCamel(snake) as SnakeToCamel<TSnake>;
+
+export const delimitToken = (...segments: Array<string>) =>
+  Array.join(segments, Constants.TOKEN_DELIMITER);
+
+export const splitToken = (token: string) =>
+  String_.split(token, Constants.TOKEN_DELIMITER);
+
+export const buildName = (nameTemplate: string, tenantId: string) =>
+  nameTemplate.replace(
+    new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"),
+    tenantId,
+  );
+
+export function getUserInitials(name: string) {
+  if (!name) return "";
+
+  const splitName = name.split(" ");
+  const firstInitial = splitName[0].charAt(0).toUpperCase();
+
+  if (splitName.length === 1) return firstInitial;
+
+  const lastInitial = splitName[splitName.length - 1].charAt(0).toUpperCase();
+
+  return `${firstInitial}${lastInitial}`;
+}
+
+export type Prettify<TObject> = {
+  [TKey in keyof TObject]: TObject[TKey];
+} & {};
+
+export type StartsWith<
+  TPrefix extends string,
+  TValue extends string,
+> = TValue extends `${TPrefix}${string}` ? TValue : never;
+
+export type EndsWith<
+  TSuffix extends string,
+  TValue extends string,
+> = TValue extends `${string}${TSuffix}` ? TValue : never;
+
+export type Discriminate<
+  TEntity,
+  TKey extends keyof TEntity,
+  TValue extends TEntity[TKey],
+> = Omit<TEntity, TKey> & Record<TKey, TValue>;
+
+export interface SchemaAndValue<TValue extends Schema.Schema.Any> {
+  schema: TValue;
+  value: TValue["Type"];
 }

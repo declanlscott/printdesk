@@ -3,10 +3,10 @@ import * as HttpClient from "@effect/platform/HttpClient";
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
 import * as Effect from "effect/Effect";
 
-import { Auth } from "../auth2";
-import { Signers } from "../aws2";
+import { Auth } from "../auth";
+import { Signers } from "../aws";
 import { Sst } from "../sst";
-import { buildName } from "../utils2";
+import { buildName } from "../utils";
 
 export namespace Api {
   export class Http extends Effect.Service<Http>()("@printdesk/core/api/Http", {

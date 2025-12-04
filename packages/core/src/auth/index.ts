@@ -1,156 +1,315 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 
-import { and, eq } from "drizzle-orm";
-import * as R from "remeda";
+import { ConfidentialClientApplication } from "@azure/msal-node";
+import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
+import { decodeJWT } from "@oslojs/jwt";
+import * as Cause from "effect/Cause";
+import * as Context from "effect/Context";
+import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
+import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
+import * as Struct from "effect/Struct";
 
-import { buildConflictUpdateColumns } from "../database/columns";
-import { useTransaction } from "../database/context";
-import { useTenant } from "../tenants/context";
-import { tenantsTable } from "../tenants/sql";
-import { delimitToken, splitToken } from "../utils/shared";
-import { identityProvidersTable, identityProviderUserGroupsTable } from "./sql";
+import { IdentityProviders } from "../identity-providers";
+import { Sst } from "../sst";
+import { Users } from "../users";
+import { delimitToken, splitToken } from "../utils";
+import { Constants } from "../utils/constants";
+import { AuthContract } from "./contract";
 
-import type { InferInsertModel } from "drizzle-orm";
-import type { Tenant } from "../tenants/sql";
-import type {
-  IdentityProvider,
-  IdentityProvidersTable,
-  IdentityProviderUserGroup,
-} from "./sql";
+import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
+import type { IdentityProvidersContract } from "../identity-providers/contract";
+import type { TenantsContract } from "../tenants/contracts";
 
 export namespace Auth {
-  export const generateToken = (size = 32) => randomBytes(size).toString("hex");
+  export namespace EntraId {
+    export interface ProviderConfig extends Oauth2WrappedConfig {
+      tenant: string;
+    }
 
-  export const deriveKeyFromSecret = (secret: string, salt: string) =>
-    new Promise<string>((resolve, reject) =>
-      scrypt(secret.normalize(), salt, 64, (err, derivedKey) =>
-        err ? reject(err) : resolve(derivedKey.toString("hex")),
-      ),
-    );
+    export const provider = ({ tenant, ...config }: ProviderConfig) =>
+      Oauth2Provider({
+        ...config,
+        type: Constants.ENTRA_ID,
+        endpoint: {
+          authorization: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`,
+          token: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
+        },
+      });
 
-  export async function hashSecret(secret: string) {
-    const salt = generateToken(16);
+    export class ClientError extends Data.TaggedError("ClientError")<{
+      readonly cause: unknown;
+    }> {}
 
-    const derivedKey = await deriveKeyFromSecret(secret, salt);
+    export class Client extends Effect.Service<Client>()(
+      "@printdesk/core/auth/EntraIdClient",
+      {
+        accessors: true,
+        dependencies: [Sst.Resource.layer],
+        effect: (
+          externalTenantId: IdentityProvidersContract.DataTransferObject["externalTenantId"],
+        ) =>
+          Effect.gen(function* () {
+            const resource = yield* Sst.Resource;
 
-    return delimitToken(salt, derivedKey);
+            const { clientId, clientSecret } =
+              yield* resource.IdentityProviders.pipe(
+                Effect.map(Struct.get(Constants.ENTRA_ID)),
+                Effect.map(
+                  Struct.evolve({
+                    clientId: Redacted.make<string>,
+                    clientSecret: Redacted.make<string>,
+                  }),
+                ),
+              );
+
+            const client = new ConfidentialClientApplication({
+              auth: {
+                clientId: Redacted.value(clientId),
+                clientSecret: Redacted.value(clientSecret),
+                authority: `https://login.microsoftonline.com/${externalTenantId}`,
+              },
+            });
+
+            const accessToken = Effect.tryPromise({
+              try: () =>
+                client.acquireTokenByClientCredential({
+                  scopes: ["https://graph.microsoft.com/.default"],
+                }),
+              catch: (cause) => new ClientError({ cause }),
+            }).pipe(
+              Effect.flatMap((result) =>
+                result === null
+                  ? Effect.fail(
+                      new ClientError({
+                        cause: new globalThis.Error(
+                          "Missing authentication result",
+                        ),
+                      }),
+                    )
+                  : Effect.succeed(result.accessToken),
+              ),
+            );
+
+            return { accessToken } as const;
+          }),
+      },
+    ) {}
   }
 
-  export async function verifySecret(secret: string, hash: string) {
-    const tokens = splitToken(hash);
-    if (tokens.length !== 2) return false;
-    const [salt, storedKey] = tokens;
-
-    const derivedKey = await deriveKeyFromSecret(secret, salt);
-
-    const storedKeyBuffer = Buffer.from(storedKey, "hex");
-    const derivedKeyBuffer = Buffer.from(derivedKey, "hex");
-    if (storedKeyBuffer.length !== derivedKeyBuffer.length) return false;
-
-    return timingSafeEqual(storedKeyBuffer, derivedKeyBuffer);
+  export namespace Google {
+    // TODO
   }
 
-  export const putIdentityProvider = async (
-    values: InferInsertModel<IdentityProvidersTable>,
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .insert(identityProvidersTable)
-        .values(values)
-        .onConflictDoUpdate({
-          target: [identityProvidersTable.id, identityProvidersTable.tenantId],
-          set: {
-            ...buildConflictUpdateColumns(identityProvidersTable, [
-              "id",
-              "tenantId",
-              "kind",
-            ]),
-            updatedAt: new Date(),
-          },
-        }),
-    );
+  export class Auth extends Effect.Service<Auth>()(
+    "@printdesk/core/auth/Auth",
+    {
+      accessors: true,
+      dependencies: [
+        Sst.Resource.layer,
+        IdentityProviders.Repository.Default,
+        Users.Repository.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const resource = yield* Sst.Resource;
+        const identityProvidersRepository = yield* IdentityProviders.Repository;
+        const usersRepository = yield* Users.Repository;
 
-  export const readIdentityProviders = async () =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(identityProvidersTable)
-        .where(eq(identityProvidersTable.tenantId, useTenant().id)),
-    );
+        const providers = yield* resource.IdentityProviders.pipe(
+          Effect.map((providers) => ({
+            [Constants.ENTRA_ID]: EntraId.provider({
+              tenant: "organizations",
+              clientID: providers[Constants.ENTRA_ID].clientId,
+              clientSecret: providers[Constants.ENTRA_ID].clientSecret,
+              scopes: [...Constants.ENTRA_ID_OAUTH_SCOPES],
+            }),
+          })),
+        );
 
-  export const readIdentityProviderById = async (id: IdentityProvider["id"]) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(identityProvidersTable)
-        .where(
-          and(
-            eq(identityProvidersTable.id, id),
-            eq(identityProvidersTable.tenantId, useTenant().id),
-          ),
-        )
-        .then(R.first()),
-    );
+        const handleUser = Effect.fn("Auth.handleUserSubject")(
+          (
+            idpKind: IdentityProvidersContract.Kind,
+            idpTenantId: IdentityProvidersContract.AccessToken["tenantId"],
+            idpUser: IdentityProvidersContract.User,
+          ) =>
+            Effect.gen(function* () {
+              const { identityProvider, tenant, user } =
+                yield* identityProvidersRepository.findWithTenantAndUserByExternalIds(
+                  idpKind,
+                  idpTenantId,
+                  idpUser.id,
+                );
 
-  export const readIdentityProvidersBySubdomain = async (
-    subdomain: Tenant["subdomain"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select({ identityProvider: identityProvidersTable })
-        .from(tenantsTable)
-        .innerJoin(
-          identityProvidersTable,
-          eq(tenantsTable.id, identityProvidersTable.tenantId),
-        )
-        .where(eq(tenantsTable.subdomain, subdomain))
-        .then(R.map(R.prop("identityProvider"))),
-    );
+              const match = Match.type<TenantsContract.Status>().pipe(
+                Match.when(Match.is("setup"), () =>
+                  Effect.gen(function* () {
+                    if (!user) {
+                      const admin = yield* usersRepository.create({
+                        origin: "internal",
+                        username: idpUser.username,
+                        externalId: idpUser.id,
+                        identityProviderId: identityProvider.id,
+                        role: "administrator",
+                        name: idpUser.name,
+                        email: idpUser.email,
+                        tenantId: identityProvider.tenantId,
+                      });
 
-  export const createIdentityProviderUserGroup = async (
-    id: IdentityProviderUserGroup["id"],
-    identityProviderId: IdentityProviderUserGroup["identityProviderId"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .insert(identityProviderUserGroupsTable)
-        .values({ id, identityProviderId, tenantId: useTenant().id }),
-    );
+                      return new AuthContract.UserSubject(
+                        Struct.pick(admin, "id", "tenantId"),
+                      );
+                    }
 
-  export const readIdentityProviderUserGroups = async (
-    identityProviderId: IdentityProvider["id"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(identityProviderUserGroupsTable)
-        .where(
-          and(
-            eq(
-              identityProviderUserGroupsTable.identityProviderId,
-              identityProviderId,
-            ),
-            eq(identityProviderUserGroupsTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
+                    if (
+                      idpUser.username !== user.username ||
+                      idpUser.name !== user.name ||
+                      idpUser.email !== user.email
+                    )
+                      yield* usersRepository.updateById(
+                        user.id,
+                        {
+                          username: idpUser.username,
+                          name: idpUser.name,
+                          email: idpUser.email,
+                        },
+                        user.tenantId,
+                      );
 
-  export const deleteIdentityProviderUserGroup = async (
-    id: IdentityProviderUserGroup["id"],
-    identityProviderId: IdentityProviderUserGroup["identityProviderId"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .delete(identityProviderUserGroupsTable)
-        .where(
-          and(
-            eq(identityProviderUserGroupsTable.id, id),
-            eq(
-              identityProviderUserGroupsTable.identityProviderId,
-              identityProviderId,
-            ),
-            eq(identityProviderUserGroupsTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
+                    return new AuthContract.UserSubject(
+                      Struct.pick(user, "id", "tenantId"),
+                    );
+                  }),
+                ),
+                Match.when(Match.is("active"), () =>
+                  Effect.gen(function* () {
+                    if (!user)
+                      return yield* Effect.fail(
+                        new Cause.NoSuchElementException(),
+                      );
+
+                    if (
+                      idpUser.username !== user.username ||
+                      idpUser.name !== user.name ||
+                      idpUser.email !== user.email
+                    )
+                      yield* usersRepository.updateById(
+                        user.id,
+                        {
+                          username: idpUser.username,
+                          name: idpUser.name,
+                          email: idpUser.email,
+                        },
+                        user.tenantId,
+                      );
+
+                    return new AuthContract.UserSubject(
+                      Struct.pick(user, "id", "tenantId"),
+                    );
+                  }),
+                ),
+                Match.when(Match.is("suspended"), () =>
+                  Effect.fail(
+                    new AuthContract.TenantSuspendedError({
+                      tenantId: identityProvider.tenantId,
+                    }),
+                  ),
+                ),
+                Match.exhaustive,
+              );
+
+              return yield* match(tenant.status);
+            }),
+        );
+
+        return { providers, handleUser } as const;
+      }),
+    },
+  ) {}
+
+  export class Session extends Context.Tag("@printdesk/core/auth/Session")<
+    Session,
+    AuthContract.Session
+  >() {}
+
+  export class CryptoError extends Data.TaggedError("CryptoError")<{
+    readonly cause: unknown;
+  }> {}
+
+  export class Crypto extends Effect.Service<Crypto>()(
+    "@printdesk/core/auth/Crypto",
+    {
+      accessors: true,
+      sync: () => {
+        const generateToken = (size = 32) =>
+          Effect.try({
+            try: () => randomBytes(size).toString("hex"),
+            catch: (cause) => new CryptoError({ cause }),
+          });
+
+        const deriveKeyFromSecret = (secret: string, salt: string) =>
+          Effect.tryPromise({
+            try: () =>
+              new Promise<string>((resolve, reject) =>
+                scrypt(secret.normalize(), salt, 64, (error, derivedKey) =>
+                  error ? reject(error) : resolve(derivedKey.toString("hex")),
+                ),
+              ),
+            catch: (cause) => new CryptoError({ cause }),
+          });
+
+        const hashSecret = (secret: string) =>
+          Effect.gen(function* () {
+            const salt = yield* generateToken(16);
+
+            const derivedKey = yield* deriveKeyFromSecret(secret, salt);
+
+            return delimitToken(salt, derivedKey);
+          });
+
+        const verifySecret = (secret: string, hash: string) =>
+          Effect.gen(function* () {
+            const tokens = splitToken(hash);
+            if (tokens.length !== 2)
+              return yield* Effect.fail(
+                new CryptoError({
+                  cause: new globalThis.Error("Invalid hash"),
+                }),
+              );
+            const [salt, storedKey] = tokens;
+
+            const derivedKey = yield* deriveKeyFromSecret(secret, salt);
+
+            const storedKeyBuffer = yield* Effect.try({
+              try: () => Buffer.from(storedKey, "hex"),
+              catch: (cause) => new CryptoError({ cause }),
+            });
+
+            const derivedKeyBuffer = yield* Effect.try({
+              try: () => Buffer.from(derivedKey, "hex"),
+              catch: (cause) => new CryptoError({ cause }),
+            });
+
+            return yield* Effect.try({
+              try: () => timingSafeEqual(storedKeyBuffer, derivedKeyBuffer),
+              catch: (cause) => new CryptoError({ cause }),
+            });
+          });
+
+        const decodeJwt = (jwt: string) =>
+          Effect.try({
+            try: () => decodeJWT(jwt),
+            catch: (cause) => new CryptoError({ cause }),
+          });
+
+        return {
+          generateToken,
+          deriveKeyFromSecret,
+          hashSecret,
+          verifySecret,
+          decodeJwt,
+        } as const;
+      },
+    },
+  ) {}
 }

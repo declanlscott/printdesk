@@ -1,171 +1,143 @@
-import * as R from "remeda";
+import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
+import * as Struct from "effect/Struct";
 
-import { AccessControl } from "../access-control/client";
-import {
-  billingAccountCustomerAuthorizationsTableName,
-  billingAccountManagerAuthorizationsTableName,
-} from "../billing-accounts/shared";
-import { ordersTableName } from "../orders/shared";
+import { AccessControl } from "../access-control";
+import { Models } from "../models";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache/client";
-import {
-  deleteUserMutationArgsSchema,
-  restoreUserMutationArgsSchema,
-  updateUserRoleMutationArgsSchema,
-  usersTableName,
-} from "./shared";
-
-import type { BillingAccount } from "../billing-accounts/sql";
-import type { Order } from "../orders/sql";
-import type { UserRole } from "./shared";
-import type { User } from "./sql";
+import { UsersContract } from "./contract";
 
 export namespace Users {
-  export const all = Replicache.createQuery({
-    getQuery: () => async (tx) => Replicache.scan(tx, usersTableName),
-  });
+  const table = Models.syncTables[UsersContract.tableName];
 
-  export const byId = Replicache.createQuery({
-    getDeps: (id: User["id"]) => ({ id }),
-    getQuery:
-      ({ id }) =>
-      async (tx) =>
-        Replicache.get(tx, usersTableName, id),
-  });
+  export class ReadRepository extends Effect.Service<ReadRepository>()(
+    "@printdesk/core/users/client/ReadRepository",
+    {
+      dependencies: [Replicache.ReadTransactionManager.Default],
+      effect: Replicache.makeReadRepository(table),
+    },
+  ) {}
 
-  export const byRoles = Replicache.createQuery({
-    getDeps: (
-      roles: Array<UserRole> = [
-        "administrator",
-        "operator",
-        "manager",
-        "customer",
+  export class WriteRepository extends Effect.Service<WriteRepository>()(
+    "@printdesk/core/users/client/WriteRepository",
+    {
+      accessors: true,
+      dependencies: [
+        ReadRepository.Default,
+        Replicache.WriteTransactionManager.Default,
       ],
-    ) => ({ roles }),
-    getQuery:
-      ({ roles }) =>
-      async (tx) =>
-        Replicache.scan(tx, usersTableName).then(
-          R.filter((user) => roles.includes(user.role)),
+      effect: ReadRepository.pipe(
+        Effect.flatMap((repository) =>
+          Replicache.makeWriteRepository(table, repository),
         ),
-  });
+      ),
+    },
+  ) {}
 
-  export const withOrderAccess = Replicache.createQuery({
-    getDeps: (orderId: Order["id"]) => ({ orderId }),
-    getQuery:
-      ({ orderId }) =>
-      async (tx) => {
-        const order = await Replicache.get(tx, ordersTableName, orderId);
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/users/client/Policies",
+    {
+      accessors: true,
+      dependencies: [ReadRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* ReadRepository;
 
-        const [adminsOps, managers, customer] = await Promise.all([
-          byRoles(["administrator", "operator"])(tx),
-          withManagerAuthorization(order.billingAccountId)(tx),
-          byId(order.customerId)(tx),
-        ]);
+        const isSelf = PoliciesContract.makePolicy(UsersContract.isSelf, {
+          make: ({ id }) =>
+            AccessControl.policy((principal) =>
+              Effect.succeed(id === principal.userId),
+            ),
+        });
 
-        return R.uniqueBy(
-          [...adminsOps, ...managers, customer].filter(Boolean),
-          R.prop("id"),
+        const canEdit = PoliciesContract.makePolicy(UsersContract.canEdit, {
+          make: ({ id }) =>
+            AccessControl.policy(() =>
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+        });
+
+        const canDelete = PoliciesContract.makePolicy(UsersContract.canDelete, {
+          make: canEdit.make,
+        });
+
+        const canRestore = PoliciesContract.makePolicy(
+          UsersContract.canRestore,
+          {
+            make: ({ id }) =>
+              AccessControl.policy(() =>
+                repository
+                  .findById(id)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+          },
         );
-      },
-  });
 
-  export const withManagerAuthorization = Replicache.createQuery({
-    getDeps: (accountId: BillingAccount["id"]) => ({ accountId }),
-    getQuery:
-      ({ accountId }) =>
-      async (tx) =>
-        R.pipe(
-          await Replicache.scan(
-            tx,
-            billingAccountManagerAuthorizationsTableName,
-          ),
-          R.filter(({ billingAccountId }) => billingAccountId === accountId),
-          async (authorizations) =>
-            Promise.all(
-              authorizations.map(({ managerId }) =>
-                Replicache.get(tx, usersTableName, managerId),
+        return { isSelf, canEdit, canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
+
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/users/client/Mutations",
+    {
+      accessors: true,
+      dependencies: [WriteRepository.Default, Policies.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* WriteRepository;
+
+        const policies = yield* Policies;
+
+        const edit = MutationsContract.makeMutation(UsersContract.edit, {
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("users:update"),
+              policies.canEdit.make({ id }),
+            ),
+          mutator: ({ id, ...user }) => repository.updateById(id, () => user),
+        });
+
+        const delete_ = MutationsContract.makeMutation(UsersContract.delete_, {
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permission("users:delete"),
+                policies.isSelf.make({ id }),
               ),
-            ).then((users) => users.filter(Boolean)),
-        ),
-  });
-
-  export const withCustomerAuthorization = Replicache.createQuery({
-    getDeps: (accountId: BillingAccount["id"]) => ({ accountId }),
-    getQuery:
-      ({ accountId }) =>
-      async (tx) =>
-        R.pipe(
-          await Replicache.scan(
-            tx,
-            billingAccountCustomerAuthorizationsTableName,
-          ),
-          R.filter(({ billingAccountId }) => billingAccountId === accountId),
-          async (authorizations) =>
-            Promise.all(
-              authorizations.map(({ customerId }) =>
-                Replicache.get(tx, usersTableName, customerId),
+              policies.canDelete.make({ id }),
+            ),
+          mutator: ({ id, deletedAt }) =>
+            repository
+              .updateById(id, () => ({ deletedAt }))
+              .pipe(
+                AccessControl.enforce(AccessControl.permission("users:read")),
+                Effect.catchTag("AccessDeniedError", () =>
+                  repository.deleteById(id),
+                ),
               ),
-            ).then((users) => users.filter(Boolean)),
-        ),
-  });
+        });
 
-  export const updateRole = Replicache.createMutator(
-    updateUserRoleMutationArgsSchema,
-    {
-      authorizer: (tx, user) =>
-        AccessControl.enforce(tx, user, usersTableName, "update"),
-      getMutator:
-        () =>
-        async (tx, { id, ...values }) => {
-          const prev = await Replicache.get(tx, usersTableName, id);
+        const restore = MutationsContract.makeMutation(UsersContract.restore, {
+          makePolicy: ({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("users:delete"),
+              policies.canRestore.make({ id }),
+            ),
+          mutator: ({ id }) =>
+            repository.updateById(id, () => ({ deletedAt: null })),
+        });
 
-          return Replicache.set(tx, usersTableName, id, {
-            ...prev,
-            ...values,
-          });
-        },
+        return { edit, delete: delete_, restore } as const;
+      }),
     },
-  );
-
-  export const delete_ = Replicache.createMutator(
-    deleteUserMutationArgsSchema,
-    {
-      authorizer: async (tx, user) =>
-        AccessControl.enforce(tx, user, usersTableName, "delete"),
-      getMutator:
-        ({ user }) =>
-        async (tx, { id, ...values }) => {
-          // Soft delete for administrators
-          if (user.role === "administrator") {
-            const prev = await Replicache.get(tx, usersTableName, id);
-
-            return Replicache.set(tx, usersTableName, id, {
-              ...prev,
-              ...values,
-              role: "customer",
-            });
-          }
-
-          await Replicache.del(tx, usersTableName, id);
-        },
-    },
-  );
-
-  export const restore = Replicache.createMutator(
-    restoreUserMutationArgsSchema,
-    {
-      authorizer: async (tx, user) =>
-        AccessControl.enforce(tx, user, usersTableName, "update"),
-      getMutator:
-        () =>
-        async (tx, { id }) => {
-          const prev = await Replicache.get(tx, usersTableName, id);
-
-          return Replicache.set(tx, usersTableName, id, {
-            ...prev,
-            deletedAt: null,
-          });
-        },
-    },
-  );
+  ) {}
 }

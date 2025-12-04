@@ -1,17 +1,17 @@
 import * as Effect from "effect/Effect";
 
-import { Announcements } from "../announcements2";
-import { Comments } from "../comments2";
-import { DeliveryOptions } from "../delivery-options2";
-import { Invoices } from "../invoices2";
-import { Orders } from "../orders2";
+import { Announcements } from "../announcements";
+import { Comments } from "../comments";
+import { DeliveryOptions } from "../delivery-options";
+import { Invoices } from "../invoices";
+import { Orders } from "../orders";
 import { Procedures } from "../procedures";
-import { Products } from "../products2";
-import { Rooms } from "../rooms2";
-import { SharedAccounts } from "../shared-accounts2";
-import { Tenants } from "../tenants2";
-import { Users } from "../users2";
-import { WorkflowStatuses } from "../workflows2";
+import { Products } from "../products";
+import { Rooms } from "../rooms";
+import { SharedAccounts } from "../shared-accounts";
+import { Tenants } from "../tenants";
+import { Users } from "../users";
+import { WorkflowStatuses } from "../workflows";
 import { MutationsContract } from "./contract";
 
 export namespace Mutations {

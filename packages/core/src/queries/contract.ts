@@ -8,12 +8,12 @@ import * as Iterable from "effect/Iterable";
 import * as Option from "effect/Option";
 import * as Stream from "effect/Stream";
 
-import { AccessControl } from "../access-control2";
+import { AccessControl } from "../access-control";
 
-import type { AuthContract } from "../auth2/contract";
-import type { ColumnsContract } from "../columns2/contract";
-import type { Models } from "../models2";
-import type { ReplicacheClientViewsModel } from "../replicache2/models";
+import type { AuthContract } from "../auth/contract";
+import type { ColumnsContract } from "../columns/contract";
+import type { Models } from "../models";
+import type { ReplicacheClientViewsModel } from "../replicache/models";
 
 export namespace QueriesContract {
   export type VersionedDto<TEntity extends Models.SyncTableName> =

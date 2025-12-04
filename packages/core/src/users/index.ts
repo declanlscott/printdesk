@@ -1,321 +1,556 @@
-import { and, eq, getTableName, inArray, sql } from "drizzle-orm";
-import * as R from "remeda";
+import {
+  and,
+  eq,
+  getTableName,
+  getViewName,
+  inArray,
+  not,
+  notInArray,
+} from "drizzle-orm";
+import * as Array from "effect/Array";
+import * as Effect from "effect/Effect";
+import * as Match from "effect/Match";
+import * as Predicate from "effect/Predicate";
+import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
-import {
-  billingAccountCustomerAuthorizationsTable,
-  billingAccountManagerAuthorizationsTable,
-  billingAccountsTable,
-} from "../billing-accounts/sql";
-import { buildConflictUpdateColumns } from "../database/columns";
-import { afterTransaction, useTransaction } from "../database/context";
-import { ordersTable } from "../orders/sql";
-import { poke } from "../replicache/poke";
-import { useTenant } from "../tenants/context";
-import { fn } from "../utils/shared";
-import {
-  deleteUserMutationArgsSchema,
-  restoreUserMutationArgsSchema,
-  updateUserRoleMutationArgsSchema,
-} from "./shared";
-import { usersTable } from "./sql";
+import { Database } from "../database";
+import { Events } from "../events";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
+import { QueriesContract } from "../queries/contract";
+import { Replicache } from "../replicache";
+import { ReplicacheNotifier } from "../replicache/notifier";
+import { ReplicacheClientViewEntriesSchema } from "../replicache/schemas";
+import { UsersContract } from "./contract";
+import { UsersSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { BillingAccount } from "../billing-accounts/sql";
-import type { Order } from "../orders/sql";
-import type { PartialExcept, Prettify } from "../utils/types";
-import type { UserRole } from "./shared";
-import type { User, UserByOrigin, UsersTable } from "./sql";
+import type { ReplicacheClientViewsSchema } from "../replicache/schemas";
+import type { Prettify } from "../utils";
 
 export namespace Users {
-  export const put = async (values: Array<InferInsertModel<UsersTable>>) =>
-    useTransaction((tx) =>
-      tx
-        .insert(usersTable)
-        .values(values)
-        .onConflictDoUpdate({
-          target: [usersTable.id, usersTable.tenantId],
-          set: {
-            ...buildConflictUpdateColumns(usersTable, [
-              "origin",
-              "username",
-              "subjectId",
-              "identityProviderId",
-              "name",
-              "email",
-              "role",
-              "createdAt",
-              "updatedAt",
-              "deletedAt",
-            ]),
-            version: sql`${usersTable.version} + 1`,
+  export class Repository extends Effect.Service<Repository>()(
+    "@printdesk/core/users/Repository",
+    {
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = UsersSchema.table.definition;
+        const activeView = UsersSchema.activeView;
+
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
+
+        const create = Effect.fn("Users.Repository.create")(
+          (user: InferInsertModel<UsersSchema.Table>) =>
+            db
+              .useTransaction((tx) => tx.insert(table).values(user).returning())
+              .pipe(
+                Effect.flatMap(Array.head),
+                Effect.catchTag("NoSuchElementException", Effect.die),
+              ),
+        );
+
+        const upsertMany = Effect.fn("Users.Repository.upsertMany")(
+          (users: Array.NonEmptyArray<InferInsertModel<UsersSchema.Table>>) =>
+            db.useTransaction((tx) =>
+              tx
+                .insert(table)
+                .values(users)
+                .onConflictDoUpdate({
+                  target: [table.id, table.tenantId],
+                  set: UsersSchema.table.conflictSet,
+                })
+                .returning(),
+            ),
+        );
+
+        const findCreates = Effect.fn("Users.Repository.findCreates")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_creates`)
+                    .as(
+                      tx
+                        .select()
+                        .from(table)
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
+              ),
+            ),
+        );
+
+        const findActiveCreates = Effect.fn(
+          "Users.Repository.findActiveCreates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_creates`)
+                  .as(
+                    tx
+                      .select()
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select()
+                  .from(cte)
+                  .where(
+                    inArray(
+                      cte.id,
+                      tx.select({ id: cte.id }).from(cte).except(qb),
+                    ),
+                  );
+              }),
+            ),
+          ),
+        );
+
+        const findUpdates = Effect.fn("Users.Repository.findUpdates")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          table,
+                          and(
+                            eq(entriesTable.entityId, table.id),
+                            not(eq(entriesTable.entityVersion, table.version)),
+                            eq(entriesTable.tenantId, table.tenantId),
+                          ),
+                        )
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select(cte[getTableName(table)])
+                    .from(cte);
+                }),
+              ),
+            ),
+        );
+
+        const findActiveUpdates = Effect.fn(
+          "Users.Repository.findActiveUpdates",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+            Effect.flatMap((qb) =>
+              db.useTransaction((tx) => {
+                const cte = tx
+                  .$with(`${getViewName(activeView)}_updates`)
+                  .as(
+                    qb
+                      .innerJoin(
+                        activeView,
+                        and(
+                          eq(entriesTable.entityId, activeView.id),
+                          not(
+                            eq(entriesTable.entityVersion, activeView.version),
+                          ),
+                          eq(entriesTable.tenantId, activeView.tenantId),
+                        ),
+                      )
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  );
+
+                return tx
+                  .with(cte)
+                  .select(cte[getViewName(activeView)])
+                  .from(cte);
+              }),
+            ),
+          ),
+        );
+
+        const findDeletes = Effect.fn("Users.Repository.finDeletes")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder
+              .deletes(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.tenantId, clientView.tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
+
+        const findActiveDeletes = Effect.fn(
+          "Users.Repository.findActiveDeletes",
+        )((clientView: ReplicacheClientViewsSchema.Row) =>
+          entriesQueryBuilder
+            .deletes(getTableName(table), clientView)
+            .pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) =>
+                  qb.except(
+                    tx
+                      .select({ id: activeView.id })
+                      .from(activeView)
+                      .where(eq(activeView.tenantId, clientView.tenantId)),
+                  ),
+                ),
+              ),
+            ),
+        );
+
+        const findFastForward = Effect.fn("Users.Repository.findFastForward")(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            excludeIds: Array<UsersSchema.Row["id"]>,
+          ) =>
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(entriesTable.entityId, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.tenantId, clientView.tenantId)),
+                      );
+
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findActiveFastForward = Effect.fn(
+          "Users.Repository.findActiveFastForward",
+        )(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            excludeIds: Array<UsersSchema.ActiveRow["id"]>,
+          ) =>
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getViewName(activeView)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            activeView,
+                            and(
+                              eq(entriesTable.entityId, activeView.id),
+                              notInArray(activeView.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(activeView.tenantId, clientView.tenantId)),
+                      );
+
+                    return tx
+                      .with(cte)
+                      .select(cte[getViewName(activeView)])
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
+
+        const findById = Effect.fn("Users.Repository.findById")(
+          (id: UsersSchema.Row["id"], tenantId: UsersSchema.Row["tenantId"]) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const findByOrigin = Effect.fn("Users.Repository.findByOrigin")(
+          <TUserOrigin extends UsersSchema.Row["origin"]>(
+            origin: TUserOrigin,
+            tenantId: UsersSchema.Row["tenantId"],
+          ) =>
+            db.useTransaction(
+              (tx) =>
+                tx
+                  .select()
+                  .from(table)
+                  .where(
+                    and(eq(table.origin, origin), eq(table.tenantId, tenantId)),
+                  ) as unknown as Promise<
+                  Array<Prettify<UsersSchema.RowByOrigin<TUserOrigin>>>
+                >,
+            ),
+        );
+
+        const findByUsernames = Effect.fn("Users.Repository.findByUsernames")(
+          (
+            usernames: ReadonlyArray<UsersSchema.Row["username"]>,
+            tenantId: UsersSchema.Row["tenantId"],
+          ) =>
+            db.useTransaction((tx) =>
+              tx
+                .select()
+                .from(table)
+                .where(
+                  and(
+                    inArray(table.username, usernames),
+                    eq(table.tenantId, tenantId),
+                  ),
+                ),
+            ),
+        );
+
+        const updateById = Effect.fn("Users.Repository.updateById")(
+          (
+            id: UsersSchema.Row["id"],
+            user: Partial<Omit<UsersSchema.Row, "id" | "tenantId">>,
+            tenantId: UsersSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set(user)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        return {
+          create,
+          upsertMany,
+          findCreates,
+          findActiveCreates,
+          findUpdates,
+          findActiveUpdates,
+          findDeletes,
+          findActiveDeletes,
+          findFastForward,
+          findActiveFastForward,
+          findById,
+          findByOrigin,
+          findByUsernames,
+          updateById,
+        } as const;
+      }),
+    },
+  ) {}
+
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/users/Queries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(UsersSchema.table.definition),
+          )
+            .query(AccessControl.permission("users:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .query(AccessControl.permission("active_users:read"), {
+              findCreates: repository.findActiveCreates,
+              findUpdates: repository.findActiveUpdates,
+              findDeletes: repository.findActiveDeletes,
+              fastForward: repository.findActiveFastForward,
+            })
+            .build();
+
+        return { differenceResolver } as const;
+      }),
+    },
+  ) {}
+
+  export class Policies extends Effect.Service<Policies>()(
+    "@printdesk/core/users/Policies",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const isSelf = PoliciesContract.makePolicy(UsersContract.isSelf, {
+          make: Effect.fn("Users.Policies.isSelf.make")(({ id }) =>
+            AccessControl.policy((principal) =>
+              Effect.succeed(id === principal.userId),
+            ),
+          ),
+        });
+
+        const canEdit = PoliciesContract.makePolicy(UsersContract.canEdit, {
+          make: Effect.fn("Users.Policies.canEdit.make")(({ id }) =>
+            AccessControl.policy((principal) =>
+              repository
+                .findById(id, principal.tenantId)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
+            ),
+          ),
+        });
+
+        const canDelete = PoliciesContract.makePolicy(UsersContract.canDelete, {
+          make: Effect.fn("Users.Policies.canDelete.make")(canEdit.make),
+        });
+
+        const canRestore = PoliciesContract.makePolicy(
+          UsersContract.canRestore,
+          {
+            make: Effect.fn("Users.Policies.canRestore.make")(({ id }) =>
+              AccessControl.policy((principal) =>
+                repository
+                  .findById(id, principal.tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNotNull),
+                  ),
+              ),
+            ),
           },
-        })
-        .returning(),
-    );
-
-  export const read = async (ids: Array<User["id"]>) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(usersTable)
-        .where(
-          and(
-            inArray(usersTable.id, ids),
-            eq(usersTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
-
-  export const byRoles = async (
-    roles: Array<UserRole> = [
-      "administrator",
-      "operator",
-      "manager",
-      "customer",
-    ],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(usersTable)
-        .where(
-          and(
-            inArray(usersTable.role, roles),
-            eq(usersTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
-
-  export const byOrigin = async <TUserOrigin extends User["origin"]>(
-    origin: TUserOrigin,
-  ) =>
-    useTransaction(
-      (tx) =>
-        tx
-          .select()
-          .from(usersTable)
-          .where(
-            and(
-              eq(usersTable.origin, origin),
-              eq(usersTable.tenantId, useTenant().id),
-            ),
-          ) as unknown as Promise<Array<Prettify<UserByOrigin<TUserOrigin>>>>,
-    );
-
-  export const byIdentityProvider = async (
-    subjectId: User["subjectId"],
-    identityProviderId: User["identityProviderId"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(usersTable)
-        .where(
-          and(
-            eq(usersTable.subjectId, subjectId),
-            eq(usersTable.identityProviderId, identityProviderId),
-            eq(usersTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
-
-  export const byUsernames = async (usernames: Array<User["username"]>) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(usersTable)
-        .where(
-          and(
-            inArray(usersTable.username, usernames),
-            eq(usersTable.tenantId, useTenant().id),
-          ),
-        ),
-    );
-
-  export async function withOrderAccess(orderId: Order["id"]) {
-    const tenant = useTenant();
-
-    return useTransaction(async (tx) => {
-      const [adminsOps, managers, [customer]] = await Promise.all([
-        byRoles(["administrator", "operator"]),
-        tx
-          .select({ id: usersTable.id })
-          .from(usersTable)
-          .innerJoin(
-            billingAccountManagerAuthorizationsTable,
-            and(
-              eq(
-                usersTable.id,
-                billingAccountManagerAuthorizationsTable.managerId,
-              ),
-              eq(
-                usersTable.tenantId,
-                billingAccountManagerAuthorizationsTable.tenantId,
-              ),
-            ),
-          )
-          .innerJoin(
-            ordersTable,
-            and(
-              eq(
-                billingAccountManagerAuthorizationsTable.billingAccountId,
-                ordersTable.billingAccountId,
-              ),
-              eq(billingAccountsTable.tenantId, tenant.id),
-            ),
-          )
-          .where(
-            and(
-              eq(ordersTable.id, orderId),
-              eq(ordersTable.tenantId, tenant.id),
-            ),
-          ),
-        tx
-          .select({ id: usersTable.id })
-          .from(usersTable)
-          .innerJoin(
-            ordersTable,
-            and(
-              eq(usersTable.id, ordersTable.customerId),
-              eq(usersTable.tenantId, ordersTable.tenantId),
-            ),
-          )
-          .where(
-            and(
-              eq(ordersTable.id, orderId),
-              eq(ordersTable.tenantId, tenant.id),
-            ),
-          ),
-      ]);
-
-      return R.uniqueBy([...adminsOps, ...managers, customer], R.prop("id"));
-    });
-  }
-
-  export const withCustomerAuthorization = async (
-    accountId: BillingAccount["id"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select({
-          customerId: billingAccountCustomerAuthorizationsTable.customerId,
-        })
-        .from(billingAccountCustomerAuthorizationsTable)
-        .where(
-          and(
-            eq(
-              billingAccountCustomerAuthorizationsTable.billingAccountId,
-              accountId,
-            ),
-            eq(
-              billingAccountCustomerAuthorizationsTable.tenantId,
-              useTenant().id,
-            ),
-          ),
-        ),
-    );
-
-  export const withManagerAuthorization = async (
-    accountId: BillingAccount["id"],
-  ) =>
-    useTransaction(async (tx) =>
-      tx
-        .select({
-          managerId: billingAccountManagerAuthorizationsTable.managerId,
-        })
-        .from(billingAccountManagerAuthorizationsTable)
-        .where(
-          and(
-            eq(
-              billingAccountManagerAuthorizationsTable.billingAccountId,
-              accountId,
-            ),
-            eq(
-              billingAccountManagerAuthorizationsTable.tenantId,
-              useTenant().id,
-            ),
-          ),
-        ),
-    );
-
-  export const updateOne = async (values: PartialExcept<User, "id">) =>
-    useTransaction(async (tx) => {
-      await tx
-        .update(usersTable)
-        .set(values)
-        .where(
-          and(
-            eq(usersTable.id, values.id),
-            eq(usersTable.tenantId, useTenant().id),
-          ),
         );
 
-      await afterTransaction(() => poke("/tenant"));
-    });
+        return { isSelf, canEdit, canDelete, canRestore } as const;
+      }),
+    },
+  ) {}
 
-  export const updateRole = fn(
-    updateUserRoleMutationArgsSchema,
-    async ({ id, ...values }) => {
-      await AccessControl.enforce(getTableName(usersTable), "update");
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/users/Mutations",
+    {
+      accessors: true,
+      dependencies: [Repository.Default, Policies.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
 
-      return useTransaction(async (tx) => {
-        await tx
-          .update(usersTable)
-          .set(values)
-          .where(
-            and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
+        const policies = yield* Policies;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notifyEdit = (user: UsersContract.DataTransferObject) =>
+          Match.value(user).pipe(
+            Match.when({ deletedAt: Match.null }, () =>
+              Array.make(
+                PullPermission.make({ permission: "users:read" }),
+                PullPermission.make({ permission: "active_users:read" }),
+              ),
+            ),
+            Match.orElse(() =>
+              Array.make(PullPermission.make({ permission: "users:read" })),
+            ),
+            notifier.notify,
           );
 
-        await afterTransaction(() => poke("/tenant"));
-      });
-    },
-  );
-
-  export const delete_ = fn(
-    deleteUserMutationArgsSchema,
-    async ({ id, ...values }) => {
-      await AccessControl.enforce(getTableName(usersTable), "delete", id);
-
-      return useTransaction(async (tx) => {
-        await tx
-          .update(usersTable)
-          .set({ ...values, role: "customer" })
-          .where(
-            and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
+        const notifyDelete = (_user: UsersContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(
+              PullPermission.make({ permission: "users:read" }),
+              PullPermission.make({ permission: "active_users:read" }),
+            ),
           );
+        const notifyRestore = notifyDelete;
 
-        await afterTransaction(() => poke("/tenant"));
-      });
-    },
-  );
-
-  export const restore = fn(restoreUserMutationArgsSchema, async ({ id }) => {
-    await AccessControl.enforce(getTableName(usersTable), "update");
-
-    return useTransaction(async (tx) => {
-      await tx
-        .update(usersTable)
-        .set({ deletedAt: null })
-        .where(
-          and(eq(usersTable.id, id), eq(usersTable.tenantId, useTenant().id)),
-        );
-
-      await afterTransaction(() => poke("/tenant"));
-    });
-  });
-
-  export const exists = async (userId: User["id"]) =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(usersTable)
-        .where(
-          and(
-            eq(usersTable.id, userId),
-            eq(usersTable.tenantId, useTenant().id),
+        const edit = MutationsContract.makeMutation(UsersContract.edit, {
+          makePolicy: Effect.fn("Users.Mutations.edit.makePolicy")(({ id }) =>
+            AccessControl.every(
+              AccessControl.permission("users:update"),
+              policies.canEdit.make({ id }),
+            ),
           ),
-        )
-        .then(R.isNot(R.isEmpty)),
-    );
+          mutator: Effect.fn("Users.Mutations.edit.mutator")((user, session) =>
+            repository
+              .updateById(user.id, user, session.tenantId)
+              .pipe(Effect.tap(notifyEdit)),
+          ),
+        });
+
+        const delete_ = MutationsContract.makeMutation(UsersContract.delete_, {
+          makePolicy: Effect.fn("Users.Mutations.delete.makePolicy")(({ id }) =>
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permission("users:delete"),
+                policies.isSelf.make({ id }),
+              ),
+              policies.canDelete.make({ id }),
+            ),
+          ),
+          mutator: Effect.fn("Users.Mutations.delete.mutator")(
+            ({ id, deletedAt }, session) =>
+              repository
+                .updateById(id, { deletedAt }, session.tenantId)
+                .pipe(Effect.tap(notifyDelete)),
+          ),
+        });
+
+        const restore = MutationsContract.makeMutation(UsersContract.restore, {
+          makePolicy: Effect.fn("Users.Mutations.restore.makePolicy")(
+            ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("users:delete"),
+                policies.canRestore.make({ id }),
+              ),
+          ),
+          mutator: Effect.fn("Users.Mutations.restore.mutator")(
+            ({ id }, session) =>
+              repository
+                .updateById(id, { deletedAt: null }, session.tenantId)
+                .pipe(Effect.tap(notifyRestore)),
+          ),
+        });
+
+        return { edit, delete: delete_, restore } as const;
+      }),
+    },
+  ) {}
 }

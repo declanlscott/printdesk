@@ -6,9 +6,9 @@ import * as Option from "effect/Option";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
-import { AccessControl } from "../access-control2";
+import { AccessControl } from "../access-control";
 
-import type { AuthContract } from "../auth2/contract";
+import type { AuthContract } from "../auth/contract";
 import type { ProceduresContract } from "../procedures/contract";
 
 export namespace MutationsContract {

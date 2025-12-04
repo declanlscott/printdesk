@@ -6,7 +6,7 @@ import * as Option from "effect/Option";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
-import type { AccessControl } from "../access-control2";
+import type { AccessControl } from "../access-control";
 import type { ProceduresContract } from "../procedures/contract";
 
 export namespace PoliciesContract {

@@ -1,248 +1,394 @@
-import { and, eq, getTableName, isNull, or, sql } from "drizzle-orm";
-import * as R from "remeda";
-import { Resource } from "sst";
+import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
+import * as Array from "effect/Array";
+import * as Effect from "effect/Effect";
 
 import { AccessControl } from "../access-control";
-import { Auth } from "../auth";
-import { identityProvidersTable } from "../auth/sql";
-import { Sqs } from "../aws";
-import { Documents } from "../backend/documents";
-import { buildConflictUpdateColumns } from "../database/columns";
-import { afterTransaction, useTransaction } from "../database/context";
-import { Papercut } from "../papercut";
-import { poke } from "../replicache/poke";
-import { Tailscale } from "../tailscale";
-import { Constants } from "../utils/constants";
-import { fn, generateId } from "../utils/shared";
-import { useTenant } from "./context";
-import { updateTenantMutationArgsSchema } from "./shared";
-import { licensesTable, tenantMetadataTable, tenantsTable } from "./sql";
+import { ColumnsContract } from "../columns/contract";
+import { Database } from "../database";
+import { Events } from "../events";
+import { MutationsContract } from "../mutations/contract";
+import { PoliciesContract } from "../policies/contract";
+import { QueriesContract } from "../queries/contract";
+import { Replicache } from "../replicache";
+import { ReplicacheNotifier } from "../replicache/notifier";
+import { ReplicacheClientViewEntriesSchema } from "../replicache/schemas";
+import { LicensesContract, TenantsContract } from "./contracts";
+import { LicensesSchema, TenantMetadataSchema, TenantsSchema } from "./schemas";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { IdentityProvider } from "../auth/sql";
-import type { ConfigureData, InfraProgramInput, RegisterData } from "./shared";
-import type { License, Tenant, TenantMetadataTable, TenantsTable } from "./sql";
+import type { ReplicacheClientViewsSchema } from "../replicache/schemas";
 
 export namespace Tenants {
-  export const put = async (values: InferInsertModel<TenantsTable>) =>
-    useTransaction((tx) =>
-      tx
-        .insert(tenantsTable)
-        .values({ ...values, status: "setup" })
-        .onConflictDoUpdate({
-          target: [tenantsTable.id],
-          set: {
-            ...buildConflictUpdateColumns(tenantsTable, [
-              "id",
-              "name",
-              "subdomain",
-              "status",
-            ]),
-            version: sql`${tenantsTable.version} + 1`,
-            updatedAt: new Date(),
-          },
-          setWhere: eq(tenantsTable.status, "setup"),
-        }),
-    );
+  export class Repository extends Effect.Service<Repository>()(
+    "@printdesk/core/tenants/Repository",
+    {
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
+      ],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = TenantsSchema.table.definition;
 
-  export const read = async () =>
-    useTransaction((tx) =>
-      tx.select().from(tenantsTable).where(eq(tenantsTable.id, useTenant().id)),
-    );
+        const entriesQueryBuilder =
+          yield* Replicache.ClientViewEntriesQueryBuilder;
+        const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
-  export const byIdentityProvider = async (
-    kind: IdentityProvider["kind"],
-    id: IdentityProvider["id"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .select({ tenant: tenantsTable })
-        .from(tenantsTable)
-        .innerJoin(
-          identityProvidersTable,
-          eq(identityProvidersTable.tenantId, tenantsTable.id),
-        )
-        .where(
-          and(
-            eq(identityProvidersTable.kind, kind),
-            eq(identityProvidersTable.id, id),
-          ),
-        )
-        .then((rows) => R.pipe(rows, R.map(R.prop("tenant")), R.first())),
-    );
+        const upsert = Effect.fn("Tenants.Repository.upsert")(
+          (tenant: InferInsertModel<TenantsSchema.Table>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(tenant)
+                  .onConflictDoUpdate({
+                    target: [table.id],
+                    set: TenantsSchema.table.conflictSet,
+                  })
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
 
-  export const update = fn(updateTenantMutationArgsSchema, async (values) => {
-    await AccessControl.enforce(getTableName(tenantsTable), "update");
+        const findCreates = Effect.fn("Tenants.Repository.findCreates")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_creates`)
+                    .as(
+                      tx
+                        .select()
+                        .from(table)
+                        .where(eq(table.id, clientView.tenantId)),
+                    );
 
-    return useTransaction(async (tx) => {
-      await tx
-        .update(tenantsTable)
-        .set(values)
-        .where(eq(tenantsTable.id, useTenant().id));
-
-      await afterTransaction(() => poke("/tenant"));
-    });
-  });
-
-  export async function isSubdomainAvailable(subdomain: Tenant["subdomain"]) {
-    if (["api", "auth", "backend", "www"].includes(subdomain)) return false;
-
-    const tenant = await useTransaction((tx) =>
-      tx
-        .select({ status: tenantsTable.status })
-        .from(tenantsTable)
-        .where(eq(tenantsTable.subdomain, subdomain))
-        .then(R.first()),
-    );
-
-    return !tenant || tenant.status === "setup";
-  }
-
-  export const isLicenseKeyAvailable = async (licenseKey: License["key"]) =>
-    useTransaction((tx) =>
-      tx
-        .select({})
-        .from(licensesTable)
-        .leftJoin(tenantsTable, eq(tenantsTable.id, licensesTable.tenantId))
-        .where(
-          and(
-            eq(licensesTable.key, licenseKey),
-            eq(licensesTable.status, "active"),
-            or(
-              isNull(licensesTable.tenantId),
-              eq(tenantsTable.status, "setup"),
+                  return tx
+                    .with(cte)
+                    .select()
+                    .from(cte)
+                    .where(
+                      inArray(
+                        cte.id,
+                        tx.select({ id: cte.id }).from(cte).except(qb),
+                      ),
+                    );
+                }),
+              ),
             ),
-          ),
-        )
-        .then(R.isNot(R.isEmpty)),
-    );
+        );
 
-  export const assignLicense = async (
-    tenantId: Tenant["id"],
-    licenseKey: License["key"],
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .update(licensesTable)
-        .set({ tenantId })
-        .where(
-          and(
-            eq(licensesTable.key, licenseKey),
-            or(
-              isNull(licensesTable.tenantId),
-              eq(licensesTable.tenantId, tenantId),
+        const findUpdates = Effect.fn("Tenants.Repository.findUpdates")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
+              Effect.flatMap((qb) =>
+                db.useTransaction((tx) => {
+                  const cte = tx
+                    .$with(`${getTableName(table)}_updates`)
+                    .as(
+                      qb
+                        .innerJoin(
+                          table,
+                          and(
+                            eq(entriesTable.entityId, table.id),
+                            not(eq(entriesTable.entityVersion, table.version)),
+                            eq(entriesTable.tenantId, table.id),
+                          ),
+                        )
+                        .where(eq(table.id, clientView.tenantId)),
+                    );
+
+                  return tx
+                    .with(cte)
+                    .select(cte[getTableName(table)])
+                    .from(cte);
+                }),
+              ),
             ),
-          ),
-        ),
-    );
+        );
 
-  export const putMetadata = async (
-    values: InferInsertModel<TenantMetadataTable>,
-  ) =>
-    useTransaction((tx) =>
-      tx
-        .insert(tenantMetadataTable)
-        .values(values)
-        .onConflictDoUpdate({
-          target: [tenantMetadataTable.tenantId],
-          set: {
-            ...buildConflictUpdateColumns(tenantMetadataTable, [
-              "infraProgramInput",
-              "apiKey",
-            ]),
-            updatedAt: new Date(),
-          },
-        }),
-    );
+        const findDeletes = Effect.fn("Tenants.Repository.findDeletes")(
+          (clientView: ReplicacheClientViewsSchema.Row) =>
+            entriesQueryBuilder
+              .deletes(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) =>
+                    qb.except(
+                      tx
+                        .select({ id: table.id })
+                        .from(table)
+                        .where(eq(table.id, clientView.tenantId)),
+                    ),
+                  ),
+                ),
+              ),
+        );
 
-  export const readMetadata = async () =>
-    useTransaction((tx) =>
-      tx
-        .select()
-        .from(tenantMetadataTable)
-        .where(eq(tenantMetadataTable.tenantId, useTenant().id))
-        .then(R.first()),
-    );
+        const findFastForward = Effect.fn("Tenants.Repository.findFastForward")(
+          (
+            clientView: ReplicacheClientViewsSchema.Row,
+            excludeIds: Array<TenantsSchema.Row["id"]>,
+          ) =>
+            entriesQueryBuilder
+              .fastForward(getTableName(table), clientView)
+              .pipe(
+                Effect.flatMap((qb) =>
+                  db.useTransaction((tx) => {
+                    const cte = tx
+                      .$with(`${getTableName(table)}_fast_forward`)
+                      .as(
+                        qb
+                          .innerJoin(
+                            table,
+                            and(
+                              eq(entriesTable.entityId, table.id),
+                              notInArray(table.id, excludeIds),
+                            ),
+                          )
+                          .where(eq(table.id, clientView.tenantId)),
+                      );
 
-  export async function initialize(
-    licenseKey: License["key"],
-    infraProgramInput: InfraProgramInput,
-  ) {
-    const tenantId = generateId();
-    const apiKey = Auth.generateToken();
-    const hash = await Auth.hashSecret(apiKey);
+                    return tx
+                      .with(cte)
+                      .select(cte[getTableName(table)])
+                      .from(cte);
+                  }),
+                ),
+              ),
+        );
 
-    await useTransaction(() =>
-      Promise.all([
-        assignLicense(tenantId, licenseKey),
-        putMetadata({ tenantId, apiKey: hash, infraProgramInput }),
-      ]),
-    );
+        const findById = Effect.fn("Tenants.Repository.findById")(
+          (id: TenantsSchema.Row["id"]) =>
+            db
+              .useTransaction((tx) =>
+                tx.select().from(table).where(eq(table.id, id)),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
 
-    return { tenantId, apiKey };
-  }
+        const findBySubdomain = Effect.fn("Tenants.Repository.findBySubdomain")(
+          (subdomain: TenantsSchema.Row["subdomain"]) =>
+            db
+              .useTransaction((tx) =>
+                tx.select().from(table).where(eq(table.subdomain, subdomain)),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
 
-  export const register = async (data: RegisterData) =>
-    useTransaction(() =>
-      Promise.all([
-        put({
-          id: useTenant().id,
-          name: data.tenantName,
-          subdomain: data.tenantSubdomain,
-        }),
-        Auth.putIdentityProvider({
-          id: data.identityProviderId,
-          kind: data.identityProviderKind,
-          tenantId: useTenant().id,
-        }),
-      ]),
-    );
+        const updateById = Effect.fn("Tenants.Repository.updateById")(
+          (
+            id: TenantsSchema.Row["id"],
+            tenant: Partial<Omit<TenantsSchema.Row, "id">>,
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set(tenant)
+                  .where(eq(table.id, id))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
 
-  export async function dispatchInfra() {
-    const programInput = await useTransaction((tx) =>
-      tx
-        .select({ programInput: tenantMetadataTable.infraProgramInput })
-        .from(tenantMetadataTable)
-        .where(eq(tenantMetadataTable.tenantId, useTenant().id))
-        .then((rows) => R.pipe(rows, R.map(R.prop("programInput")), R.first())),
-    );
-    if (!programInput) throw new Error("Tenant metadata not found");
-
-    const output = await Sqs.sendMessage({
-      QueueUrl: Resource.InfraQueue.url,
-      MessageBody: JSON.stringify({
-        tenantId: useTenant().id,
-        ...programInput,
+        return {
+          upsert,
+          findCreates,
+          findUpdates,
+          findDeletes,
+          findFastForward,
+          findById,
+          findBySubdomain,
+          updateById,
+        } as const;
       }),
-    });
-    if (!output.MessageId) throw new Error("Failed to dispatch infra");
+    },
+  ) {}
 
-    return output.MessageId;
-  }
+  export class Queries extends Effect.Service<Queries>()(
+    "@printdesk/core/tenants/Queries",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
 
-  export const config = async (data: ConfigureData) =>
-    Promise.all([
-      Tailscale.setOauthClient(
-        data.tailscaleOauthClientId,
-        data.tailscaleOauthClientSecret,
-      ),
-      Papercut.setTailnetServerUri(data.tailnetPapercutServerUri),
-      Papercut.setServerAuthToken(data.papercutServerAuthToken),
-      Documents.setMimeTypes(Constants.DEFAULT_DOCUMENTS_MIME_TYPES),
-      Documents.setSizeLimit(Constants.DEFAULT_DOCUMENTS_SIZE_LIMIT),
-    ]);
+        const differenceResolver =
+          new QueriesContract.DifferenceResolverBuilder(
+            getTableName(TenantsSchema.table.definition),
+          )
+            .query(AccessControl.permission("tenants:read"), {
+              findCreates: repository.findCreates,
+              findUpdates: repository.findUpdates,
+              findDeletes: repository.findDeletes,
+              fastForward: repository.findFastForward,
+            })
+            .build();
 
-  export const activate = async () =>
-    useTransaction((tx) =>
-      Promise.all([
-        tx
-          .update(tenantsTable)
-          .set({ status: "active" })
-          .where(eq(tenantsTable.id, useTenant().id)),
-        tx
-          .update(tenantMetadataTable)
-          .set({ apiKey: null })
-          .where(eq(tenantMetadataTable.tenantId, useTenant().id)),
-      ]),
-    );
+        return { differenceResolver } as const;
+      }),
+    },
+  ) {}
+
+  export class Mutations extends Effect.Service<Mutations>()(
+    "@printdesk/core/tenants/Mutations",
+    {
+      accessors: true,
+      dependencies: [Repository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* Repository;
+
+        const notifier = yield* ReplicacheNotifier;
+        const PullPermission = yield* Events.ReplicachePullPermission;
+
+        const notifyEdit = (_tenant: TenantsContract.DataTransferObject) =>
+          notifier.notify(
+            Array.make(PullPermission.make({ permission: "tenants:read" })),
+          );
+
+        const edit = MutationsContract.makeMutation(TenantsContract.edit, {
+          makePolicy: Effect.fn("Tenants.Mutations.edit.makePolicy")(() =>
+            AccessControl.permission("tenants:update"),
+          ),
+          mutator: Effect.fn("Tenants.Mutations.edit.mutator")(
+            (tenant, session) =>
+              repository
+                .updateById(session.tenantId, tenant)
+                .pipe(Effect.tap(notifyEdit)),
+          ),
+        });
+
+        return { edit } as const;
+      }),
+    },
+  ) {}
+
+  export class LicensesRepository extends Effect.Service<LicensesRepository>()(
+    "@printdesk/core/tenants/LicensesRepository",
+    {
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = LicensesSchema.table.definition;
+
+        const findByKeyWithTenant = Effect.fn(
+          "Tenants.LicensesRepository.findByKey",
+        )((key: LicensesSchema.Row["key"]) =>
+          db
+            .useTransaction((tx) =>
+              tx
+                .select({
+                  license: table,
+                  tenant: TenantsSchema.table.definition,
+                })
+                .from(table)
+                .leftJoin(
+                  TenantsSchema.table.definition,
+                  eq(TenantsSchema.table.definition.id, table.tenantId),
+                )
+                .where(eq(table.key, key)),
+            )
+            .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const updateByKey = Effect.fn("Tenants.LicensesRepository.updateByKey")(
+          (
+            key: LicensesSchema.Row["key"],
+            license: Partial<Omit<LicensesSchema.Row, "key">>,
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set(license)
+                  .where(eq(table.key, key))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        return { findByKeyWithTenant, updateByKey } as const;
+      }),
+    },
+  ) {}
+
+  export class LicensePolicies extends Effect.Service<LicensePolicies>()(
+    "@printdesk/core/tenants/LicensePolicies",
+    {
+      accessors: true,
+      dependencies: [LicensesRepository.Default],
+      effect: Effect.gen(function* () {
+        const repository = yield* LicensesRepository;
+
+        const isAvailable = PoliciesContract.makePolicy(
+          LicensesContract.isAvailable,
+          {
+            make: Effect.fn("Tenants.LicensesPolicies.isAvailable.make")(
+              ({ key }) =>
+                AccessControl.policy(() =>
+                  repository
+                    .findByKeyWithTenant(key)
+                    .pipe(
+                      Effect.map(
+                        ({ license, tenant }) =>
+                          license.status === "active" &&
+                          (license.tenantId === null ||
+                            tenant?.status === "setup"),
+                      ),
+                    ),
+                ),
+            ),
+          },
+        );
+
+        return { isAvailable } as const;
+      }),
+    },
+  ) {}
+
+  export class MetadataRepository extends Effect.Service<MetadataRepository>()(
+    "@printdesk/core/tenants/MetadataRepository",
+    {
+      dependencies: [Database.TransactionManager.Default],
+      effect: Effect.gen(function* () {
+        const db = yield* Database.TransactionManager;
+        const table = TenantMetadataSchema.table.definition;
+
+        const upsert = Effect.fn("Tenants.MetadataRepository.upsert")(
+          (metadata: InferInsertModel<TenantMetadataSchema.Table>) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .insert(table)
+                  .values(metadata)
+                  .onConflictDoUpdate({
+                    target: [table.tenantId],
+                    set: TenantMetadataSchema.table.conflictSet,
+                  })
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const findByTenant = Effect.fn(
+          "Tenants.MetadataRepository.findByTenant",
+        )((tenantId: TenantsSchema.Row["id"]) =>
+          db
+            .useTransaction((tx) =>
+              tx
+                .select()
+                .from(table)
+                .where(
+                  eq(table.tenantId, ColumnsContract.TenantId.make(tenantId)),
+                ),
+            )
+            .pipe(Effect.flatMap(Array.head)),
+        );
+
+        return { upsert, findByTenant } as const;
+      }),
+    },
+  ) {}
 }

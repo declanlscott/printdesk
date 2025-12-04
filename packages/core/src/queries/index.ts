@@ -6,31 +6,31 @@ import * as Number from "effect/Number";
 import * as Option from "effect/Option";
 import * as Stream from "effect/Stream";
 
-import { Announcements } from "../announcements2";
-import { Comments } from "../comments2";
-import { DeliveryOptions } from "../delivery-options2";
-import { Groups } from "../groups2";
-import { Invoices } from "../invoices2";
-import { Models } from "../models2";
-import { Orders } from "../orders2";
-import { Products } from "../products2";
-import { ReplicacheContract } from "../replicache2/contract";
-import { ReplicacheClientViewEntriesModel } from "../replicache2/models";
-import { Rooms } from "../rooms2";
-import { SharedAccounts } from "../shared-accounts2";
-import { Tenants } from "../tenants2";
-import { Users } from "../users2";
+import { Announcements } from "../announcements";
+import { Comments } from "../comments";
+import { DeliveryOptions } from "../delivery-options";
+import { Groups } from "../groups";
+import { Invoices } from "../invoices";
+import { Models } from "../models";
+import { Orders } from "../orders";
+import { Products } from "../products";
+import { ReplicacheContract } from "../replicache/contract";
+import { ReplicacheClientViewEntriesModel } from "../replicache/models";
+import { Rooms } from "../rooms";
+import { SharedAccounts } from "../shared-accounts";
+import { Tenants } from "../tenants";
+import { Users } from "../users";
 import { Constants } from "../utils/constants";
 import {
   RoomWorkflows,
   SharedAccountWorkflows,
   WorkflowStatuses,
-} from "../workflows2";
+} from "../workflows";
 import { QueriesContract } from "./contract";
 
-import type { AuthContract } from "../auth2/contract";
-import type { ColumnsContract } from "../columns2/contract";
-import type { ReplicacheClientViewsModel } from "../replicache2/models";
+import type { AuthContract } from "../auth/contract";
+import type { ColumnsContract } from "../columns/contract";
+import type { ReplicacheClientViewsModel } from "../replicache/models";
 
 export namespace Queries {
   export class DifferenceLimitExceededError extends Data.TaggedError(

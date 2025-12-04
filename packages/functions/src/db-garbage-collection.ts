@@ -1,7 +1,7 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
-import { Database } from "@printdesk/core/database2";
-import { Replicache } from "@printdesk/core/replicache2";
+import { Database } from "@printdesk/core/database";
+import { Replicache } from "@printdesk/core/replicache";
 import { Sst } from "@printdesk/core/sst";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";

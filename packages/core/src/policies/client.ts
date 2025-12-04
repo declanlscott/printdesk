@@ -1,11 +1,11 @@
 import * as Effect from "effect/Effect";
 
-import { Comments } from "../comments2/client";
-import { Orders } from "../orders2/client";
+import { Comments } from "../comments/client";
+import { Orders } from "../orders/client";
 import { Procedures } from "../procedures";
-import { SharedAccounts } from "../shared-accounts2/client";
-import { Users } from "../users2/client";
-import { SharedAccountWorkflows } from "../workflows2/client";
+import { SharedAccounts } from "../shared-accounts/client";
+import { Users } from "../users/client";
+import { SharedAccountWorkflows } from "../workflows/client";
 import { PoliciesContract } from "./contract";
 
 export namespace Policies {

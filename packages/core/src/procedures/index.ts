@@ -1,24 +1,24 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
-import { AnnouncementsContract } from "../announcements2/contract";
-import { CommentsContract } from "../comments2/contract";
-import { DeliveryOptionsContract } from "../delivery-options2/contract";
-import { InvoicesContract } from "../invoices2/contract";
-import { OrdersContract } from "../orders2/contract";
-import { ProductsContract } from "../products2/contract";
-import { ReplicacheContract } from "../replicache2/contract";
-import { RoomsContract } from "../rooms2/contract";
+import { AnnouncementsContract } from "../announcements/contract";
+import { CommentsContract } from "../comments/contract";
+import { DeliveryOptionsContract } from "../delivery-options/contract";
+import { InvoicesContract } from "../invoices/contract";
+import { OrdersContract } from "../orders/contract";
+import { ProductsContract } from "../products/contract";
+import { ReplicacheContract } from "../replicache/contract";
+import { RoomsContract } from "../rooms/contract";
 import {
   SharedAccountManagerAccessContract,
   SharedAccountsContract,
-} from "../shared-accounts2/contracts";
-import { TenantsContract } from "../tenants2/contracts";
-import { UsersContract } from "../users2/contract";
+} from "../shared-accounts/contracts";
+import { TenantsContract } from "../tenants/contracts";
+import { UsersContract } from "../users/contract";
 import {
   SharedAccountWorkflowsContract,
   WorkflowStatusesContract,
-} from "../workflows2/contracts";
+} from "../workflows/contracts";
 import { ProceduresContract } from "./contract";
 
 export namespace Procedures {

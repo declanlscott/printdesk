@@ -1,11 +1,11 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import { Logger } from "@effect-aws/powertools-logger";
 import { issuer } from "@openauthjs/openauth";
-import { Auth } from "@printdesk/core/auth2";
-import { AuthContract } from "@printdesk/core/auth2/contract";
-import { Database } from "@printdesk/core/database2";
-import { Graph } from "@printdesk/core/graph2";
-import { IdentityProvidersContract } from "@printdesk/core/identity-providers2/contract";
+import { Auth } from "@printdesk/core/auth";
+import { AuthContract } from "@printdesk/core/auth/contract";
+import { Database } from "@printdesk/core/database";
+import { Graph } from "@printdesk/core/graph";
+import { IdentityProvidersContract } from "@printdesk/core/identity-providers/contract";
 import { Sst } from "@printdesk/core/sst";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Cause from "effect/Cause";

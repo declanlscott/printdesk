@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 
-import { Credentials, Signers } from "./src/aws2";
+import { Credentials, Signers } from "./src/aws";
 import { Sst } from "./src/sst";
 
 const runtime = ManagedRuntime.make(

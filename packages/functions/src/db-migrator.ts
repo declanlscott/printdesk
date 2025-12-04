@@ -1,6 +1,6 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import * as Logger from "@effect-aws/powertools-logger";
-import { Database } from "@printdesk/core/database2";
+import { Database } from "@printdesk/core/database";
 import { Sst } from "@printdesk/core/sst";
 import { sql } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";

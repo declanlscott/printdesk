@@ -1,8 +1,10 @@
+import * as Array from "effect/Array";
 import * as Cause from "effect/Cause";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
+import type * as Option from "effect/Option";
 import type {
   ReadTransaction as ReadTx,
   WriteTransaction as WriteTx,
@@ -131,11 +133,12 @@ export namespace Replicache {
       const findById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>
         get(table, id);
 
-      const findWhere = <TSuccess>(
+      const findWhere = <TValue>(
         filter: (
-          all: ReadonlyArray<TTable["DataTransferObject"]["Type"]>,
-        ) => TSuccess,
-      ) => findAll.pipe(Effect.map(filter));
+          value: TTable["DataTransferObject"]["Type"],
+          index: number,
+        ) => Option.Option<TValue>,
+      ) => findAll.pipe(Effect.map(Array.filterMap(filter)));
 
       return { findAll, findById, findWhere } as const;
     });
@@ -154,14 +157,14 @@ export namespace Replicache {
 
       const updateById = (
         id: TTable["DataTransferObject"]["Type"]["id"],
-        update: (
+        next: (
           prev: TTable["DataTransferObject"]["Type"],
         ) => Partial<
           Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
         >,
       ) =>
         readRepository.findById(id).pipe(
-          Effect.map((prev) => ({ ...prev, ...update(prev) })),
+          Effect.map((prev) => ({ ...prev, ...next(prev) })),
           Effect.flatMap((next) => set(table, next.id, next)),
         );
 

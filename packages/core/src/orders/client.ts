@@ -53,13 +53,11 @@ export namespace Orders {
         const findByWorkflowStatusId = (
           workflowStatusId: ColumnsContract.EntityId,
         ) =>
-          base.findWhere(
-            Array.filterMap((order) =>
-              order.roomWorkflowStatusId === workflowStatusId ||
-              order.sharedAccountWorkflowStatusId === workflowStatusId
-                ? Option.some(order)
-                : Option.none(),
-            ),
+          base.findWhere((order) =>
+            order.roomWorkflowStatusId === workflowStatusId ||
+            order.sharedAccountWorkflowStatusId === workflowStatusId
+              ? Option.some(order)
+              : Option.none(),
           );
 
         const findActiveManagerIds = (
@@ -69,13 +67,11 @@ export namespace Orders {
             .findById(id)
             .pipe(
               Effect.flatMap((order) =>
-                sharedAccountManagerAccessRepository.findWhere(
-                  Array.filterMap((access) =>
-                    access.sharedAccountId === order.sharedAccountId &&
-                    access.deletedAt === null
-                      ? Option.some(access.managerId)
-                      : Option.none(),
-                  ),
+                sharedAccountManagerAccessRepository.findWhere((access) =>
+                  access.sharedAccountId === order.sharedAccountId &&
+                  access.deletedAt === null
+                    ? Option.some(access.managerId)
+                    : Option.none(),
                 ),
               ),
             );

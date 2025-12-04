@@ -238,13 +238,11 @@ export namespace SharedAccounts {
             .findById(id)
             .pipe(
               Effect.flatMap((sharedAccount) =>
-                customerAccessRepository.findWhere(
-                  Array.filterMap((access) =>
-                    access.sharedAccountId === sharedAccount.id &&
-                    access.deletedAt === null
-                      ? Option.some(access.customerId)
-                      : Option.none(),
-                  ),
+                customerAccessRepository.findWhere((access) =>
+                  access.sharedAccountId === sharedAccount.id &&
+                  access.deletedAt === null
+                    ? Option.some(access.customerId)
+                    : Option.none(),
                 ),
               ),
             );
@@ -256,13 +254,11 @@ export namespace SharedAccounts {
             .findById(id)
             .pipe(
               Effect.flatMap((sharedAccount) =>
-                managerAccessRepository.findWhere(
-                  Array.filterMap((access) =>
-                    access.sharedAccountId === sharedAccount.id &&
-                    access.deletedAt === null
-                      ? Option.some(access.managerId)
-                      : Option.none(),
-                  ),
+                managerAccessRepository.findWhere((access) =>
+                  access.sharedAccountId === sharedAccount.id &&
+                  access.deletedAt === null
+                    ? Option.some(access.managerId)
+                    : Option.none(),
                 ),
               ),
             );
@@ -274,13 +270,11 @@ export namespace SharedAccounts {
             .findById(id)
             .pipe(
               Effect.flatMap((sharedAccount) =>
-                customerGroupAccessRepository.findWhere(
-                  Array.filterMap((access) =>
-                    access.sharedAccountId === sharedAccount.id &&
-                    access.deletedAt === null
-                      ? Option.some(access.customerGroupId)
-                      : Option.none(),
-                  ),
+                customerGroupAccessRepository.findWhere((access) =>
+                  access.sharedAccountId === sharedAccount.id &&
+                  access.deletedAt === null
+                    ? Option.some(access.customerGroupId)
+                    : Option.none(),
                 ),
               ),
             );

@@ -44,13 +44,11 @@ export namespace Groups {
             .findById(id)
             .pipe(
               Effect.flatMap((group) =>
-                membershipsRepository.findWhere(
-                  Array.filterMap((membership) =>
-                    membership.customerGroupId === group.id &&
-                    membership.deletedAt === null
-                      ? Option.some(membership.memberId)
-                      : Option.none(),
-                  ),
+                membershipsRepository.findWhere((membership) =>
+                  membership.customerGroupId === group.id &&
+                  membership.deletedAt === null
+                    ? Option.some(membership.memberId)
+                    : Option.none(),
                 ),
               ),
             );

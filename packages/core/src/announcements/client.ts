@@ -1,4 +1,3 @@
-import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
@@ -44,12 +43,10 @@ export namespace Announcements {
           >,
         ) =>
           repository
-            .findWhere(
-              Array.filterMap((a) =>
-                a.roomId === roomId
-                  ? Option.some(base.updateById(a.id, () => announcement))
-                  : Option.none(),
-              ),
+            .findWhere((a) =>
+              a.roomId === roomId
+                ? Option.some(base.updateById(a.id, () => announcement))
+                : Option.none(),
             )
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
@@ -57,12 +54,10 @@ export namespace Announcements {
           roomId: AnnouncementsContract.DataTransferObject["roomId"],
         ) =>
           repository
-            .findWhere(
-              Array.filterMap((a) =>
-                a.roomId === roomId
-                  ? Option.some(base.deleteById(a.id))
-                  : Option.none(),
-              ),
+            .findWhere((a) =>
+              a.roomId === roomId
+                ? Option.some(base.deleteById(a.id))
+                : Option.none(),
             )
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 

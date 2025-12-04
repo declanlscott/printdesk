@@ -57,12 +57,10 @@ export namespace RoomWorkflows {
           >,
         ) =>
           repository
-            .findWhere(
-              Array.filterMap((w) =>
-                w.roomId === roomId
-                  ? Option.some(base.updateById(w.id, () => roomWorkflow))
-                  : Option.none(),
-              ),
+            .findWhere((w) =>
+              w.roomId === roomId
+                ? Option.some(base.updateById(w.id, () => roomWorkflow))
+                : Option.none(),
             )
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
@@ -70,12 +68,10 @@ export namespace RoomWorkflows {
           roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
         ) =>
           repository
-            .findWhere(
-              Array.filterMap((w) =>
-                w.roomId === roomId
-                  ? Option.some(base.deleteById(w.id))
-                  : Option.none(),
-              ),
+            .findWhere((w) =>
+              w.roomId === roomId
+                ? Option.some(base.deleteById(w.id))
+                : Option.none(),
             )
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
@@ -112,13 +108,11 @@ export namespace SharedAccountWorkflows {
             .findById(id)
             .pipe(
               Effect.flatMap((workflow) =>
-                sharedAccountCustomerAccessRepository.findWhere(
-                  Array.filterMap((access) =>
-                    access.sharedAccountId === workflow.sharedAccountId &&
-                    access.customerId === customerId
-                      ? Option.some(workflow)
-                      : Option.none(),
-                  ),
+                sharedAccountCustomerAccessRepository.findWhere((access) =>
+                  access.sharedAccountId === workflow.sharedAccountId &&
+                  access.customerId === customerId
+                    ? Option.some(workflow)
+                    : Option.none(),
                 ),
               ),
             );
@@ -129,13 +123,11 @@ export namespace SharedAccountWorkflows {
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflow) =>
-              sharedAccountManagerAccessRepository.findWhere(
-                Array.filterMap((access) =>
-                  access.sharedAccountId === workflow.sharedAccountId &&
-                  access.managerId === managerId
-                    ? Option.some(workflow)
-                    : Option.none(),
-                ),
+              sharedAccountManagerAccessRepository.findWhere((access) =>
+                access.sharedAccountId === workflow.sharedAccountId &&
+                access.managerId === managerId
+                  ? Option.some(workflow)
+                  : Option.none(),
               ),
             ),
             Effect.flatMap(Array.head),
@@ -226,13 +218,11 @@ export namespace WorkflowStatuses {
 
         const findLastByWorkflowId = (workflowId: ColumnsContract.EntityId) =>
           base
-            .findWhere(
-              Array.filterMap((ws) =>
-                ws.roomWorkflowId === workflowId ||
-                ws.sharedAccountWorkflowId === workflowId
-                  ? Option.some(ws)
-                  : Option.none(),
-              ),
+            .findWhere((ws) =>
+              ws.roomWorkflowId === workflowId ||
+              ws.sharedAccountWorkflowId === workflowId
+                ? Option.some(ws)
+                : Option.none(),
             )
             .pipe(
               Effect.map(
@@ -247,18 +237,16 @@ export namespace WorkflowStatuses {
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflowStatus) =>
-              base.findWhere(
-                Array.filterMap((ws) =>
-                  (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
-                    ws.sharedAccountWorkflowId ===
-                      workflowStatus.sharedAccountWorkflowId) &&
-                  Number.between(ws.index, {
-                    minimum: Number.min(workflowStatus.index, index),
-                    maximum: Number.max(workflowStatus.index, index),
-                  })
-                    ? Option.some(ws)
-                    : Option.none(),
-                ),
+              base.findWhere((ws) =>
+                (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
+                  ws.sharedAccountWorkflowId ===
+                    workflowStatus.sharedAccountWorkflowId) &&
+                Number.between(ws.index, {
+                  minimum: Number.min(workflowStatus.index, index),
+                  maximum: Number.max(workflowStatus.index, index),
+                })
+                  ? Option.some(ws)
+                  : Option.none(),
               ),
             ),
             Effect.map(
@@ -273,15 +261,13 @@ export namespace WorkflowStatuses {
             .findById(id)
             .pipe(
               Effect.flatMap((workflowStatus) =>
-                base.findWhere(
-                  Array.filterMap((ws) =>
-                    (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
-                      ws.sharedAccountWorkflowId ===
-                        workflowStatus.sharedAccountWorkflowId) &&
-                    ws.index >= workflowStatus.index
-                      ? Option.some(ws)
-                      : Option.none(),
-                  ),
+                base.findWhere((ws) =>
+                  (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
+                    ws.sharedAccountWorkflowId ===
+                      workflowStatus.sharedAccountWorkflowId) &&
+                  ws.index >= workflowStatus.index
+                    ? Option.some(ws)
+                    : Option.none(),
                 ),
               ),
             );

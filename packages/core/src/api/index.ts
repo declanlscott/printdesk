@@ -31,6 +31,7 @@ export namespace Api {
           HttpClient.mapRequest(HttpClientRequest.prependUrl(baseUrl)),
         ),
         Effect.map(HttpClient.mapRequestEffect(signer.signRequest)),
+        Effect.map(HttpClient.filterStatusOk),
       );
 
       return { client } as const;

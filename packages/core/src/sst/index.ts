@@ -1,6 +1,5 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as ManagedRuntime from "effect/ManagedRuntime";
 import { Resource as SstResource } from "sst";
 
 import type { Context } from "effect";
@@ -20,6 +19,4 @@ export namespace Sst {
       }),
     );
   }
-
-  export const runtime = ManagedRuntime.make(Sst.Resource.layer);
 }

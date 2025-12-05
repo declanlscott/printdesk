@@ -1,4 +1,5 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
+import { getSignedUrl } from "@aws-sdk/cloudfront-signer";
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { DsqlSigner } from "@effect-aws/dsql";
 import * as HttpClientError from "@effect/platform/HttpClientError";
@@ -18,6 +19,7 @@ import * as Struct from "effect/Struct";
 
 import { Sst } from "../sst";
 
+import type { CloudfrontSignInput } from "@aws-sdk/cloudfront-signer";
 import type * as HttpBody from "@effect/platform/HttpBody";
 import type {
   AwsCredentialIdentity,
@@ -78,6 +80,74 @@ export namespace Credentials {
 }
 
 export namespace Signers {
+  export namespace Cloudfront {
+    export class SignerError extends Data.TaggedError("SignerError")<{
+      readonly cause: unknown;
+    }> {}
+
+    export interface RequestSigningArguments extends Omit<
+      CloudfrontSignInput,
+      | "url"
+      | "keyPairId"
+      | "privateKey"
+      | "dateLessThan"
+      | "dateGreaterThan"
+      | "policy"
+    > {
+      expiresIn: Duration.Duration;
+    }
+
+    export class Signer extends Effect.Service<Signer>()(
+      "@printdesk/core/aws/CloudfrontSigner",
+      {
+        dependencies: [Sst.Resource.layer],
+        effect: Effect.gen(function* () {
+          const keyPairId = yield* Sst.Resource.CloudfrontKeyGroup.pipe(
+            Effect.map(Redacted.value),
+            Effect.map(Struct.get("id")),
+          );
+          const privateKey = yield* Sst.Resource.CloudfrontPrivateKey.pipe(
+            Effect.map(Redacted.value),
+            Effect.map(Struct.get("pem")),
+          );
+
+          const signUrl = Effect.fn("CloudfrontSigner.signUrl")(
+            (...args: Parameters<typeof getSignedUrl>) =>
+              Effect.try({
+                try: () => new URL(getSignedUrl(...args)),
+                catch: (error) => new SignerError({ cause: error }),
+              }),
+          );
+
+          const signRequest = Effect.fn("CloudfrontSigner.signRequest")(
+            (
+              request: HttpClientRequest.HttpClientRequest,
+              { expiresIn, ...args }: RequestSigningArguments = {
+                expiresIn: Duration.seconds(60),
+              },
+            ) =>
+              signUrl({
+                ...args,
+                url: request.url,
+                keyPairId,
+                privateKey,
+                dateLessThan: DateTime.unsafeNow().pipe(
+                  DateTime.addDuration(expiresIn),
+                  DateTime.toDateUtc,
+                ),
+              }).pipe(
+                Effect.map((url) =>
+                  request.pipe(HttpClientRequest.setUrl(url)),
+                ),
+              ),
+          );
+
+          return { signRequest } as const;
+        }),
+      },
+    ) {}
+  }
+
   export namespace Dsql {
     export const Signer = DsqlSigner;
 

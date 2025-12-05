@@ -27,12 +27,15 @@ export namespace Api {
         ),
       );
 
-      const signer = yield* Signers.ExecuteApi;
+      const apiSigner = yield* Signers.ExecuteApi;
+      const cloudfrontSigner = yield* Signers.Cloudfront.Signer;
+
       const client = yield* HttpClient.HttpClient.pipe(
         Effect.map(
           HttpClient.mapRequest(HttpClientRequest.prependUrl(baseUrl)),
         ),
-        Effect.map(HttpClient.mapRequestEffect(signer.signRequest)),
+        Effect.map(HttpClient.mapRequestEffect(apiSigner.signRequest)),
+        Effect.map(HttpClient.mapRequestEffect(cloudfrontSigner.signRequest)),
         Effect.map(HttpClient.filterStatusOk),
       );
 

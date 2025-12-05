@@ -15,9 +15,9 @@ import * as Exit from "effect/Exit";
 import * as Function from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
 import * as Runtime from "effect/Runtime";
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
 import { Hono } from "hono";
 import { handle } from "hono/aws-lambda";
 import { createMiddleware } from "hono/factory";
@@ -43,12 +43,10 @@ class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
     const crypto = yield* Auth.Crypto;
     const resource = yield* Sst.Resource;
 
-    const domain = yield* resource.Domains.pipe(Effect.map(Struct.get("auth")));
-    const routerSecret = yield* resource.RouterSecret.pipe(
-      Effect.map(Struct.get("value")),
-    );
-
     const runtime = yield* Effect.runtime();
+
+    const domain = resource.Domains.pipe(Redacted.value).auth;
+    const routerSecret = resource.RouterSecret.pipe(Redacted.value).value;
 
     const app = new Hono()
       .use(

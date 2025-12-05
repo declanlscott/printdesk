@@ -8,6 +8,7 @@ import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
+import * as Redacted from "effect/Redacted";
 import * as Ref from "effect/Ref";
 import * as Runtime from "effect/Runtime";
 import * as Schedule from "effect/Schedule";
@@ -92,7 +93,9 @@ export namespace Database {
       accessors: true,
       dependencies: [Logger.Default],
       scoped: Effect.gen(function* () {
-        const dsqlCluster = yield* Sst.Resource.DsqlCluster;
+        const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
+          Effect.map(Redacted.value),
+        );
 
         const pool = yield* Effect.acquireRelease(
           Effect.sync(

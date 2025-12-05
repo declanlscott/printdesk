@@ -51,23 +51,16 @@ export namespace Auth {
           externalTenantId: IdentityProvidersContract.DataTransferObject["externalTenantId"],
         ) =>
           Effect.gen(function* () {
-            const resource = yield* Sst.Resource;
-
             const { clientId, clientSecret } =
-              yield* resource.IdentityProviders.pipe(
+              yield* Sst.Resource.IdentityProviders.pipe(
+                Effect.map(Redacted.value),
                 Effect.map(Struct.get(Constants.ENTRA_ID)),
-                Effect.map(
-                  Struct.evolve({
-                    clientId: Redacted.make<string>,
-                    clientSecret: Redacted.make<string>,
-                  }),
-                ),
               );
 
             const client = new ConfidentialClientApplication({
               auth: {
-                clientId: Redacted.value(clientId),
-                clientSecret: Redacted.value(clientSecret),
+                clientId,
+                clientSecret,
                 authority: `https://login.microsoftonline.com/${externalTenantId}`,
               },
             });
@@ -112,11 +105,8 @@ export namespace Auth {
         Users.Repository.Default,
       ],
       effect: Effect.gen(function* () {
-        const resource = yield* Sst.Resource;
-        const identityProvidersRepository = yield* IdentityProviders.Repository;
-        const usersRepository = yield* Users.Repository;
-
-        const providers = yield* resource.IdentityProviders.pipe(
+        const providers = yield* Sst.Resource.IdentityProviders.pipe(
+          Effect.map(Redacted.value),
           Effect.map((providers) => ({
             [Constants.ENTRA_ID]: EntraId.provider({
               tenant: "organizations",
@@ -126,6 +116,8 @@ export namespace Auth {
             }),
           })),
         );
+        const identityProvidersRepository = yield* IdentityProviders.Repository;
+        const usersRepository = yield* Users.Repository;
 
         const handleUser = Effect.fn("Auth.handleUserSubject")(
           (

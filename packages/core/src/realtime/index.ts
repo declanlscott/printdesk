@@ -3,6 +3,7 @@ import * as HttpClient from "@effect/platform/HttpClient";
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
 import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
+import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
@@ -29,18 +30,17 @@ export namespace Realtime {
         Procedures.Policies.Default,
       ],
       effect: Effect.gen(function* () {
+        const resource = yield* Sst.Resource;
+
         const maybeSession = yield* Effect.serviceOption(Auth.Session);
-        const dns = yield* Sst.Resource.AppsyncEventApi.pipe(
-          Effect.map(Struct.get("dns")),
-        );
-        const nameTemplate = yield* Sst.Resource.TenantDomains.pipe(
-          Effect.map(Struct.get("realtime")),
-          Effect.map(Struct.get("nameTemplate")),
-        );
         const signer = yield* Signers.Appsync;
         const httpClient = yield* HttpClient.HttpClient;
 
         const Event = yield* Events.Event;
+
+        const dns = resource.AppsyncEventApi.pipe(Redacted.value).dns;
+        const nameTemplate = resource.TenantDomains.pipe(Redacted.value)
+          .realtime.nameTemplate;
 
         const url = maybeSession.pipe(
           Option.match({

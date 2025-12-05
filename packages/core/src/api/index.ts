@@ -2,6 +2,7 @@ import * as FetchHttpClient from "@effect/platform/FetchHttpClient";
 import * as HttpClient from "@effect/platform/HttpClient";
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
 
 import { Auth } from "../auth";
 import { Signers } from "../aws";
@@ -19,6 +20,7 @@ export namespace Api {
     effect: Effect.gen(function* () {
       const session = yield* Auth.Session;
       const baseUrl = yield* Sst.Resource.TenantDomains.pipe(
+        Effect.map(Redacted.value),
         Effect.map(
           (domains) =>
             `https://${buildName(domains.api.nameTemplate, session.tenantId)}`,

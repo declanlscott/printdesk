@@ -14,6 +14,7 @@ import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
+import * as Struct from "effect/Struct";
 
 import { Sst } from "../sst";
 
@@ -88,8 +89,10 @@ export namespace Signers {
       Layer.unwrapEffect(
         Effect.gen(function* () {
           const credentials = yield* Credentials.values;
-          const dsqlCluster = yield* Sst.Resource.DsqlCluster;
-          const aws = yield* Sst.Resource.Aws;
+          const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
+            Effect.map(Redacted.value),
+          );
+          const aws = yield* Sst.Resource.Aws.pipe(Effect.map(Redacted.value));
 
           return DsqlSigner.layer({
             credentials,
@@ -112,31 +115,35 @@ export namespace Signers {
     readonly cause: unknown;
   }> {}
 
-  export interface RequestPresigningArguments
-    extends Omit<
-      SmithyRequestPresigningArguments,
-      "expiresIn" | "signingDate"
-    > {
+  export interface RequestPresigningArguments extends Omit<
+    SmithyRequestPresigningArguments,
+    "expiresIn" | "signingDate"
+  > {
     expiresIn?: Duration.Duration;
     signingDate?: DateTime.Utc;
   }
 
-  export interface RequestSigningArguments
-    extends Omit<SmithyRequestSigningArguments, "signingDate"> {
+  export interface RequestSigningArguments extends Omit<
+    SmithyRequestSigningArguments,
+    "signingDate"
+  > {
     signingDate?: DateTime.Utc;
   }
 
   export const makeSignatureV4Signer = (service: string) =>
     Effect.gen(function* () {
       const credentials = yield* Credentials.values;
-      const aws = yield* Sst.Resource.Aws;
+      const region = yield* Sst.Resource.Aws.pipe(
+        Effect.map(Redacted.value),
+        Effect.map(Struct.get("region")),
+      );
 
       const signatureV4 = yield* Effect.try({
         try: () =>
           new SignatureV4({
             credentials,
             sha256: Sha256,
-            region: aws.region,
+            region,
             service,
           }),
         catch: (cause) => new SignatureV4Error({ cause }),

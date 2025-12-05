@@ -146,11 +146,11 @@ class Realtime(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__ssl = ssl.Ssl(
+        self.__ssl = ssl.DnsValidatedCertificate(
             name="Realtime",
-            args=ssl.SslArgs(
+            args=ssl.DnsValidatedCertificateArgs(
                 tenant_id=args.tenant_id,
-                domain_name_template=Resource.TenantDomains.realtime.nameTemplate,
+                domain_name=naming.template(Resource.TenantDomains.realtime.nameTemplate, args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )

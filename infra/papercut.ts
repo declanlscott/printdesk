@@ -1,7 +1,7 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { identityProviders } from "./auth";
-import { cloudfrontPrivateKey, cloudfrontPublicKey } from "./cdn";
+import { cloudfrontPrivateKey, cloudfrontPublicKey, routerSecret } from "./cdn";
 import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import { tenantRoles } from "./iam";
@@ -39,6 +39,7 @@ export const papercutTailgateResourceCiphertext = new lib.Ciphertext(
         aws_,
         headerKeys,
         papercutServer,
+        routerSecret,
         tenantDomains,
       ),
     ),

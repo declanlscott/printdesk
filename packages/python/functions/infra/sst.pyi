@@ -116,6 +116,8 @@ class Resource:
             nameTemplate: str
         type: str
     class TenantDomains:
+        class cdn: 
+            nameTemplate: str
         class api:
             nameTemplate: str
         class storage:

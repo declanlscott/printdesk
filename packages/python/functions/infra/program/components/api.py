@@ -127,7 +127,6 @@ class Api(pulumi.ComponentResource):
                     variables={
                         "TENANT_ID": args.tenant_id,
                         "SST_KEY": Resource.TenantApiFunctionResourceCiphertext.encryptionKey,
-                        "SST_RESOURCE_RouterSecret": args.static_config.parameters.router_secret_sst_resource.value,
                     }
                 ),
                 tags=tags(args.tenant_id),
@@ -364,10 +363,6 @@ class Api(pulumi.ComponentResource):
                                 "name": "SST_KEY",
                                 "valueFrom": Resource.PapercutTailgateSstKeyParameter.arn,
                             },
-                            {
-                                "name": "SST_RESOURCE_RouterSecret",
-                                "valueFrom": args.static_config.parameters.router_secret_sst_resource.arn,
-                            }
                         ]
                     }
                 ]),

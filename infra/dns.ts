@@ -54,6 +54,7 @@ export const domains = new sst.Linkable("Domains", {
 });
 
 export const tenantSubdomainTemplates = {
+  cdn: buildSubdomain("cdn", true),
   api: buildSubdomain("api", true),
   storage: buildSubdomain("storage", true),
   realtime: buildSubdomain("realtime", true),

@@ -37,7 +37,6 @@ def inline(payload: sqs_record.Payload):
     router = Router(
         args=RouterArgs(
             tenant_id=payload.tenant_id,
-            secret=config.static.router_secret,
         ),
     )
 

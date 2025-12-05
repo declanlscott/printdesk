@@ -5,22 +5,26 @@ import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
 
 from sst import Resource
-from utils import naming, tags
+from utils import tags
 
 
-class SslArgs:
-    def __init__(self, tenant_id: str, domain_name_template: str):
+class DnsValidatedCertificateArgs:
+    def __init__(self,
+                 tenant_id: str,
+                 domain_name: pulumi.Input[str],
+                 subject_alternative_names: Optional[pulumi.Input[Sequence[pulumi.Input[str]]]] = None,):
         self.tenant_id = tenant_id
-        self.domain_name_template = domain_name_template
+        self.domain_name = domain_name
+        self.subject_alternative_names = subject_alternative_names
 
 
-class Ssl(pulumi.ComponentResource):
+class DnsValidatedCertificate(pulumi.ComponentResource):
     def __init__(
-        self, name: str, args: SslArgs, opts: Optional[pulumi.ResourceOptions] = None
+        self, name: str, args: DnsValidatedCertificateArgs, opts: Optional[pulumi.ResourceOptions] = None
     ):
         super().__init__(
-            t="pd:resource:Ssl",
-            name=f"{name}Ssl",
+            t="pd:resource:DnsValidatedCertificate",
+            name=f"{name}DnsValidatedCertificate",
             props=vars(args),
             opts=opts
         )
@@ -36,8 +40,9 @@ class Ssl(pulumi.ComponentResource):
         self.__certificate = aws.acm.Certificate(
             resource_name=f"{name}Certificate",
             props=aws.acm.CertificateArgs(
-                domain_name=naming.template(args.domain_name_template, args.tenant_id),
+                domain_name=args.domain_name,
                 validation_method="DNS",
+                subject_alternative_names=args.subject_alternative_names,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self, provider=self.__us_east_1_provider)

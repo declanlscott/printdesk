@@ -64,7 +64,13 @@ export const tenantApiFunctionResourceCiphertext = new lib.Ciphertext(
   "TenantApiFunctionResourceCiphertext",
   {
     plaintext: $jsonStringify(
-      injectLinkables(resourcePrefix, appData, aws_, tenantDomains),
+      injectLinkables(
+        resourcePrefix,
+        appData,
+        aws_,
+        routerSecret,
+        tenantDomains,
+      ),
     ),
     writeToFile: normalizePath(resourceFileName, tenantApiFunctionDir),
   },

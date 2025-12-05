@@ -204,7 +204,7 @@ class _Bucket(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__public_access_block = aws.s3.BucketPublicAccessBlockArgs(
+        self.__public_access_block = aws.s3.BucketPublicAccessBlock(
             resource_name=f"{resource_name}PublicAccessBlock",
             args=aws.s3.BucketPublicAccessBlockArgs(
                 bucket=self.__bucket.bucket,

@@ -14,9 +14,7 @@ export const routerSecretRotation = new time.Rotating("RouterSecretRotation", {
 export const routerSecret = new random.RandomPassword("RouterSecret", {
   length: 32,
   special: true,
-  keepers: {
-    rotation: routerSecretRotation.id,
-  },
+  keepers: { rotation: routerSecretRotation.id },
 });
 
 export const webBasicAuth = $output([

@@ -26,7 +26,7 @@
     "@xstate/react": "^6.0.0",
     "cmdk": "^1.1.1",
     "jotai": "^2.15.2",
-    "lucide-react": "^0.546.0",
+    "lucide-react": "^0.555.0",
     "partysocket": "^1.1.6",
     "react": "^19.2.1",
     "react-aria-components": "^1.13.0",

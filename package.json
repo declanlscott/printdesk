@@ -14,10 +14,10 @@
   "dependencies": {
     "@aws-sdk/credential-providers": "^3.943.0",
     "@aws-sdk/dsql-signer": "^3.943.0",
-    "@effect/platform": "^0.90.10",
+    "@effect/platform": "^0.93.6",
     "@openauthjs/openauth": "^0.4.3",
     "@printdesk/core": "workspace:*",
-    "drizzle-orm": "^0.44.7",
+    "drizzle-orm": "^0.45.0",
     "effect": "^3.19.8",
     "hono": "^4.10.7",
     "replicache": "^15.3.0",
@@ -26,7 +26,7 @@
   "devDependencies": {
     "@aws-sdk/client-appsync": "^3.943.0",
     "@aws-sdk/client-sts": "^3.943.0",
-    "@effect/language-service": "^0.31.2",
+    "@effect/language-service": "^0.59.0",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.0",
     "@microsoft/microsoft-graph-types": "^2.43.1",
     "@smithy/util-waiter": "^4.2.5",
@@ -47,7 +47,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "prettier": "^3.7.4",
     "prettier-plugin-astro": "^0.14.1",
-    "prettier-plugin-tailwindcss": "^0.6.14",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "remeda": "^2.32.0",
     "typescript": "^5.9.3",
     "wrangler": "^4.52.1"

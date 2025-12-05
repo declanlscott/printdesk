@@ -32,6 +32,6 @@
   "devDependencies": {
     "@smithy/types": "^4.9.0",
     "@types/pg": "^8.15.6",
-    "drizzle-kit": "^0.31.7"
+    "drizzle-kit": "^0.31.8"
   }
 }

@@ -51,23 +51,23 @@ class Router(pulumi.ComponentResource):
             )
         )
 
-        self.__files_ssl = ssl.Ssl(
+        self.__storage_ssl = ssl.Ssl(
             name="Files",
             args=ssl.SslArgs(
                 tenant_id=args.tenant_id,
-                domain_name_template=Resource.TenantDomains.files.nameTemplate,
+                domain_name_template=Resource.TenantDomains.storage.nameTemplate,
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__files_alias_record = cloudflare.Record(
+        self.__storage_alias_record = cloudflare.Record(
             resource_name="FilesAliasRecord",
             args=cloudflare.RecordArgs(
                 zone_id=Resource.Zone.id,
                 type="CNAME",
-                name=self.__files_ssl.certificate.domain_name,
+                name=self.__storage_ssl.certificate.domain_name,
                 content=naming.template(
-                    name_template=Resource.TenantDomains.files.nameTemplate,
+                    name_template=Resource.TenantDomains.storage.nameTemplate,
                     tenant_id=args.tenant_id,
                 ),
                 ttl=1,
@@ -78,3 +78,8 @@ class Router(pulumi.ComponentResource):
                 delete_before_replace=True,
             )
         )
+
+        self.register_outputs({
+            "api_alias_record": self.__api_alias_record.id,
+            "storage_alias_record": self.__storage_alias_record.id,
+        })

@@ -115,7 +115,7 @@ class Resource:
     class TenantDomains:
         class api:
             nameTemplate: str
-        class files:
+        class storage:
             nameTemplate: str
         class realtime:
             nameTemplate: str

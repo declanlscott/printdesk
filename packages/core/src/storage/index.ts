@@ -3,10 +3,10 @@ import * as Effect from "effect/Effect";
 
 import { Api } from "../api";
 
-export namespace Files {
+export namespace Storage {
   export namespace Documents {
     export class Client extends Effect.Service<Client>()(
-      "@printdesk/core/files/DocumentsClient",
+      "@printdesk/core/storage/DocumentsClient",
       {
         accessors: true,
         dependencies: [Api.Http.Default],
@@ -17,28 +17,30 @@ export namespace Files {
             "/documents/mime-types",
           ).pipe(
             httpClient.execute,
-            Effect.withSpan("Files.Documents.getMimeTypes"),
+            Effect.withSpan("Storage.Documents.getMimeTypes"),
           );
 
-          const setMimeTypes = Effect.fn("Files.Documents.Client.setMimeTypes")(
-            () =>
-              HttpClientRequest.put("/documents/mime-types").pipe(
-                httpClient.execute,
-              ),
+          const setMimeTypes = Effect.fn(
+            "Storage.Documents.Client.setMimeTypes",
+          )(() =>
+            HttpClientRequest.put("/documents/mime-types").pipe(
+              httpClient.execute,
+            ),
           );
 
           const getSizeLimit = HttpClientRequest.get(
             "/documents/size-limit",
           ).pipe(
             httpClient.execute,
-            Effect.withSpan("Files.Documents.getSizeLimit"),
+            Effect.withSpan("Storage.Documents.getSizeLimit"),
           );
 
-          const setSizeLimit = Effect.fn("Files.Documents.Client.setSizeLimit")(
-            () =>
-              HttpClientRequest.put("/documents/size-limit").pipe(
-                httpClient.execute,
-              ),
+          const setSizeLimit = Effect.fn(
+            "Storage.Documents.Client.setSizeLimit",
+          )(() =>
+            HttpClientRequest.put("/documents/size-limit").pipe(
+              httpClient.execute,
+            ),
           );
 
           return {

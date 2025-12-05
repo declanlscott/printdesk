@@ -2,8 +2,8 @@
 // https://github.com/sst/sst/blob/432418a2bb8d55584aace24982a90782e8b83431/platform/src/components/aws/router.ts#L1481
 import cf from "cloudfront";
 async function handler(event) {
-  const subdomain = event.request.headers.host.value.split(".")[0];
-  if (subdomain.startsWith("api-") || subdomain.startsWith("storage-")) {
+  const requestHost = event.request.headers.host.value.split;
+  if (requestHost.startsWith("api-") || requestHost.startsWith("storage-")) {
     event.request.headers["x-router-secret"] = {
       value: "{{routerSecret}}"
     }

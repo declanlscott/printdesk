@@ -2,7 +2,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 
 import { issuer } from "./auth";
 import { domains, zone } from "./dns";
-import * as lib from "./lib";
+import * as lib from "./lib/components";
 
 export const reverseProxyWorker = new sst.cloudflare.Worker(
   "ReverseProxyWorker",
@@ -14,7 +14,7 @@ export const reverseProxyWorker = new sst.cloudflare.Worker(
 );
 
 export const reverseProxyWorkerAuxiliaryBindings =
-  new lib.cloudflare.Workers.AuxiliaryBindings(
+  new lib.cloudflare.workers.AuxiliaryBindings(
     "ReverseProxyWorkerAuxiliaryBindings",
     {
       scriptName: reverseProxyWorker.nodes.worker.scriptName,

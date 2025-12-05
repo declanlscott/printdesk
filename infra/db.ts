@@ -1,11 +1,11 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import * as lib from "./lib";
+import * as lib from "./lib/components";
 import { aws_, isProdStage } from "./misc";
 import { calculateHash, normalizePath } from "./utils";
 
-export const dsqlCluster = new lib.aws.DsqlCluster(
+export const dsqlCluster = new lib.aws.dsql.Cluster(
   "DsqlCluster",
   {
     tags: {

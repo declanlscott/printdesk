@@ -1,1 +1,1 @@
-export * from "./dynamic";
+export * as workers from "./workers";

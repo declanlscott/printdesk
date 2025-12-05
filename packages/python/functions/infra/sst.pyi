@@ -29,7 +29,10 @@ class Resource:
     class CloudfrontPublicKey:
         id: str
         type: str
-    class CloudfrontRewriteUriFunction:
+    class CloudfrontKeyValueStore:
+        arn: str
+        type: str
+    class CloudfrontRequestFunction:
         arn: str
         type: str
     class CloudfrontS3OriginAccessControl:

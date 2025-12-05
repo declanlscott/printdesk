@@ -1,3 +1,5 @@
+export type VpcArgs = sst.aws.VpcArgs;
+
 export class Vpc extends sst.aws.Vpc {
   constructor(
     name: string,

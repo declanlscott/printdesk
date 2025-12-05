@@ -1,65 +1,11 @@
+import { readFileSync } from "node:fs";
+
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { domains } from "./dns";
+import * as lib from "./lib/components";
 import { isProdStage } from "./misc";
-
-export const cloudfrontPrivateKey = new tls.PrivateKey("CloudfrontPrivateKey", {
-  algorithm: "RSA",
-  rsaBits: 2048,
-});
-
-export const cloudfrontPublicKey = new aws.cloudfront.PublicKey(
-  "CloudfrontPublicKey",
-  { encodedKey: cloudfrontPrivateKey.publicKeyPem },
-);
-
-export const cloudfrontKeyGroup = new aws.cloudfront.KeyGroup(
-  "CloudfrontKeyGroup",
-  { items: [cloudfrontPublicKey.id] },
-);
-
-export const cloudfrontApiCachePolicy = new aws.cloudfront.CachePolicy(
-  "CloudfrontApiCachePolicy",
-  {
-    defaultTtl: 0,
-    minTtl: 0,
-    maxTtl: 31536000, // 1 year
-    parametersInCacheKeyAndForwardedToOrigin: {
-      cookiesConfig: {
-        cookieBehavior: "none",
-      },
-      headersConfig: {
-        headerBehavior: "none",
-      },
-      queryStringsConfig: {
-        queryStringBehavior: "none",
-      },
-      enableAcceptEncodingBrotli: true,
-      enableAcceptEncodingGzip: true,
-    },
-  },
-);
-
-export const cloudfrontS3OriginAccessControl =
-  new aws.cloudfront.OriginAccessControl("CloudfrontS3OriginAccessControl", {
-    originAccessControlOriginType: "s3",
-    signingBehavior: "always",
-    signingProtocol: "sigv4",
-  });
-
-export const cloudfrontRewriteUriFunction = new aws.cloudfront.Function(
-  "CloudfrontRewriteUriFunction",
-  {
-    runtime: "cloudfront-js-2.0",
-    code: [
-      `function handler(event) {`,
-      `  let request = event.request;`,
-      `  request.uri = request.uri.replace(/^\\/[^\\/]*\\//, "/");`,
-      `  return request;`,
-      `}`,
-    ].join("\n"),
-  },
-);
+import { normalizePath } from "./utils";
 
 export const routerSecretRotation = new time.Rotating("RouterSecretRotation", {
   rotationMonths: 1,
@@ -139,3 +85,68 @@ export const router = new sst.aws.Router("Router", {
     },
   },
 });
+
+export const cloudfrontPrivateKey = new tls.PrivateKey("CloudfrontPrivateKey", {
+  algorithm: "RSA",
+  rsaBits: 2048,
+});
+
+export const cloudfrontPublicKey = new aws.cloudfront.PublicKey(
+  "CloudfrontPublicKey",
+  { encodedKey: cloudfrontPrivateKey.publicKeyPem },
+);
+
+export const cloudfrontKeyGroup = new aws.cloudfront.KeyGroup(
+  "CloudfrontKeyGroup",
+  { items: [cloudfrontPublicKey.id] },
+);
+
+export const cloudfrontApiCachePolicy = new aws.cloudfront.CachePolicy(
+  "CloudfrontApiCachePolicy",
+  {
+    defaultTtl: 0,
+    minTtl: 0,
+    maxTtl: 31536000, // 1 year
+    parametersInCacheKeyAndForwardedToOrigin: {
+      cookiesConfig: {
+        cookieBehavior: "none",
+      },
+      headersConfig: {
+        headerBehavior: "none",
+      },
+      queryStringsConfig: {
+        queryStringBehavior: "none",
+      },
+      enableAcceptEncodingBrotli: true,
+      enableAcceptEncodingGzip: true,
+    },
+  },
+);
+
+export const cloudfrontS3OriginAccessControl =
+  new aws.cloudfront.OriginAccessControl("CloudfrontS3OriginAccessControl", {
+    originAccessControlOriginType: "s3",
+    signingBehavior: "always",
+    signingProtocol: "sigv4",
+  });
+
+export const cloudfrontKeyValueStore = new lib.aws.cloudfront.KeyValueStore(
+  "CloudfrontKeyValueStore",
+);
+
+export const cloudfrontRequestFunction = new lib.aws.cloudfront.Function(
+  "CloudfrontRequestFunction",
+  {
+    runtime: "cloudfront-js-2.0",
+    keyValueStoreAssociations: [cloudfrontKeyValueStore.arn],
+    code: $resolve([routerSecret.result, router._kvNamespace!] as const).apply(
+      ([routerSecret, kvNamespace]) =>
+        readFileSync(
+          normalizePath("infra/lib/templates/cloudfront-request-function.js"),
+          "utf-8",
+        )
+          .replace(new RegExp("{{routerSecret}}"), routerSecret)
+          .replace(new RegExp("{{kvNamespace}}"), kvNamespace),
+    ),
+  },
+);

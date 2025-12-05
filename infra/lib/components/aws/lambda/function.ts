@@ -1,10 +1,12 @@
+export type FunctionArgs = sst.aws.FunctionArgs;
+
 export class Function extends sst.aws.Function {
   constructor(
     name: string,
-    props: sst.aws.FunctionArgs,
+    args: sst.aws.FunctionArgs,
     opts?: $util.ComponentResourceOptions,
   ) {
-    super(name, props, opts);
+    super(name, args, opts);
   }
 
   getSSTLink() {

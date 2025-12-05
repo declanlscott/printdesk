@@ -5,7 +5,7 @@ import { cloudfrontPrivateKey, cloudfrontPublicKey } from "./cdn";
 import { dsqlCluster } from "./db";
 import { domains, tenantDomains } from "./dns";
 import { tenantRoles } from "./iam";
-import * as lib from "./lib";
+import * as lib from "./lib/components";
 import {
   appData,
   aws_,
@@ -66,7 +66,7 @@ export const papercutTailgateImage = new awsx.ecr.Image(
   { dependsOn: [papercutTailgateResourceCiphertext] },
 );
 
-export const papercutSync = new lib.aws.Function("PapercutSync", {
+export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
   handler: "packages/functions/src/papercut-sync.handler",
   timeout: "20 seconds",
   link: [
@@ -82,25 +82,28 @@ export const papercutSync = new lib.aws.Function("PapercutSync", {
   ],
 });
 
-export const invoicesProcessor = new lib.aws.Function("InvoicesProcessor", {
-  handler: "packages/functions/src/invoices-processor.handler",
-  timeout: "20 seconds",
-  link: [
-    appData,
-    aws_,
-    cloudfrontPublicKey,
-    cloudfrontPrivateKey,
-    domains,
-    dsqlCluster,
-    tenantDomains,
-    tenantRoles,
-  ],
-  permissions: [
-    {
-      actions: ["sts:AssumeRole"],
-      resources: [
-        $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/*`,
-      ],
-    },
-  ],
-});
+export const invoicesProcessor = new lib.aws.lambda.Function(
+  "InvoicesProcessor",
+  {
+    handler: "packages/functions/src/invoices-processor.handler",
+    timeout: "20 seconds",
+    link: [
+      appData,
+      aws_,
+      cloudfrontPublicKey,
+      cloudfrontPrivateKey,
+      domains,
+      dsqlCluster,
+      tenantDomains,
+      tenantRoles,
+    ],
+    permissions: [
+      {
+        actions: ["sts:AssumeRole"],
+        resources: [
+          $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/*`,
+        ],
+      },
+    ],
+  },
+);

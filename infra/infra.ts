@@ -6,8 +6,9 @@ import {
 import {
   cloudfrontApiCachePolicy,
   cloudfrontKeyGroup,
+  cloudfrontKeyValueStore,
   cloudfrontPublicKey,
-  cloudfrontRewriteUriFunction,
+  cloudfrontRequestFunction,
   cloudfrontS3OriginAccessControl,
 } from "./cdn";
 import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
@@ -22,7 +23,7 @@ import {
   tenantApiFunctionRole,
   tenantRoles,
 } from "./iam";
-import * as lib from "./lib";
+import * as lib from "./lib/components";
 import {
   appData,
   aws_,
@@ -56,8 +57,9 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         cloudfrontApiCachePolicy,
         cloudfrontKeyGroup,
         cloudfrontPublicKey,
-        cloudfrontRewriteUriFunction,
         cloudfrontS3OriginAccessControl,
+        cloudfrontKeyValueStore,
+        cloudfrontRequestFunction,
         domains,
         headerKeys,
         invoicesProcessor,

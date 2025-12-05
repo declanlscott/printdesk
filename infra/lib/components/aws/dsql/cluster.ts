@@ -1,9 +1,11 @@
 import type { Link } from "~/.sst/platform/src/components/link";
 
-export class DsqlCluster extends aws.dsql.Cluster implements Link.Linkable {
+export type ClusterArgs = aws.dsql.ClusterArgs;
+
+export class Cluster extends aws.dsql.Cluster implements Link.Linkable {
   constructor(
     name: string,
-    args?: aws.dsql.ClusterArgs,
+    args?: ClusterArgs,
     opts?: $util.CustomResourceOptions,
   ) {
     super(name, args, opts);

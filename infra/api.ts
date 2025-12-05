@@ -14,13 +14,13 @@ import {
   realtimeSubscriberRoleExternalId,
   tenantRoles,
 } from "./iam";
-import * as lib from "./lib";
+import * as lib from "./lib/components";
 import { appData, aws_, resourceFileName, resourcePrefix } from "./misc";
 import { appsyncEventApi } from "./realtime";
 import { infraQueue, repository, temporaryBucket } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 
-export const api = new lib.aws.Function("Api", {
+export const api = new lib.aws.lambda.Function("Api", {
   handler: "packages/functions/node/src/api/index.handler",
   url: {
     router: {

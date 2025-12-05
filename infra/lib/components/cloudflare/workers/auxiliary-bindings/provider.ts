@@ -36,8 +36,7 @@ export interface AuxiliaryBindingsProviderInputs {
   bindings: Record<string, Binding>;
 }
 
-export interface AuxiliaryBindingsProviderOutputs
-  extends AuxiliaryBindingsProviderInputs {
+export interface AuxiliaryBindingsProviderOutputs extends AuxiliaryBindingsProviderInputs {
   createdOn: string;
   modifiedOn: string;
 }

@@ -11,6 +11,7 @@ import { Sst } from "./src/sst";
 const runtime = ManagedRuntime.make(
   Signers.Dsql.makeLayer({ expiresIn: Duration.hours(12) }).pipe(
     Layer.provide(Credentials.fromChain()),
+    Layer.provideMerge(Sst.Resource.layer),
   ),
 );
 

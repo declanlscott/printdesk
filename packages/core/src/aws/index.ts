@@ -17,7 +17,9 @@ import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
+import { Auth } from "../auth";
 import { Sst } from "../sst";
+import { buildName } from "../utils";
 
 import type { CloudfrontSignInput } from "@aws-sdk/cloudfront-signer";
 import type * as HttpBody from "@effect/platform/HttpBody";
@@ -102,14 +104,12 @@ export namespace Signers {
       {
         dependencies: [Sst.Resource.layer],
         effect: Effect.gen(function* () {
-          const keyPairId = yield* Sst.Resource.CloudfrontKeyGroup.pipe(
-            Effect.map(Redacted.value),
-            Effect.map(Struct.get("id")),
-          );
-          const privateKey = yield* Sst.Resource.CloudfrontPrivateKey.pipe(
-            Effect.map(Redacted.value),
-            Effect.map(Struct.get("pem")),
-          );
+          const resource = yield* Sst.Resource;
+
+          const keyPairId = resource.CloudfrontKeyGroup.pipe(Redacted.value).id;
+          const privateKey = resource.CloudfrontPrivateKey.pipe(
+            Redacted.value,
+          ).pem;
 
           const signUrl = Effect.fn("CloudfrontSigner.signUrl")(
             (...args: Parameters<typeof getSignedUrl>) =>
@@ -172,12 +172,15 @@ export namespace Signers {
             expiresIn: expiresIn?.pipe(Duration.toSeconds),
           });
         }),
-      ).pipe(Layer.provideMerge(Sst.Resource.layer));
+      );
 
     export const layer = makeLayer();
 
     export const runtime = ManagedRuntime.make(
-      layer.pipe(Layer.provide(Credentials.fromChain())),
+      layer.pipe(
+        Layer.provide(Credentials.fromChain()),
+        Layer.provideMerge(Sst.Resource.layer),
+      ),
     );
   }
 
@@ -200,7 +203,7 @@ export namespace Signers {
     signingDate?: DateTime.Utc;
   }
 
-  export const makeSignatureV4Signer = (service: string) =>
+  export const makeSignatureV4Signer = (service: string, host?: string) =>
     Effect.gen(function* () {
       const credentials = yield* Credentials.values;
       const region = yield* Sst.Resource.Aws.pipe(
@@ -253,7 +256,7 @@ export namespace Signers {
               protocol,
               hostname,
               path,
-              headers: { ...request.headers, host: hostname },
+              headers: { ...request.headers, host: host ?? hostname },
               body: matchBody(request.body),
             }),
             {
@@ -291,7 +294,7 @@ export namespace Signers {
               protocol,
               hostname,
               path,
-              headers: { ...request.headers, host: hostname },
+              headers: { ...request.headers, host: host ?? hostname },
               body: matchBody(request.body),
             }),
             {
@@ -317,11 +320,31 @@ export namespace Signers {
 
   export class Appsync extends Effect.Service<Appsync>()(
     "@printdesk/core/aws/AppsyncSigner",
-    { effect: makeSignatureV4Signer("appsync") },
+    {
+      dependencies: [Sst.Resource.layer],
+      effect: makeSignatureV4Signer("appsync"),
+    },
   ) {}
 
   export class ExecuteApi extends Effect.Service<ExecuteApi>()(
     "@printdesk/core/aws/ExecuteApiSigner",
-    { effect: makeSignatureV4Signer("execute-api") },
-  ) {}
+    {
+      dependencies: [Sst.Resource.layer],
+      effect: (host?: string) => makeSignatureV4Signer("execute-api", host),
+    },
+  ) {
+    static readonly tenantLayer = Layer.unwrapEffect(
+      Auth.Session.pipe(
+        Effect.flatMap((session) =>
+          Sst.Resource.TenantDomains.pipe(
+            Effect.map(Redacted.value),
+            Effect.map((hosts) =>
+              buildName(hosts.api.nameTemplate, session.tenantId),
+            ),
+          ),
+        ),
+        Effect.map(this.Default),
+      ),
+    ).pipe(Layer.provide(Sst.Resource.layer));
+  }
 }

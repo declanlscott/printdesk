@@ -14,7 +14,8 @@ export namespace Api {
     accessors: true,
     dependencies: [
       Sst.Resource.layer,
-      Signers.ExecuteApi.Default,
+      Signers.ExecuteApi.tenantLayer,
+      Signers.Cloudfront.Signer.Default,
       FetchHttpClient.layer,
     ],
     effect: Effect.gen(function* () {
@@ -27,14 +28,14 @@ export namespace Api {
         ),
       );
 
-      const apiSigner = yield* Signers.ExecuteApi;
+      const executeSigner = yield* Signers.ExecuteApi;
       const cloudfrontSigner = yield* Signers.Cloudfront.Signer;
 
       const client = yield* HttpClient.HttpClient.pipe(
         Effect.map(
           HttpClient.mapRequest(HttpClientRequest.prependUrl(baseUrl)),
         ),
-        Effect.map(HttpClient.mapRequestEffect(apiSigner.signRequest)),
+        Effect.map(HttpClient.mapRequestEffect(executeSigner.signRequest)),
         Effect.map(HttpClient.mapRequestEffect(cloudfrontSigner.signRequest)),
         Effect.map(HttpClient.filterStatusOk),
       );

@@ -23,7 +23,7 @@ export namespace Api {
         Effect.map(Redacted.value),
         Effect.map(
           (domains) =>
-            `https://${buildName(domains.api.nameTemplate, session.tenantId)}`,
+            `https://${buildName(domains.cdn.nameTemplate, session.tenantId)}/api`,
         ),
       );
 

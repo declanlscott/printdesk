@@ -114,3 +114,7 @@ def physical(max_: int, name: str, suffix: str = ""):
     main = prefix(max_ - 9 - len(suffix), name)
     random_pretty = hash_string_to_pretty_string(os.urandom(8).hex(), 8)
     return f"{main}-{random_pretty}{suffix}"
+
+def build_kv_namespace(name: str):
+    data = f"{Resource.AppData.name}-{Resource.AppData.stage}-{name}"
+    return hashlib.md5(data.encode("utf-8")).hexdigest()[:4]

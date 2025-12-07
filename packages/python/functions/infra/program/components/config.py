@@ -11,16 +11,20 @@ from utils import tags, is_prod_stage
 class Parameters:
     def __init__(
         self,
+        router_secret_sst_resource: pulumi.Input[aws.ssm.Parameter],
         agent_access_token: pulumi.Input[aws.ssm.Parameter],
     ):
+        self.router_secret_sst_resource = router_secret_sst_resource
         self.agent_access_token = agent_access_token
 
 
 class Static:
     def __init__(
         self,
+        router_secret: pulumi.Input[str],
         parameters: Parameters,
     ):
+        self.router_secret = router_secret
         self.parameters = parameters
 
 
@@ -60,6 +64,33 @@ class Config(pulumi.ComponentResource):
             name="Config",
             props=vars(args),
             opts=opts
+        )
+
+        self.__router_secret = random.RandomPassword(
+            resource_name="RouterSecret",
+            args=random.RandomPasswordArgs(
+                length=32,
+                special=True,
+                keepers={
+                    "rotation": Resource.RouterSecretRotation.id,
+                }
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__router_secret_sst_resource_parameter = aws.ssm.Parameter(
+            resource_name="RouterSecretSstResourceParameter",
+            args=aws.ssm.ParameterArgs(
+                name=f"/{Resource.AppData.name}/{Resource.AppData.stage}/{args.tenant_id}/sst/resource/router-secret",
+                type=aws.ssm.ParameterType.SECURE_STRING,
+                value=pulumi.Output.json_dumps(
+                    {
+                        "value": self.__router_secret.result,
+                        "type": self.__router_secret._type.replace(":", "."),
+                    }
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.__agent_access_token = random.RandomPassword(
@@ -148,6 +179,8 @@ class Config(pulumi.ComponentResource):
 
         self.register_outputs(
             {
+                "router_secret": self.__router_secret.id,
+                "router_secret_sst_resource_parameter": self.__router_secret_sst_resource_parameter.id,
                 "agent_access_token": self.__agent_access_token.id,
                 "agent_access_token_parameter": self.__agent_access_token_parameter.id,
                 "application": self.__application.id,
@@ -161,7 +194,9 @@ class Config(pulumi.ComponentResource):
     @property
     def static(self):
         return Static(
+            router_secret=self.__router_secret.result,
             parameters=Parameters(
+                router_secret_sst_resource=self.__router_secret_sst_resource_parameter,
                 agent_access_token=self.__agent_access_token_parameter,
             )
         )

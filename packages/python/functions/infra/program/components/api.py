@@ -3,8 +3,10 @@ from typing import Optional
 
 import pulumi
 import pulumi_aws as aws
+import pulumi_cloudflare as cloudflare
 from sst import Resource
 
+from . import ssl
 from .config import Static, Dynamic
 from .physical_name import PhysicalName, PhysicalNameArgs
 from utils import tags, naming
@@ -42,6 +44,7 @@ class Api(pulumi.ComponentResource):
                     allow_methods=["*"],
                     allow_origins=["*"],
                 ),
+                disable_execute_api_endpoint=True,
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self)
@@ -92,6 +95,54 @@ class Api(pulumi.ComponentResource):
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__ssl = ssl.DnsValidatedCertificate(
+            name="Api",
+            args=ssl.DnsValidatedCertificateArgs(
+                tenant_id=args.tenant_id,
+                domain_name=naming.template(Resource.TenantDomains.api.nameTemplate, args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__domain_name = aws.apigatewayv2.DomainName(
+            resource_name="DomainName",
+            args=aws.apigatewayv2.DomainNameArgs(
+                domain_name=self.__ssl.certificate.domain_name,
+                domain_name_configuration=aws.apigatewayv2.DomainNameDomainNameConfigurationArgs(
+                    certificate_arn=self.__ssl.certificate.arn,
+                    endpoint_type="REGIONAL",
+                    security_policy="TLS_1_2",
+                )
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__alias_record = cloudflare.Record(
+            resource_name="AliasRecord",
+            args=cloudflare.RecordArgs(
+                zone_id=Resource.Zone.id,
+                type="CNAME",
+                name=self.__domain_name.domain_name,
+                content=self.__domain_name.domain_name_configuration.target_domain_name,
+                ttl=1,
+                proxied=True,
+            ),
+            opts=pulumi.ResourceOptions(
+                parent=self,
+                delete_before_replace=True,
+            ),
+        )
+
+        self.__domain_mapping = aws.apigatewayv2.ApiMapping(
+            resource_name="DomainMapping",
+            args=aws.apigatewayv2.ApiMappingArgs(
+                api_id=self.__api.id,
+                domain_name=self.__domain_name.domain_name,
+                stage=self.__stage.name,
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
         )
 
         self.__api_function_name = PhysicalName(
@@ -515,6 +566,9 @@ class Api(pulumi.ComponentResource):
                 "api": self.__api.id,
                 "log_group": self.__log_group.id,
                 "stage": self.__stage.id,
+                "domain_name": self.__domain_name.id,
+                "alias_record": self.__alias_record.id,
+                "domain_mapping": self.__domain_mapping.id,
                 "api_function_name": self.__api_function_name.result,
                 "api_function_log_group": self.__api_function_log_group.id,
                 "api_function": self.__api_function.id,
@@ -531,3 +585,7 @@ class Api(pulumi.ComponentResource):
                 "papercut_server_route": self.__papercut_server_route.id,
             }
         )
+
+    @property
+    def domain_name(self):
+        return self.__domain_name.domain_name

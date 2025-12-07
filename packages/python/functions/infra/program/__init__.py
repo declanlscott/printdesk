@@ -37,6 +37,10 @@ def inline(payload: sqs_record.Payload):
     router = Router(
         args=RouterArgs(
             tenant_id=payload.tenant_id,
+            secret=config.dynamic.router_secret,
+            api_domain_name=api.domain_name,
+            assets_domain_name=storage.assets_bucket.regional_domain_name,
+            documents_domain_name=storage.documents_bucket.regional_domain_name,
         ),
     )
 

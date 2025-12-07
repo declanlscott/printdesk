@@ -29,12 +29,6 @@ class Resource:
     class CloudfrontPublicKey:
         id: str
         type: str
-    class CloudfrontKeyValueStore:
-        arn: str
-        type: str
-    class CloudfrontRequestFunction:
-        arn: str
-        type: str
     class CloudfrontS3OriginAccessControl:
         id: str
         type: str
@@ -99,6 +93,9 @@ class Resource:
     class RealtimePublisherRoleExternalId:
         type: str
         value: str
+    class RouterSecretRotation:
+        id: str
+        type: str
     class TenantApiFunctionImage:
         uri: str
         type: str
@@ -120,8 +117,6 @@ class Resource:
             nameTemplate: str
         class api:
             nameTemplate: str
-        class storage:
-            nameTemplate: str
         class realtime:
             nameTemplate: str
         type: str
@@ -138,6 +133,12 @@ class Resource:
             nameTemplate: str
         class realtimeSubscriber:
             nameTemplate: str
+        type: str
+    class TenantRouterPatterns:
+        class api:
+            template: str
+        class storage:
+            template: str
         type: str
     class Vpc:
         id: str

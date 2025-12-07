@@ -1,15 +1,13 @@
-import { readFileSync } from "node:fs";
-
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { domains } from "./dns";
+import { domains, tenantDomains } from "./dns";
 import * as lib from "./lib/components";
 import { isProdStage } from "./misc";
-import { normalizePath } from "./utils";
 
-export const routerSecretRotation = new time.Rotating("RouterSecretRotation", {
-  rotationMonths: 1,
-});
+export const routerSecretRotation = new lib.time.Rotating(
+  "RouterSecretRotation",
+  { rotationMonths: 1 },
+);
 
 export const routerSecret = new random.RandomPassword("RouterSecret", {
   length: 32,
@@ -128,23 +126,13 @@ export const cloudfrontS3OriginAccessControl =
     signingProtocol: "sigv4",
   });
 
-export const cloudfrontKeyValueStore = new lib.aws.cloudfront.KeyValueStore(
-  "CloudfrontKeyValueStore",
-);
-
-export const cloudfrontRequestFunction = new lib.aws.cloudfront.Function(
-  "CloudfrontRequestFunction",
-  {
-    runtime: "cloudfront-js-2.0",
-    keyValueStoreAssociations: [cloudfrontKeyValueStore.arn],
-    code: $resolve([routerSecret.result, router._kvNamespace!] as const).apply(
-      ([routerSecret, kvNamespace]) =>
-        readFileSync(
-          normalizePath("infra/lib/templates/cloudfront-request-function.js"),
-          "utf-8",
-        )
-          .replace(new RegExp("{{routerSecret}}"), routerSecret)
-          .replace(new RegExp("{{kvNamespace}}"), kvNamespace),
-    ),
+export const tenantRouterPatterns = new sst.Linkable("TenantRouterPatterns", {
+  properties: {
+    api: {
+      template: $interpolate`${tenantDomains.properties.cdn.nameTemplate}/api`,
+    },
+    storage: {
+      template: $interpolate`${tenantDomains.properties.cdn.nameTemplate}/storage`,
+    },
   },
-);
+});

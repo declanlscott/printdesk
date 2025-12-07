@@ -6,10 +6,9 @@ import {
 import {
   cloudfrontApiCachePolicy,
   cloudfrontKeyGroup,
-  cloudfrontKeyValueStore,
   cloudfrontPublicKey,
-  cloudfrontRequestFunction,
   cloudfrontS3OriginAccessControl,
+  routerSecretRotation,
 } from "./cdn";
 import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
 import { domains, tenantDomains, zone } from "./dns";
@@ -58,8 +57,6 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         cloudfrontKeyGroup,
         cloudfrontPublicKey,
         cloudfrontS3OriginAccessControl,
-        cloudfrontKeyValueStore,
-        cloudfrontRequestFunction,
         domains,
         headerKeys,
         invoicesProcessor,
@@ -73,6 +70,7 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         pulumiRoleExternalId,
         realtimePublisherRole,
         realtimePublisherRoleExternalId,
+        routerSecretRotation,
         tenantApiFunctionImage,
         tenantApiFunctionResourceCiphertext,
         tenantApiFunctionRole,

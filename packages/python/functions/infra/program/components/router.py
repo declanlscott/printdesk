@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 import pulumi
@@ -10,8 +11,17 @@ from utils import naming, tags
 
 
 class RouterArgs:
-    def __init__(self, tenant_id: str):
+    def __init__(self,
+                 tenant_id: str,
+                 secret: pulumi.Input[str],
+                 api_domain_name: pulumi.Input[str],
+                 assets_domain_name: pulumi.Input[str],
+                 documents_domain_name: pulumi.Input[str]):
         self.tenant_id = tenant_id
+        self.secret = secret
+        self.api_domain_name = api_domain_name
+        self.assets_domain_name = assets_domain_name
+        self.documents_domain_name = documents_domain_name
 
 
 class Router(pulumi.ComponentResource):
@@ -23,16 +33,261 @@ class Router(pulumi.ComponentResource):
             opts=opts
         )
 
-        cdn_domain_name = naming.template(Resource.TenantDomains.cdn.nameTemplate, args.tenant_id)
-        api_domain_name = naming.template(Resource.TenantDomains.api.nameTemplate, args.tenant_id)
-        storage_domain_name = naming.template(Resource.TenantDomains.storage.nameTemplate, args.tenant_id)
-
         self.__cdn_ssl = ssl.DnsValidatedCertificate(
             name="Cdn",
             args=ssl.DnsValidatedCertificateArgs(
                 tenant_id=args.tenant_id,
-                domain_name=cdn_domain_name,
-                subject_alternative_names=[api_domain_name,  storage_domain_name],
+                domain_name=naming.template(Resource.TenantDomains.cdn.nameTemplate, args.tenant_id),
+            ),
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        self.__key_value_store = aws.cloudfront.KeyValueStore(
+            resource_name="KeyValueStore",
+            opts=pulumi.ResourceOptions(parent=self)
+        )
+
+        kv_namespace = naming.build_kv_namespace("Router")
+
+        class Pattern:
+            def __init__(self, host: str, path: str):
+                self.host = host
+                self.path = path
+
+        def parse_pattern(pattern: str):
+            parts = pattern.split("/")
+            host = parts[0]
+            path = "/" + "/".join(parts[1:])
+
+            escaped = re.sub(r'[.+?^${}()|[\]\\]', r'\\\g<0>', host) # Escape special regex chars
+            escaped = escaped.replace("*", ".*") # Replace * with .*
+
+            return Pattern(host=escaped, path=path)
+
+        api_namespace = naming.build_kv_namespace("Api")
+        api_pattern: pulumi.Output[Pattern] = self.__cdn_ssl.certificate.domain_name.apply(
+            lambda domain_name: parse_pattern(f"{domain_name}/api")
+        )
+
+        assets_namespace = naming.build_kv_namespace("Assets")
+        assets_pattern: pulumi.Output[Pattern] = self.__cdn_ssl.certificate.domain_name.apply(
+            lambda domain_name: parse_pattern(f"{domain_name}/assets")
+        )
+
+        documents_namespace = naming.build_kv_namespace("Documents")
+        documents_pattern: pulumi.Output[Pattern] = self.__cdn_ssl.certificate.domain_name.apply(
+            lambda domain_name: parse_pattern(f"{domain_name}/documents")
+        )
+
+        self.__key_value_pairs = aws.cloudfront.KeyvaluestoreKeysExclusive(
+            resource_name="KeyValuePairs",
+            args=aws.cloudfront.KeyvaluestoreKeysExclusiveArgs(
+                key_value_store_arn=self.__key_value_store.arn,
+                resource_key_value_pairs=[
+                    aws.cloudfront.KeyvaluestoreKeysExclusiveResourceKeyValuePairArgs(
+                        key=f"{kv_namespace}:routes",
+                        value=pulumi.Output.json_dumps([
+                            f"url,{api_namespace},{api_pattern.host},{api_pattern.path}",
+                            f"bucket,{assets_namespace},{assets_pattern.host},{assets_pattern.path}",
+                            f"bucket,{documents_namespace},{documents_pattern.host},{documents_pattern.path}",
+                        ]),
+                    ),
+                    aws.cloudfront.KeyvaluestoreKeysExclusiveResourceKeyValuePairArgs(
+                        key=f"{api_namespace}:metadata",
+                        value=pulumi.Output.json_dumps({
+                            "host": args.api_domain_name,
+                            "rewrite": {
+                                "regex": "^/api/(.*)$",
+                                "to": "/$1",
+                            },
+                        }),
+                    ),
+                    aws.cloudfront.KeyvaluestoreKeysExclusiveResourceKeyValuePairArgs(
+                        key=f"{assets_namespace}:metadata",
+                        value=pulumi.Output.json_dumps({
+                            "domain": args.assets_domain_name,
+                            "rewrite": {
+                                "regex": "^/assets/(.*)$",
+                                "to": "/$1",
+                            },
+                        }),
+                    ),
+                    aws.cloudfront.KeyvaluestoreKeysExclusiveResourceKeyValuePairArgs(
+                        key=f"{documents_namespace}:metadata",
+                        value=pulumi.Output.json_dumps({
+                            "domain": args.documents_domain_name,
+                            "rewrite": {
+                                "regex": "^/documents/(.*)$",
+                                "to": "/$1",
+                            },
+                        }),
+                    ),
+                ],
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self.__request_function = aws.cloudfront.Function(
+            resource_name="RequestFunction",
+            args=aws.cloudfront.FunctionArgs(
+                runtime="cloudfront-js-2.0",
+                key_value_store_associations=[self.__key_value_store.arn],
+                code=pulumi.Output.format("""// This code is adapted from SST (MIT License).
+// https://github.com/sst/sst/blob/432418a2bb8d55584aace24982a90782e8b83431/platform/src/components/aws/router.ts#L1481
+import cf from "cloudfront";
+async function handler(event) {
+  if (event.request.headers.host.value === "{0}" && event.request.uri.startsWith("/api")) {
+    event.request.headers["x-router-secret"] = {
+      value: "{1}",
+    };
+  }
+  
+  if (event.request.headers.host.value.includes('cloudfront.net')) {
+    return {
+      statusCode: 403,
+      statusDescription: 'Forbidden',
+      body: {
+        encoding: "text",
+        data: '<html><head><title>403 Forbidden</title></head><body><center><h1>403 Forbidden</h1></center></body></html>'
+      }
+    };
+  }
+
+  function setUrlOrigin(urlHost, override) {
+    event.request.headers["x-forwarded-host"] = event.request.headers.host;
+    const origin = {
+      domainName: urlHost,
+      customOriginConfig: {
+        port: 443,
+        protocol: "https",
+        sslProtocols: ["TLSv1.2"],
+      },
+      originAccessControlConfig: {
+        enabled: false,
+      }
+    };
+    override = override ?? {};
+    if (override.protocol === "http") {
+      delete origin.customOriginConfig;
+    }
+    if (override.connectionAttempts) {
+      origin.connectionAttempts = override.connectionAttempts;
+    }
+    if (override.timeouts) {
+      origin.timeouts = override.timeouts;
+    }
+    cf.updateRequestOrigin(origin);
+  }
+
+  function setS3Origin(s3Domain, override) {
+    delete event.request.headers["Cookies"];
+    delete event.request.headers["cookies"];
+    delete event.request.cookies;
+
+    const origin = {
+      domainName: s3Domain,
+      originAccessControlConfig: {
+        enabled: true,
+        signingBehavior: "always",
+        signingProtocol: "sigv4",
+        originType: "s3",
+      }
+    };
+    override = override ?? {};
+    if (override.connectionAttempts) {
+      origin.connectionAttempts = override.connectionAttempts;
+    }
+    if (override.timeouts) {
+      origin.timeouts = override.timeouts;
+    }
+    cf.updateRequestOrigin(origin);
+  }
+
+  const routerNS = "{1}";
+
+  async function getRoutes() {
+    let routes = [];
+    try {
+      const v = await cf.kvs().get(routerNS + ":routes");
+      routes = JSON.parse(v);
+
+      // handle chunked routes
+      if (routes.parts) {
+        const chunkPromises = [];
+        for (let i = 0; i < routes.parts; i++) {
+          chunkPromises.push(cf.kvs().get(routerNS + ":routes:" + i));
+        }
+        const chunks = await Promise.all(chunkPromises);
+        routes = JSON.parse(chunks.join(""));
+      }
+    } catch (e) {}
+    return routes;
+  }
+
+  async function matchRoute(routes) {
+    const requestHost = event.request.headers.host.value;
+    const requestHostWithEscapedDots = requestHost.replace(/\./g, "\\.");
+    const requestHostRegexPattern = "^" + requestHost + "$";
+    let match;
+    routes.forEach(r => {
+      var parts = r.split(",");
+      const type = parts[0];
+      const routeNs = parts[1];
+      const host = parts[2];
+      const hostLength = host.length;
+      const path = parts[3];
+      const pathLength = path.length;
+
+      // Do not consider if the current match is a better winner
+      if (match && (
+          hostLength < match.hostLength
+          || (hostLength === match.hostLength && pathLength < match.pathLength)
+      )) return;
+
+      const hostMatches = host === ""
+        || host === requestHostWithEscapedDots
+        || (host.includes("*") && new RegExp(host).test(requestHostRegexPattern));
+      if (!hostMatches) return;
+
+      const pathMatches = event.request.uri.startsWith(path);
+      if (!pathMatches) return;
+
+      match = {
+        type,
+        routeNs,
+        host,
+        hostLength,
+        path,
+        pathLength,
+      };
+    });
+
+    // Load metadata
+    if (match) {
+      try {
+        const type = match.type;
+        const routeNs = match.routeNs;
+        const v = await cf.kvs().get(routeNs + ":metadata");
+        return { type, routeNs, metadata: JSON.parse(v) };
+      } catch (e) {}
+    }
+  }
+
+  // Look up the route
+  const routes = await getRoutes();
+  const route = await matchRoute(routes);
+  if (!route) return event.request;
+  if (route.metadata.rewrite) {
+    const rw = route.metadata.rewrite;
+    event.request.uri = event.request.uri.replace(new RegExp(rw.regex), rw.to);
+  }
+  if (route.type === "url") setUrlOrigin(route.metadata.host, route.metadata.origin);
+  if (route.type === "bucket") setS3Origin(route.metadata.domain, route.metadata.origin);
+  return event.request;
+}""",
+                                          self.__cdn_ssl.certificate.domain_name,
+                                          args.secret,
+                                          kv_namespace),
             ),
             opts=pulumi.ResourceOptions(parent=self)
         )
@@ -77,7 +332,7 @@ class Router(pulumi.ComponentResource):
                     function_associations=[
                         aws.cloudfront.DistributionDefaultCacheBehaviorFunctionAssociationArgs(
                             event_type="viewer-request",
-                            function_arn=Resource.CloudfrontRequestFunction.arn,
+                            function_arn=self.__request_function.arn,
                         ),
                     ]
                 ),
@@ -86,7 +341,7 @@ class Router(pulumi.ComponentResource):
                         restriction_type="none"
                     )
                 ),
-                aliases=[cdn_domain_name, api_domain_name, storage_domain_name],
+                aliases=[self.__cdn_ssl.certificate.domain_name],
                 viewer_certificate=aws.cloudfront.DistributionViewerCertificateArgs(
                     acm_certificate_arn=self.__cdn_ssl.certificate.arn,
                     ssl_support_method="sni-only",
@@ -104,39 +359,7 @@ class Router(pulumi.ComponentResource):
             args=cloudflare.RecordArgs(
                 zone_id=Resource.Zone.id,
                 type="CNAME",
-                name=cdn_domain_name,
-                content=self.__distribution.domain_name,
-                ttl=1,
-                proxied=True,
-            ),
-            opts=pulumi.ResourceOptions(
-                parent=self,
-                delete_before_replace=True,
-            )
-        )
-
-        self.__api_alias_record = cloudflare.Record(
-            resource_name="ApiAliasRecord",
-            args=cloudflare.RecordArgs(
-                zone_id=Resource.Zone.id,
-                type="CNAME",
-                name=api_domain_name,
-                content=self.__distribution.domain_name,
-                ttl=1,
-                proxied=True,
-            ),
-            opts=pulumi.ResourceOptions(
-                parent=self,
-                delete_before_replace=True,
-            )
-        )
-
-        self.__storage_alias_record = cloudflare.Record(
-            resource_name="StorageAliasRecord",
-            args=cloudflare.RecordArgs(
-                zone_id=Resource.Zone.id,
-                type="CNAME",
-                name=storage_domain_name,
+                name=self.__cdn_ssl.certificate.domain_name,
                 content=self.__distribution.domain_name,
                 ttl=1,
                 proxied=True,
@@ -148,8 +371,9 @@ class Router(pulumi.ComponentResource):
         )
 
         self.register_outputs({
-            "cdn_alias_record": self.__cdn_alias_record.id,
+            "key_value_store": self.__key_value_store.id,
+            "key_value_pairs": self.__key_value_pairs.id,
+            "request_function": self.__request_function.id,
             "distribution": self.__distribution.id,
-            "api_alias_record": self.__api_alias_record.id,
-            "storage_alias_record": self.__storage_alias_record.id,
+            "cdn_alias_record": self.__cdn_alias_record.id,
         })

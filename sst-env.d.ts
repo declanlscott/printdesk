@@ -204,10 +204,10 @@ declare module "sst" {
       "type": "sst.aws.Bucket"
     }
     "TenantDomains": {
-      "api": {
+      "cdn": {
         "nameTemplate": string
       },
-      "files": {
+      "api": {
         "nameTemplate": string
       },
       "realtime": {

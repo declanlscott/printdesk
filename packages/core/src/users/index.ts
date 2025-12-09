@@ -508,10 +508,11 @@ export namespace Users {
               policies.canEdit.make({ id }),
             ),
           ),
-          mutator: Effect.fn("Users.Mutations.edit.mutator")((user, session) =>
-            repository
-              .updateById(user.id, user, session.tenantId)
-              .pipe(Effect.tap(notifyEdit)),
+          mutator: Effect.fn("Users.Mutations.edit.mutator")(
+            (user, { tenantId }) =>
+              repository
+                .updateById(user.id, user, tenantId)
+                .pipe(Effect.tap(notifyEdit)),
           ),
         });
 
@@ -526,9 +527,9 @@ export namespace Users {
             ),
           ),
           mutator: Effect.fn("Users.Mutations.delete.mutator")(
-            ({ id, deletedAt }, session) =>
+            ({ id, deletedAt }, { tenantId }) =>
               repository
-                .updateById(id, { deletedAt }, session.tenantId)
+                .updateById(id, { deletedAt }, tenantId)
                 .pipe(Effect.tap(notifyDelete)),
           ),
         });
@@ -542,9 +543,9 @@ export namespace Users {
               ),
           ),
           mutator: Effect.fn("Users.Mutations.restore.mutator")(
-            ({ id }, session) =>
+            ({ id }, { tenantId }) =>
               repository
-                .updateById(id, { deletedAt: null }, session.tenantId)
+                .updateById(id, { deletedAt: null }, tenantId)
                 .pipe(Effect.tap(notifyRestore)),
           ),
         });

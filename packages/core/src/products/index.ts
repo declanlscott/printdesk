@@ -732,9 +732,9 @@ export namespace Products {
               ),
           ),
           mutator: Effect.fn("Products.Mutations.edit.mutator")(
-            ({ id, ...product }, session) =>
+            ({ id, ...product }, user) =>
               repository
-                .updateById(id, product, session.tenantId)
+                .updateById(id, product, user.tenantId)
                 .pipe(Effect.tap(notifyEdit)),
           ),
         });
@@ -750,8 +750,8 @@ export namespace Products {
                 ),
             ),
             mutator: Effect.fn("Products.Mutations.publish.mutator")(
-              ({ id, updatedAt }, session) =>
-                repository.findByIdForUpdate(id, session.tenantId).pipe(
+              ({ id, updatedAt }, user) =>
+                repository.findByIdForUpdate(id, user.tenantId).pipe(
                   Effect.flatMap((prev) =>
                     repository
                       .updateById(
@@ -764,7 +764,7 @@ export namespace Products {
                           }),
                           updatedAt,
                         },
-                        session.tenantId,
+                        user.tenantId,
                       )
                       .pipe(Effect.tap(notifyPublish)),
                   ),
@@ -782,8 +782,8 @@ export namespace Products {
               ),
           ),
           mutator: Effect.fn("Products.Mutations.draft.mutator")(
-            ({ id, updatedAt }, session) =>
-              repository.findByIdForUpdate(id, session.tenantId).pipe(
+            ({ id, updatedAt }, user) =>
+              repository.findByIdForUpdate(id, user.tenantId).pipe(
                 Effect.flatMap((prev) =>
                   repository
                     .updateById(
@@ -796,7 +796,7 @@ export namespace Products {
                         }),
                         updatedAt,
                       },
-                      session.tenantId,
+                      user.tenantId,
                     )
                     .pipe(Effect.tap(notifyDraft)),
                 ),
@@ -815,13 +815,9 @@ export namespace Products {
                 ),
             ),
             mutator: Effect.fn("Products.Mutations.delete.mutator")(
-              ({ id, deletedAt }, session) =>
+              ({ id, deletedAt }, user) =>
                 repository
-                  .updateById(
-                    id,
-                    { deletedAt, status: "draft" },
-                    session.tenantId,
-                  )
+                  .updateById(id, { deletedAt, status: "draft" }, user.tenantId)
                   .pipe(Effect.tap(notifyDelete)),
             ),
           },
@@ -838,9 +834,9 @@ export namespace Products {
                 ),
             ),
             mutator: Effect.fn("Products.Mutations.restore.mutator")(
-              ({ id }, session) =>
+              ({ id }, user) =>
                 repository
-                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .updateById(id, { deletedAt: null }, user.tenantId)
                   .pipe(Effect.tap(notifyRestore)),
             ),
           },

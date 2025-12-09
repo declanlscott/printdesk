@@ -1232,11 +1232,10 @@ export namespace Orders {
               policies.canEdit.make({ id }),
             ),
           ),
-          mutator: Effect.fn("Orders.Mutations.edit.mutator")(
-            (order, session) =>
-              repository
-                .updateById(order.id, order, session.tenantId)
-                .pipe(Effect.tap(notifyEdit)),
+          mutator: Effect.fn("Orders.Mutations.edit.mutator")((order, user) =>
+            repository
+              .updateById(order.id, order, user.tenantId)
+              .pipe(Effect.tap(notifyEdit)),
           ),
         });
 
@@ -1252,16 +1251,16 @@ export namespace Orders {
               ),
           ),
           mutator: Effect.fn("Orders.Mutations.approve.makePolicy")(
-            ({ id, ...order }, session) =>
+            ({ id, ...order }, user) =>
               repository
                 .updateById(
                   id,
                   {
                     ...order,
                     sharedAccountWorkflowStatusId: null,
-                    managerId: session.userId,
+                    managerId: user.id,
                   },
-                  session.tenantId,
+                  user.tenantId,
                 )
                 .pipe(Effect.tap(notifyApprove)),
           ),
@@ -1280,12 +1279,12 @@ export namespace Orders {
             ),
             mutator: Effect.fn(
               "Orders.Mutations.transitionRoomWorkflowStatus.mutator",
-            )(({ id, ...order }, session) =>
+            )(({ id, ...order }, user) =>
               repository
                 .updateById(
                   id,
                   { ...order, sharedAccountWorkflowStatusId: null },
-                  session.tenantId,
+                  user.tenantId,
                 )
                 .pipe(Effect.tap(notifyTransition)),
             ),
@@ -1309,12 +1308,12 @@ export namespace Orders {
               ),
               mutator: Effect.fn(
                 "Orders.Mutations.transitionSharedAccountWorkflowStatus.mutator",
-              )(({ id, ...order }, session) =>
+              )(({ id, ...order }, user) =>
                 repository
                   .updateById(
                     id,
                     { ...order, roomWorkflowStatusId: null },
-                    session.tenantId,
+                    user.tenantId,
                   )
                   .pipe(Effect.tap(notifyTransition)),
               ),
@@ -1336,9 +1335,9 @@ export namespace Orders {
               ),
           ),
           mutator: Effect.fn("Orders.Mutations.delete.mutator")(
-            ({ id, deletedAt }, session) =>
+            ({ id, deletedAt }, user) =>
               repository
-                .updateById(id, { deletedAt }, session.tenantId)
+                .updateById(id, { deletedAt }, user.tenantId)
                 .pipe(Effect.tap(notifyDelete)),
           ),
         });
@@ -1352,9 +1351,9 @@ export namespace Orders {
               ),
           ),
           mutator: Effect.fn("Orders.Mutations.restore.mutator")(
-            ({ id }, session) =>
+            ({ id }, user) =>
               repository
-                .updateById(id, { deletedAt: null }, session.tenantId)
+                .updateById(id, { deletedAt: null }, user.tenantId)
                 .pipe(Effect.tap(notifyRestore)),
           ),
         });

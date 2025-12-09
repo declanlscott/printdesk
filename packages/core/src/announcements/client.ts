@@ -128,12 +128,12 @@ export namespace Announcements {
           AnnouncementsContract.create,
           {
             makePolicy: () => AccessControl.permission("announcements:create"),
-            mutator: (announcement, session) =>
+            mutator: (announcement, user) =>
               repository.create(
                 AnnouncementsContract.DataTransferObject.make({
                   ...announcement,
-                  authorId: session.userId,
-                  tenantId: session.tenantId,
+                  authorId: user.id,
+                  tenantId: user.tenantId,
                 }),
               ),
           },

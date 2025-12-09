@@ -8,7 +8,7 @@ import * as Schema from "effect/Schema";
 
 import { AccessControl } from "../access-control";
 
-import type { AuthContract } from "../auth/contract";
+import type { ActorsContract } from "../actors/contract";
 import type { ProceduresContract } from "../procedures/contract";
 
 export namespace MutationsContract {
@@ -19,7 +19,7 @@ export namespace MutationsContract {
     TContext,
   > = (
     args: Schema.Schema.Type<TArgs>,
-    session: AuthContract.Session,
+    user: ActorsContract.User,
   ) => Effect.Effect<TSuccess, TError, TContext>;
 
   export type Mutation<
@@ -178,7 +178,7 @@ export namespace MutationsContract {
       args:
         | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
         | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
-      session: AuthContract.Session,
+      user: ActorsContract.User,
     ) {
       return this.#map.pipe(
         HashMap.get(name),
@@ -217,7 +217,7 @@ export namespace MutationsContract {
                 ).pipe(
                   Effect.flatMap((args) =>
                     mutation
-                      .mutator(args, session)
+                      .mutator(args, user)
                       .pipe(
                         AccessControl.enforce(mutation.makePolicy(args)),
                         Effect.flatMap(

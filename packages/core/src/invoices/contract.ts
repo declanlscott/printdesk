@@ -106,4 +106,11 @@ export namespace InvoicesContract {
       Effect.map((fn) => fn.apply(undefined, [order])),
       Effect.flatMap(Schema.decodeUnknown(Estimate)),
     );
+
+  export const ProcessInvoicePayload = Schema.parseJson(
+    Schema.Struct({
+      invoiceId: ColumnsContract.EntityId,
+      tenantId: ColumnsContract.TenantId,
+    }),
+  );
 }

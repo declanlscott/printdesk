@@ -680,12 +680,12 @@ export namespace Announcements {
               () => AccessControl.permission("announcements:create"),
             ),
             mutator: Effect.fn("Announcements.Mutations.create.mutator")(
-              (announcement, session) =>
+              (announcement, user) =>
                 repository
                   .create({
                     ...announcement,
-                    authorId: session.userId,
-                    tenantId: session.tenantId,
+                    authorId: user.id,
+                    tenantId: user.tenantId,
                   })
                   .pipe(Effect.tap(notifyCreate)),
             ),
@@ -703,9 +703,9 @@ export namespace Announcements {
                 ),
             ),
             mutator: Effect.fn("Announcements.Mutations.edit.mutator")(
-              ({ id, ...announcement }, session) =>
+              ({ id, ...announcement }, user) =>
                 repository
-                  .updateById(id, announcement, session.tenantId)
+                  .updateById(id, announcement, user.tenantId)
                   .pipe(Effect.tap(notifyEdit)),
             ),
           },
@@ -722,9 +722,9 @@ export namespace Announcements {
                 ),
             ),
             mutator: Effect.fn("Announcements.Mutations.delete.mutator")(
-              ({ id, deletedAt }, session) =>
+              ({ id, deletedAt }, user) =>
                 repository
-                  .updateById(id, { deletedAt }, session.tenantId)
+                  .updateById(id, { deletedAt }, user.tenantId)
                   .pipe(Effect.tap(notifyDelete)),
             ),
           },
@@ -741,9 +741,9 @@ export namespace Announcements {
                 ),
             ),
             mutator: Effect.fn("Announcements.Mutations.restore.mutator")(
-              ({ id }, session) =>
+              ({ id }, user) =>
                 repository
-                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .updateById(id, { deletedAt: null }, user.tenantId)
                   .pipe(Effect.tap(notifyRestore)),
             ),
           },

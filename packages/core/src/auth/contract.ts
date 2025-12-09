@@ -7,11 +7,6 @@ import { Constants } from "../utils/constants";
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 
 export namespace AuthContract {
-  export class Session extends Schema.Class<Session>("Session")({
-    userId: ColumnsContract.EntityId,
-    tenantId: ColumnsContract.TenantId,
-  }) {}
-
   export class UserSubject extends Schema.Class<UserSubject>("UserSubject")({
     id: ColumnsContract.EntityId,
     tenantId: ColumnsContract.TenantId,

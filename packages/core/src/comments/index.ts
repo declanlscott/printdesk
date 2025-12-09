@@ -997,12 +997,12 @@ export namespace Comments {
               ),
           ),
           mutator: Effect.fn("Comments.Mutations.create.mutator")(
-            (comment, session) =>
+            (comment, user) =>
               repository
                 .create({
                   ...comment,
-                  authorId: session.userId,
-                  tenantId: session.tenantId,
+                  authorId: user.id,
+                  tenantId: user.tenantId,
                 })
                 .pipe(Effect.tap(notifyCreate)),
           ),
@@ -1020,9 +1020,9 @@ export namespace Comments {
               ),
           ),
           mutator: Effect.fn("Comments.Mutations.edit.mutator")(
-            ({ id, ...comment }, session) =>
+            ({ id, ...comment }, user) =>
               repository
-                .updateById(id, comment, session.tenantId)
+                .updateById(id, comment, user.tenantId)
                 .pipe(Effect.tap(notifyEdit)),
           ),
         });
@@ -1041,9 +1041,9 @@ export namespace Comments {
                 ),
             ),
             mutator: Effect.fn("Comments.Mutations.delete.mutator")(
-              ({ id, deletedAt }, session) =>
+              ({ id, deletedAt }, user) =>
                 repository
-                  .updateById(id, { deletedAt }, session.tenantId)
+                  .updateById(id, { deletedAt }, user.tenantId)
                   .pipe(Effect.tap(notifyDelete)),
             ),
           },
@@ -1060,9 +1060,9 @@ export namespace Comments {
                 ),
             ),
             mutator: Effect.fn("Comments.Mutations.restore.mutator")(
-              ({ id }, session) =>
+              ({ id }, user) =>
                 repository
-                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .updateById(id, { deletedAt: null }, user.tenantId)
                   .pipe(Effect.tap(notifyRestore)),
             ),
           },

@@ -4,7 +4,6 @@ import { ConfidentialClientApplication } from "@azure/msal-node";
 import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
 import { decodeJWT } from "@oslojs/jwt";
 import * as Cause from "effect/Cause";
-import * as Context from "effect/Context";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
@@ -218,11 +217,6 @@ export namespace Auth {
       }),
     },
   ) {}
-
-  export class Session extends Context.Tag("@printdesk/core/auth/Session")<
-    Session,
-    AuthContract.Session
-  >() {}
 
   export class CryptoError extends Data.TaggedError("CryptoError")<{
     readonly cause: unknown;

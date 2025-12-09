@@ -28,7 +28,7 @@ import {
 } from "../workflows";
 import { QueriesContract } from "./contract";
 
-import type { AuthContract } from "../auth/contract";
+import type { ActorsContract } from "../actors/contract";
 import type { ColumnsContract } from "../columns/contract";
 import type { ReplicacheClientViewsModel } from "../replicache/models";
 
@@ -113,7 +113,7 @@ export namespace Queries {
         const differentiate = Effect.fn("Queries.Differentiator.differentiate")(
           (
             clientView: ReplicacheClientViewsModel.Record,
-            userId: AuthContract.Session["userId"],
+            userId: ActorsContract.User["id"],
             limitOffset: number,
             clientViewVersion: {
               next: ColumnsContract.Version;

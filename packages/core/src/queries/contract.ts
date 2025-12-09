@@ -10,7 +10,7 @@ import * as Stream from "effect/Stream";
 
 import { AccessControl } from "../access-control";
 
-import type { AuthContract } from "../auth/contract";
+import type { ActorsContract } from "../actors/contract";
 import type { ColumnsContract } from "../columns/contract";
 import type { Models } from "../models";
 import type { ReplicacheClientViewsModel } from "../replicache/models";
@@ -38,7 +38,7 @@ export namespace QueriesContract {
     readonly policy: AccessControl.Policy<TPolicyError, TPolicyContext>;
     readonly findCreates: (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Effect.Effect<
       Array<VersionedDto<TEntity>>,
       TCreatesError,
@@ -46,7 +46,7 @@ export namespace QueriesContract {
     >;
     readonly findUpdates: (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Effect.Effect<
       Array<VersionedDto<TEntity>>,
       TUpdatesError,
@@ -54,7 +54,7 @@ export namespace QueriesContract {
     >;
     readonly findDeletes: (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Effect.Effect<
       Array<Pick<VersionedDto<TEntity>, "id">>,
       TDeletesError,
@@ -63,7 +63,7 @@ export namespace QueriesContract {
     readonly fastForward: (
       clientView: ReplicacheClientViewsModel.Record,
       excludeIds: Array<VersionedDto<TEntity>["id"]>,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Effect.Effect<
       Array<VersionedDto<TEntity>>,
       TFastForwardError,
@@ -87,7 +87,7 @@ export namespace QueriesContract {
     readonly entity: TEntity;
     readonly findCreates: (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>,
       TCreatesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
@@ -95,7 +95,7 @@ export namespace QueriesContract {
     >;
     readonly findUpdates: (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>,
       TUpdatesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
@@ -103,7 +103,7 @@ export namespace QueriesContract {
     >;
     readonly findDeletes: (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>["id"],
       TDeletesError | Exclude<TPolicyError, AccessControl.AccessDeniedError>,
@@ -112,7 +112,7 @@ export namespace QueriesContract {
     readonly fastForward: (
       clientView: ReplicacheClientViewsModel.Record,
       excludeIds: Chunk.Chunk<VersionedDto<TEntity>["id"]>,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>,
       | TFastForwardError
@@ -283,7 +283,7 @@ export namespace QueriesContract {
 
     #findCreates = (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) =>
       this.#resolveData(
         Iterable.map(this.#queries, (q) => {
@@ -297,7 +297,7 @@ export namespace QueriesContract {
 
     #findUpdates = (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) =>
       this.#resolveData(
         Iterable.map(this.#queries, (q) => {
@@ -311,7 +311,7 @@ export namespace QueriesContract {
 
     #findDeletes = (
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) =>
       this.#resolveIds(
         Iterable.map(this.#queries, (q) => {
@@ -328,7 +328,7 @@ export namespace QueriesContract {
       excludeIds: Chunk.Chunk<
         Models.SyncTable["DataTransferObject"]["Type"]["id"]
       >,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) =>
       this.#resolveData(
         Iterable.map(this.#queries, (q) => {
@@ -425,7 +425,7 @@ export namespace QueriesContract {
         ? Differentiator<TRecord, TIsFinal>
         : never,
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) {
       return this.#map.pipe(
         HashMap.entries,
@@ -460,7 +460,7 @@ export namespace QueriesContract {
         ? Differentiator<TRecord, TIsFinal>
         : never,
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) {
       return this.#map.pipe(
         HashMap.entries,
@@ -495,7 +495,7 @@ export namespace QueriesContract {
         ? Differentiator<TRecord, TIsFinal>
         : never,
       clientView: ReplicacheClientViewsModel.Record,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) {
       return this.#map.pipe(
         HashMap.entries,
@@ -534,7 +534,7 @@ export namespace QueriesContract {
         entity: Models.SyncTableName;
         id: Models.SyncTable["DataTransferObject"]["Type"]["id"];
       }>,
-      userId: AuthContract.Session["userId"],
+      userId: ActorsContract.User["id"],
     ) {
       return this.#map.pipe(
         HashMap.entries,

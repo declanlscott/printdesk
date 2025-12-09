@@ -728,9 +728,9 @@ export namespace Rooms {
             ),
           ),
           mutator: Effect.fn("Rooms.Mutations.edit.mutator")(
-            ({ id, ...room }, session) =>
+            ({ id, ...room }, user) =>
               repository
-                .updateById(id, room, session.tenantId)
+                .updateById(id, room, user.tenantId)
                 .pipe(Effect.tap(notifyEdit)),
           ),
         });
@@ -744,12 +744,12 @@ export namespace Rooms {
               ),
           ),
           mutator: Effect.fn("Rooms.Mutations.publish.mutator")(
-            ({ id, updatedAt }, session) =>
+            ({ id, updatedAt }, user) =>
               repository
                 .updateById(
                   id,
                   { status: "published", updatedAt },
-                  session.tenantId,
+                  user.tenantId,
                 )
                 .pipe(Effect.tap(notifyPublish)),
           ),
@@ -763,18 +763,18 @@ export namespace Rooms {
             ),
           ),
           mutator: Effect.fn("Rooms.Mutations.draft.mutator")(
-            ({ id, updatedAt }, session) =>
+            ({ id, updatedAt }, user) =>
               Effect.all(
                 Tuple.make(
                   repository.updateById(
                     id,
                     { status: "draft", updatedAt },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                   productsRepository.updateByRoomId(
                     id,
                     { status: "draft", updatedAt },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                 ),
                 { concurrency: "unbounded" },
@@ -790,33 +790,33 @@ export namespace Rooms {
             ),
           ),
           mutator: Effect.fn("Rooms.Mutations.delete.mutator")(
-            ({ id, deletedAt }, session) =>
+            ({ id, deletedAt }, user) =>
               Effect.all(
                 Tuple.make(
                   repository.updateById(
                     id,
                     { deletedAt, status: "draft" },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                   announcementsRepository.updateByRoomId(
                     id,
                     { deletedAt },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                   deliveryOptionsRepository.updateByRoomId(
                     id,
                     { deletedAt },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                   workflowsRepository.updateByRoomId(
                     id,
                     { deletedAt },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                   productsRepository.updateByRoomId(
                     id,
                     { deletedAt, status: "draft" },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                 ),
                 { concurrency: "unbounded" },
@@ -833,16 +833,16 @@ export namespace Rooms {
               ),
           ),
           mutator: Effect.fn("Rooms.Mutations.restore.mutator")(
-            ({ id }, session) =>
+            ({ id }, user) =>
               Effect.all(
                 Tuple.make(
                   repository
-                    .updateById(id, { deletedAt: null }, session.tenantId)
+                    .updateById(id, { deletedAt: null }, user.tenantId)
                     .pipe(Effect.map(Struct.omit("version"))),
                   workflowsRepository.updateByRoomId(
                     id,
                     { deletedAt: null },
-                    session.tenantId,
+                    user.tenantId,
                   ),
                 ),
                 { concurrency: "unbounded" },

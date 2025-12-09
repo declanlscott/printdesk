@@ -5,7 +5,7 @@ import * as Schema from "effect/Schema";
 
 import { Replicache } from ".";
 import { AccessControl } from "../access-control";
-import { Auth } from "../auth";
+import { Actors } from "../actors";
 import { ColumnsContract } from "../columns/contract";
 import { Database } from "../database";
 import { Mutations } from "../mutations";
@@ -36,7 +36,9 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
       Procedures.Mutations.Default,
     ],
     effect: Effect.gen(function* () {
-      const session = yield* Auth.Session;
+      const user = yield* Actors.Actor.pipe(
+        Effect.flatMap((actor) => actor.assert("User")),
+      );
 
       const db = yield* Database.TransactionManager;
       const clientGroupsRepository = yield* Replicache.ClientGroupsRepository;
@@ -63,13 +65,14 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                   [
                     // 3: Get client group
                     clientGroupsRepository
-                      .findByIdForUpdate(clientGroupId, session.tenantId)
+                      .findByIdForUpdate(clientGroupId, user.tenantId)
                       .pipe(
                         Effect.catchTag("NoSuchElementException", () =>
                           Effect.succeed(
                             ReplicacheClientGroupsModel.Record.make({
                               id: clientGroupId,
-                              ...session,
+                              userId: user.id,
+                              tenantId: user.tenantId,
                             }),
                           ),
                         ),
@@ -77,13 +80,13 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
 
                     // 5: Get client
                     clientsRepository
-                      .findByIdForUpdate(mutation.clientID, session.tenantId)
+                      .findByIdForUpdate(mutation.clientID, user.tenantId)
                       .pipe(
                         Effect.catchTag("NoSuchElementException", () =>
                           Effect.succeed(
                             ReplicacheClientsModel.Record.make({
                               id: mutation.clientID,
-                              tenantId: session.tenantId,
+                              tenantId: user.tenantId,
                               clientGroupId,
                             }),
                           ),
@@ -131,11 +134,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                   // 10(i): Business logic
                   // 10(i)(a): version column is automatically updated by Drizzle on any affected rows
                   yield* dispatcher
-                    .dispatch(
-                      mutation.name,
-                      { encoded: mutation.args },
-                      session,
-                    )
+                    .dispatch(mutation.name, { encoded: mutation.args }, user)
                     .pipe(
                       // 10(ii)(a,b): Log and abort
                       Effect.tapErrorCause((error) =>

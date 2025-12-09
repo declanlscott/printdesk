@@ -1096,9 +1096,9 @@ export namespace SharedAccounts {
                 ),
             ),
             mutator: Effect.fn("SharedAccounts.Mutations.edit.mutator")(
-              ({ id, ...sharedAccount }, session) =>
+              ({ id, ...sharedAccount }, user) =>
                 repository
-                  .updateById(id, sharedAccount, session.tenantId)
+                  .updateById(id, sharedAccount, user.tenantId)
                   .pipe(Effect.tap(notifyEdit)),
             ),
           },
@@ -1115,9 +1115,9 @@ export namespace SharedAccounts {
                 ),
             ),
             mutator: Effect.fn("SharedAccounts.Mutations.delete.mutator")(
-              ({ id, deletedAt }, session) =>
+              ({ id, deletedAt }, user) =>
                 repository
-                  .updateById(id, { deletedAt }, session.tenantId)
+                  .updateById(id, { deletedAt }, user.tenantId)
                   .pipe(Effect.tap(notifyDelete)),
             ),
           },
@@ -1135,9 +1135,9 @@ export namespace SharedAccounts {
               ),
             ),
             mutator: Effect.fn("SharedAccounts.Mutations.restore.mutator")(
-              ({ id }, session) =>
+              ({ id }, user) =>
                 repository
-                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .updateById(id, { deletedAt: null }, user.tenantId)
                   .pipe(Effect.tap(notifyRestore)),
             ),
           },
@@ -2595,9 +2595,9 @@ export namespace SharedAccounts {
             ),
             mutator: Effect.fn(
               "SharedAccounts.ManagerAccessMutations.delete.mutator",
-            )(({ id, deletedAt }, session) =>
+            )(({ id, deletedAt }, user) =>
               repository
-                .updateById(id, { deletedAt }, session.tenantId)
+                .updateById(id, { deletedAt }, user.tenantId)
                 .pipe(Effect.tap(notifyDelete)),
             ),
           },
@@ -2618,9 +2618,9 @@ export namespace SharedAccounts {
             ),
             mutator: Effect.fn(
               "SharedAccounts.ManagerAccessMutations.restore.mutator",
-            )(({ id }, session) =>
+            )(({ id }, user) =>
               repository
-                .updateById(id, { deletedAt: null }, session.tenantId)
+                .updateById(id, { deletedAt: null }, user.tenantId)
                 .pipe(Effect.tap(notifyRestore)),
             ),
           },

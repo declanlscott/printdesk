@@ -17,7 +17,7 @@ import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
-import { Auth } from "../auth";
+import { Actors } from "../actors";
 import { Sst } from "../sst";
 import { buildName } from "../utils";
 
@@ -58,14 +58,20 @@ export namespace Credentials {
         ),
       });
 
-    static readonly layer = (provider: () => AwsCredentialIdentityProvider) =>
+    static readonly layer = (identity: AwsCredentialIdentity) =>
+      Layer.succeed(this, this.make(identity));
+
+    static readonly providerLayer = (
+      provider: () => AwsCredentialIdentityProvider,
+    ) =>
       Layer.effect(
         this,
         Effect.promise(provider()).pipe(Effect.map(this.make)),
       );
   }
 
-  export const fromChain = () => Credentials.layer(fromNodeProviderChain);
+  export const fromChain = () =>
+    Credentials.providerLayer(fromNodeProviderChain);
 
   export const values = Credentials.pipe(
     Effect.map((credentials) => ({
@@ -334,13 +340,12 @@ export namespace Signers {
     },
   ) {
     static readonly tenantLayer = Layer.unwrapEffect(
-      Auth.Session.pipe(
-        Effect.flatMap((session) =>
+      Actors.Actor.pipe(
+        Effect.flatMap(Struct.get("assertPrivate")),
+        Effect.flatMap(({ tenantId }) =>
           Sst.Resource.TenantDomains.pipe(
             Effect.map(Redacted.value),
-            Effect.map((hosts) =>
-              buildName(hosts.api.nameTemplate, session.tenantId),
-            ),
+            Effect.map((hosts) => buildName(hosts.api.nameTemplate, tenantId)),
           ),
         ),
         Effect.map(this.Default),

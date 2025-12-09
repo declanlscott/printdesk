@@ -2968,9 +2968,9 @@ export namespace WorkflowStatuses {
                 ),
             ),
             mutator: Effect.fn("WorkflowStatuses.Mutations.edit.mutator")(
-              ({ id, ...workflowStatus }, session) =>
+              ({ id, ...workflowStatus }, user) =>
                 repository
-                  .updateById(id, workflowStatus, session.tenantId)
+                  .updateById(id, workflowStatus, user.tenantId)
                   .pipe(Effect.tap(notifyEdit)),
             ),
           },
@@ -2988,10 +2988,10 @@ export namespace WorkflowStatuses {
               ),
             ),
             mutator: Effect.fn("WorkflowStatuses.Mutations.reorder.mutator")(
-              ({ id, index, updatedAt }, session) =>
+              ({ id, index, updatedAt }, user) =>
                 Effect.gen(function* () {
                   const slice = yield* repository
-                    .findSliceForUpdate(id, session.tenantId, index)
+                    .findSliceForUpdate(id, user.tenantId, index)
                     .pipe(
                       Effect.flatMap((slice) =>
                         Array.last(slice).pipe(
@@ -3023,7 +3023,7 @@ export namespace WorkflowStatuses {
                   // Temporarily negate indexes to avoid uniqueness violations during upsert
                   yield* repository.negateMany(
                     Array.map(slice, Struct.get("id")),
-                    session.tenantId,
+                    user.tenantId,
                   );
 
                   return yield* repository.upsertMany(
@@ -3054,16 +3054,16 @@ export namespace WorkflowStatuses {
               ),
             ),
             mutator: Effect.fn("WorkflowStatuses.Mutations.delete.mutator")(
-              ({ id, deletedAt }, session) =>
+              ({ id, deletedAt }, user) =>
                 Effect.gen(function* () {
                   const slice = yield* repository.findTailSliceByIdForUpdate(
                     id,
-                    session.tenantId,
+                    user.tenantId,
                   );
 
                   const deleted = yield* repository.deleteById(
                     id,
-                    session.tenantId,
+                    user.tenantId,
                   );
 
                   yield* repository.upsertMany(

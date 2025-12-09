@@ -8,7 +8,7 @@ import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 
-import { Auth } from "../auth";
+import { Actors } from "../actors";
 import { Signers } from "../aws";
 import { Events } from "../events";
 import { Procedures } from "../procedures";
@@ -17,6 +17,7 @@ import { buildName } from "../utils";
 
 import type * as Chunk from "effect/Chunk";
 import type * as Duration from "effect/Duration";
+import type { ActorsContract } from "../actors/contract";
 import type { RealtimeContract } from "./contract";
 
 export namespace Realtime {
@@ -32,7 +33,11 @@ export namespace Realtime {
       effect: Effect.gen(function* () {
         const resource = yield* Sst.Resource;
 
-        const maybeSession = yield* Effect.serviceOption(Auth.Session);
+        const maybePrivateActor = (yield* Actors.Actor.pipe(
+          Effect.flatMap(Struct.get("assertPrivate")),
+          Effect.map(Option.some),
+          Effect.catchTag("InvalidActorError", () => Effect.succeedNone),
+        )) as Option.Option<ActorsContract.System | ActorsContract.User>;
         const signer = yield* Signers.Appsync;
         const httpClient = yield* HttpClient.HttpClient;
 
@@ -42,9 +47,10 @@ export namespace Realtime {
         const nameTemplate = resource.TenantDomains.pipe(Redacted.value)
           .realtime.nameTemplate;
 
-        const url = maybeSession.pipe(
+        const url = maybePrivateActor.pipe(
           Option.match({
-            onSome: (session) => buildName(nameTemplate, session.tenantId),
+            onSome: (privateActor) =>
+              buildName(nameTemplate, privateActor.tenantId),
             onNone: () => dns.realtime,
           }),
           (domain) =>
@@ -60,9 +66,9 @@ export namespace Realtime {
           channel?: RealtimeContract.Channel<TChannel>,
           expiresIn?: Duration.Duration,
         ) =>
-          maybeSession.pipe(
+          maybePrivateActor.pipe(
             Option.match({
-              onSome: (session) => buildName(nameTemplate, session.tenantId),
+              onSome: (actor) => buildName(nameTemplate, actor.tenantId),
               onNone: () => dns.http,
             }),
             (domain) =>
@@ -94,9 +100,10 @@ export namespace Realtime {
             channel: RealtimeContract.Channel<TChannel>,
             events: Chunk.Chunk<Events.Event>,
           ) =>
-            maybeSession.pipe(
+            maybePrivateActor.pipe(
               Option.match({
-                onSome: (session) => buildName(nameTemplate, session.tenantId),
+                onSome: (privateActor) =>
+                  buildName(nameTemplate, privateActor.tenantId),
                 onNone: () => dns.http,
               }),
               (domain) =>

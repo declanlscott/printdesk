@@ -8,7 +8,7 @@ import * as Tuple from "effect/Tuple";
 
 import { Replicache } from ".";
 import { AccessControl } from "../access-control";
-import { Auth } from "../auth";
+import { Actors } from "../actors";
 import { ColumnsContract } from "../columns/contract";
 import { Database } from "../database";
 import { Queries } from "../queries";
@@ -35,7 +35,9 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
       Queries.Differentiator.Default,
     ],
     effect: Effect.gen(function* () {
-      const { userId, tenantId } = yield* Auth.Session;
+      const { userId, tenantId } = yield* Actors.Actor.pipe(
+        Effect.flatMap((actor) => actor.assert("User")),
+      );
 
       const db = yield* Database.TransactionManager;
       const clientGroupsRepository = yield* Replicache.ClientGroupsRepository;

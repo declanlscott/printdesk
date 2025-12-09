@@ -1,6 +1,7 @@
 import {
   and,
   eq,
+  getTableColumns,
   getTableName,
   getViewName,
   getViewSelectedFields,
@@ -18,10 +19,12 @@ import { Events } from "../events";
 import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders";
 import { OrdersContract } from "../orders/contract";
+import { OrdersSchema } from "../orders/schema";
 import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache";
 import { ReplicacheNotifier } from "../replicache/notifier";
 import { ReplicacheClientViewEntriesSchema } from "../replicache/schemas";
+import { SharedAccountsSchema } from "../shared-accounts/schemas";
 import { InvoicesContract } from "./contract";
 import { InvoicesSchema } from "./schema";
 
@@ -723,6 +726,69 @@ export namespace Invoices {
                 ),
           );
 
+        const findByIdForUpdateWithSharedAccount = Effect.fn(
+          "Invoices.Repository.findByIdForUpdateWithSharedAccount",
+        )(
+          (
+            id: InvoicesSchema.Row["id"],
+            tenantId: InvoicesSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .select({
+                    invoice: getTableColumns(table),
+                    sharedAccount: getTableColumns(
+                      SharedAccountsSchema.table.definition,
+                    ),
+                  })
+                  .from(table)
+                  .innerJoin(
+                    OrdersSchema.table.definition,
+                    and(
+                      eq(table.orderId, OrdersSchema.table.definition.id),
+                      eq(
+                        table.tenantId,
+                        OrdersSchema.table.definition.tenantId,
+                      ),
+                    ),
+                  )
+                  .innerJoin(
+                    SharedAccountsSchema.table.definition,
+                    and(
+                      eq(
+                        OrdersSchema.table.definition.sharedAccountId,
+                        SharedAccountsSchema.table.definition.id,
+                      ),
+                      eq(
+                        OrdersSchema.table.definition.tenantId,
+                        SharedAccountsSchema.table.definition.tenantId,
+                      ),
+                    ),
+                  )
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .for("update", { of: table }),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
+        const updateById = Effect.fn("Invoices.Repository.updateById")(
+          (
+            id: InvoicesSchema.Row["id"],
+            invoice: Partial<Omit<InvoicesSchema.Row, "id" | "tenantId">>,
+            tenantId: InvoicesSchema.Row["tenantId"],
+          ) =>
+            db
+              .useTransaction((tx) =>
+                tx
+                  .update(table)
+                  .set(invoice)
+                  .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+                  .returning(),
+              )
+              .pipe(Effect.flatMap(Array.head)),
+        );
+
         return {
           create,
           findCreates,
@@ -741,6 +807,8 @@ export namespace Invoices {
           findActiveFastForward,
           findActiveCustomerPlacedOrderFastForward,
           findActiveManagerAuthorizedSharedAccountOrderFastForward,
+          findByIdForUpdateWithSharedAccount,
+          updateById,
         } as const;
       }),
     },

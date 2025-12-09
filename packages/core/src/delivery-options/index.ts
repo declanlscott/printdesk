@@ -697,9 +697,9 @@ export namespace DeliveryOptions {
                 ),
             ),
             mutator: Effect.fn("DeliveryOptions.Mutations.edit.mutator")(
-              ({ id, ...deliveryOption }, session) =>
+              ({ id, ...deliveryOption }, user) =>
                 repository
-                  .updateById(id, deliveryOption, session.tenantId)
+                  .updateById(id, deliveryOption, user.tenantId)
                   .pipe(Effect.tap(notifyEdit)),
             ),
           },
@@ -717,9 +717,9 @@ export namespace DeliveryOptions {
               ),
             ),
             mutator: Effect.fn("DeliveryOptions.Mutations.delete.mutator")(
-              ({ id, deletedAt }, session) =>
+              ({ id, deletedAt }, user) =>
                 repository
-                  .updateById(id, { deletedAt }, session.tenantId)
+                  .updateById(id, { deletedAt }, user.tenantId)
                   .pipe(Effect.tap(notifyDelete)),
             ),
           },
@@ -737,9 +737,9 @@ export namespace DeliveryOptions {
               ),
             ),
             mutator: Effect.fn("DeliveryOptions.Mutations.restore.mutator")(
-              ({ id }, session) =>
+              ({ id }, user) =>
                 repository
-                  .updateById(id, { deletedAt: null }, session.tenantId)
+                  .updateById(id, { deletedAt: null }, user.tenantId)
                   .pipe(Effect.tap(notifyRestore)),
             ),
           },

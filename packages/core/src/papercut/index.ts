@@ -1,4 +1,5 @@
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
+import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
@@ -33,6 +34,14 @@ export namespace Papercut {
   };
   type SharedAccountPropertySchemas = typeof SharedAccountPropertySchemas;
 
+  export class SharedAccountBalanceAdjustmentFailure extends Data.TaggedError(
+    "SharedAccountBalanceAdjustmentFailure",
+  ) {}
+
+  export class UserAndGroupSyncFailure extends Data.TaggedError(
+    "UserAndGroupSyncFailure",
+  ) {}
+
   export class Client extends Effect.Service<Client>()(
     "@printdesk/core/papercut/Client",
     {
@@ -48,9 +57,7 @@ export namespace Papercut {
 
         const setTailnetUri = Effect.fn("Papercut.Client.setTailnetUri")(
           (value: PapercutContract.TailnetUri) =>
-            HttpClientRequest.put(
-              `${Constants.PAPERCUT_SERVER_PATH_PREFIX}/tailnet-uri`,
-            ).pipe(
+            HttpClientRequest.put("/papercut/tailnet-uri").pipe(
               HttpClientRequest.schemaBodyJson(
                 Schema.Struct({ value: PapercutContract.TailnetUri }),
               )({ value }),
@@ -60,9 +67,7 @@ export namespace Papercut {
 
         const setAuthToken = Effect.fn("Papercut.Client.setAuthToken")(
           (value: PapercutContract.AuthToken) =>
-            HttpClientRequest.put(
-              `${Constants.PAPERCUT_SERVER_PATH_PREFIX}/auth-token`,
-            ).pipe(
+            HttpClientRequest.put("/papercut/auth-token").pipe(
               HttpClientRequest.schemaBodyJson(
                 Schema.Struct({ value: PapercutContract.AuthToken }),
               )({ value }),
@@ -88,6 +93,11 @@ export namespace Papercut {
               Effect.map(injectAuthHeader),
               Effect.flatMap(httpClient.execute),
               Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
+              Effect.flatMap((response) =>
+                !response.value
+                  ? Effect.fail(new SharedAccountBalanceAdjustmentFailure())
+                  : Effect.void,
+              ),
             ),
         );
 
@@ -205,6 +215,11 @@ export namespace Papercut {
             Effect.map(injectAuthHeader),
             Effect.flatMap(httpClient.execute),
             Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
+            Effect.flatMap((response) =>
+              !response.value
+                ? Effect.fail(new UserAndGroupSyncFailure())
+                : Effect.void,
+            ),
             Effect.withSpan("Papercut.Client.performUserAndGroupSync"),
           );
 

@@ -261,11 +261,10 @@ export namespace Tenants {
           makePolicy: Effect.fn("Tenants.Mutations.edit.makePolicy")(() =>
             AccessControl.permission("tenants:update"),
           ),
-          mutator: Effect.fn("Tenants.Mutations.edit.mutator")(
-            (tenant, session) =>
-              repository
-                .updateById(session.tenantId, tenant)
-                .pipe(Effect.tap(notifyEdit)),
+          mutator: Effect.fn("Tenants.Mutations.edit.mutator")((tenant, user) =>
+            repository
+              .updateById(user.tenantId, tenant)
+              .pipe(Effect.tap(notifyEdit)),
           ),
         });
 

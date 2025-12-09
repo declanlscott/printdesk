@@ -120,12 +120,12 @@ export namespace Comments {
               orderPolicies.isCustomerOrManager.make({ id: orderId }),
               orderPolicies.isManagerAuthorized.make({ id: orderId }),
             ),
-          mutator: (comment, session) =>
+          mutator: (comment, user) =>
             repository.create(
               CommentsContract.DataTransferObject.make({
                 ...comment,
-                authorId: session.userId,
-                tenantId: session.tenantId,
+                authorId: user.id,
+                tenantId: user.tenantId,
               }),
             ),
         });

@@ -1,50 +1,62 @@
-import { Sqs } from "@printdesk/core/aws";
-import { withAws } from "@printdesk/core/aws/context";
-import { useTransaction } from "@printdesk/core/database/context";
-import { tenantMetadataTable, tenantsTable } from "@printdesk/core/tenants/sql";
-import { eq } from "drizzle-orm";
-import * as R from "remeda";
-import { Resource } from "sst";
+import { SQS } from "@effect-aws/client-sqs";
+import { LambdaHandler } from "@effect-aws/lambda";
+import { ColumnsContract } from "@printdesk/core/columns/contract";
+import { Sst } from "@printdesk/core/sst";
+import { Tenants } from "@printdesk/core/tenants";
+import { TenantMetadataContract } from "@printdesk/core/tenants/contracts";
+import * as Chunk from "effect/Chunk";
+import * as Effect from "effect/Effect";
+import * as Iterable from "effect/Iterable";
+import * as Layer from "effect/Layer";
+import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
+import * as Stream from "effect/Stream";
+import * as Struct from "effect/Struct";
 
-export const handler = async () =>
-  withAws(
-    () => ({ sqs: { client: new Sqs.Client() } }),
-    async () => {
-      const tenants = await useTransaction((tx) =>
-        tx
-          .select({
-            id: tenantsTable.id,
-            infraProgramInput: tenantMetadataTable.infraProgramInput,
-          })
-          .from(tenantsTable)
-          .innerJoin(
-            tenantMetadataTable,
-            eq(tenantMetadataTable.tenantId, tenantsTable.id),
-          )
-          .where(eq(tenantsTable.status, "active")),
+const layer = Layer.mergeAll(
+  SQS.defaultLayer,
+  Tenants.MetadataRepository.Default,
+).pipe(Layer.provideMerge(Sst.Resource.layer));
+
+export const handler = LambdaHandler.make({
+  layer,
+  handler: () =>
+    Effect.gen(function* () {
+      const sqs = yield* SQS;
+      const queueUrl = yield* Sst.Resource.InfraQueue.pipe(
+        Effect.map(Redacted.value),
+        Effect.map(Struct.get("url")),
       );
 
-      const failedEntries: NonNullable<
-        Awaited<ReturnType<typeof Sqs.sendMessageBatch>>["Failed"]
-      > = [];
+      const failedEntries = yield* Tenants.MetadataRepository.findByActive.pipe(
+        Stream.fromIterableEffect,
+        Stream.grouped(10),
+        Stream.map(Chunk.map(Struct.pick("tenantId", "infraProgramInput"))),
+        Stream.mapEffect(
+          Schema.encode(
+            Schema.Chunk(
+              Schema.parseJson(
+                Schema.Struct({
+                  tenantId: ColumnsContract.TenantId,
+                  infraProgramInput: TenantMetadataContract.InfraProgramInput,
+                }),
+              ),
+            ),
+          ),
+        ),
+        Stream.mapEffect((messages) =>
+          sqs.sendMessageBatch({
+            QueueUrl: queueUrl,
+            Entries: messages.map((message, index) => ({
+              Id: index.toString(),
+              MessageBody: message,
+            })),
+          }),
+        ),
+        Stream.runCollect,
+        Effect.map(Iterable.flatMap((output) => output.Failed ?? [])),
+      );
 
-      for (const chunk of R.chunk(tenants, 10)) {
-        const { Failed } = await Sqs.sendMessageBatch({
-          QueueUrl: Resource.InfraQueue.url,
-          Entries: chunk.map(({ id: tenantId, infraProgramInput }, index) => ({
-            Id: index.toString(),
-            MessageBody: JSON.stringify({ tenantId, ...infraProgramInput }),
-          })),
-        });
-
-        if (Failed && !R.isEmpty(Failed)) {
-          console.error("Failed to send messages to SQS", Failed);
-          failedEntries.push(...Failed);
-        }
-      }
-
-      if (!R.isEmpty(failedEntries)) return { success: false };
-
-      return { success: true };
-    },
-  );
+      return { success: Iterable.isEmpty(failedEntries) };
+    }),
+});

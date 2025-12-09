@@ -1,3 +1,6 @@
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
+
 import {
   api,
   tenantApiFunctionImage,
@@ -179,11 +182,35 @@ export const infraDispatcher = new sst.aws.Function("InfraDispatcher", {
   link: [aws_, dsqlCluster, infraQueue],
 });
 
-new aws.lambda.Invocation("InfraDispatcherInvocation", {
-  functionName: infraDispatcher.name,
-  input: JSON.stringify({}),
-  triggers: {
-    dbMigratorInvocationSuccess: $jsonStringify(dbMigratorInvocationSuccess),
-    infraFunction: infraFunction.lastModified,
+export const infraDispatcherInvocation = new aws.lambda.Invocation(
+  "InfraDispatcherInvocation",
+  {
+    functionName: infraDispatcher.name,
+    input: JSON.stringify({}),
+    triggers: {
+      dbMigratorInvocationSuccess: $jsonStringify(dbMigratorInvocationSuccess),
+      infraFunction: infraFunction.lastModified,
+    },
   },
-});
+);
+
+export const infraDispatcherInvocationSuccess =
+  infraDispatcherInvocation.result.apply(
+    Schema.decodeSync(
+      Schema.transform(
+        Schema.parseJson(
+          Schema.Struct({
+            success: Schema.Literal(true).annotations({
+              message: () => "Infra dispatch failed",
+            }),
+          }).annotations({ message: () => "Invalid infra dispatch result" }),
+        ),
+        Schema.Literal(true),
+        {
+          strict: true,
+          decode: Struct.get("success"),
+          encode: (success) => ({ success }),
+        },
+      ),
+    ),
+  );

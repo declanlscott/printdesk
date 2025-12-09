@@ -1,4 +1,12 @@
-import { and, eq, getTableName, inArray, not, notInArray } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableColumns,
+  getTableName,
+  inArray,
+  not,
+  notInArray,
+} from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 
@@ -22,6 +30,7 @@ export namespace Tenants {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/tenants/Repository",
     {
+      accessors: true,
       dependencies: [
         Database.TransactionManager.Default,
         Replicache.ClientViewEntriesQueryBuilder.Default,
@@ -351,6 +360,7 @@ export namespace Tenants {
   export class MetadataRepository extends Effect.Service<MetadataRepository>()(
     "@printdesk/core/tenants/MetadataRepository",
     {
+      accessors: true,
       dependencies: [Database.TransactionManager.Default],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -387,7 +397,20 @@ export namespace Tenants {
             .pipe(Effect.flatMap(Array.head)),
         );
 
-        return { upsert, findByTenant } as const;
+        const findByActive = db
+          .useTransaction((tx) =>
+            tx
+              .select(getTableColumns(table))
+              .from(table)
+              .innerJoin(
+                TenantsSchema.table.definition,
+                eq(table.tenantId, TenantsSchema.table.definition.id),
+              )
+              .where(eq(TenantsSchema.table.definition.status, "active")),
+          )
+          .pipe(Effect.withSpan("Tenants.MetadataRepository.findByActive"));
+
+        return { upsert, findByTenant, findByActive } as const;
       }),
     },
   ) {}

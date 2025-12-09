@@ -111,7 +111,7 @@ def record_handler(record: SQSRecord):
                         "events": [
                             json.dumps(
                                 {
-                                    "kind": "infra_provision_result",
+                                    "_tag": "InfraProvisionResult",
                                     "success": success,
                                     "dispatchId": record.message_id,
                                     "retrying": not success

@@ -48,9 +48,9 @@ export const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
       ),
       Schema.Literal(true),
       {
+        strict: true,
         decode: Struct.get("success"),
         encode: (success) => ({ success }),
-        strict: true,
       },
     ),
   ),

@@ -14,6 +14,9 @@ importers:
       '@aws-sdk/dsql-signer':
         specifier: ^3.947.0
         version: 3.947.0
+      '@effect-aws/client-sqs':
+        specifier: ^1.10.3
+        version: 1.10.3(effect@3.19.9)
       '@effect/platform':
         specifier: ^0.93.6
         version: 0.93.6(effect@3.19.9)
@@ -40,6 +43,9 @@ importers:
         version: 3.17.25
     devDependencies:
       '@aws-sdk/client-appsync':
+        specifier: ^3.947.0
+        version: 3.947.0
+      '@aws-sdk/client-sqs':
         specifier: ^3.947.0
         version: 3.947.0
       '@aws-sdk/client-sts':
@@ -866,6 +872,16 @@ packages:
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
+
+  '@effect-aws/client-sqs@1.10.3':
+    resolution: {integrity: sha512-2dtBaCSCmu8xO7wxWN66JVcnWx9jLJ2KNwQUEsKyQMDg+z/ru43en0kAR2q6uiOLrnpnS2EtFUwjiZUZK1z+TQ==}
+    peerDependencies:
+      effect: '>=3.0.4 <4.0.0'
+
+  '@effect-aws/commons@0.3.0':
+    resolution: {integrity: sha512-TO3YD+Q//o5+ATz4zHqmhPloD9LyxeJmYLblznJApn9A7f6KkcWhVEYXj0dJZ8+1snnlDm73UMkFJYJDGX4lzQ==}
+    peerDependencies:
+      effect: '>=3.0.4 <4.0.0'
 
   '@effect-aws/dsql@0.1.0':
     resolution: {integrity: sha512-Xo1K5/KklMR0UrvBzSgQGulgWmgvxONItuhNtHZ5Oq9Iqix1xrBMk+eO6PT2YwKN5cFz4zfIZZYFuoHmvKxRSg==}
@@ -7828,6 +7844,21 @@ snapshots:
       '@jridgewell/trace-mapping': 0.3.9
 
   '@drizzle-team/brocli@0.10.2': {}
+
+  '@effect-aws/client-sqs@1.10.3(effect@3.19.9)':
+    dependencies:
+      '@aws-sdk/client-sqs': 3.947.0
+      '@effect-aws/commons': 0.3.0(effect@3.19.9)
+      effect: 3.19.9
+    transitivePeerDependencies:
+      - aws-crt
+
+  '@effect-aws/commons@0.3.0(effect@3.19.9)':
+    dependencies:
+      '@smithy/protocol-http': 5.3.5
+      '@smithy/smithy-client': 4.9.10
+      '@smithy/types': 4.9.0
+      effect: 3.19.9
 
   '@effect-aws/dsql@0.1.0(effect@3.19.9)':
     dependencies:

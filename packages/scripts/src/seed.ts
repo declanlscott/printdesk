@@ -1,25 +1,28 @@
 import { Database } from "@printdesk/core/database";
-import { replicacheMetaTable } from "@printdesk/core/replicache/sql";
+import { ReplicacheMetaSchema } from "@printdesk/core/replicache/schemas";
+import { Sst } from "@printdesk/core/sst";
 import { Constants } from "@printdesk/core/utils/constants";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
 
-async function seed() {
-  await Database.initialize().insert(replicacheMetaTable).values({
-    key: "schemaVersion",
-    value: Constants.DB_SCHEMA_VERSION,
-  });
-}
+const seed = Effect.gen(function* () {
+  const db = yield* Database.Database;
 
-async function main() {
-  console.log("🌱 Seeding database ...");
+  yield* Effect.tryPromise(() =>
+    db.client
+      .insert(ReplicacheMetaSchema.table.definition)
+      .values({ key: "schemaVersion", value: Constants.DB_SCHEMA_VERSION }),
+  ).pipe(
+    Effect.tapBoth({
+      onFailure: (error) => Effect.logError("❌ Error during seeding", error),
+      onSuccess: () => Effect.logInfo("✅ Seeding complete!"),
+    }),
+  );
+});
 
-  try {
-    await seed();
-    console.log("✅ Seeding completed!");
-    process.exit(0);
-  } catch (e) {
-    console.error("❌ Error during seeding:", e);
-    process.exit(1);
-  }
-}
-
-void main();
+void seed.pipe(
+  Effect.provide(
+    Database.Database.Default.pipe(Layer.provide(Sst.Resource.layer)),
+  ),
+  Effect.runFork,
+);

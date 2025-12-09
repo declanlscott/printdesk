@@ -44,14 +44,16 @@ export const handler = LambdaHandler.make({
             ),
           ),
         ),
-        Stream.mapEffect((messages) =>
-          sqs.sendMessageBatch({
-            QueueUrl: queueUrl,
-            Entries: messages.map((message, index) => ({
-              Id: index.toString(),
-              MessageBody: message,
-            })),
-          }),
+        Stream.mapEffect(
+          (messages) =>
+            sqs.sendMessageBatch({
+              QueueUrl: queueUrl,
+              Entries: messages.map((message, index) => ({
+                Id: index.toString(),
+                MessageBody: message,
+              })),
+            }),
+          { concurrency: "unbounded" },
         ),
         Stream.runCollect,
         Effect.map(Iterable.flatMap((output) => output.Failed ?? [])),

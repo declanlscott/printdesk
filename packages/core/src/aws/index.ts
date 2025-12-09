@@ -29,8 +29,15 @@ import type {
   RequestPresigningArguments as SmithyRequestPresigningArguments,
   RequestSigningArguments as SmithyRequestSigningArguments,
 } from "@smithy/types";
+import type { ColumnsContract } from "../columns/contract";
 
 export namespace Credentials {
+  export const buildRoleArn = (
+    accountId: string,
+    nameTemplate: string,
+    tenantId: ColumnsContract.TenantId,
+  ) => `arn:aws:iam::${accountId}:role/${buildName(nameTemplate, tenantId)}`;
+
   export class Credentials extends Context.Tag(
     "@printdesk/core/aws/Credentials",
   )<

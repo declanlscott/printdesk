@@ -1,9 +1,8 @@
-/* eslint-disable drizzle/enforce-delete-with-where */
 import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
-import { subjects } from "@printdesk/core/auth/subjects";
+import { AuthContract } from "@printdesk/core/auth/contract";
+import { delimitToken } from "@printdesk/core/utils";
 import { Constants } from "@printdesk/core/utils/constants";
-import { delimitToken } from "@printdesk/core/utils/shared";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
@@ -21,7 +20,7 @@ export const rateLimiter = createMiddleware(
           async verifyToken(token, c) {
             const verified = await createClient({
               clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
-            }).verify(subjects, token);
+            }).verify(AuthContract.subjects, token);
 
             if (verified.err) {
               console.error("Token verification failed:", verified.err);
@@ -32,7 +31,7 @@ export const rateLimiter = createMiddleware(
               return false;
             }
 
-            c.set("subject", verified.subject);
+            c.set("subject", verified.subject.properties);
 
             return true;
           },
@@ -42,9 +41,9 @@ export const rateLimiter = createMiddleware(
         }>(async (c, next) => {
           const key = delimitToken(
             "tenant",
-            c.var.subject.properties.tenantId,
+            c.var.subject.tenantId,
             "user",
-            c.var.subject.properties.id,
+            c.var.subject.id,
           );
 
           console.log("Rate limiting by user:", key);

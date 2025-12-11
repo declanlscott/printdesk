@@ -55,21 +55,21 @@ export namespace Papercut {
         const httpClient = yield* Api.Http.client;
         const xmlRpc = yield* Xml.Rpc.Client;
 
-        const setTailnetUri = Effect.fn("Papercut.Client.setTailnetUri")(
-          (value: PapercutContract.TailnetUri) =>
-            HttpClientRequest.put("/papercut/tailnet-uri").pipe(
-              HttpClientRequest.schemaBodyJson(
-                Schema.Struct({ value: PapercutContract.TailnetUri }),
-              )({ value }),
-              Effect.flatMap(httpClient.execute),
-            ),
-        );
-
         const setAuthToken = Effect.fn("Papercut.Client.setAuthToken")(
           (value: PapercutContract.AuthToken) =>
             HttpClientRequest.put("/papercut/auth-token").pipe(
               HttpClientRequest.schemaBodyJson(
                 Schema.Struct({ value: PapercutContract.AuthToken }),
+              )({ value }),
+              Effect.flatMap(httpClient.execute),
+            ),
+        );
+
+        const setTailnetUri = Effect.fn("Papercut.Client.setTailnetUri")(
+          (value: PapercutContract.TailnetUri) =>
+            HttpClientRequest.put("/papercut/tailnet-uri").pipe(
+              HttpClientRequest.schemaBodyJson(
+                Schema.Struct({ value: PapercutContract.TailnetUri }),
               )({ value }),
               Effect.flatMap(httpClient.execute),
             ),

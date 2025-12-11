@@ -17,7 +17,9 @@ func New() http.Handler {
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	mux.HandlePrefix("/config", config())
+	mux.HandlePrefix("/documents", documents())
+	mux.HandlePrefix("/papercut", papercut())
+	mux.HandlePrefix("/tailscale", tailscale())
 
 	mw := middleware.Chain(
 		middleware.Recovery,
@@ -28,23 +30,13 @@ func New() http.Handler {
 	return mw(mux)
 }
 
-func config() http.Handler {
-	mux := _http.NewServeMux()
-
-	mux.HandlePrefix("/app/settings", appSettings())
-	mux.HandlePrefix("/papercut", papercut())
-	mux.HandlePrefix("/tailscale", tailscale())
-
-	return mux
-}
-
-func appSettings() http.Handler {
+func documents() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("PUT /documents/mime-types", handlers.SetDocumentsMimeTypes)
-	mux.HandleFunc("PUT /documents/size-limit", handlers.SetDocumentsSizeLimit)
-	mux.HandleFunc("GET /documents/mime-types", handlers.GetDocumentsMimeTypes)
-	mux.HandleFunc("GET /documents/size-limit", handlers.GetDocumentsSizeLimit)
+	mux.HandleFunc("PUT /mime-types", handlers.SetDocumentsMimeTypes)
+	mux.HandleFunc("PUT /size-limit", handlers.SetDocumentsSizeLimit)
+	mux.HandleFunc("GET /mime-types", handlers.GetDocumentsMimeTypes)
+	mux.HandleFunc("GET /size-limit", handlers.GetDocumentsSizeLimit)
 
 	return mux
 }
@@ -52,8 +44,8 @@ func appSettings() http.Handler {
 func papercut() http.Handler {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("PUT /server/tailnet-uri", handlers.SetPapercutServerTailnetUri)
-	mux.HandleFunc("PUT /server/auth-token", handlers.SetPapercutServerAuthToken)
+	mux.HandleFunc("PUT /tailnet-uri", handlers.SetPapercutServerTailnetUri)
+	mux.HandleFunc("PUT /auth-token", handlers.SetPapercutServerAuthToken)
 
 	return mux
 }

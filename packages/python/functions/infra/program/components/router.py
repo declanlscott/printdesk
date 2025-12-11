@@ -86,6 +86,9 @@ class Router(pulumi.ComponentResource):
                 resource_key_value_pairs=[
                     aws.cloudfront.KeyvaluestoreKeysExclusiveResourceKeyValuePairArgs(
                         key=f"{kv_namespace}:routes",
+                        # NOTE: If size of value exceeds 1KB, chunking needs to be implemented
+                        # Quota: https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/cloudfront-limits.html#limits-keyvaluestores
+                        # Reference implementation: https://github.com/sst/sst/blob/19b85a752620151232715a720331aeabd0c1ab4b/pkg/server/resource/aws-kv-routes-update.go#L325
                         value=pulumi.Output.json_dumps([
                             f"url,{api_namespace},{api_pattern.host},{api_pattern.path}",
                             f"bucket,{assets_namespace},{assets_pattern.host},{assets_pattern.path}",

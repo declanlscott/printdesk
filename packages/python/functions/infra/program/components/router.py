@@ -140,8 +140,8 @@ class Router(pulumi.ComponentResource):
 import cf from "cloudfront";
 async function handler(event) {
   if (event.request.headers.host.value === "{0}" && event.request.uri.startsWith("/api")) {
-    event.request.headers["x-router-secret"] = {
-      value: "{1}",
+    event.request.headers["{1}"] = {
+      value: "{2}",
     };
   }
   
@@ -206,7 +206,7 @@ async function handler(event) {
     cf.updateRequestOrigin(origin);
   }
 
-  const routerNS = "{1}";
+  const routerNS = "{3}";
 
   async function getRoutes() {
     let routes = [];
@@ -289,6 +289,7 @@ async function handler(event) {
   return event.request;
 }""",
                                           self.__cdn_ssl.certificate.domain_name,
+                                          Resource.HeaderKeys.ROUTER_SECRET,
                                           args.secret,
                                           kv_namespace),
             ),

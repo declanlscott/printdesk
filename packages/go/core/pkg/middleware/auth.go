@@ -22,26 +22,29 @@ func Validator(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		apiDomain := strings.ReplaceAll(apiDomainTemplate, "{{tenant_id}}", tenantId)
+		expectedForwardedHost := strings.ReplaceAll(apiDomainTemplate, "{{tenant_id}}", tenantId)
+		receivedForwardedHost := r.Header.Get("X-Forwarded-Host")
+		if receivedForwardedHost != expectedForwardedHost {
+			log.Printf("Expected forwarded host %s, received %s", expectedForwardedHost, receivedForwardedHost)
 
-		key, err := resource.Get[string]("HeaderKeys", "ROUTER_SECRET")
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+
+		expectedRouterSecret, err := resource.Get[string]("RouterSecret", "value")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		routerSecret, err := resource.Get[string]("RouterSecret", "value")
+		routerSecretHeaderKey, err := resource.Get[string]("HeaderKeys", "ROUTER_SECRET")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		xfh := r.Header.Get("X-Forwarded-Host")
-		xrs := r.Header.Get(key)
-		if xfh != apiDomain || xrs != routerSecret {
-			log.Printf("invalid forwarded host or secret: %s, %s", xfh, xrs)
-
-			http.Error(w, "Forbidden", http.StatusForbidden)
+		receivedRouterSecret := r.Header.Get(routerSecretHeaderKey)
+		if receivedRouterSecret != expectedRouterSecret {
+			log.Printf("invalid router secret: %s", receivedRouterSecret)
+			http.Error(w, "forbidden", http.StatusForbidden)
 			return
 		}
 

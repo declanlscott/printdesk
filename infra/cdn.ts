@@ -1,8 +1,6 @@
-import { Constants } from "@printdesk/core/utils/constants";
-
 import { domains, tenantDomains } from "./dns";
 import * as lib from "./lib/components";
-import { isProdStage } from "./misc";
+import { headerKeys, isProdStage } from "./misc";
 
 export const routerSecretRotation = new lib.time.Rotating(
   "RouterSecretRotation",
@@ -44,7 +42,7 @@ export const router = new sst.aws.Router("Router", {
           `switch (event.request.headers.host.value) {`,
           `  case "${domains.api}":`,
           `  case "${domains.auth}": {`,
-          `    event.request.headers["${Constants.HEADER_KEYS.ROUTER_SECRET}"] = {`,
+          `    event.request.headers["${headerKeys.properties.ROUTER_SECRET}"] = {`,
           `      value: "${routerSecret}",`,
           `    };`,
           `    break;`,

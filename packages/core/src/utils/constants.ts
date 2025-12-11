@@ -25,20 +25,10 @@ export namespace Constants {
 
   export const VITE_RESOURCE_PREFIX = "VITE_RESOURCE_";
 
-  export const SUBJECT_KINDS = {
-    USER: "user",
-  } as const;
-
   export const OPENAUTH_CLIENT_IDS = {
     API: "api",
     REVERSE_PROXY: "reverse-proxy",
     WEB: "web",
-  } as const;
-
-  export const ACTOR_KINDS = {
-    PUBLIC: "public",
-    SYSTEM: "system",
-    USER: SUBJECT_KINDS.USER,
   } as const;
 
   export const HEADER_KEYS = {

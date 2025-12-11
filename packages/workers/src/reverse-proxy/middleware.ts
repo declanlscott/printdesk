@@ -26,7 +26,7 @@ export const rateLimiter = createMiddleware(
               console.error("Token verification failed:", verified.err);
               return false;
             }
-            if (verified.subject.type !== Constants.SUBJECT_KINDS.USER) {
+            if (verified.subject.type !== AuthContract.UserSubject._tag) {
               console.error("Invalid subject type:", verified.subject.type);
               return false;
             }

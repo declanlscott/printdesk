@@ -131,8 +131,7 @@ class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
               );
 
               return yield* Effect.tryPromise({
-                try: () =>
-                  response.subject(Constants.SUBJECT_KINDS.USER, userSubject),
+                try: () => response.subject(userSubject._tag, userSubject),
                 catch: (cause) => new IssuerError({ cause }),
               });
             })

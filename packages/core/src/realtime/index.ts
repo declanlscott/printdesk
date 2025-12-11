@@ -37,7 +37,9 @@ export namespace Realtime {
           Effect.flatMap(Struct.get("assertPrivate")),
           Effect.map(Option.some),
           Effect.catchTag("InvalidActorError", () => Effect.succeedNone),
-        )) as Option.Option<ActorsContract.System | ActorsContract.User>;
+        )) as Option.Option<
+          ActorsContract.SystemActor | ActorsContract.UserActor
+        >;
         const signer = yield* Signers.Appsync;
         const httpClient = yield* HttpClient.HttpClient;
 

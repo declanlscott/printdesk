@@ -19,7 +19,7 @@ export namespace MutationsContract {
     TContext,
   > = (
     args: Schema.Schema.Type<TArgs>,
-    user: ActorsContract.User,
+    user: ActorsContract.UserActor,
   ) => Effect.Effect<TSuccess, TError, TContext>;
 
   export type Mutation<
@@ -178,7 +178,7 @@ export namespace MutationsContract {
       args:
         | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
         | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
-      user: ActorsContract.User,
+      user: ActorsContract.UserActor,
     ) {
       return this.#map.pipe(
         HashMap.get(name),

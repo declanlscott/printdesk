@@ -9,22 +9,26 @@ export namespace ActorsContract {
     actorTag: Actor["properties"]["_tag"];
   }> {}
 
-  export class Public extends Schema.TaggedClass<Public>("Public")(
-    "Public",
-    {},
+  export class PublicActor extends Schema.TaggedClass<PublicActor>(
+    "PublicActor",
+  )("PublicActor", {}) {}
+
+  export class SystemActor extends Schema.TaggedClass<SystemActor>(
+    "SystemActor",
+  )("SystemActor", {
+    tenantId: ColumnsContract.TenantId,
+  }) {}
+
+  export class UserActor extends Schema.TaggedClass<UserActor>("UserActor")(
+    "UserActor",
+    {
+      id: ColumnsContract.EntityId,
+      tenantId: ColumnsContract.TenantId,
+    },
   ) {}
 
-  export class System extends Schema.TaggedClass<System>("System")("System", {
-    tenantId: ColumnsContract.TenantId,
-  }) {}
-
-  export class User extends Schema.TaggedClass<User>("User")("User", {
-    id: ColumnsContract.EntityId,
-    tenantId: ColumnsContract.TenantId,
-  }) {}
-
   export class Actor extends Schema.TaggedClass<Actor>("Actor")("Actor", {
-    properties: Schema.Union(Public, System, User),
+    properties: Schema.Union(PublicActor, SystemActor, UserActor),
   }) {
     assert = <TActorTag extends Actor["properties"]["_tag"]>(
       actorTag: TActorTag,
@@ -41,7 +45,7 @@ export namespace ActorsContract {
       });
 
     assertPrivate = Effect.suspend(() => {
-      if (this.properties._tag === "Public")
+      if (this.properties._tag === "PublicActor")
         return Effect.fail(
           new InvalidActorError({ actorTag: this.properties._tag }),
         );

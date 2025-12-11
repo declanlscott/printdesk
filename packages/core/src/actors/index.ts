@@ -15,7 +15,7 @@ export namespace Actors {
         this,
         this.of(
           new ActorsContract.Actor({
-            properties: new ActorsContract.Public(),
+            properties: new ActorsContract.PublicActor(),
           }),
         ),
       );
@@ -25,7 +25,7 @@ export namespace Actors {
         this,
         this.of(
           new ActorsContract.Actor({
-            properties: new ActorsContract.System({ tenantId }),
+            properties: new ActorsContract.SystemActor({ tenantId }),
           }),
         ),
       );
@@ -38,7 +38,7 @@ export namespace Actors {
         this,
         this.of(
           new ActorsContract.Actor({
-            properties: new ActorsContract.User({ id, tenantId }),
+            properties: new ActorsContract.UserActor({ id, tenantId }),
           }),
         ),
       );

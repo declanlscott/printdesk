@@ -113,7 +113,7 @@ export namespace Queries {
         const differentiate = Effect.fn("Queries.Differentiator.differentiate")(
           (
             clientView: ReplicacheClientViewsModel.Record,
-            userId: ActorsContract.User["id"],
+            userId: ActorsContract.UserActor["id"],
             limitOffset: number,
             clientViewVersion: {
               next: ColumnsContract.Version;

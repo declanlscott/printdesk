@@ -35,8 +35,8 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
       Queries.Differentiator.Default,
     ],
     effect: Effect.gen(function* () {
-      const { userId, tenantId } = yield* Actors.Actor.pipe(
-        Effect.flatMap((actor) => actor.assert("User")),
+      const { id: userId, tenantId } = yield* Actors.Actor.pipe(
+        Effect.flatMap((actor) => actor.assert("UserActor")),
       );
 
       const db = yield* Database.TransactionManager;

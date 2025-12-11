@@ -37,7 +37,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
     ],
     effect: Effect.gen(function* () {
       const user = yield* Actors.Actor.pipe(
-        Effect.flatMap((actor) => actor.assert("User")),
+        Effect.flatMap((actor) => actor.assert("UserActor")),
       );
 
       const db = yield* Database.TransactionManager;

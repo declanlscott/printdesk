@@ -57,7 +57,7 @@ class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
             throw new HTTPException(403, { message: "Invalid forwarded host" });
 
           if (
-            c.env.event.headers[Constants.HEADER_KEYS.ROUTER_SECRET] !==
+            c.env.event.headers[Constants.HEADER_NAMES.ROUTER_SECRET] !==
             routerSecret
           )
             throw new HTTPException(403, { message: "Invalid router secret" });

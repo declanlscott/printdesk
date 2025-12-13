@@ -1,6 +1,6 @@
 import { domains, tenantDomains } from "./dns";
 import * as lib from "./lib/components";
-import { headerKeys, isProdStage } from "./misc";
+import { headerNames, isProdStage } from "./misc";
 
 export const routerSecretRotation = new lib.time.Rotating(
   "RouterSecretRotation",
@@ -42,7 +42,7 @@ export const router = new sst.aws.Router("Router", {
           `switch (event.request.headers.host.value) {`,
           `  case "${domains.api}":`,
           `  case "${domains.auth}": {`,
-          `    event.request.headers["${headerKeys.properties.ROUTER_SECRET}"] = {`,
+          `    event.request.headers["${headerNames.properties.ROUTER_SECRET}"] = {`,
           `      value: "${routerSecret}",`,
           `    };`,
           `    break;`,

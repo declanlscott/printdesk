@@ -289,7 +289,7 @@ async function handler(event) {
   return event.request;
 }""",
                                           self.__cdn_ssl.certificate.domain_name,
-                                          Resource.HeaderKeys.ROUTER_SECRET,
+                                          Resource.HeaderNames.ROUTER_SECRET,
                                           args.secret,
                                           kv_namespace),
             ),

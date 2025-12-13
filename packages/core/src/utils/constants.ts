@@ -31,7 +31,7 @@ export namespace Constants {
     WEB: "web",
   } as const;
 
-  export const HEADER_KEYS = {
+  export const HEADER_NAMES = {
     TENANT_ID: "x-tenant-id",
     ROUTER_SECRET: "x-router-secret",
     PAPERCUT_INJECT_AUTH: "x-papercut-inject-auth",

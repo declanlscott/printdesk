@@ -43,7 +43,7 @@ class Resource:
         web: str
         www: str
         type: str
-    class HeaderKeys:
+    class HeaderNames:
         TENANT_ID: str
         ROUTER_SECRET: str
         PAPERCUT_INJECT_AUTH: str

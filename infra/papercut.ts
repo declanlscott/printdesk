@@ -9,7 +9,7 @@ import * as lib from "./lib/components";
 import {
   appData,
   aws_,
-  headerKeys,
+  headerNames,
   resourceFileName,
   resourcePrefix,
 } from "./misc";
@@ -37,8 +37,8 @@ export const papercutTailgateResourceCiphertext = new lib.Ciphertext(
         resourcePrefix,
         appData,
         aws_,
-        headerKeys,
         papercutServer,
+        headerNames,
         routerSecret,
         tenantDomains,
       ),

@@ -129,8 +129,8 @@ export const cloudflare_ = new sst.Linkable("Cloudflare", {
   },
 });
 
-export const headerKeys = new sst.Linkable("HeaderKeys", {
-  properties: Constants.HEADER_KEYS,
+export const headerNames = new sst.Linkable("HeaderNames", {
+  properties: Constants.HEADER_NAMES,
 });
 
 export const budgetEmail = new sst.Secret("BudgetEmail");

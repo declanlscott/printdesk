@@ -29,7 +29,7 @@ import * as lib from "./lib/components";
 import {
   appData,
   aws_,
-  headerKeys,
+  headerNames,
   resourceFileName,
   resourcePrefix,
 } from "./misc";
@@ -61,7 +61,7 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         cloudfrontPublicKey,
         cloudfrontS3OriginAccessControl,
         domains,
-        headerKeys,
+        headerNames,
         invoicesProcessor,
         papercutServer,
         papercutSync,

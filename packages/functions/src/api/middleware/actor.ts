@@ -21,7 +21,7 @@ export const actor = createMiddleware(
     every(
       bearerAuth({
         async verifyToken(token, c: Context<Env>) {
-          const tenantId = c.req.header(Constants.HEADER_KEYS.TENANT_ID);
+          const tenantId = c.req.header(Constants.HEADER_NAMES.TENANT_ID);
           if (tenantId) {
             const result = await useTransaction((tx) =>
               tx
@@ -31,7 +31,7 @@ export const actor = createMiddleware(
                   and(
                     eq(
                       tenantMetadataTable.tenantId,
-                      c.req.header(Constants.HEADER_KEYS.TENANT_ID)!,
+                      c.req.header(Constants.HEADER_NAMES.TENANT_ID)!,
                     ),
                     isNotNull(tenantMetadataTable.apiKey),
                   ),

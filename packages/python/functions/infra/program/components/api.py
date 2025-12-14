@@ -254,8 +254,8 @@ class Api(pulumi.ComponentResource):
                             statements=pulumi.Output.all(
                                 pulumi.Output.from_input(args.dynamic_config.application.arn),
                                 pulumi.Output.from_input(args.dynamic_config.environment.arn),
-                                pulumi.Output.from_input(args.dynamic_config.profiles.papercut_server_tailnet_uri.arn),
-                                pulumi.Output.from_input(args.dynamic_config.profiles.papercut_server_auth_token.arn),
+                                pulumi.Output.from_input(args.dynamic_config.profiles.papercut_tailscale_service.arn),
+                                pulumi.Output.from_input(args.dynamic_config.profiles.papercut_web_services_auth_token.arn),
                                 pulumi.Output.from_input(args.dynamic_config.profiles.tailscale_oauth_client.arn),
                             ).apply(lambda appconfig_resources: [
                                 aws.iam.GetPolicyDocumentStatementArgs(
@@ -343,8 +343,8 @@ class Api(pulumi.ComponentResource):
                                     "{0}:{1}:{2},{0}:{1}:{3},{0}:{1}:{4}",
                                     args.dynamic_config.application.name,
                                     args.dynamic_config.environment.name,
-                                    args.dynamic_config.profiles.papercut_server_tailnet_uri.name,
-                                    args.dynamic_config.profiles.papercut_server_auth_token.name,
+                                    args.dynamic_config.profiles.papercut_tailscale_service.name,
+                                    args.dynamic_config.profiles.papercut_web_services_auth_token.name,
                                     args.dynamic_config.profiles.tailscale_oauth_client.name
                                 ),
                             }
@@ -395,10 +395,10 @@ class Api(pulumi.ComponentResource):
                                     "application": args.dynamic_config.application.name,
                                     "environment": args.dynamic_config.environment.name,
                                     "profiles": {
-                                        "papercutServerTailnetUri":
-                                            args.dynamic_config.profiles.papercut_server_tailnet_uri.name,
-                                        "papercutServerAuthToken":
-                                            args.dynamic_config.profiles.papercut_server_auth_token.name,
+                                        "papercutTailscaleService":
+                                            args.dynamic_config.profiles.papercut_tailscale_service.name,
+                                        "papercutWebServicesAuthToken":
+                                            args.dynamic_config.profiles.papercut_web_services_auth_token.name,
                                         "tailscaleOauthClient":
                                             args.dynamic_config.profiles.tailscale_oauth_client.name,
                                     }
@@ -534,8 +534,8 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__papercut_server_integration = aws.apigatewayv2.Integration(
-            resource_name="PapercutServerIntegration",
+        self.__papercut_service_integration = aws.apigatewayv2.Integration(
+            resource_name="PapercutServiceIntegration",
             args=aws.apigatewayv2.IntegrationArgs(
                 api_id=self.__api.id,
                 connection_id=Resource.VpcLink.id,
@@ -547,14 +547,14 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__papercut_server_route = aws.apigatewayv2.Route(
-            resource_name="PapercutServerRoute",
+        self.__papercut_service_route = aws.apigatewayv2.Route(
+            resource_name="PapercutServiceRoute",
             args=aws.apigatewayv2.RouteArgs(
                 api_id=self.__api.id,
-                route_key=f"{Resource.PapercutServer.paths.prefix}/{{proxy+}}",
+                route_key=f"{Resource.Papercut.servicePath}/{{proxy+}}",
                 target=pulumi.Output.format(
                     "integrations/{0}",
-                    self.__papercut_server_integration.id
+                    self.__papercut_service_integration.id
                 ),
                 authorization_type="AWS_IAM",
             ),
@@ -581,8 +581,8 @@ class Api(pulumi.ComponentResource):
                 "papercut_tailgate_cloud_map_service": self.__papercut_tailgate_cloud_map_service.id,
                 "papercut_tailgate_service": self.__papercut_tailgate_service.id,
                 "papercut_tailgate_auto_scaling_target": self.__papercut_tailgate_auto_scaling_target.id,
-                "papercut_server_integration": self.__papercut_server_integration.id,
-                "papercut_server_route": self.__papercut_server_route.id,
+                "papercut_service_integration": self.__papercut_service_integration.id,
+                "papercut_service_route": self.__papercut_service_route.id,
             }
         )
 

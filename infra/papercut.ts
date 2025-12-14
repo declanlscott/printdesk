@@ -16,12 +16,10 @@ import {
 import { repository } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 
-export const papercutServer = new sst.Linkable("PapercutServer", {
+export const papercut = new sst.Linkable("Papercut", {
   properties: {
-    paths: {
-      prefix: Constants.PAPERCUT_SERVER_PATH_PREFIX,
-      webServicesApi: Constants.PAPERCUT_WEB_SERVICES_API_PATH,
-    },
+    servicePath: Constants.PAPERCUT_SERVICE_PATH,
+    webServicesPath: Constants.PAPERCUT_WEB_SERVICES_PATH,
   },
 });
 
@@ -37,8 +35,8 @@ export const papercutTailgateResourceCiphertext = new lib.Ciphertext(
         resourcePrefix,
         appData,
         aws_,
-        papercutServer,
         headerNames,
+        papercut,
         routerSecret,
         tenantDomains,
       ),

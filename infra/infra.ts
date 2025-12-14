@@ -35,7 +35,7 @@ import {
 } from "./misc";
 import {
   invoicesProcessor,
-  papercutServer,
+  papercut,
   papercutSync,
   papercutTailgateImage,
   papercutTailgateSstKeyParameter,
@@ -63,7 +63,7 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         domains,
         headerNames,
         invoicesProcessor,
-        papercutServer,
+        papercut,
         papercutSync,
         papercutTailgateExecutionRole,
         papercutTailgateImage,

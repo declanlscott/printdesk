@@ -93,9 +93,9 @@ const effectHandler: EffectHandler<
                     (total, lineItem) => total + lineItem.cost,
                   );
 
-                  const papercut = yield* Papercut.Client.pipe(
+                  const papercut = yield* Papercut.WebServicesClient.pipe(
                     Effect.provide(
-                      Papercut.Client.Default.pipe(
+                      Papercut.WebServicesClient.Default.pipe(
                         Layer.provide(
                           Actors.Actor.systemLayer(payload.tenantId),
                         ),

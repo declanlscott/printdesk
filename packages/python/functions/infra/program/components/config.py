@@ -31,12 +31,12 @@ class Static:
 class Profiles:
     def __init__(
         self,
-        papercut_server_tailnet_uri: pulumi.Input[aws.appconfig.ConfigurationProfile],
-        papercut_server_auth_token: pulumi.Input[aws.appconfig.ConfigurationProfile],
+        papercut_tailscale_service: pulumi.Input[aws.appconfig.ConfigurationProfile],
+        papercut_web_services_auth_token: pulumi.Input[aws.appconfig.ConfigurationProfile],
         tailscale_oauth_client: pulumi.Input[aws.appconfig.ConfigurationProfile],
     ):
-        self.papercut_server_tailnet_uri = papercut_server_tailnet_uri
-        self.papercut_server_auth_token = papercut_server_auth_token
+        self.papercut_tailscale_service = papercut_tailscale_service
+        self.papercut_web_services_auth_token = papercut_web_services_auth_token
         self.tailscale_oauth_client = tailscale_oauth_client
 
 
@@ -135,8 +135,8 @@ class Config(pulumi.ComponentResource):
             ),
         )
 
-        self.__papercut_server_tailnet_uri_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="PapercutServerTailnetUriProfile",
+        self.__papercut_tailscale_service_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="PapercutTailscaleServiceProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
                 application_id=self.__application.id,
                 location_uri="hosted",
@@ -149,8 +149,8 @@ class Config(pulumi.ComponentResource):
             ),
         )
 
-        self.__papercut_server_auth_token_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="PapercutServerAuthTokenProfile",
+        self.__papercut_web_services_auth_token_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="PapercutWebServicesAuthTokenProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
                 application_id=self.__application.id,
                 location_uri="hosted",
@@ -185,8 +185,8 @@ class Config(pulumi.ComponentResource):
                 "agent_access_token_parameter": self.__agent_access_token_parameter.id,
                 "application": self.__application.id,
                 "environment": self.__environment.id,
-                "papercut_server_tailnet_uri_profile": self.__papercut_server_tailnet_uri_profile.id,
-                "papercut_server_auth_token_profile": self.__papercut_server_auth_token_profile.id,
+                "papercut_tailscale_service_profile": self.__papercut_tailscale_service_profile.id,
+                "papercut_web_services_auth_token_profile": self.__papercut_web_services_auth_token_profile.id,
                 "tailscale_oauth_client_profile": self.__tailscale_oauth_client_profile.id,
             }
         )
@@ -207,8 +207,8 @@ class Config(pulumi.ComponentResource):
             application=self.__application,
             environment=self.__environment,
             profiles=Profiles(
-                papercut_server_tailnet_uri=self.__papercut_server_tailnet_uri_profile,
-                papercut_server_auth_token=self.__papercut_server_auth_token_profile,
+                papercut_tailscale_service=self.__papercut_tailscale_service_profile,
+                papercut_web_services_auth_token=self.__papercut_web_services_auth_token_profile,
                 tailscale_oauth_client=self.__tailscale_oauth_client_profile
             )
         )

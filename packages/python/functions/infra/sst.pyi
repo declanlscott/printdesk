@@ -54,10 +54,9 @@ class Resource:
         name: str
         roleArn: str
         type: str
-    class PapercutServer:
-        class paths:
-            prefix: str
-            webServicesApi: str
+    class Papercut:
+        servicePath: str
+        webServicesApiPath: str
         type: str
     class PapercutSync:
         arn: str

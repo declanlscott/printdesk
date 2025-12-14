@@ -10,6 +10,41 @@ import { Xml } from "../xml";
 import { PapercutContract } from "./contract";
 
 export namespace Papercut {
+  export class Client extends Effect.Service<Client>()(
+    "@printdesk/core/papercut/Client",
+    {
+      dependencies: [Api.Http.Default],
+      effect: Effect.gen(function* () {
+        const httpClient = yield* Api.Http.client;
+
+        const setWebServicesAuthToken = Effect.fn(
+          "Papercut.Client.setWebServicesAuthToken",
+        )((value: PapercutContract.WebServicesAuthToken) =>
+          HttpClientRequest.put("/papercut/auth-token").pipe(
+            HttpClientRequest.schemaBodyJson(
+              Schema.Struct({ value: PapercutContract.WebServicesAuthToken }),
+            )({ value }),
+            Effect.flatMap(httpClient.execute),
+          ),
+        );
+
+        const setTailscaleService = Effect.fn(
+          "Papercut.Client.setTailscaleService",
+        )(
+          (service: PapercutContract.TailscaleService) =>
+            HttpClientRequest.put("/papercut/tailscale-service").pipe(
+              HttpClientRequest.schemaBodyJson(
+                PapercutContract.TailscaleService,
+              )(service),
+            ),
+          Effect.flatMap(httpClient.execute),
+        );
+
+        return { setWebServicesAuthToken, setTailscaleService } as const;
+      }),
+    },
+  ) {}
+
   const SharedAccountPropertySchemas = {
     "access-groups": CommaSeparatedString,
     "access-users": CommaSeparatedString,
@@ -42,41 +77,21 @@ export namespace Papercut {
     "UserAndGroupSyncFailure",
   ) {}
 
-  export class Client extends Effect.Service<Client>()(
-    "@printdesk/core/papercut/Client",
+  export class WebServicesClient extends Effect.Service<WebServicesClient>()(
+    "@printdesk/core/papercut/WebServicesClient",
     {
       dependencies: [
         Api.Http.Default,
         Xml.Rpc.Client.Default(
-          `${Constants.PAPERCUT_SERVER_PATH_PREFIX}${Constants.PAPERCUT_WEB_SERVICES_API_PATH}`,
+          `${Constants.PAPERCUT_SERVICE_PATH}${Constants.PAPERCUT_WEB_SERVICES_PATH}`,
         ),
       ],
       effect: Effect.gen(function* () {
         const httpClient = yield* Api.Http.client;
         const xmlRpc = yield* Xml.Rpc.Client;
 
-        const setAuthToken = Effect.fn("Papercut.Client.setAuthToken")(
-          (value: PapercutContract.AuthToken) =>
-            HttpClientRequest.put("/papercut/auth-token").pipe(
-              HttpClientRequest.schemaBodyJson(
-                Schema.Struct({ value: PapercutContract.AuthToken }),
-              )({ value }),
-              Effect.flatMap(httpClient.execute),
-            ),
-        );
-
-        const setTailnetUri = Effect.fn("Papercut.Client.setTailnetUri")(
-          (value: PapercutContract.TailnetUri) =>
-            HttpClientRequest.put("/papercut/tailnet-uri").pipe(
-              HttpClientRequest.schemaBodyJson(
-                Schema.Struct({ value: PapercutContract.TailnetUri }),
-              )({ value }),
-              Effect.flatMap(httpClient.execute),
-            ),
-        );
-
         const injectAuthHeader = HttpClientRequest.setHeader(
-          Constants.HEADER_KEYS.PAPERCUT_INJECT_AUTH,
+          Constants.HEADER_NAMES.PAPERCUT_INJECT_AUTH,
           "true",
         );
 
@@ -224,8 +239,6 @@ export namespace Papercut {
           );
 
         return {
-          setTailnetUri,
-          setAuthToken,
           adjustSharedAccountAccountBalance,
           getGroupMembers,
           getSharedAccountProperties,

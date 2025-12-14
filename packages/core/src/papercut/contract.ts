@@ -1,15 +1,19 @@
 import * as Schema from "effect/Schema";
 
 export namespace PapercutContract {
-  export const TailnetUri = Schema.NonEmptyString.pipe(
-    Schema.brand("PapercutTailnetUri"),
-    Schema.Redacted,
-  );
-  export type TailnetUri = typeof TailnetUri.Type;
+  export class TailscaleService extends Schema.Class<TailscaleService>(
+    "TailscaleService",
+  )({
+    domain: Schema.NonEmptyString.pipe(Schema.trimmed()),
+    path: Schema.NonEmptyString.pipe(
+      Schema.trimmed(),
+      Schema.optionalWith({ default: () => "/" }),
+    ),
+  }) {}
 
-  export const AuthToken = Schema.NonEmptyString.pipe(
-    Schema.brand("PapercutAuthToken"),
+  export const WebServicesAuthToken = Schema.NonEmptyString.pipe(
+    Schema.brand("PapercutWebServicesAuthToken"),
     Schema.Redacted,
   );
-  export type AuthToken = typeof AuthToken.Type;
+  export type WebServicesAuthToken = typeof WebServicesAuthToken.Type;
 }

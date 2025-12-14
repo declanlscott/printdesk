@@ -55,8 +55,8 @@ export namespace Constants {
 
   export const VARCHAR_LENGTH = 50;
 
-  export const PAPERCUT_SERVER_PATH_PREFIX = "/papercut/server";
-  export const PAPERCUT_WEB_SERVICES_API_PATH = "/rpc/api/xmlrpc";
+  export const PAPERCUT_SERVICE_PATH = "/papercut/service";
+  export const PAPERCUT_WEB_SERVICES_PATH = "/rpc/api/xmlrpc";
 
   export const PAPERCUT_API_PAGINATION_LIMIT = 1_000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;

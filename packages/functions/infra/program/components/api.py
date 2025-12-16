@@ -211,7 +211,7 @@ class Api(pulumi.ComponentResource):
         )
 
         self.__api_function_route = aws.apigatewayv2.Route(
-            resrouce_name="ApiFunctionRoute",
+            resource_name="ApiFunctionRoute",
             args=aws.apigatewayv2.RouteArgs(
                 api_id=self.__api.id,
                 route_key="$default",

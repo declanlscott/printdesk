@@ -24,7 +24,7 @@ export const papercut = new sst.Linkable("Papercut", {
 });
 
 const papercutTailgatePath = normalizePath(
-  "packages/go/services/papercut-tailgate",
+  "packages/services/papercut-tailgate",
 );
 
 export const papercutTailgateResourceCiphertext = new lib.Ciphertext(

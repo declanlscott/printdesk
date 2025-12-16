@@ -58,7 +58,7 @@ export const api = new lib.aws.lambda.Function("Api", {
   ],
 });
 
-const tenantApiFunctionDir = normalizePath("packages/go/functions/tenant-api");
+const tenantApiFunctionPath = normalizePath("packages/functions/tenant-api");
 
 export const tenantApiFunctionResourceCiphertext = new lib.Ciphertext(
   "TenantApiFunctionResourceCiphertext",
@@ -72,7 +72,7 @@ export const tenantApiFunctionResourceCiphertext = new lib.Ciphertext(
         tenantDomains,
       ),
     ),
-    writeToFile: normalizePath(resourceFileName, tenantApiFunctionDir),
+    writeToFile: normalizePath(resourceFileName, tenantApiFunctionPath),
   },
 );
 
@@ -80,7 +80,7 @@ export const tenantApiFunctionImage = new awsx.ecr.Image(
   "TenantApiFunctionImage",
   {
     repositoryUrl: repository.url,
-    context: tenantApiFunctionDir,
+    context: tenantApiFunctionPath,
     platform: "linux/arm64",
     imageTag: "latest",
   },

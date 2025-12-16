@@ -1,7 +1,0 @@
-go 1.25.5
-
-use (
-	./core
-	./functions/tenant-api
-	./services/papercut-tailgate
-)

@@ -44,7 +44,7 @@ import { infraQueue, pulumiBucket, repository, tenantBuckets } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
 import { vpc, vpcLink } from "./vpc";
 
-const infraFunctionDir = normalizePath("packages/python/functions/infra");
+const infraFunctionPath = normalizePath("packages/functions/infra");
 
 const infraFunctionResourceCiphertext = new lib.Ciphertext(
   "InfraFunctionResourceCiphertext",
@@ -85,7 +85,7 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         zone,
       ),
     ),
-    writeToFile: normalizePath(resourceFileName, infraFunctionDir),
+    writeToFile: normalizePath(resourceFileName, infraFunctionPath),
   },
 );
 
@@ -93,7 +93,7 @@ export const infraFunctionImage = new awsx.ecr.Image(
   "InfraFunctionImage",
   {
     repositoryUrl: repository.url,
-    context: infraFunctionDir,
+    context: infraFunctionPath,
     platform: "linux/arm64",
     imageTag: "latest",
   },

@@ -34,7 +34,8 @@ export namespace Constants {
   export const HEADER_NAMES = {
     TENANT_ID: "x-tenant-id",
     ROUTER_SECRET: "x-router-secret",
-    PAPERCUT_INJECT_AUTH: "x-papercut-inject-auth",
+    PAPERCUT_GATEWAY_INJECT_WEB_SERVICES_AUTH_TOKEN:
+      "x-papercut-gateway-inject-web-services-auth-token",
   } as const;
 
   export const ENTRA_ID = "entra_id";

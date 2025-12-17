@@ -27,7 +27,7 @@ type Value struct {
 	InnerXML string `xml:",innerxml"`
 }
 
-func InjectAuthToken(req *httputil.ProxyRequest, authToken string) error {
+func InjectWebServicesAuthToken(req *httputil.ProxyRequest, authToken string) error {
 	inBody, err := io.ReadAll(req.In.Body)
 	if err != nil {
 		return err

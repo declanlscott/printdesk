@@ -64,14 +64,10 @@ class Resource:
         name: str
         roleArn: str
         type: str
-    class PapercutTailgateExecutionRole:
-        name: str
-        arn: str
-        type: str
-    class PapercutTailgateImage:
+    class PapercutGatewayImage:
         uri: str
         type: str
-    class PapercutTailgateSstKeyParameter:
+    class PapercutGatewaySstKeyParameter:
         name: str
         arn: str
         type: str

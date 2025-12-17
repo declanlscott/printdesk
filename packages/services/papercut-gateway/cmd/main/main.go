@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"papercut-tailgate/internal/proxy"
+	"papercut-gateway/internal/proxy"
 )
 
 func main() {

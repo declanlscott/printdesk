@@ -5,9 +5,9 @@ WORKDIR /app
 COPY ../../../go.* ./
 COPY ../../core/go.* ./core
 COPY ../../core/pkg ./core
-COPY ./ ./papercut-tailgate
+COPY ./ ./papercut-gateway
 
-WORKDIR /app/papercut-tailgate
+WORKDIR /app/papercut-gateway
 
 RUN go mod download
 
@@ -17,4 +17,4 @@ FROM alpine
 
 ARG SST_KEY_FILE=resource.enc
 
-COPY --from=builder /app/papercut-tailgate/bin/main /app/papercut-tailgate/${SST_KEY_FILE} ./
+COPY --from=builder /app/papercut-gateway/bin/main /app/papercut-gateway/${SST_KEY_FILE} ./

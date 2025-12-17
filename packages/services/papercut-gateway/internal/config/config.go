@@ -16,9 +16,9 @@ import (
 )
 
 type Config struct {
-	AuthToken string
-	OAuth     *clientcredentials.Config
-	Target    *url.URL
+	TailscaleClientCredentials     *clientcredentials.Config
+	PapercutTailscaleServiceTarget *url.URL
+	PapercutWebServicesAuthToken   string
 }
 
 const agtTokenKey = "agent-token"
@@ -30,44 +30,6 @@ func Load(ctx context.Context, agtToken string) (*Config, error) {
 	)
 
 	g, ctx := errgroup.WithContext(context.WithValue(ctx, agtTokenKey, agtToken))
-
-	g.Go(func() error {
-		profile, err := sst.Resource[string]("AppConfig", "profiles", "papercutServerTailnetUri")
-		if err != nil {
-			return err
-		}
-
-		rawUri, err := load(ctx, profile)
-		if err != nil {
-			return err
-		}
-
-		mu.Lock()
-		defer mu.Unlock()
-		if cfg.Target, err = url.Parse(rawUri); err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	g.Go(func() error {
-		profile, err := sst.Resource[string]("AppConfig", "profiles", "papercutServerAuthToken")
-		if err != nil {
-			return err
-		}
-
-		authToken, err := load(ctx, profile)
-		if err != nil {
-			return err
-		}
-
-		mu.Lock()
-		defer mu.Unlock()
-		cfg.AuthToken = authToken
-
-		return nil
-	})
 
 	g.Go(func() error {
 		profile, err := sst.Resource[string]("AppConfig", "profiles", "tailscaleOauthClient")
@@ -85,10 +47,51 @@ func Load(ctx context.Context, agtToken string) (*Config, error) {
 
 		mu.Lock()
 		defer mu.Unlock()
-		cfg.OAuth = &clientcredentials.Config{
+		cfg.TailscaleClientCredentials = &clientcredentials.Config{
 			ClientID:     client.Id,
 			ClientSecret: client.Secret,
 		}
+
+		g.Go(func() error {
+			profile, err := sst.Resource[string]("AppConfig", "profiles", "papercutTailscaleService")
+			if err != nil {
+				return err
+			}
+
+			service, err := unmarshal[struct {
+				Domain string `json:"domain"`
+				Path   string `json:"path"`
+			}](ctx, profile)
+			if err != nil {
+				return err
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+			if cfg.PapercutTailscaleServiceTarget, err = url.Parse(fmt.Sprintf("https://%s%s", service.Domain, service.Path)); err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		g.Go(func() error {
+			profile, err := sst.Resource[string]("AppConfig", "profiles", "papercutWebServicesAuthToken")
+			if err != nil {
+				return err
+			}
+
+			authToken, err := load(ctx, profile)
+			if err != nil {
+				return err
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+			cfg.PapercutWebServicesAuthToken = authToken
+
+			return nil
+		})
 
 		return nil
 	})

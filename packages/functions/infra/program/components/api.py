@@ -224,10 +224,10 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__papercut_tailgate_log_group = aws.cloudwatch.LogGroup(
-            resource_name="PapercutTailgateLogGroup",
+        self.__papercut_gateway_log_group = aws.cloudwatch.LogGroup(
+            resource_name="PapercutGatewayLogGroup",
             args=aws.cloudwatch.LogGroupArgs(
-                name=f"/sst/cluster/{Resource.Cluster.name}/{naming.physical(64, "papercut-tailgate")}/{args.tenant_id}",
+                name=f"/sst/cluster/{Resource.Cluster.name}/{naming.physical(64, "papercut-gateway")}/{args.tenant_id}",
                 tags=tags(args.tenant_id),
             ),
             opts=pulumi.ResourceOptions(
@@ -236,8 +236,45 @@ class Api(pulumi.ComponentResource):
             )
         )
 
-        self.__papercut_tailgate_task_role = aws.iam.Role(
-            resource_name="PapercutTailgateTaskRole",
+        self.__papercut_gateway_execution_role = aws.iam.Role(
+            resource_name="PapercutGatewayExecutionRole",
+            args=aws.iam.RoleArgs(
+                assume_role_policy=aws.iam.get_policy_document_output(
+                    statements=[aws.iam.GetPolicyDocumentStatementArgs(
+                        actions=["sts:AssumeRole"],
+                        principals=[aws.iam.GetPolicyDocumentStatementPrincipalArgs(
+                            type="Service",
+                            identifiers=["ecs-tasks.amazonaws.com"],
+                        )]
+                    )]
+                ).json,
+                managed_policy_arns=[aws.iam.ManagedPolicy.AMAZON_ECS_TASK_EXECUTION_ROLE_POLICY],
+                inline_policies=[
+                    aws.iam.RoleInlinePolicyArgs(
+                        policy=aws.iam.get_policy_document_output(
+                            statements=pulumi.Output.all(
+                                pulumi.Output.from_input(args.static_config.parameters.agent_access_token.arn),
+                                aws.kms.get_alias_output(name="alias/aws/ssm").arn,
+                            ).apply(
+                                lambda arns: [
+                                    aws.iam.GetPolicyDocumentStatementArgs(
+                                        actions=["ssm:GetParameter"],
+                                        resources=[arns[0], Resource.PapercutGatewaySstKeyParameter.arn],
+                                    ),
+                                    aws.iam.GetPolicyDocumentStatementArgs(
+                                        actions=["kms:Decrypt"],
+                                        resources=[arns[1]],
+                                    ),
+                                ]
+                            )
+                        ).json
+                    )
+                ],
+            )
+        )
+
+        self.__papercut_gateway_task_role = aws.iam.Role(
+            resource_name="PapercutGatewayTaskRole",
             args=aws.iam.RoleArgs(
                 assume_role_policy=aws.iam.get_policy_document_output(
                     statements=[aws.iam.GetPolicyDocumentStatementArgs(
@@ -283,11 +320,11 @@ class Api(pulumi.ComponentResource):
         )
 
         appconfig_agent_port = 2772
-        papercut_tailgate_port = 8080
-        self.__papercut_tailgate_task_definition = aws.ecs.TaskDefinition(
-            resource_name="PapercutTailgateTaskDefinition",
+        papercut_gateway_port = 8080
+        self.__papercut_gateway_task_definition = aws.ecs.TaskDefinition(
+            resource_name="PapercutGatewayTaskDefinition",
             args=aws.ecs.TaskDefinitionArgs(
-                family=f"{Resource.Cluster.name}-{args.tenant_id}-papercut-tailgate",
+                family=f"{Resource.Cluster.name}-{args.tenant_id}-papercut-gateway",
                 track_latest=True,
                 cpu="256",
                 memory="512",
@@ -297,8 +334,8 @@ class Api(pulumi.ComponentResource):
                     cpu_architecture="ARM64",
                     operating_system_family="LINUX",
                 ),
-                execution_role_arn=Resource.PapercutTailgateExecutionRole.arn,
-                task_role_arn=self.__papercut_tailgate_task_role.arn,
+                execution_role_arn=self.__papercut_gateway_execution_role.arn,
+                task_role_arn=self.__papercut_gateway_task_role.arn,
                 container_definitions=pulumi.Output.json_dumps([
                     {
                         "name": "appconfig-agent",
@@ -324,7 +361,7 @@ class Api(pulumi.ComponentResource):
                         "logConfiguration": {
                             "logDriver": "awslogs",
                             "options": {
-                                "awslogs-group": self.__papercut_tailgate_log_group.name,
+                                "awslogs-group": self.__papercut_gateway_log_group.name,
                                 "awslogs-region": Resource.Aws.region,
                                 "awslogs-stream-prefix": "appconfig-agent",
                             }
@@ -357,8 +394,8 @@ class Api(pulumi.ComponentResource):
                         ]
                     },
                     {
-                        "name": "papercut-tailgate",
-                        "image": Resource.PapercutTailgateImage.uri,
+                        "name": "papercut-gateway",
+                        "image": Resource.PapercutGatewayImage.uri,
                         "essential": True,
                         "pseudoTerminal": True,
                         "dependsOn": [
@@ -371,9 +408,9 @@ class Api(pulumi.ComponentResource):
                         "logConfiguration": {
                             "logDriver": "awslogs",
                             "options": {
-                                "awslogs-group": self.__papercut_tailgate_log_group.name,
+                                "awslogs-group": self.__papercut_gateway_log_group.name,
                                 "awslogs-region": Resource.Aws.region,
-                                "awslogs-stream-prefix": "papercut-tailgate",
+                                "awslogs-stream-prefix": "papercut-gateway",
                             }
                         },
                         "linuxParameters": {
@@ -386,7 +423,7 @@ class Api(pulumi.ComponentResource):
                             },
                             {
                                 "name": "PORT",
-                                "value": str(papercut_tailgate_port),
+                                "value": str(papercut_gateway_port),
                             },
                             {
                                 "name": "SST_RESOURCE_AppConfig",
@@ -412,7 +449,7 @@ class Api(pulumi.ComponentResource):
                             },
                             {
                                 "name": "SST_KEY",
-                                "valueFrom": Resource.PapercutTailgateSstKeyParameter.arn,
+                                "valueFrom": Resource.PapercutGatewaySstKeyParameter.arn,
                             },
                         ]
                     }
@@ -422,10 +459,10 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__papercut_tailgate_cloud_map_service = aws.servicediscovery.Service(
-            resource_name="PapercutTailgateCloudMapService",
+        self.__papercut_gateway_cloud_map_service = aws.servicediscovery.Service(
+            resource_name="PapercutGatewayCloudMapService",
             args=aws.servicediscovery.ServiceArgs(
-                name=f"{args.tenant_id}.papercut-tailgate.{Resource.AppData.stage}.{Resource.AppData.name}",
+                name=f"{args.tenant_id}.papercut-gateway.{Resource.AppData.stage}.{Resource.AppData.name}",
                 namespace_id=Resource.Vpc.cloudMapNamespaceId,
                 force_destroy=True,
                 dns_config=aws.servicediscovery.ServiceDnsConfigArgs(
@@ -446,11 +483,11 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self)
         )
 
-        self.__papercut_tailgate_service = aws.ecs.Service(
-            resource_name="PapercutTailgateService",
+        self.__papercut_gateway_service = aws.ecs.Service(
+            resource_name="PapercutGatewayService",
             args=aws.ecs.ServiceArgs(
                 cluster=Resource.Cluster.arn,
-                task_definition=self.__papercut_tailgate_task_definition.arn,
+                task_definition=self.__papercut_gateway_task_definition.arn,
                 desired_count=1,
                 force_new_deployment=True,
                 capacity_provider_strategies=[
@@ -508,8 +545,8 @@ class Api(pulumi.ComponentResource):
                 ),
                 enable_execute_command=True,
                 service_registries=aws.ecs.ServiceServiceRegistriesArgs(
-                    registry_arn=self.__papercut_tailgate_cloud_map_service.arn,
-                    port=papercut_tailgate_port,
+                    registry_arn=self.__papercut_gateway_cloud_map_service.arn,
+                    port=papercut_gateway_port,
                 ),
                 wait_for_steady_state=False,
                 tags=tags(args.tenant_id),
@@ -517,15 +554,15 @@ class Api(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self.__papercut_tailgate_auto_scaling_target = aws.appautoscaling.Target(
-            resource_name="PapercutTailgateAutoScalingTarget",
+        self.__papercut_gateway_auto_scaling_target = aws.appautoscaling.Target(
+            resource_name="PapercutGatewayAutoScalingTarget",
             args=aws.appautoscaling.TargetArgs(
                 service_namespace="ecs",
                 scalable_dimension="ecs:service:DesiredCount",
                 resource_id=pulumi.Output.format(
                     "service/{0}/{1}",
                     Resource.Cluster.name,
-                    self.__papercut_tailgate_service.name,
+                    self.__papercut_gateway_service.name,
                 ),
                 min_capacity=1,
                 max_capacity=1,
@@ -541,7 +578,7 @@ class Api(pulumi.ComponentResource):
                 connection_id=Resource.VpcLink.id,
                 connection_type="VPC_LINK",
                 integration_type="HTTP_PROXY",
-                integration_uri=self.__papercut_tailgate_cloud_map_service.arn,
+                integration_uri=self.__papercut_gateway_cloud_map_service.arn,
                 integration_method="ANY",
             ),
             opts=pulumi.ResourceOptions(parent=self)
@@ -575,12 +612,13 @@ class Api(pulumi.ComponentResource):
                 "api_function_permission": self.__api_function_permission.id,
                 "api_function_integration": self.__api_function_integration.id,
                 "api_function_route": self.__api_function_route.id,
-                "papercut_tailgate_log_group": self.__papercut_tailgate_log_group.id,
-                "papercut_tailgate_task_role": self.__papercut_tailgate_task_role.id,
-                "papercut_tailgate_task_definition": self.__papercut_tailgate_task_definition.id,
-                "papercut_tailgate_cloud_map_service": self.__papercut_tailgate_cloud_map_service.id,
-                "papercut_tailgate_service": self.__papercut_tailgate_service.id,
-                "papercut_tailgate_auto_scaling_target": self.__papercut_tailgate_auto_scaling_target.id,
+                "papercut_gateway_log_group": self.__papercut_gateway_log_group.id,
+                "papercut_gateway_execution_role": self.__papercut_gateway_execution_role.id,
+                "papercut_gateway_task_role": self.__papercut_gateway_task_role.id,
+                "papercut_gateway_task_definition": self.__papercut_gateway_task_definition.id,
+                "papercut_gateway_cloud_map_service": self.__papercut_gateway_cloud_map_service.id,
+                "papercut_gateway_service": self.__papercut_gateway_service.id,
+                "papercut_gateway_auto_scaling_target": self.__papercut_gateway_auto_scaling_target.id,
                 "papercut_service_integration": self.__papercut_service_integration.id,
                 "papercut_service_route": self.__papercut_service_route.id,
             }

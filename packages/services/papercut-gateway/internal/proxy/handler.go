@@ -13,8 +13,8 @@ import (
 	"core/pkg/http/multiplexer"
 	"core/pkg/sst"
 
-	"papercut-tailgate/internal/config"
-	"papercut-tailgate/internal/tailscale"
+	"papercut-gateway/internal/config"
+	"papercut-gateway/internal/tailscale"
 )
 
 type Handler struct {
@@ -60,7 +60,7 @@ func (h *Handler) initialize(ctx context.Context, cfgAgtToken string) error {
 		return err
 	}
 
-	c := tailscale.NewClient(cfg.OAuth)
+	c := tailscale.NewClient(cfg.TailscaleClientCredentials)
 	s, err := c.NewServer(ctx)
 	if err != nil {
 		return err
@@ -118,11 +118,11 @@ func (h *Handler) hotReload(ctx context.Context, cfgAgtToken string) error {
 		s          *tailscale.Server
 	)
 
-	if currentCfg.OAuth.ClientID != cfg.OAuth.ClientID ||
-		currentCfg.OAuth.ClientSecret != cfg.OAuth.ClientSecret {
+	if currentCfg.TailscaleClientCredentials.ClientID != cfg.TailscaleClientCredentials.ClientID ||
+		currentCfg.TailscaleClientCredentials.ClientSecret != cfg.TailscaleClientCredentials.ClientSecret {
 		hasChanges = true
 
-		c := tailscale.NewClient(cfg.OAuth)
+		c := tailscale.NewClient(cfg.TailscaleClientCredentials)
 		if s, err = c.NewServer(ctx); err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func (h *Handler) hotReload(ctx context.Context, cfgAgtToken string) error {
 		s = h.s
 	}
 
-	if currentCfg.AuthToken != cfg.AuthToken || currentCfg.Target.String() != cfg.Target.String() {
+	if currentCfg.PapercutWebServicesAuthToken != cfg.PapercutWebServicesAuthToken || currentCfg.PapercutTailscaleServiceTarget.String() != cfg.PapercutTailscaleServiceTarget.String() {
 		hasChanges = true
 	}
 

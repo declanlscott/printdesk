@@ -3,5 +3,5 @@ go 1.25.5
 use (
 	./packages/core
 	./packages/functions/tenant-api
-	./packages/services/papercut-tailgate
+	./packages/services/papercut-gateway
 )

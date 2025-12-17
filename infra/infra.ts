@@ -17,7 +17,6 @@ import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
 import { domains, tenantDomains, zone } from "./dns";
 import {
   cloudflareApiToken,
-  papercutTailgateExecutionRole,
   pulumiRole,
   pulumiRoleExternalId,
   realtimePublisherRole,
@@ -36,9 +35,9 @@ import {
 import {
   invoicesProcessor,
   papercut,
+  papercutGatewayImage,
+  papercutGatewaySstKeyParameter,
   papercutSync,
-  papercutTailgateImage,
-  papercutTailgateSstKeyParameter,
 } from "./papercut";
 import { infraQueue, pulumiBucket, repository, tenantBuckets } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
@@ -65,9 +64,8 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         invoicesProcessor,
         papercut,
         papercutSync,
-        papercutTailgateExecutionRole,
-        papercutTailgateImage,
-        papercutTailgateSstKeyParameter,
+        papercutGatewayImage,
+        papercutGatewaySstKeyParameter,
         pulumiBucket,
         pulumiRole,
         pulumiRoleExternalId,

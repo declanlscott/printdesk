@@ -23,12 +23,10 @@ export const papercut = new sst.Linkable("Papercut", {
   },
 });
 
-const papercutTailgatePath = normalizePath(
-  "packages/services/papercut-tailgate",
-);
+const papercutGatewayPath = normalizePath("packages/services/papercut-gateway");
 
-export const papercutTailgateResourceCiphertext = new lib.Ciphertext(
-  "PapercutTailgateResourceCiphertext",
+export const papercutGatewayResourceCiphertext = new lib.Ciphertext(
+  "PapercutGatewayResourceCiphertext",
   {
     plaintext: $jsonStringify(
       injectLinkables(
@@ -41,28 +39,28 @@ export const papercutTailgateResourceCiphertext = new lib.Ciphertext(
         tenantDomains,
       ),
     ),
-    writeToFile: normalizePath(resourceFileName, papercutTailgatePath),
+    writeToFile: normalizePath(resourceFileName, papercutGatewayPath),
   },
 );
 
-export const papercutTailgateSstKeyParameter = new aws.ssm.Parameter(
-  "PapercutTailgateSstKey",
+export const papercutGatewaySstKeyParameter = new aws.ssm.Parameter(
+  "PapercutGatewaySstKey",
   {
-    name: `/${$app.name}/${$app.stage}/papercut-tailgate/sst-key`,
+    name: `/${$app.name}/${$app.stage}/papercut-gateway/sst-key`,
     type: aws.ssm.ParameterType.SecureString,
-    value: papercutTailgateResourceCiphertext.encryptionKey,
+    value: papercutGatewayResourceCiphertext.encryptionKey,
   },
 );
 
-export const papercutTailgateImage = new awsx.ecr.Image(
-  "PapercutTailgateImage",
+export const papercutGatewayImage = new awsx.ecr.Image(
+  "PapercutGatewayImage",
   {
     repositoryUrl: repository.url,
-    context: papercutTailgatePath,
+    context: papercutGatewayPath,
     platform: "linux/arm64",
     imageTag: "latest",
   },
-  { dependsOn: [papercutTailgateResourceCiphertext] },
+  { dependsOn: [papercutGatewayResourceCiphertext] },
 );
 
 export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {

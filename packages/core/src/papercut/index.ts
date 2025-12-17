@@ -90,10 +90,12 @@ export namespace Papercut {
         const httpClient = yield* Api.Http.client;
         const xmlRpc = yield* Xml.Rpc.Client;
 
-        const injectAuthHeader = HttpClientRequest.setHeader(
-          Constants.HEADER_NAMES.PAPERCUT_INJECT_AUTH,
-          "true",
-        );
+        const gatewayInjectAuthTokenHeader = (inject = true) =>
+          HttpClientRequest.setHeader(
+            Constants.HEADER_NAMES
+              .PAPERCUT_GATEWAY_INJECT_WEB_SERVICES_AUTH_TOKEN,
+            inject.toString(),
+          );
 
         const adjustSharedAccountAccountBalance = Effect.fn(
           "Papercut.Client.adjustSharedAccountAccountBalance",
@@ -105,7 +107,7 @@ export namespace Papercut {
               Xml.ExplicitString.with(comment),
             ])
             .pipe(
-              Effect.map(injectAuthHeader),
+              Effect.map(gatewayInjectAuthTokenHeader()),
               Effect.flatMap(httpClient.execute),
               Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
               Effect.flatMap((response) =>
@@ -125,7 +127,7 @@ export namespace Papercut {
                 Xml.ExplicitInt.with(limit),
               ])
               .pipe(
-                Effect.map(injectAuthHeader),
+                Effect.map(gatewayInjectAuthTokenHeader()),
                 Effect.flatMap(httpClient.execute),
                 Effect.flatMap(
                   xmlRpc.response(
@@ -147,7 +149,7 @@ export namespace Papercut {
               Xml.ExplicitStringArray.with(propertyKeys),
             ])
             .pipe(
-              Effect.map(injectAuthHeader),
+              Effect.map(gatewayInjectAuthTokenHeader()),
               Effect.flatMap(httpClient.execute),
               Effect.flatMap(
                 xmlRpc.response(
@@ -181,7 +183,7 @@ export namespace Papercut {
         const getTotalUsers = xmlRpc
           .request("api.getTotalUsers", [])
           .pipe(
-            Effect.map(injectAuthHeader),
+            Effect.map(gatewayInjectAuthTokenHeader()),
             Effect.flatMap(httpClient.execute),
             Effect.flatMap(xmlRpc.response(Xml.Rpc.IntResponse)),
             Effect.withSpan("Papercut.Client.getTotalUsers"),
@@ -196,7 +198,7 @@ export namespace Papercut {
               Xml.ExplicitInt.with(limit),
             ])
             .pipe(
-              Effect.map(injectAuthHeader),
+              Effect.map(gatewayInjectAuthTokenHeader()),
               Effect.flatMap(httpClient.execute),
               Effect.flatMap(
                 xmlRpc.response(
@@ -214,7 +216,7 @@ export namespace Papercut {
                 Xml.ExplicitInt.with(limit),
               ])
               .pipe(
-                Effect.map(injectAuthHeader),
+                Effect.map(gatewayInjectAuthTokenHeader()),
                 Effect.flatMap(httpClient.execute),
                 Effect.flatMap(
                   xmlRpc.response(
@@ -227,7 +229,7 @@ export namespace Papercut {
         const performUserAndGroupSync = xmlRpc
           .request("api.performUserAndGroupSync", [])
           .pipe(
-            Effect.map(injectAuthHeader),
+            Effect.map(gatewayInjectAuthTokenHeader()),
             Effect.flatMap(httpClient.execute),
             Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
             Effect.flatMap((response) =>

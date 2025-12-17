@@ -19,7 +19,7 @@ func NewClient(cfg *clientcredentials.Config) *Client {
 				ClientID:     cfg.ClientID,
 				ClientSecret: cfg.ClientSecret,
 			}.HTTPClient(),
-			UserAgent: "papercut-tailgate",
+			UserAgent: "papercut-gateway",
 		},
 	}
 }
@@ -33,7 +33,7 @@ func (c *Client) CreateAuthKey(ctx context.Context) (*tsclient.Key, error) {
 
 	key, err := c.Keys().Create(ctx, tsclient.CreateKeyRequest{
 		Capabilities: capabilities,
-		Description:  "PaperCut Tailscale Gateway",
+		Description:  "PaperCut Gateway",
 	})
 	if err != nil {
 		return nil, err

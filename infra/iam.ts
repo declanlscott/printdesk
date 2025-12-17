@@ -7,34 +7,6 @@ export const cloudflareApiToken = new sst.Linkable("CloudflareApiToken", {
   },
 });
 
-export const papercutTailgateExecutionRole = new aws.iam.Role(
-  "PapercutTailgateExecutionRole",
-  {
-    assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-      Service: "ecs-tasks.amazonaws.com",
-    }),
-    managedPolicyArns: [aws.iam.ManagedPolicy.AmazonECSTaskExecutionRolePolicy],
-    inlinePolicies: [
-      {
-        policy: aws.iam.getPolicyDocumentOutput({
-          statements: [
-            {
-              actions: ["ssm:GetParameter"],
-              resources: ["*"],
-            },
-            {
-              actions: ["kms:Decrypt"],
-              resources: [
-                aws.kms.getAliasOutput({ name: "alias/aws/ssm" }).arn,
-              ],
-            },
-          ],
-        }).json,
-      },
-    ],
-  },
-);
-
 export const pulumiRoleExternalId = new random.RandomPassword(
   "PulumiRoleExternalId",
   {

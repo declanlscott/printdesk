@@ -1,17 +1,10 @@
 {
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
   "compilerOptions": {
-    "strict": true,
-    "esModuleInterop": true,
-    "jsx": "react-jsx",
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "baseUrl": ".",
-    "paths": {
-      "@printdesk/core/*": ["../core/src/*"],
-      "@printdesk/functions/*": ["../functions/src/*"],
-      "~/*": ["src/*"]
-    }
-  },
-  "references": [{ "path": "../functions" }]
+    "plugins": [{ "name": "@effect/language-service" }]
+  }
 }

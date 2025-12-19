@@ -1,47 +1,14 @@
 import { RouterProvider } from "react-aria-components";
-import { SharedErrors } from "@printdesk/core/errors/shared";
-import { tenantSubdomainSchema } from "@printdesk/core/tenants/shared";
+import { TanStackDevtools } from "@tanstack/react-devtools";
 import {
-  createRootRouteWithContext,
-  HeadContent,
-  notFound,
+  createRootRoute,
+  Link,
   Outlet,
-  retainSearchParams,
   useRouter,
 } from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import * as v from "valibot";
+import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
-import type { InitialRouterContext } from "~/types";
-
-export const Route = createRootRouteWithContext<InitialRouterContext>()({
-  validateSearch: v.object({ subdomain: v.optional(tenantSubdomainSchema) }),
-  search: { middlewares: [retainSearchParams(["subdomain"])] },
-  beforeLoad: async ({ context, search }) => {
-    const subdomain =
-      context.resource.AppData.isDevMode ||
-      !context.resource.AppData.isProdStage
-        ? search.subdomain
-        : window.location.hostname
-            .split(`.${context.resource.Domains.root}`)
-            .at(0);
-    if (!subdomain) throw new Error("Missing subdomain");
-
-    return { subdomain };
-  },
-  head: () => ({
-    meta: [{ title: "Printdesk" }],
-    links: [{ rel: "icon", href: "/favicon.svg" }],
-  }),
-  component: RouteComponent,
-  onError: (error) => {
-    if (error instanceof SharedErrors.NotFound) throw notFound();
-
-    throw error;
-  },
-});
-
-function RouteComponent() {
+function RootLayout() {
   const { navigate, buildLocation } = useRouter();
 
   return (
@@ -49,11 +16,30 @@ function RouteComponent() {
       navigate={(to, options) => navigate({ ...to, ...options })}
       useHref={(to) => buildLocation(to || {}).href}
     >
-      <HeadContent />
-
+      <div className="flex gap-2 p-2">
+        <Link to="/" className="[&.active]:font-bold">
+          Home
+        </Link>{" "}
+        <Link to="/about" className="[&.active]:font-bold">
+          About
+        </Link>
+      </div>
+      <hr />
       <Outlet />
 
-      <TanStackRouterDevtools position="bottom-right" />
+      <TanStackDevtools
+        config={{
+          position: "bottom-right",
+        }}
+        plugins={[
+          {
+            name: "Tanstack Router",
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+        ]}
+      />
     </RouterProvider>
   );
 }
+
+export const Route = createRootRoute({ component: RootLayout });

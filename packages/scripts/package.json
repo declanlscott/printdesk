@@ -1,5 +1,6 @@
 {
   "name": "@printdesk/scripts",
+  "private": true,
   "scripts": {
     "seed": "tsx ./src/seed.ts",
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0",

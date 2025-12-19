@@ -1,5 +1,6 @@
 {
   "name": "@printdesk/functions",
+  "private": true,
   "type": "module",
   "scripts": {
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
@@ -7,9 +8,16 @@
   "dependencies": {
     "@effect-aws/lambda": "^1.5.1",
     "@effect-aws/powertools-logger": "^1.5.1",
-    "@printdesk/core": "workspace:*"
+    "@effect-aws/client-sts": "catalog:",
+    "@effect-aws/client-sqs": "catalog:",
+    "@openauthjs/openauth": "catalog:",
+    "@printdesk/core": "workspace:*",
+    "effect": "catalog:",
+    "drizzle-orm": "catalog:",
+    "hono": "catalog:"
   },
   "devDependencies": {
+    "@effect/language-service": "catalog:",
     "@types/aws-lambda": "^8.10.159"
   }
 }

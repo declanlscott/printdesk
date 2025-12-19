@@ -29,7 +29,7 @@ export default $config({
     };
   },
   async run() {
-    const { readdirSync } = await import("node:fs");
+    const { readdir } = await import("node:fs/promises");
 
     $transform(sst.aws.Function, (args) => {
       args.architecture ??= "arm64";
@@ -38,7 +38,7 @@ export default $config({
 
     const outputs = {};
 
-    const dir = readdirSync("./infra");
+    const dir = await readdir("./infra");
     for (const file of dir) {
       if (file === "lib") continue;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment

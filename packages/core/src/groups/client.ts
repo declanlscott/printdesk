@@ -70,13 +70,11 @@ export namespace Groups {
           CustomerGroupsContract.isMemberOf,
           {
             make: ({ id, memberId }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findActiveMemberIds(id)
                   .pipe(
-                    Effect.map(
-                      Array.some(Equal.equals(memberId ?? principal.userId)),
-                    ),
+                    Effect.map(Array.some(Equal.equals(memberId ?? user.id))),
                   ),
               ),
           },

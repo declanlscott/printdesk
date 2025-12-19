@@ -170,15 +170,13 @@ export namespace SharedAccountWorkflows {
           SharedAccountWorkflowsContract.isCustomerAuthorized,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findActiveCustomerAuthorized(principal.userId, id)
-                  .pipe(
-                    Effect.andThen(true),
-                    Effect.catchTag("NoSuchElementException", () =>
-                      Effect.succeed(true),
-                    ),
+              AccessControl.userPolicy((user) =>
+                repository.findActiveCustomerAuthorized(user.id, id).pipe(
+                  Effect.andThen(true),
+                  Effect.catchTag("NoSuchElementException", () =>
+                    Effect.succeed(true),
                   ),
+                ),
               ),
           },
         );
@@ -187,15 +185,13 @@ export namespace SharedAccountWorkflows {
           SharedAccountWorkflowsContract.isManagerAuthorized,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
-                repository
-                  .findActiveManagerAuthorized(principal.userId, id)
-                  .pipe(
-                    Effect.andThen(true),
-                    Effect.catchTag("NoSuchElementException", () =>
-                      Effect.succeed(false),
-                    ),
+              AccessControl.userPolicy((user) =>
+                repository.findActiveManagerAuthorized(user.id, id).pipe(
+                  Effect.andThen(true),
+                  Effect.catchTag("NoSuchElementException", () =>
+                    Effect.succeed(false),
                   ),
+                ),
               ),
           },
         );
@@ -314,23 +310,20 @@ export namespace WorkflowStatuses {
         const sharedAccountWorkflowPolicies =
           yield* SharedAccountWorkflows.Policies;
 
-        const isEditable = PoliciesContract.makePolicy(
+        const canEdit = PoliciesContract.makePolicy(
           WorkflowStatusesContract.canEdit,
           {
             make: ({ id }) =>
-              AccessControl.every(
-                AccessControl.permission("workflow_statuses:update"),
-                repository.findById(id).pipe(
-                  Effect.flatMap((workflowStatus) =>
-                    Match.value(workflowStatus).pipe(
-                      Match.when({ roomWorkflowId: Match.null }, (s) =>
-                        sharedAccountWorkflowPolicies.isManagerAuthorized.make({
-                          id: s.sharedAccountWorkflowId,
-                        }),
-                      ),
-                      Match.orElse(() =>
-                        AccessControl.permission("rooms:update"),
-                      ),
+              repository.findById(id).pipe(
+                Effect.flatMap((workflowStatus) =>
+                  Match.value(workflowStatus).pipe(
+                    Match.when({ roomWorkflowId: Match.null }, (s) =>
+                      sharedAccountWorkflowPolicies.isManagerAuthorized.make({
+                        id: s.sharedAccountWorkflowId,
+                      }),
+                    ),
+                    Match.orElse(() =>
+                      AccessControl.permission("rooms:update"),
                     ),
                   ),
                 ),
@@ -338,17 +331,14 @@ export namespace WorkflowStatuses {
           },
         );
 
-        const isDeletable = PoliciesContract.makePolicy(
+        const canDelete = PoliciesContract.makePolicy(
           WorkflowStatusesContract.canDelete,
           {
             make: ({ id }) =>
               AccessControl.every(
-                AccessControl.permission("workflow_statuses:delete"),
-                AccessControl.policy(() =>
-                  ordersRepository
-                    .findByWorkflowStatusId(id)
-                    .pipe(Effect.map(Array.isEmptyArray)),
-                ),
+                ordersRepository
+                  .findByWorkflowStatusId(id)
+                  .pipe(Effect.map(Array.isEmptyArray), AccessControl.policy),
                 repository.findById(id).pipe(
                   Effect.flatMap((workflowStatus) =>
                     Match.value(workflowStatus).pipe(
@@ -367,7 +357,7 @@ export namespace WorkflowStatuses {
           },
         );
 
-        return { isEditable, isDeletable } as const;
+        return { canEdit, canDelete } as const;
       }),
     },
   ) {}
@@ -442,7 +432,11 @@ export namespace WorkflowStatuses {
         const edit = MutationsContract.makeMutation(
           WorkflowStatusesContract.edit,
           {
-            makePolicy: ({ id }) => policies.isEditable.make({ id }),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("workflow_statuses:update"),
+                policies.canEdit.make({ id }),
+              ),
             mutator: ({ id, ...workflowStatus }) =>
               writeRepository.updateById(id, () => workflowStatus),
           },
@@ -451,7 +445,11 @@ export namespace WorkflowStatuses {
         const reorder = MutationsContract.makeMutation(
           WorkflowStatusesContract.reorder,
           {
-            makePolicy: ({ id }) => policies.isEditable.make({ id }),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("workflow_statuses:update"),
+                policies.canEdit.make({ id }),
+              ),
             mutator: ({ id, index, updatedAt }) =>
               Effect.gen(function* () {
                 const slice = yield* readRepository
@@ -466,7 +464,11 @@ export namespace WorkflowStatuses {
                     ),
                   );
 
-                const delta = index - slice[0].index;
+                const delta = yield* Array.head(slice).pipe(
+                  Effect.map(Struct.get("index")),
+                  Effect.map(Number.subtract(index)),
+                  Effect.map(Number.negate),
+                );
                 const shift = Ordering.reverse(Number.sign(delta));
 
                 if (!shift)
@@ -500,7 +502,11 @@ export namespace WorkflowStatuses {
         const delete_ = MutationsContract.makeMutation(
           WorkflowStatusesContract.delete_,
           {
-            makePolicy: ({ id }) => policies.isDeletable.make({ id }),
+            makePolicy: ({ id }) =>
+              AccessControl.every(
+                AccessControl.permission("workflow_statuses:delete"),
+                policies.canDelete.make({ id }),
+              ),
             mutator: ({ id, deletedAt }) =>
               Effect.gen(function* () {
                 const slice = yield* readRepository.findTailSliceById(id);

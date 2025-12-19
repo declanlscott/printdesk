@@ -897,12 +897,12 @@ export namespace Comments {
           CommentsContract.isAuthor,
           {
             make: Effect.fn("Comments.Policies.isAuthor.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, user.tenantId)
                   .pipe(
                     Effect.map(Struct.get("authorId")),
-                    Effect.map(Equal.equals(principal.userId)),
+                    Effect.map(Equal.equals(user.id)),
                   ),
               ),
             ),
@@ -911,9 +911,9 @@ export namespace Comments {
 
         const canEdit = PoliciesContract.makePolicy(CommentsContract.canEdit, {
           make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
-            AccessControl.policy((principal) =>
+            AccessControl.privatePolicy(({ tenantId }) =>
               repository
-                .findById(id, principal.tenantId)
+                .findById(id, tenantId)
                 .pipe(
                   Effect.map(Struct.get("deletedAt")),
                   Effect.map(Predicate.isNull),
@@ -931,9 +931,9 @@ export namespace Comments {
           CommentsContract.canRestore,
           {
             make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNotNull),

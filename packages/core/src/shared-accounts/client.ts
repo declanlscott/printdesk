@@ -86,14 +86,13 @@ export namespace SharedAccounts {
           SharedAccountManagerAccessContract.canDelete,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                  AccessControl.policy,
+                ),
           },
         );
 
@@ -101,14 +100,13 @@ export namespace SharedAccounts {
           SharedAccountManagerAccessContract.canRestore,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNotNull),
+                  AccessControl.policy,
+                ),
           },
         );
 
@@ -317,13 +315,11 @@ export namespace SharedAccounts {
           SharedAccountsContract.isCustomerAuthorized,
           {
             make: ({ id, customerId }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findActiveAuthorizedCustomerIds(id)
                   .pipe(
-                    Effect.map(
-                      Array.some(Equal.equals(customerId ?? principal.userId)),
-                    ),
+                    Effect.map(Array.some(Equal.equals(customerId ?? user.id))),
                   ),
               ),
           },
@@ -333,13 +329,11 @@ export namespace SharedAccounts {
           SharedAccountsContract.isManagerAuthorized,
           {
             make: ({ id, managerId }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findActiveAuthorizedManagerIds(id)
                   .pipe(
-                    Effect.map(
-                      Array.some(Equal.equals(managerId ?? principal.userId)),
-                    ),
+                    Effect.map(Array.some(Equal.equals(managerId ?? user.id))),
                   ),
               ),
           },
@@ -349,14 +343,13 @@ export namespace SharedAccounts {
           SharedAccountsContract.canEdit,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                  AccessControl.policy,
+                ),
           },
         );
 
@@ -369,14 +362,13 @@ export namespace SharedAccounts {
           SharedAccountsContract.canRestore,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNotNull),
+                  AccessControl.policy,
+                ),
           },
         );
 

@@ -559,16 +559,13 @@ export namespace Products {
 
         const canEdit = PoliciesContract.makePolicy(ProductsContract.canEdit, {
           make: Effect.fn("Products.Policies.canEdit.make")(({ id }) =>
-            AccessControl.every(
-              AccessControl.permission("products:update"),
-              AccessControl.policy((principal) =>
-                repository
-                  .findById(id, principal.tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
+            AccessControl.privatePolicy(({ tenantId }) =>
+              repository
+                .findById(id, tenantId)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                ),
             ),
           ),
         });
@@ -577,9 +574,9 @@ export namespace Products {
           ProductsContract.canDelete,
           {
             make: Effect.fn("Products.Policies.canDelete.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNull),
@@ -593,9 +590,9 @@ export namespace Products {
           ProductsContract.canRestore,
           {
             make: Effect.fn("Products.Policies.canRestore.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNotNull),

@@ -50,12 +50,12 @@ export namespace Comments {
           CommentsContract.isAuthor,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findById(id)
                   .pipe(
                     Effect.map(Struct.get("authorId")),
-                    Effect.map(Equal.equals(principal.userId)),
+                    Effect.map(Equal.equals(user.id)),
                   ),
               ),
           },
@@ -63,14 +63,13 @@ export namespace Comments {
 
         const canEdit = PoliciesContract.makePolicy(CommentsContract.canEdit, {
           make: ({ id }) =>
-            AccessControl.policy(() =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                ),
-            ),
+            repository
+              .findById(id)
+              .pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNull),
+                AccessControl.policy,
+              ),
         });
 
         const canDelete = PoliciesContract.makePolicy(
@@ -82,14 +81,13 @@ export namespace Comments {
           CommentsContract.canRestore,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNotNull),
+                  AccessControl.policy,
+                ),
           },
         );
 

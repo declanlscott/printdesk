@@ -148,7 +148,7 @@ export namespace Auth {
                       });
 
                       return new AuthContract.UserSubject(
-                        Struct.pick(admin, "id", "tenantId"),
+                        Struct.pick(admin, "id", "tenantId", "role"),
                       );
                     }
 
@@ -168,7 +168,7 @@ export namespace Auth {
                       );
 
                     return new AuthContract.UserSubject(
-                      Struct.pick(user, "id", "tenantId"),
+                      Struct.pick(user, "id", "tenantId", "role"),
                     );
                   }),
                 ),
@@ -195,7 +195,7 @@ export namespace Auth {
                       );
 
                     return new AuthContract.UserSubject(
-                      Struct.pick(user, "id", "tenantId"),
+                      Struct.pick(user, "id", "tenantId", "role"),
                     );
                   }),
                 ),

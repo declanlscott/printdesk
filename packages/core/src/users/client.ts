@@ -46,21 +46,18 @@ export namespace Users {
 
         const isSelf = PoliciesContract.makePolicy(UsersContract.isSelf, {
           make: ({ id }) =>
-            AccessControl.policy((principal) =>
-              Effect.succeed(id === principal.userId),
-            ),
+            AccessControl.userPolicy((user) => Effect.succeed(id === user.id)),
         });
 
         const canEdit = PoliciesContract.makePolicy(UsersContract.canEdit, {
           make: ({ id }) =>
-            AccessControl.policy(() =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                ),
-            ),
+            repository
+              .findById(id)
+              .pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNull),
+                AccessControl.policy,
+              ),
         });
 
         const canDelete = PoliciesContract.makePolicy(UsersContract.canDelete, {
@@ -71,14 +68,13 @@ export namespace Users {
           UsersContract.canRestore,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNotNull),
+                  AccessControl.policy,
+                ),
           },
         );
 

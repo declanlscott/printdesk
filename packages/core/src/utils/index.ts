@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
-import * as String_ from "effect/String";
+import * as _String from "effect/String";
 import * as Tuple from "effect/Tuple";
 import { customAlphabet } from "nanoid";
 
@@ -73,13 +73,13 @@ export type SnakeToCamel<TSnake extends Lowercase<string>> =
     : TSnake;
 
 export const snakeToCamel = <TSnake extends Lowercase<string>>(snake: TSnake) =>
-  String_.snakeToCamel(snake) as SnakeToCamel<TSnake>;
+  _String.snakeToCamel(snake) as SnakeToCamel<TSnake>;
 
 export const delimitToken = (...segments: Array<string>) =>
   Array.join(segments, Constants.TOKEN_DELIMITER);
 
 export const splitToken = (token: string) =>
-  String_.split(token, Constants.TOKEN_DELIMITER);
+  _String.split(token, Constants.TOKEN_DELIMITER);
 
 export const buildName = (
   nameTemplate: string,
@@ -90,18 +90,25 @@ export const buildName = (
     tenantId,
   );
 
-export function getUserInitials(name: string) {
-  if (!name) return "";
+export const getUserInitials = (name: string) =>
+  Effect.gen(function* () {
+    if (!name) return "";
 
-  const splitName = name.split(" ");
-  const firstInitial = splitName[0].charAt(0).toUpperCase();
+    const splitName = name.split(" ");
+    const firstInitial = yield* Array.head(splitName).pipe(
+      Effect.flatMap(_String.charAt(0)),
+      Effect.map(_String.toUpperCase),
+    );
 
-  if (splitName.length === 1) return firstInitial;
+    if (splitName.length === 1) return firstInitial;
 
-  const lastInitial = splitName[splitName.length - 1].charAt(0).toUpperCase();
+    const lastInitial = yield* Array.last(splitName).pipe(
+      Effect.flatMap(_String.charAt(0)),
+      Effect.map(_String.toUpperCase),
+    );
 
-  return `${firstInitial}${lastInitial}`;
-}
+    return `${firstInitial}${lastInitial}`;
+  });
 
 export type Prettify<TObject> = {
   [TKey in keyof TObject]: TObject[TKey];

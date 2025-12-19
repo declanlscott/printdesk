@@ -335,17 +335,13 @@ export namespace Tenants {
           {
             make: Effect.fn("Tenants.LicensesPolicies.isAvailable.make")(
               ({ key }) =>
-                AccessControl.policy(() =>
-                  repository
-                    .findByKeyWithTenant(key)
-                    .pipe(
-                      Effect.map(
-                        ({ license, tenant }) =>
-                          license.status === "active" &&
-                          (license.tenantId === null ||
-                            tenant?.status === "setup"),
-                      ),
-                    ),
+                repository.findByKeyWithTenant(key).pipe(
+                  Effect.map(
+                    ({ license, tenant }) =>
+                      license.status === "active" &&
+                      (license.tenantId === null || tenant?.status === "setup"),
+                  ),
+                  AccessControl.policy,
                 ),
             ),
           },

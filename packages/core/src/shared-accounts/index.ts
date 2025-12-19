@@ -964,13 +964,11 @@ export namespace SharedAccounts {
             make: Effect.fn(
               "SharedAccounts.Policies.isCustomerAuthorized.make",
             )(({ id, customerId }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
-                  .findActiveAuthorizedCustomerIds(id, principal.tenantId)
+                  .findActiveAuthorizedCustomerIds(id, user.tenantId)
                   .pipe(
-                    Effect.map(
-                      Array.some(Equal.equals(customerId ?? principal.userId)),
-                    ),
+                    Effect.map(Array.some(Equal.equals(customerId ?? user.id))),
                   ),
               ),
             ),
@@ -982,12 +980,12 @@ export namespace SharedAccounts {
           {
             make: Effect.fn("SharedAccounts.Policies.isManagerAuthorized.make")(
               ({ id, managerId }) =>
-                AccessControl.policy((principal) =>
+                AccessControl.userPolicy((user) =>
                   repository
-                    .findActiveAuthorizedManagerIds(id, principal.tenantId)
+                    .findActiveAuthorizedManagerIds(id, user.tenantId)
                     .pipe(
                       Effect.map(
-                        Array.some(Equal.equals(managerId ?? principal.userId)),
+                        Array.some(Equal.equals(managerId ?? user.id)),
                       ),
                     ),
                 ),
@@ -999,9 +997,9 @@ export namespace SharedAccounts {
           SharedAccountsContract.canEdit,
           {
             make: Effect.fn("SharedAccounts.Policies.canEdit.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNull),
@@ -1025,9 +1023,9 @@ export namespace SharedAccounts {
           {
             make: Effect.fn("SharedAccounts.Policies.canRestore.make")(
               ({ id }) =>
-                AccessControl.policy((principal) =>
+                AccessControl.privatePolicy(({ tenantId }) =>
                   repository
-                    .findById(id, principal.tenantId)
+                    .findById(id, tenantId)
                     .pipe(
                       Effect.map(Struct.get("deletedAt")),
                       Effect.map(Predicate.isNotNull),
@@ -2485,9 +2483,9 @@ export namespace SharedAccounts {
             make: Effect.fn(
               "SharedAccounts.ManagerAccessPolicies.canDelete.make",
             )(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNull),
@@ -2503,9 +2501,9 @@ export namespace SharedAccounts {
             make: Effect.fn(
               "SharedAccounts.ManagerAccessPolicies.canRestore.make",
             )(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNotNull),

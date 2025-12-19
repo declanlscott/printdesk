@@ -9,6 +9,7 @@ import * as Tuple from "effect/Tuple";
 import { Replicache } from ".";
 import { AccessControl } from "../access-control";
 import { Actors } from "../actors";
+import { ActorsContract } from "../actors/contract";
 import { ColumnsContract } from "../columns/contract";
 import { Database } from "../database";
 import { Queries } from "../queries";
@@ -35,9 +36,10 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
       Queries.Differentiator.Default,
     ],
     effect: Effect.gen(function* () {
-      const { id: userId, tenantId } = yield* Actors.Actor.pipe(
+      const user = yield* Actors.Actor.pipe(
         Effect.flatMap((actor) => actor.assert("UserActor")),
       );
+      const { id: userId, tenantId } = user;
 
       const db = yield* Database.TransactionManager;
       const clientGroupsRepository = yield* Replicache.ClientGroupsRepository;
@@ -114,9 +116,8 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
                 );
 
                 // 5: Verify requesting client group owns requested client
-                yield* AccessControl.policy(
-                  (principal) =>
-                    Effect.succeed(principal.userId === clientGroup.userId),
+                yield* AccessControl.userPolicy(
+                  (user) => Effect.succeed(user.id === clientGroup.userId),
                   "Requesting client group does not own requested client.",
                 );
 
@@ -203,6 +204,10 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
             { retry: true },
           )
           .pipe(
+            Effect.provideService(
+              Actors.Actor,
+              new ActorsContract.Actor({ properties: user }),
+            ),
             Effect.map(
               Option.match({
                 // 10: If diff is empty, return no-op

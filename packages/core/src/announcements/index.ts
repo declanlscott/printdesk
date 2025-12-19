@@ -569,9 +569,9 @@ export namespace Announcements {
           AnnouncementsContract.canEdit,
           {
             make: Effect.fn("Announcements.Policies.canEdit.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNull),
@@ -595,9 +595,9 @@ export namespace Announcements {
           {
             make: Effect.fn("Announcements.Policies.canRestore.make")(
               ({ id }) =>
-                AccessControl.policy((principal) =>
+                AccessControl.privatePolicy(({ tenantId }) =>
                   repository
-                    .findById(id, principal.tenantId)
+                    .findById(id, tenantId)
                     .pipe(
                       Effect.map(Struct.get("deletedAt")),
                       Effect.map(Predicate.isNotNull),

@@ -78,14 +78,13 @@ export namespace Announcements {
           AnnouncementsContract.canEdit,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNull),
+                  AccessControl.policy,
+                ),
           },
         );
 
@@ -98,14 +97,13 @@ export namespace Announcements {
           AnnouncementsContract.canRestore,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNotNull),
+                  AccessControl.policy,
+                ),
           },
         );
 

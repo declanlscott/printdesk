@@ -4,6 +4,7 @@ import * as Layer from "effect/Layer";
 import { ActorsContract } from "./contract";
 
 import type { ColumnsContract } from "../columns/contract";
+import type { UsersContract } from "../users/contract";
 
 export namespace Actors {
   export class Actor extends Context.Tag("@printdesk/core/actors/Actor")<
@@ -33,12 +34,13 @@ export namespace Actors {
     static readonly userLayer = (
       id: ColumnsContract.EntityId,
       tenantId: ColumnsContract.TenantId,
+      role: UsersContract.Role,
     ) =>
       Layer.succeed(
         this,
         this.of(
           new ActorsContract.Actor({
-            properties: new ActorsContract.UserActor({ id, tenantId }),
+            properties: new ActorsContract.UserActor({ id, tenantId, role }),
           }),
         ),
       );

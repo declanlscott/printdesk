@@ -3,6 +3,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { ColumnsContract } from "../columns/contract";
+import { UsersContract } from "../users/contract";
 
 export namespace ActorsContract {
   export class InvalidActorError extends Data.TaggedError("InvalidActorError")<{
@@ -24,6 +25,7 @@ export namespace ActorsContract {
     {
       id: ColumnsContract.EntityId,
       tenantId: ColumnsContract.TenantId,
+      role: UsersContract.Role,
     },
   ) {}
 

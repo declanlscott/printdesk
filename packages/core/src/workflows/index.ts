@@ -25,6 +25,7 @@ import * as Ordering from "effect/Ordering";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
+import { Actors } from "../actors";
 import { Database } from "../database";
 import { Events } from "../events";
 import { MutationsContract } from "../mutations/contract";
@@ -1451,13 +1452,9 @@ export namespace SharedAccountWorkflows {
             make: Effect.fn(
               "SharedAccountWorkflows.Policies.isCustomerAuthorized",
             )(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
-                  .findActiveCustomerAuthorized(
-                    principal.userId,
-                    id,
-                    principal.tenantId,
-                  )
+                  .findActiveCustomerAuthorized(user.id, id, user.tenantId)
                   .pipe(
                     Effect.andThen(true),
                     Effect.catchTag("NoSuchElementException", () =>
@@ -1475,13 +1472,9 @@ export namespace SharedAccountWorkflows {
             make: Effect.fn(
               "SharedAccountWorkflows.Policies.isManagerAuthorized.make",
             )(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
-                  .findActiveManagerAuthorized(
-                    principal.userId,
-                    id,
-                    principal.tenantId,
-                  )
+                  .findActiveManagerAuthorized(user.id, id, user.tenantId)
                   .pipe(
                     Effect.andThen(true),
                     Effect.catchTag("NoSuchElementException", () =>
@@ -2787,8 +2780,9 @@ export namespace WorkflowStatuses {
           {
             make: Effect.fn("WorkflowStatuses.Policies.canEdit.make")(
               ({ id }) =>
-                AccessControl.Principal.tenantId.pipe(
-                  Effect.flatMap((tenantId) =>
+                Actors.Actor.pipe(
+                  Effect.flatMap(Struct.get("assertPrivate")),
+                  Effect.flatMap(({ tenantId }) =>
                     repository.findById(id, tenantId).pipe(
                       Effect.flatMap((workflowStatus) =>
                         Match.value(workflowStatus).pipe(
@@ -2815,9 +2809,9 @@ export namespace WorkflowStatuses {
             make: Effect.fn("WorkflowStatuses.Policies.canDelete.make")(
               ({ id }) =>
                 AccessControl.every(
-                  AccessControl.policy((principal) =>
+                  AccessControl.privatePolicy(({ tenantId }) =>
                     ordersRepository
-                      .findByWorkflowStatusId(id, principal.tenantId)
+                      .findByWorkflowStatusId(id, tenantId)
                       .pipe(Effect.map(Array.isEmptyArray)),
                   ),
                   canEdit.make({ id }),
@@ -3002,7 +2996,11 @@ export namespace WorkflowStatuses {
                       ),
                     );
 
-                  const delta = index - slice[0].index;
+                  const delta = yield* Array.head(slice).pipe(
+                    Effect.map(Struct.get("index")),
+                    Effect.map(Number.subtract(index)),
+                    Effect.map(Number.negate),
+                  );
                   const shift = Ordering.reverse(Number.sign(delta));
 
                   if (!shift)

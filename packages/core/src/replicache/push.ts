@@ -6,6 +6,7 @@ import * as Schema from "effect/Schema";
 import { Replicache } from ".";
 import { AccessControl } from "../access-control";
 import { Actors } from "../actors";
+import { ActorsContract } from "../actors/contract";
 import { ColumnsContract } from "../columns/contract";
 import { Database } from "../database";
 import { Mutations } from "../mutations";
@@ -97,15 +98,14 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 );
 
                 // 4: Verify requesting user owns specified client group
-                yield* AccessControl.policy(
-                  (principal) =>
-                    Effect.succeed(principal.userId === clientGroup.userId),
+                yield* AccessControl.userPolicy(
+                  (user) => Effect.succeed(user.id === clientGroup.userId),
                   "User does not own specified client group.",
                 );
 
                 // 6: Verify requesting client group owns requested client
                 yield* AccessControl.policy(
-                  () => Effect.succeed(clientGroupId === client.clientGroupId),
+                  Effect.succeed(clientGroupId === client.clientGroupId),
                   "Requesting client group does not own requested client.",
                 );
 
@@ -173,6 +173,10 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 );
               }),
             ),
+          ),
+          Effect.provideService(
+            Actors.Actor,
+            new ActorsContract.Actor({ properties: user }),
           ),
           Effect.timed,
           Effect.flatMap(([duration]) =>

@@ -1,17 +1,15 @@
 import * as Data from "effect/Data";
 import * as Schema from "effect/Schema";
 
-import { ColumnsContract } from "../columns/contract";
+import { ActorsContract } from "../actors/contract";
 
 import type { StandardSchemaV1 } from "@standard-schema/spec";
+import type { ColumnsContract } from "../columns/contract";
 
 export namespace AuthContract {
   export class UserSubject extends Schema.TaggedClass<UserSubject>(
     "UserSubject",
-  )("UserSubject", {
-    id: ColumnsContract.EntityId,
-    tenantId: ColumnsContract.TenantId,
-  }) {}
+  )("UserSubject", ActorsContract.UserActor.fields) {}
 
   export const subjects: {
     [UserSubject._tag]: StandardSchemaV1<

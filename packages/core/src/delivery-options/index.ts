@@ -571,9 +571,9 @@ export namespace DeliveryOptions {
           DeliveryOptionsContract.canEdit,
           {
             make: Effect.fn("DeliveryOptions.Policies.canEdit.make")(({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.privatePolicy(({ tenantId }) =>
                 repository
-                  .findById(id, principal.tenantId)
+                  .findById(id, tenantId)
                   .pipe(
                     Effect.map(Struct.get("deletedAt")),
                     Effect.map(Predicate.isNull),
@@ -597,9 +597,9 @@ export namespace DeliveryOptions {
           {
             make: Effect.fn("DeliveryOptions.Policies.canRestore.make")(
               ({ id }) =>
-                AccessControl.policy((principal) =>
+                AccessControl.privatePolicy(({ tenantId }) =>
                   repository
-                    .findById(id, principal.tenantId)
+                    .findById(id, tenantId)
                     .pipe(
                       Effect.map(Struct.get("deletedAt")),
                       Effect.map(Predicate.isNotNull),

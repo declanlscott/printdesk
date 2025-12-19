@@ -114,12 +114,12 @@ export namespace Orders {
           OrdersContract.isCustomer,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findById(id)
                   .pipe(
                     Effect.map(Struct.get("customerId")),
-                    Effect.map(Equal.equals(principal.userId)),
+                    Effect.map(Equal.equals(user.id)),
                   ),
               ),
           },
@@ -129,12 +129,12 @@ export namespace Orders {
           OrdersContract.isManager,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findById(id)
                   .pipe(
                     Effect.map(Struct.get("managerId")),
-                    Effect.map(Equal.equals(principal.userId)),
+                    Effect.map(Equal.equals(user.id)),
                   ),
               ),
           },
@@ -144,14 +144,14 @@ export namespace Orders {
           OrdersContract.isCustomerOrManager,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findById(id)
                   .pipe(
                     Effect.map(
                       (order) =>
-                        order.customerId === principal.userId ||
-                        order.managerId === principal.userId,
+                        order.customerId === user.id ||
+                        order.managerId === user.id,
                     ),
                   ),
               ),
@@ -162,38 +162,37 @@ export namespace Orders {
           OrdersContract.isManagerAuthorized,
           {
             make: ({ id }) =>
-              AccessControl.policy((principal) =>
+              AccessControl.userPolicy((user) =>
                 repository
                   .findActiveManagerIds(id)
-                  .pipe(Effect.map(Array.some(Equal.equals(principal.userId)))),
+                  .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
               ),
           },
         );
 
         const canEdit = PoliciesContract.makePolicy(OrdersContract.canEdit, {
           make: ({ id }) =>
-            AccessControl.policy(() =>
-              repository.findByIdWithWorkflowStatus(id).pipe(
-                Effect.map(({ order, workflowStatus }) =>
-                  Match.value(order).pipe(
-                    Match.when({ deletedAt: Match.null }, (o) =>
-                      Match.value(o).pipe(
-                        Match.when(
-                          { sharedAccountWorkflowStatusId: Match.null },
-                          () =>
-                            !order.approvedAt &&
-                            !(
-                              workflowStatus.type === "InProgress" ||
-                              workflowStatus.type === "Completed"
-                            ),
-                        ),
-                        Match.orElse(() => true),
+            repository.findByIdWithWorkflowStatus(id).pipe(
+              Effect.map(({ order, workflowStatus }) =>
+                Match.value(order).pipe(
+                  Match.when({ deletedAt: Match.null }, (o) =>
+                    Match.value(o).pipe(
+                      Match.when(
+                        { sharedAccountWorkflowStatusId: Match.null },
+                        () =>
+                          !order.approvedAt &&
+                          !(
+                            workflowStatus.type === "InProgress" ||
+                            workflowStatus.type === "Completed"
+                          ),
                       ),
+                      Match.orElse(() => true),
                     ),
-                    Match.orElse(() => false),
                   ),
+                  Match.orElse(() => false),
                 ),
               ),
+              AccessControl.policy,
             ),
         });
 
@@ -201,18 +200,17 @@ export namespace Orders {
           OrdersContract.canApprove,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository.findByIdWithWorkflowStatus(id).pipe(
-                  Effect.map(({ order }) =>
-                    Match.value(order).pipe(
-                      Match.when(
-                        { deletedAt: Match.null },
-                        (o) => o.sharedAccountWorkflowStatusId !== null,
-                      ),
-                      Match.orElse(() => false),
+              repository.findByIdWithWorkflowStatus(id).pipe(
+                Effect.map(({ order }) =>
+                  Match.value(order).pipe(
+                    Match.when(
+                      { deletedAt: Match.null },
+                      (o) => o.sharedAccountWorkflowStatusId !== null,
                     ),
+                    Match.orElse(() => false),
                   ),
                 ),
+                AccessControl.policy,
               ),
           },
         );
@@ -221,18 +219,17 @@ export namespace Orders {
           OrdersContract.canTransition,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository.findByIdWithWorkflowStatus(id).pipe(
-                  Effect.map(({ order, workflowStatus }) =>
-                    Match.value(order).pipe(
-                      Match.when(
-                        { deletedAt: Match.null },
-                        () => workflowStatus.type !== "Completed",
-                      ),
-                      Match.orElse(() => false),
+              repository.findByIdWithWorkflowStatus(id).pipe(
+                Effect.map(({ order, workflowStatus }) =>
+                  Match.value(order).pipe(
+                    Match.when(
+                      { deletedAt: Match.null },
+                      () => workflowStatus.type !== "Completed",
                     ),
+                    Match.orElse(() => false),
                   ),
                 ),
+                AccessControl.policy,
               ),
           },
         );
@@ -246,14 +243,13 @@ export namespace Orders {
           OrdersContract.canRestore,
           {
             make: ({ id }) =>
-              AccessControl.policy(() =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
-              ),
+              repository
+                .findById(id)
+                .pipe(
+                  Effect.map(Struct.get("deletedAt")),
+                  Effect.map(Predicate.isNotNull),
+                  AccessControl.policy,
+                ),
           },
         );
 

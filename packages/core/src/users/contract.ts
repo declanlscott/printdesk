@@ -17,7 +17,9 @@ export namespace UsersContract {
     "manager",
     "customer",
   ] as const;
-  export type Role = (typeof roles)[number];
+
+  export const Role = Schema.Literal(...roles);
+  export type Role = (typeof Role)["Type"];
 
   export class DataTransferObject extends Schema.Class<DataTransferObject>(
     "DataTransferObject",
@@ -27,9 +29,7 @@ export namespace UsersContract {
     username: Schema.String,
     externalId: Schema.String,
     identityProviderId: ColumnsContract.EntityId,
-    role: Schema.Literal(...roles).pipe(
-      Schema.optionalWith({ default: () => "customer" }),
-    ),
+    role: Role.pipe(Schema.optionalWith({ default: () => "customer" })),
     name: Schema.String,
     email: Schema.String,
   }) {}

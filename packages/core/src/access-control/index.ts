@@ -1,23 +1,27 @@
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as HashSet from "effect/HashSet";
+import * as Struct from "effect/Struct";
+
+import { Actors } from "../actors";
 
 import type { Schema } from "effect";
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
-import type { ColumnsContract } from "../columns/contract";
+import type { ActorsContract } from "../actors/contract";
 import type { Permissions } from "../permissions";
 import type { UsersContract } from "../users/contract";
 
 export namespace AccessControl {
-  export type UserRoleAcls = ReadonlyRecord<
+  export type UserRoleAcl = ReadonlyRecord<
     UsersContract.Role,
-    ReadonlyArray<Permissions.Permission>
+    HashSet.HashSet<Permissions.Permission>
   >;
+
   export const userRoleAcls = Effect.sync(
     () =>
       ({
-        administrator: [
+        administrator: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "announcements:create",
           "announcements:read",
           "announcements:update",
@@ -73,8 +77,8 @@ export namespace AccessControl {
           "workflow_statuses:read",
           "workflow_statuses:update",
           "workflow_statuses:delete",
-        ] as const,
-        operator: [
+        ),
+        operator: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "announcements:create",
           "active_announcements:read",
           "announcements:update",
@@ -110,8 +114,8 @@ export namespace AccessControl {
           "active_room_workflows:read",
           "active_shared_account_workflows:read",
           "active_workflow_statuses:read",
-        ] as const,
-        manager: [
+        ),
+        manager: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "active_published_room_announcements:read",
           "active_manager_authorized_shared_accounts:read",
           "active_customer_authorized_shared_accounts:read",
@@ -138,8 +142,8 @@ export namespace AccessControl {
           "active_published_room_workflow_statuses:read",
           "active_customer_authorized_shared_account_workflow_statuses:read",
           "active_manager_authorized_shared_account_workflow_statuses:read",
-        ] as const,
-        customer: [
+        ),
+        customer: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "active_published_room_announcements:read",
           "active_customer_authorized_shared_accounts:read",
           "active_authorized_shared_account_customer_access:read",
@@ -159,29 +163,19 @@ export namespace AccessControl {
           "active_customer_authorized_shared_account_workflows:read",
           "active_published_room_workflow_statuses:read",
           "active_customer_authorized_shared_account_workflow_statuses:read",
-        ] as const,
-      }) satisfies UserRoleAcls,
+        ),
+      }) satisfies UserRoleAcl,
   );
 
-  export class Principal extends Effect.Tag(
-    "@printdesk/core/access-control/Principal",
-  )<
-    Principal,
-    {
-      readonly userId: ColumnsContract.EntityId;
-      readonly tenantId: ColumnsContract.TenantId;
-      readonly acl: HashSet.HashSet<Permissions.Permission>;
-    }
-  >() {}
-
   export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
+    readonly cause?: unknown;
     readonly message: string;
   }> {}
 
   export type Policy<TError = never, TContext = never> = Effect.Effect<
     void,
-    AccessDeniedError | TError,
-    Principal | TContext
+    AccessDeniedError | ActorsContract.InvalidActorError | TError,
+    TContext | Actors.Actor
   >;
 
   export type MakePolicy<
@@ -190,7 +184,10 @@ export namespace AccessControl {
     TContext,
   > = (
     args: Schema.Schema.Type<TArgs>,
-  ) => Policy<Exclude<TError, AccessDeniedError>, Exclude<TContext, Principal>>;
+  ) => Policy<
+    Exclude<TError, AccessDeniedError | ActorsContract.InvalidActorError>,
+    Exclude<TContext, Actors.Actor>
+  >;
 
   export const enforce =
     <TPolicyError, TPolicyContext>(
@@ -211,23 +208,57 @@ export namespace AccessControl {
     Effect.all(policies, { concurrency: 1, discard: true });
 
   export const policy = <TError, TContext>(
+    predicate: Effect.Effect<boolean, TError, TContext>,
+    message = "Access denied.",
+  ): Policy<TError, TContext> =>
+    Effect.gen(function* () {
+      const access = yield* predicate;
+      if (!access)
+        return yield* Effect.fail(new AccessDeniedError({ message }));
+    });
+
+  export const userPolicy = <TError, TContext>(
     predicate: (
-      principal: Principal["Type"],
+      user: ActorsContract.UserActor,
     ) => Effect.Effect<boolean, TError, TContext>,
     message = "Access denied.",
   ): Policy<TError, TContext> =>
     Effect.gen(function* () {
-      const principal = yield* Principal;
+      const user = yield* Actors.Actor.pipe(
+        Effect.flatMap((actor) => actor.assert("UserActor")),
+      );
 
-      const access = yield* predicate(principal);
+      const access = yield* predicate(user);
+      if (!access)
+        return yield* Effect.fail(new AccessDeniedError({ message }));
+    });
+
+  export const privatePolicy = <TError, TContext>(
+    predicate: (
+      privateActor: Exclude<
+        ActorsContract.Actor["properties"],
+        { _tag: "PublicActor" }
+      >,
+    ) => Effect.Effect<boolean, TError, TContext>,
+    message = "Access denied.",
+  ): Policy<TError, TContext> =>
+    Effect.gen(function* () {
+      const privateActor = yield* Actors.Actor.pipe(
+        Effect.flatMap(Struct.get("assertPrivate")),
+      );
+
+      const access = yield* predicate(privateActor);
       if (!access)
         return yield* Effect.fail(new AccessDeniedError({ message }));
     });
 
   export const permission = (permission: Permissions.Permission) =>
-    policy(
-      (principal) =>
-        principal.acl.pipe(HashSet.has(permission), Effect.succeed),
+    userPolicy(
+      (user) =>
+        userRoleAcls.pipe(
+          Effect.map(Struct.get(user.role)),
+          Effect.map(HashSet.has(permission)),
+        ),
       `Access denied: ${permission}`,
     );
 }

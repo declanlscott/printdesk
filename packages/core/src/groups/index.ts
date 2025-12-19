@@ -590,13 +590,11 @@ export namespace Groups {
           {
             make: Effect.fn("Groups.CustomersPolicies.isMemberOf.make")(
               ({ id, memberId }) =>
-                AccessControl.policy((principal) =>
+                AccessControl.userPolicy((user) =>
                   repository
-                    .findActiveMemberIds(id, principal.tenantId)
+                    .findActiveMemberIds(id, user.tenantId)
                     .pipe(
-                      Effect.map(
-                        Array.some(Equal.equals(memberId ?? principal.userId)),
-                      ),
+                      Effect.map(Array.some(Equal.equals(memberId ?? user.id))),
                     ),
                 ),
             ),

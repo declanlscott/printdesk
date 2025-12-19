@@ -36,11 +36,11 @@ export const papercutGatewayResourceCiphertext = new lib.Ciphertext(
         headerNames,
         papercut,
         routerSecret,
-        tenantDomains,
-      ),
+        tenantDomains
+      )
     ),
     writeToFile: normalizePath(resourceFileName, papercutGatewayPath),
-  },
+  }
 );
 
 export const papercutGatewaySstKeyParameter = new aws.ssm.Parameter(
@@ -49,7 +49,7 @@ export const papercutGatewaySstKeyParameter = new aws.ssm.Parameter(
     name: `/${$app.name}/${$app.stage}/papercut-gateway/sst-key`,
     type: aws.ssm.ParameterType.SecureString,
     value: papercutGatewayResourceCiphertext.encryptionKey,
-  },
+  }
 );
 
 export const papercutGatewayImage = new awsx.ecr.Image(
@@ -60,24 +60,24 @@ export const papercutGatewayImage = new awsx.ecr.Image(
     platform: "linux/arm64",
     imageTag: "latest",
   },
-  { dependsOn: [papercutGatewayResourceCiphertext] },
+  { dependsOn: [papercutGatewayResourceCiphertext] }
 );
 
-export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
-  handler: "packages/functions/src/papercut-sync.handler",
-  timeout: "20 seconds",
-  link: [
-    appData,
-    aws_,
-    cloudfrontPublicKey,
-    cloudfrontPrivateKey,
-    domains,
-    dsqlCluster,
-    identityProviders,
-    tenantDomains,
-    tenantRoles,
-  ],
-});
+// export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
+//   handler: "packages/functions/src/papercut-sync.handler",
+//   timeout: "20 seconds",
+//   link: [
+//     appData,
+//     aws_,
+//     cloudfrontPublicKey,
+//     cloudfrontPrivateKey,
+//     domains,
+//     dsqlCluster,
+//     identityProviders,
+//     tenantDomains,
+//     tenantRoles,
+//   ],
+// });
 
 export const invoicesProcessor = new lib.aws.lambda.Function(
   "InvoicesProcessor",
@@ -98,9 +98,11 @@ export const invoicesProcessor = new lib.aws.lambda.Function(
       {
         actions: ["sts:AssumeRole"],
         resources: [
-          $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/*`,
+          $interpolate`arn:aws:iam::${
+            aws.getCallerIdentityOutput().accountId
+          }:role/*`,
         ],
       },
     ],
-  },
+  }
 );

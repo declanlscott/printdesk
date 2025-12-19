@@ -2,7 +2,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import {
-  api,
+  // api,
   tenantApiFunctionImage,
   tenantApiFunctionResourceCiphertext,
 } from "./api";
@@ -37,7 +37,7 @@ import {
   papercut,
   papercutGatewayImage,
   papercutGatewaySstKeyParameter,
-  papercutSync,
+  // papercutSync,
 } from "./papercut";
 import { infraQueue, pulumiBucket, repository, tenantBuckets } from "./storage";
 import { injectLinkables, normalizePath } from "./utils";
@@ -51,7 +51,7 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
     plaintext: $jsonStringify(
       injectLinkables(
         resourcePrefix,
-        api,
+        // api,
         appData,
         aws_,
         cloudflareApiToken,
@@ -63,7 +63,7 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         headerNames,
         invoicesProcessor,
         papercut,
-        papercutSync,
+        // papercutSync,
         papercutGatewayImage,
         papercutGatewaySstKeyParameter,
         pulumiBucket,
@@ -80,11 +80,11 @@ const infraFunctionResourceCiphertext = new lib.Ciphertext(
         tenantRoles,
         vpc,
         vpcLink,
-        zone,
-      ),
+        zone
+      )
     ),
     writeToFile: normalizePath(resourceFileName, infraFunctionPath),
-  },
+  }
 );
 
 export const infraFunctionImage = new awsx.ecr.Image(
@@ -95,7 +95,7 @@ export const infraFunctionImage = new awsx.ecr.Image(
     platform: "linux/arm64",
     imageTag: "latest",
   },
-  { dependsOn: [infraFunctionResourceCiphertext] },
+  { dependsOn: [infraFunctionResourceCiphertext] }
 );
 
 const infraFunctionName = new lib.PhysicalName("InfraFunction", { max: 64 });
@@ -138,7 +138,7 @@ export const infraFunctionLogGroup = new aws.cloudwatch.LogGroup(
   {
     name: $interpolate`/aws/lambda/${infraFunctionName.result}`,
     retentionInDays: 14,
-  },
+  }
 );
 
 const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", {
@@ -189,7 +189,7 @@ export const infraDispatcherInvocation = new aws.lambda.Invocation(
       dbMigratorInvocationSuccess: $jsonStringify(dbMigratorInvocationSuccess),
       infraFunction: infraFunction.lastModified,
     },
-  },
+  }
 );
 
 export const infraDispatcherInvocationSuccess =
@@ -201,14 +201,14 @@ export const infraDispatcherInvocationSuccess =
             success: Schema.Literal(true).annotations({
               message: () => "Infra dispatch failed",
             }),
-          }).annotations({ message: () => "Invalid infra dispatch result" }),
+          }).annotations({ message: () => "Invalid infra dispatch result" })
         ),
         Schema.Literal(true),
         {
           strict: true,
           decode: Struct.get("success"),
           encode: (success) => ({ success }),
-        },
-      ),
-    ),
+        }
+      )
+    )
   );

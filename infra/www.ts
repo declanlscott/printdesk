@@ -3,7 +3,7 @@ import { isProdStage } from "./misc";
 
 export const www = new sst.aws.Astro("Www", {
   path: "packages/www",
-  buildCommand: "pnpm build",
+  buildCommand: "bun run build",
   router: {
     instance: router,
     path: isProdStage ? "/" : "/www",

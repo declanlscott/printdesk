@@ -71,7 +71,7 @@ export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
 new sst.x.DevCommand("Studio", {
   link: [aws_, dsqlCluster],
   dev: {
-    command: "pnpm drizzle:studio",
+    command: "bun run drizzle:studio",
     directory: "packages/core",
     autostart: true,
   },

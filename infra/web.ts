@@ -9,7 +9,7 @@ import { injectLinkables } from "./utils";
 export const web = new sst.aws.StaticSite("Web", {
   path: "packages/web",
   build: {
-    command: "pnpm build",
+    command: "bun run build",
     output: "dist",
   },
   router: {

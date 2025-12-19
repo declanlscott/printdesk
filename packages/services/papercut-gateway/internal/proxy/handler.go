@@ -130,7 +130,8 @@ func (h *Handler) hotReload(ctx context.Context, cfgAgtToken string) error {
 		s = h.s
 	}
 
-	if currentCfg.PapercutWebServicesAuthToken != cfg.PapercutWebServicesAuthToken || currentCfg.PapercutTailscaleServiceTarget.String() != cfg.PapercutTailscaleServiceTarget.String() {
+	if currentCfg.PapercutWebServicesAuthToken != cfg.PapercutWebServicesAuthToken ||
+		currentCfg.PapercutTailscaleServiceTarget.String() != cfg.PapercutTailscaleServiceTarget.String() {
 		hasChanges = true
 	}
 

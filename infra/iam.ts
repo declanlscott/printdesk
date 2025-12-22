@@ -1,5 +1,5 @@
 import { appsyncEventApi } from "./realtime";
-import { buildNameTemplate } from "./utils";
+import { buildTenantTemplate } from "./utils";
 
 export const cloudflareApiToken = new sst.Linkable("CloudflareApiToken", {
   properties: {
@@ -148,22 +148,22 @@ export const tenantApiFunctionRole = new aws.iam.Role("TenantApiFunctionRole", {
 export const tenantRoles = new sst.Linkable("TenantRoles", {
   properties: {
     apiAccess: {
-      nameTemplate: buildNameTemplate("ApiAccessRole"),
+      nameTemplate: buildTenantTemplate("ApiAccessRole"),
     },
     bucketsAccess: {
-      nameTemplate: buildNameTemplate("BucketsAccessRole"),
+      nameTemplate: buildTenantTemplate("BucketsAccessRole"),
     },
     invoicesSender: {
-      nameTemplate: buildNameTemplate("InvoicesSenderRole"),
+      nameTemplate: buildTenantTemplate("InvoicesSenderRole"),
     },
     invoicesReceiver: {
-      nameTemplate: buildNameTemplate("InvoicesReceiverRole"),
+      nameTemplate: buildTenantTemplate("InvoicesReceiverRole"),
     },
     realtimePublisher: {
-      nameTemplate: buildNameTemplate("RealtimePublisherRole"),
+      nameTemplate: buildTenantTemplate("RealtimePublisherRole"),
     },
     realtimeSubscriber: {
-      nameTemplate: buildNameTemplate("RealtimeSubscriberRole"),
+      nameTemplate: buildTenantTemplate("RealtimeSubscriberRole"),
     },
   },
 });

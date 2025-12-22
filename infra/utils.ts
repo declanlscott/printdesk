@@ -46,7 +46,7 @@ export function calculateHash(dirPath: string) {
   return createHash("sha256").update(hashes.sort().join("|")).digest("hex");
 }
 
-export const buildNameTemplate = <TIdentifier extends string>(
+export const buildTenantTemplate = <TIdentifier extends string>(
   identifier: TIdentifier,
 ) =>
   `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-${identifier}` as const;

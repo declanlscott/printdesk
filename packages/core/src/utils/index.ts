@@ -81,14 +81,11 @@ export const delimitToken = (...segments: Array<string>) =>
 export const splitToken = (token: string) =>
   _String.split(token, Constants.TOKEN_DELIMITER);
 
-export const buildName = (
-  nameTemplate: string,
+export const tenantTemplate = (
+  template: string,
   tenantId: ColumnsContract.TenantId,
 ) =>
-  nameTemplate.replace(
-    new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"),
-    tenantId,
-  );
+  template.replace(new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"), tenantId);
 
 export const getUserInitials = (name: string) =>
   Effect.gen(function* () {

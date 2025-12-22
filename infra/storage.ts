@@ -1,6 +1,6 @@
 import { pulumiRole } from "./iam";
 import { isProdStage } from "./misc";
-import { buildNameTemplate } from "./utils";
+import { buildTenantTemplate } from "./utils";
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket", {
   versioning: true,
@@ -76,10 +76,10 @@ export const repository = new awsx.ecr.Repository(
 export const tenantBuckets = new sst.Linkable("TenantBuckets", {
   properties: {
     assets: {
-      nameTemplate: buildNameTemplate("AssetsBucket"),
+      nameTemplate: buildTenantTemplate("AssetsBucket"),
     },
     documents: {
-      nameTemplate: buildNameTemplate("DocumentsBucket"),
+      nameTemplate: buildTenantTemplate("DocumentsBucket"),
     },
   },
 });

@@ -13,7 +13,7 @@ import { Signers } from "../aws";
 import { Events } from "../events";
 import { Procedures } from "../procedures";
 import { Sst } from "../sst";
-import { buildName } from "../utils";
+import { tenantTemplate } from "../utils";
 
 import type * as Chunk from "effect/Chunk";
 import type * as Duration from "effect/Duration";
@@ -46,13 +46,13 @@ export namespace Realtime {
         const Event = yield* Events.Event;
 
         const dns = resource.AppsyncEventApi.pipe(Redacted.value).dns;
-        const nameTemplate = resource.TenantDomains.pipe(Redacted.value)
+        const tenantDnsTemplate = resource.TenantDomains.pipe(Redacted.value)
           .realtime.nameTemplate;
 
         const url = maybePrivateActor.pipe(
           Option.match({
             onSome: (privateActor) =>
-              buildName(nameTemplate, privateActor.tenantId),
+              tenantTemplate(tenantDnsTemplate, privateActor.tenantId),
             onNone: () => dns.realtime,
           }),
           (domain) =>
@@ -70,7 +70,8 @@ export namespace Realtime {
         ) =>
           maybePrivateActor.pipe(
             Option.match({
-              onSome: (actor) => buildName(nameTemplate, actor.tenantId),
+              onSome: (actor) =>
+                tenantTemplate(tenantDnsTemplate, actor.tenantId),
               onNone: () => dns.http,
             }),
             (domain) =>
@@ -105,7 +106,7 @@ export namespace Realtime {
             maybePrivateActor.pipe(
               Option.match({
                 onSome: (privateActor) =>
-                  buildName(nameTemplate, privateActor.tenantId),
+                  tenantTemplate(tenantDnsTemplate, privateActor.tenantId),
                 onNone: () => dns.http,
               }),
               (domain) =>

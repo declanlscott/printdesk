@@ -19,7 +19,7 @@ import * as Struct from "effect/Struct";
 
 import { Actors } from "../actors";
 import { Sst } from "../sst";
-import { buildName } from "../utils";
+import { tenantTemplate } from "../utils";
 
 import type { CloudfrontSignInput } from "@aws-sdk/cloudfront-signer";
 import type * as HttpBody from "@effect/platform/HttpBody";
@@ -36,7 +36,8 @@ export namespace Credentials {
     accountId: string,
     nameTemplate: string,
     tenantId: ColumnsContract.TenantId,
-  ) => `arn:aws:iam::${accountId}:role/${buildName(nameTemplate, tenantId)}`;
+  ) =>
+    `arn:aws:iam::${accountId}:role/${tenantTemplate(nameTemplate, tenantId)}`;
 
   export class Credentials extends Context.Tag(
     "@printdesk/core/aws/Credentials",
@@ -352,7 +353,9 @@ export namespace Signers {
         Effect.flatMap(({ tenantId }) =>
           Sst.Resource.TenantDomains.pipe(
             Effect.map(Redacted.value),
-            Effect.map((hosts) => buildName(hosts.api.nameTemplate, tenantId)),
+            Effect.map((hosts) =>
+              tenantTemplate(hosts.api.nameTemplate, tenantId),
+            ),
           ),
         ),
         Effect.map(this.Default),

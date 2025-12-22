@@ -8,7 +8,7 @@ import * as Struct from "effect/Struct";
 import { Actors } from "../actors";
 import { Signers } from "../aws";
 import { Sst } from "../sst";
-import { buildName } from "../utils";
+import { tenantTemplate } from "../utils";
 
 export namespace Api {
   export class Http extends Effect.Service<Http>()("@printdesk/core/api/Http", {
@@ -27,7 +27,7 @@ export namespace Api {
         Effect.map(Redacted.value),
         Effect.map(
           (domains) =>
-            `https://${buildName(domains.cdn.nameTemplate, tenantId)}/api`,
+            `https://${tenantTemplate(domains.cdn.nameTemplate, tenantId)}/api`,
         ),
       );
 

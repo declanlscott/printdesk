@@ -256,13 +256,13 @@ export namespace Auth {
         const verifySecret = (secret: string, hash: string) =>
           Effect.gen(function* () {
             const tokens = splitToken(hash);
-            if (tokens.length !== 2)
+            const [salt, storedKey] = tokens;
+            if (tokens.length !== 2 || !salt || !storedKey)
               return yield* Effect.fail(
                 new CryptoError({
                   cause: new globalThis.Error("Invalid hash"),
                 }),
               );
-            const [salt, storedKey] = tokens;
 
             const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 

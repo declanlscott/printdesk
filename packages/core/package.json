@@ -32,6 +32,8 @@
   "devDependencies": {
     "@effect/language-service": "catalog:",
     "@standard-schema/spec": "^1.1.0",
-    "@microsoft/microsoft-graph-types": "^2.43.1"
+    "@microsoft/microsoft-graph-types": "^2.43.1",
+    "@smithy/types": "^4.11.0",
+    "@types/pg": "^8.16.0"
   }
 }

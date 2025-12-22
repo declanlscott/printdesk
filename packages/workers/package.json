@@ -6,7 +6,9 @@
   },
   "dependencies": {
     "@mjackson/fetch-proxy": "^0.4.0",
-    "@printdesk/core": "workspace:*"
+    "@printdesk/core": "workspace:*",
+    "@openauthjs/openauth": "catalog:",
+    "hono": "catalog:"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20251217.0"

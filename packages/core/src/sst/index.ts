@@ -8,9 +8,7 @@ import type { Context } from "effect";
 export namespace Sst {
   export class Resource extends Effect.Tag("@printdesk/core/sst/Resource")<
     Sst.Resource,
-    {
-      readonly [TKey in keyof _Resource]: Redacted.Redacted<_Resource[TKey]>;
-    }
+    { readonly [TKey in keyof _Resource]: Redacted.Redacted<_Resource[TKey]> }
   >() {
     static readonly layer = Layer.succeed(
       this,

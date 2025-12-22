@@ -21,9 +21,7 @@ export namespace AuthContract {
         typeof UserSubject.Encoded,
         never
       >;
-  } = {
-    [UserSubject._tag]: Schema.standardSchemaV1(UserSubject),
-  };
+  } = { [UserSubject._tag]: Schema.standardSchemaV1(UserSubject) };
 
   export class InvalidAudienceError extends Data.TaggedError(
     "InvalidAudienceError",
@@ -34,7 +32,5 @@ export namespace AuthContract {
 
   export class TenantSuspendedError extends Data.TaggedError(
     "TenantSuspendedError",
-  )<{
-    readonly tenantId: ColumnsContract.TenantId;
-  }> {}
+  )<{ readonly tenantId: ColumnsContract.TenantId }> {}
 }

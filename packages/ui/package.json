@@ -9,6 +9,7 @@
     "./utils": "./src/utils.ts"
   },
   "dependencies": {
+    "@toolwind/corner-shape": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "react-aria-components": "catalog:",

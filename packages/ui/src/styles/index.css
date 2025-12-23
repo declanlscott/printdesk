@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "tailwindcss-react-aria-components";
+@plugin "@toolwind/corner-shape";
 @source "./";
 
 @custom-variant dark (&:is(.dark *));

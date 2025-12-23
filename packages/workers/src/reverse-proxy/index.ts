@@ -5,11 +5,12 @@ import { logger } from "hono/logger";
 import { proxy, rateLimiter } from "./middleware";
 
 import type { FetchProxy } from "@mjackson/fetch-proxy";
+import type { VerifyResult } from "@openauthjs/openauth/client";
 import type { AuthContract } from "@printdesk/core/auth/contract";
 
 declare module "hono" {
   interface ContextVariableMap {
-    subject: AuthContract.UserSubject;
+    subject: VerifyResult<typeof AuthContract.subjects>["subject"];
     rateLimitOutcome: RateLimitOutcome;
     proxy: FetchProxy;
   }

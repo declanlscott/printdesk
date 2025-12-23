@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { Api } from "../api";
-import { CommaSeparatedString, StringFromUnknown } from "../utils";
+import { separatedString, StringFromUnknown } from "../utils";
 import { Constants } from "../utils/constants";
 import { Xml } from "../xml";
 import { PapercutContract } from "./contract";
@@ -45,6 +45,7 @@ export namespace Papercut {
     },
   ) {}
 
+  const CommaSeparatedString = separatedString(",");
   const SharedAccountPropertySchemas = {
     "access-groups": CommaSeparatedString,
     "access-users": CommaSeparatedString,

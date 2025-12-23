@@ -21,6 +21,23 @@ export const NanoId = Schema.String.pipe(
   Schema.pattern(Constants.NANOID_REGEX),
 );
 
+export const separatedString = (separator = Constants.SEPARATOR) =>
+  Object.assign(
+    Schema.String.annotations({
+      description: `a string separated by ${separator}`,
+    }).pipe(
+      Schema.pattern(
+        new RegExp(`^(?:[^${separator}]+(?:${separator}[^${separator}]+)*)?$`),
+      ),
+      Schema.transform(Schema.Trim.pipe(Schema.Array), {
+        strict: true,
+        decode: _String.split(separator),
+        encode: Array.join(separator),
+      }),
+    ),
+    { separator },
+  );
+
 export const Cost = Schema.Union(Schema.Number, Schema.NumberFromString);
 
 export const IsoTimestamp = Schema.String.pipe(
@@ -40,14 +57,6 @@ export const StringFromUnknown = Schema.Unknown.pipe(
     strict: true,
     decode: String,
     encode: String,
-  }),
-);
-
-export const CommaSeparatedString = Schema.String.pipe(
-  Schema.transform(Schema.Array(Schema.String), {
-    strict: true,
-    decode: (csv) => csv.split(", "),
-    encode: (array) => array.join(", "),
   }),
 );
 
@@ -74,12 +83,6 @@ export type SnakeToCamel<TSnake extends Lowercase<string>> =
 
 export const snakeToCamel = <TSnake extends Lowercase<string>>(snake: TSnake) =>
   _String.snakeToCamel(snake) as SnakeToCamel<TSnake>;
-
-export const delimitToken = (...segments: Array<string>) =>
-  Array.join(segments, Constants.TOKEN_DELIMITER);
-
-export const splitToken = (token: string) =>
-  _String.split(token, Constants.TOKEN_DELIMITER);
 
 export const tenantTemplate = (
   template: string,

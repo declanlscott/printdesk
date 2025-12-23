@@ -1,8 +1,8 @@
 import { createFetchProxy } from "@mjackson/fetch-proxy";
 import { createClient } from "@openauthjs/openauth/client";
 import { AuthContract } from "@printdesk/core/auth/contract";
-import { delimitToken } from "@printdesk/core/utils";
 import { Constants } from "@printdesk/core/utils/constants";
+import * as Schema from "effect/Schema";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
 import { every, some } from "hono/combine";
@@ -31,7 +31,7 @@ export const rateLimiter = createMiddleware(
               return false;
             }
 
-            c.set("subject", verified.subject.properties);
+            c.set("subject", verified.subject);
 
             return true;
           },
@@ -39,14 +39,15 @@ export const rateLimiter = createMiddleware(
         createMiddleware<{
           Bindings: Bindings;
         }>(async (c, next) => {
-          const key = delimitToken(
+          const encode = Schema.encodeSync(AuthContract.Token);
+          const key = encode([
             "tenant",
-            c.var.subject.tenantId,
-            "user",
-            c.var.subject.id,
-          );
+            c.var.subject.properties.tenantId,
+            c.var.subject.type,
+            c.var.subject.properties.id,
+          ]);
 
-          console.log("Rate limiting by user:", key);
+          console.log("Rate limiting by subject:", key);
           c.set(
             "rateLimitOutcome",
             await c.env[Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER].limit({
@@ -63,7 +64,8 @@ export const rateLimiter = createMiddleware(
         const ip = getConnInfo(c).remote.address;
         if (!ip) throw new Error("Missing remote address");
 
-        const key = delimitToken("ip", ip);
+        const encode = Schema.encodeSync(AuthContract.Token);
+        const key = encode(["ip", ip]);
 
         console.log("Rate limiting by IP:", key);
         c.set(

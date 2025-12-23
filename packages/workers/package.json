@@ -8,6 +8,7 @@
     "@mjackson/fetch-proxy": "^0.4.0",
     "@printdesk/core": "workspace:*",
     "@openauthjs/openauth": "catalog:",
+    "effect": "catalog:",
     "hono": "catalog:"
   },
   "devDependencies": {

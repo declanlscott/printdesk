@@ -8,12 +8,12 @@ import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { IdentityProviders } from "../identity-providers";
 import { Sst } from "../sst";
 import { Users } from "../users";
-import { delimitToken, splitToken } from "../utils";
 import { Constants } from "../utils/constants";
 import { AuthContract } from "./contract";
 
@@ -247,15 +247,17 @@ export namespace Auth {
         const hashSecret = (secret: string) =>
           Effect.gen(function* () {
             const salt = yield* generateToken(16);
-
             const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 
-            return delimitToken(salt, derivedKey);
+            const encode = Schema.encode(AuthContract.Token);
+
+            return yield* encode([salt, derivedKey]);
           });
 
         const verifySecret = (secret: string, hash: string) =>
           Effect.gen(function* () {
-            const tokens = splitToken(hash);
+            const decode = Schema.decode(AuthContract.Token);
+            const tokens = yield* decode(hash);
             const [salt, storedKey] = tokens;
             if (tokens.length !== 2 || !salt || !storedKey)
               return yield* Effect.fail(

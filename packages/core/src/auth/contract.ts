@@ -2,6 +2,7 @@ import * as Data from "effect/Data";
 import * as Schema from "effect/Schema";
 
 import { ActorsContract } from "../actors/contract";
+import { separatedString } from "../utils";
 
 import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { ColumnsContract } from "../columns/contract";
@@ -33,4 +34,6 @@ export namespace AuthContract {
   export class TenantSuspendedError extends Data.TaggedError(
     "TenantSuspendedError",
   )<{ readonly tenantId: ColumnsContract.TenantId }> {}
+
+  export const Token = separatedString();
 }

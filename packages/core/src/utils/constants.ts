@@ -3,7 +3,7 @@ import * as Duration from "effect/Duration";
 export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
 
-  export const TOKEN_DELIMITER = "#";
+  export const SEPARATOR = String.fromCharCode(0x1f);
 
   export const CLOUDFLARE_BINDING_NAMES = {
     RATE_LIMITER: "RATE_LIMITER",

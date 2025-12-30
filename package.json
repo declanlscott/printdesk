@@ -12,7 +12,7 @@
   },
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/**"
     ],
     "catalog": {
       "@aws-sdk/client-sts": "^3.953.0",

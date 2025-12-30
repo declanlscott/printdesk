@@ -1,0 +1,13 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Printdesk Edge Proxy",
+  "outputfilename": "printdesk-edge-proxy",
+  "frontend:install": "bun install",
+  "frontend:build": "bun run build",
+  "frontend:dev:watcher": "bun run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Declan L. Scott",
+    "email": "declanlscott@gmail.com"
+  }
+}

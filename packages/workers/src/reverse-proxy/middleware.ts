@@ -1,7 +1,9 @@
 import { createFetchProxy } from "@mjackson/fetch-proxy";
-import { createClient } from "@openauthjs/openauth/client";
 import { AuthContract } from "@printdesk/core/auth/contract";
+import { Oauth } from "@printdesk/core/auth/oauth";
 import { Constants } from "@printdesk/core/utils/constants";
+import * as Effect from "effect/Effect";
+import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Schema from "effect/Schema";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
@@ -12,29 +14,35 @@ import { HTTPException } from "hono/http-exception";
 import type { FetchProxy } from "@mjackson/fetch-proxy";
 import type { Bindings } from "./types";
 
+const { runPromise } = ManagedRuntime.make(
+  Oauth.Client.Default({
+    clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
+  }),
+);
+
 export const rateLimiter = createMiddleware(
   every(
     some(
       every(
         bearerAuth({
-          async verifyToken(token, c) {
-            const verified = await createClient({
-              clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
-            }).verify(AuthContract.subjects, token);
+          verifyToken: (token, c) =>
+            Oauth.Client.pipe(
+              Effect.flatMap(({ verify }) =>
+                verify(AuthContract.subjects, token),
+              ),
+              Effect.map(({ subject }) => {
+                if (subject.type !== AuthContract.UserSubject._tag) {
+                  console.error("Invalid subject type:", subject.type);
+                  return false;
+                }
 
-            if (verified.err) {
-              console.error("Token verification failed:", verified.err);
-              return false;
-            }
-            if (verified.subject.type !== AuthContract.UserSubject._tag) {
-              console.error("Invalid subject type:", verified.subject.type);
-              return false;
-            }
+                c.set("subject", subject);
 
-            c.set("subject", verified.subject);
-
-            return true;
-          },
+                return true;
+              }),
+              Effect.catchAll(() => Effect.succeed(false)),
+              runPromise,
+            ),
         }),
         createMiddleware<{
           Bindings: Bindings;

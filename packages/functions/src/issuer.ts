@@ -3,6 +3,7 @@ import { Logger } from "@effect-aws/powertools-logger";
 import { issuer } from "@openauthjs/openauth";
 import { Auth } from "@printdesk/core/auth";
 import { AuthContract } from "@printdesk/core/auth/contract";
+import { Crypto } from "@printdesk/core/auth/crypto";
 import { Database } from "@printdesk/core/database";
 import { Graph } from "@printdesk/core/graph";
 import { IdentityProvidersContract } from "@printdesk/core/identity-providers/contract";
@@ -33,14 +34,14 @@ class IssuerError extends Data.TaggedError("IssuerError")<{
 class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
   dependencies: [
     Database.TransactionManager.Default,
-    Auth.Auth.Default,
-    Auth.Crypto.Default,
+    Auth.Default,
+    Crypto.Default,
     Sst.Resource.layer,
   ],
   effect: Effect.gen(function* () {
     const db = yield* Database.TransactionManager;
-    const auth = yield* Auth.Auth;
-    const crypto = yield* Auth.Crypto;
+    const auth = yield* Auth;
+    const crypto = yield* Crypto;
     const resource = yield* Sst.Resource;
 
     const runtime = yield* Effect.runtime();

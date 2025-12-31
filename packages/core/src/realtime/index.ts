@@ -17,7 +17,6 @@ import { tenantTemplate } from "../utils";
 
 import type * as Chunk from "effect/Chunk";
 import type * as Duration from "effect/Duration";
-import type { ActorsContract } from "../actors/contract";
 import type { RealtimeContract } from "./contract";
 
 export namespace Realtime {
@@ -33,13 +32,15 @@ export namespace Realtime {
       effect: Effect.gen(function* () {
         const resource = yield* Sst.Resource;
 
-        const maybePrivateActor = (yield* Actors.Actor.pipe(
+        const maybePrivateActor = yield* Actors.Actor.pipe(
           Effect.flatMap(Struct.get("assertPrivate")),
           Effect.map(Option.some),
-          Effect.catchTag("InvalidActorError", () => Effect.succeedNone),
-        )) as Option.Option<
-          ActorsContract.SystemActor | ActorsContract.UserActor
-        >;
+          Effect.catchTag("InvalidActorError", () =>
+            Option.none<
+              Effect.Effect.Success<Actors.Actor["Type"]["assertPrivate"]>
+            >().pipe(Effect.succeed),
+          ),
+        );
         const signer = yield* Signers.Appsync;
         const httpClient = yield* HttpClient.HttpClient;
 

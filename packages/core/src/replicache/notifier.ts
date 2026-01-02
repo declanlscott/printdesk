@@ -40,7 +40,7 @@ export class ReplicacheNotifier extends Effect.Service<ReplicacheNotifier>()(
             (requests: Array.NonEmptyArray<Notify>) =>
               realtime
                 .publish(
-                  RealtimeContract.makeChannel("/replicache"),
+                  RealtimeContract.Channel.make("/replicache"),
                   Chunk.fromIterable(requests).pipe(
                     Chunk.map(Struct.get("notification")),
                   ),

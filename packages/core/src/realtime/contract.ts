@@ -3,8 +3,6 @@ import * as Schema from "effect/Schema";
 
 import { Events } from "../events";
 
-import type { StartsWith } from "../utils";
-
 export namespace RealtimeContract {
   const success = <TKind extends string>(kind: TKind) =>
     Schema.Struct({
@@ -42,15 +40,12 @@ export namespace RealtimeContract {
     Schema.brand("SubscriptionId"),
   );
   export type SubscriptionId = typeof SubscriptionId.Type;
-  export const Channel = Schema.String.pipe(
-    Schema.startsWith("/"),
-    Schema.brand("Channel"),
-  );
-  export type Channel<TChannel extends string> = typeof Channel.Type &
-    StartsWith<"/", TChannel>;
-  export const makeChannel = <TChannel extends string>(
-    channel: StartsWith<"/", TChannel>,
-  ) => Channel.make(channel) as Channel<TChannel>;
+
+  export const Channel = Schema.TemplateLiteral(
+    Schema.Literal("/"),
+    Schema.String,
+  ).pipe(Schema.brand("Channel"));
+  export type Channel = typeof Channel.Type;
 
   export class Subscribe extends Schema.Class<Subscribe>("Subscribe")({
     type: Schema.tag("subscribe"),

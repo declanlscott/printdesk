@@ -14,15 +14,16 @@ import { Events } from "../events";
 import { Procedures } from "../procedures";
 import { Sst } from "../sst";
 import { tenantTemplate } from "../utils";
+import { RealtimeContract } from "./contract";
 
 import type * as Chunk from "effect/Chunk";
 import type * as Duration from "effect/Duration";
-import type { RealtimeContract } from "./contract";
 
 export namespace Realtime {
   export class Realtime extends Effect.Service<Realtime>()(
     "@printdesk/core/realtime/Realtime",
     {
+      accessors: true,
       dependencies: [
         Sst.Resource.layer,
         Signers.Appsync.Default,
@@ -60,13 +61,13 @@ export namespace Realtime {
             HttpClientRequest.get(`wss://${domain}`).pipe(
               HttpClientRequest.appendUrl("/event/realtime"),
               Struct.get("url"),
-              Effect.succeed,
+              Schema.decode(RealtimeContract.Url),
               Effect.withSpan("Realtime.Realtime.url"),
             ),
         );
 
-        const getAuth = <TChannel extends string>(
-          channel?: RealtimeContract.Channel<TChannel>,
+        const getAuthorization = (
+          channel?: RealtimeContract.Channel,
           expiresIn?: Duration.Duration,
         ) =>
           maybePrivateActor.pipe(
@@ -84,10 +85,7 @@ export namespace Realtime {
                 }),
                 HttpClientRequest.schemaBodyJson(
                   Schema.Struct({
-                    channel: Schema.String.pipe(
-                      Schema.startsWith("/"),
-                      Schema.optional,
-                    ),
+                    channel: RealtimeContract.Channel.pipe(Schema.optional),
                   }),
                 )({ channel }),
                 Effect.flatMap((request) =>
@@ -100,8 +98,8 @@ export namespace Realtime {
           );
 
         const publish = Effect.fn("Realtime.Realtime.publish")(
-          <TChannel extends string>(
-            channel: RealtimeContract.Channel<TChannel>,
+          (
+            channel: RealtimeContract.Channel,
             events: Chunk.Chunk<Events.Event>,
           ) =>
             maybePrivateActor.pipe(
@@ -118,7 +116,7 @@ export namespace Realtime {
                       HttpClientRequest.appendUrl("/event"),
                       HttpClientRequest.schemaBodyJson(
                         Schema.Struct({
-                          channel: Schema.String.pipe(Schema.startsWith("/")),
+                          channel: RealtimeContract.Channel,
                           events: Schema.Chunk(Event),
                         }),
                       )({ channel, events }),
@@ -130,7 +128,7 @@ export namespace Realtime {
             ),
         );
 
-        return { url, getAuth, publish } as const;
+        return { url, getAuthorization, publish } as const;
       }),
     },
   ) {}

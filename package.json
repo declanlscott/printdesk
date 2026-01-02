@@ -16,9 +16,9 @@
     ],
     "catalog": {
       "@effect/language-service": "^0.63.2",
+      "@effect/platform": "^0.94.0",
       "@effect-aws/client-sts": "^1.10.7",
       "@effect-aws/client-sqs": "^1.10.3",
-      "@effect/platform": "^0.94.0",
       "@openauthjs/openauth": "^0.4.3",
       "@react-aria/optimize-locales-plugin": "^1.1.5",
       "@tailwindcss/vite": "^4.1.18",

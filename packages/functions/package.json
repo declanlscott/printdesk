@@ -6,14 +6,16 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@effect-aws/client-sqs": "catalog:",
+    "@effect-aws/client-sts": "catalog:",
     "@effect-aws/lambda": "^1.5.1",
     "@effect-aws/powertools-logger": "^1.5.1",
-    "@effect-aws/client-sts": "catalog:",
-    "@effect-aws/client-sqs": "catalog:",
+    "@effect/platform": "catalog:",
+    "@effect/platform-node": "^0.104.0",
     "@openauthjs/openauth": "catalog:",
     "@printdesk/core": "workspace:*",
-    "effect": "catalog:",
     "drizzle-orm": "catalog:",
+    "effect": "catalog:",
     "hono": "catalog:"
   },
   "devDependencies": {

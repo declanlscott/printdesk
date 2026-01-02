@@ -22,7 +22,14 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@printdesk/core/*": ["../../core/src/*"]
+    },
+
+    "plugins": [{ "name": "@effect/language-service" }]
   },
-  "include": ["src"]
+  "include": ["src", "sst-env.d.ts"]
 }

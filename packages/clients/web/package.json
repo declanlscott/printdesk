@@ -7,6 +7,7 @@
     "build": "tsc -b && vite build"
   },
   "dependencies": {
+    "@printdesk/core": "workspace:*",
     "@printdesk/ui": "workspace:*",
     "react-aria-components": "catalog:",
     "@tanstack/react-router": "catalog:",
@@ -26,6 +27,7 @@
     "@types/react-dom": "catalog:",
     "@vitejs/plugin-react": "catalog:",
     "babel-plugin-react-compiler": "catalog:",
+    "sst": "catalog:",
     "tailwindcss": "catalog:",
     "vite": "catalog:"
   }

@@ -60,6 +60,7 @@
     "packages/clients/web": {
       "name": "@printdesk/web",
       "dependencies": {
+        "@printdesk/core": "workspace:*",
         "@printdesk/ui": "workspace:*",
         "@tanstack/react-router": "catalog:",
         "react": "catalog:",
@@ -79,6 +80,7 @@
         "@types/react-dom": "catalog:",
         "@vitejs/plugin-react": "catalog:",
         "babel-plugin-react-compiler": "catalog:",
+        "sst": "catalog:",
         "tailwindcss": "catalog:",
         "vite": "catalog:",
       },

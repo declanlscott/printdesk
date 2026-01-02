@@ -190,11 +190,10 @@ export namespace Signers {
 
     export const layer = makeLayer();
 
-    export const runtime = ManagedRuntime.make(
-      layer.pipe(
-        Layer.provide(Credentials.fromChain()),
-        Layer.provideMerge(Sst.Resource.layer),
-      ),
+    export const runtime = layer.pipe(
+      Layer.provide(Credentials.fromChain()),
+      Layer.provideMerge(Sst.Resource.layer),
+      ManagedRuntime.make,
     );
   }
 

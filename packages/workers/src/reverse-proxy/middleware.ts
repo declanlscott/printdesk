@@ -3,7 +3,6 @@ import { AuthContract } from "@printdesk/core/auth/contract";
 import { Oauth } from "@printdesk/core/auth/oauth";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
-import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Schema from "effect/Schema";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
@@ -14,11 +13,9 @@ import { HTTPException } from "hono/http-exception";
 import type { FetchProxy } from "@mjackson/fetch-proxy";
 import type { Bindings } from "./types";
 
-const { runPromise } = ManagedRuntime.make(
-  Oauth.Client.Default({
-    clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
-  }),
-);
+const oauthRuntime = Oauth.Client.runtime({
+  clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
+});
 
 export const rateLimiter = createMiddleware(
   every(
@@ -41,7 +38,7 @@ export const rateLimiter = createMiddleware(
                 return true;
               }),
               Effect.catchAll(() => Effect.succeed(false)),
-              runPromise,
+              oauthRuntime.runPromise,
             ),
         }),
         createMiddleware<{

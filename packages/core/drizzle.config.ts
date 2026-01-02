@@ -8,11 +8,10 @@ import * as Redacted from "effect/Redacted";
 import { Credentials, Signers } from "./src/aws";
 import { Sst } from "./src/sst";
 
-const runtime = ManagedRuntime.make(
-  Signers.Dsql.makeLayer({ expiresIn: Duration.hours(12) }).pipe(
-    Layer.provide(Credentials.fromChain()),
-    Layer.provideMerge(Sst.Resource.layer),
-  ),
+const runtime = Signers.Dsql.makeLayer({ expiresIn: Duration.hours(12) }).pipe(
+  Layer.provide(Credentials.fromChain()),
+  Layer.provideMerge(Sst.Resource.layer),
+  ManagedRuntime.make,
 );
 
 export default Effect.gen(function* () {

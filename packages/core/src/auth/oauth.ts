@@ -6,6 +6,7 @@ import {
 } from "@openauthjs/openauth/error";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
+import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Match from "effect/Match";
 
 import type {
@@ -131,5 +132,8 @@ export namespace Oauth {
           return { authorize, exchange, refresh, verify };
         }),
     },
-  ) {}
+  ) {
+    static readonly runtime = (input: ClientInput) =>
+      this.Default(input).pipe(ManagedRuntime.make);
+  }
 }

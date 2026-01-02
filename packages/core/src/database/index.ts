@@ -245,9 +245,7 @@ export namespace Database {
             { retry = false }: { retry?: boolean } = {},
           ) =>
             Effect.gen(function* () {
-              const runPromise = yield* Effect.runtime<TContext>().pipe(
-                Effect.map((runtime) => Runtime.runPromise(runtime)),
-              );
+              const runtime = yield* Effect.runtime<TContext>();
 
               const transaction = Effect.async<
                 TSuccess,
@@ -266,11 +264,6 @@ export namespace Database {
                 void db
                   .transaction((tx) =>
                     execute(tx).pipe(
-                      // Throw on any error so drizzle rolls back the transaction
-                      Effect.catchAllCause((cause) => {
-                        throw new TransactionError({ cause });
-                        return Effect.never;
-                      }),
                       Effect.provide(Transaction.Default(tx)),
                       Effect.timed,
                       Effect.flatMap(([duration, success]) =>
@@ -278,38 +271,26 @@ export namespace Database {
                           `[Database]: Transaction completed successfully in ${duration.pipe(Duration.toMillis)}ms`,
                         ).pipe(Effect.as(success)),
                       ),
-                      (transaction) => runPromise(transaction, { signal }),
+                      (transaction) =>
+                        // Throws on any error so drizzle rolls back the transaction
+                        Runtime.runPromise(runtime, transaction, { signal }),
                     ),
                   )
                   .then(Effect.succeed)
-                  // Propagate transaction error back into effect
                   .catch((exception) => {
                     if (Runtime.isFiberFailure(exception)) {
                       const cause = exception[Runtime.FiberFailureCauseId];
 
-                      if (
-                        Cause.isDie(cause) &&
-                        Cause.isDieType(cause) &&
-                        cause.defect instanceof TransactionError
-                      ) {
-                        const txCause = cause.defect
-                          .cause as Cause.Cause<unknown>;
+                      // Propagate errors back into effect
+                      if (Cause.isFailure(cause) && Cause.isFailType(cause)) {
+                        const error = cause.error as TError;
 
-                        if (
-                          Cause.isFailure(txCause) &&
-                          Cause.isFailType(txCause)
-                        ) {
-                          const error = txCause.error as TError;
-
-                          return matchTxError(error).pipe(
-                            Option.match({
-                              onSome: Effect.fail,
-                              onNone: () => Effect.fail(error),
-                            }),
-                          );
-                        }
-
-                        return Effect.die(txCause);
+                        return matchTxError(error).pipe(
+                          Option.match({
+                            onSome: Effect.fail,
+                            onNone: () => Effect.fail(error),
+                          }),
+                        );
                       }
 
                       return Effect.die(cause);

@@ -67,7 +67,7 @@ export namespace Papercut {
     "overdraft-amount": Schema.Number,
     pin: StringFromUnknown,
     restricted: Schema.Boolean,
-  };
+  } as const;
   type SharedAccountPropertySchemas = typeof SharedAccountPropertySchemas;
 
   export class SharedAccountBalanceAdjustmentFailure extends Data.TaggedError(

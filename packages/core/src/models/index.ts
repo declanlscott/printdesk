@@ -48,7 +48,7 @@ export namespace Models {
     Record.fromEntries(
       Tuple.map(tables, (table) => Tuple.make(table.name, table)),
     ) as {
-      [TName in TTables[number]["name"]]: Extract<
+      readonly [TName in TTables[number]["name"]]: Extract<
         TTables[number],
         { name: TName }
       >;

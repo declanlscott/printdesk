@@ -157,7 +157,9 @@ export namespace ReplicacheContract {
   export const putTableOperationSchemas = Record.map(
     Models.syncTables,
     makePutTableOperationSchema,
-  ) as { [TName in Models.SyncTableName]: PutTableOperationStruct<TName> };
+  ) as {
+    readonly [TName in Models.SyncTableName]: PutTableOperationStruct<TName>;
+  };
 
   export const PutTableOperation = Schema.Union(
     ...Record.values(putTableOperationSchemas),
@@ -198,7 +200,9 @@ export namespace ReplicacheContract {
   export const deleteTableOperationSchemas = Record.map(
     Models.syncTables,
     makeDeleteTableOperationSchema,
-  ) as { [TName in Models.SyncTableName]: DeleteTableOperationStruct<TName> };
+  ) as {
+    readonly [TName in Models.SyncTableName]: DeleteTableOperationStruct<TName>;
+  };
 
   export const DeleteTableOperation = Schema.Union(
     ...Record.values(deleteTableOperationSchemas),

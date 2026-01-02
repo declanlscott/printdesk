@@ -74,7 +74,7 @@ export namespace Permissions {
       String.endsWith(":read")(permission)
         ? Option.some(
             permission as {
-              [TPermission in TPermissions[number]]: TPermission extends `${string}:read`
+              readonly [TPermission in TPermissions[number]]: TPermission extends `${string}:read`
                 ? TPermission
                 : never;
             }[TPermissions[number]],

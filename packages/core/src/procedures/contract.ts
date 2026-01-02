@@ -49,8 +49,8 @@ export namespace ProceduresContract {
 
     get record() {
       return this.#map.pipe(HashMap.entries, Record.fromEntries) as {
-        [TName in keyof TRecord]: TName extends string
-          ? Procedure<TName, TRecord[TName]["Args"]>
+        readonly [TName in keyof TRecord]: TName extends string
+          ? Procedure<TName, TRecord[TName]["Args"], TRecord[TName]["Returns"]>
           : never;
       };
     }
@@ -64,7 +64,7 @@ export namespace ProceduresContract {
               name: Schema.tag(procedure.name),
               args: procedure.Args,
             }) as {
-              [TName in keyof TRecord]: TName extends string
+              readonly [TName in keyof TRecord]: TName extends string
                 ? Schema.Struct<{
                     name: Schema.tag<TName>;
                     args: TRecord[TName]["Args"];

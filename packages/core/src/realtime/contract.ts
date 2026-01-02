@@ -86,4 +86,15 @@ export namespace RealtimeContract {
     ),
   );
   export type Event = Effect.Effect.Success<typeof Event>["Type"];
+
+  export class GetAuthorizationPayload extends Schema.Class<GetAuthorizationPayload>(
+    "GetAuthorizationPayload",
+  )({ channel: Channel.pipe(Schema.optional) }) {}
+
+  export const Authorization = Schema.Record({
+    key: Schema.String,
+    value: Schema.String,
+  });
+
+  export const Url = Schema.URL;
 }

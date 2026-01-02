@@ -220,6 +220,7 @@ export namespace SharedAccounts {
         Replicache.ReadTransactionManager.Default,
         CustomerAccessReadRepository.Default,
         ManagerAccessReadRepository.Default,
+        CustomerGroupAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
         const base = yield* Replicache.makeReadRepository(table);

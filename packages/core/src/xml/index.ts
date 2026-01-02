@@ -145,7 +145,7 @@ export namespace Xml {
 
         const build = <TInput>(input: TInput) =>
           Effect.try({
-            try: () => client.build(input) as string,
+            try: () => client.build(input),
             catch: (error) => new BuilderError({ cause: error }),
           });
 

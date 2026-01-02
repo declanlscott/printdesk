@@ -2,17 +2,62 @@ import * as Array from "effect/Array";
 import * as Cause from "effect/Cause";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
+import { pipe } from "effect/Function";
 import * as Schema from "effect/Schema";
+import { Replicache as ReplicacheClient } from "replicache";
 
 import type * as Option from "effect/Option";
 import type {
   ReadTransaction as ReadTx,
+  ReplicacheOptions,
   WriteTransaction as WriteTx,
 } from "replicache";
 import type { Models } from "../models";
 
 export namespace Replicache {
-  export class ReplicacheError extends Data.TaggedError("ReplicacheError")<{
+  type Mutators = Record<
+    string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (tx: WriteTx, args?: any) => any
+  >;
+
+  type InferMutator<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    TMutator extends (tx: WriteTx, ...args: Array<any>) => any,
+  > = TMutator extends (tx: WriteTx, ...args: infer TArgs) => infer TReturn
+    ? (
+        ...args: TArgs
+      ) => TReturn extends Promise<Awaited<TReturn>>
+        ? TReturn
+        : Promise<TReturn>
+    : never;
+
+  type InferMutate<TMutators extends Mutators> = {
+    readonly [TKey in keyof TMutators]: InferMutator<TMutators[TKey]>;
+  };
+
+  export interface Options<
+    TMutators extends Mutators,
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  > extends ReplicacheOptions<{}> {
+    mutators: TMutators;
+  }
+
+  export class Client<TMutators extends Mutators> extends ReplicacheClient {
+    constructor(opts: Options<TMutators>) {
+      super(opts);
+    }
+
+    override get mutate() {
+      return super.mutate as InferMutate<TMutators>;
+    }
+  }
+
+  export class ClientError extends Data.TaggedError("ClientError")<{
+    readonly cause: unknown;
+  }> {}
+
+  export class MutateError extends Data.TaggedError("MutateError")<{
     readonly cause: unknown;
   }> {}
 
@@ -20,6 +65,10 @@ export namespace Replicache {
     "@printdesk/core/replicache/client/ReadTransaction",
     { scoped: (tx: ReadTx | WriteTx) => Effect.succeed({ tx }) },
   ) {}
+
+  export class ReadTransactionError extends Data.TaggedError(
+    "ReadTransactionError",
+  )<{ readonly cause: unknown }> {}
 
   export class ReadTransactionManager extends Effect.Service<ReadTransactionManager>()(
     "@printdesk/core/replicache/client/ReadTransactionManager",
@@ -30,7 +79,7 @@ export namespace Replicache {
         const scan = <TTable extends Models.SyncTable>(table: TTable) =>
           Effect.tryPromise({
             try: () => tx.scan({ prefix: `${table.name}/` }).toArray(),
-            catch: (cause) => new ReplicacheError({ cause }),
+            catch: (cause) => new ReadTransactionError({ cause }),
           }).pipe(
             Effect.flatMap(
               Schema.decodeUnknown<
@@ -48,20 +97,17 @@ export namespace Replicache {
           Effect.gen(function* () {
             const value = yield* Effect.tryPromise({
               try: () => tx.get(`${table.name}/${id}`),
-              catch: (cause) => new ReplicacheError({ cause }),
+              catch: (cause) => new ReadTransactionError({ cause }),
             });
+            if (!value) return yield* new Cause.NoSuchElementException();
 
-            if (!value)
-              return yield* Effect.fail(new Cause.NoSuchElementException());
-
-            return yield* Effect.succeed(value).pipe(
-              Effect.flatMap(
-                Schema.decodeUnknown<
-                  TTable["DataTransferObject"]["Type"],
-                  TTable["DataTransferObject"]["Encoded"],
-                  never
-                >(Schema.asSchema(table.DataTransferObject)),
-              ),
+            return yield* pipe(
+              value,
+              Schema.decodeUnknown<
+                TTable["DataTransferObject"]["Type"],
+                TTable["DataTransferObject"]["Encoded"],
+                never
+              >(table.DataTransferObject.pipe(Schema.asSchema)),
             );
           });
 
@@ -74,6 +120,10 @@ export namespace Replicache {
     "@printdesk/core/replicache/client/WriteTransaction",
     { scoped: (tx: WriteTx) => Effect.succeed({ tx }) },
   ) {}
+
+  export class WriteTransactionError extends Data.TaggedError(
+    "WriteTransactionError",
+  )<{ readonly cause: unknown }> {}
 
   export class WriteTransactionManager extends Effect.Service<WriteTransactionManager>()(
     "@printdesk/core/replicache/client/WriteTransactionManager",
@@ -94,12 +144,12 @@ export namespace Replicache {
                 TTable["DataTransferObject"]["Type"],
                 TTable["DataTransferObject"]["Encoded"],
                 never
-              >(Schema.asSchema(table.DataTransferObject)),
+              >(table.DataTransferObject.pipe(Schema.asSchema)),
             ),
             Effect.flatMap((encoded) =>
               Effect.tryPromise({
                 try: () => tx.set(`${table.name}/${id}`, encoded),
-                catch: (cause) => new ReplicacheError({ cause }),
+                catch: (cause) => new WriteTransactionError({ cause }),
               }),
             ),
             Effect.andThen(get(table, id)),
@@ -113,7 +163,7 @@ export namespace Replicache {
             get(table, id),
             Effect.tryPromise({
               try: () => tx.del(`${table.name}/${id}`),
-              catch: (cause) => new ReplicacheError({ cause }),
+              catch: (cause) => new WriteTransactionError({ cause }),
             }),
           );
 

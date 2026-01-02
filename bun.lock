@@ -66,6 +66,7 @@
         "react": "catalog:",
         "react-aria-components": "catalog:",
         "react-dom": "catalog:",
+        "replicache": "catalog:",
       },
       "devDependencies": {
         "@effect/language-service": "catalog:",

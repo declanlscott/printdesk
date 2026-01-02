@@ -12,7 +12,8 @@
     "react-aria-components": "catalog:",
     "@tanstack/react-router": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "replicache": "catalog:"
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",

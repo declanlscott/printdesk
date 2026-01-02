@@ -107,7 +107,7 @@ export namespace MutationsContract {
   }> {
     #isFinal = false;
     #map = HashMap.empty<
-      keyof TProcedureRecord,
+      keyof TProcedureRecord & string,
       Mutation<
         keyof TProcedureRecord & string,
         TProcedureRecord[keyof TProcedureRecord]["Args"],
@@ -118,6 +118,8 @@ export namespace MutationsContract {
         TRecord[keyof TRecord]["PolicyContext"]
       >
     >();
+
+    Record = {} as TRecord;
 
     mutation<
       TName extends keyof TProcedureRecord & string,

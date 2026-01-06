@@ -1,3 +1,4 @@
+import * as Context from "effect/Context";
 import * as Data from "effect/Data";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
@@ -7,7 +8,20 @@ import { ColumnsContract } from "../columns/contract";
 import { Models } from "../models";
 import { Constants } from "../utils/constants";
 
+import type { ReplicachePuller } from "./pull";
+import type { ReplicachePusher } from "./push";
+
 export namespace ReplicacheContract {
+  export class Puller extends Context.Tag("@printdesk/core/replicache/Puller")<
+    Puller,
+    ReplicachePuller.Type
+  >() {}
+
+  export class Pusher extends Context.Tag("@printdesk/core/replicache/Pusher")<
+    Pusher,
+    ReplicachePusher.Type
+  >() {}
+
   export class ClientStateNotFoundResponse extends Schema.Class<ClientStateNotFoundResponse>(
     "ClientStateNotFoundResponse",
   )({ error: Schema.tag("ClientStateNotFound") }) {}

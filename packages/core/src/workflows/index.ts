@@ -1452,15 +1452,20 @@ export namespace SharedAccountWorkflows {
             make: Effect.fn(
               "SharedAccountWorkflows.Policies.isCustomerAuthorized",
             )(({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findActiveCustomerAuthorized(user.id, id, user.tenantId)
-                  .pipe(
-                    Effect.andThen(true),
-                    Effect.catchTag("NoSuchElementException", () =>
-                      Effect.succeed(false),
+              AccessControl.userPolicy(
+                {
+                  name: SharedAccountWorkflowsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findActiveCustomerAuthorized(user.id, id, user.tenantId)
+                    .pipe(
+                      Effect.andThen(true),
+                      Effect.catchTag("NoSuchElementException", () =>
+                        Effect.succeed(false),
+                      ),
                     ),
-                  ),
               ),
             ),
           },
@@ -1472,15 +1477,20 @@ export namespace SharedAccountWorkflows {
             make: Effect.fn(
               "SharedAccountWorkflows.Policies.isManagerAuthorized.make",
             )(({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findActiveManagerAuthorized(user.id, id, user.tenantId)
-                  .pipe(
-                    Effect.andThen(true),
-                    Effect.catchTag("NoSuchElementException", () =>
-                      Effect.succeed(false),
+              AccessControl.userPolicy(
+                {
+                  name: SharedAccountWorkflowsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findActiveManagerAuthorized(user.id, id, user.tenantId)
+                    .pipe(
+                      Effect.andThen(true),
+                      Effect.catchTag("NoSuchElementException", () =>
+                        Effect.succeed(false),
+                      ),
                     ),
-                  ),
               ),
             ),
           },
@@ -2809,10 +2819,15 @@ export namespace WorkflowStatuses {
             make: Effect.fn("WorkflowStatuses.Policies.canDelete.make")(
               ({ id }) =>
                 AccessControl.every(
-                  AccessControl.privatePolicy(({ tenantId }) =>
-                    ordersRepository
-                      .findByWorkflowStatusId(id, tenantId)
-                      .pipe(Effect.map(Array.isEmptyArray)),
+                  AccessControl.privatePolicy(
+                    {
+                      name: WorkflowStatusesContract.tableName,
+                      id,
+                    },
+                    ({ tenantId }) =>
+                      ordersRepository
+                        .findByWorkflowStatusId(id, tenantId)
+                        .pipe(Effect.map(Array.isEmptyArray)),
                   ),
                   canEdit.make({ id }),
                 ),

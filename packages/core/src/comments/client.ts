@@ -50,13 +50,15 @@ export namespace Comments {
           CommentsContract.isAuthor,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("authorId")),
-                    Effect.map(Equal.equals(user.id)),
-                  ),
+              AccessControl.userPolicy(
+                { name: CommentsContract.tableName, id },
+                (user) =>
+                  repository
+                    .findById(id)
+                    .pipe(
+                      Effect.map(Struct.get("authorId")),
+                      Effect.map(Equal.equals(user.id)),
+                    ),
               ),
           },
         );
@@ -68,7 +70,7 @@ export namespace Comments {
               .pipe(
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNull),
-                AccessControl.policy,
+                AccessControl.policy({ name: CommentsContract.tableName, id }),
               ),
         });
 
@@ -81,13 +83,14 @@ export namespace Comments {
           CommentsContract.canRestore,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNotNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNotNull),
+                AccessControl.policy({
+                  name: CommentsContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 

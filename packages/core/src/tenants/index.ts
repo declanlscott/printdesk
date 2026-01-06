@@ -9,6 +9,7 @@ import {
 } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
 
 import { AccessControl } from "../access-control";
 import { ColumnsContract } from "../columns/contract";
@@ -341,7 +342,10 @@ export namespace Tenants {
                       license.status === "active" &&
                       (license.tenantId === null || tenant?.status === "setup"),
                   ),
-                  AccessControl.policy,
+                  AccessControl.policy({
+                    name: LicensesContract.tableName,
+                    id: key.pipe(Redacted.value),
+                  }),
                 ),
             ),
           },

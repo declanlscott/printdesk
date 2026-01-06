@@ -559,13 +559,18 @@ export namespace Products {
 
         const canEdit = PoliciesContract.makePolicy(ProductsContract.canEdit, {
           make: Effect.fn("Products.Policies.canEdit.make")(({ id }) =>
-            AccessControl.privatePolicy(({ tenantId }) =>
-              repository
-                .findById(id, tenantId)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                ),
+            AccessControl.privatePolicy(
+              {
+                name: ProductsContract.tableName,
+                id,
+              },
+              ({ tenantId }) =>
+                repository
+                  .findById(id, tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
             ),
           ),
         });
@@ -574,13 +579,18 @@ export namespace Products {
           ProductsContract.canDelete,
           {
             make: Effect.fn("Products.Policies.canDelete.make")(({ id }) =>
-              AccessControl.privatePolicy(({ tenantId }) =>
-                repository
-                  .findById(id, tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
+              AccessControl.privatePolicy(
+                {
+                  name: ProductsContract.tableName,
+                  id,
+                },
+                ({ tenantId }) =>
+                  repository
+                    .findById(id, tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNull),
+                    ),
               ),
             ),
           },
@@ -590,13 +600,18 @@ export namespace Products {
           ProductsContract.canRestore,
           {
             make: Effect.fn("Products.Policies.canRestore.make")(({ id }) =>
-              AccessControl.privatePolicy(({ tenantId }) =>
-                repository
-                  .findById(id, tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
+              AccessControl.privatePolicy(
+                {
+                  name: ProductsContract.tableName,
+                  id,
+                },
+                ({ tenantId }) =>
+                  repository
+                    .findById(id, tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
               ),
             ),
           },

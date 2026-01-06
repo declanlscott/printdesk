@@ -6,10 +6,13 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
+import { Actors } from "../actors";
+import { ActorsContract } from "../actors/contract";
 import { Models } from "../models";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache/client";
+import { Users } from "../users/client";
 import {
   SharedAccountCustomerAccessContract,
   SharedAccountCustomerGroupAccessContract,
@@ -86,13 +89,14 @@ export namespace SharedAccounts {
           SharedAccountManagerAccessContract.canDelete,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNull),
+                AccessControl.policy({
+                  name: SharedAccountManagerAccessContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 
@@ -100,13 +104,14 @@ export namespace SharedAccounts {
           SharedAccountManagerAccessContract.canRestore,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNotNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNotNull),
+                AccessControl.policy({
+                  name: SharedAccountManagerAccessContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 
@@ -308,35 +313,84 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/client/Policies",
     {
       accessors: true,
-      dependencies: [ReadRepository.Default],
+      dependencies: [ReadRepository.Default, Users.ReadRepository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
+        const usersRepository = yield* Users.ReadRepository;
 
         const isCustomerAuthorized = PoliciesContract.makePolicy(
           SharedAccountsContract.isCustomerAuthorized,
           {
-            make: ({ id, customerId }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findActiveAuthorizedCustomerIds(id)
-                  .pipe(
-                    Effect.map(Array.some(Equal.equals(customerId ?? user.id))),
-                  ),
-              ),
+            make: ({ id, customerId }) => {
+              const policy = AccessControl.userPolicy(
+                {
+                  name: SharedAccountsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findActiveAuthorizedCustomerIds(id)
+                    .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
+              );
+
+              return customerId.pipe(
+                Option.match({
+                  onSome: (customerId) =>
+                    policy.pipe(
+                      Effect.provideServiceEffect(
+                        Actors.Actor,
+                        usersRepository.findById(customerId).pipe(
+                          Effect.map(
+                            (user) =>
+                              new ActorsContract.Actor({
+                                properties: new ActorsContract.UserActor(user),
+                              }),
+                          ),
+                        ),
+                      ),
+                    ),
+                  onNone: () => policy,
+                }),
+              );
+            },
           },
         );
 
         const isManagerAuthorized = PoliciesContract.makePolicy(
           SharedAccountsContract.isManagerAuthorized,
           {
-            make: ({ id, managerId }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findActiveAuthorizedManagerIds(id)
-                  .pipe(
-                    Effect.map(Array.some(Equal.equals(managerId ?? user.id))),
-                  ),
-              ),
+            make: ({ id, managerId }) => {
+              const policy = AccessControl.userPolicy(
+                {
+                  name: SharedAccountsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findActiveAuthorizedManagerIds(id)
+                    .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
+              );
+
+              return managerId.pipe(
+                Option.match({
+                  onSome: (managerId) =>
+                    policy.pipe(
+                      Effect.provideServiceEffect(
+                        Actors.Actor,
+                        usersRepository.findById(managerId).pipe(
+                          Effect.map(
+                            (user) =>
+                              new ActorsContract.Actor({
+                                properties: new ActorsContract.UserActor(user),
+                              }),
+                          ),
+                        ),
+                      ),
+                    ),
+                  onNone: () => policy,
+                }),
+              );
+            },
           },
         );
 
@@ -344,13 +398,14 @@ export namespace SharedAccounts {
           SharedAccountsContract.canEdit,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNull),
+                AccessControl.policy({
+                  name: SharedAccountsContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 
@@ -363,13 +418,14 @@ export namespace SharedAccounts {
           SharedAccountsContract.canRestore,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNotNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNotNull),
+                AccessControl.policy({
+                  name: SharedAccountsContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 

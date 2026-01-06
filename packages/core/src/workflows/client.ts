@@ -170,13 +170,18 @@ export namespace SharedAccountWorkflows {
           SharedAccountWorkflowsContract.isCustomerAuthorized,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository.findActiveCustomerAuthorized(user.id, id).pipe(
-                  Effect.andThen(true),
-                  Effect.catchTag("NoSuchElementException", () =>
-                    Effect.succeed(true),
+              AccessControl.userPolicy(
+                {
+                  name: SharedAccountWorkflowsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository.findActiveCustomerAuthorized(user.id, id).pipe(
+                    Effect.andThen(true),
+                    Effect.catchTag("NoSuchElementException", () =>
+                      Effect.succeed(true),
+                    ),
                   ),
-                ),
               ),
           },
         );
@@ -185,13 +190,18 @@ export namespace SharedAccountWorkflows {
           SharedAccountWorkflowsContract.isManagerAuthorized,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository.findActiveManagerAuthorized(user.id, id).pipe(
-                  Effect.andThen(true),
-                  Effect.catchTag("NoSuchElementException", () =>
-                    Effect.succeed(false),
+              AccessControl.userPolicy(
+                {
+                  name: SharedAccountWorkflowsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository.findActiveManagerAuthorized(user.id, id).pipe(
+                    Effect.andThen(true),
+                    Effect.catchTag("NoSuchElementException", () =>
+                      Effect.succeed(false),
+                    ),
                   ),
-                ),
               ),
           },
         );
@@ -336,9 +346,13 @@ export namespace WorkflowStatuses {
           {
             make: ({ id }) =>
               AccessControl.every(
-                ordersRepository
-                  .findByWorkflowStatusId(id)
-                  .pipe(Effect.map(Array.isEmptyArray), AccessControl.policy),
+                ordersRepository.findByWorkflowStatusId(id).pipe(
+                  Effect.map(Array.isEmptyArray),
+                  AccessControl.policy({
+                    name: SharedAccountWorkflowsContract.tableName,
+                    id,
+                  }),
+                ),
                 repository.findById(id).pipe(
                   Effect.flatMap((workflowStatus) =>
                     Match.value(workflowStatus).pipe(

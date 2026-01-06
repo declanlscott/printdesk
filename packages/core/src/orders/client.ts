@@ -114,13 +114,18 @@ export namespace Orders {
           OrdersContract.isCustomer,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("customerId")),
-                    Effect.map(Equal.equals(user.id)),
-                  ),
+              AccessControl.userPolicy(
+                {
+                  name: OrdersContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findById(id)
+                    .pipe(
+                      Effect.map(Struct.get("customerId")),
+                      Effect.map(Equal.equals(user.id)),
+                    ),
               ),
           },
         );
@@ -129,13 +134,18 @@ export namespace Orders {
           OrdersContract.isManager,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(Struct.get("managerId")),
-                    Effect.map(Equal.equals(user.id)),
-                  ),
+              AccessControl.userPolicy(
+                {
+                  name: OrdersContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findById(id)
+                    .pipe(
+                      Effect.map(Struct.get("managerId")),
+                      Effect.map(Equal.equals(user.id)),
+                    ),
               ),
           },
         );
@@ -144,16 +154,21 @@ export namespace Orders {
           OrdersContract.isCustomerOrManager,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findById(id)
-                  .pipe(
-                    Effect.map(
-                      (order) =>
-                        order.customerId === user.id ||
-                        order.managerId === user.id,
+              AccessControl.userPolicy(
+                {
+                  name: OrdersContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findById(id)
+                    .pipe(
+                      Effect.map(
+                        (order) =>
+                          order.customerId === user.id ||
+                          order.managerId === user.id,
+                      ),
                     ),
-                  ),
               ),
           },
         );
@@ -162,10 +177,15 @@ export namespace Orders {
           OrdersContract.isManagerAuthorized,
           {
             make: ({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findActiveManagerIds(id)
-                  .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
+              AccessControl.userPolicy(
+                {
+                  name: OrdersContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findActiveManagerIds(id)
+                    .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
               ),
           },
         );
@@ -192,7 +212,10 @@ export namespace Orders {
                   Match.orElse(() => false),
                 ),
               ),
-              AccessControl.policy,
+              AccessControl.policy({
+                name: OrdersContract.tableName,
+                id,
+              }),
             ),
         });
 
@@ -210,7 +233,10 @@ export namespace Orders {
                     Match.orElse(() => false),
                   ),
                 ),
-                AccessControl.policy,
+                AccessControl.policy({
+                  name: OrdersContract.tableName,
+                  id,
+                }),
               ),
           },
         );
@@ -229,7 +255,10 @@ export namespace Orders {
                     Match.orElse(() => false),
                   ),
                 ),
-                AccessControl.policy,
+                AccessControl.policy({
+                  name: OrdersContract.tableName,
+                  id,
+                }),
               ),
           },
         );
@@ -243,13 +272,14 @@ export namespace Orders {
           OrdersContract.canRestore,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNotNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNotNull),
+                AccessControl.policy({
+                  name: OrdersContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 
@@ -296,11 +326,12 @@ export namespace Orders {
                       userPolicies.isSelf.make({ id: order.customerId }),
                       sharedAccountPolicies.isManagerAuthorized.make({
                         id: order.sharedAccountId,
+                        managerId: Option.none(),
                       }),
                     ),
                     sharedAccountPolicies.isCustomerAuthorized.make({
                       id: order.sharedAccountId,
-                      customerId: order.customerId,
+                      customerId: Option.some(order.customerId),
                     }),
                   ),
                 ),

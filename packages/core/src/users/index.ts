@@ -421,19 +421,30 @@ export namespace Users {
 
         const isSelf = PoliciesContract.makePolicy(UsersContract.isSelf, {
           make: Effect.fn("Users.Policies.isSelf.make")(({ id }) =>
-            AccessControl.userPolicy((user) => Effect.succeed(id === user.id)),
+            AccessControl.userPolicy(
+              {
+                name: UsersContract.tableName,
+                id,
+              },
+              (user) => Effect.succeed(id === user.id),
+            ),
           ),
         });
 
         const canEdit = PoliciesContract.makePolicy(UsersContract.canEdit, {
           make: Effect.fn("Users.Policies.canEdit.make")(({ id }) =>
-            AccessControl.privatePolicy(({ tenantId }) =>
-              repository
-                .findById(id, tenantId)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                ),
+            AccessControl.privatePolicy(
+              {
+                name: UsersContract.tableName,
+                id,
+              },
+              ({ tenantId }) =>
+                repository
+                  .findById(id, tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
             ),
           ),
         });
@@ -446,13 +457,18 @@ export namespace Users {
           UsersContract.canRestore,
           {
             make: Effect.fn("Users.Policies.canRestore.make")(({ id }) =>
-              AccessControl.privatePolicy(({ tenantId }) =>
-                repository
-                  .findById(id, tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
+              AccessControl.privatePolicy(
+                {
+                  name: UsersContract.tableName,
+                  id,
+                },
+                ({ tenantId }) =>
+                  repository
+                    .findById(id, tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
               ),
             ),
           },

@@ -1,27 +1,31 @@
-import * as Data from "effect/Data";
+import { HttpApiSchema } from "@effect/platform";
 import * as Effect from "effect/Effect";
 import * as HashSet from "effect/HashSet";
+import * as Match from "effect/Match";
+import * as Schema from "effect/Schema";
+import * as SchemaAST from "effect/SchemaAST";
 import * as Struct from "effect/Struct";
 
 import { Actors } from "../actors";
+import { ActorsContract } from "../actors/contract";
+import { Permissions } from "../permissions";
 
-import type { Schema } from "effect";
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { ReadonlyRecord } from "effect/Record";
-import type { ActorsContract } from "../actors/contract";
-import type { Permissions } from "../permissions";
 import type { UsersContract } from "../users/contract";
 
 export namespace AccessControl {
   export type UserRoleAcl = ReadonlyRecord<
     UsersContract.Role,
-    HashSet.HashSet<Permissions.Permission>
+    HashSet.HashSet<Permissions.EncodedPermission>
   >;
 
   export const userRoleAcls = Effect.sync(
     () =>
       ({
-        administrator: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+        administrator: HashSet.make<
+          ReadonlyArray<Permissions.EncodedPermission>
+        >(
           "announcements:create",
           "announcements:read",
           "announcements:update",
@@ -78,7 +82,7 @@ export namespace AccessControl {
           "workflow_statuses:update",
           "workflow_statuses:delete",
         ),
-        operator: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+        operator: HashSet.make<ReadonlyArray<Permissions.EncodedPermission>>(
           "announcements:create",
           "active_announcements:read",
           "announcements:update",
@@ -115,7 +119,7 @@ export namespace AccessControl {
           "active_shared_account_workflows:read",
           "active_workflow_statuses:read",
         ),
-        manager: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+        manager: HashSet.make<ReadonlyArray<Permissions.EncodedPermission>>(
           "active_published_room_announcements:read",
           "active_manager_authorized_shared_accounts:read",
           "active_customer_authorized_shared_accounts:read",
@@ -143,7 +147,7 @@ export namespace AccessControl {
           "active_customer_authorized_shared_account_workflow_statuses:read",
           "active_manager_authorized_shared_account_workflow_statuses:read",
         ),
-        customer: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+        customer: HashSet.make<ReadonlyArray<Permissions.EncodedPermission>>(
           "active_published_room_announcements:read",
           "active_customer_authorized_shared_accounts:read",
           "active_authorized_shared_account_customer_access:read",
@@ -167,10 +171,60 @@ export namespace AccessControl {
       }) satisfies UserRoleAcl,
   );
 
-  export class AccessDeniedError extends Data.TaggedError("AccessDeniedError")<{
-    readonly cause?: unknown;
-    readonly message: string;
-  }> {}
+  class EntityString extends Schema.make<Permissions.Resource | (string & {})>(
+    SchemaAST.stringKeyword,
+  ) {}
+
+  export const Entity = Schema.Union(
+    EntityString,
+    Schema.Struct({ name: EntityString, id: Schema.String }),
+  );
+  export type Entity = typeof Entity.Type;
+
+  export class AccessDeniedError extends Schema.TaggedError<AccessDeniedError>(
+    "AccessDeniedError",
+  )(
+    "AccessDeniedError",
+    {
+      actor: ActorsContract.Actor.fields.properties,
+      entity: Entity,
+      action: Permissions.Action.pipe(Schema.optional),
+    },
+    HttpApiSchema.annotations({ status: 403 }),
+  ) {
+    override get message() {
+      const matchAction = Match.type<Permissions.Action | undefined>().pipe(
+        Match.when(Match.undefined, () => "access"),
+        Match.orElse((action) => `perform action "${action}" on`),
+      );
+
+      const matchEntity = Match.type<Entity>().pipe(
+        Match.when(Match.string, (entity) => `"${entity}"`),
+        Match.orElse(({ name, id }) => `"${name}" (${id})`),
+      );
+
+      const matchActor = Match.type<ActorsContract.Actor["properties"]>().pipe(
+        Match.tag(
+          "PublicActor",
+          () =>
+            `Public actor is not authorized to ${matchAction(this.action)} entity ${matchEntity(this.entity)}.`,
+        ),
+        Match.tag(
+          "SystemActor",
+          (system) =>
+            `System actor (${system.tenantId}) is not authorized to ${matchAction(this.action)} entity ${matchEntity(this.entity)}.`,
+        ),
+        Match.tag(
+          "UserActor",
+          (user) =>
+            `User actor (${user.id}) is not authorized to ${matchAction(this.action)} entity ${matchEntity(this.entity)}.`,
+        ),
+        Match.exhaustive,
+      );
+
+      return matchActor(this.actor);
+    }
+  }
 
   export type Policy<TError = never, TContext = never> = Effect.Effect<
     void,
@@ -207,21 +261,29 @@ export namespace AccessControl {
   ): Policy<TError, TContext> =>
     Effect.all(policies, { concurrency: 1, discard: true });
 
-  export const policy = <TError, TContext>(
-    predicate: Effect.Effect<boolean, TError, TContext>,
-    message = "Access denied.",
-  ): Policy<TError, TContext> =>
-    Effect.gen(function* () {
-      const access = yield* predicate;
-      if (!access)
-        return yield* Effect.fail(new AccessDeniedError({ message }));
-    });
+  export const policy =
+    (entity: Entity, action?: Permissions.Action) =>
+    <TError, TContext>(
+      predicate: Effect.Effect<boolean, TError, TContext>,
+    ): Policy<TError, TContext> =>
+      Effect.gen(function* () {
+        const { properties: actor } = yield* Actors.Actor;
+
+        const access = yield* predicate;
+        if (!access)
+          return yield* new AccessDeniedError({
+            actor,
+            entity,
+            action,
+          });
+      });
 
   export const userPolicy = <TError, TContext>(
+    entity: Entity,
     predicate: (
       user: ActorsContract.UserActor,
     ) => Effect.Effect<boolean, TError, TContext>,
-    message = "Access denied.",
+    action?: Permissions.Action,
   ): Policy<TError, TContext> =>
     Effect.gen(function* () {
       const user = yield* Actors.Actor.pipe(
@@ -230,17 +292,22 @@ export namespace AccessControl {
 
       const access = yield* predicate(user);
       if (!access)
-        return yield* Effect.fail(new AccessDeniedError({ message }));
+        return yield* new AccessDeniedError({
+          actor: user,
+          entity,
+          action,
+        });
     });
 
   export const privatePolicy = <TError, TContext>(
+    entity: Entity,
     predicate: (
       privateActor: Exclude<
         ActorsContract.Actor["properties"],
         { _tag: "PublicActor" }
       >,
     ) => Effect.Effect<boolean, TError, TContext>,
-    message = "Access denied.",
+    action?: Permissions.Action,
   ): Policy<TError, TContext> =>
     Effect.gen(function* () {
       const privateActor = yield* Actors.Actor.pipe(
@@ -249,16 +316,28 @@ export namespace AccessControl {
 
       const access = yield* predicate(privateActor);
       if (!access)
-        return yield* Effect.fail(new AccessDeniedError({ message }));
+        return yield* new AccessDeniedError({
+          actor: privateActor,
+          entity,
+          action,
+        });
     });
 
-  export const permission = (permission: Permissions.Permission) =>
-    userPolicy(
-      (user) =>
-        userRoleAcls.pipe(
-          Effect.map(Struct.get(user.role)),
-          Effect.map(HashSet.has(permission)),
+  export const permission = (permission: Permissions.EncodedPermission) =>
+    Permissions.Permission.pipe(
+      Effect.map(Schema.decode),
+      Effect.flatMap((decode) => decode(permission)),
+      Effect.orDie,
+      Effect.flatMap(({ resource, action }) =>
+        userPolicy(
+          resource,
+          (user) =>
+            userRoleAcls.pipe(
+              Effect.map(Struct.get(user.role)),
+              Effect.map(HashSet.has(permission)),
+            ),
+          action,
         ),
-      `Access denied: ${permission}`,
+      ),
     );
 }

@@ -569,13 +569,18 @@ export namespace Announcements {
           AnnouncementsContract.canEdit,
           {
             make: Effect.fn("Announcements.Policies.canEdit.make")(({ id }) =>
-              AccessControl.privatePolicy(({ tenantId }) =>
-                repository
-                  .findById(id, tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNull),
-                  ),
+              AccessControl.privatePolicy(
+                {
+                  name: AnnouncementsContract.tableName,
+                  id,
+                },
+                ({ tenantId }) =>
+                  repository
+                    .findById(id, tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNull),
+                    ),
               ),
             ),
           },
@@ -595,13 +600,18 @@ export namespace Announcements {
           {
             make: Effect.fn("Announcements.Policies.canRestore.make")(
               ({ id }) =>
-                AccessControl.privatePolicy(({ tenantId }) =>
-                  repository
-                    .findById(id, tenantId)
-                    .pipe(
-                      Effect.map(Struct.get("deletedAt")),
-                      Effect.map(Predicate.isNotNull),
-                    ),
+                AccessControl.privatePolicy(
+                  {
+                    name: AnnouncementsContract.tableName,
+                    id,
+                  },
+                  ({ tenantId }) =>
+                    repository
+                      .findById(id, tenantId)
+                      .pipe(
+                        Effect.map(Struct.get("deletedAt")),
+                        Effect.map(Predicate.isNotNull),
+                      ),
                 ),
             ),
           },

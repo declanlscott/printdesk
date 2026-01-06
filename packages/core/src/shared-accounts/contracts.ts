@@ -76,7 +76,7 @@ export namespace SharedAccountsContract {
     name: "isCustomerAuthorizedSharedAccount",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
-      customerId: Schema.optional(ColumnsContract.EntityId),
+      customerId: ColumnsContract.EntityId.pipe(Schema.OptionFromUndefinedOr),
     }),
     Returns: Schema.Void,
   });
@@ -85,7 +85,7 @@ export namespace SharedAccountsContract {
     name: "isManagerAuthorizedSharedAccount",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
-      managerId: Schema.optional(ColumnsContract.EntityId),
+      managerId: ColumnsContract.EntityId.pipe(Schema.OptionFromUndefinedOr),
     }),
     Returns: Schema.Void,
   });

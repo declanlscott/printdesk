@@ -52,13 +52,14 @@ export namespace Rooms {
 
         const canEdit = PoliciesContract.makePolicy(RoomsContract.canEdit, {
           make: ({ id }) =>
-            repository
-              .findById(id)
-              .pipe(
-                Effect.map(Struct.get("deletedAt")),
-                Effect.map(Predicate.isNull),
-                AccessControl.policy,
-              ),
+            repository.findById(id).pipe(
+              Effect.map(Struct.get("deletedAt")),
+              Effect.map(Predicate.isNull),
+              AccessControl.policy({
+                name: RoomsContract.tableName,
+                id,
+              }),
+            ),
         });
 
         const canDelete = PoliciesContract.makePolicy(RoomsContract.canDelete, {
@@ -69,13 +70,14 @@ export namespace Rooms {
           RoomsContract.canRestore,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNotNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNotNull),
+                AccessControl.policy({
+                  name: RoomsContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 

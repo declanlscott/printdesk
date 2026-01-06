@@ -4,9 +4,12 @@ import * as Equal from "effect/Equal";
 import * as Option from "effect/Option";
 
 import { AccessControl } from "../access-control";
+import { Actors } from "../actors";
+import { ActorsContract } from "../actors/contract";
 import { Models } from "../models";
 import { PoliciesContract } from "../policies/contract";
 import { Replicache } from "../replicache/client";
+import { Users } from "../users/client";
 import {
   CustomerGroupMembershipsContract,
   CustomerGroupsContract,
@@ -62,21 +65,49 @@ export namespace Groups {
     "@printdesk/core/groups/client/CustomersPolicies",
     {
       accessors: true,
-      dependencies: [CustomersReadRepository.Default],
+      dependencies: [
+        CustomersReadRepository.Default,
+        Users.ReadRepository.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* CustomersReadRepository;
+        const usersRepository = yield* Users.ReadRepository;
 
         const isMemberOf = PoliciesContract.makePolicy(
           CustomerGroupsContract.isMemberOf,
           {
-            make: ({ id, memberId }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findActiveMemberIds(id)
-                  .pipe(
-                    Effect.map(Array.some(Equal.equals(memberId ?? user.id))),
-                  ),
-              ),
+            make: ({ id, memberId }) => {
+              const policy = AccessControl.userPolicy(
+                {
+                  name: CustomerGroupsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findActiveMemberIds(id)
+                    .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
+              );
+
+              return memberId.pipe(
+                Option.match({
+                  onSome: (memberId) =>
+                    policy.pipe(
+                      Effect.provideServiceEffect(
+                        Actors.Actor,
+                        usersRepository.findById(memberId).pipe(
+                          Effect.map(
+                            (user) =>
+                              new ActorsContract.Actor({
+                                properties: new ActorsContract.UserActor(user),
+                              }),
+                          ),
+                        ),
+                      ),
+                    ),
+                  onNone: () => policy,
+                }),
+              );
+            },
           },
         );
 

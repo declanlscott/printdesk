@@ -21,9 +21,11 @@ export namespace Events {
     dispatchId: Schema.String,
   }) {}
 
-  export const ReplicachePullPermission = Permissions.SyncReadPermission.pipe(
-    Effect.map((permission) =>
-      Schema.TaggedStruct("ReplicachePullPermission", { permission }),
+  export const ReplicachePullPermission = Permissions.syncReadPermissions.pipe(
+    Effect.map((permissions) =>
+      Schema.TaggedStruct("ReplicachePullPermission", {
+        permission: Schema.Literal(...permissions),
+      }),
     ),
   );
   export type ReplicachePullPermission = Effect.Effect.Success<

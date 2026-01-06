@@ -49,7 +49,7 @@ export namespace CustomerGroupsContract {
     name: "isMemberOfCustomerGroup",
     Args: Schema.Struct({
       ...DataTransferStruct.pick("id").fields,
-      memberId: Schema.optional(ColumnsContract.EntityId),
+      memberId: ColumnsContract.EntityId.pipe(Schema.OptionFromUndefinedOr),
     }),
     Returns: Schema.Void,
   });

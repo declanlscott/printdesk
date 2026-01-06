@@ -516,13 +516,18 @@ export namespace Rooms {
 
         const canEdit = PoliciesContract.makePolicy(RoomsContract.canEdit, {
           make: Effect.fn("Rooms.Policies.canEdit.make")(({ id }) =>
-            AccessControl.privatePolicy(({ tenantId }) =>
-              repository
-                .findById(id, tenantId)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                ),
+            AccessControl.privatePolicy(
+              {
+                name: RoomsContract.tableName,
+                id,
+              },
+              ({ tenantId }) =>
+                repository
+                  .findById(id, tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
             ),
           ),
         });
@@ -535,13 +540,18 @@ export namespace Rooms {
           RoomsContract.canRestore,
           {
             make: Effect.fn("Rooms.Policies.canRestore.make")(({ id }) =>
-              AccessControl.privatePolicy(({ tenantId }) =>
-                repository
-                  .findById(id, tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
+              AccessControl.privatePolicy(
+                {
+                  name: RoomsContract.tableName,
+                  id,
+                },
+                ({ tenantId }) =>
+                  repository
+                    .findById(id, tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
               ),
             ),
           },

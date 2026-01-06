@@ -11,14 +11,18 @@ import {
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
+import * as Option from "effect/Option";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
+import { Actors } from "../actors";
+import { ActorsContract } from "../actors/contract";
 import { Database } from "../database";
 import { PoliciesContract } from "../policies/contract";
 import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache";
 import { ReplicacheClientViewEntriesSchema } from "../replicache/schemas";
+import { Users } from "../users";
 import { CustomerGroupsContract } from "./contracts";
 import {
   CustomerGroupMembershipsSchema,
@@ -581,22 +585,54 @@ export namespace Groups {
     "@printdesk/core/groups/CustomersPolicies",
     {
       accessors: true,
-      dependencies: [CustomersRepository.Default],
+      dependencies: [CustomersRepository.Default, Users.Repository.Default],
       effect: Effect.gen(function* () {
         const repository = yield* CustomersRepository;
+        const usersRepository = yield* Users.Repository;
 
         const isMemberOf = PoliciesContract.makePolicy(
           CustomerGroupsContract.isMemberOf,
           {
             make: Effect.fn("Groups.CustomersPolicies.isMemberOf.make")(
-              ({ id, memberId }) =>
-                AccessControl.userPolicy((user) =>
-                  repository
-                    .findActiveMemberIds(id, user.tenantId)
-                    .pipe(
-                      Effect.map(Array.some(Equal.equals(memberId ?? user.id))),
-                    ),
-                ),
+              ({ id, memberId }) => {
+                const policy = AccessControl.userPolicy(
+                  {
+                    name: CustomerGroupsContract.tableName,
+                    id,
+                  },
+                  (user) =>
+                    repository
+                      .findActiveMemberIds(id, user.tenantId)
+                      .pipe(Effect.map(Array.some(Equal.equals(user.id)))),
+                );
+
+                return memberId.pipe(
+                  Option.match({
+                    onSome: (memberId) =>
+                      Actors.Actor.pipe(
+                        Effect.flatMap(Struct.get("assertPrivate")),
+                        Effect.flatMap(({ tenantId }) =>
+                          policy.pipe(
+                            Effect.provideServiceEffect(
+                              Actors.Actor,
+                              usersRepository.findById(memberId, tenantId).pipe(
+                                Effect.map(
+                                  (user) =>
+                                    new ActorsContract.Actor({
+                                      properties: new ActorsContract.UserActor(
+                                        user,
+                                      ),
+                                    }),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    onNone: () => policy,
+                  }),
+                );
+              },
             ),
           },
         );

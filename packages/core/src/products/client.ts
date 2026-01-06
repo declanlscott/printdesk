@@ -76,13 +76,14 @@ export namespace Products {
 
         const canEdit = PoliciesContract.makePolicy(ProductsContract.canEdit, {
           make: ({ id }) =>
-            repository
-              .findById(id)
-              .pipe(
-                Effect.map(Struct.get("deletedAt")),
-                Effect.map(Predicate.isNull),
-                AccessControl.policy,
-              ),
+            repository.findById(id).pipe(
+              Effect.map(Struct.get("deletedAt")),
+              Effect.map(Predicate.isNull),
+              AccessControl.policy({
+                name: ProductsContract.tableName,
+                id,
+              }),
+            ),
         });
 
         const canDelete = PoliciesContract.makePolicy(
@@ -94,13 +95,14 @@ export namespace Products {
           ProductsContract.canRestore,
           {
             make: ({ id }) =>
-              repository
-                .findById(id)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNotNull),
-                  AccessControl.policy,
-                ),
+              repository.findById(id).pipe(
+                Effect.map(Struct.get("deletedAt")),
+                Effect.map(Predicate.isNotNull),
+                AccessControl.policy({
+                  name: ProductsContract.tableName,
+                  id,
+                }),
+              ),
           },
         );
 

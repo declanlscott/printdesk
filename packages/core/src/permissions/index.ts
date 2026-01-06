@@ -8,13 +8,17 @@ import * as Struct from "effect/Struct";
 import { Models } from "../models";
 
 export namespace Permissions {
-  export type Action = "create" | "read" | "update" | "delete";
+  export const separator = ":";
+  export type Separator = typeof separator;
+
+  export const Action = Schema.Literal("create", "read", "update", "delete");
+  export type Action = typeof Action.Type;
 
   export type Config = Record<string, ReadonlyArray<Action>>;
 
   export type InferFromConfig<TConfig extends Config> = {
     [TResource in keyof TConfig]: TConfig[TResource][number] extends Action
-      ? `${TResource & string}:${TConfig[TResource][number]}`
+      ? `${TResource & string}${Separator}${TConfig[TResource][number]}`
       : never;
   }[keyof TConfig];
 
@@ -23,7 +27,11 @@ export namespace Permissions {
       Array.flatMap(Struct.entries(config), ([resource, actions]) =>
         Array.map(
           actions,
-          (action) => `${resource}:${action}` as InferFromConfig<TConfig>,
+          (action) =>
+            Array.join(
+              [resource, action],
+              separator,
+            ) as InferFromConfig<TConfig>,
         ),
       ),
     );
@@ -65,16 +73,57 @@ export namespace Permissions {
   export const permissions = Effect.all(
     Array.make(syncPermissions, nonSyncPermissions),
   ).pipe(Effect.map(Array.flatten));
-  export type Permission = Effect.Effect.Success<typeof permissions>[number];
+  export type Permissions = Effect.Effect.Success<typeof permissions>;
 
-  const makeReadPermissions = <TPermissions extends Array<Permission>>(
+  export type Resource = {
+    readonly [TPermission in Permissions[number]]: TPermission extends `${infer TResource}:${Action}`
+      ? TResource
+      : never;
+  }[Permissions[number]];
+
+  export const Permission = permissions.pipe(
+    Effect.map((permissions) =>
+      Schema.Literal(...permissions).pipe(
+        Schema.transform(
+          Schema.Struct({
+            resource: Schema.Literal(
+              ...Array.map(
+                permissions,
+                (permission) =>
+                  String.split(permission, separator)[0] as Resource,
+              ),
+            ),
+            action: Action,
+          }),
+          {
+            strict: false,
+            decode: (permission) => {
+              const [resource, action] = String.split(
+                permission,
+                separator,
+              ) as [Resource, Action];
+
+              return { resource, action };
+            },
+            encode: ({ resource, action }) =>
+              Array.join([resource, action], separator),
+          },
+        ),
+      ),
+    ),
+  );
+  export type EncodedPermission = Effect.Effect.Success<
+    typeof Permission
+  >["Encoded"];
+
+  const makeReadPermissions = <TPermissions extends Array<EncodedPermission>>(
     permissions: TPermissions,
   ) =>
     Array.filterMap(permissions, (permission) =>
-      String.endsWith(":read")(permission)
+      String.endsWith(`${separator}read`)(permission)
         ? Option.some(
             permission as {
-              readonly [TPermission in TPermissions[number]]: TPermission extends `${string}:read`
+              readonly [TPermission in TPermissions[number]]: TPermission extends `${string}${Separator}read`
                 ? TPermission
                 : never;
             }[TPermissions[number]],
@@ -102,28 +151,4 @@ export namespace Permissions {
   export type ReadPermission = Effect.Effect.Success<
     typeof readPermissions
   >[number];
-
-  export const SyncPermission = syncPermissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
-
-  export const NonSyncPermission = nonSyncPermissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
-
-  export const Permission = permissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
-
-  export const SyncReadPermission = syncReadPermissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
-
-  export const NonSyncReadPermission = nonSyncReadPermissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
-
-  export const ReadPermission = readPermissions.pipe(
-    Effect.map((permissions) => Schema.Literal(...permissions)),
-  );
 }

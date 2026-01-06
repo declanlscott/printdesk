@@ -897,13 +897,18 @@ export namespace Comments {
           CommentsContract.isAuthor,
           {
             make: Effect.fn("Comments.Policies.isAuthor.make")(({ id }) =>
-              AccessControl.userPolicy((user) =>
-                repository
-                  .findById(id, user.tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("authorId")),
-                    Effect.map(Equal.equals(user.id)),
-                  ),
+              AccessControl.userPolicy(
+                {
+                  name: CommentsContract.tableName,
+                  id,
+                },
+                (user) =>
+                  repository
+                    .findById(id, user.tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("authorId")),
+                      Effect.map(Equal.equals(user.id)),
+                    ),
               ),
             ),
           },
@@ -911,13 +916,18 @@ export namespace Comments {
 
         const canEdit = PoliciesContract.makePolicy(CommentsContract.canEdit, {
           make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
-            AccessControl.privatePolicy(({ tenantId }) =>
-              repository
-                .findById(id, tenantId)
-                .pipe(
-                  Effect.map(Struct.get("deletedAt")),
-                  Effect.map(Predicate.isNull),
-                ),
+            AccessControl.privatePolicy(
+              {
+                name: CommentsContract.tableName,
+                id,
+              },
+              ({ tenantId }) =>
+                repository
+                  .findById(id, tenantId)
+                  .pipe(
+                    Effect.map(Struct.get("deletedAt")),
+                    Effect.map(Predicate.isNull),
+                  ),
             ),
           ),
         });
@@ -931,13 +941,18 @@ export namespace Comments {
           CommentsContract.canRestore,
           {
             make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
-              AccessControl.privatePolicy(({ tenantId }) =>
-                repository
-                  .findById(id, tenantId)
-                  .pipe(
-                    Effect.map(Struct.get("deletedAt")),
-                    Effect.map(Predicate.isNotNull),
-                  ),
+              AccessControl.privatePolicy(
+                {
+                  name: CommentsContract.tableName,
+                  id,
+                },
+                ({ tenantId }) =>
+                  repository
+                    .findById(id, tenantId)
+                    .pipe(
+                      Effect.map(Struct.get("deletedAt")),
+                      Effect.map(Predicate.isNotNull),
+                    ),
               ),
             ),
           },

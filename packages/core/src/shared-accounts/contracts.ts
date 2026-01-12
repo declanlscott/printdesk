@@ -35,7 +35,6 @@ export namespace SharedAccountsContract {
       Schema.NonNegativeInt,
     ).pipe(Schema.optionalWith({ default: () => -1 })),
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "shared_accounts";
   export const table =
@@ -72,10 +71,16 @@ export namespace SharedAccountsContract {
       }),
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const isCustomerAuthorized = new ProceduresContract.Procedure({
     name: "isCustomerAuthorizedSharedAccount",
     Args: Schema.Struct({
-      ...DataTransferStruct.pick("id").fields,
+      ...IdOnly.fields,
       customerId: ColumnsContract.EntityId.pipe(Schema.OptionFromUndefinedOr),
     }),
     Returns: Schema.Void,
@@ -84,7 +89,7 @@ export namespace SharedAccountsContract {
   export const isManagerAuthorized = new ProceduresContract.Procedure({
     name: "isManagerAuthorizedSharedAccount",
     Args: Schema.Struct({
-      ...DataTransferStruct.pick("id").fields,
+      ...IdOnly.fields,
       managerId: ColumnsContract.EntityId.pipe(Schema.OptionFromUndefinedOr),
     }),
     Returns: Schema.Void,
@@ -92,32 +97,39 @@ export namespace SharedAccountsContract {
 
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditSharedAccount",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteSharedAccount",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreSharedAccount",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editSharedAccount",
-    Args: DataTransferStruct.pick("id", "updatedAt").pipe(
+    Args: DataTransferObject.pipe(
+      Schema.omit(
+        ...Struct.keys(ColumnsContract.Tenant.fields),
+        "name",
+        "origin",
+        "papercutAccountId",
+      ),
+      Schema.partial,
       Schema.extend(
-        DataTransferStruct.omit(
-          ...Struct.keys(ColumnsContract.Tenant.fields),
-          "name",
-          "origin",
-          "papercutAccountId",
-        ).pipe(Schema.partial),
+        Schema.Struct(
+          Struct.evolve(
+            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            { id: (id) => id.from },
+          ),
+        ),
       ),
     ),
     Returns: DataTransferObject,
@@ -125,16 +137,18 @@ export namespace SharedAccountsContract {
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteSharedAccount",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreSharedAccount",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }
@@ -147,7 +161,6 @@ export namespace SharedAccountCustomerAccessContract {
     customerId: ColumnsContract.EntityId,
     sharedAccountId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "shared_account_customer_access";
   export const table =
@@ -183,7 +196,6 @@ export namespace SharedAccountManagerAccessContract {
     managerId: ColumnsContract.EntityId,
     sharedAccountId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "shared_account_manager_access";
   export const table =
@@ -217,36 +229,44 @@ export namespace SharedAccountManagerAccessContract {
       }),
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteSharedAccountManagerAccess",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreSharedAccountManagerAccess",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const create = new ProceduresContract.Procedure({
     name: "createSharedAccountManagerAccess",
-    Args: DataTransferStruct.omit("deletedAt", "tenantId"),
+    Args: DataTransferObject.pipe(Schema.omit("deletedAt", "tenantId")),
     Returns: DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteSharedAccountManagerAccess",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreSharedAccountManagerAccess",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }
@@ -259,7 +279,6 @@ export namespace SharedAccountCustomerGroupAccessContract {
     customerGroupId: ColumnsContract.EntityId,
     sharedAccountId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "shared_account_customer_group_access";
   export const table =

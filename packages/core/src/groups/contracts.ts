@@ -1,4 +1,5 @@
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
 import { ProceduresContract } from "../procedures/contract";
@@ -18,7 +19,6 @@ export namespace CustomerGroupsContract {
     externalId: Schema.String,
     identityProviderId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "customer_groups";
   export const table =
@@ -48,7 +48,9 @@ export namespace CustomerGroupsContract {
   export const isMemberOf = new ProceduresContract.Procedure({
     name: "isMemberOfCustomerGroup",
     Args: Schema.Struct({
-      ...DataTransferStruct.pick("id").fields,
+      ...Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+        id: (id) => id.from,
+      }),
       memberId: ColumnsContract.EntityId.pipe(Schema.OptionFromUndefinedOr),
     }),
     Returns: Schema.Void,

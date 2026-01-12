@@ -1,6 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
+import { AuthContract } from "../auth/contract";
 import { ColumnsContract } from "../columns/contract";
 import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables/contract";
@@ -27,7 +28,6 @@ export namespace LicensesContract {
       Schema.optionalWith({ default: () => "active" }),
     ),
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "licenses";
   export const table =
@@ -38,7 +38,7 @@ export namespace LicensesContract {
 
   export const isAvailable = new ProceduresContract.Procedure({
     name: "isLicenseAvailable",
-    Args: DataTransferStruct.pick("key"),
+    Args: DataTransferObject.pipe(Schema.pick("key")),
     Returns: Schema.Void,
   });
 }
@@ -63,7 +63,6 @@ export namespace TenantsContract {
       Schema.optionalWith({ default: () => "setup" }),
     ),
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "tenants";
   export const table = new (TablesContract.makeClass<TenantsSchema.Table>())(
@@ -74,17 +73,23 @@ export namespace TenantsContract {
 
   export const isSubdomainAvailable = new ProceduresContract.Procedure({
     name: "isTenantSubdomainAvailable",
-    Args: DataTransferStruct.pick("subdomain"),
+    Args: DataTransferObject.pipe(Schema.pick("subdomain")),
     Returns: Schema.Void,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editTenant",
-    Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt"),
-      DataTransferStruct.omit(
-        ...Struct.keys(ColumnsContract.Tenant.fields),
-      ).pipe(Schema.partial),
+    Args: DataTransferObject.pipe(
+      Schema.omit(...Struct.keys(ColumnsContract.Tenant.fields)),
+      Schema.partial,
+      Schema.extend(
+        Schema.Struct(
+          Struct.evolve(
+            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            { id: (id) => id.from },
+          ),
+        ),
+      ),
     ),
     Returns: DataTransferObject,
   });

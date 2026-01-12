@@ -1,5 +1,5 @@
-import * as Either from "effect/Either";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
 import { ProceduresContract } from "../procedures/contract";
@@ -31,9 +31,7 @@ export namespace OrdersContract {
 
     // Color mode
     color: Schema.Struct({
-      enabled: Schema.Boolean.annotations({
-        decodingFallback: () => Either.right(false),
-      }),
+      enabled: Schema.Boolean,
     }).pipe(Schema.optional),
 
     // Pages
@@ -149,7 +147,7 @@ export namespace OrdersContract {
   });
   export const Attributes = Schema.Union(AttributesV1);
 
-  const BaseDto = Schema.Struct({
+  class BaseDto extends Schema.Class<BaseDto>("BaseDto2")({
     ...ColumnsContract.Tenant.fields,
     customerId: ColumnsContract.EntityId,
     managerId: ColumnsContract.EntityId.pipe(
@@ -168,19 +166,23 @@ export namespace OrdersContract {
       Schema.NullOr,
       Schema.optionalWith({ default: () => null }),
     ),
-  });
+  }) {}
 
-  export const SharedAccountWorkflowStatusDto = Schema.Struct({
+  export class SharedAccountWorkflowStatusDto extends Schema.Class<SharedAccountWorkflowStatusDto>(
+    "SharedAccountWorkflowStatusDto",
+  )({
     ...BaseDto.fields,
     sharedAccountWorkflowStatusId: ColumnsContract.EntityId,
     roomWorkflowStatusId: Schema.Null,
-  });
+  }) {}
 
-  export const RoomWorkflowStatusDto = Schema.Struct({
+  export class RoomWorkflowStatusDto extends Schema.Class<RoomWorkflowStatusDto>(
+    "RoomWorkflowStatusDto",
+  )({
     ...BaseDto.fields,
     sharedAccountWorkflowStatusId: Schema.Null,
     roomWorkflowStatusId: ColumnsContract.EntityId,
-  });
+  }) {}
 
   export const DataTransferObject = Schema.Union(
     SharedAccountWorkflowStatusDto,
@@ -219,57 +221,63 @@ export namespace OrdersContract {
       ),
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(BaseDto.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const isCustomer = new ProceduresContract.Procedure({
     name: "isOrderCustomer",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const isManager = new ProceduresContract.Procedure({
     name: "isOrderManager",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const isCustomerOrManager = new ProceduresContract.Procedure({
     name: "isOrderCustomerOrManager",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const isManagerAuthorized = new ProceduresContract.Procedure({
     name: "isOrderManagerAuthorized",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditOrder",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canApprove = new ProceduresContract.Procedure({
     name: "canApproveOrder",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canTransition = new ProceduresContract.Procedure({
     name: "canTransitionOrder",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteOrder",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreOrder",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
@@ -283,65 +291,99 @@ export namespace OrdersContract {
   export const create = new ProceduresContract.Procedure({
     name: "createOrder",
     Args: Schema.Union(
-      SharedAccountWorkflowStatusDto.omit(...omittedOnCreate),
-      RoomWorkflowStatusDto.omit(...omittedOnCreate),
+      SharedAccountWorkflowStatusDto.pipe(Schema.omit(...omittedOnCreate)),
+      RoomWorkflowStatusDto.pipe(Schema.omit(...omittedOnCreate)),
     ),
     Returns: DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editOrder",
-    Args: Schema.extend(
-      BaseDto.pick("id", "updatedAt"),
-      BaseDto.pick(
-        "productId",
-        "sharedAccountId",
-        "deliveryOptionId",
-        "attributes",
-      ).pipe(Schema.partial),
+    Args: BaseDto.pipe(
+      Schema.omit(
+        ...Struct.keys(ColumnsContract.Tenant.fields),
+        "managerId",
+        "operatorId",
+        "approvedAt",
+      ),
+      Schema.partial,
+      Schema.extend(
+        Schema.Struct(
+          Struct.evolve(Struct.pick(BaseDto.fields, "id", "updatedAt"), {
+            id: (id) => id.from,
+          }),
+        ),
+      ),
     ),
     Returns: DataTransferObject,
   });
 
   export const approve = new ProceduresContract.Procedure({
     name: "approveOrder",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      roomWorkflowStatusId: ColumnsContract.EntityId,
-      approvedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(
+        Struct.pick(
+          RoomWorkflowStatusDto.fields,
+          "id",
+          "approvedAt",
+          "roomWorkflowStatusId",
+        ),
+        {
+          id: (id) => id.from,
+          approvedAt: (approvedAt) => approvedAt.from,
+        },
+      ),
+    ),
     Returns: DataTransferObject,
   });
 
   export const transitionRoomWorkflowStatus = new ProceduresContract.Procedure({
     name: "transitionOrderRoomWorkflowStatus",
-    Args: RoomWorkflowStatusDto.pick("id", "updatedAt", "roomWorkflowStatusId"),
+    Args: Schema.Struct(
+      Struct.evolve(
+        Struct.pick(
+          RoomWorkflowStatusDto.fields,
+          "id",
+          "updatedAt",
+          "roomWorkflowStatusId",
+        ),
+        { id: (id) => id.from },
+      ),
+    ),
     Returns: DataTransferObject,
   });
 
   export const transitionSharedAccountWorkflowStatus =
     new ProceduresContract.Procedure({
       name: "transitionOrderSharedAccountWorkflowStatus",
-      Args: SharedAccountWorkflowStatusDto.pick(
-        "id",
-        "updatedAt",
-        "sharedAccountWorkflowStatusId",
+      Args: Schema.Struct(
+        Struct.evolve(
+          Struct.pick(
+            SharedAccountWorkflowStatusDto.fields,
+            "id",
+            "updatedAt",
+            "sharedAccountWorkflowStatusId",
+          ),
+          { id: (id) => id.from },
+        ),
       ),
       Returns: DataTransferObject,
     });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteOrder",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(BaseDto.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreOrder",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }

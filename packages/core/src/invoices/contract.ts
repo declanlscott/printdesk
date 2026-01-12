@@ -34,7 +34,6 @@ export namespace InvoicesContract {
     ),
     orderId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "invoices";
   export const table = new (TablesContract.makeClass<InvoicesSchema.Table>())(
@@ -72,11 +71,8 @@ export namespace InvoicesContract {
 
   export const create = new ProceduresContract.Procedure({
     name: "createInvoice",
-    Args: DataTransferStruct.omit(
-      "status",
-      "chargedAt",
-      "deletedAt",
-      "tenantId",
+    Args: DataTransferObject.pipe(
+      Schema.omit("status", "chargedAt", "deletedAt", "tenantId"),
     ),
     Returns: DataTransferObject,
   });

@@ -26,7 +26,6 @@ export namespace DeliveryOptionsContract {
     ),
     roomId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "delivery_options";
   export const table =
@@ -50,54 +49,67 @@ export namespace DeliveryOptionsContract {
       DataTransferObject,
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditDeliveryOption",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteDeliveryOption",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreDeliveryOption",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const create = new ProceduresContract.Procedure({
     name: "createDeliveryOption",
-    Args: DataTransferStruct.omit("deletedAt", "tenantId"),
+    Args: DataTransferObject.pipe(Schema.omit("deletedAt", "tenantId")),
     Returns: DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editDeliveryOption",
-    Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt"),
-      DataTransferStruct.omit(
-        ...Struct.keys(ColumnsContract.Tenant.fields),
-        "roomId",
-      ).pipe(Schema.partial),
+    Args: DataTransferObject.pipe(
+      Schema.omit(...Struct.keys(ColumnsContract.Tenant.fields), "roomId"),
+      Schema.partial,
+      Schema.extend(
+        Schema.Struct(
+          Struct.evolve(
+            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            { id: (id) => id.from },
+          ),
+        ),
+      ),
     ),
     Returns: DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteDeliveryOption",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreDeliveryOption",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }

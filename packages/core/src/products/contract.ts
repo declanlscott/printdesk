@@ -136,7 +136,6 @@ export namespace ProductsContract {
     roomId: ColumnsContract.EntityId,
     config: Configuration,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "products";
   export const table = new (TablesContract.makeClass<ProductsSchema.Table>())(
@@ -159,67 +158,82 @@ export namespace ProductsContract {
       DataTransferObject,
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
+  const IdAndUpdatedAt = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "updatedAt"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditProduct",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteProduct",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreProduct",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const create = new ProceduresContract.Procedure({
     name: "createProduct",
-    Args: DataTransferStruct.omit("deletedAt", "tenantId"),
+    Args: DataTransferObject.pipe(Schema.omit("deletedAt", "tenantId")),
     Returns: DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editProduct",
-    Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt"),
-      DataTransferStruct.omit(
+    Args: DataTransferObject.pipe(
+      Schema.omit(
         ...Struct.keys(ColumnsContract.Tenant.fields),
         "status",
         "roomId",
-      ).pipe(Schema.partial),
+      ),
+      Schema.partial,
+      Schema.extend(IdAndUpdatedAt),
     ),
     Returns: DataTransferObject,
   });
 
   export const publish = new ProceduresContract.Procedure({
     name: "publishProduct",
-    Args: DataTransferStruct.pick("id", "updatedAt"),
+    Args: IdAndUpdatedAt,
     Returns: DataTransferObject,
   });
 
   export const draft = new ProceduresContract.Procedure({
     name: "draftProduct",
-    Args: DataTransferStruct.pick("id", "updatedAt"),
+    Args: IdAndUpdatedAt,
     Returns: DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteProduct",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreProduct",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }

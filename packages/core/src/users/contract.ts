@@ -33,7 +33,6 @@ export namespace UsersContract {
     name: Schema.String,
     email: Schema.String,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "users";
   export const table = new (TablesContract.makeClass<UsersSchema.Table>())(
@@ -49,35 +48,40 @@ export namespace UsersContract {
       DataTransferObject,
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const isSelf = new ProceduresContract.Procedure({
     name: "isUserSelf",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditUser",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteUser",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreUser",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editUser",
-    Args: Schema.extend(
-      DataTransferStruct.pick("id", "updatedAt"),
-      DataTransferStruct.omit(
+    Args: DataTransferObject.pipe(
+      Schema.omit(
         ...Struct.keys(ColumnsContract.Tenant.fields),
         "origin",
         "username",
@@ -85,23 +89,38 @@ export namespace UsersContract {
         "identityProviderId",
         "name",
         "email",
-      ).pipe(Schema.partial),
+        "role",
+      ),
+      Schema.partial,
+      Schema.extend(
+        Schema.Struct(
+          Struct.evolve(
+            Struct.pick(DataTransferObject.fields, "id", "updatedAt", "role"),
+            {
+              id: (id) => id.from,
+              role: (role) => role.from.pipe(Schema.optional),
+            },
+          ),
+        ),
+      ),
     ),
     Returns: DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteUser",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreUser",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }

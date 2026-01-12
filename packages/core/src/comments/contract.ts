@@ -3,7 +3,10 @@ import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
 import { ProceduresContract } from "../procedures/contract";
-import { SharedAccountCustomerAccessContract } from "../shared-accounts/contracts";
+import {
+  SharedAccountCustomerAccessContract,
+  SharedAccountManagerAccessContract,
+} from "../shared-accounts/contracts";
 import { TablesContract } from "../tables/contract";
 
 import type { CommentsSchema } from "./schema";
@@ -20,7 +23,6 @@ export namespace CommentsContract {
       Schema.optionalWith({ default: () => false }),
     ),
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "comments";
   export const table = new (TablesContract.makeClass<CommentsSchema.Table>())(
@@ -40,12 +42,13 @@ export namespace CommentsContract {
   export const activeCustomerPlacedOrderView =
     new (TablesContract.makeViewClass<CommentsSchema.ActiveCustomerPlacedOrderView>())(
       activeCustomerPlacedOrderViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        ...SharedAccountCustomerAccessContract.DataTransferStruct.pick(
-          "customerId",
-        ).fields,
-      }),
+      DataTransferObject.pipe(
+        Schema.extend(
+          SharedAccountCustomerAccessContract.DataTransferObject.pipe(
+            Schema.pick("customerId"),
+          ),
+        ),
+      ),
     );
 
   export const activeManagerAuthorizedSharedAccountOrderViewName = `active_manager_authorized_shared_account_order_${tableName}`;
@@ -54,49 +57,66 @@ export namespace CommentsContract {
       activeManagerAuthorizedSharedAccountOrderViewName,
       Schema.Struct({
         ...DataTransferObject.fields,
-        authorizedManagerId: ColumnsContract.EntityId,
+        authorizedManagerId:
+          SharedAccountManagerAccessContract.DataTransferObject.fields
+            .managerId,
       }),
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const isAuthor = new ProceduresContract.Procedure({
     name: "isCommentAuthor",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditComment",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteComment",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canRestore = new ProceduresContract.Procedure({
     name: "canRestoreComment",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const create = new ProceduresContract.Procedure({
     name: "createComment",
-    Args: DataTransferStruct.omit("authorId", "deletedAt", "tenantId"),
+    Args: DataTransferObject.pipe(
+      Schema.omit("authorId", "deletedAt", "tenantId"),
+    ),
     Returns: DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editComment",
-    Args: DataTransferStruct.pick("id", "updatedAt").pipe(
+    Args: DataTransferObject.pipe(
+      Schema.omit(
+        ...Struct.keys(ColumnsContract.Tenant.fields),
+        "orderId",
+        "authorId",
+      ),
+      Schema.partial,
       Schema.extend(
-        DataTransferStruct.omit(
-          ...Struct.keys(ColumnsContract.Tenant.fields),
-          "orderId",
-          "authorId",
-        ).pipe(Schema.partial),
+        Schema.Struct(
+          Struct.evolve(
+            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            { id: (id) => id.from },
+          ),
+        ),
       ),
     ),
     Returns: DataTransferObject,
@@ -104,16 +124,18 @@ export namespace CommentsContract {
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteComment",
-    Args: Schema.Struct({
-      ...DataTransferStruct.pick("id").fields,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreComment",
-    Args: DataTransferStruct.pick("id"),
+    Args: IdOnly,
     Returns: DataTransferObject,
   });
 }

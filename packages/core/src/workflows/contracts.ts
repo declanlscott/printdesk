@@ -20,7 +20,6 @@ export namespace RoomWorkflowsContract {
     ...ColumnsContract.Tenant.fields,
     roomId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "room_workflows";
   export const table =
@@ -52,7 +51,6 @@ export namespace SharedAccountWorkflowsContract {
     ...ColumnsContract.Tenant.fields,
     sharedAccountId: ColumnsContract.EntityId,
   }) {}
-  export const DataTransferStruct = Schema.Struct(DataTransferObject.fields);
 
   export const tableName = "shared_account_workflows";
   export const table =
@@ -89,15 +87,21 @@ export namespace SharedAccountWorkflowsContract {
       ),
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const isCustomerAuthorized = new ProceduresContract.Procedure({
     name: "isCustomerAuthorizedSharedAccountWorkflow",
-    Args: Schema.Struct({ id: ColumnsContract.EntityId }),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const isManagerAuthorized = new ProceduresContract.Procedure({
     name: "isManagerAuthorizedSharedAccountWorkflow",
-    Args: Schema.Struct({ id: ColumnsContract.EntityId }),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 }
@@ -106,26 +110,30 @@ export namespace WorkflowStatusesContract {
   export const types = ["New", "Pending", "InProgress", "Completed"] as const;
   export type Type = (typeof types)[number];
 
-  const BaseDto = Schema.Struct({
+  class BaseDto extends Schema.Class<BaseDto>("BaseDto")({
     ...ColumnsContract.Tenant.fields,
     name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
     type: Schema.Literal(...types),
     charging: Schema.Boolean,
     color: HexColor.pipe(Schema.NullOr),
     index: Schema.NonNegativeInt,
-  });
+  }) {}
 
-  export const SharedAccountWorkflowDto = Schema.Struct({
+  export class SharedAccountWorkflowDto extends Schema.Class<SharedAccountWorkflowDto>(
+    "SharedAccountWorkflowDto",
+  )({
     ...BaseDto.fields,
     sharedAccountWorkflowId: ColumnsContract.EntityId,
     roomWorkflowId: Schema.Null,
-  });
+  }) {}
 
-  export const RoomWorkflowDto = Schema.Struct({
+  export class RoomWorkflowDto extends Schema.Class<RoomWorkflowDto>(
+    "RoomWorkflowDto",
+  )({
     ...BaseDto.fields,
     sharedAccountWorkflowId: Schema.Null,
     roomWorkflowId: ColumnsContract.EntityId,
-  });
+  }) {}
 
   export const DataTransferObject = Schema.Union(
     SharedAccountWorkflowDto,
@@ -175,33 +183,45 @@ export namespace WorkflowStatusesContract {
       ),
     );
 
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(BaseDto.fields, "id"), {
+      id: (id) => id.from,
+    }),
+  );
+
   export const canEdit = new ProceduresContract.Procedure({
     name: "canEditWorkflowStatus",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
   export const canDelete = new ProceduresContract.Procedure({
     name: "canDeleteWorkflowStatus",
-    Args: BaseDto.pick("id"),
+    Args: IdOnly,
     Returns: Schema.Void,
   });
 
+  const omittedOnAppend = ["index", "deletedAt", "tenantId"] as const;
   export const append = new ProceduresContract.Procedure({
     name: "appendWorkflowStatus",
     Args: Schema.Union(
-      SharedAccountWorkflowDto.omit("index", "deletedAt", "tenantId"),
-      RoomWorkflowDto.omit("index", "deletedAt", "tenantId"),
+      SharedAccountWorkflowDto.pipe(Schema.omit(...omittedOnAppend)),
+      RoomWorkflowDto.pipe(Schema.omit(...omittedOnAppend)),
     ),
     Returns: DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editWorkflowStatus",
-    Args: Schema.extend(
-      BaseDto.pick("id", "updatedAt"),
-      BaseDto.omit(...Struct.keys(ColumnsContract.Tenant.fields), "index").pipe(
-        Schema.partial,
+    Args: BaseDto.pipe(
+      Schema.omit(...Struct.keys(ColumnsContract.Tenant.fields), "index"),
+      Schema.partial,
+      Schema.extend(
+        Schema.Struct(
+          Struct.evolve(Struct.pick(BaseDto.fields, "id", "updatedAt"), {
+            id: (id) => id.from,
+          }),
+        ),
       ),
     ),
     Returns: DataTransferObject,
@@ -209,16 +229,22 @@ export namespace WorkflowStatusesContract {
 
   export const reorder = new ProceduresContract.Procedure({
     name: "reorderWorkflowStatus",
-    Args: BaseDto.pick("id", "index", "updatedAt"),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(BaseDto.fields, "id", "index", "updatedAt"), {
+        id: (id) => id.from,
+      }),
+    ),
     Returns: DataTransferObject.pipe(Schema.Array),
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteWorkflowStatus",
-    Args: Schema.Struct({
-      id: ColumnsContract.EntityId,
-      deletedAt: Schema.DateTimeUtc,
-    }),
+    Args: Schema.Struct(
+      Struct.evolve(Struct.pick(BaseDto.fields, "id", "deletedAt"), {
+        id: (id) => id.from,
+        deletedAt: (deletedAt) => deletedAt.from,
+      }),
+    ),
     Returns: DataTransferObject,
   });
 }

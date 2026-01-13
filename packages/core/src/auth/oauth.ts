@@ -8,17 +8,22 @@ import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
+
+import { AuthContract } from "./contract";
 
 import type {
   ClientInput,
   ExchangeError,
   RefreshError,
+  RefreshOptions,
   VerifyError,
+  VerifyOptions,
 } from "@openauthjs/openauth/client";
-import type { SubjectSchema } from "@openauthjs/openauth/subject";
 
 export namespace Oauth {
-  export class ClientError extends Data.TaggedError("ClientError")<{
+  export class ClientError extends Data.TaggedError("OauthClientError")<{
     readonly cause: unknown;
   }> {}
 
@@ -37,6 +42,7 @@ export namespace Oauth {
   export class Client extends Effect.Service<Client>()(
     "@printdesk/core/auth/OauthClient",
     {
+      accessors: true,
       effect: (input: ClientInput) =>
         Effect.gen(function* () {
           const client = yield* Effect.try({
@@ -56,7 +62,7 @@ export namespace Oauth {
               catch: (cause) => new ClientError({ cause }),
             }).pipe(
               Effect.flatMap((result) =>
-                Effect.suspend(() => {
+                Effect.gen(function* () {
                   const matchError = Match.type<ExchangeError["err"]>().pipe(
                     Match.when(
                       Match.instanceOf(InvalidAuthorizationCodeErrorCause),
@@ -66,68 +72,98 @@ export namespace Oauth {
                   );
 
                   if (result.err !== false)
-                    return Effect.fail(matchError(result.err));
+                    return yield* matchError(result.err);
 
-                  return Effect.succeed(result.tokens);
+                  const decode = Schema.decode(AuthContract.OauthTokens);
+
+                  return yield* decode(result.tokens);
                 }),
               ),
             );
 
-          const refresh = (...args: Parameters<typeof client.refresh>) =>
-            Effect.tryPromise({
-              try: () => client.refresh(...args),
-              catch: (cause) => new ClientError({ cause }),
-            }).pipe(
-              Effect.flatMap((result) =>
-                Effect.suspend(() => {
-                  const matchError = Match.type<RefreshError["err"]>().pipe(
-                    Match.when(
-                      Match.instanceOf(InvalidRefreshTokenErrorCause),
-                      (cause) => new InvalidRefreshTokenError({ cause }),
-                    ),
-                    Match.when(
-                      Match.instanceOf(InvalidAccessTokenErrorCause),
-                      (cause) => new InvalidAccessTokenError({ cause }),
-                    ),
-                    Match.orElse((cause) => new ClientError({ cause })),
-                  );
-
-                  if (result.err !== false)
-                    return Effect.fail(matchError(result.err));
-
-                  return Effect.succeed(result.tokens);
-                }),
-              ),
-            );
-
-          const verify = <TSubjectSchema extends SubjectSchema>(
-            ...args: Parameters<typeof client.verify<TSubjectSchema>>
+          const refresh = (
+            refresh: Redacted.Redacted<string>,
+            opts?: RefreshOptions,
           ) =>
-            Effect.tryPromise({
-              try: () => client.verify(...args),
-              catch: (cause) => new ClientError({ cause }),
-            }).pipe(
-              Effect.flatMap((result) =>
-                Effect.suspend(() => {
-                  const matchError = Match.type<VerifyError["err"]>().pipe(
-                    Match.when(
-                      Match.instanceOf(InvalidRefreshTokenErrorCause),
-                      (cause) => new InvalidRefreshTokenError({ cause }),
-                    ),
-                    Match.when(
-                      Match.instanceOf(InvalidAccessTokenErrorCause),
-                      (cause) => new InvalidAccessTokenError({ cause }),
-                    ),
-                    Match.orElse((cause) => new ClientError({ cause })),
-                  );
+            Effect.gen(function* () {
+              const result = yield* Effect.tryPromise({
+                try: () => client.refresh(refresh.pipe(Redacted.value), opts),
+                catch: (cause) => new ClientError({ cause }),
+              });
 
-                  if (result.err !== undefined)
-                    return Effect.fail(matchError(result.err));
+              const matchError = Match.type<RefreshError["err"]>().pipe(
+                Match.when(
+                  Match.instanceOf(InvalidRefreshTokenErrorCause),
+                  (cause) => new InvalidRefreshTokenError({ cause }),
+                ),
+                Match.when(
+                  Match.instanceOf(InvalidAccessTokenErrorCause),
+                  (cause) => new InvalidAccessTokenError({ cause }),
+                ),
+                Match.orElse((cause) => new ClientError({ cause })),
+              );
 
-                  return Effect.succeed(result);
+              if (result.err !== false) return yield* matchError(result.err);
+
+              const decode = Schema.decode(
+                AuthContract.OauthTokens.pipe(Schema.OptionFromUndefinedOr),
+              );
+
+              return yield* decode(result.tokens);
+            });
+
+          const verify = (
+            token: Redacted.Redacted<string>,
+            opts?: VerifyOptions,
+          ) =>
+            Effect.gen(function* () {
+              const result = yield* Effect.tryPromise({
+                try: () =>
+                  client.verify(
+                    AuthContract.subjects,
+                    token.pipe(Redacted.value),
+                    opts,
+                  ),
+                catch: (cause) => new ClientError({ cause }),
+              });
+
+              const matchError = Match.type<VerifyError["err"]>().pipe(
+                Match.when(
+                  Match.instanceOf(InvalidRefreshTokenErrorCause),
+                  (cause) => new InvalidRefreshTokenError({ cause }),
+                ),
+                Match.when(
+                  Match.instanceOf(InvalidAccessTokenErrorCause),
+                  (cause) => new InvalidAccessTokenError({ cause }),
+                ),
+                Match.orElse((cause) => new ClientError({ cause })),
+              );
+
+              if (result.err !== undefined)
+                return yield* matchError(result.err);
+
+              const decode = Schema.decode(
+                Schema.Struct({
+                  tokens: AuthContract.OauthTokens.pipe(
+                    Schema.OptionFromUndefinedOr,
+                  ),
+                  audience: Schema.String.pipe(
+                    Schema.propertySignature,
+                    Schema.fromKey("aud"),
+                  ),
+                  subject: Schema.Struct({
+                    type: Schema.Literal(AuthContract.UserSubject._tag),
+                    properties: AuthContract.UserSubject,
+                  }),
                 }),
-              ),
-            );
+              );
+
+              return yield* decode({
+                tokens: result.tokens,
+                aud: result.aud,
+                subject: result.subject,
+              });
+            });
 
           return { authorize, exchange, refresh, verify };
         }),

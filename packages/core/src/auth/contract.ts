@@ -1,8 +1,9 @@
 import * as Data from "effect/Data";
+import * as Number from "effect/Number";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { ActorsContract } from "../actors/contract";
-import { separatedString } from "../utils";
 import { HexString } from "../utils";
 import { Constants } from "../utils/constants";
 
@@ -12,7 +13,7 @@ import type { ColumnsContract } from "../columns/contract";
 export namespace AuthContract {
   export class UserSubject extends Schema.TaggedClass<UserSubject>(
     "UserSubject",
-  )("UserSubject", ActorsContract.UserActor.fields) {}
+  )("UserSubject", Struct.omit(ActorsContract.UserActor.fields, "_tag")) {}
 
   export const subjects: {
     [UserSubject._tag]: StandardSchemaV1<
@@ -24,7 +25,7 @@ export namespace AuthContract {
         typeof UserSubject.Encoded,
         never
       >;
-  } = { [UserSubject._tag]: Schema.standardSchemaV1(UserSubject) };
+  } = { [UserSubject._tag]: UserSubject.pipe(Schema.standardSchemaV1) };
 
   export class InvalidAudienceError extends Data.TaggedError(
     "InvalidAudienceError",
@@ -53,4 +54,16 @@ export namespace AuthContract {
       encode: ({ salt, derivedKey }) => [salt, Constants.SEPARATOR, derivedKey],
     }),
   );
+
+  export class OauthTokens extends Schema.Class<OauthTokens>("OauthTokens")({
+    access: Schema.String.pipe(Schema.Redacted),
+    refresh: Schema.String.pipe(Schema.Redacted),
+    expiresIn: Schema.Number.pipe(
+      Schema.transform(Schema.DateTimeUtcFromNumber, {
+        strict: true,
+        decode: Number.multiply(1_000),
+        encode: Number.unsafeDivide(1_000),
+      }),
+    ),
+  }) {}
 }

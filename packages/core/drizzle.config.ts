@@ -1,3 +1,4 @@
+import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { defineConfig } from "drizzle-kit";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -9,7 +10,7 @@ import { Credentials, Signers } from "./src/aws";
 import { Sst } from "./src/sst";
 
 const runtime = Signers.Dsql.makeLayer({ expiresIn: Duration.hours(12) }).pipe(
-  Layer.provide(Credentials.fromChain()),
+  Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
   Layer.provideMerge(Sst.Resource.layer),
   ManagedRuntime.make,
 );

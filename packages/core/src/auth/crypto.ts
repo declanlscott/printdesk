@@ -3,11 +3,32 @@ import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { decodeJWT } from "@oslojs/jwt";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import * as Schema from "effect/Schema";
+import * as Predicate from "effect/Predicate";
+import * as Redacted from "effect/Redacted";
 
 import { AuthContract } from "./contract";
 
-export class CryptoError extends Data.TaggedError("CryptoError")<{
+export class TokenGenerationError extends Data.TaggedError(
+  "TokenGenerationError",
+)<{ readonly cause: unknown }> {}
+
+export class KeyDerivationError extends Data.TaggedError("KeyDerivationError")<{
+  readonly cause: unknown;
+}> {}
+
+export class KeyBufferError extends Data.TaggedError("KeyBufferError")<{
+  readonly cause: unknown;
+}> {}
+
+export class KeyVerificationError extends Data.TaggedError(
+  "KeyVerificationError",
+)<{ readonly cause: unknown }> {}
+
+export class InvalidSecretError extends Data.TaggedError(
+  "InvalidSecretError",
+) {}
+
+export class JwtDecodeError extends Data.TaggedError("JwtDecodeError")<{
   readonly cause: unknown;
 }> {}
 
@@ -18,65 +39,70 @@ export class Crypto extends Effect.Service<Crypto>()(
     sync: () => {
       const generateToken = (size = 32) =>
         Effect.try({
-          try: () => randomBytes(size).toString("hex"),
-          catch: (cause) => new CryptoError({ cause }),
+          try: () => Redacted.make(randomBytes(size).toString("hex")),
+          catch: (cause) => new TokenGenerationError({ cause }),
         });
 
-      const deriveKeyFromSecret = (secret: string, salt: string) =>
+      const deriveKeyFromSecret = (
+        secret: Redacted.Redacted<string>,
+        salt: Redacted.Redacted<string>,
+      ) =>
         Effect.tryPromise({
           try: () =>
-            new Promise<string>((resolve, reject) =>
-              scrypt(secret.normalize(), salt, 64, (error, derivedKey) =>
-                error ? reject(error) : resolve(derivedKey.toString("hex")),
+            new Promise<Redacted.Redacted<string>>((resolve, reject) =>
+              scrypt(
+                Redacted.value(secret).normalize(),
+                Redacted.value(salt),
+                64,
+                (error, derivedKey) =>
+                  error
+                    ? reject(error)
+                    : resolve(Redacted.make(derivedKey.toString("hex"))),
               ),
             ),
-          catch: (cause) => new CryptoError({ cause }),
+          catch: (cause) => new KeyDerivationError({ cause }),
         });
 
-      const hashSecret = (secret: string) =>
+      const hashSecret = (secret: Redacted.Redacted<string>) =>
         Effect.gen(function* () {
           const salt = yield* generateToken(16);
           const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 
-          const encode = Schema.encode(AuthContract.Token);
-
-          return yield* encode([salt, derivedKey]);
+          return new AuthContract.SecretHash({ salt, derivedKey });
         });
 
-      const verifySecret = (secret: string, hash: string) =>
+      const verifySecret = (
+        secret: Redacted.Redacted<string>,
+        { salt, derivedKey: storedKey }: AuthContract.SecretHash,
+      ) =>
         Effect.gen(function* () {
-          const decode = Schema.decode(AuthContract.Token);
-          const tokens = yield* decode(hash);
-          const [salt, storedKey] = tokens;
-          if (tokens.length !== 2 || !salt || !storedKey)
-            return yield* Effect.fail(
-              new CryptoError({
-                cause: new globalThis.Error("Invalid hash"),
-              }),
-            );
-
           const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 
           const storedKeyBuffer = yield* Effect.try({
-            try: () => Buffer.from(storedKey, "hex"),
-            catch: (cause) => new CryptoError({ cause }),
+            try: () => Buffer.from(storedKey.pipe(Redacted.value), "hex"),
+            catch: (cause) => new KeyBufferError({ cause }),
           });
 
           const derivedKeyBuffer = yield* Effect.try({
-            try: () => Buffer.from(derivedKey, "hex"),
-            catch: (cause) => new CryptoError({ cause }),
+            try: () => Buffer.from(derivedKey.pipe(Redacted.value), "hex"),
+            catch: (cause) => new KeyBufferError({ cause }),
           });
 
-          return yield* Effect.try({
+          yield* Effect.try({
             try: () => timingSafeEqual(storedKeyBuffer, derivedKeyBuffer),
-            catch: (cause) => new CryptoError({ cause }),
-          });
+            catch: (cause) => new KeyVerificationError({ cause }),
+          }).pipe(
+            Effect.filterOrFail(
+              Predicate.isTruthy,
+              () => new InvalidSecretError(),
+            ),
+          );
         });
 
-      const decodeJwt = (jwt: string) =>
+      const decodeJwt = (jwt: Redacted.Redacted<string>) =>
         Effect.try({
-          try: () => decodeJWT(jwt),
-          catch: (cause) => new CryptoError({ cause }),
+          try: () => jwt.pipe(Redacted.value, decodeJWT, Redacted.make),
+          catch: (cause) => new JwtDecodeError({ cause }),
         });
 
       return {

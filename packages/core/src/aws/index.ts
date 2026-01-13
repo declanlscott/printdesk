@@ -30,6 +30,7 @@ import type {
   RequestSigningArguments as SmithyRequestSigningArguments,
 } from "@smithy/types";
 import type { ColumnsContract } from "../columns/contract";
+import type { CredentialsContract } from "./contract";
 
 export namespace Credentials {
   export const buildRoleArn = (
@@ -67,27 +68,22 @@ export namespace Credentials {
     static readonly providerLayer = (
       provider: () => AwsCredentialIdentityProvider,
     ) =>
-      Layer.effect(
-        this,
-        Effect.promise(provider()).pipe(Effect.map(this.make)),
+      Effect.promise(provider()).pipe(
+        Effect.map(this.make),
+        Layer.effect(this),
       );
   }
 
-  export const fromChain = () =>
-    Credentials.providerLayer(fromNodeProviderChain);
-
-  export const values = Credentials.pipe(
+  export const values = Identity.pipe(
     Effect.map((credentials) => ({
       accessKeyId: credentials.accessKeyId.pipe(Redacted.value),
       secretAccessKey: credentials.secretAccessKey.pipe(Redacted.value),
-      sessionToken: credentials.sessionToken.pipe(Redacted.value),
-      credentialScope: credentials.credentialScope.pipe(Redacted.value),
-      accountId: credentials.accountId.pipe(Redacted.value),
-      expiration: credentials.expiration.pipe(Redacted.value, (expiration) =>
-        expiration?.pipe(DateTime.toDate),
-      ),
+      sessionToken: credentials.sessionToken?.pipe(Redacted.value),
+      credentialScope: credentials.credentialScope?.pipe(Redacted.value),
+      accountId: credentials.accountId?.pipe(Redacted.value),
+      expiration: credentials.expiration?.pipe(Redacted.value, DateTime.toDate),
     })),
-  );
+  ) satisfies Effect.Effect<AwsCredentialIdentity, never, Identity>;
 }
 
 export namespace Signers {
@@ -165,28 +161,26 @@ export namespace Signers {
         expiresIn: Duration.minutes(15),
       },
     ) =>
-      Layer.unwrapEffect(
-        Effect.gen(function* () {
-          const credentials = yield* Credentials.values;
-          const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
-            Effect.map(Redacted.value),
-          );
-          const aws = yield* Sst.Resource.Aws.pipe(Effect.map(Redacted.value));
+      Effect.gen(function* () {
+        const credentials = yield* Credentials.values;
+        const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
+          Effect.map(Redacted.value),
+        );
+        const aws = yield* Sst.Resource.Aws.pipe(Effect.map(Redacted.value));
 
-          return DsqlSigner.layer({
-            credentials,
-            sha256: Sha256,
-            hostname: dsqlCluster.host,
-            region: aws.region,
-            expiresIn: expiresIn?.pipe(Duration.toSeconds),
-          });
-        }),
-      );
+        return DsqlSigner.layer({
+          credentials,
+          sha256: Sha256,
+          hostname: dsqlCluster.host,
+          region: aws.region,
+          expiresIn: expiresIn?.pipe(Duration.toSeconds),
+        });
+      }).pipe(Layer.unwrapEffect);
 
     export const layer = makeLayer();
 
     export const runtime = layer.pipe(
-      Layer.provide(Credentials.fromChain()),
+      Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
       Layer.provideMerge(Sst.Resource.layer),
       ManagedRuntime.make,
     );
@@ -213,22 +207,25 @@ export namespace Signers {
 
   export const makeSignatureV4Signer = (service: string, host?: string) =>
     Effect.gen(function* () {
-      const credentials = yield* Credentials.values;
       const region = yield* Sst.Resource.Aws.pipe(
         Effect.map(Redacted.value),
         Effect.map(Struct.get("region")),
       );
 
-      const signatureV4 = yield* Effect.try({
-        try: () =>
-          new SignatureV4({
-            credentials,
-            sha256: Sha256,
-            region,
-            service,
+      const make = Credentials.values.pipe(
+        Effect.flatMap((credentials) =>
+          Effect.try({
+            try: () =>
+              new SignatureV4({
+                credentials,
+                sha256: Sha256,
+                region,
+                service,
+              }),
+            catch: (cause) => new SignatureV4Error({ cause }),
           }),
-        catch: (cause) => new SignatureV4Error({ cause }),
-      });
+        ),
+      );
 
       const matchBody = Match.type<HttpBody.HttpBody>().pipe(
         Match.tag("Empty", () => undefined),
@@ -240,16 +237,24 @@ export namespace Signers {
       );
 
       const presign = (...args: Parameters<SignatureV4["presign"]>) =>
-        Effect.tryPromise({
-          try: () => signatureV4.presign(...args),
-          catch: (cause) => new SignatureV4Error({ cause }),
-        }).pipe(Effect.withSpan(`Signers.${service}.presign`));
+        make.pipe(
+          Effect.flatMap((sigv4) =>
+            Effect.tryPromise({
+              try: () => sigv4.presign(...args),
+              catch: (cause) => new SignatureV4Error({ cause }),
+            }),
+          ),
+        );
 
       const sign = (...args: Parameters<SignatureV4["sign"]>) =>
-        Effect.tryPromise({
-          try: () => signatureV4.sign(...args),
-          catch: (cause) => new SignatureV4Error({ cause }),
-        }).pipe(Effect.withSpan(`Signers.${service}.sign`));
+        make.pipe(
+          Effect.flatMap((sigv4) =>
+            Effect.tryPromise({
+              try: () => sigv4.sign(...args),
+              catch: (cause) => new SignatureV4Error({ cause }),
+            }),
+          ),
+        );
 
       const presignRequest = (
         request: HttpClientRequest.HttpClientRequest,
@@ -329,6 +334,7 @@ export namespace Signers {
   export class Appsync extends Effect.Service<Appsync>()(
     "@printdesk/core/aws/AppsyncSigner",
     {
+      accessors: true,
       dependencies: [Sst.Resource.layer],
       effect: makeSignatureV4Signer("appsync"),
     },
@@ -337,23 +343,24 @@ export namespace Signers {
   export class ExecuteApi extends Effect.Service<ExecuteApi>()(
     "@printdesk/core/aws/ExecuteApiSigner",
     {
+      accessors: true,
       dependencies: [Sst.Resource.layer],
       effect: (host?: string) => makeSignatureV4Signer("execute-api", host),
     },
   ) {
-    static readonly tenantLayer = Layer.unwrapEffect(
-      Actors.Actor.pipe(
-        Effect.flatMap(Struct.get("assertPrivate")),
-        Effect.flatMap(({ tenantId }) =>
-          Sst.Resource.TenantDomains.pipe(
-            Effect.map(Redacted.value),
-            Effect.map((hosts) =>
-              tenantTemplate(hosts.api.nameTemplate, tenantId),
-            ),
+    static readonly tenantLayer = Actors.Actor.pipe(
+      Effect.flatMap(Struct.get("assertPrivate")),
+      Effect.flatMap(({ tenantId }) =>
+        Sst.Resource.TenantDomains.pipe(
+          Effect.map(Redacted.value),
+          Effect.map((hosts) =>
+            tenantTemplate(hosts.api.nameTemplate, tenantId),
           ),
         ),
-        Effect.map(this.Default),
       ),
-    ).pipe(Layer.provide(Sst.Resource.layer));
+      Effect.map(this.Default),
+      Layer.unwrapEffect,
+      Layer.provide(Sst.Resource.layer),
+    );
   }
 }

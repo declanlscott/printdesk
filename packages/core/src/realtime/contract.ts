@@ -31,7 +31,8 @@ export namespace RealtimeContract {
     "ConnectionAck",
   )({
     type: Schema.tag("connection_ack"),
-    connectionTimeout: Schema.propertySignature(Schema.DurationFromMillis).pipe(
+    connectionTimeout: Schema.DurationFromMillis.pipe(
+      Schema.propertySignature,
       Schema.fromKey("connectionTimeoutMs"),
     ),
   }) {}
@@ -41,11 +42,11 @@ export namespace RealtimeContract {
   );
   export type SubscriptionId = typeof SubscriptionId.Type;
 
-  export const Channel = Schema.TemplateLiteral(
+  export const Channel = Schema.TemplateLiteralParser(
     Schema.Literal("/"),
     Schema.String,
   ).pipe(Schema.brand("Channel"));
-  export type Channel = typeof Channel.Type;
+  export type Channel = typeof Channel.Encoded;
 
   export class Subscribe extends Schema.Class<Subscribe>("Subscribe")({
     type: Schema.tag("subscribe"),
@@ -89,7 +90,7 @@ export namespace RealtimeContract {
 
   export class GetAuthorizationPayload extends Schema.Class<GetAuthorizationPayload>(
     "GetAuthorizationPayload",
-  )({ channel: Channel.pipe(Schema.optional) }) {}
+  )({ channel: Channel.pipe(Schema.encodedSchema, Schema.optional) }) {}
 
   export const Authorization = Schema.Record({
     key: Schema.String,

@@ -89,7 +89,10 @@ export namespace Realtime {
                 }),
                 HttpClientRequest.schemaBodyJson(
                   Schema.Struct({
-                    channel: RealtimeContract.Channel.pipe(Schema.optional),
+                    channel: RealtimeContract.Channel.pipe(
+                      Schema.encodedSchema,
+                      Schema.optional,
+                    ),
                   }),
                 )({ channel }),
                 Effect.flatMap((request) =>
@@ -124,8 +127,10 @@ export namespace Realtime {
                       HttpClientRequest.appendUrl("/event"),
                       HttpClientRequest.schemaBodyJson(
                         Schema.Struct({
-                          channel: RealtimeContract.Channel,
-                          events: Schema.Chunk(Event),
+                          channel: RealtimeContract.Channel.pipe(
+                            Schema.encodedSchema,
+                          ),
+                          events: Event.pipe(Schema.Chunk),
                         }),
                       )({ channel, events }),
                       Effect.flatMap(signer.signRequest),

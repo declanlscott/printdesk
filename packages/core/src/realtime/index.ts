@@ -32,8 +32,12 @@ export namespace Realtime {
       ],
       effect: Effect.gen(function* () {
         const resource = yield* Sst.Resource;
+        const signer = yield* Signers.Appsync;
+        const httpClient = yield* HttpClient.HttpClient;
 
-        const maybePrivateActor = yield* Actors.Actor.pipe(
+        const Event = yield* Events.Event;
+
+        const maybePrivateActor = Actors.Actor.pipe(
           Effect.flatMap(Struct.get("assertPrivate")),
           Effect.map(Option.some),
           Effect.catchTag("InvalidActorError", () =>
@@ -42,28 +46,26 @@ export namespace Realtime {
             >().pipe(Effect.succeed),
           ),
         );
-        const signer = yield* Signers.Appsync;
-        const httpClient = yield* HttpClient.HttpClient;
-
-        const Event = yield* Events.Event;
-
         const dns = resource.AppsyncEventApi.pipe(Redacted.value).dns;
         const tenantDnsTemplate = resource.TenantDomains.pipe(Redacted.value)
           .realtime.nameTemplate;
 
         const url = maybePrivateActor.pipe(
-          Option.match({
-            onSome: (privateActor) =>
-              tenantTemplate(tenantDnsTemplate, privateActor.tenantId),
-            onNone: () => dns.realtime,
-          }),
-          (domain) =>
+          Effect.map(
+            Option.match({
+              onSome: (privateActor) =>
+                tenantTemplate(tenantDnsTemplate, privateActor.tenantId),
+              onNone: () => dns.realtime,
+            }),
+          ),
+          Effect.flatMap((domain) =>
             HttpClientRequest.get(`wss://${domain}`).pipe(
               HttpClientRequest.appendUrl("/event/realtime"),
               Struct.get("url"),
               Schema.decode(RealtimeContract.Url),
               Effect.withSpan("Realtime.Realtime.url"),
             ),
+          ),
         );
 
         const getAuthorization = (
@@ -71,12 +73,14 @@ export namespace Realtime {
           expiresIn?: Duration.Duration,
         ) =>
           maybePrivateActor.pipe(
-            Option.match({
-              onSome: (actor) =>
-                tenantTemplate(tenantDnsTemplate, actor.tenantId),
-              onNone: () => dns.http,
-            }),
-            (domain) =>
+            Effect.map(
+              Option.match({
+                onSome: (actor) =>
+                  tenantTemplate(tenantDnsTemplate, actor.tenantId),
+                onNone: () => dns.http,
+              }),
+            ),
+            Effect.flatMap((domain) =>
               HttpClientRequest.post(`https://${domain}`).pipe(
                 HttpClientRequest.appendUrl("/event"),
                 HttpClientRequest.setHeaders({
@@ -95,6 +99,7 @@ export namespace Realtime {
                 ),
                 Effect.map(Struct.get("headers")),
               ),
+            ),
           );
 
         const publish = Effect.fn("Realtime.Realtime.publish")(
@@ -103,13 +108,16 @@ export namespace Realtime {
             events: Chunk.Chunk<Events.Event>,
           ) =>
             maybePrivateActor.pipe(
-              Option.match({
-                onSome: (privateActor) =>
-                  tenantTemplate(tenantDnsTemplate, privateActor.tenantId),
-                onNone: () => dns.http,
-              }),
-              (domain) =>
-                Stream.fromChunk(events).pipe(
+              Effect.map(
+                Option.match({
+                  onSome: (privateActor) =>
+                    tenantTemplate(tenantDnsTemplate, privateActor.tenantId),
+                  onNone: () => dns.http,
+                }),
+              ),
+              Effect.flatMap((domain) =>
+                events.pipe(
+                  Stream.fromChunk,
                   Stream.grouped(5),
                   Stream.runForEach((events) =>
                     HttpClientRequest.post(`https://${domain}`).pipe(
@@ -125,6 +133,7 @@ export namespace Realtime {
                     ),
                   ),
                 ),
+              ),
             ),
         );
 

@@ -39,31 +39,26 @@ export namespace Credentials {
   ) =>
     `arn:aws:iam::${accountId}:role/${tenantTemplate(nameTemplate, tenantId)}`;
 
-  export class Credentials extends Context.Tag(
-    "@printdesk/core/aws/Credentials",
-  )<
-    Credentials,
-    {
-      readonly accessKeyId: Redacted.Redacted<string>;
-      readonly secretAccessKey: Redacted.Redacted<string>;
-      readonly sessionToken: Redacted.Redacted<string | undefined>;
-      readonly credentialScope: Redacted.Redacted<string | undefined>;
-      readonly accountId: Redacted.Redacted<string | undefined>;
-      readonly expiration: Redacted.Redacted<DateTime.Utc | undefined>;
-    }
-  >() {
+  // @effect-leakable-service
+  export class Identity extends Context.Tag(
+    "@printdesk/core/aws/CredentialsIdentity",
+  )<Identity, CredentialsContract.Identity>() {
     static readonly make = (identity: AwsCredentialIdentity) =>
       this.of({
         accessKeyId: Redacted.make(identity.accessKeyId),
         secretAccessKey: Redacted.make(identity.secretAccessKey),
-        sessionToken: Redacted.make(identity.sessionToken),
-        credentialScope: Redacted.make(identity.credentialScope),
-        accountId: Redacted.make(identity.accountId),
-        expiration: Redacted.make(
-          identity.expiration !== undefined
-            ? DateTime.unsafeMake(identity.expiration)
-            : undefined,
-        ),
+        sessionToken: identity.sessionToken
+          ? Redacted.make(identity.sessionToken)
+          : undefined,
+        credentialScope: identity.credentialScope
+          ? Redacted.make(identity.credentialScope)
+          : undefined,
+        accountId: identity.accountId
+          ? Redacted.make(identity.accessKeyId)
+          : undefined,
+        expiration: identity.expiration
+          ? Redacted.make(DateTime.unsafeMake(identity.expiration))
+          : undefined,
       });
 
     static readonly layer = (identity: AwsCredentialIdentity) =>

@@ -7,6 +7,7 @@ import type { ColumnsContract } from "../columns/contract";
 import type { UsersContract } from "../users/contract";
 
 export namespace Actors {
+  // @effect-leakable-service
   export class Actor extends Context.Tag("@printdesk/core/actors/Actor")<
     Actor,
     ActorsContract.Actor

@@ -52,7 +52,7 @@ export namespace TenantMetadataSchema {
     infraProgramInput: Columns.jsonb(
       TenantMetadataContract.InfraProgramInput,
     ).notNull(),
-    apiKey: Columns.redactedVarchar(),
+    apiKeyHash: Columns.secretHash(),
     lastPapercutSyncAt: Columns.datetime(),
     ...Columns.timestamps,
   });

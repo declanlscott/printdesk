@@ -110,7 +110,7 @@ export namespace TenantMetadataContract {
   )({
     tenantId: ColumnsContract.TenantId,
     infraProgramInput: InfraProgramInput,
-    apiKey: Schema.String.pipe(Schema.Redacted, Schema.NullOr),
+    apiKeyHash: AuthContract.SecretHashFromString.pipe(Schema.NullOr),
     lastPapercutSyncAt: Schema.DateTimeUtc.pipe(Schema.NullOr),
     ...ColumnsContract.Timestamps.fields,
   }) {}

@@ -21,6 +21,10 @@ export const NanoId = Schema.String.pipe(
   Schema.pattern(Constants.NANOID_REGEX),
 );
 
+export const HexString = Schema.String.pipe(
+  Schema.pattern(Constants.HEX_REGEX),
+);
+
 export const separatedString = (separator = Constants.SEPARATOR) =>
   Object.assign(
     Schema.String.annotations({

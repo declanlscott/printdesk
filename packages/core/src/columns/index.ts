@@ -10,6 +10,7 @@ import * as DateTime from "effect/DateTime";
 import * as ParseResult from "effect/ParseResult";
 import * as Schema from "effect/Schema";
 
+import { AuthContract } from "../auth/contract";
 import { generateId } from "../utils";
 import { Constants } from "../utils/constants";
 import { ColumnsContract } from "./contract";
@@ -28,23 +29,14 @@ export namespace Columns {
     },
   ) => pgVarchar(config);
 
-  export function redactedVarchar(length = Constants.VARCHAR_LENGTH) {
-    const RedactedVarchar = Schema.String.pipe(
-      Schema.maxLength(length),
-      Schema.Redacted,
-    );
-
-    const make = customType<{
-      driverData: typeof RedactedVarchar.Encoded;
-      data: typeof RedactedVarchar.Type;
-    }>({
-      dataType: () => `varchar(${length})`,
-      fromDriver: Schema.decodeSync(RedactedVarchar),
-      toDriver: Schema.encodeSync(RedactedVarchar),
-    });
-
-    return make();
-  }
+  export const secretHash = customType<{
+    driverData: typeof AuthContract.SecretHashFromString.Encoded;
+    data: typeof AuthContract.SecretHashFromString.Type;
+  }>({
+    dataType: () => "varchar(161)", // 32 (salt) + 1 (separator) + 128 (derived key)
+    fromDriver: Schema.decodeSync(AuthContract.SecretHashFromString),
+    toDriver: Schema.encodeSync(AuthContract.SecretHashFromString),
+  });
 
   export function redactedUuid() {
     const RedactedUuid = Schema.UUID.pipe(Schema.Redacted);

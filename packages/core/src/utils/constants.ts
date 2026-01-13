@@ -104,4 +104,6 @@ export namespace Constants {
   export const HEX_COLOR_REGEX = new RegExp(
     /^#(?:[\da-fA-F]{3,4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/u,
   );
+
+  export const HEX_REGEX = new RegExp(/^[0-9A-Fa-f]+$/u);
 }

@@ -414,7 +414,7 @@ export namespace Xml {
                     {
                       strict: true,
                       decode: (text, _, ast) =>
-                        Effect.fail(
+                        ParseResult.fail(
                           new ParseResult.Forbidden(
                             ast,
                             text,
@@ -474,7 +474,7 @@ export namespace Xml {
                                 ),
                               ),
                             encode: (output, _, ast) =>
-                              Effect.fail(
+                              ParseResult.fail(
                                 new ParseResult.Forbidden(
                                   ast,
                                   output,

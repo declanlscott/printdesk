@@ -26,7 +26,7 @@ export namespace ReplicachePuller {
   /**
    * Implements the row version strategy pull algorithm from the [Replicache docs](https://doc.replicache.dev/strategies/row-version#pull).
    */
-  const impl = Effect.gen(function* () {
+  const make = Effect.gen(function* () {
     const user = yield* Actors.Actor.pipe(
       Effect.flatMap((actor) => actor.assert("UserActor")),
     );
@@ -251,8 +251,8 @@ export namespace ReplicachePuller {
       (pullRequest: ReplicacheContract.PullRequest) =>
         Effect.gen(function* () {
           if (pullRequest.pullVersion !== 1)
-            return yield* Effect.fail(
-              new ReplicacheContract.VersionNotSupportedError("pull"),
+            return yield* new ReplicacheContract.VersionNotSupportedError(
+              "pull",
             );
 
           return yield* process(
@@ -284,9 +284,10 @@ export namespace ReplicachePuller {
     return { pull } as const;
   });
 
-  export type Type = Effect.Effect.Success<typeof impl>;
+  export type Type = Effect.Effect.Success<typeof make>;
 
-  export const layer = Layer.effect(ReplicacheContract.Puller, impl).pipe(
+  export const layer = make.pipe(
+    Layer.effect(ReplicacheContract.Puller),
     Layer.provide(Database.TransactionManager.Default),
     Layer.provide(Replicache.ClientGroupsRepository.Default),
     Layer.provide(Replicache.ClientsRepository.Default),

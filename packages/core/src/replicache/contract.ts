@@ -89,11 +89,13 @@ export namespace ReplicacheContract {
     "PushRequestV1",
   )({
     pushVersion: Schema.tag(1),
-    clientGroupId: Schema.propertySignature(Schema.UUID).pipe(
-      Schema.fromKey("clientGroupID"),
+    clientGroupId: Schema.UUID.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("clientGroupId"),
     ),
     mutations: MutationV1.pipe(Schema.Array),
-    profileId: Schema.propertySignature(Schema.UUID).pipe(
+    profileId: Schema.UUID.pipe(
+      Schema.propertySignature,
       Schema.fromKey("profileID"),
     ),
     schemaVersion: Schema.String,
@@ -130,8 +132,9 @@ export namespace ReplicacheContract {
     schemaVersion: Schema.String,
     profileID: Schema.String,
     cookie: Cookie,
-    clientGroupId: Schema.propertySignature(Schema.UUID).pipe(
-      Schema.fromKey("clientGroupID"),
+    clientGroupId: Schema.UUID.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("clientGroupId"),
     ),
   }) {}
 
@@ -139,7 +142,11 @@ export namespace ReplicacheContract {
   export type PullRequest = typeof PullRequest.Type;
 
   export const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
-    Schema.TemplateLiteral(Schema.Literal(name), "/", ColumnsContract.EntityId);
+    Schema.TemplateLiteralParser(
+      Schema.Literal(name),
+      Schema.Literal("/"),
+      ColumnsContract.EntityId,
+    );
   export type TableKey<TName extends Models.SyncTableName> = ReturnType<
     typeof tableKey<TName>
   >["Type"];
@@ -164,7 +171,13 @@ export namespace ReplicacheContract {
   type PutTableOperationStruct<TName extends Models.SyncTableName> =
     Schema.Struct<{
       op: Schema.tag<"put">;
-      key: Schema.TemplateLiteral<`${TName}/${ColumnsContract.EntityId}`>;
+      key: Schema.TemplateLiteralParser<
+        [
+          Schema.Literal<[TName]>,
+          Schema.Literal<["/"]>,
+          typeof ColumnsContract.EntityId,
+        ]
+      >;
       value: Models.SyncTableByName<TName>["DataTransferObject"];
     }>;
 
@@ -180,7 +193,6 @@ export namespace ReplicacheContract {
   );
   export type PutTableOperation = typeof PutTableOperation.Type;
 
-  // TODO: Figure out the types
   export const makePutTableOperation = <TTable extends Models.SyncTable>({
     table,
     value,
@@ -188,12 +200,11 @@ export namespace ReplicacheContract {
     table: TTable;
     value: TTable["DataTransferObject"]["Type"];
   }) =>
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    putTableOperationSchemas[table.name].make({
-      key: `${table.name}/${value.id}`,
+    ({
+      op: "put",
+      key: [table.name, "/", value.id] as const,
       value,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any) as Extract<PutTableOperation, { key: TableKey<TTable["name"]> }>;
+    }) as Extract<PutTableOperation, { key: TableKey<TTable["name"]> }>;
 
   export const PutOperation = Schema.Union(
     PutTableOperation,
@@ -208,7 +219,13 @@ export namespace ReplicacheContract {
   type DeleteTableOperationStruct<TName extends Models.SyncTableName> =
     Schema.Struct<{
       op: Schema.tag<"del">;
-      key: Schema.TemplateLiteral<`${TName}/${ColumnsContract.EntityId}`>;
+      key: Schema.TemplateLiteralParser<
+        [
+          Schema.Literal<[TName]>,
+          Schema.Literal<["/"]>,
+          typeof ColumnsContract.EntityId,
+        ]
+      >;
     }>;
 
   export const deleteTableOperationSchemas = Record.map(
@@ -230,14 +247,10 @@ export namespace ReplicacheContract {
     table: TTable;
     id: TTable["DataTransferObject"]["Type"]["id"];
   }) =>
-    (
-      deleteTableOperationSchemas[table.name] as DeleteTableOperationStruct<
-        TTable["name"]
-      >
-    ).make({ key: `${table.name}/${id}` }) as Extract<
-      DeleteTableOperation,
-      { key: TableKey<TTable["name"]> }
-    >;
+    ({
+      op: "del",
+      key: [table.name, "/", id] as const,
+    }) as Extract<DeleteTableOperation, { key: TableKey<TTable["name"]> }>;
 
   export const DeleteOperation = DeleteTableOperation;
   export type DeleteOperation = typeof DeleteOperation.Type;
@@ -272,12 +285,10 @@ export namespace ReplicacheContract {
     "PullResponseOkV1",
   )({
     cookie: Cookie,
-    lastMutationIdChanges: Schema.propertySignature(
-      Schema.Record({
-        key: Schema.UUID,
-        value: ColumnsContract.Version,
-      }),
-    ).pipe(Schema.fromKey("lastMutationIDChanges")),
+    lastMutationIdChanges: Schema.Record({
+      key: Schema.UUID,
+      value: ColumnsContract.Version,
+    }).pipe(Schema.propertySignature, Schema.fromKey("lastMutationIDChanges")),
     patch: PatchOperation.pipe(Schema.Chunk),
   }) {}
 

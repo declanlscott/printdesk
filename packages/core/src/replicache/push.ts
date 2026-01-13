@@ -28,7 +28,7 @@ export namespace ReplicachePusher {
   /**
    * Implements the row version strategy push algorithm from the [Replicache docs](https://doc.replicache.dev/strategies/row-version#push).
    */
-  const impl = Effect.gen(function* () {
+  const make = Effect.gen(function* () {
     const user = yield* Actors.Actor.pipe(
       Effect.flatMap((actor) => actor.assert("UserActor")),
     );
@@ -236,9 +236,10 @@ export namespace ReplicachePusher {
     return { push } as const;
   });
 
-  export type Type = Effect.Effect.Success<typeof impl>;
+  export type Type = Effect.Effect.Success<typeof make>;
 
-  export const layer = Layer.effect(ReplicacheContract.Pusher, impl).pipe(
+  export const layer = make.pipe(
+    Layer.effect(ReplicacheContract.Pusher),
     Layer.provide(Database.TransactionManager.Default),
     Layer.provide(Replicache.ClientGroupsRepository.Default),
     Layer.provide(Replicache.ClientsRepository.Default),

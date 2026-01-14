@@ -36,10 +36,7 @@ export namespace ReplicacheClientGroupsModel {
     clientVersion: ColumnsContract.Version.pipe(
       Schema.optionalWith({ default: () => ColumnsContract.Version.make(0) }),
     ),
-    clientViewVersion: ColumnsContract.Version.pipe(
-      Schema.NullOr,
-      Schema.optionalWith({ default: () => null }),
-    ),
+    clientViewVersion: ColumnsContract.NullableVersion,
     ...ColumnsContract.Timestamps.fields,
   }) {}
 
@@ -102,7 +99,7 @@ export namespace ReplicacheClientViewEntriesModel {
     clientViewVersion: ColumnsContract.Version,
     entity: Schema.Literal(...entities),
     entityId: ColumnsContract.EntityId,
-    entityVersion: ColumnsContract.Version.pipe(Schema.NullOr),
+    entityVersion: ColumnsContract.NullableVersion,
     tenantId: ColumnsContract.TenantId,
   }) {}
 

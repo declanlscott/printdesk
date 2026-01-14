@@ -28,10 +28,7 @@ export namespace InvoicesContract {
     status: Schema.Literal(...statuses).pipe(
       Schema.optionalWith({ default: () => "processing" }),
     ),
-    chargedAt: Schema.DateTimeUtc.pipe(
-      Schema.NullOr,
-      Schema.optionalWith({ default: () => null }),
-    ),
+    chargedAt: ColumnsContract.NullableTimestamp,
     orderId: ColumnsContract.EntityId,
   }) {}
 

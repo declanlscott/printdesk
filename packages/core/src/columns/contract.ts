@@ -10,21 +10,27 @@ export namespace ColumnsContract {
   );
   export type VarChar = typeof VarChar.Type;
 
+  export const Timestamp = Schema.DateTimeUtc.pipe(
+    Schema.optionalWith({ default: DateTime.unsafeNow }),
+  );
+  export const NullableTimestamp = Schema.DateTimeUtc.pipe(
+    Schema.NullOr,
+    Schema.optionalWith({ default: () => null }),
+  );
+
   export class Timestamps extends Schema.Class<Timestamps>("Timestamps")({
-    createdAt: Schema.DateTimeUtc.pipe(
-      Schema.optionalWith({ default: DateTime.unsafeNow }),
-    ),
-    updatedAt: Schema.DateTimeUtc.pipe(
-      Schema.optionalWith({ default: DateTime.unsafeNow }),
-    ),
-    deletedAt: Schema.DateTimeUtc.pipe(
-      Schema.NullOr,
-      Schema.optionalWith({ default: () => null }),
-    ),
+    createdAt: Timestamp,
+    updatedAt: Timestamp,
+    deletedAt: NullableTimestamp,
   }) {}
 
   export const EntityId = NanoId.pipe(Schema.brand("EntityId"));
   export type EntityId = typeof EntityId.Type;
+  export const NullableEntityId = EntityId.pipe(
+    Schema.NullOr,
+    Schema.optionalWith({ default: () => null }),
+  );
+
   export const TenantId = EntityId.pipe(Schema.brand("TenantId"));
   export type TenantId = typeof TenantId.Type;
 
@@ -36,4 +42,8 @@ export namespace ColumnsContract {
 
   export const Version = Schema.NonNegativeInt.pipe(Schema.brand("Version"));
   export type Version = typeof Version.Type;
+  export const NullableVersion = ColumnsContract.Version.pipe(
+    Schema.NullOr,
+    Schema.optionalWith({ default: () => null }),
+  );
 }

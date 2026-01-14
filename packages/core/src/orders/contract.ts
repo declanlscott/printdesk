@@ -150,22 +150,13 @@ export namespace OrdersContract {
   class BaseDto extends Schema.Class<BaseDto>("BaseDto2")({
     ...ColumnsContract.Tenant.fields,
     customerId: ColumnsContract.EntityId,
-    managerId: ColumnsContract.EntityId.pipe(
-      Schema.NullOr,
-      Schema.optionalWith({ default: () => null }),
-    ),
-    operatorId: ColumnsContract.EntityId.pipe(
-      Schema.NullOr,
-      Schema.optionalWith({ default: () => null }),
-    ),
+    managerId: ColumnsContract.NullableEntityId,
+    operatorId: ColumnsContract.NullableEntityId,
     productId: ColumnsContract.EntityId,
     sharedAccountId: ColumnsContract.EntityId.pipe(Schema.NullOr),
     deliveryOptionId: ColumnsContract.EntityId,
     attributes: Attributes,
-    approvedAt: Schema.DateTimeUtc.pipe(
-      Schema.NullOr,
-      Schema.optionalWith({ default: () => null }),
-    ),
+    approvedAt: ColumnsContract.NullableTimestamp,
   }) {}
 
   export class SharedAccountWorkflowStatusDto extends Schema.Class<SharedAccountWorkflowStatusDto>(

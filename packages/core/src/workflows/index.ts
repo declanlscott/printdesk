@@ -3019,18 +3019,14 @@ export namespace WorkflowStatuses {
                   const shift = Ordering.reverse(Number.sign(delta));
 
                   if (!shift)
-                    return yield* Effect.fail(
-                      new Cause.IllegalArgumentException(
-                        `Invalid workflow status index, delta with existing index must be non-zero.`,
-                      ),
+                    return yield* new Cause.IllegalArgumentException(
+                      `Invalid workflow status index, delta with existing index must be non-zero.`,
                     );
 
                   const actualDelta = (slice.length - 1) * -shift;
                   if (delta !== actualDelta)
-                    return yield* Effect.fail(
-                      new Cause.IllegalArgumentException(
-                        `Invalid workflow status index, delta mismatch. Delta: ${delta}, actual delta: ${actualDelta}.`,
-                      ),
+                    return yield* new Cause.IllegalArgumentException(
+                      `Invalid workflow status index, delta mismatch. Delta: ${delta}, actual delta: ${actualDelta}.`,
                     );
 
                   // Temporarily negate indexes to avoid uniqueness violations during upsert

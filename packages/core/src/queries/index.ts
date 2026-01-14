@@ -223,8 +223,7 @@ export namespace Queries {
                   Effect.scoped,
                 );
 
-              if (limit < 0)
-                return yield* Effect.fail(new DifferenceLimitExceededError());
+              if (limit < 0) return yield* new DifferenceLimitExceededError();
 
               // Fast-forward
               if (clientView.version < clientViewVersion.max)

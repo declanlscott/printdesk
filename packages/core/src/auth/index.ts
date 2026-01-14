@@ -92,8 +92,7 @@ export class Auth extends Effect.Service<Auth>()("@printdesk/core/auth/Auth", {
             ),
             Match.when(Match.is("active"), () =>
               Effect.gen(function* () {
-                if (!user)
-                  return yield* Effect.fail(new Cause.NoSuchElementException());
+                if (!user) return yield* new Cause.NoSuchElementException();
 
                 if (
                   idpUser.username !== user.username ||

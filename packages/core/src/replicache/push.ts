@@ -109,9 +109,7 @@ export namespace ReplicachePusher {
               );
 
               if (client.lastMutationId === 0 && mutation.id > 1)
-                return yield* Effect.fail(
-                  new ReplicacheContract.ClientStateNotFoundError(),
-                );
+                return yield* new ReplicacheContract.ClientStateNotFoundError();
 
               // 7: Next mutation ID
               const nextMutationId = client.lastMutationId + 1;
@@ -200,8 +198,8 @@ export namespace ReplicachePusher {
       (pushRequest: ReplicacheContract.PushRequest) =>
         Effect.gen(function* () {
           if (pushRequest.pushVersion !== 1)
-            return yield* Effect.fail(
-              new ReplicacheContract.VersionNotSupportedError("push"),
+            return yield* new ReplicacheContract.VersionNotSupportedError(
+              "push",
             );
 
           yield* Effect.forEach(pushRequest.mutations, (mutation) =>

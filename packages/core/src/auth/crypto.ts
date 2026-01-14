@@ -39,7 +39,7 @@ export class Crypto extends Effect.Service<Crypto>()(
     sync: () => {
       const generateToken = (size = 32) =>
         Effect.try({
-          try: () => Redacted.make(randomBytes(size).toString("hex")),
+          try: () => Redacted.make(randomBytes(size).toString("base64")),
           catch: (cause) => new TokenGenerationError({ cause }),
         });
 
@@ -57,7 +57,7 @@ export class Crypto extends Effect.Service<Crypto>()(
                 (error, derivedKey) =>
                   error
                     ? reject(error)
-                    : resolve(Redacted.make(derivedKey.toString("hex"))),
+                    : resolve(Redacted.make(derivedKey.toString("base64"))),
               ),
             ),
           catch: (cause) => new KeyDerivationError({ cause }),
@@ -68,23 +68,23 @@ export class Crypto extends Effect.Service<Crypto>()(
           const salt = yield* generateToken(16);
           const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 
-          return new AuthContract.SecretHash({ salt, derivedKey });
+          return new AuthContract.Hash({ salt, derivedKey });
         });
 
       const verifySecret = (
         secret: Redacted.Redacted<string>,
-        { salt, derivedKey: storedKey }: AuthContract.SecretHash,
+        { salt, derivedKey: storedKey }: AuthContract.Hash,
       ) =>
         Effect.gen(function* () {
           const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 
           const storedKeyBuffer = yield* Effect.try({
-            try: () => Buffer.from(storedKey.pipe(Redacted.value), "hex"),
+            try: () => Buffer.from(storedKey.pipe(Redacted.value), "base64"),
             catch: (cause) => new KeyBufferError({ cause }),
           });
 
           const derivedKeyBuffer = yield* Effect.try({
-            try: () => Buffer.from(derivedKey.pipe(Redacted.value), "hex"),
+            try: () => Buffer.from(derivedKey.pipe(Redacted.value), "base64"),
             catch: (cause) => new KeyBufferError({ cause }),
           });
 

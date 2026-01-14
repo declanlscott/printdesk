@@ -105,5 +105,7 @@ export namespace Constants {
     /^#(?:[\da-fA-F]{3,4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/u,
   );
 
-  export const HEX_REGEX = new RegExp(/^[0-9A-Fa-f]+$/u);
+  export const BASE64_REGEX = new RegExp(
+    /^(?:[\da-z+/]{4})*(?:[\da-z+/]{2}==|[\da-z+/]{3}=)?$/iu,
+  );
 }

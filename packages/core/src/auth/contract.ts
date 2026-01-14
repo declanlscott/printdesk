@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ActorsContract } from "../actors/contract";
-import { HexString } from "../utils";
+import { Base64 } from "../utils";
 import { Constants } from "../utils/constants";
 
 import type { StandardSchemaV1 } from "@standard-schema/spec";
@@ -38,17 +38,17 @@ export namespace AuthContract {
     "TenantSuspendedError",
   )<{ readonly tenantId: ColumnsContract.TenantId }> {}
 
-  export class SecretHash extends Schema.Class<SecretHash>("SecretHash")({
-    salt: HexString.pipe(Schema.Redacted),
-    derivedKey: HexString.pipe(Schema.Redacted),
+  export class Hash extends Schema.Class<Hash>("Hash")({
+    salt: Base64.pipe(Schema.Redacted),
+    derivedKey: Base64.pipe(Schema.Redacted),
   }) {}
 
-  export const SecretHashFromString = Schema.TemplateLiteralParser(
-    HexString, // salt
+  export const HashFromString = Schema.TemplateLiteralParser(
+    Base64, // salt
     Schema.Literal(Constants.SEPARATOR),
-    HexString, // derived key
+    Base64, // derived key
   ).pipe(
-    Schema.transform(SecretHash, {
+    Schema.transform(Hash, {
       strict: true,
       decode: ([salt, _, derivedKey]) => ({ salt, derivedKey }),
       encode: ({ salt, derivedKey }) => [salt, Constants.SEPARATOR, derivedKey],

@@ -21,8 +21,8 @@ export const NanoId = Schema.String.pipe(
   Schema.pattern(Constants.NANOID_REGEX),
 );
 
-export const HexString = Schema.String.pipe(
-  Schema.pattern(Constants.HEX_REGEX),
+export const Base64 = Schema.String.pipe(
+  Schema.pattern(Constants.BASE64_REGEX),
 );
 
 export const separatedString = (separator = Constants.SEPARATOR) =>

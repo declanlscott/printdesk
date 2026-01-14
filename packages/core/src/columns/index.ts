@@ -29,13 +29,14 @@ export namespace Columns {
     },
   ) => pgVarchar(config);
 
-  export const secretHash = customType<{
-    driverData: typeof AuthContract.SecretHashFromString.Encoded;
-    data: typeof AuthContract.SecretHashFromString.Type;
+  export const hash = customType<{
+    driverData: typeof AuthContract.HashFromString.Encoded;
+    data: typeof AuthContract.HashFromString.Type;
   }>({
-    dataType: () => "varchar(161)", // 32 (salt) + 1 (separator) + 128 (derived key)
-    fromDriver: Schema.decodeSync(AuthContract.SecretHashFromString),
-    toDriver: Schema.encodeSync(AuthContract.SecretHashFromString),
+    // 24 (salt, 16B) + 1 (separator) + 88 (derived key, 32B) = 113 characters. Base64 encoded.
+    dataType: () => "varchar(113)",
+    fromDriver: Schema.decodeSync(AuthContract.HashFromString),
+    toDriver: Schema.encodeSync(AuthContract.HashFromString),
   });
 
   export function redactedUuid() {

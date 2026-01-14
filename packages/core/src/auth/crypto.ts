@@ -99,9 +99,9 @@ export class Crypto extends Effect.Service<Crypto>()(
           );
         });
 
-      const decodeJwt = (jwt: Redacted.Redacted<string>) =>
+      const decodeJwt = (jwt: string) =>
         Effect.try({
-          try: () => jwt.pipe(Redacted.value, decodeJWT, Redacted.make),
+          try: () => decodeJWT(jwt),
           catch: (cause) => new JwtDecodeError({ cause }),
         });
 

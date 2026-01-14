@@ -1,5 +1,13 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
-import { index, pgView } from "drizzle-orm/pg-core";
+import {
+  and,
+  eq,
+  getViewSelectedFields,
+  isNotNull,
+  isNull,
+  ne,
+  or,
+} from "drizzle-orm";
+import { check, index, pgView } from "drizzle-orm/pg-core";
 import * as Schema from "effect/Schema";
 
 import { Columns } from "../columns";
@@ -23,7 +31,22 @@ export namespace InvoicesSchema {
       chargedAt: Columns.datetime(),
       orderId: Columns.entityId.notNull(),
     },
-    (table) => [index().on(table.orderId)],
+    (table) => [
+      index().on(table.orderId),
+      check(
+        "charged_status",
+        or(
+          and(
+            eq(table.status, "charged" satisfies InvoicesContract.Status),
+            isNotNull(table.chargedAt),
+          ),
+          and(
+            ne(table.status, "charged" satisfies InvoicesContract.Status),
+            isNull(table.chargedAt),
+          ),
+        )!,
+      ),
+    ],
   );
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;

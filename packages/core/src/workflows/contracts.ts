@@ -242,7 +242,7 @@ export namespace WorkflowStatusesContract {
     Args: Schema.Struct(
       Struct.evolve(Struct.pick(BaseDto.fields, "id", "deletedAt"), {
         id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from,
+        deletedAt: (deletedAt) => deletedAt.from.members[0],
       }),
     ),
     Returns: DataTransferObject,

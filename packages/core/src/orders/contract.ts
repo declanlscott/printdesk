@@ -330,7 +330,7 @@ export namespace OrdersContract {
         ),
         {
           id: (id) => id.from,
-          approvedAt: (approvedAt) => approvedAt.from,
+          approvedAt: (approvedAt) => approvedAt.from.members[0],
         },
       ),
     ),
@@ -375,7 +375,7 @@ export namespace OrdersContract {
     Args: Schema.Struct(
       Struct.evolve(Struct.pick(BaseDto.fields, "id", "deletedAt"), {
         id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from,
+        deletedAt: (deletedAt) => deletedAt.from.members[0],
       }),
     ),
     Returns: DataTransferObject,

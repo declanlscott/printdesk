@@ -112,7 +112,7 @@ export namespace UsersContract {
     Args: Schema.Struct(
       Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
         id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from,
+        deletedAt: (deletedAt) => deletedAt.from.members[0],
       }),
     ),
     Returns: DataTransferObject,

@@ -181,7 +181,7 @@ export namespace Signers {
 
     export const runtime = layer.pipe(
       Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
-      Layer.provideMerge(Sst.Resource.layer),
+      Layer.provide(Sst.Resource.layer),
       ManagedRuntime.make,
     );
   }

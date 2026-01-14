@@ -108,10 +108,10 @@ export namespace Database {
                 user: dsqlCluster.user,
                 password: () =>
                   Signers.Dsql.Signer.pipe(
-                    Effect.flatMap((signer) =>
+                    Effect.andThen((signer) =>
                       signer.getDbConnectAdminAuthToken(),
                     ),
-                    Signers.Dsql.runtime.runSync,
+                    Signers.Dsql.runtime.runPromise,
                   ),
               }),
           ),

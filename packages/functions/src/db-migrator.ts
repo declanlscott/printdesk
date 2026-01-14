@@ -27,9 +27,10 @@ type DrizzleMigration = {
   created_at: string;
 };
 
-const layer = Layer.mergeAll(Database.DatabaseLive, Logger.defaultLayer).pipe(
-  Layer.provideMerge(Sst.Resource.layer),
-);
+const layer = Layer.mergeAll(
+  Database.Database.Default,
+  Logger.defaultLayer,
+).pipe(Layer.provideMerge(Sst.Resource.layer));
 
 export const handler = LambdaHandler.make({
   layer,
@@ -123,7 +124,7 @@ const migrate = (config: MigrationConfig) =>
 
               const [id, hash, createdAt] = returned.row
                 .slice(1, -1)
-                .split(",");
+                .split(",") as [string, string, string];
 
               return {
                 id: Number(id),

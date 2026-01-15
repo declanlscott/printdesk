@@ -4,14 +4,13 @@ import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
-import { IdentityProviders } from "../identity-providers";
+import { EntraId, IdentityProviders } from "../identity";
 import { Sst } from "../sst";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
 import { AuthContract } from "./contract";
-import { EntraId } from "./entra-id";
 
-import type { IdentityProvidersContract } from "../identity-providers/contract";
+import type { IdentityProvidersContract } from "../identity/contract";
 import type { TenantsContract } from "../tenants/contracts";
 
 export class Auth extends Effect.Service<Auth>()("@printdesk/core/auth/Auth", {
@@ -25,7 +24,7 @@ export class Auth extends Effect.Service<Auth>()("@printdesk/core/auth/Auth", {
     const providers = yield* Sst.Resource.IdentityProviders.pipe(
       Effect.map(Redacted.value),
       Effect.map((providers) => ({
-        [Constants.ENTRA_ID]: EntraId.provider({
+        [Constants.ENTRA_ID]: EntraId.oauthProvider({
           tenant: "organizations",
           clientID: providers[Constants.ENTRA_ID].clientId,
           clientSecret: providers[Constants.ENTRA_ID].clientSecret,

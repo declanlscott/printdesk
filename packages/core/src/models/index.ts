@@ -9,7 +9,7 @@ import {
   CustomerGroupMembershipsContract,
   CustomerGroupsContract,
 } from "../groups/contracts";
-import { IdentityProvidersContract } from "../identity-providers/contract";
+import { IdentityProvidersContract } from "../identity/contract";
 import { InvoicesContract } from "../invoices/contract";
 import { OrdersContract } from "../orders/contract";
 import { ProductsContract } from "../products/contract";

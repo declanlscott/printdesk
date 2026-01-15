@@ -6,7 +6,7 @@ import { AuthContract } from "@printdesk/core/auth/contract";
 import { Crypto } from "@printdesk/core/auth/crypto";
 import { Database } from "@printdesk/core/database";
 import { Graph } from "@printdesk/core/graph";
-import { IdentityProvidersContract } from "@printdesk/core/identity-providers/contract";
+import { IdentityProvidersContract } from "@printdesk/core/identity/contract";
 import { Sst } from "@printdesk/core/sst";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Cause from "effect/Cause";

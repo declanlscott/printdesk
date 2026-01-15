@@ -11,7 +11,7 @@
   "dependencies": {
     "@aws-crypto/sha256-js": "^5.2.0",
     "@aws-sdk/cloudfront-signer": "^3.957.0",
-    "@aws-sdk/credential-providers": "^3.958.0",
+    "@aws-sdk/credential-providers": "catalog:",
     "@azure/msal-node": "^3.8.4",
     "@effect/platform": "catalog:",
     "@effect-aws/dsql": "^0.1.0",

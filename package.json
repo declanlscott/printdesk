@@ -15,6 +15,7 @@
       "packages/**"
     ],
     "catalog": {
+      "@aws-sdk/credential-providers": "^3.958.0",
       "@effect/language-service": "^0.64.1",
       "@effect/platform": "^0.94.1",
       "@effect-aws/client-sts": "^1.10.7",

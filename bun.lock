@@ -91,7 +91,7 @@
       "dependencies": {
         "@aws-crypto/sha256-js": "^5.2.0",
         "@aws-sdk/cloudfront-signer": "^3.957.0",
-        "@aws-sdk/credential-providers": "^3.958.0",
+        "@aws-sdk/credential-providers": "catalog:",
         "@azure/msal-node": "^3.8.4",
         "@effect-aws/dsql": "^0.1.0",
         "@effect/platform": "catalog:",
@@ -121,6 +121,7 @@
     "packages/functions": {
       "name": "@printdesk/functions",
       "dependencies": {
+        "@aws-sdk/credential-providers": "catalog:",
         "@effect-aws/client-sqs": "catalog:",
         "@effect-aws/client-sts": "catalog:",
         "@effect-aws/lambda": "^1.5.1",
@@ -186,6 +187,7 @@
     },
   },
   "catalog": {
+    "@aws-sdk/credential-providers": "^3.958.0",
     "@effect-aws/client-sqs": "^1.10.3",
     "@effect-aws/client-sts": "^1.10.7",
     "@effect/language-service": "^0.64.1",

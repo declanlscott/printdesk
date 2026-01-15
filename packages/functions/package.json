@@ -6,6 +6,7 @@
     "lint": "eslint ./src/ --ext ts --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@aws-sdk/credential-providers": "catalog:",
     "@effect-aws/client-sqs": "catalog:",
     "@effect-aws/client-sts": "catalog:",
     "@effect-aws/lambda": "^1.5.1",

@@ -33,6 +33,10 @@ import type { ColumnsContract } from "../columns/contract";
 import type { CredentialsContract } from "./contract";
 
 export namespace Credentials {
+  export class ProviderError extends Data.TaggedError(
+    "CredentialProviderError",
+  )<{ readonly cause: unknown }> {}
+
   export const buildRoleArn = (
     accountId: string,
     nameTemplate: string,
@@ -62,16 +66,20 @@ export namespace Credentials {
           : undefined,
       });
 
+    static readonly fromProvider = (
+      provider: () => AwsCredentialIdentityProvider,
+    ) =>
+      Effect.tryPromise({
+        try: () => provider()(),
+        catch: (cause) => new ProviderError({ cause }),
+      }).pipe(Effect.map(this.make));
+
     static readonly layer = (identity: AwsCredentialIdentity) =>
       Layer.succeed(this, this.make(identity));
 
     static readonly providerLayer = (
       provider: () => AwsCredentialIdentityProvider,
-    ) =>
-      Effect.promise(provider()).pipe(
-        Effect.map(this.make),
-        Layer.effect(this),
-      );
+    ) => this.fromProvider(provider).pipe(Layer.effect(this));
   }
 
   export const values = Identity.pipe(

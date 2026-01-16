@@ -236,11 +236,13 @@ export namespace Signers {
       );
 
       const matchBody = Match.type<HttpBody.HttpBody>().pipe(
-        Match.tag("Empty", () => undefined),
-        Match.tag("Raw", (body) => body.body),
-        Match.tag("Uint8Array", (body) => body.body),
-        Match.tag("FormData", (body) => body.formData),
-        Match.tag("Stream", (body) => body.stream),
+        Match.tags({
+          Empty: () => undefined,
+          Raw: (body) => body.body,
+          Uint8Array: (body) => body.body,
+          FormData: (body) => body.formData,
+          Stream: (body) => body.stream,
+        }),
         Match.exhaustive,
       );
 

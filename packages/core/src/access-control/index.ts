@@ -204,21 +204,14 @@ export namespace AccessControl {
       );
 
       const matchActor = Match.type<ActorsContract.Actor["properties"]>().pipe(
-        Match.tag(
-          "PublicActor",
-          () =>
+        Match.tags({
+          PublicActor: () =>
             `Public actor is not authorized to ${matchAction(this.action)} entity ${matchEntity(this.entity)}.`,
-        ),
-        Match.tag(
-          "SystemActor",
-          (system) =>
+          SystemActor: (system) =>
             `System actor (${system.tenantId}) is not authorized to ${matchAction(this.action)} entity ${matchEntity(this.entity)}.`,
-        ),
-        Match.tag(
-          "UserActor",
-          (user) =>
+          UserActor: (user) =>
             `User actor (${user.id}) is not authorized to ${matchAction(this.action)} entity ${matchEntity(this.entity)}.`,
-        ),
+        }),
         Match.exhaustive,
       );
 

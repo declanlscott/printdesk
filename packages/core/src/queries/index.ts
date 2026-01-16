@@ -142,9 +142,8 @@ export namespace Queries {
                             Match.type<
                               Stream.Stream.Success<typeof first>
                             >().pipe(
-                              Match.tag(
-                                "update",
-                                (update) =>
+                              Match.tags({
+                                update: (update) =>
                                   new ReplicacheClientViewEntriesModel.Record({
                                     clientGroupId: clientView.clientGroupId,
                                     clientViewVersion: clientViewVersion.next,
@@ -153,10 +152,7 @@ export namespace Queries {
                                     entityVersion: update.value.data.version,
                                     tenantId: clientView.tenantId,
                                   }),
-                              ),
-                              Match.tag(
-                                "delete",
-                                (delete_) =>
+                                delete: (delete_) =>
                                   new ReplicacheClientViewEntriesModel.Record({
                                     clientGroupId: clientView.clientGroupId,
                                     clientViewVersion: clientViewVersion.next,
@@ -165,7 +161,7 @@ export namespace Queries {
                                     entityVersion: null,
                                     tenantId: clientView.tenantId,
                                   }),
-                              ),
+                              }),
                               Match.exhaustive,
                             ),
                           ),
@@ -176,27 +172,28 @@ export namespace Queries {
                             Match.type<
                               Stream.Stream.Success<typeof second>
                             >().pipe(
-                              Match.tag("update", (update) =>
-                                ReplicacheContract.makePutTableOperation({
-                                  table: Models.syncTables[update.value.entity],
-                                  value: update.value.data,
-                                }),
-                              ),
-                              Match.tag("delete", (delete_) =>
-                                ReplicacheContract.makeDeleteTableOperation({
-                                  table:
-                                    Models.syncTables[delete_.value.entity],
-                                  id: delete_.value.id,
-                                }),
-                              ),
+                              Match.tags({
+                                update: (update) =>
+                                  ReplicachePullerContract.makePutTableOperation(
+                                    {
+                                      table:
+                                        Models.syncTables[update.value.entity],
+                                      value: update.value.data,
+                                    },
+                                  ),
+                                delete: (delete_) =>
+                                  ReplicachePullerContract.makeDeleteTableOperation(
+                                    {
+                                      table:
+                                        Models.syncTables[delete_.value.entity],
+                                      id: delete_.value.id,
+                                    },
+                                  ),
+                              }),
                               Match.exhaustive,
                             ),
                           ),
-                          Stream.runCollect<
-                            ReplicacheContract.PatchOperation,
-                            Stream.Stream.Error<typeof second>,
-                            Stream.Stream.Context<typeof second>
-                          >,
+                          Stream.runCollect,
                         ),
                         limit: third.pipe(
                           Stream.runFold(baseLimit, Number.decrement),
@@ -206,11 +203,13 @@ export namespace Queries {
                             Match.type<
                               Stream.Stream.Success<typeof fourth>
                             >().pipe(
-                              Match.tag("update", (update) => ({
-                                entity: update.value.entity,
-                                id: update.value.data.id,
-                              })),
-                              Match.tag("delete", (delete_) => delete_.value),
+                              Match.tags({
+                                update: (update) => ({
+                                  entity: update.value.entity,
+                                  id: update.value.data.id,
+                                }),
+                                delete: (delete_) => delete_.value,
+                              }),
                               Match.exhaustive,
                             ),
                           ),

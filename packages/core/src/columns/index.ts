@@ -10,7 +10,7 @@ import * as DateTime from "effect/DateTime";
 import * as ParseResult from "effect/ParseResult";
 import * as Schema from "effect/Schema";
 
-import { AuthContract } from "../auth/contract";
+import { CryptoContract } from "../auth/contracts";
 import { generateId } from "../utils";
 import { Constants } from "../utils/constants";
 import { ColumnsContract } from "./contract";
@@ -30,13 +30,13 @@ export namespace Columns {
   ) => pgVarchar(config);
 
   export const hash = customType<{
-    driverData: typeof AuthContract.HashFromString.Encoded;
-    data: typeof AuthContract.HashFromString.Type;
+    driverData: typeof CryptoContract.HashFromString.Encoded;
+    data: typeof CryptoContract.HashFromString.Type;
   }>({
     // 24 (salt, 16B) + 1 (separator) + 88 (derived key, 32B) = 113 characters. Base64 encoded.
     dataType: () => "varchar(113)",
-    fromDriver: Schema.decodeSync(AuthContract.HashFromString),
-    toDriver: Schema.encodeSync(AuthContract.HashFromString),
+    fromDriver: Schema.decodeSync(CryptoContract.HashFromString),
+    toDriver: Schema.encodeSync(CryptoContract.HashFromString),
   });
 
   export function redactedUuid() {

@@ -8,7 +8,7 @@ import { EntraId, IdentityProviders } from "../identity";
 import { Sst } from "../sst";
 import { Users } from "../users";
 import { Constants } from "../utils/constants";
-import { AuthContract } from "./contract";
+import { AuthContract } from "./contracts";
 
 import type { IdentityProvidersContract } from "../identity/contract";
 import type { TenantsContract } from "../tenants/contracts";

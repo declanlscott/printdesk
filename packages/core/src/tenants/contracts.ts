@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { AuthContract } from "../auth/contract";
+import { CryptoContract } from "../auth/contracts";
 import { ColumnsContract } from "../columns/contract";
 import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables/contract";

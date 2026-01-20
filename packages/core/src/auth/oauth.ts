@@ -1,3 +1,4 @@
+import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import { createClient } from "@openauthjs/openauth/client";
 import {
   InvalidAccessTokenError as InvalidAccessTokenErrorCause,
@@ -11,7 +12,7 @@ import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 
-import { AuthContract } from "./contract";
+import { AuthContract } from "./contracts";
 
 import type {
   ClientInput,
@@ -23,21 +24,33 @@ import type {
 } from "@openauthjs/openauth/client";
 
 export namespace Oauth {
-  export class ClientError extends Data.TaggedError("OauthClientError")<{
-    readonly cause: unknown;
-  }> {}
+  export class ClientError extends Schema.TaggedError<ClientError>(
+    "ClientError",
+  )(
+    "ClientError",
+    { cause: Schema.Defect },
+    HttpApiSchema.annotations({ status: 500 }),
+  ) {}
 
   export class InvalidAuthorizationCodeError extends Data.TaggedError(
     "InvalidAuthorizationCodeError",
   )<{ readonly cause: InvalidAuthorizationCodeErrorCause }> {}
 
-  export class InvalidRefreshTokenError extends Data.TaggedError(
+  export class InvalidRefreshTokenError extends Schema.TaggedError<InvalidRefreshTokenError>(
     "InvalidRefreshTokenError",
-  )<{ readonly cause: InvalidRefreshTokenErrorCause }> {}
+  )(
+    "InvalidRefreshTokenError",
+    {},
+    HttpApiSchema.annotations({ status: 401 }),
+  ) {}
 
-  export class InvalidAccessTokenError extends Data.TaggedError(
+  export class InvalidAccessTokenError extends Schema.TaggedError<InvalidAccessTokenError>(
     "InvalidAccessTokenError",
-  )<{ readonly cause: InvalidAccessTokenErrorCause }> {}
+  )(
+    "InvalidAccessTokenError",
+    {},
+    HttpApiSchema.annotations({ status: 401 }),
+  ) {}
 
   export class Client extends Effect.Service<Client>()(
     "@printdesk/core/auth/OauthClient",

@@ -34,10 +34,9 @@ export namespace ColumnsContract {
   export const TenantId = EntityId.pipe(Schema.brand("TenantId"));
   export type TenantId = typeof TenantId.Type;
 
-  export class Tenant extends Schema.Class<Tenant>("Tenant")({
+  export class BaseEntity extends Timestamps.extend<BaseEntity>("BaseEntity")({
     id: EntityId.pipe(Schema.optionalWith({ default: generateId })),
     tenantId: TenantId,
-    ...Timestamps.fields,
   }) {}
 
   export const Version = Schema.NonNegativeInt.pipe(Schema.brand("Version"));

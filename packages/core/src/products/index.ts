@@ -561,7 +561,7 @@ export namespace Products {
           make: Effect.fn("Products.Policies.canEdit.make")(({ id }) =>
             AccessControl.privatePolicy(
               {
-                name: ProductsContract.tableName,
+                name: ProductsContract.Table.name,
                 id,
               },
               ({ tenantId }) =>
@@ -581,7 +581,7 @@ export namespace Products {
             make: Effect.fn("Products.Policies.canDelete.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: ProductsContract.tableName,
+                  name: ProductsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -602,7 +602,7 @@ export namespace Products {
             make: Effect.fn("Products.Policies.canRestore.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: ProductsContract.tableName,
+                  name: ProductsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -630,6 +630,7 @@ export namespace Products {
         Repository.Default,
         Rooms.Repository.Default,
         Policies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -640,7 +641,9 @@ export namespace Products {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyCreate = (product: ProductsContract.DataTransferObject) =>
+        const notifyCreate = (
+          product: typeof ProductsContract.Table.DataTransferObject.Type,
+        ) =>
           Match.value(product).pipe(
             Match.when({ status: Match.is("published") }, () =>
               roomsRepository.findById(product.roomId, product.tenantId).pipe(
@@ -682,11 +685,13 @@ export namespace Products {
                 ),
               ),
             ),
-            Effect.map(notifier.notify),
+            Effect.flatMap(notifier.notify),
           );
         const notifyEdit = notifyCreate;
 
-        const notifyPublish = (product: ProductsContract.DataTransferObject) =>
+        const notifyPublish = (
+          product: typeof ProductsContract.Table.DataTransferObject.Type,
+        ) =>
           roomsRepository.findById(product.roomId, product.tenantId).pipe(
             Effect.map((room) =>
               Match.value(room).pipe(
@@ -716,7 +721,7 @@ export namespace Products {
                 ),
               ),
             ),
-            Effect.map(notifier.notify),
+            Effect.flatMap(notifier.notify),
           );
         const notifyDraft = notifyPublish;
 

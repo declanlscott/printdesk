@@ -11,19 +11,14 @@ import {
 import { Columns } from "../columns";
 import { CustomerGroupMembershipsSchema } from "../groups/schemas";
 import { Tables } from "../tables";
-import {
-  SharedAccountCustomerAccessContract,
-  SharedAccountCustomerGroupAccessContract,
-  SharedAccountManagerAccessContract,
-  SharedAccountsContract,
-} from "./contracts";
+import { SharedAccountsContract } from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 import type { Discriminate } from "../utils";
 
 export namespace SharedAccountsSchema {
   export const table = new Tables.Sync(
-    SharedAccountsContract.tableName,
+    "shared_accounts",
     {
       origin: Columns.union(SharedAccountsContract.origins)
         .default("internal")
@@ -47,18 +42,17 @@ export namespace SharedAccountsSchema {
   export type RowByOrigin<TSharedAccountOrigin extends Row["origin"]> =
     Discriminate<Row, "origin", TSharedAccountOrigin>;
 
-  export const activeView = pgView(SharedAccountsContract.activeViewName).as(
-    (qb) =>
-      qb
-        .select()
-        .from(table.definition)
-        .where(isNull(table.definition.deletedAt)),
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeCustomerAuthorizedView = pgView(
-    SharedAccountsContract.activeCustomerAuthorizedViewName,
+    `active_customer_authorized_${table.name}`,
   ).as((qb) =>
     qb
       .select({
@@ -86,7 +80,7 @@ export namespace SharedAccountsSchema {
     InferSelectViewModel<ActiveCustomerAuthorizedView>;
 
   export const activeManagerAuthorizedView = pgView(
-    SharedAccountsContract.activeManagerAuthorizedViewName,
+    `active_manager_authorized_${table.name}`,
   ).as((qb) =>
     qb
       .select({
@@ -115,7 +109,7 @@ export namespace SharedAccountsSchema {
 
 export namespace SharedAccountCustomerAccessSchema {
   export const table = new Tables.Sync(
-    SharedAccountCustomerAccessContract.tableName,
+    `shared_account_customer_access`,
     {
       customerId: Columns.entityId.notNull(),
       sharedAccountId: Columns.entityId.notNull(),
@@ -128,9 +122,7 @@ export namespace SharedAccountCustomerAccessSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(
-    SharedAccountCustomerAccessContract.activeViewName,
-  ).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -146,7 +138,7 @@ export namespace SharedAccountCustomerAccessSchema {
 
 export namespace SharedAccountManagerAccessSchema {
   export const table = new Tables.Sync(
-    SharedAccountManagerAccessContract.tableName,
+    "shared_account_manager_access",
     {
       managerId: Columns.entityId.notNull(),
       sharedAccountId: Columns.entityId.notNull(),
@@ -159,9 +151,7 @@ export namespace SharedAccountManagerAccessSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(
-    SharedAccountManagerAccessContract.activeViewName,
-  ).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -175,7 +165,7 @@ export namespace SharedAccountManagerAccessSchema {
   export type ActiveAuthorizedRow = InferSelectViewModel<ActiveAuthorizedView>;
 
   export const activeCustomerAuthorizedView = pgView(
-    SharedAccountManagerAccessContract.activeCustomerAuthorizedViewName,
+    `active_customer_authorized_${table.name}`,
   ).as((qb) =>
     qb
       .select({
@@ -205,7 +195,7 @@ export namespace SharedAccountManagerAccessSchema {
 
 export namespace SharedAccountCustomerGroupAccessSchema {
   export const table = new Tables.Sync(
-    SharedAccountCustomerGroupAccessContract.tableName,
+    `shared_account_customer_group_access`,
     {
       customerGroupId: Columns.entityId.notNull(),
       sharedAccountId: Columns.entityId.notNull(),
@@ -222,9 +212,7 @@ export namespace SharedAccountCustomerGroupAccessSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(
-    SharedAccountCustomerGroupAccessContract.activeViewName,
-  ).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -234,7 +222,7 @@ export namespace SharedAccountCustomerGroupAccessSchema {
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeAuthorizedView = pgView(
-    SharedAccountCustomerGroupAccessContract.activeAuthorizedViewName,
+    `active_authorized_${table.name}`,
   ).as((qb) =>
     qb
       .select({

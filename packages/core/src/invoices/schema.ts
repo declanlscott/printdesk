@@ -20,7 +20,7 @@ import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace InvoicesSchema {
   export const table = new Tables.Sync(
-    InvoicesContract.tableName,
+    "invoices",
     {
       lineItems: Columns.jsonb(
         InvoicesContract.LineItem.pipe(Schema.Array),
@@ -51,7 +51,7 @@ export namespace InvoicesSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(InvoicesContract.activeViewName).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -61,7 +61,7 @@ export namespace InvoicesSchema {
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeCustomerPlacedOrderView = pgView(
-    InvoicesContract.activeCustomerPlacedOrderViewName,
+    `active_customer_placed_order_${table.name}`,
   ).as((qb) =>
     qb
       .select({
@@ -83,7 +83,7 @@ export namespace InvoicesSchema {
     InferSelectViewModel<ActiveCustomerPlacedOrderView>;
 
   export const activeManagerAuthorizedSharedAccountOrderView = pgView(
-    InvoicesContract.activeManagerAuthorizedSharedAccountOrderViewName,
+    `active_manager_authorized_shared_account_order_${table.name}`,
   ).as((qb) =>
     qb
       .select({

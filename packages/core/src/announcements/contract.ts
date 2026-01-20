@@ -8,39 +8,33 @@ import { TablesContract } from "../tables/contract";
 import type { AnnouncementsSchema } from "./schema";
 
 export namespace AnnouncementsContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    content: Schema.String,
-    roomId: ColumnsContract.EntityId,
-    authorId: ColumnsContract.EntityId,
-  }) {}
+  export class Table extends TablesContract.Table<AnnouncementsSchema.Table>(
+    "announcements",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("Announcement")({
+      content: Schema.String,
+      roomId: ColumnsContract.EntityId,
+      authorId: ColumnsContract.EntityId,
+    }) {},
+    ["create", "read", "update", "delete"],
+  ) {}
 
-  export const tableName = "announcements";
-  export const table =
-    new (TablesContract.makeClass<AnnouncementsSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["create", "read", "update", "delete"],
-    );
+  export class ActiveView extends TablesContract.View<AnnouncementsSchema.ActiveView>(
+    "active_announcements",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveAnnouncement")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+    ) {},
+  ) {}
 
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<AnnouncementsSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activePublishedRoomViewName = `active_published_room_${tableName}`;
-  export const activePublishedRoomView =
-    new (TablesContract.makeViewClass<AnnouncementsSchema.ActivePublishedRoomView>())(
-      activePublishedRoomViewName,
-      DataTransferObject,
-    );
+  export class ActivePublishedRoomView extends TablesContract.View<AnnouncementsSchema.ActivePublishedRoomView>(
+    "active_published_room_announcements",
+  )(ActiveView.DataTransferObject) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+    Struct.evolve(Struct.pick(Table.DataTransferObject.fields, "id"), {
       id: (id) => id.from,
     }),
   );
@@ -65,17 +59,17 @@ export namespace AnnouncementsContract {
 
   export const create = new ProceduresContract.Procedure({
     name: "createAnnouncement",
-    Args: DataTransferObject.pipe(
+    Args: Table.DataTransferObject.pipe(
       Schema.omit("authorId", "deletedAt", "tenantId"),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editAnnouncement",
-    Args: DataTransferObject.pipe(
+    Args: Table.DataTransferObject.pipe(
       Schema.omit(
-        ...Struct.keys(ColumnsContract.Tenant.fields),
+        ...Struct.keys(ColumnsContract.BaseEntity.fields),
         "roomId",
         "authorId",
       ),
@@ -83,29 +77,32 @@ export namespace AnnouncementsContract {
       Schema.extend(
         Schema.Struct(
           Struct.evolve(
-            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            Struct.pick(Table.DataTransferObject.fields, "id", "updatedAt"),
             { id: (id) => id.from },
           ),
         ),
       ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteAnnouncement",
     Args: Schema.Struct(
-      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
-        id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from.members[0],
-      }),
+      Struct.evolve(
+        Struct.pick(Table.DataTransferObject.fields, "id", "deletedAt"),
+        {
+          id: (id) => id.from,
+          deletedAt: (deletedAt) => deletedAt.from.members[0],
+        },
+      ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreAnnouncement",
     Args: IdOnly,
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }

@@ -12,59 +12,57 @@ import { TablesContract } from "../tables/contract";
 import type { CommentsSchema } from "./schema";
 
 export namespace CommentsContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    orderId: ColumnsContract.EntityId,
-    authorId: ColumnsContract.EntityId,
-    content: Schema.String,
-    internal: Schema.Boolean.pipe(
-      Schema.optionalWith({ default: () => false }),
-    ),
-  }) {}
-
-  export const tableName = "comments";
-  export const table = new (TablesContract.makeClass<CommentsSchema.Table>())(
-    tableName,
-    DataTransferObject,
-    ["create", "read", "update", "delete"],
-  );
-
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<CommentsSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activeCustomerPlacedOrderViewName = `active_customer_placed_order_${tableName}`;
-  export const activeCustomerPlacedOrderView =
-    new (TablesContract.makeViewClass<CommentsSchema.ActiveCustomerPlacedOrderView>())(
-      activeCustomerPlacedOrderViewName,
-      DataTransferObject.pipe(
-        Schema.extend(
-          SharedAccountCustomerAccessContract.DataTransferObject.pipe(
-            Schema.pick("customerId"),
-          ),
-        ),
+  export class Table extends TablesContract.Table<CommentsSchema.Table>(
+    "comments",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("Comment")({
+      orderId: ColumnsContract.EntityId,
+      authorId: ColumnsContract.EntityId,
+      content: Schema.String,
+      internal: Schema.Boolean.pipe(
+        Schema.optionalWith({ default: () => false }),
       ),
-    );
+    }) {},
+    ["create", "read", "update", "delete"],
+  ) {}
 
-  export const activeManagerAuthorizedSharedAccountOrderViewName = `active_manager_authorized_shared_account_order_${tableName}`;
-  export const activeManagerAuthorizedSharedAccountOrderView =
-    new (TablesContract.makeViewClass<CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderView>())(
-      activeManagerAuthorizedSharedAccountOrderViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        authorizedManagerId:
-          SharedAccountManagerAccessContract.DataTransferObject.fields
-            .managerId,
+  export class ActiveView extends TablesContract.View<CommentsSchema.ActiveView>(
+    "active_comments",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveComment")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
       }),
-    );
+    ) {},
+  ) {}
+
+  export class ActiveCustomerPlacedOrderView extends TablesContract.View<CommentsSchema.ActiveCustomerPlacedOrderView>(
+    "active_customer_placed_order_comments",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveCustomerPlacedOrderComment",
+    )(
+      Struct.pick(
+        SharedAccountCustomerAccessContract.Table.DataTransferObject.fields,
+        "customerId",
+      ),
+    ) {},
+  ) {}
+
+  export class ActiveManagerAuthorizedSharedAccountOrderView extends TablesContract.View<CommentsSchema.ActiveManagerAuthorizedSharedAccountOrderView>(
+    "active_manager_authorized_shared_account_order_comments",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveManagerAuthorizedSharedAccountOrderComment",
+    )({
+      authorizedManagerId:
+        SharedAccountManagerAccessContract.Table.DataTransferObject.fields
+          .managerId,
+    }) {},
+  ) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+    Struct.evolve(Struct.pick(Table.DataTransferObject.fields, "id"), {
       id: (id) => id.from,
     }),
   );
@@ -95,17 +93,17 @@ export namespace CommentsContract {
 
   export const create = new ProceduresContract.Procedure({
     name: "createComment",
-    Args: DataTransferObject.pipe(
+    Args: Table.DataTransferObject.pipe(
       Schema.omit("authorId", "deletedAt", "tenantId"),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editComment",
-    Args: DataTransferObject.pipe(
+    Args: Table.DataTransferObject.pipe(
       Schema.omit(
-        ...Struct.keys(ColumnsContract.Tenant.fields),
+        ...Struct.keys(ColumnsContract.BaseEntity.fields),
         "orderId",
         "authorId",
       ),
@@ -113,29 +111,32 @@ export namespace CommentsContract {
       Schema.extend(
         Schema.Struct(
           Struct.evolve(
-            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            Struct.pick(Table.DataTransferObject.fields, "id", "updatedAt"),
             { id: (id) => id.from },
           ),
         ),
       ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteComment",
     Args: Schema.Struct(
-      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
-        id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from.members[0],
-      }),
+      Struct.evolve(
+        Struct.pick(Table.DataTransferObject.fields, "id", "deletedAt"),
+        {
+          id: (id) => id.from,
+          deletedAt: (deletedAt) => deletedAt.from.members[0],
+        },
+      ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreComment",
     Args: IdOnly,
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }

@@ -10,13 +10,13 @@ import { Replicache } from "../replicache/client";
 import { UsersContract } from "./contract";
 
 export namespace Users {
-  const table = Models.syncTables[UsersContract.tableName];
+  const Table = Models.syncTables[UsersContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/users/client/ReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -30,7 +30,7 @@ export namespace Users {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -48,7 +48,7 @@ export namespace Users {
           make: ({ id }) =>
             AccessControl.userPolicy(
               {
-                name: UsersContract.tableName,
+                name: UsersContract.Table.name,
                 id,
               },
               (user) => Effect.succeed(id === user.id),
@@ -61,7 +61,7 @@ export namespace Users {
               Effect.map(Struct.get("deletedAt")),
               Effect.map(Predicate.isNull),
               AccessControl.policy({
-                name: UsersContract.tableName,
+                name: UsersContract.Table.name,
                 id,
               }),
             ),
@@ -79,7 +79,7 @@ export namespace Users {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: UsersContract.tableName,
+                  name: UsersContract.Table.name,
                   id,
                 }),
               ),

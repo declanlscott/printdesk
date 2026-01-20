@@ -17,62 +17,55 @@ export namespace SharedAccountsContract {
   export const origins = ["papercut", "internal"] as const;
   export type Origin = (typeof origins)[number];
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    origin: Schema.Literal(...origins).pipe(
-      Schema.optionalWith({ default: () => "internal" }),
-    ),
-    name: Schema.String,
-    reviewThreshold: Schema.transform(Cost, Schema.String, {
-      decode: String,
-      encode: Number,
-      strict: true,
-    }).pipe(Schema.NullOr),
-    papercutAccountId: Schema.Union(
-      Schema.Literal(-1),
-      Schema.NonNegativeInt,
-    ).pipe(Schema.optionalWith({ default: () => -1 })),
-  }) {}
+  export class Table extends TablesContract.Table<SharedAccountsSchema.Table>(
+    "shared_accounts",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("SharedAccount")({
+      origin: Schema.Literal(...origins).pipe(
+        Schema.optionalWith({ default: () => "internal" }),
+      ),
+      name: Schema.String,
+      reviewThreshold: Schema.transform(Cost, Schema.String, {
+        decode: String,
+        encode: Number,
+        strict: true,
+      }).pipe(Schema.NullOr),
+      papercutAccountId: Schema.Union(
+        Schema.Literal(-1),
+        Schema.NonNegativeInt,
+      ).pipe(Schema.optionalWith({ default: () => -1 })),
+    }) {},
+    ["read", "update", "delete"],
+  ) {}
 
-  export const tableName = "shared_accounts";
-  export const table =
-    new (TablesContract.makeClass<SharedAccountsSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["read", "update", "delete"],
-    );
-
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<SharedAccountsSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
-  export const activeCustomerAuthorizedView =
-    new (TablesContract.makeViewClass<SharedAccountsSchema.ActiveCustomerAuthorizedView>())(
-      activeCustomerAuthorizedViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        customerId: ColumnsContract.EntityId,
+  export class ActiveView extends TablesContract.View<SharedAccountsSchema.ActiveView>(
+    "active_shared_accounts",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveSharedAccount")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
       }),
-    );
+    ) {},
+  ) {}
 
-  export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
-  export const activeManagerAuthorizedView =
-    new (TablesContract.makeViewClass<SharedAccountsSchema.ActiveManagerAuthorizedView>())(
-      activeManagerAuthorizedViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        managerId: ColumnsContract.EntityId,
-      }),
-    );
+  export class ActiveCustomerAuthorizedView extends TablesContract.View<SharedAccountsSchema.ActiveCustomerAuthorizedView>(
+    "active_customer_authorized_shared_accounts",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveCustomerAuthorizedSharedAccount",
+    )({ customerId: ColumnsContract.EntityId }) {},
+  ) {}
+
+  export class ActiveManagerAuthorizedView extends TablesContract.View<SharedAccountsSchema.ActiveManagerAuthorizedView>(
+    "active_manager_authorized_shared_accounts",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveManagerAuthorizedSharedAccount",
+    )({ managerId: ColumnsContract.EntityId }) {},
+  ) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+    Struct.evolve(Struct.pick(Table.DataTransferObject.fields, "id"), {
       id: (id) => id.from,
     }),
   );
@@ -115,9 +108,9 @@ export namespace SharedAccountsContract {
 
   export const edit = new ProceduresContract.Procedure({
     name: "editSharedAccount",
-    Args: DataTransferObject.pipe(
+    Args: Table.DataTransferObject.pipe(
       Schema.omit(
-        ...Struct.keys(ColumnsContract.Tenant.fields),
+        ...Struct.keys(ColumnsContract.BaseEntity.fields),
         "name",
         "origin",
         "papercutAccountId",
@@ -126,111 +119,103 @@ export namespace SharedAccountsContract {
       Schema.extend(
         Schema.Struct(
           Struct.evolve(
-            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            Struct.pick(Table.DataTransferObject.fields, "id", "updatedAt"),
             { id: (id) => id.from },
           ),
         ),
       ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteSharedAccount",
     Args: Schema.Struct(
-      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
-        id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from.members[0],
-      }),
+      Struct.evolve(
+        Struct.pick(Table.DataTransferObject.fields, "id", "deletedAt"),
+        {
+          id: (id) => id.from,
+          deletedAt: (deletedAt) => deletedAt.from.members[0],
+        },
+      ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreSharedAccount",
     Args: IdOnly,
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }
 
 export namespace SharedAccountCustomerAccessContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    customerId: ColumnsContract.EntityId,
-    sharedAccountId: ColumnsContract.EntityId,
-  }) {}
+  export class Table extends TablesContract.Table<SharedAccountCustomerAccessSchema.Table>(
+    "shared_account_customer_access",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>(
+      "SharedAccountCustomerAccess",
+    )({
+      customerId: ColumnsContract.EntityId,
+      sharedAccountId: ColumnsContract.EntityId,
+    }) {},
+    ["read"],
+  ) {}
 
-  export const tableName = "shared_account_customer_access";
-  export const table =
-    new (TablesContract.makeClass<SharedAccountCustomerAccessSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["read"],
-    );
-
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<SharedAccountCustomerAccessSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activeAuthorizedViewName = `active_authorized_${tableName}`;
-  export const activeAuthorizedView =
-    new (TablesContract.makeVirtualViewClass<SharedAccountCustomerAccessSchema.ActiveAuthorizedView>())(
-      activeAuthorizedViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        customerId: ColumnsContract.EntityId,
+  export class ActiveView extends TablesContract.View<SharedAccountCustomerAccessSchema.ActiveView>(
+    "active_shared_account_customer_access",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveSharedAccountCustomerAccess")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
       }),
-    );
+    ) {},
+  ) {}
+
+  export class ActiveAuthorizedView extends TablesContract.VirtualView<SharedAccountCustomerAccessSchema.ActiveAuthorizedView>()(
+    `active_authorized_${Table.name}`,
+    ActiveView.DataTransferObject,
+  ) {}
 }
 
 export namespace SharedAccountManagerAccessContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    managerId: ColumnsContract.EntityId,
-    sharedAccountId: ColumnsContract.EntityId,
-  }) {}
+  export class Table extends TablesContract.Table<SharedAccountManagerAccessSchema.Table>(
+    "shared_account_manager_access",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>(
+      "SharedAccountManagerAccess",
+    )({
+      managerId: ColumnsContract.EntityId,
+      sharedAccountId: ColumnsContract.EntityId,
+    }) {},
+    ["create", "read", "delete"],
+  ) {}
 
-  export const tableName = "shared_account_manager_access";
-  export const table =
-    new (TablesContract.makeClass<SharedAccountManagerAccessSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["create", "read", "delete"],
-    );
-
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<SharedAccountManagerAccessSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activeAuthorizedViewName = `active_authorized_${tableName}`;
-  export const activeAuthorizedView =
-    new (TablesContract.makeVirtualViewClass<SharedAccountManagerAccessSchema.ActiveAuthorizedView>())(
-      activeAuthorizedViewName,
-      DataTransferObject,
-    );
-
-  export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
-  export const activeCustomerAuthorizedView =
-    new (TablesContract.makeViewClass<SharedAccountManagerAccessSchema.ActiveCustomerAuthorizedView>())(
-      activeCustomerAuthorizedViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        customerId: ColumnsContract.EntityId,
+  export class ActiveView extends TablesContract.View<SharedAccountManagerAccessSchema.ActiveView>(
+    "active_shared_account_manager_access",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveSharedAccountManagerAccess")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
       }),
-    );
+    ) {},
+  ) {}
+
+  export class ActiveAuthorizedView extends TablesContract.VirtualView<SharedAccountManagerAccessSchema.ActiveAuthorizedView>()(
+    `active_authorized_${Table.name}`,
+    Table.DataTransferObject,
+  ) {}
+
+  export class ActiveCustomerAuthorizedView extends TablesContract.View<SharedAccountManagerAccessSchema.ActiveCustomerAuthorizedView>(
+    "active_customer_authorized_shared_account_manager_access",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveCustomerAuthorizedSharedAccountManagerAccess",
+    )({ customerId: ColumnsContract.EntityId }) {},
+  ) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+    Struct.evolve(Struct.pick(Table.DataTransferObject.fields, "id"), {
       id: (id) => id.from,
     }),
   );
@@ -249,59 +234,61 @@ export namespace SharedAccountManagerAccessContract {
 
   export const create = new ProceduresContract.Procedure({
     name: "createSharedAccountManagerAccess",
-    Args: DataTransferObject.pipe(Schema.omit("deletedAt", "tenantId")),
-    Returns: DataTransferObject,
+    Args: Table.DataTransferObject.pipe(Schema.omit("deletedAt", "tenantId")),
+    Returns: Table.DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteSharedAccountManagerAccess",
     Args: Schema.Struct(
-      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
-        id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from.members[0],
-      }),
+      Struct.evolve(
+        Struct.pick(Table.DataTransferObject.fields, "id", "deletedAt"),
+        {
+          id: (id) => id.from,
+          deletedAt: (deletedAt) => deletedAt.from.members[0],
+        },
+      ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreSharedAccountManagerAccess",
     Args: IdOnly,
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }
 
 export namespace SharedAccountCustomerGroupAccessContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    customerGroupId: ColumnsContract.EntityId,
-    sharedAccountId: ColumnsContract.EntityId,
-  }) {}
+  export class Table extends TablesContract.Table<SharedAccountCustomerGroupAccessSchema.Table>(
+    "shared_account_customer_group_access",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>(
+      "SharedAccountCustomerGroupAccess",
+    )({
+      customerGroupId: ColumnsContract.EntityId,
+      sharedAccountId: ColumnsContract.EntityId,
+    }) {},
+    ["read"],
+  ) {}
 
-  export const tableName = "shared_account_customer_group_access";
-  export const table =
-    new (TablesContract.makeClass<SharedAccountCustomerGroupAccessSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["read"],
-    );
-
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<SharedAccountCustomerGroupAccessSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activeAuthorizedViewName = `active_authorized_${tableName}`;
-  export const activeAuthorizedView =
-    new (TablesContract.makeViewClass<SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedView>())(
-      activeAuthorizedViewName,
-      Schema.Struct({
-        ...DataTransferObject.fields,
-        memberId: ColumnsContract.EntityId,
+  export class ActiveView extends TablesContract.View<SharedAccountCustomerGroupAccessSchema.ActiveView>(
+    "active_shared_account_customer_group_access",
+  )(
+    class Dto extends Table.DataTransferObject.extend<Dto>(
+      "ActiveSharedAccountCustomerGroupAccess",
+    )(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
       }),
-    );
+    ) {},
+  ) {}
+
+  export class ActiveAuthorizedView extends TablesContract.View<SharedAccountCustomerGroupAccessSchema.ActiveAuthorizedView>(
+    "active_authorized_shared_account_customer_group_access",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveAuthorizedSharedAccountCustomerGroupAccess",
+    )({ memberId: ColumnsContract.EntityId }) {},
+  ) {}
 }

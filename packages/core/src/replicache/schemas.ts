@@ -10,18 +10,15 @@ import * as Schema from "effect/Schema";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
-import {
-  ReplicacheClientGroupsModel,
-  ReplicacheClientsModel,
-  ReplicacheClientViewEntriesModel,
-  ReplicacheClientViewsModel,
-  ReplicacheMetaModel,
-} from "./models";
+import { ReplicacheClientViewEntriesModel } from "./models";
 
 import type { InferSelectModel } from "drizzle-orm";
+import type { ReplicacheClientGroupsModel } from "./models";
+
+const clientGroupId = uuid().$type<ReplicacheClientGroupsModel.Id>();
 
 export namespace ReplicacheMetaSchema {
-  export const table = new Tables.Table(ReplicacheMetaModel.tableName, {
+  export const table = new Tables.Table("replicache_meta", {
     key: text().primaryKey(),
     value: Columns.jsonb(Schema.Any).notNull(),
   });
@@ -32,9 +29,9 @@ export namespace ReplicacheMetaSchema {
 
 export namespace ReplicacheClientGroupsSchema {
   export const table = new Tables.Table(
-    ReplicacheClientGroupsModel.tableName,
+    "replicache_client_groups",
     {
-      id: uuid("id").notNull(),
+      id: clientGroupId.notNull(),
       tenantId: Columns.tenantId,
       userId: Columns.entityId.notNull(),
       clientVersion: Columns.version.notNull(),
@@ -53,11 +50,11 @@ export namespace ReplicacheClientGroupsSchema {
 
 export namespace ReplicacheClientsSchema {
   export const table = new Tables.Table(
-    ReplicacheClientsModel.tableName,
+    "replicache_clients",
     {
       id: uuid().notNull(),
       tenantId: Columns.tenantId,
-      clientGroupId: uuid().notNull(),
+      clientGroupId: clientGroupId.notNull(),
       lastMutationId: bigint({ mode: "number" }).notNull().default(0),
       version: Columns.version.notNull(),
       ...Columns.timestamps,
@@ -75,9 +72,9 @@ export namespace ReplicacheClientsSchema {
 
 export namespace ReplicacheClientViewsSchema {
   export const table = new Tables.Table(
-    ReplicacheClientViewsModel.tableName,
+    "replicache_client_views",
     {
-      clientGroupId: uuid().notNull(),
+      clientGroupId: clientGroupId.notNull(),
       version: Columns.version.notNull(),
       clientVersion: Columns.version.notNull(),
       tenantId: Columns.tenantId,
@@ -95,9 +92,9 @@ export namespace ReplicacheClientViewsSchema {
 
 export namespace ReplicacheClientViewEntriesSchema {
   export const table = new Tables.Table(
-    ReplicacheClientViewEntriesModel.tableName,
+    "replicache_client_view_entries",
     {
-      clientGroupId: uuid().notNull(),
+      clientGroupId: clientGroupId.notNull(),
       clientViewVersion: Columns.version.notNull(),
       entity: Columns.union(
         ReplicacheClientViewEntriesModel.entities,

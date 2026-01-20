@@ -11,13 +11,13 @@ import { Replicache } from "../replicache/client";
 import { AnnouncementsContract } from "./contract";
 
 export namespace Announcements {
-  const table = Models.syncTables[AnnouncementsContract.tableName];
+  const Table = Models.syncTables[AnnouncementsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/announcements/client/ReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -31,13 +31,13 @@ export namespace Announcements {
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* Replicache.makeWriteRepository(Table, repository);
 
         const updateByRoomId = (
-          roomId: AnnouncementsContract.DataTransferObject["roomId"],
+          roomId: (typeof AnnouncementsContract.Table.DataTransferObject.Type)["roomId"],
           announcement: Partial<
             Omit<
-              AnnouncementsContract.DataTransferObject,
+              typeof AnnouncementsContract.Table.DataTransferObject.Type,
               "id" | "roomId" | "tenantId"
             >
           >,
@@ -51,7 +51,7 @@ export namespace Announcements {
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
-          roomId: AnnouncementsContract.DataTransferObject["roomId"],
+          roomId: (typeof AnnouncementsContract.Table.DataTransferObject.Type)["roomId"],
         ) =>
           repository
             .findWhere((a) =>
@@ -82,7 +82,7 @@ export namespace Announcements {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNull),
                 AccessControl.policy({
-                  name: AnnouncementsContract.tableName,
+                  name: AnnouncementsContract.Table.name,
                   id,
                 }),
               ),
@@ -102,7 +102,7 @@ export namespace Announcements {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: AnnouncementsContract.tableName,
+                  name: AnnouncementsContract.Table.name,
                   id,
                 }),
               ),
@@ -130,7 +130,7 @@ export namespace Announcements {
             makePolicy: () => AccessControl.permission("announcements:create"),
             mutator: (announcement, user) =>
               repository.create(
-                AnnouncementsContract.DataTransferObject.make({
+                new AnnouncementsContract.Table.DataTransferObject({
                   ...announcement,
                   authorId: user.id,
                   tenantId: user.tenantId,

@@ -246,14 +246,16 @@ export namespace Tenants {
     "@printdesk/core/tenants/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default],
+      dependencies: [Repository.Default, ReplicacheNotifier.Default],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyEdit = (_tenant: TenantsContract.DataTransferObject) =>
+        const notifyEdit = (
+          _tenant: typeof TenantsContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(PullPermission.make({ permission: "tenants:read" })),
           );
@@ -343,7 +345,7 @@ export namespace Tenants {
                       (license.tenantId === null || tenant?.status === "setup"),
                   ),
                   AccessControl.policy({
-                    name: LicensesContract.tableName,
+                    name: LicensesContract.Table.name,
                     id: key.pipe(Redacted.value),
                   }),
                 ),

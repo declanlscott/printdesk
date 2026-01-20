@@ -8,13 +8,12 @@ import {
   SharedAccountsSchema,
 } from "../shared-accounts/schemas";
 import { Tables } from "../tables";
-import { CommentsContract } from "./contract";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace CommentsSchema {
   export const table = new Tables.Sync(
-    CommentsContract.tableName,
+    "comments",
     {
       orderId: Columns.entityId.notNull(),
       authorId: Columns.entityId.notNull(),
@@ -26,7 +25,7 @@ export namespace CommentsSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(CommentsContract.activeViewName).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -36,7 +35,7 @@ export namespace CommentsSchema {
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeCustomerPlacedOrderView = pgView(
-    CommentsContract.activeCustomerPlacedOrderViewName,
+    `active_customer_placed_order_${table.name}`,
   ).as((qb) =>
     qb
       .select({
@@ -58,7 +57,7 @@ export namespace CommentsSchema {
     InferSelectViewModel<ActiveCustomerPlacedOrderView>;
 
   export const activeManagerAuthorizedSharedAccountOrderView = pgView(
-    CommentsContract.activeManagerAuthorizedSharedAccountOrderViewName,
+    `active_manager_authorized_shared_account_order_${table.name}`,
   ).as((qb) =>
     qb
       .select({

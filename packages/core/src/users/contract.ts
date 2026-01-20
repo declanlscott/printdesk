@@ -21,35 +21,31 @@ export namespace UsersContract {
   export const Role = Schema.Literal(...roles);
   export type Role = (typeof Role)["Type"];
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    origin: Schema.Literal(...origins),
-    username: Schema.String,
-    externalId: Schema.String,
-    identityProviderId: ColumnsContract.EntityId,
-    role: Role.pipe(Schema.optionalWith({ default: () => "customer" })),
-    name: Schema.String,
-    email: Schema.String,
-  }) {}
-
-  export const tableName = "users";
-  export const table = new (TablesContract.makeClass<UsersSchema.Table>())(
-    tableName,
-    DataTransferObject,
+  export class Table extends TablesContract.Table<UsersSchema.Table>("users")(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("User")({
+      origin: Schema.Literal(...origins),
+      username: Schema.String,
+      externalId: Schema.String,
+      identityProviderId: ColumnsContract.EntityId,
+      role: Role.pipe(Schema.optionalWith({ default: () => "customer" })),
+      name: Schema.String,
+      email: Schema.String,
+    }) {},
     ["read", "update", "delete"],
-  );
+  ) {}
 
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<UsersSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
+  export class ActiveView extends TablesContract.View<UsersSchema.ActiveView>(
+    "active_users",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("ActiveUser")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+    ) {},
+  ) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+    Struct.evolve(Struct.pick(Table.DataTransferObject.fields, "id"), {
       id: (id) => id.from,
     }),
   );
@@ -80,9 +76,9 @@ export namespace UsersContract {
 
   export const edit = new ProceduresContract.Procedure({
     name: "editUser",
-    Args: DataTransferObject.pipe(
+    Args: Table.DataTransferObject.pipe(
       Schema.omit(
-        ...Struct.keys(ColumnsContract.Tenant.fields),
+        ...Struct.keys(ColumnsContract.BaseEntity.fields),
         "origin",
         "username",
         "externalId",
@@ -95,7 +91,12 @@ export namespace UsersContract {
       Schema.extend(
         Schema.Struct(
           Struct.evolve(
-            Struct.pick(DataTransferObject.fields, "id", "updatedAt", "role"),
+            Struct.pick(
+              Table.DataTransferObject.fields,
+              "id",
+              "updatedAt",
+              "role",
+            ),
             {
               id: (id) => id.from,
               role: (role) => role.from.pipe(Schema.optional),
@@ -104,23 +105,26 @@ export namespace UsersContract {
         ),
       ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const delete_ = new ProceduresContract.Procedure({
     name: "deleteUser",
     Args: Schema.Struct(
-      Struct.evolve(Struct.pick(DataTransferObject.fields, "id", "deletedAt"), {
-        id: (id) => id.from,
-        deletedAt: (deletedAt) => deletedAt.from.members[0],
-      }),
+      Struct.evolve(
+        Struct.pick(Table.DataTransferObject.fields, "id", "deletedAt"),
+        {
+          id: (id) => id.from,
+          deletedAt: (deletedAt) => deletedAt.from.members[0],
+        },
+      ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const restore = new ProceduresContract.Procedure({
     name: "restoreUser",
     Args: IdOnly,
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }

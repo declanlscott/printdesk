@@ -573,7 +573,7 @@ export namespace DeliveryOptions {
             make: Effect.fn("DeliveryOptions.Policies.canEdit.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: DeliveryOptionsContract.tableName,
+                  name: DeliveryOptionsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -604,7 +604,7 @@ export namespace DeliveryOptions {
               ({ id }) =>
                 AccessControl.privatePolicy(
                   {
-                    name: DeliveryOptionsContract.tableName,
+                    name: DeliveryOptionsContract.Table.name,
                     id,
                   },
                   ({ tenantId }) =>
@@ -628,7 +628,12 @@ export namespace DeliveryOptions {
     "@printdesk/core/delivery-options/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Policies.Default],
+      dependencies: [
+        Repository.Default,
+        Rooms.Repository.Default,
+        Policies.Default,
+        ReplicacheNotifier.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
         const roomsRepository = yield* Rooms.Repository;
@@ -639,7 +644,7 @@ export namespace DeliveryOptions {
         const PullPermission = yield* Events.ReplicachePullPermission;
 
         const notifyCreate = (
-          deliveryOption: DeliveryOptionsContract.DataTransferObject,
+          deliveryOption: typeof DeliveryOptionsContract.Table.DataTransferObject.Type,
         ) =>
           roomsRepository
             .findById(deliveryOption.roomId, deliveryOption.tenantId)
@@ -675,7 +680,7 @@ export namespace DeliveryOptions {
                   ),
                 ),
               ),
-              Effect.map(notifier.notify),
+              Effect.flatMap(notifier.notify),
             );
         const notifyEdit = notifyCreate;
         const notifyDelete = notifyCreate;

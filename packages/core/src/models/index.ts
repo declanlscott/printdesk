@@ -55,24 +55,24 @@ export namespace Models {
     };
 
   export const allSyncTables = Array.make(
-    AnnouncementsContract.table,
-    CommentsContract.table,
-    CustomerGroupsContract.table,
-    CustomerGroupMembershipsContract.table,
-    DeliveryOptionsContract.table,
-    InvoicesContract.table,
-    OrdersContract.table,
-    ProductsContract.table,
-    RoomsContract.table,
-    SharedAccountsContract.table,
-    SharedAccountCustomerAccessContract.table,
-    SharedAccountManagerAccessContract.table,
-    SharedAccountCustomerGroupAccessContract.table,
-    TenantsContract.table,
-    UsersContract.table,
-    RoomWorkflowsContract.table,
-    SharedAccountWorkflowsContract.table,
-    WorkflowStatusesContract.table,
+    AnnouncementsContract.Table,
+    CommentsContract.Table,
+    DeliveryOptionsContract.Table,
+    CustomerGroupsContract.Table,
+    CustomerGroupMembershipsContract.Table,
+    InvoicesContract.Table,
+    OrdersContract.Table,
+    ProductsContract.Table,
+    RoomsContract.Table,
+    SharedAccountsContract.Table,
+    SharedAccountCustomerAccessContract.Table,
+    SharedAccountManagerAccessContract.Table,
+    SharedAccountCustomerGroupAccessContract.Table,
+    TenantsContract.Table,
+    UsersContract.Table,
+    RoomWorkflowsContract.Table,
+    SharedAccountWorkflowsContract.Table,
+    WorkflowStatusesContract.Table,
   );
   export const syncTables = record(allSyncTables);
   export type SyncTable = (typeof syncTables)[keyof typeof syncTables];
@@ -82,7 +82,7 @@ export namespace Models {
     { name: TName }
   >;
 
-  export const allNonSyncTables = Array.make(IdentityProvidersContract.table);
+  export const allNonSyncTables = Array.make(IdentityProvidersContract.Table);
   export const nonSyncTables = record(allNonSyncTables);
   export type NonSyncTable = (typeof nonSyncTables)[keyof typeof nonSyncTables];
   export type NonSyncTableName = NonSyncTable["name"];
@@ -92,8 +92,8 @@ export namespace Models {
   >;
 
   export const allInternalTables = Array.make(
-    LicensesContract.table,
-    TenantMetadataContract.table,
+    LicensesContract.Table,
+    TenantMetadataContract.Table,
   );
   export const internalTables = record(allInternalTables);
   export type InternalTable =
@@ -105,46 +105,46 @@ export namespace Models {
   >;
 
   export const allSyncViews = Array.make(
-    AnnouncementsContract.activeView,
-    AnnouncementsContract.activePublishedRoomView,
-    SharedAccountsContract.activeView,
-    SharedAccountsContract.activeCustomerAuthorizedView,
-    SharedAccountsContract.activeManagerAuthorizedView,
-    SharedAccountCustomerAccessContract.activeView,
-    SharedAccountCustomerAccessContract.activeAuthorizedView,
-    SharedAccountManagerAccessContract.activeView,
-    SharedAccountManagerAccessContract.activeAuthorizedView,
-    SharedAccountManagerAccessContract.activeCustomerAuthorizedView,
-    SharedAccountCustomerGroupAccessContract.activeView,
-    SharedAccountCustomerGroupAccessContract.activeAuthorizedView,
-    CommentsContract.activeView,
-    CommentsContract.activeManagerAuthorizedSharedAccountOrderView,
-    CommentsContract.activeCustomerPlacedOrderView,
-    CustomerGroupsContract.activeView,
-    CustomerGroupsContract.activeMembershipView,
-    CustomerGroupMembershipsContract.activeView,
-    DeliveryOptionsContract.activeView,
-    DeliveryOptionsContract.activePublishedRoomView,
-    InvoicesContract.activeView,
-    InvoicesContract.activeManagerAuthorizedSharedAccountOrderView,
-    InvoicesContract.activeCustomerPlacedOrderView,
-    OrdersContract.activeView,
-    OrdersContract.activeManagerAuthorizedSharedAccountView,
-    OrdersContract.activeCustomerPlacedView,
-    ProductsContract.activeView,
-    ProductsContract.activePublishedView,
-    RoomsContract.activeView,
-    RoomsContract.activePublishedView,
-    UsersContract.activeView,
-    RoomWorkflowsContract.activeView,
-    RoomWorkflowsContract.activePublishedRoomView,
-    SharedAccountWorkflowsContract.activeView,
-    SharedAccountWorkflowsContract.activeCustomerAuthorizedView,
-    SharedAccountWorkflowsContract.activeManagerAuthorizedView,
-    WorkflowStatusesContract.activeView,
-    WorkflowStatusesContract.activePublishedRoomView,
-    WorkflowStatusesContract.activeCustomerAuthorizedSharedAccountView,
-    WorkflowStatusesContract.activeManagerAuthorizedSharedAccountView,
+    AnnouncementsContract.ActiveView,
+    AnnouncementsContract.ActivePublishedRoomView,
+    CommentsContract.ActiveView,
+    CommentsContract.ActiveManagerAuthorizedSharedAccountOrderView,
+    CommentsContract.ActiveCustomerPlacedOrderView,
+    DeliveryOptionsContract.ActiveView,
+    DeliveryOptionsContract.ActivePublishedRoomView,
+    CustomerGroupsContract.ActiveView,
+    CustomerGroupsContract.ActiveMembershipView,
+    CustomerGroupMembershipsContract.ActiveView,
+    InvoicesContract.ActiveView,
+    InvoicesContract.ActiveManagerAuthorizedSharedAccountOrderView,
+    InvoicesContract.ActiveCustomerPlacedOrderView,
+    OrdersContract.ActiveView,
+    OrdersContract.ActiveManagerAuthorizedSharedAccountView,
+    OrdersContract.ActiveCustomerPlacedView,
+    ProductsContract.ActiveView,
+    ProductsContract.ActivePublishedView,
+    RoomsContract.ActiveView,
+    RoomsContract.ActivePublishedView,
+    UsersContract.ActiveView,
+    RoomWorkflowsContract.ActiveView,
+    RoomWorkflowsContract.ActivePublishedRoomView,
+    SharedAccountsContract.ActiveView,
+    SharedAccountsContract.ActiveCustomerAuthorizedView,
+    SharedAccountsContract.ActiveManagerAuthorizedView,
+    SharedAccountCustomerAccessContract.ActiveView,
+    SharedAccountCustomerAccessContract.ActiveAuthorizedView,
+    SharedAccountManagerAccessContract.ActiveView,
+    SharedAccountManagerAccessContract.ActiveAuthorizedView,
+    SharedAccountManagerAccessContract.ActiveCustomerAuthorizedView,
+    SharedAccountCustomerGroupAccessContract.ActiveView,
+    SharedAccountCustomerGroupAccessContract.ActiveAuthorizedView,
+    SharedAccountWorkflowsContract.ActiveView,
+    SharedAccountWorkflowsContract.ActiveCustomerAuthorizedView,
+    SharedAccountWorkflowsContract.ActiveManagerAuthorizedView,
+    WorkflowStatusesContract.ActiveView,
+    WorkflowStatusesContract.ActivePublishedRoomView,
+    WorkflowStatusesContract.ActiveCustomerAuthorizedSharedAccountView,
+    WorkflowStatusesContract.ActiveManagerAuthorizedSharedAccountView,
   );
   export const syncViews = record(allSyncViews);
   export type SyncView = (typeof syncViews)[keyof typeof syncViews];

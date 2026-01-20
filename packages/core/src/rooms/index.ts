@@ -518,7 +518,7 @@ export namespace Rooms {
           make: Effect.fn("Rooms.Policies.canEdit.make")(({ id }) =>
             AccessControl.privatePolicy(
               {
-                name: RoomsContract.tableName,
+                name: RoomsContract.Table.name,
                 id,
               },
               ({ tenantId }) =>
@@ -542,7 +542,7 @@ export namespace Rooms {
             make: Effect.fn("Rooms.Policies.canRestore.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: RoomsContract.tableName,
+                  name: RoomsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -573,6 +573,7 @@ export namespace Rooms {
         Products.Repository.Default,
         RoomWorkflows.Repository.Default,
         Policies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -586,7 +587,9 @@ export namespace Rooms {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyCreate = (room: RoomsContract.DataTransferObject) =>
+        const notifyCreate = (
+          room: typeof RoomsContract.Table.DataTransferObject.Type,
+        ) =>
           Match.value(room).pipe(
             Match.when({ status: Match.is("published") }, () =>
               Array.make(
@@ -617,7 +620,9 @@ export namespace Rooms {
             notifier.notify,
           );
 
-        const notifyEdit = (room: RoomsContract.DataTransferObject) =>
+        const notifyEdit = (
+          room: typeof RoomsContract.Table.DataTransferObject.Type,
+        ) =>
           Match.value(room).pipe(
             Match.when({ status: Match.is("published") }, () =>
               Array.make(
@@ -637,7 +642,9 @@ export namespace Rooms {
             notifier.notify,
           );
 
-        const notifyPublish = (_room: RoomsContract.DataTransferObject) =>
+        const notifyPublish = (
+          _room: typeof RoomsContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "rooms:read" }),
@@ -661,7 +668,9 @@ export namespace Rooms {
           );
         const notifyDraft = notifyPublish;
 
-        const notifyDelete = (_room: RoomsContract.DataTransferObject) =>
+        const notifyDelete = (
+          _room: typeof RoomsContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "rooms:read" }),
@@ -696,7 +705,9 @@ export namespace Rooms {
             ),
           );
 
-        const notifyRestore = (_room: RoomsContract.DataTransferObject) =>
+        const notifyRestore = (
+          _room: typeof RoomsContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "rooms:read" }),

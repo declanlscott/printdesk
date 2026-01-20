@@ -11,13 +11,13 @@ import { Replicache } from "../replicache/client";
 import { DeliveryOptionsContract } from "./contract";
 
 export namespace DeliveryOptions {
-  const table = Models.syncTables[DeliveryOptionsContract.tableName];
+  const Table = Models.syncTables[DeliveryOptionsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/delivery-options/client/ReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -31,13 +31,13 @@ export namespace DeliveryOptions {
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* Replicache.makeWriteRepository(Table, repository);
 
         const updateByRoomId = (
-          roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
+          roomId: (typeof DeliveryOptionsContract.Table.DataTransferObject.Type)["roomId"],
           deliveryOption: Partial<
             Omit<
-              DeliveryOptionsContract.DataTransferObject,
+              typeof DeliveryOptionsContract.Table.DataTransferObject.Type,
               "id" | "roomId" | "tenantId"
             >
           >,
@@ -51,7 +51,7 @@ export namespace DeliveryOptions {
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
-          roomId: DeliveryOptionsContract.DataTransferObject["roomId"],
+          roomId: (typeof DeliveryOptionsContract.Table.DataTransferObject.Type)["roomId"],
         ) =>
           repository
             .findWhere((o) =>
@@ -82,7 +82,7 @@ export namespace DeliveryOptions {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNull),
                 AccessControl.policy({
-                  name: DeliveryOptionsContract.tableName,
+                  name: DeliveryOptionsContract.Table.name,
                   id,
                 }),
               ),
@@ -102,7 +102,7 @@ export namespace DeliveryOptions {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: DeliveryOptionsContract.tableName,
+                  name: DeliveryOptionsContract.Table.name,
                   id,
                 }),
               ),
@@ -131,7 +131,7 @@ export namespace DeliveryOptions {
               AccessControl.permission("delivery_options:create"),
             mutator: (deliveryOption, { tenantId }) =>
               repository.create(
-                DeliveryOptionsContract.DataTransferObject.make({
+                new DeliveryOptionsContract.Table.DataTransferObject({
                   ...deliveryOption,
                   tenantId,
                 }),

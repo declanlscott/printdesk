@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Array from "effect/Array";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
@@ -6,6 +7,7 @@ import * as HashMap from "effect/HashMap";
 import * as HashSet from "effect/HashSet";
 import * as Iterable from "effect/Iterable";
 import * as Option from "effect/Option";
+import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 
 import { AccessControl } from "../access-control";
@@ -37,7 +39,7 @@ export namespace QueriesContract {
     readonly entity: TEntity;
     readonly policy: AccessControl.Policy<TPolicyError, TPolicyContext>;
     readonly findCreates: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) => Effect.Effect<
       Array<VersionedDto<TEntity>>,
@@ -45,7 +47,7 @@ export namespace QueriesContract {
       TCreatesContext
     >;
     readonly findUpdates: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) => Effect.Effect<
       Array<VersionedDto<TEntity>>,
@@ -53,7 +55,7 @@ export namespace QueriesContract {
       TUpdatesContext
     >;
     readonly findDeletes: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) => Effect.Effect<
       Array<Pick<VersionedDto<TEntity>, "id">>,
@@ -61,7 +63,7 @@ export namespace QueriesContract {
       TDeletesContext
     >;
     readonly fastForward: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       excludeIds: Array<VersionedDto<TEntity>["id"]>,
       userId: ActorsContract.UserActor["id"],
     ) => Effect.Effect<
@@ -86,7 +88,7 @@ export namespace QueriesContract {
   > {
     readonly entity: TEntity;
     readonly findCreates: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>,
@@ -94,7 +96,7 @@ export namespace QueriesContract {
       TCreatesContext | TPolicyContext
     >;
     readonly findUpdates: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>,
@@ -102,7 +104,7 @@ export namespace QueriesContract {
       TUpdatesContext | TPolicyContext
     >;
     readonly findDeletes: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) => Stream.Stream<
       VersionedDto<TEntity>["id"],
@@ -110,7 +112,7 @@ export namespace QueriesContract {
       TDeletesContext | TPolicyContext
     >;
     readonly fastForward: (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       excludeIds: Chunk.Chunk<VersionedDto<TEntity>["id"]>,
       userId: ActorsContract.UserActor["id"],
     ) => Stream.Stream<
@@ -282,7 +284,7 @@ export namespace QueriesContract {
       ).pipe(Stream.fromIterableEffect);
 
     #findCreates = (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) =>
       this.#resolveData(
@@ -296,7 +298,7 @@ export namespace QueriesContract {
       );
 
     #findUpdates = (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) =>
       this.#resolveData(
@@ -310,7 +312,7 @@ export namespace QueriesContract {
       );
 
     #findDeletes = (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) =>
       this.#resolveIds(
@@ -324,7 +326,7 @@ export namespace QueriesContract {
       );
 
     #fastForward = (
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       excludeIds: Chunk.Chunk<
         Models.SyncTable["DataTransferObject"]["Type"]["id"]
       >,
@@ -424,7 +426,7 @@ export namespace QueriesContract {
       }
         ? Differentiator<TRecord, TIsFinal>
         : never,
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) {
       return this.#map.pipe(
@@ -459,7 +461,7 @@ export namespace QueriesContract {
       }
         ? Differentiator<TRecord, TIsFinal>
         : never,
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) {
       return this.#map.pipe(
@@ -494,7 +496,7 @@ export namespace QueriesContract {
       }
         ? Differentiator<TRecord, TIsFinal>
         : never,
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       userId: ActorsContract.UserActor["id"],
     ) {
       return this.#map.pipe(
@@ -529,7 +531,7 @@ export namespace QueriesContract {
       }
         ? Differentiator<TRecord, TIsFinal>
         : never,
-      clientView: ReplicacheClientViewsModel.Record,
+      clientView: typeof ReplicacheClientViewsModel.Table.Record.Type,
       excludes: Chunk.Chunk<{
         entity: Models.SyncTableName;
         id: Models.SyncTable["DataTransferObject"]["Type"]["id"];
@@ -572,4 +574,12 @@ export namespace QueriesContract {
       >;
     }
   }
+
+  export class DifferenceLimitExceededError extends Schema.TaggedError<DifferenceLimitExceededError>(
+    "DifferenceLimitExceededError",
+  )(
+    "DifferenceLimitExceededError",
+    {},
+    HttpApiSchema.annotations({ status: 500 }),
+  ) {}
 }

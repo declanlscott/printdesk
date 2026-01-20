@@ -571,7 +571,7 @@ export namespace Announcements {
             make: Effect.fn("Announcements.Policies.canEdit.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: AnnouncementsContract.tableName,
+                  name: AnnouncementsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -602,7 +602,7 @@ export namespace Announcements {
               ({ id }) =>
                 AccessControl.privatePolicy(
                   {
-                    name: AnnouncementsContract.tableName,
+                    name: AnnouncementsContract.Table.name,
                     id,
                   },
                   ({ tenantId }) =>
@@ -630,6 +630,7 @@ export namespace Announcements {
         Repository.Default,
         Rooms.Repository.Default,
         Policies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -641,7 +642,7 @@ export namespace Announcements {
         const PullPermission = yield* Events.ReplicachePullPermission;
 
         const notifyCreate = (
-          announcement: AnnouncementsContract.DataTransferObject,
+          announcement: typeof AnnouncementsContract.Table.DataTransferObject.Type,
         ) =>
           roomsRepository
             .findById(announcement.roomId, announcement.tenantId)
@@ -677,7 +678,7 @@ export namespace Announcements {
                   ),
                 ),
               ),
-              Effect.map(notifier.notify),
+              Effect.flatMap(notifier.notify),
             );
         const notifyEdit = notifyCreate;
         const notifyDelete = notifyCreate;

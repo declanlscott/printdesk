@@ -8,7 +8,7 @@ import type { InferSelectModel } from "drizzle-orm";
 
 export namespace IdentityProvidersSchema {
   export const table = new Tables.NonSync(
-    IdentityProvidersContract.tableName,
+    "identity_providers",
     {
       kind: Columns.union(IdentityProvidersContract.kinds).notNull(),
       externalTenantId: text().notNull(),

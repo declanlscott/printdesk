@@ -23,36 +23,31 @@ import {
 } from "../shared-accounts/schemas";
 import { Tables } from "../tables";
 import { Constants } from "../utils/constants";
-import {
-  RoomWorkflowsContract,
-  SharedAccountWorkflowsContract,
-  WorkflowStatusesContract,
-} from "./contracts";
+import { WorkflowStatusesContract } from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 import type { ColumnsContract } from "../columns/contract";
 
 export namespace RoomWorkflowsSchema {
   export const table = new Tables.Sync(
-    RoomWorkflowsContract.tableName,
+    "room_workflows",
     { roomId: Columns.entityId.notNull() },
     (table) => [uniqueIndex().on(table.roomId, table.tenantId)],
   );
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(RoomWorkflowsContract.activeViewName).as(
-    (qb) =>
-      qb
-        .select()
-        .from(table.definition)
-        .where(isNull(table.definition.deletedAt)),
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activePublishedRoomView = pgView(
-    RoomWorkflowsContract.activePublishedRoomViewName,
+    `active_published_${table.name}`,
   ).as((qb) =>
     qb
       .select(getViewSelectedFields(activeView))
@@ -75,16 +70,14 @@ export namespace RoomWorkflowsSchema {
 
 export namespace SharedAccountWorkflowsSchema {
   export const table = new Tables.Sync(
-    SharedAccountWorkflowsContract.tableName,
+    "shared_account_workflows",
     { sharedAccountId: Columns.entityId.notNull() },
     (table) => [uniqueIndex().on(table.sharedAccountId, table.tenantId)],
   );
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(
-    SharedAccountWorkflowsContract.activeViewName,
-  ).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -94,13 +87,12 @@ export namespace SharedAccountWorkflowsSchema {
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeCustomerAuthorizedView = pgView(
-    SharedAccountWorkflowsContract.activeCustomerAuthorizedViewName,
+    `active_customer_authorized_${table.name}`,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedCustomerId:
-          SharedAccountCustomerAccessSchema.activeView.customerId,
+        customerId: SharedAccountCustomerAccessSchema.activeView.customerId,
       })
       .from(SharedAccountCustomerAccessSchema.activeView)
       .innerJoin(
@@ -123,13 +115,12 @@ export namespace SharedAccountWorkflowsSchema {
     InferSelectViewModel<ActiveCustomerAuthorizedView>;
 
   export const activeManagerAuthorizedView = pgView(
-    SharedAccountWorkflowsContract.activeManagerAuthorizedViewName,
+    `active_manager_authorized_${table.name}`,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedManagerId:
-          SharedAccountManagerAccessSchema.activeView.managerId,
+        managerId: SharedAccountManagerAccessSchema.activeView.managerId,
       })
       .from(activeView)
       .innerJoin(
@@ -184,7 +175,7 @@ export namespace WorkflowStatusesSchema {
   };
 
   export const table = new Tables.Sync(
-    WorkflowStatusesContract.tableName,
+    "workflow_statuses",
     {
       name: Columns.varchar({
         length: Constants.VARCHAR_LENGTH,
@@ -208,25 +199,23 @@ export namespace WorkflowStatusesSchema {
   export type Table = typeof table.definition;
   export type Row = WorkflowStatusRow<InferSelectModel<Table>>;
 
-  export const activeView = pgView(WorkflowStatusesContract.activeViewName).as(
-    (qb) =>
-      qb
-        .select(getTableColumns(table.definition))
-        .from(table.definition)
-        .where(isNull(table.definition.deletedAt)),
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
+    qb
+      .select(getTableColumns(table.definition))
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = WorkflowStatusRow<InferSelectViewModel<ActiveView>>;
 
   export const activeCustomerAuthorizedSharedAccountView = pgView(
-    WorkflowStatusesContract.activeCustomerAuthorizedSharedAccountViewName,
+    `active_customer_authorized_shared_account_${table.name}`,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedCustomerId:
-          SharedAccountWorkflowsSchema.activeCustomerAuthorizedView
-            .authorizedCustomerId,
+        customerId:
+          SharedAccountWorkflowsSchema.activeCustomerAuthorizedView.customerId,
       })
       .from(activeView)
       .innerJoin(
@@ -251,14 +240,13 @@ export namespace WorkflowStatusesSchema {
     >;
 
   export const activeManagerAuthorizedSharedAccountView = pgView(
-    WorkflowStatusesContract.activeManagerAuthorizedSharedAccountViewName,
+    `active_manager_authorized_shared_account_${table.name}`,
   ).as((qb) =>
     qb
       .select({
         ...getViewSelectedFields(activeView),
-        authorizedManagerId:
-          SharedAccountWorkflowsSchema.activeManagerAuthorizedView
-            .authorizedManagerId,
+        managerId:
+          SharedAccountWorkflowsSchema.activeManagerAuthorizedView.managerId,
       })
       .from(activeView)
       .innerJoin(
@@ -283,7 +271,7 @@ export namespace WorkflowStatusesSchema {
     >;
 
   export const activePublishedRoomView = pgView(
-    WorkflowStatusesContract.activePublishedRoomViewName,
+    `active_published_room_${table.name}`,
   ).as((qb) =>
     qb
       .select(getViewSelectedFields(activeView))

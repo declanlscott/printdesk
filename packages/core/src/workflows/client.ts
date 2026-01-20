@@ -25,13 +25,13 @@ import type { ColumnsContract } from "../columns/contract";
 import type { SharedAccountManagerAccessContract } from "../shared-accounts/contracts";
 
 export namespace RoomWorkflows {
-  const table = Models.syncTables[RoomWorkflowsContract.tableName];
+  const Table = Models.syncTables[RoomWorkflowsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/RoomsReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -45,13 +45,13 @@ export namespace RoomWorkflows {
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* Replicache.makeWriteRepository(Table, repository);
 
         const updateByRoomId = (
-          roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
+          roomId: (typeof RoomWorkflowsContract.Table.DataTransferObject.Type)["roomId"],
           roomWorkflow: Partial<
             Omit<
-              RoomWorkflowsContract.DataTransferObject,
+              typeof RoomWorkflowsContract.Table.DataTransferObject.Type,
               "id" | "roomId" | "tenantId"
             >
           >,
@@ -65,7 +65,7 @@ export namespace RoomWorkflows {
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
-          roomId: RoomWorkflowsContract.DataTransferObject["roomId"],
+          roomId: (typeof RoomWorkflowsContract.Table.DataTransferObject.Type)["roomId"],
         ) =>
           repository
             .findWhere((w) =>
@@ -82,7 +82,7 @@ export namespace RoomWorkflows {
 }
 
 export namespace SharedAccountWorkflows {
-  const table = Models.syncTables[SharedAccountWorkflowsContract.tableName];
+  const Table = Models.syncTables[SharedAccountWorkflowsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/SharedAccountsReadRepository",
@@ -93,7 +93,7 @@ export namespace SharedAccountWorkflows {
         SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* Replicache.makeReadRepository(Table);
 
         const sharedAccountCustomerAccessRepository =
           yield* SharedAccounts.CustomerAccessReadRepository;
@@ -102,7 +102,7 @@ export namespace SharedAccountWorkflows {
 
         const findActiveCustomerAuthorized = (
           customerId: ColumnsContract.EntityId,
-          id: SharedAccountWorkflowsContract.DataTransferObject["id"],
+          id: (typeof SharedAccountWorkflowsContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -118,8 +118,8 @@ export namespace SharedAccountWorkflows {
             );
 
         const findActiveManagerAuthorized = (
-          managerId: SharedAccountManagerAccessContract.DataTransferObject["managerId"],
-          id: SharedAccountWorkflowsContract.DataTransferObject["id"],
+          managerId: (typeof SharedAccountManagerAccessContract.Table.DataTransferObject.Type)["managerId"],
+          id: (typeof SharedAccountWorkflowsContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflow) =>
@@ -152,7 +152,7 @@ export namespace SharedAccountWorkflows {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -172,7 +172,7 @@ export namespace SharedAccountWorkflows {
             make: ({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: SharedAccountWorkflowsContract.tableName,
+                  name: SharedAccountWorkflowsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -192,7 +192,7 @@ export namespace SharedAccountWorkflows {
             make: ({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: SharedAccountWorkflowsContract.tableName,
+                  name: SharedAccountWorkflowsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -213,14 +213,14 @@ export namespace SharedAccountWorkflows {
 }
 
 export namespace WorkflowStatuses {
-  const table = Models.syncTables[WorkflowStatusesContract.tableName];
+  const Table = Models.syncTables[WorkflowStatusesContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/StatusesReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* Replicache.makeReadRepository(Table);
 
         const findLastByWorkflowId = (workflowId: ColumnsContract.EntityId) =>
           base
@@ -238,8 +238,8 @@ export namespace WorkflowStatuses {
             );
 
         const findSlice = (
-          id: WorkflowStatusesContract.DataTransferObject["id"],
-          index: WorkflowStatusesContract.DataTransferObject["index"],
+          id: (typeof WorkflowStatusesContract.Table.DataTransferObject.Type)["id"],
+          index: (typeof WorkflowStatusesContract.Table.DataTransferObject.Type)["index"],
         ) =>
           base.findById(id).pipe(
             Effect.flatMap((workflowStatus) =>
@@ -261,7 +261,7 @@ export namespace WorkflowStatuses {
           );
 
         const findTailSliceById = (
-          id: WorkflowStatusesContract.DataTransferObject["id"],
+          id: (typeof WorkflowStatusesContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -298,7 +298,7 @@ export namespace WorkflowStatuses {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -349,7 +349,7 @@ export namespace WorkflowStatuses {
                 ordersRepository.findByWorkflowStatusId(id).pipe(
                   Effect.map(Array.isEmptyArray),
                   AccessControl.policy({
-                    name: SharedAccountWorkflowsContract.tableName,
+                    name: SharedAccountWorkflowsContract.Table.name,
                     id,
                   }),
                 ),
@@ -424,17 +424,20 @@ export namespace WorkflowStatuses {
                   Effect.flatMap((index) =>
                     writeRepository.create(
                       Match.value(workflowStatus).pipe(
-                        Match.when({ roomWorkflowId: Match.null }, (status) =>
-                          WorkflowStatusesContract.SharedAccountWorkflowDto.make(
-                            { ...status, index, tenantId },
-                          ),
+                        Match.when(
+                          { roomWorkflowId: Match.null },
+                          (status) =>
+                            new WorkflowStatusesContract.SharedAccountWorkflowDto(
+                              { ...status, index, tenantId },
+                            ),
                         ),
-                        Match.orElse((status) =>
-                          WorkflowStatusesContract.RoomWorkflowDto.make({
-                            ...status,
-                            index,
-                            tenantId,
-                          }),
+                        Match.orElse(
+                          (status) =>
+                            new WorkflowStatusesContract.RoomWorkflowDto({
+                              ...status,
+                              index,
+                              tenantId,
+                            }),
                         ),
                       ),
                     ),

@@ -39,13 +39,17 @@ export namespace Tables {
       );
     }
 
+    get name() {
+      return getTableName(this.definition);
+    }
+
     get conflictSet() {
       return Array.reduce(
         Record.values(getTableColumns(this.definition)),
         Record.empty<string, SQL>(),
         (set, { name }) => {
           set[name] = sql.raw(
-            `COALESCE(EXCLUDED."${name}", "${getTableName(this.definition)}"."${name}")`,
+            `COALESCE(EXCLUDED."${name}", "${this.name}"."${name}")`,
           );
 
           return set;
@@ -90,6 +94,10 @@ export namespace Tables {
       );
     }
 
+    get name() {
+      return getTableName(this.definition);
+    }
+
     get conflictSet() {
       return Array.reduce(
         Record.values(getTableColumns(this.definition)),
@@ -103,13 +111,10 @@ export namespace Tables {
                   "updated_at",
                   (name) => `COALESCE(EXCLUDED."${name}", NOW())`,
                 ),
-                Match.when(
-                  "version",
-                  (name) => `"${getTableName(this.definition)}"."${name}" + 1`,
-                ),
+                Match.when("version", (name) => `"${this.name}"."${name}" + 1`),
                 Match.orElse(
                   (name) =>
-                    `COALESCE(EXCLUDED."${name}", "${getTableName(this.definition)}"."${name}")`,
+                    `COALESCE(EXCLUDED."${name}", "${this.name}"."${name}")`,
                 ),
               ),
             ),
@@ -146,6 +151,10 @@ export namespace Tables {
       );
     }
 
+    get name() {
+      return getTableName(this.definition);
+    }
+
     get conflictSet() {
       return Array.reduce(
         Record.values(getTableColumns(this.definition)),
@@ -159,7 +168,7 @@ export namespace Tables {
               ),
               Match.orElse(
                 (name) =>
-                  `COALESCE(EXCLUDED."${name}", "${getTableName(this.definition)}"."${name}")`,
+                  `COALESCE(EXCLUDED."${name}", "${this.name}"."${name}")`,
               ),
             ),
           );

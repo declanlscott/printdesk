@@ -3,16 +3,12 @@ import { index, pgView, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
-import {
-  CustomerGroupMembershipsContract,
-  CustomerGroupsContract,
-} from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace CustomerGroupsSchema {
   export const table = new Tables.Sync(
-    CustomerGroupsContract.tableName,
+    "customer_groups",
     {
       name: text().notNull(),
       externalId: text().notNull(),
@@ -28,18 +24,17 @@ export namespace CustomerGroupsSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(CustomerGroupsContract.activeViewName).as(
-    (qb) =>
-      qb
-        .select()
-        .from(table.definition)
-        .where(isNull(table.definition.deletedAt)),
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
+    qb
+      .select()
+      .from(table.definition)
+      .where(isNull(table.definition.deletedAt)),
   );
   export type ActiveView = typeof activeView;
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activeMembershipView = pgView(
-    CustomerGroupsContract.activeMembershipViewName,
+    `active_membership_${table.name}`,
   ).as((qb) =>
     qb
       .select({
@@ -66,19 +61,14 @@ export namespace CustomerGroupsSchema {
 }
 
 export namespace CustomerGroupMembershipsSchema {
-  export const table = new Tables.Sync(
-    CustomerGroupMembershipsContract.tableName,
-    {
-      customerGroupId: Columns.entityId.notNull(),
-      memberId: Columns.entityId.notNull(),
-    },
-  );
+  export const table = new Tables.Sync("customer_group_memberships", {
+    customerGroupId: Columns.entityId.notNull(),
+    memberId: Columns.entityId.notNull(),
+  });
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(
-    CustomerGroupMembershipsContract.activeViewName,
-  ).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)

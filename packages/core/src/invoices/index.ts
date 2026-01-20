@@ -876,14 +876,20 @@ export namespace Invoices {
     "@printdesk/core/invoices/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Orders.Repository.Default],
+      dependencies: [
+        Repository.Default,
+        Orders.Repository.Default,
+        ReplicacheNotifier.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyCreate = (invoice: InvoicesContract.DataTransferObject) =>
+        const notifyCreate = (
+          invoice: typeof InvoicesContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "invoices:read" }),

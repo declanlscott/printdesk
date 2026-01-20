@@ -10,7 +10,7 @@ import type { Discriminate } from "../utils";
 
 export namespace UsersSchema {
   export const table = new Tables.Sync(
-    UsersContract.tableName,
+    "users",
     {
       origin: Columns.union(UsersContract.origins).notNull(),
       username: text().notNull(),
@@ -37,7 +37,7 @@ export namespace UsersSchema {
     TUserOrigin
   >;
 
-  export const activeView = pgView(UsersContract.activeViewName).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)

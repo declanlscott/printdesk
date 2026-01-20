@@ -19,26 +19,20 @@ export namespace LicensesContract {
 
   export const Key = Schema.UUID.pipe(Schema.Redacted);
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    key: Key,
-    status: Schema.Literal(...statuses).pipe(
-      Schema.optionalWith({ default: () => "active" }),
-    ),
-  }) {}
-
-  export const tableName = "licenses";
-  export const table =
-    new (TablesContract.makeInternalClass<LicensesSchema.Table>())(
-      tableName,
-      DataTransferObject,
-    );
+  export class Table extends TablesContract.InternalTable<LicensesSchema.Table>(
+    "licenses",
+  )(
+    class Record extends ColumnsContract.BaseEntity.extend<Record>("License")({
+      key: Key,
+      status: Schema.Literal(...statuses).pipe(
+        Schema.optionalWith({ default: () => "active" }),
+      ),
+    }) {},
+  ) {}
 
   export const isAvailable = new ProceduresContract.Procedure({
     name: "isLicenseAvailable",
-    Args: DataTransferObject.pipe(Schema.pick("key")),
+    Args: Table.Record.pipe(Schema.pick("key")),
     Returns: Schema.Void,
   });
 }
@@ -53,45 +47,40 @@ export namespace TenantsContract {
   );
   export type Subdomain = typeof Subdomain.Type;
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    subdomain: Subdomain,
-    name: Schema.String,
-    status: Schema.Literal(...statuses).pipe(
-      Schema.optionalWith({ default: () => "setup" }),
-    ),
-  }) {}
-
-  export const tableName = "tenants";
-  export const table = new (TablesContract.makeClass<TenantsSchema.Table>())(
-    tableName,
-    DataTransferObject,
+  export class Table extends TablesContract.Table<TenantsSchema.Table>(
+    "tenants",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("Tenant")({
+      subdomain: Subdomain,
+      name: Schema.String,
+      status: Schema.Literal(...statuses).pipe(
+        Schema.optionalWith({ default: () => "setup" }),
+      ),
+    }) {},
     ["read", "update"],
-  );
+  ) {}
 
   export const isSubdomainAvailable = new ProceduresContract.Procedure({
     name: "isTenantSubdomainAvailable",
-    Args: DataTransferObject.pipe(Schema.pick("subdomain")),
+    Args: Table.DataTransferObject.pipe(Schema.pick("subdomain")),
     Returns: Schema.Void,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editTenant",
-    Args: DataTransferObject.pipe(
-      Schema.omit(...Struct.keys(ColumnsContract.Tenant.fields)),
+    Args: Table.DataTransferObject.pipe(
+      Schema.omit(...Struct.keys(ColumnsContract.BaseEntity.fields)),
       Schema.partial,
       Schema.extend(
         Schema.Struct(
           Struct.evolve(
-            Struct.pick(DataTransferObject.fields, "id", "updatedAt"),
+            Struct.pick(Table.DataTransferObject.fields, "id", "updatedAt"),
             { id: (id) => id.from },
           ),
         ),
       ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }
 
@@ -105,20 +94,16 @@ export namespace TenantMetadataContract {
     timezone: Timezone,
   }) {}
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    tenantId: ColumnsContract.TenantId,
-    infraProgramInput: InfraProgramInput,
-    apiKeyHash: AuthContract.HashFromString.pipe(Schema.NullOr),
-    lastPapercutSyncAt: ColumnsContract.NullableTimestamp,
-    ...ColumnsContract.Timestamps.fields,
-  }) {}
-
-  export const tableName = "tenant_metadata";
-  export const table =
-    new (TablesContract.makeInternalClass<TenantMetadataSchema.Table>())(
-      tableName,
-      DataTransferObject,
-    );
+  export class Table extends TablesContract.InternalTable<TenantMetadataSchema.Table>(
+    "tenant_metadata",
+  )(
+    class Record extends ColumnsContract.Timestamps.extend<Record>(
+      "TenantMetadata",
+    )({
+      tenantId: ColumnsContract.TenantId,
+      infraProgramInput: InfraProgramInput,
+      apiKeyHash: CryptoContract.HashFromString.pipe(Schema.NullOr),
+      lastPapercutSyncAt: ColumnsContract.NullableTimestamp,
+    }) {},
+  ) {}
 }

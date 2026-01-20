@@ -43,7 +43,7 @@ export namespace EntraId {
       accessors: true,
       dependencies: [Sst.Resource.layer],
       effect: (
-        externalTenantId: IdentityProvidersContract.DataTransferObject["externalTenantId"],
+        externalTenantId: (typeof IdentityProvidersContract.Table.DataTransferObject.Type)["externalTenantId"],
       ) =>
         Effect.gen(function* () {
           const { clientId, clientSecret } =

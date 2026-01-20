@@ -679,7 +679,7 @@ export namespace SharedAccountWorkflows {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -697,14 +697,14 @@ export namespace SharedAccountWorkflows {
                           ],
                           Struct.omit(
                             getViewSelectedFields(activeCustomerAuthorizedView),
-                            "authorizedCustomerId",
+                            "customerId",
                           ),
                         )
                         .from(activeCustomerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              activeCustomerAuthorizedView.customerId,
                               customerId,
                             ),
                             eq(
@@ -735,7 +735,7 @@ export namespace SharedAccountWorkflows {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -753,14 +753,14 @@ export namespace SharedAccountWorkflows {
                           ],
                           Struct.omit(
                             getViewSelectedFields(activeManagerAuthorizedView),
-                            "authorizedManagerId",
+                            "managerId",
                           ),
                         )
                         .from(activeManagerAuthorizedView)
                         .where(
                           and(
                             eq(
-                              activeManagerAuthorizedView.authorizedManagerId,
+                              activeManagerAuthorizedView.managerId,
                               managerId,
                             ),
                             eq(
@@ -850,7 +850,7 @@ export namespace SharedAccountWorkflows {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -883,7 +883,7 @@ export namespace SharedAccountWorkflows {
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedView.authorizedCustomerId,
+                              activeCustomerAuthorizedView.customerId,
                               customerId,
                             ),
                             eq(
@@ -903,7 +903,7 @@ export namespace SharedAccountWorkflows {
                       ],
                       Struct.omit(
                         cte[getViewName(activeCustomerAuthorizedView)],
-                        "authorizedCustomerId",
+                        "customerId",
                       ),
                     )
                     .from(cte);
@@ -917,7 +917,7 @@ export namespace SharedAccountWorkflows {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -950,7 +950,7 @@ export namespace SharedAccountWorkflows {
                         .where(
                           and(
                             eq(
-                              activeManagerAuthorizedView.authorizedManagerId,
+                              activeManagerAuthorizedView.managerId,
                               managerId,
                             ),
                             eq(
@@ -970,7 +970,7 @@ export namespace SharedAccountWorkflows {
                       ],
                       Struct.omit(
                         cte[getViewName(activeManagerAuthorizedView)],
-                        "authorizedManagerId",
+                        "managerId",
                       ),
                     )
                     .from(cte);
@@ -1022,7 +1022,7 @@ export namespace SharedAccountWorkflows {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1034,7 +1034,7 @@ export namespace SharedAccountWorkflows {
                       .where(
                         and(
                           eq(
-                            activeCustomerAuthorizedView.authorizedCustomerId,
+                            activeCustomerAuthorizedView.customerId,
                             customerId,
                           ),
                           eq(
@@ -1054,7 +1054,7 @@ export namespace SharedAccountWorkflows {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1065,10 +1065,7 @@ export namespace SharedAccountWorkflows {
                       .from(activeManagerAuthorizedView)
                       .where(
                         and(
-                          eq(
-                            activeManagerAuthorizedView.authorizedManagerId,
-                            managerId,
-                          ),
+                          eq(activeManagerAuthorizedView.managerId, managerId),
                           eq(
                             activeManagerAuthorizedView.tenantId,
                             clientView.tenantId,
@@ -1159,7 +1156,7 @@ export namespace SharedAccountWorkflows {
             excludeIds: Array<
               SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["id"]
             >,
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["customerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -1188,7 +1185,7 @@ export namespace SharedAccountWorkflows {
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizedView.authorizedCustomerId,
+                                activeCustomerAuthorizedView.customerId,
                                 customerId,
                               ),
                               eq(
@@ -1209,7 +1206,7 @@ export namespace SharedAccountWorkflows {
                         ],
                         Struct.omit(
                           cte[getViewName(activeCustomerAuthorizedView)],
-                          "authorizedCustomerId",
+                          "customerId",
                         ),
                       )
                       .from(cte);
@@ -1226,7 +1223,7 @@ export namespace SharedAccountWorkflows {
             excludeIds: Array<
               SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["id"]
             >,
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["managerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -1255,7 +1252,7 @@ export namespace SharedAccountWorkflows {
                           .where(
                             and(
                               eq(
-                                activeManagerAuthorizedView.authorizedManagerId,
+                                activeManagerAuthorizedView.managerId,
                                 managerId,
                               ),
                               eq(
@@ -1276,7 +1273,7 @@ export namespace SharedAccountWorkflows {
                         ],
                         Struct.omit(
                           cte[getViewName(activeManagerAuthorizedView)],
-                          "authorizedManagerId",
+                          "managerId",
                         ),
                       )
                       .from(cte);
@@ -1306,7 +1303,7 @@ export namespace SharedAccountWorkflows {
           "SharedAccountWorkflows.Repository.findActiveCustomerAuthorized",
         )(
           (
-            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["authorizedCustomerId"],
+            customerId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["customerId"],
             id: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["id"],
             tenantId: SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedRow["tenantId"],
           ) =>
@@ -1314,15 +1311,12 @@ export namespace SharedAccountWorkflows {
               .useTransaction((tx) =>
                 tx
                   .select()
-                  .from(activeManagerAuthorizedView)
+                  .from(activeCustomerAuthorizedView)
                   .where(
                     and(
-                      eq(
-                        activeManagerAuthorizedView.authorizedManagerId,
-                        customerId,
-                      ),
-                      eq(activeManagerAuthorizedView.id, id),
-                      eq(activeManagerAuthorizedView.tenantId, tenantId),
+                      eq(activeCustomerAuthorizedView.customerId, customerId),
+                      eq(activeCustomerAuthorizedView.id, id),
+                      eq(activeCustomerAuthorizedView.tenantId, tenantId),
                     ),
                   ),
               )
@@ -1333,7 +1327,7 @@ export namespace SharedAccountWorkflows {
           "SharedAccountWorkflows.Repository.findActiveManagerAuthorized",
         )(
           (
-            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["authorizedManagerId"],
+            managerId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["managerId"],
             id: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["id"],
             tenantId: SharedAccountWorkflowsSchema.ActiveManagerAuthorizedRow["tenantId"],
           ) =>
@@ -1344,10 +1338,7 @@ export namespace SharedAccountWorkflows {
                   .from(activeManagerAuthorizedView)
                   .where(
                     and(
-                      eq(
-                        activeManagerAuthorizedView.authorizedManagerId,
-                        managerId,
-                      ),
+                      eq(activeManagerAuthorizedView.managerId, managerId),
                       eq(activeManagerAuthorizedView.id, id),
                       eq(activeManagerAuthorizedView.tenantId, tenantId),
                     ),
@@ -1454,7 +1445,7 @@ export namespace SharedAccountWorkflows {
             )(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: SharedAccountWorkflowsContract.tableName,
+                  name: SharedAccountWorkflowsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -1479,7 +1470,7 @@ export namespace SharedAccountWorkflows {
             )(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: SharedAccountWorkflowsContract.tableName,
+                  name: SharedAccountWorkflowsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -1506,7 +1497,10 @@ export namespace WorkflowStatuses {
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/workflows/StatusesRepository",
     {
-      dependencies: [Database.TransactionManager.Default],
+      dependencies: [
+        Database.TransactionManager.Default,
+        Replicache.ClientViewEntriesQueryBuilder.Default,
+      ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
         const table = WorkflowStatusesSchema.table.definition;
@@ -1622,7 +1616,7 @@ export namespace WorkflowStatuses {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["customerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1642,14 +1636,14 @@ export namespace WorkflowStatuses {
                             getViewSelectedFields(
                               activeCustomerAuthorizedSharedAccountView,
                             ),
-                            "authorizedCustomerId",
+                            "customerId",
                           ),
                         )
                         .from(activeCustomerAuthorizedSharedAccountView)
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
+                              activeCustomerAuthorizedSharedAccountView.customerId,
                               customerId,
                             ),
                             eq(
@@ -1673,7 +1667,7 @@ export namespace WorkflowStatuses {
                     Array<
                       Omit<
                         WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
-                        "authorizedCustomerId"
+                        "customerId"
                       >
                     >
                   >;
@@ -1687,7 +1681,7 @@ export namespace WorkflowStatuses {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["managerId"],
           ) =>
             entriesQueryBuilder.creates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1707,14 +1701,14 @@ export namespace WorkflowStatuses {
                             getViewSelectedFields(
                               activeManagerAuthorizedSharedAccountView,
                             ),
-                            "authorizedManagerId",
+                            "managerId",
                           ),
                         )
                         .from(activeManagerAuthorizedSharedAccountView)
                         .where(
                           and(
                             eq(
-                              activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                              activeManagerAuthorizedSharedAccountView.managerId,
                               managerId,
                             ),
                             eq(
@@ -1738,7 +1732,7 @@ export namespace WorkflowStatuses {
                     Array<
                       Omit<
                         WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
-                        "authorizedManagerId"
+                        "managerId"
                       >
                     >
                   >;
@@ -1853,7 +1847,7 @@ export namespace WorkflowStatuses {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["customerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1886,7 +1880,7 @@ export namespace WorkflowStatuses {
                         .where(
                           and(
                             eq(
-                              activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
+                              activeCustomerAuthorizedSharedAccountView.customerId,
                               customerId,
                             ),
                             eq(
@@ -1912,14 +1906,14 @@ export namespace WorkflowStatuses {
                         cte[
                           getViewName(activeCustomerAuthorizedSharedAccountView)
                         ],
-                        "authorizedCustomerId",
+                        "customerId",
                       ),
                     )
                     .from(cte) as Promise<
                     Array<
                       Omit<
                         WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
-                        "authorizedCustomerId"
+                        "customerId"
                       >
                     >
                   >;
@@ -1933,7 +1927,7 @@ export namespace WorkflowStatuses {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["managerId"],
           ) =>
             entriesQueryBuilder.updates(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -1966,7 +1960,7 @@ export namespace WorkflowStatuses {
                         .where(
                           and(
                             eq(
-                              activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                              activeManagerAuthorizedSharedAccountView.managerId,
                               managerId,
                             ),
                             eq(
@@ -1992,14 +1986,14 @@ export namespace WorkflowStatuses {
                         cte[
                           getViewName(activeManagerAuthorizedSharedAccountView)
                         ],
-                        "authorizedManagerId",
+                        "managerId",
                       ),
                     )
                     .from(cte) as Promise<
                     Array<
                       Omit<
                         WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
-                        "authorizedManagerId"
+                        "managerId"
                       >
                     >
                   >;
@@ -2096,7 +2090,7 @@ export namespace WorkflowStatuses {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["customerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -2110,7 +2104,7 @@ export namespace WorkflowStatuses {
                       .where(
                         and(
                           eq(
-                            activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
+                            activeCustomerAuthorizedSharedAccountView.customerId,
                             customerId,
                           ),
                           eq(
@@ -2130,7 +2124,7 @@ export namespace WorkflowStatuses {
         )(
           (
             clientView: ReplicacheClientViewsSchema.Row,
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["managerId"],
           ) =>
             entriesQueryBuilder.deletes(getTableName(table), clientView).pipe(
               Effect.flatMap((qb) =>
@@ -2144,7 +2138,7 @@ export namespace WorkflowStatuses {
                       .where(
                         and(
                           eq(
-                            activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                            activeManagerAuthorizedSharedAccountView.managerId,
                             managerId,
                           ),
                           eq(
@@ -2263,7 +2257,7 @@ export namespace WorkflowStatuses {
             excludeIds: Array<
               WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["id"]
             >,
-            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["authorizedCustomerId"],
+            customerId: WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow["customerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -2292,7 +2286,7 @@ export namespace WorkflowStatuses {
                           .where(
                             and(
                               eq(
-                                activeCustomerAuthorizedSharedAccountView.authorizedCustomerId,
+                                activeCustomerAuthorizedSharedAccountView.customerId,
                                 customerId,
                               ),
                               eq(
@@ -2324,14 +2318,14 @@ export namespace WorkflowStatuses {
                               activeCustomerAuthorizedSharedAccountView,
                             )
                           ],
-                          "authorizedCustomerId",
+                          "customerId",
                         ),
                       )
                       .from(cte) as Promise<
                       Array<
                         Omit<
                           WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountRow,
-                          "authorizedCustomerId"
+                          "customerId"
                         >
                       >
                     >;
@@ -2348,7 +2342,7 @@ export namespace WorkflowStatuses {
             excludeIds: Array<
               WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["id"]
             >,
-            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["authorizedManagerId"],
+            managerId: WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow["managerId"],
           ) =>
             entriesQueryBuilder
               .fastForward(getTableName(table), clientView)
@@ -2377,7 +2371,7 @@ export namespace WorkflowStatuses {
                           .where(
                             and(
                               eq(
-                                activeManagerAuthorizedSharedAccountView.authorizedManagerId,
+                                activeManagerAuthorizedSharedAccountView.managerId,
                                 managerId,
                               ),
                               eq(
@@ -2409,14 +2403,14 @@ export namespace WorkflowStatuses {
                               activeManagerAuthorizedSharedAccountView,
                             )
                           ],
-                          "authorizedManagerId",
+                          "managerId",
                         ),
                       )
                       .from(cte) as Promise<
                       Array<
                         Omit<
                           WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountRow,
-                          "authorizedManagerId"
+                          "managerId"
                         >
                       >
                     >;
@@ -2821,7 +2815,7 @@ export namespace WorkflowStatuses {
                 AccessControl.every(
                   AccessControl.privatePolicy(
                     {
-                      name: WorkflowStatusesContract.tableName,
+                      name: WorkflowStatusesContract.Table.name,
                       id,
                     },
                     ({ tenantId }) =>
@@ -2849,6 +2843,7 @@ export namespace WorkflowStatuses {
         RoomWorkflows.Repository.Default,
         SharedAccountWorkflows.Policies.Default,
         Policies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -2862,7 +2857,7 @@ export namespace WorkflowStatuses {
         const PullPermission = yield* Events.ReplicachePullPermission;
 
         const notifyAppend = (
-          workflowStatus: WorkflowStatusesContract.DataTransferObject,
+          workflowStatus: typeof WorkflowStatusesContract.Table.DataTransferObject.Type,
         ) =>
           Match.value(workflowStatus).pipe(
             Match.when({ roomWorkflowId: Match.null }, (s) =>
@@ -2919,7 +2914,7 @@ export namespace WorkflowStatuses {
                   ),
                 ),
             ),
-            Effect.map(notifier.notify),
+            Effect.flatMap(notifier.notify),
           );
         const notifyEdit = notifyAppend;
         const notifyDelete = notifyAppend;

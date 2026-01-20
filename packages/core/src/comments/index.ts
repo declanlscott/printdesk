@@ -899,7 +899,7 @@ export namespace Comments {
             make: Effect.fn("Comments.Policies.isAuthor.make")(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: CommentsContract.tableName,
+                  name: CommentsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -918,7 +918,7 @@ export namespace Comments {
           make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
             AccessControl.privatePolicy(
               {
-                name: CommentsContract.tableName,
+                name: CommentsContract.Table.name,
                 id,
               },
               ({ tenantId }) =>
@@ -943,7 +943,7 @@ export namespace Comments {
             make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: CommentsContract.tableName,
+                  name: CommentsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -971,6 +971,7 @@ export namespace Comments {
         Repository.Default,
         Orders.Policies.Default,
         Policies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -981,7 +982,9 @@ export namespace Comments {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyCreate = (comment: CommentsContract.DataTransferObject) =>
+        const notifyCreate = (
+          comment: typeof CommentsContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "comments:read" }),

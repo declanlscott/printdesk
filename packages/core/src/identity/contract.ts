@@ -63,19 +63,15 @@ export namespace IdentityProvidersContract {
   export const kinds = [Constants.ENTRA_ID, Constants.GOOGLE] as const;
   export type Kind = (typeof kinds)[number];
 
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    kind: Schema.Literal(...kinds),
-    externalTenantId: Schema.String,
-  }) {}
-
-  export const tableName = "identity_providers";
-  export const table =
-    new (TablesContract.makeClass<IdentityProvidersSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["create", "read", "delete"],
-    );
+  export class Table extends TablesContract.Table<IdentityProvidersSchema.Table>(
+    "identity_providers",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>(
+      "IdentityProvider",
+    )({
+      kind: Schema.Literal(...kinds),
+      externalTenantId: Schema.String,
+    }) {},
+    ["create", "read", "delete"],
+  ) {}
 }

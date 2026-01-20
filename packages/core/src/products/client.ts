@@ -11,13 +11,13 @@ import { Replicache } from "../replicache/client";
 import { ProductsContract } from "./contract";
 
 export namespace Products {
-  const table = Models.syncTables[ProductsContract.tableName];
+  const Table = Models.syncTables[ProductsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/products/client/ReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -31,13 +31,13 @@ export namespace Products {
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(table, repository);
+        const base = yield* Replicache.makeWriteRepository(Table, repository);
 
         const updateByRoomId = (
-          roomId: ProductsContract.DataTransferObject["roomId"],
+          roomId: (typeof ProductsContract.Table.DataTransferObject.Type)["roomId"],
           product: Partial<
             Omit<
-              ProductsContract.DataTransferObject,
+              typeof ProductsContract.Table.DataTransferObject.Type,
               "id" | "roomId" | "tenantId"
             >
           >,
@@ -51,7 +51,7 @@ export namespace Products {
             .pipe(Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })));
 
         const deleteByRoomId = (
-          roomId: ProductsContract.DataTransferObject["roomId"],
+          roomId: (typeof ProductsContract.Table.DataTransferObject.Type)["roomId"],
         ) =>
           repository
             .findWhere((p) =>
@@ -80,7 +80,7 @@ export namespace Products {
               Effect.map(Struct.get("deletedAt")),
               Effect.map(Predicate.isNull),
               AccessControl.policy({
-                name: ProductsContract.tableName,
+                name: ProductsContract.Table.name,
                 id,
               }),
             ),
@@ -99,7 +99,7 @@ export namespace Products {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: ProductsContract.tableName,
+                  name: ProductsContract.Table.name,
                   id,
                 }),
               ),
@@ -125,7 +125,7 @@ export namespace Products {
           makePolicy: () => AccessControl.permission("products:create"),
           mutator: (product, { tenantId }) =>
             repository.create(
-              ProductsContract.DataTransferObject.make({
+              new ProductsContract.Table.DataTransferObject({
                 ...product,
                 tenantId,
               }),

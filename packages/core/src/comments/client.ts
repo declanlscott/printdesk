@@ -12,13 +12,13 @@ import { Replicache } from "../replicache/client";
 import { CommentsContract } from "./contract";
 
 export namespace Comments {
-  const table = Models.syncTables[CommentsContract.tableName];
+  const Table = Models.syncTables[CommentsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/comments/client/ReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -32,7 +32,7 @@ export namespace Comments {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -51,7 +51,7 @@ export namespace Comments {
           {
             make: ({ id }) =>
               AccessControl.userPolicy(
-                { name: CommentsContract.tableName, id },
+                { name: CommentsContract.Table.name, id },
                 (user) =>
                   repository
                     .findById(id)
@@ -70,7 +70,7 @@ export namespace Comments {
               .pipe(
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNull),
-                AccessControl.policy({ name: CommentsContract.tableName, id }),
+                AccessControl.policy({ name: CommentsContract.Table.name, id }),
               ),
         });
 
@@ -87,7 +87,7 @@ export namespace Comments {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: CommentsContract.tableName,
+                  name: CommentsContract.Table.name,
                   id,
                 }),
               ),
@@ -123,7 +123,7 @@ export namespace Comments {
             ),
           mutator: (comment, user) =>
             repository.create(
-              CommentsContract.DataTransferObject.make({
+              new CommentsContract.Table.DataTransferObject({
                 ...comment,
                 authorId: user.id,
                 tenantId: user.tenantId,

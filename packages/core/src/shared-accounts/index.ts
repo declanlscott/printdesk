@@ -971,7 +971,7 @@ export namespace SharedAccounts {
             )(({ id, customerId }) => {
               const policy = AccessControl.userPolicy(
                 {
-                  name: SharedAccountsContract.tableName,
+                  name: SharedAccountsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -1017,7 +1017,7 @@ export namespace SharedAccounts {
               ({ id, managerId }) => {
                 const policy = AccessControl.userPolicy(
                   {
-                    name: SharedAccountsContract.tableName,
+                    name: SharedAccountsContract.Table.name,
                     id,
                   },
                   (user) =>
@@ -1068,7 +1068,7 @@ export namespace SharedAccounts {
             make: Effect.fn("SharedAccounts.Policies.canEdit.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: SharedAccountsContract.tableName,
+                  name: SharedAccountsContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -1099,7 +1099,7 @@ export namespace SharedAccounts {
               ({ id }) =>
                 AccessControl.privatePolicy(
                   {
-                    name: SharedAccountsContract.tableName,
+                    name: SharedAccountsContract.Table.name,
                     id,
                   },
                   ({ tenantId }) =>
@@ -1129,7 +1129,11 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Policies.Default],
+      dependencies: [
+        Repository.Default,
+        Policies.Default,
+        ReplicacheNotifier.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
@@ -1139,7 +1143,7 @@ export namespace SharedAccounts {
         const PullPermission = yield* Events.ReplicachePullPermission;
 
         const notifyEdit = (
-          sharedAccount: SharedAccountsContract.DataTransferObject,
+          sharedAccount: typeof SharedAccountsContract.Table.DataTransferObject.Type,
         ) =>
           notifier.notify(
             Array.make(
@@ -1341,7 +1345,7 @@ export namespace SharedAccounts {
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountCustomerAccessContract.activeAuthorizedViewName}_creates`,
+                      `${SharedAccountCustomerAccessContract.ActiveAuthorizedView.name}_creates`,
                     )
                     .as(
                       tx
@@ -1444,7 +1448,7 @@ export namespace SharedAccounts {
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountCustomerAccessContract.activeAuthorizedViewName}_updates`,
+                      `${SharedAccountCustomerAccessContract.ActiveAuthorizedView.name}_updates`,
                     )
                     .as(
                       qb
@@ -1640,7 +1644,7 @@ export namespace SharedAccounts {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${SharedAccountCustomerAccessContract.activeAuthorizedViewName}_fast_forward`,
+                        `${SharedAccountCustomerAccessContract.ActiveAuthorizedView.name}_fast_forward`,
                       )
                       .as(
                         qb
@@ -1889,7 +1893,7 @@ export namespace SharedAccounts {
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountManagerAccessContract.activeAuthorizedViewName}_creates`,
+                      `${SharedAccountManagerAccessContract.ActiveAuthorizedView.name}_creates`,
                     )
                     .as(
                       tx
@@ -2045,7 +2049,7 @@ export namespace SharedAccounts {
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${SharedAccountManagerAccessContract.activeAuthorizedViewName}_updates`,
+                      `${SharedAccountManagerAccessContract.ActiveAuthorizedView.name}_updates`,
                     )
                     .as(
                       qb
@@ -2333,7 +2337,7 @@ export namespace SharedAccounts {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${SharedAccountManagerAccessContract.activeAuthorizedViewName}_fast_forward`,
+                        `${SharedAccountManagerAccessContract.ActiveAuthorizedView.name}_fast_forward`,
                       )
                       .as(
                         qb
@@ -2566,7 +2570,7 @@ export namespace SharedAccounts {
             )(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: SharedAccountManagerAccessContract.tableName,
+                  name: SharedAccountManagerAccessContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -2589,7 +2593,7 @@ export namespace SharedAccounts {
             )(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: SharedAccountManagerAccessContract.tableName,
+                  name: SharedAccountManagerAccessContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -2616,6 +2620,7 @@ export namespace SharedAccounts {
       dependencies: [
         ManagerAccessRepository.Default,
         ManagerAccessPolicies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ManagerAccessRepository;
@@ -2626,7 +2631,7 @@ export namespace SharedAccounts {
         const PullPermission = yield* Events.ReplicachePullPermission;
 
         const notifyCreate = (
-          access: SharedAccountManagerAccessContract.DataTransferObject,
+          access: typeof SharedAccountManagerAccessContract.Table.DataTransferObject.Type,
         ) =>
           notifier.notify(
             Array.make(

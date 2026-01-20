@@ -9,7 +9,7 @@ import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace RoomsSchema {
   export const table = new Tables.Sync(
-    RoomsContract.tableName,
+    "rooms",
     {
       name: Columns.varchar().notNull(),
       status: Columns.union(RoomsContract.statuses).default("draft").notNull(),
@@ -23,7 +23,7 @@ export namespace RoomsSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(RoomsContract.activeViewName).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -33,7 +33,7 @@ export namespace RoomsSchema {
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activePublishedView = pgView(
-    RoomsContract.activePublishedViewName,
+    `active_published_${table.name}`,
   ).as((qb) =>
     qb.select().from(activeView).where(eq(activeView.status, "published")),
   );

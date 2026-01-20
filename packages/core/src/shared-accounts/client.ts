@@ -21,19 +21,19 @@ import {
 } from "./contracts";
 
 export namespace SharedAccounts {
-  const customerAccessTable =
-    Models.syncTables[SharedAccountCustomerAccessContract.tableName];
-  const managerAccessTable =
-    Models.syncTables[SharedAccountManagerAccessContract.tableName];
-  const customerGroupAccessTable =
-    Models.syncTables[SharedAccountCustomerGroupAccessContract.tableName];
-  const table = Models.syncTables[SharedAccountsContract.tableName];
+  const CustomerAccessTable =
+    Models.syncTables[SharedAccountCustomerAccessContract.Table.name];
+  const ManagerAccessTable =
+    Models.syncTables[SharedAccountManagerAccessContract.Table.name];
+  const CustomerGroupAccessTable =
+    Models.syncTables[SharedAccountCustomerGroupAccessContract.Table.name];
+  const Table = Models.syncTables[SharedAccountsContract.Table.name];
 
   export class CustomerAccessReadRepository extends Effect.Service<CustomerAccessReadRepository>()(
     "@printdesk/core/shared-accounts/client/CustomerAccessReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(customerAccessTable),
+      effect: Replicache.makeReadRepository(CustomerAccessTable),
     },
   ) {}
 
@@ -47,7 +47,7 @@ export namespace SharedAccounts {
       ],
       effect: CustomerAccessReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(customerAccessTable, repository),
+          Replicache.makeWriteRepository(CustomerAccessTable, repository),
         ),
       ),
     },
@@ -57,7 +57,7 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/client/ManagerAccessReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(managerAccessTable),
+      effect: Replicache.makeReadRepository(ManagerAccessTable),
     },
   ) {}
 
@@ -71,7 +71,7 @@ export namespace SharedAccounts {
       ],
       effect: ManagerAccessReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(managerAccessTable, repository),
+          Replicache.makeWriteRepository(ManagerAccessTable, repository),
         ),
       ),
     },
@@ -93,7 +93,7 @@ export namespace SharedAccounts {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNull),
                 AccessControl.policy({
-                  name: SharedAccountManagerAccessContract.tableName,
+                  name: SharedAccountManagerAccessContract.Table.name,
                   id,
                 }),
               ),
@@ -108,7 +108,7 @@ export namespace SharedAccounts {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: SharedAccountManagerAccessContract.tableName,
+                  name: SharedAccountManagerAccessContract.Table.name,
                   id,
                 }),
               ),
@@ -140,10 +140,9 @@ export namespace SharedAccounts {
               AccessControl.permission("shared_account_manager_access:create"),
             mutator: (access, { tenantId }) =>
               repository.create(
-                SharedAccountManagerAccessContract.DataTransferObject.make({
-                  ...access,
-                  tenantId,
-                }),
+                new SharedAccountManagerAccessContract.Table.DataTransferObject(
+                  { ...access, tenantId },
+                ),
               ),
           },
         );
@@ -198,7 +197,7 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/client/CustomerGroupAccessReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(customerGroupAccessTable),
+      effect: Replicache.makeReadRepository(CustomerGroupAccessTable),
     },
   ) {}
 
@@ -212,7 +211,7 @@ export namespace SharedAccounts {
       ],
       effect: CustomerGroupAccessReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(customerGroupAccessTable, repository),
+          Replicache.makeWriteRepository(CustomerGroupAccessTable, repository),
         ),
       ),
     },
@@ -228,7 +227,7 @@ export namespace SharedAccounts {
         CustomerGroupAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* Replicache.makeReadRepository(Table);
 
         const customerAccessRepository = yield* CustomerAccessReadRepository;
         const managerAccessRepository = yield* ManagerAccessReadRepository;
@@ -236,7 +235,7 @@ export namespace SharedAccounts {
           yield* CustomerGroupAccessReadRepository;
 
         const findActiveAuthorizedCustomerIds = (
-          id: SharedAccountsContract.DataTransferObject["id"],
+          id: (typeof SharedAccountsContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -252,7 +251,7 @@ export namespace SharedAccounts {
             );
 
         const findActiveAuthorizedManagerIds = (
-          id: SharedAccountsContract.DataTransferObject["id"],
+          id: (typeof SharedAccountsContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -268,7 +267,7 @@ export namespace SharedAccounts {
             );
 
         const findActiveAuthorizedCustomerGroupIds = (
-          id: SharedAccountsContract.DataTransferObject["id"],
+          id: (typeof SharedAccountsContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -303,7 +302,7 @@ export namespace SharedAccounts {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -324,7 +323,7 @@ export namespace SharedAccounts {
             make: ({ id, customerId }) => {
               const policy = AccessControl.userPolicy(
                 {
-                  name: SharedAccountsContract.tableName,
+                  name: SharedAccountsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -362,7 +361,7 @@ export namespace SharedAccounts {
             make: ({ id, managerId }) => {
               const policy = AccessControl.userPolicy(
                 {
-                  name: SharedAccountsContract.tableName,
+                  name: SharedAccountsContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -402,7 +401,7 @@ export namespace SharedAccounts {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNull),
                 AccessControl.policy({
-                  name: SharedAccountsContract.tableName,
+                  name: SharedAccountsContract.Table.name,
                   id,
                 }),
               ),
@@ -422,7 +421,7 @@ export namespace SharedAccounts {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: SharedAccountsContract.tableName,
+                  name: SharedAccountsContract.Table.name,
                   id,
                 }),
               ),

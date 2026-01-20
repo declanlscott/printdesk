@@ -16,15 +16,15 @@ import {
 } from "./contracts";
 
 export namespace Groups {
-  const table = Models.syncTables[CustomerGroupsContract.tableName];
-  const membershipsTable =
-    Models.syncTables[CustomerGroupMembershipsContract.tableName];
+  const Table = Models.syncTables[CustomerGroupsContract.Table.name];
+  const MembershipsTable =
+    Models.syncTables[CustomerGroupMembershipsContract.Table.name];
 
   export class CustomerMembershipsReadRepository extends Effect.Service<CustomerMembershipsReadRepository>()(
     "@printdesk/core/groups/client/CustomerMembershipsReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(membershipsTable),
+      effect: Replicache.makeReadRepository(MembershipsTable),
     },
   ) {}
 
@@ -36,12 +36,12 @@ export namespace Groups {
         CustomerMembershipsReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* Replicache.makeReadRepository(Table);
 
         const membershipsRepository = yield* CustomerMembershipsReadRepository;
 
         const findActiveMemberIds = (
-          id: CustomerGroupsContract.DataTransferObject["id"],
+          id: (typeof CustomerGroupsContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -79,7 +79,7 @@ export namespace Groups {
             make: ({ id, memberId }) => {
               const policy = AccessControl.userPolicy(
                 {
-                  name: CustomerGroupsContract.tableName,
+                  name: CustomerGroupsContract.Table.name,
                   id,
                 },
                 (user) =>

@@ -597,7 +597,7 @@ export namespace Groups {
               ({ id, memberId }) => {
                 const policy = AccessControl.userPolicy(
                   {
-                    name: CustomerGroupsContract.tableName,
+                    name: CustomerGroupsContract.Table.name,
                     id,
                   },
                   (user) =>

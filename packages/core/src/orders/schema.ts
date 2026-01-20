@@ -26,7 +26,7 @@ export namespace OrdersSchema {
     );
 
   export const table = new Tables.Sync(
-    OrdersContract.tableName,
+    "orders",
     {
       customerId: Columns.entityId.notNull(),
       managerId: Columns.entityId,
@@ -56,7 +56,7 @@ export namespace OrdersSchema {
   export type Table = typeof table.definition;
   export type Row = OrderRow<InferSelectModel<Table>>;
 
-  export const activeView = pgView(OrdersContract.activeViewName).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -72,7 +72,7 @@ export namespace OrdersSchema {
   >;
 
   export const activeManagerAuthorizedSharedAccountView = pgView(
-    OrdersContract.activeManagerAuthorizedSharedAccountViewName,
+    `active_manager_authorized_shared_account_${table.name}`,
   ).as((qb) =>
     qb
       .select({

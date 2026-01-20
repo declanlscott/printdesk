@@ -10,7 +10,7 @@ import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 
 export namespace ProductsSchema {
   export const table = new Tables.Sync(
-    ProductsContract.tableName,
+    "products",
     {
       name: Columns.varchar().notNull(),
       status: Columns.union(ProductsContract.statuses)
@@ -24,7 +24,7 @@ export namespace ProductsSchema {
   export type Table = typeof table.definition;
   export type Row = InferSelectModel<Table>;
 
-  export const activeView = pgView(ProductsContract.activeViewName).as((qb) =>
+  export const activeView = pgView(`active_${table.name}`).as((qb) =>
     qb
       .select()
       .from(table.definition)
@@ -34,7 +34,7 @@ export namespace ProductsSchema {
   export type ActiveRow = InferSelectViewModel<ActiveView>;
 
   export const activePublishedView = pgView(
-    ProductsContract.activePublishedViewName,
+    `active_published_${table.name}`,
   ).as((qb) =>
     qb
       .select(getViewSelectedFields(activeView))

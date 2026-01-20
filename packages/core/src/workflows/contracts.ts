@@ -14,81 +14,68 @@ import type {
 } from "./schemas";
 
 export namespace RoomWorkflowsContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    roomId: ColumnsContract.EntityId,
-  }) {}
+  export class Table extends TablesContract.Table<RoomWorkflowsSchema.Table>(
+    "room_workflows",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("RoomWorkflow")({
+      roomId: ColumnsContract.EntityId,
+    }) {},
+    ["read"],
+  ) {}
 
-  export const tableName = "room_workflows";
-  export const table =
-    new (TablesContract.makeClass<RoomWorkflowsSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["read"],
-    );
+  export class ActiveView extends TablesContract.View<RoomWorkflowsSchema.ActiveView>(
+    "active_room_workflows",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveRoomWorkflow")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+    ) {},
+  ) {}
 
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<RoomWorkflowsSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activePublishedRoomViewName = `active_published_${tableName}`;
-  export const activePublishedRoomView =
-    new (TablesContract.makeViewClass<RoomWorkflowsSchema.ActivePublishedRoomView>())(
-      activePublishedRoomViewName,
-      DataTransferObject,
-    );
+  export class ActivePublishedRoomView extends TablesContract.View<RoomWorkflowsSchema.ActivePublishedRoomView>(
+    "active_published_room_workflows",
+  )(ActiveView.DataTransferObject) {}
 }
 
 export namespace SharedAccountWorkflowsContract {
-  export class DataTransferObject extends Schema.Class<DataTransferObject>(
-    "DataTransferObject",
-  )({
-    ...ColumnsContract.Tenant.fields,
-    sharedAccountId: ColumnsContract.EntityId,
-  }) {}
+  export class Table extends TablesContract.Table<SharedAccountWorkflowsSchema.Table>(
+    "shared_account_workflows",
+  )(
+    class Dto extends ColumnsContract.BaseEntity.extend<Dto>(
+      "SharedAccountWorkflow",
+    )({ sharedAccountId: ColumnsContract.EntityId }) {},
+    ["read"],
+  ) {}
 
-  export const tableName = "shared_account_workflows";
-  export const table =
-    new (TablesContract.makeClass<SharedAccountWorkflowsSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["read"],
-    );
+  export class ActiveView extends TablesContract.View<SharedAccountWorkflowsSchema.ActiveView>(
+    "active_shared_account_workflows",
+  )(
+    class Dto extends Schema.Class<Dto>("ActiveSharedAccountWorkflow")(
+      Struct.evolve(Table.DataTransferObject.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+    ) {},
+  ) {}
 
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<SharedAccountWorkflowsSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
+  export class ActiveCustomerAuthorizedView extends TablesContract.View<SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedView>(
+    "active_customer_authorized_shared_account_workflows",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveCustomerAuthorizedSharedAccountWorkflow",
+    )({ customerId: ColumnsContract.EntityId }) {},
+  ) {}
 
-  export const activeCustomerAuthorizedViewName = `active_customer_authorized_${tableName}`;
-  export const activeCustomerAuthorizedView =
-    new (TablesContract.makeViewClass<SharedAccountWorkflowsSchema.ActiveCustomerAuthorizedView>())(
-      activeCustomerAuthorizedViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedCustomerId: ColumnsContract.EntityId }),
-      ),
-    );
-
-  export const activeManagerAuthorizedViewName = `active_manager_authorized_${tableName}`;
-  export const activeManagerAuthorizedView =
-    new (TablesContract.makeViewClass<SharedAccountWorkflowsSchema.ActiveManagerAuthorizedView>())(
-      activeManagerAuthorizedViewName,
-      Schema.extend(
-        DataTransferObject,
-        Schema.Struct({ authorizedManagerId: ColumnsContract.EntityId }),
-      ),
-    );
+  export class ActiveManagerAuthorizedView extends TablesContract.View<SharedAccountWorkflowsSchema.ActiveManagerAuthorizedView>(
+    "active_manager_authorized_shared_account_workflows",
+  )(
+    class Dto extends ActiveView.DataTransferObject.extend<Dto>(
+      "ActiveManagerAuthorizedSharedAccountWorkflow",
+    )({ managerId: ColumnsContract.EntityId }) {},
+  ) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(DataTransferObject.fields, "id"), {
+    Struct.evolve(Struct.pick(Table.DataTransferObject.fields, "id"), {
       id: (id) => id.from,
     }),
   );
@@ -111,7 +98,7 @@ export namespace WorkflowStatusesContract {
   export type Type = (typeof types)[number];
 
   class BaseDto extends Schema.Class<BaseDto>("BaseDto")({
-    ...ColumnsContract.Tenant.fields,
+    ...ColumnsContract.BaseEntity.fields,
     name: Schema.Trim.pipe(Schema.maxLength(Constants.VARCHAR_LENGTH)),
     type: Schema.Literal(...types),
     charging: Schema.Boolean,
@@ -120,7 +107,7 @@ export namespace WorkflowStatusesContract {
   }) {}
 
   export class SharedAccountWorkflowDto extends Schema.Class<SharedAccountWorkflowDto>(
-    "SharedAccountWorkflowDto",
+    "SharedAccountWorkflow",
   )({
     ...BaseDto.fields,
     sharedAccountWorkflowId: ColumnsContract.EntityId,
@@ -128,60 +115,76 @@ export namespace WorkflowStatusesContract {
   }) {}
 
   export class RoomWorkflowDto extends Schema.Class<RoomWorkflowDto>(
-    "RoomWorkflowDto",
+    "RoomWorkflow",
   )({
     ...BaseDto.fields,
     sharedAccountWorkflowId: Schema.Null,
     roomWorkflowId: ColumnsContract.EntityId,
   }) {}
 
-  export const DataTransferObject = Schema.Union(
-    SharedAccountWorkflowDto,
-    RoomWorkflowDto,
-  );
-  export type DataTransferObject = typeof DataTransferObject.Type;
+  export class Table extends TablesContract.Table<WorkflowStatusesSchema.Table>(
+    "workflow_statuses",
+  )(Schema.Union(SharedAccountWorkflowDto, RoomWorkflowDto), [
+    "create",
+    "read",
+    "update",
+    "delete",
+  ]) {}
 
-  export const tableName = "workflow_statuses";
-  export const table =
-    new (TablesContract.makeClass<WorkflowStatusesSchema.Table>())(
-      tableName,
-      DataTransferObject,
-      ["create", "read", "update", "delete"],
-    );
-
-  export const activeViewName = `active_${tableName}`;
-  export const activeView =
-    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActiveView>())(
-      activeViewName,
-      DataTransferObject,
-    );
-
-  export const activePublishedRoomViewName = `active_published_room_${tableName}`;
-  export const activePublishedRoomView =
-    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActivePublishedRoomView>())(
-      activePublishedRoomViewName,
-      RoomWorkflowDto,
-    );
-
-  export const activeCustomerAuthorizedSharedAccountViewName = `active_customer_authorized_shared_account_${tableName}`;
-  export const activeCustomerAuthorizedSharedAccountView =
-    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountView>())(
-      activeCustomerAuthorizedSharedAccountViewName,
-      Schema.extend(
-        SharedAccountWorkflowDto,
-        Schema.Struct({ authorizedCustomerId: ColumnsContract.EntityId }),
+  export class ActiveView extends TablesContract.View<WorkflowStatusesSchema.ActiveView>(
+    "active_workflow_statuses",
+  )(
+    Schema.Union(
+      Schema.Struct(
+        Struct.evolve(SharedAccountWorkflowDto.fields, {
+          deletedAt: (deletedAt) => deletedAt.from.members[1],
+        }),
       ),
-    );
-
-  export const activeManagerAuthorizedSharedAccountViewName = `active_manager_authorized_shared_account_${tableName}`;
-  export const activeManagerAuthorizedSharedAccountView =
-    new (TablesContract.makeViewClass<WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountView>())(
-      activeManagerAuthorizedSharedAccountViewName,
-      Schema.extend(
-        SharedAccountWorkflowDto,
-        Schema.Struct({ authorizedManagerId: ColumnsContract.EntityId }),
+      Schema.Struct(
+        Struct.evolve(RoomWorkflowDto.fields, {
+          deletedAt: (deletedAt) => deletedAt.from.members[1],
+        }),
       ),
-    );
+    ),
+  ) {}
+
+  export class ActivePublishedRoomView extends TablesContract.View<WorkflowStatusesSchema.ActivePublishedRoomView>(
+    "active_published_room_workflow_statuses",
+  )(
+    class Dto extends RoomWorkflowDto.extend<Dto>(
+      "ActivePublishedRoomWorkflowStatus",
+    )(
+      Struct.evolve(RoomWorkflowDto.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+    ) {},
+  ) {}
+
+  export class ActiveCustomerAuthorizedSharedAccountView extends TablesContract.View<WorkflowStatusesSchema.ActiveCustomerAuthorizedSharedAccountView>(
+    "active_customer_authorized_shared_account_workflow_statuses",
+  )(
+    class Dto extends SharedAccountWorkflowDto.extend<Dto>(
+      "ActiveCustomerAuthorizedSharedAccountWorkflowStatus",
+    )({
+      ...Struct.evolve(SharedAccountWorkflowDto.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+      customerId: ColumnsContract.EntityId,
+    }) {},
+  ) {}
+
+  export class ActiveManagerAuthorizedSharedAccountView extends TablesContract.View<WorkflowStatusesSchema.ActiveManagerAuthorizedSharedAccountView>(
+    "active_manager_authorized_shared_account_workflow_statuses",
+  )(
+    class Dto extends SharedAccountWorkflowDto.extend<Dto>(
+      "ActiveManagerAuthorizedSharedAccountWorkflowStatus",
+    )({
+      ...Struct.evolve(SharedAccountWorkflowDto.fields, {
+        deletedAt: (deletedAt) => deletedAt.from.members[1],
+      }),
+      managerId: ColumnsContract.EntityId,
+    }) {},
+  ) {}
 
   const IdOnly = Schema.Struct(
     Struct.evolve(Struct.pick(BaseDto.fields, "id"), {
@@ -208,13 +211,13 @@ export namespace WorkflowStatusesContract {
       SharedAccountWorkflowDto.pipe(Schema.omit(...omittedOnAppend)),
       RoomWorkflowDto.pipe(Schema.omit(...omittedOnAppend)),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const edit = new ProceduresContract.Procedure({
     name: "editWorkflowStatus",
     Args: BaseDto.pipe(
-      Schema.omit(...Struct.keys(ColumnsContract.Tenant.fields), "index"),
+      Schema.omit(...Struct.keys(ColumnsContract.BaseEntity.fields), "index"),
       Schema.partial,
       Schema.extend(
         Schema.Struct(
@@ -224,7 +227,7 @@ export namespace WorkflowStatusesContract {
         ),
       ),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 
   export const reorder = new ProceduresContract.Procedure({
@@ -234,7 +237,7 @@ export namespace WorkflowStatusesContract {
         id: (id) => id.from,
       }),
     ),
-    Returns: DataTransferObject.pipe(Schema.Array),
+    Returns: Table.DataTransferObject.pipe(Schema.Array),
   });
 
   export const delete_ = new ProceduresContract.Procedure({
@@ -245,6 +248,6 @@ export namespace WorkflowStatusesContract {
         deletedAt: (deletedAt) => deletedAt.from.members[0],
       }),
     ),
-    Returns: DataTransferObject,
+    Returns: Table.DataTransferObject,
   });
 }

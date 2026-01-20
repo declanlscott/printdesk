@@ -13,7 +13,7 @@ import type { InferSelectModel } from "drizzle-orm";
 
 export namespace LicensesSchema {
   export const table = new Tables.NonSync(
-    LicensesContract.tableName,
+    "licenses",
     {
       key: Columns.redactedUuid()
         .notNull()
@@ -31,7 +31,7 @@ export namespace LicensesSchema {
 
 export namespace TenantsSchema {
   export const table = new Tables.Sync(
-    TenantsContract.tableName,
+    "tenants",
     {
       subdomain: Columns.varchar().$type<TenantsContract.Subdomain>().notNull(),
       name: Columns.varchar().notNull(),
@@ -47,7 +47,7 @@ export namespace TenantsSchema {
 }
 
 export namespace TenantMetadataSchema {
-  export const table = new Tables.Table(TenantMetadataContract.tableName, {
+  export const table = new Tables.Table("tenant_metadata", {
     tenantId: Columns.tenantId.primaryKey(),
     infraProgramInput: Columns.jsonb(
       TenantMetadataContract.InfraProgramInput,

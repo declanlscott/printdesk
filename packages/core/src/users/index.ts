@@ -423,7 +423,7 @@ export namespace Users {
           make: Effect.fn("Users.Policies.isSelf.make")(({ id }) =>
             AccessControl.userPolicy(
               {
-                name: UsersContract.tableName,
+                name: UsersContract.Table.name,
                 id,
               },
               (user) => Effect.succeed(id === user.id),
@@ -435,7 +435,7 @@ export namespace Users {
           make: Effect.fn("Users.Policies.canEdit.make")(({ id }) =>
             AccessControl.privatePolicy(
               {
-                name: UsersContract.tableName,
+                name: UsersContract.Table.name,
                 id,
               },
               ({ tenantId }) =>
@@ -459,7 +459,7 @@ export namespace Users {
             make: Effect.fn("Users.Policies.canRestore.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: UsersContract.tableName,
+                  name: UsersContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -483,7 +483,11 @@ export namespace Users {
     "@printdesk/core/users/Mutations",
     {
       accessors: true,
-      dependencies: [Repository.Default, Policies.Default],
+      dependencies: [
+        Repository.Default,
+        Policies.Default,
+        ReplicacheNotifier.Default,
+      ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
@@ -492,7 +496,9 @@ export namespace Users {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyEdit = (user: UsersContract.DataTransferObject) =>
+        const notifyEdit = (
+          user: typeof UsersContract.Table.DataTransferObject.Type,
+        ) =>
           Match.value(user).pipe(
             Match.when({ deletedAt: Match.null }, () =>
               Array.make(
@@ -506,7 +512,9 @@ export namespace Users {
             notifier.notify,
           );
 
-        const notifyDelete = (_user: UsersContract.DataTransferObject) =>
+        const notifyDelete = (
+          _user: typeof UsersContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "users:read" }),

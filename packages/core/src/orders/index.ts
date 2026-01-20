@@ -145,7 +145,7 @@ export namespace Orders {
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${OrdersContract.activeCustomerPlacedViewName}_creates`,
+                      `${OrdersContract.ActiveCustomerPlacedView.name}_creates`,
                     )
                     .as(
                       tx
@@ -308,7 +308,7 @@ export namespace Orders {
                 db.useTransaction((tx) => {
                   const cte = tx
                     .$with(
-                      `${OrdersContract.activeCustomerPlacedViewName}_updates`,
+                      `${OrdersContract.ActiveCustomerPlacedView.name}_updates`,
                     )
                     .as(
                       qb
@@ -613,7 +613,7 @@ export namespace Orders {
                   db.useTransaction((tx) => {
                     const cte = tx
                       .$with(
-                        `${OrdersContract.activeCustomerPlacedViewName}_fast_forward`,
+                        `${OrdersContract.ActiveCustomerPlacedView.name}_fast_forward`,
                       )
                       .as(
                         qb
@@ -964,7 +964,9 @@ export namespace Orders {
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
 
-        const decode = Schema.decodeUnknown(OrdersContract.DataTransferObject);
+        const decode = Schema.decodeUnknown(
+          OrdersContract.Table.DataTransferObject,
+        );
 
         const isCustomer = PoliciesContract.makePolicy(
           OrdersContract.isCustomer,
@@ -972,7 +974,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.isCustomer.make")(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -993,7 +995,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.isManager.make")(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -1014,7 +1016,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.isCustomerOrManager")(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -1038,7 +1040,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.isManagerAuthorized")(({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -1054,7 +1056,7 @@ export namespace Orders {
           make: Effect.fn("Orders.Policies.canEdit.make")(({ id }) =>
             AccessControl.privatePolicy(
               {
-                name: OrdersContract.tableName,
+                name: OrdersContract.Table.name,
                 id,
               },
               ({ tenantId }) =>
@@ -1094,7 +1096,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.canApprove.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -1120,7 +1122,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.canTransition.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -1151,7 +1153,7 @@ export namespace Orders {
             make: Effect.fn("Orders.Policies.canRestore.make")(({ id }) =>
               AccessControl.privatePolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 ({ tenantId }) =>
@@ -1190,6 +1192,7 @@ export namespace Orders {
         Users.Policies.Default,
         SharedAccounts.Policies.Default,
         Policies.Default,
+        ReplicacheNotifier.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* Repository;
@@ -1201,7 +1204,9 @@ export namespace Orders {
         const notifier = yield* ReplicacheNotifier;
         const PullPermission = yield* Events.ReplicachePullPermission;
 
-        const notifyCreate = (order: OrdersContract.DataTransferObject) =>
+        const notifyCreate = (
+          order: typeof OrdersContract.Table.DataTransferObject.Type,
+        ) =>
           notifier.notify(
             Array.make(
               PullPermission.make({ permission: "orders:read" }),

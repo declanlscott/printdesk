@@ -19,7 +19,7 @@ import { OrdersContract } from "./contract";
 import type { ColumnsContract } from "../columns/contract";
 
 export namespace Orders {
-  const table = Models.syncTables[OrdersContract.tableName];
+  const Table = Models.syncTables[OrdersContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/orders/client/ReadRepository",
@@ -30,7 +30,7 @@ export namespace Orders {
         SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(table);
+        const base = yield* Replicache.makeReadRepository(Table);
 
         const workflowStatusesRepository =
           yield* WorkflowStatuses.ReadRepository;
@@ -38,7 +38,7 @@ export namespace Orders {
           yield* SharedAccounts.ManagerAccessReadRepository;
 
         const findByIdWithWorkflowStatus = (
-          id: OrdersContract.DataTransferObject["id"],
+          id: (typeof OrdersContract.Table.DataTransferObject.Type)["id"],
         ) =>
           Effect.gen(function* () {
             const order = yield* base.findById(id);
@@ -61,7 +61,7 @@ export namespace Orders {
           );
 
         const findActiveManagerIds = (
-          id: OrdersContract.DataTransferObject["id"],
+          id: (typeof OrdersContract.Table.DataTransferObject.Type)["id"],
         ) =>
           base
             .findById(id)
@@ -96,7 +96,7 @@ export namespace Orders {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -116,7 +116,7 @@ export namespace Orders {
             make: ({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -136,7 +136,7 @@ export namespace Orders {
             make: ({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -156,7 +156,7 @@ export namespace Orders {
             make: ({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -179,7 +179,7 @@ export namespace Orders {
             make: ({ id }) =>
               AccessControl.userPolicy(
                 {
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 },
                 (user) =>
@@ -213,7 +213,7 @@ export namespace Orders {
                 ),
               ),
               AccessControl.policy({
-                name: OrdersContract.tableName,
+                name: OrdersContract.Table.name,
                 id,
               }),
             ),
@@ -234,7 +234,7 @@ export namespace Orders {
                   ),
                 ),
                 AccessControl.policy({
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 }),
               ),
@@ -256,7 +256,7 @@ export namespace Orders {
                   ),
                 ),
                 AccessControl.policy({
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 }),
               ),
@@ -276,7 +276,7 @@ export namespace Orders {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: OrdersContract.tableName,
+                  name: OrdersContract.Table.name,
                   id,
                 }),
               ),
@@ -351,11 +351,12 @@ export namespace Orders {
                     tenantId,
                   }),
               ),
-              Match.orElse((order) =>
-                OrdersContract.SharedAccountWorkflowStatusDto.make({
-                  ...order,
-                  tenantId,
-                }),
+              Match.orElse(
+                (order) =>
+                  new OrdersContract.SharedAccountWorkflowStatusDto({
+                    ...order,
+                    tenantId,
+                  }),
               ),
               repository.create,
             ),

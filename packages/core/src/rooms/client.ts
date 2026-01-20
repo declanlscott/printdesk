@@ -16,13 +16,13 @@ import { RoomWorkflowsContract } from "../workflows/contracts";
 import { RoomsContract } from "./contract";
 
 export namespace Rooms {
-  const table = Models.syncTables[RoomsContract.tableName];
+  const Table = Models.syncTables[RoomsContract.Table.name];
 
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/rooms/client/ReadRepository",
     {
       dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(table),
+      effect: Replicache.makeReadRepository(Table),
     },
   ) {}
 
@@ -36,7 +36,7 @@ export namespace Rooms {
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(table, repository),
+          Replicache.makeWriteRepository(Table, repository),
         ),
       ),
     },
@@ -56,7 +56,7 @@ export namespace Rooms {
               Effect.map(Struct.get("deletedAt")),
               Effect.map(Predicate.isNull),
               AccessControl.policy({
-                name: RoomsContract.tableName,
+                name: RoomsContract.Table.name,
                 id,
               }),
             ),
@@ -74,7 +74,7 @@ export namespace Rooms {
                 Effect.map(Struct.get("deletedAt")),
                 Effect.map(Predicate.isNotNull),
                 AccessControl.policy({
-                  name: RoomsContract.tableName,
+                  name: RoomsContract.Table.name,
                   id,
                 }),
               ),
@@ -114,13 +114,13 @@ export namespace Rooms {
             Effect.all(
               Tuple.make(
                 repository.create(
-                  RoomsContract.DataTransferObject.make({
+                  new RoomsContract.Table.DataTransferObject({
                     ...room,
                     tenantId,
                   }),
                 ),
                 workflowsRepository.create(
-                  RoomWorkflowsContract.DataTransferObject.make({
+                  new RoomWorkflowsContract.Table.DataTransferObject({
                     id: workflowId,
                     roomId: room.id,
                     createdAt: room.createdAt,

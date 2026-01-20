@@ -7,7 +7,7 @@ import type {
   View,
 } from "drizzle-orm";
 import type { PgTable, PgView } from "drizzle-orm/pg-core";
-import type { Schema } from "effect";
+import type * as Schema from "effect/Schema";
 import type { Permissions } from "../permissions";
 
 export namespace TablesContract {
@@ -27,92 +27,75 @@ export namespace TablesContract {
       : never;
   }[number];
 
-  export const makeClass = <TTable extends PgTable>() =>
-    class<
+  export const Table =
+    <TTable extends PgTable = never>(name: TTable["_"]["name"]) =>
+    <
       TDataTransferObject extends Schema.Schema.AnyNoContext,
       TActions extends ReadonlyArray<Permissions.Action>,
-    > {
-      readonly name: TTable["_"]["name"];
-      readonly DataTransferObject: TDataTransferObject;
-      readonly #actions: TActions;
+    >(
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TTable>
+        ? TDataTransferObject
+        : never,
+      actions: TActions,
+    ) =>
+      class {
+        static readonly name = name;
+        static readonly DataTransferObject = DataTransferObject;
 
-      constructor(
-        name: TTable["_"]["name"],
-        DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TTable>
-          ? TDataTransferObject
-          : never,
-        actions: TActions,
-      ) {
-        this.name = name;
-        this.DataTransferObject = DataTransferObject;
-        this.#actions = actions;
-      }
+        static get permissions() {
+          return Array.map(
+            actions,
+            (action) =>
+              `${name}:${action}` as InferPermissions<TTable, TActions>,
+          );
+        }
+      };
 
-      get permissions() {
-        return Array.map(
-          this.#actions,
-          (action) =>
-            `${this.name}:${action}` as InferPermissions<TTable, TActions>,
-        );
-      }
-    };
+  export const View =
+    <TView extends PgView>(name: TView["_"]["name"]) =>
+    <TDataTransferObject extends Schema.Schema.AnyNoContext>(
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
+        ? TDataTransferObject
+        : never,
+    ) =>
+      class {
+        static readonly name = name;
+        static readonly DataTransferObject = DataTransferObject;
 
-  export const makeViewClass = <TView extends PgView>() =>
-    class<TDataTransferObject extends Schema.Schema.AnyNoContext> {
-      readonly name: TView["_"]["name"];
-      readonly DataTransferObject: TDataTransferObject;
+        static get permission() {
+          return `${name}:read` as const;
+        }
+      };
 
-      constructor(
-        name: TView["_"]["name"],
-        DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
-          ? TDataTransferObject
-          : never,
-      ) {
-        this.name = name;
-        this.DataTransferObject = DataTransferObject;
-      }
-
-      get permission() {
-        return `${this.name}:read` as const;
-      }
-    };
-
-  export const makeVirtualViewClass = <TView extends PgView>() =>
-    class<
+  export const VirtualView =
+    <TView extends PgView>() =>
+    <
       TName extends string,
       TDataTransferObject extends Schema.Schema.AnyNoContext,
-    > {
-      readonly name: TName;
-      readonly DataTransferObject: TDataTransferObject;
+    >(
+      name: TName,
+      DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
+        ? TDataTransferObject
+        : never,
+    ) =>
+      class {
+        static readonly name = name;
+        static readonly DataTransferObject = DataTransferObject;
 
-      constructor(
-        name: TName,
-        DataTransferObject: Schema.Schema.Type<TDataTransferObject> extends InferDataTransferObject<TView>
-          ? TDataTransferObject
-          : never,
-      ) {
-        this.name = name;
-        this.DataTransferObject = DataTransferObject;
-      }
+        static get permission() {
+          return `${name}:read` as const;
+        }
+      };
 
-      get permission() {
-        return `${this.name}:read` as const;
-      }
-    };
-
-  export const makeInternalClass = <TTable extends PgTable>() =>
-    class<TRow extends Schema.Schema.AnyNoContext> {
-      readonly name: TTable["_"]["name"];
-      readonly Record: TRow;
-
-      constructor(
-        name: TTable["_"]["name"],
-        Record: Schema.Schema.Type<TRow> extends InferSelectModel<TTable>
-          ? TRow
-          : never,
-      ) {
-        this.name = name;
-        this.Record = Record;
-      }
-    };
+  export const InternalTable =
+    <TTable extends PgTable>(name: TTable["_"]["name"]) =>
+    <TRecord extends Schema.Schema.AnyNoContext>(
+      Record: Schema.Schema.Type<TRecord> extends InferSelectModel<TTable>
+        ? TRecord
+        : never,
+    ) =>
+      class {
+        static readonly name = name;
+        static readonly Record = Record;
+      };
 }

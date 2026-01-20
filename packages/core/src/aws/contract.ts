@@ -1,3 +1,4 @@
+import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Schema from "effect/Schema";
 
 export namespace CredentialsContract {
@@ -9,4 +10,12 @@ export namespace CredentialsContract {
     accountId: Schema.String.pipe(Schema.Redacted, Schema.optional),
     expiration: Schema.DateTimeUtc.pipe(Schema.Redacted, Schema.optional),
   }) {}
+
+  export class ProviderError extends Schema.TaggedError<ProviderError>(
+    "CredentialsProviderError",
+  )(
+    "CredentialsProviderError",
+    { cause: Schema.Defect },
+    HttpApiSchema.annotations({ status: 500 }),
+  ) {}
 }

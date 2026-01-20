@@ -20,6 +20,7 @@ import * as Struct from "effect/Struct";
 import { Actors } from "../actors";
 import { Sst } from "../sst";
 import { tenantTemplate } from "../utils";
+import { CredentialsContract } from "./contract";
 
 import type { CloudfrontSignInput } from "@aws-sdk/cloudfront-signer";
 import type * as HttpBody from "@effect/platform/HttpBody";
@@ -30,13 +31,8 @@ import type {
   RequestSigningArguments as SmithyRequestSigningArguments,
 } from "@smithy/types";
 import type { ColumnsContract } from "../columns/contract";
-import type { CredentialsContract } from "./contract";
 
 export namespace Credentials {
-  export class ProviderError extends Data.TaggedError(
-    "CredentialProviderError",
-  )<{ readonly cause: unknown }> {}
-
   export const buildRoleArn = (
     accountId: string,
     nameTemplate: string,
@@ -71,7 +67,7 @@ export namespace Credentials {
     ) =>
       Effect.tryPromise({
         try: () => provider()(),
-        catch: (cause) => new ProviderError({ cause }),
+        catch: (cause) => new CredentialsContract.ProviderError({ cause }),
       }).pipe(Effect.map(this.make));
 
     static readonly layer = (identity: AwsCredentialIdentity) =>

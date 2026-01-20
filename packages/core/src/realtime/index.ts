@@ -40,7 +40,7 @@ export namespace Realtime {
         const maybePrivateActor = Actors.Actor.pipe(
           Effect.flatMap(Struct.get("assertPrivate")),
           Effect.map(Option.some),
-          Effect.catchTag("InvalidActorError", () =>
+          Effect.catchTag("ForbiddenActorError", () =>
             Option.none<
               Effect.Effect.Success<Actors.Actor["Type"]["assertPrivate"]>
             >().pipe(Effect.succeed),

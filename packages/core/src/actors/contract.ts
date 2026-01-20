@@ -1,15 +1,13 @@
-import * as Data from "effect/Data";
+import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
+import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
 import { UsersContract } from "../users/contract";
 
 export namespace ActorsContract {
-  export class InvalidActorError extends Data.TaggedError("InvalidActorError")<{
-    actorTag: Actor["properties"]["_tag"];
-  }> {}
-
   export class PublicActor extends Schema.TaggedClass<PublicActor>(
     "PublicActor",
   )("PublicActor", {}) {}
@@ -38,7 +36,7 @@ export namespace ActorsContract {
       Effect.suspend(() => {
         if (this.properties._tag !== actorTag)
           return Effect.fail(
-            new InvalidActorError({ actorTag: this.properties._tag }),
+            new ForbiddenActorError({ actor: this.properties._tag }),
           );
 
         return Effect.succeed(
@@ -49,10 +47,22 @@ export namespace ActorsContract {
     assertPrivate = Effect.suspend(() => {
       if (this.properties._tag === "PublicActor")
         return Effect.fail(
-          new InvalidActorError({ actorTag: this.properties._tag }),
+          new ForbiddenActorError({ actor: this.properties._tag }),
         );
 
       return Effect.succeed(this.properties);
     });
   }
+
+  export class ForbiddenActorError extends Schema.TaggedError<ForbiddenActorError>(
+    "ForbiddenActorError",
+  )(
+    "ForbiddenActorError",
+    {
+      actor: Schema.Literal(
+        ...Array.map(Actor.fields.properties.members, Struct.get("_tag")),
+      ),
+    },
+    HttpApiSchema.annotations({ statusCode: 403 }),
+  ) {}
 }

@@ -221,7 +221,7 @@ export namespace AccessControl {
 
   export type Policy<TError = never, TContext = never> = Effect.Effect<
     void,
-    AccessDeniedError | ActorsContract.InvalidActorError | TError,
+    AccessDeniedError | ActorsContract.ForbiddenActorError | TError,
     TContext | Actors.Actor
   >;
 
@@ -232,7 +232,7 @@ export namespace AccessControl {
   > = (
     args: Schema.Schema.Type<TArgs>,
   ) => Policy<
-    Exclude<TError, AccessDeniedError | ActorsContract.InvalidActorError>,
+    Exclude<TError, AccessDeniedError | ActorsContract.ForbiddenActorError>,
     Exclude<TContext, Actors.Actor>
   >;
 

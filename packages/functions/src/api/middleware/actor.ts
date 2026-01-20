@@ -56,14 +56,19 @@ export const actorLayer = Effect.gen(function* () {
         UserHeaders,
       ).pipe(
         HttpServerRequest.schemaHeaders,
-        Effect.mapError(() => new HttpApiError.Unauthorized()),
+        Effect.catchTag("ParseError", (e) =>
+          HttpApiError.HttpApiDecodeError.refailParseError(e),
+        ),
       );
 
       if ("apiKey" in headers) {
         const hash = yield* tenantMetadataRepository
           .findByTenant(headers.tenantId)
           .pipe(
-            Effect.mapError(() => new HttpApiError.Unauthorized()),
+            Effect.catchTag(
+              "NoSuchElementException",
+              () => new HttpApiError.Unauthorized(),
+            ),
             Effect.map(Struct.get("apiKeyHash")),
             Effect.filterOrFail(
               Predicate.isNotNull,
@@ -71,9 +76,7 @@ export const actorLayer = Effect.gen(function* () {
             ),
           );
 
-        yield* crypto
-          .verifySecret(headers.apiKey, hash)
-          .pipe(Effect.mapError(() => new HttpApiError.Unauthorized()));
+        yield* crypto.verifySecret(headers.apiKey, hash);
 
         return new ActorsContract.Actor({
           properties: new ActorsContract.SystemActor({
@@ -85,7 +88,11 @@ export const actorLayer = Effect.gen(function* () {
       if ("bearerToken" in headers) {
         const { subject } = yield* oauth
           .verify(headers.bearerToken)
-          .pipe(Effect.mapError(() => new HttpApiError.Unauthorized()));
+          .pipe(
+            Effect.catchTag("ParseError", (e) =>
+              HttpApiError.HttpApiDecodeError.refailParseError(e),
+            ),
+          );
 
         return new ActorsContract.Actor({
           properties: new ActorsContract.UserActor(subject.properties),

@@ -12,6 +12,7 @@ import {
   sql,
 } from "drizzle-orm";
 import * as Array from "effect/Array";
+import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 
@@ -26,6 +27,7 @@ import {
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { Models } from "../models";
+import type { ReplicacheClientGroupsModel } from "./models";
 
 export namespace Replicache {
   export class ClientGroupsRepository extends Effect.Service<ClientGroupsRepository>()(
@@ -416,7 +418,7 @@ export namespace Replicache {
             entity: TEntity,
             clientView: ReplicacheClientViewsSchema.Row,
           ) =>
-            db.useDynamic((tx) =>
+            db.useQueryBuilder((tx) =>
               tx
                 .select({ id: table.entityId })
                 .from(table)
@@ -439,7 +441,7 @@ export namespace Replicache {
             entity: TEntity,
             clientView: ReplicacheClientViewsSchema.Row,
           ) =>
-            db.useDynamic((tx) =>
+            db.useQueryBuilder((tx) =>
               tx
                 .select()
                 .from(table)
@@ -461,7 +463,7 @@ export namespace Replicache {
             entity: TEntity,
             clientView: ReplicacheClientViewsSchema.Row,
           ) =>
-            db.useDynamic((tx) =>
+            db.useQueryBuilder((tx) =>
               tx
                 .select({ id: table.entityId })
                 .from(table)
@@ -490,7 +492,7 @@ export namespace Replicache {
             entity: TEntity,
             clientView: ReplicacheClientViewsSchema.Row,
           ) =>
-            db.useDynamic((tx) =>
+            db.useQueryBuilder((tx) =>
               tx
                 .select()
                 .from(table)
@@ -510,4 +512,8 @@ export namespace Replicache {
       }),
     },
   ) {}
+
+  export class ClientGroupId extends Context.Tag(
+    "@printdesk/core/replicache/ClientGroupId",
+  )<ClientGroupId, ReplicacheClientGroupsModel.Id>() {}
 }

@@ -18,6 +18,7 @@ import { Signers } from "../aws";
 import { Sst } from "../sst";
 import { paginate } from "../utils";
 import { Constants } from "../utils/constants";
+import { DatabaseContract } from "./contract";
 
 import type {
   Logger as DrizzleLogger,
@@ -67,31 +68,25 @@ export namespace Database {
     "ConnectionTimeoutError",
   ) {}
 
-  export class TransactionError extends Data.TaggedError("TransactionError")<{
-    readonly cause: unknown;
-  }> {
-    /**
-     * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
-     *
-     * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
-     * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
-     * https://stackoverflow.com/a/16409293/749644
-     */
-    get isRetryable() {
-      return (
-        this.cause instanceof DatabaseError &&
-        (this.cause.code ===
-          Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
-          this.cause.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE)
-      );
-    }
-  }
+  /**
+   * Because Aurora DSQL uses REPEATABLE READ isolation level, we need to be prepared to retry transactions.
+   *
+   * See https://stackoverflow.com/questions/60339223/node-js-transaction-coflicts-in-postgresql-optimistic-concurrency-control-and,
+   * https://www.postgresql.org/docs/10/errcodes-appendix.html, and
+   * https://stackoverflow.com/a/16409293/749644
+   */
+  export const isTransactionErrorRetryable = (
+    error: DatabaseContract.TransactionError,
+  ) =>
+    error.cause instanceof DatabaseError &&
+    (error.cause.code === Constants.POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE ||
+      error.cause.code === Constants.POSTGRES_DEADLOCK_DETECTED_ERROR_CODE);
 
   export class Database extends Effect.Service<Database>()(
     "@printdesk/core/database/Database",
     {
       accessors: true,
-      dependencies: [Logger.Default],
+      dependencies: [Sst.Resource.layer, Logger.Default],
       scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
           Effect.map(Redacted.value),
@@ -226,13 +221,15 @@ export namespace Database {
 
         const matchTxError = (error: unknown) => {
           if (
-            error instanceof TransactionError &&
+            error instanceof DatabaseContract.TransactionError &&
             error.cause instanceof DatabaseError
           )
             return matchTxError(error.cause);
 
           if (error instanceof DatabaseError)
-            return Option.some(new TransactionError({ cause: error }));
+            return Option.some(
+              new DatabaseContract.TransactionError({ cause: error }),
+            );
 
           return Option.none();
         };
@@ -251,12 +248,12 @@ export namespace Database {
 
               const transaction = Effect.async<
                 TSuccess,
-                TError | TransactionError,
+                TError | DatabaseContract.TransactionError,
                 TContext
               >((resume, signal) => {
                 const abortListener = () =>
                   Effect.fail(
-                    new TransactionError({
+                    new DatabaseContract.TransactionError({
                       cause: new globalThis.Error("Transaction interrupted"),
                     }),
                   ).pipe(resume);
@@ -326,7 +323,7 @@ export namespace Database {
                 Effect.retry({
                   while: (error) =>
                     Predicate.isTagged(error, "TransactionError") &&
-                    error.isRetryable,
+                    isTransactionErrorRetryable(error),
                   schedule,
                 }),
               );
@@ -338,34 +335,40 @@ export namespace Database {
         )(<TReturn>(callback: (tx: Transaction["tx"]) => Promise<TReturn>) =>
           Effect.gen(function* () {
             const execute = (tx: Transaction["tx"]) =>
-              Effect.async<TReturn, TransactionError>((resume, signal) => {
-                const abortListener = () =>
-                  Effect.fail(
-                    new TransactionError({
-                      cause: new globalThis.Error(
-                        "Transaction execution interrupted",
+              Effect.async<TReturn, DatabaseContract.TransactionError>(
+                (resume, signal) => {
+                  const abortListener = () =>
+                    Effect.fail(
+                      new DatabaseContract.TransactionError({
+                        cause: new globalThis.Error(
+                          "Transaction execution aborted",
+                        ),
+                      }),
+                    ).pipe(resume);
+
+                  signal.addEventListener("abort", abortListener);
+
+                  Effect.tryPromise({
+                    try: () => callback(tx),
+                    catch: (error) =>
+                      matchTxError(error).pipe(
+                        Option.getOrElse(
+                          () =>
+                            new DatabaseContract.TransactionError({
+                              cause: error,
+                            }),
+                        ),
                       ),
-                    }),
-                  ).pipe(resume);
+                  }).pipe(resume);
 
-                signal.addEventListener("abort", abortListener);
+                  return Effect.sync(() =>
+                    signal.removeEventListener("abort", abortListener),
+                  );
+                },
+              );
 
-                Effect.tryPromise({
-                  try: () => callback(tx),
-                  catch: (error) =>
-                    matchTxError(error).pipe(
-                      Option.getOrElse(
-                        () => new TransactionError({ cause: error }),
-                      ),
-                    ),
-                }).pipe(resume);
-
-                return Effect.sync(() =>
-                  signal.removeEventListener("abort", abortListener),
-                );
-              });
-
-            return yield* Effect.serviceOption(Transaction).pipe(
+            return yield* Transaction.pipe(
+              Effect.serviceOption,
               Effect.flatMap(
                 Option.match({
                   onSome: ({ tx }) => execute(tx),
@@ -376,24 +379,35 @@ export namespace Database {
           }),
         );
 
-        const useDynamic = Effect.fn("Database.TransactionManager.useDynamic")(
+        const useQueryBuilder = Effect.fn(
+          "Database.TransactionManager.useQueryBuilder",
+        )(
           <
             TQueryBuilder extends AnyPgSelectQueryBuilder,
             TDynamic extends PgSelectDynamic<TQueryBuilder>,
           >(
             callback: (tx: Transaction["tx"]) => TDynamic,
           ) =>
-            Effect.serviceOption(Transaction).pipe(
-              Effect.flatMap(
-                Option.match({
-                  onSome: ({ tx }) => Effect.succeed(callback(tx)),
-                  onNone: () =>
-                    Effect.dieMessage(
-                      `"useDynamic" called outside of transaction scope.`,
-                    ),
-                }),
-              ),
-            ),
+            Effect.gen(function* () {
+              const execute = (tx: Transaction["tx"]) =>
+                Effect.try({
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+                  try: () => callback(tx),
+                  catch: (cause) =>
+                    new DatabaseContract.QueryBuilderError({ cause }),
+                });
+
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+              return yield* Transaction.pipe(
+                Effect.serviceOption,
+                Effect.flatMap(
+                  Option.match({
+                    onSome: ({ tx }) => execute(tx),
+                    onNone: () => withTransaction(execute),
+                  }),
+                ),
+              );
+            }),
         );
 
         const afterTransaction = Effect.fn(
@@ -403,14 +417,12 @@ export namespace Database {
             effect: Effect.Effect<void>,
             { onSuccessOnly = true }: { onSuccessOnly?: boolean } = {},
           ) =>
-            Effect.serviceOption(Transaction).pipe(
+            Transaction.pipe(
+              Effect.serviceOption,
               Effect.flatMap(
                 Option.match({
                   onSome: (transaction) =>
-                    transaction.registerAfterEffect({
-                      onSuccessOnly,
-                      effect,
-                    }),
+                    transaction.registerAfterEffect({ onSuccessOnly, effect }),
                   onNone: () => effect,
                 }),
               ),
@@ -420,7 +432,7 @@ export namespace Database {
         return {
           withTransaction,
           useTransaction,
-          useDynamic,
+          useQueryBuilder,
           afterTransaction,
         } as const;
       }),

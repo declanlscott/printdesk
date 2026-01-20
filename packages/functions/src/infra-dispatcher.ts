@@ -34,14 +34,12 @@ export const handler = LambdaHandler.make({
         Stream.map(Chunk.map(Struct.pick("tenantId", "infraProgramInput"))),
         Stream.mapEffect(
           Schema.encode(
-            Schema.Chunk(
-              Schema.parseJson(
-                Schema.Struct({
-                  tenantId: ColumnsContract.TenantId,
-                  infraProgramInput: TenantMetadataContract.InfraProgramInput,
-                }),
-              ),
-            ),
+            Schema.parseJson(
+              Schema.Struct({
+                tenantId: ColumnsContract.TenantId,
+                infraProgramInput: TenantMetadataContract.InfraProgramInput,
+              }),
+            ).pipe(Schema.Chunk),
           ),
         ),
         Stream.mapEffect(

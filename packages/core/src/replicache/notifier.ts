@@ -5,6 +5,7 @@ import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Struct from "effect/Struct";
 
+import { Replicache } from ".";
 import { Actors } from "../actors";
 import { Credentials } from "../aws";
 import { Database } from "../database";
@@ -31,67 +32,63 @@ export class ReplicacheNotifier extends Effect.Service<ReplicacheNotifier>()(
       Realtime.Realtime.Default,
       Database.TransactionManager.Default,
     ],
-    effect: (clientGroupId: Events.ReplicacheNotification["clientGroupId"]) =>
-      Effect.gen(function* () {
-        const realtime = yield* Realtime.Realtime;
-        const db = yield* Database.TransactionManager;
+    effect: Effect.gen(function* () {
+      const realtime = yield* Realtime.Realtime;
+      const db = yield* Database.TransactionManager;
 
-        const resolver = RequestResolver.makeBatched(
-          Effect.fn("ReplicacheNotifier.batchedRun")(
-            (requests: Array.NonEmptyArray<Notify>) =>
-              realtime
-                .publish(
-                  "/replicache",
-                  Chunk.fromIterable(requests).pipe(
-                    Chunk.map(Struct.get("notification")),
+      const resolver = RequestResolver.makeBatched(
+        Effect.fn("ReplicacheNotifier.batchedRun")(
+          (requests: Array.NonEmptyArray<Notify>) =>
+            realtime
+              .publish(
+                "/replicache",
+                Chunk.fromIterable(requests).pipe(
+                  Chunk.map(Struct.get("notification")),
+                ),
+              )
+              .pipe(
+                Effect.andThen((success) =>
+                  Effect.forEach(
+                    requests,
+                    Request.completeEffect(Effect.succeed(success)),
                   ),
-                )
-                .pipe(
-                  Effect.andThen((success) =>
-                    Effect.forEach(
-                      requests,
-                      Request.completeEffect(Effect.succeed(success)),
-                    ),
-                  ),
-                  Effect.catchAll((error) =>
-                    Effect.forEach(
-                      requests,
-                      Request.completeEffect(
-                        Effect.fail(new NotifyError({ cause: error })),
-                      ),
+                ),
+                Effect.catchAll((error) =>
+                  Effect.forEach(
+                    requests,
+                    Request.completeEffect(
+                      Effect.fail(new NotifyError({ cause: error })),
                     ),
                   ),
                 ),
-          ),
-        ).pipe(
-          RequestResolver.contextFromServices(
-            Actors.Actor,
-            Credentials.Identity,
-          ),
-        );
+              ),
+        ),
+      ).pipe(
+        RequestResolver.contextFromServices(Actors.Actor, Credentials.Identity),
+      );
 
-        const notify = Effect.fn("ReplicacheNotifier.notify")(
-          (data: Events.ReplicacheNotification["data"]) =>
-            resolver.pipe(
-              Effect.flatMap((resolver) =>
-                db.afterTransaction(
-                  Effect.request(
-                    Notify({ notification: { clientGroupId, data } }),
-                    resolver,
-                  ).pipe(
-                    Effect.catchTag("NotifyError", (error) =>
-                      Effect.logError(
-                        "[ReplicacheNotifier]: Replicache notification failed.",
-                        error.cause,
-                      ),
+      const notify = Effect.fn("ReplicacheNotifier.notify")(
+        (data: Events.ReplicacheNotification["data"]) =>
+          Effect.all([Replicache.ClientGroupId, resolver]).pipe(
+            Effect.flatMap(([clientGroupId, resolver]) =>
+              db.afterTransaction(
+                Effect.request(
+                  Notify({ notification: { clientGroupId, data } }),
+                  resolver,
+                ).pipe(
+                  Effect.catchTag("NotifyError", (error) =>
+                    Effect.logError(
+                      "[ReplicacheNotifier]: Replicache notification failed.",
+                      error.cause,
                     ),
                   ),
                 ),
               ),
             ),
-        );
+          ),
+      );
 
-        return { notify } as const;
-      }),
+      return { notify } as const;
+    }),
   },
 ) {}

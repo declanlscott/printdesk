@@ -1,4 +1,4 @@
-import * as Context from "effect/Context";
+import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Data from "effect/Data";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
@@ -7,21 +7,9 @@ import * as Struct from "effect/Struct";
 import { ColumnsContract } from "../columns/contract";
 import { Models } from "../models";
 import { Constants } from "../utils/constants";
-
-import type { ReplicachePuller } from "./pull";
-import type { ReplicachePusher } from "./push";
+import { ReplicacheClientGroupsModel } from "./models";
 
 export namespace ReplicacheContract {
-  export class Puller extends Context.Tag("@printdesk/core/replicache/Puller")<
-    Puller,
-    ReplicachePuller.Type
-  >() {}
-
-  export class Pusher extends Context.Tag("@printdesk/core/replicache/Pusher")<
-    Pusher,
-    ReplicachePusher.Type
-  >() {}
-
   export class ClientStateNotFoundResponse extends Schema.Class<ClientStateNotFoundResponse>(
     "ClientStateNotFoundResponse",
   )({ error: Schema.tag("ClientStateNotFound") }) {}
@@ -56,68 +44,14 @@ export namespace ReplicacheContract {
       this.response = new VersionNotSupportedResponse({ versionType });
     }
   }
+}
 
-  export class MutationV0 extends Schema.TaggedClass<MutationV0>("MutationV0")(
-    "MutationV0",
-    {
-      name: Schema.String,
-      args: Schema.Any,
-      id: Schema.Number,
-      timestamp: Schema.Number,
-    },
-  ) {}
-
-  export class MutationV1 extends Schema.TaggedClass<MutationV1>("MutationV1")(
-    "MutationV1",
-    { ...Struct.omit(MutationV0.fields, "_tag"), clientID: Schema.UUID },
-  ) {}
-
-  export const Mutation = Schema.Union(MutationV0, MutationV1);
-  export type Mutation = typeof Mutation.Type;
-
-  export class PushRequestV0 extends Schema.Class<PushRequestV0>(
-    "PushRequestV0",
-  )({
-    pushVersion: Schema.tag(0),
-    clientID: Schema.UUID,
-    mutations: MutationV0.pipe(Schema.Array),
-    profileID: Schema.String,
-    schemaVersion: Schema.String,
-  }) {}
-
-  export class PushRequestV1 extends Schema.Class<PushRequestV1>(
-    "PushRequestV1",
-  )({
-    pushVersion: Schema.tag(1),
-    clientGroupId: Schema.UUID.pipe(
-      Schema.propertySignature,
-      Schema.fromKey("clientGroupId"),
-    ),
-    mutations: MutationV1.pipe(Schema.Array),
-    profileId: Schema.UUID.pipe(
-      Schema.propertySignature,
-      Schema.fromKey("profileID"),
-    ),
-    schemaVersion: Schema.String,
-  }) {}
-
-  export const PushRequest = Schema.Union(PushRequestV0, PushRequestV1);
-  export type PushRequest = typeof PushRequest.Type;
-
-  export const PushResponse = Schema.Union(
-    Schema.Undefined,
-    ClientStateNotFoundResponse,
-    VersionNotSupportedResponse,
-  );
-  export type PushResponse = typeof PushResponse.Type;
-
+export namespace ReplicachePullerContract {
   export const Cookie = Schema.Struct({ order: ColumnsContract.Version }).pipe(
     Schema.NullOr,
   );
 
-  export class PullRequestV0 extends Schema.Class<PullRequestV0>(
-    "PullRequestV0",
-  )({
+  export class RequestV0 extends Schema.Class<RequestV0>("RequestV0")({
     pullVersion: Schema.tag(0),
     schemaVersion: Schema.String,
     profileID: Schema.String,
@@ -125,21 +59,19 @@ export namespace ReplicacheContract {
     lastMutationID: Schema.Int,
   }) {}
 
-  export class PullRequestV1 extends Schema.Class<PullRequestV1>(
-    "PullRequestV1",
-  )({
+  export class RequestV1 extends Schema.Class<RequestV1>("RequestV1")({
     pullVersion: Schema.tag(1),
     schemaVersion: Schema.String,
     profileID: Schema.String,
     cookie: Cookie,
-    clientGroupId: Schema.UUID.pipe(
+    clientGroupId: ReplicacheClientGroupsModel.Id.pipe(
       Schema.propertySignature,
-      Schema.fromKey("clientGroupId"),
+      Schema.fromKey("clientGroupID"),
     ),
   }) {}
 
-  export const PullRequest = Schema.Union(PullRequestV0, PullRequestV1);
-  export type PullRequest = typeof PullRequest.Type;
+  export const Request = Schema.Union(RequestV0, RequestV1);
+  export type Request = typeof Request.Type;
 
   export const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
     Schema.TemplateLiteralParser(
@@ -266,24 +198,20 @@ export namespace ReplicacheContract {
   );
   export type PatchOperation = typeof PatchOperation.Type;
 
-  export class PullResponseOkV0 extends Schema.Class<PullResponseOkV0>(
-    "PullResponseOkV0",
-  )({
+  export class ResponseOkV0 extends Schema.Class<ResponseOkV0>("ResponseOkV0")({
     cookie: Cookie,
     lastMutationID: Schema.Int,
     patch: PatchOperation.pipe(Schema.Chunk),
   }) {}
 
-  export const PullResponseV0 = Schema.Union(
-    PullResponseOkV0,
-    ClientStateNotFoundResponse,
-    VersionNotSupportedResponse,
+  export const ResponseV0 = Schema.Union(
+    ResponseOkV0,
+    ReplicacheContract.ClientStateNotFoundResponse,
+    ReplicacheContract.VersionNotSupportedResponse,
   );
-  export type PullResponseV0 = typeof PullResponseV0.Type;
+  export type ResponseV0 = typeof ResponseV0.Type;
 
-  export class PullResponseOkV1 extends Schema.Class<PullResponseOkV1>(
-    "PullResponseOkV1",
-  )({
+  export class ResponseOkV1 extends Schema.Class<ResponseOkV1>("ResponseOkV1")({
     cookie: Cookie,
     lastMutationIdChanges: Schema.Record({
       key: Schema.UUID,
@@ -292,13 +220,79 @@ export namespace ReplicacheContract {
     patch: PatchOperation.pipe(Schema.Chunk),
   }) {}
 
-  export const PullResponseV1 = Schema.Union(
-    PullResponseOkV1,
-    ClientStateNotFoundResponse,
-    VersionNotSupportedResponse,
+  export const ResponseV1 = Schema.Union(
+    ResponseOkV1,
+    ReplicacheContract.ClientStateNotFoundResponse,
+    ReplicacheContract.VersionNotSupportedResponse,
   );
-  export type PullResponseV1 = typeof PullResponseV1.Type;
+  export type ResponseV1 = typeof ResponseV1.Type;
 
-  export const PullResponse = Schema.Union(PullResponseV0, PullResponseV1);
-  export type PullResponse = typeof PullResponse.Type;
+  export const Response = Schema.Union(ResponseV0, ResponseV1);
+  export type Response = typeof Response.Type;
+}
+
+export namespace ReplicachePusherContract {
+  export class MutationV0 extends Schema.TaggedClass<MutationV0>("MutationV0")(
+    "MutationV0",
+    {
+      name: Schema.String,
+      args: Schema.Any,
+      id: Schema.Number,
+      timestamp: Schema.Number,
+    },
+  ) {}
+
+  export class MutationV1 extends Schema.TaggedClass<MutationV1>("MutationV1")(
+    "MutationV1",
+    {
+      ...Struct.omit(MutationV0.fields, "_tag"),
+      clientId: Schema.UUID.pipe(
+        Schema.propertySignature,
+        Schema.fromKey("clientID"),
+      ),
+    },
+  ) {}
+
+  export const Mutation = Schema.Union(MutationV0, MutationV1);
+  export type Mutation = typeof Mutation.Type;
+
+  export class RequestV0 extends Schema.Class<RequestV0>("RequestV0")({
+    pushVersion: Schema.tag(0),
+    clientID: Schema.UUID,
+    mutations: MutationV0.pipe(Schema.Array),
+    profileID: Schema.String,
+    schemaVersion: Schema.String,
+  }) {}
+
+  export class RequestV1 extends Schema.Class<RequestV1>("RequestV1")({
+    pushVersion: Schema.tag(1),
+    clientGroupId: ReplicacheClientGroupsModel.Id.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("clientGroupID"),
+    ),
+    mutations: MutationV1.pipe(Schema.Array),
+    profileId: Schema.UUID.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("profileID"),
+    ),
+    schemaVersion: Schema.String,
+  }) {}
+
+  export const Request = Schema.Union(RequestV0, RequestV1);
+  export type Request = typeof Request.Type;
+
+  export const Response = Schema.Union(
+    Schema.Void,
+    ReplicacheContract.ClientStateNotFoundResponse,
+    ReplicacheContract.VersionNotSupportedResponse,
+  );
+  export type Response = typeof Response.Type;
+
+  export class FutureMutationError extends Schema.TaggedError<FutureMutationError>(
+    "FutureMutationError",
+  )(
+    "FutureMutationError",
+    { mutationId: MutationV1.fields.id },
+    HttpApiSchema.annotations({ status: 500 }),
+  ) {}
 }

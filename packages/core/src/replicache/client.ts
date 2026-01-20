@@ -1,5 +1,6 @@
 import * as Array from "effect/Array";
 import * as Cause from "effect/Cause";
+import * as Context from "effect/Context";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import { pipe } from "effect/Function";
@@ -61,10 +62,10 @@ export namespace Replicache {
     readonly cause: unknown;
   }> {}
 
-  export class ReadTransaction extends Effect.Service<ReadTransaction>()(
+  // @effect-leakable-service
+  export class ReadTransaction extends Context.Tag(
     "@printdesk/core/replicache/client/ReadTransaction",
-    { scoped: (tx: ReadTx | WriteTx) => Effect.succeed({ tx }) },
-  ) {}
+  )<ReadTransaction, ReadTx | WriteTx>() {}
 
   export class ReadTransactionError extends Data.TaggedError(
     "ReadTransactionError",
@@ -73,14 +74,15 @@ export namespace Replicache {
   export class ReadTransactionManager extends Effect.Service<ReadTransactionManager>()(
     "@printdesk/core/replicache/client/ReadTransactionManager",
     {
-      effect: Effect.gen(function* () {
-        const { tx } = yield* ReadTransaction;
-
+      sync: () => {
         const scan = <TTable extends Models.SyncTable>(table: TTable) =>
-          Effect.tryPromise({
-            try: () => tx.scan({ prefix: `${table.name}/` }).toArray(),
-            catch: (cause) => new ReadTransactionError({ cause }),
-          }).pipe(
+          ReadTransaction.pipe(
+            Effect.flatMap((tx) =>
+              Effect.tryPromise({
+                try: () => tx.scan({ prefix: `${table.name}/` }).toArray(),
+                catch: (cause) => new ReadTransactionError({ cause }),
+              }),
+            ),
             Effect.flatMap(
               Schema.decodeUnknown<
                 ReadonlyArray<TTable["DataTransferObject"]["Type"]>,
@@ -95,6 +97,8 @@ export namespace Replicache {
           id: TTable["DataTransferObject"]["Type"]["id"],
         ) =>
           Effect.gen(function* () {
+            const tx = yield* ReadTransaction;
+
             const value = yield* Effect.tryPromise({
               try: () => tx.get(`${table.name}/${id}`),
               catch: (cause) => new ReadTransactionError({ cause }),
@@ -112,14 +116,14 @@ export namespace Replicache {
           });
 
         return { scan, get } as const;
-      }),
+      },
     },
   ) {}
 
-  export class WriteTransaction extends Effect.Service<WriteTransaction>()(
+  // @effect-leakable-service
+  export class WriteTransaction extends Context.Tag(
     "@printdesk/core/replicache/client/WriteTransaction",
-    { scoped: (tx: WriteTx) => Effect.succeed({ tx }) },
-  ) {}
+  )<WriteTransaction, WriteTx>() {}
 
   export class WriteTransactionError extends Data.TaggedError(
     "WriteTransactionError",
@@ -130,7 +134,6 @@ export namespace Replicache {
     {
       dependencies: [ReadTransactionManager.Default],
       effect: Effect.gen(function* () {
-        const { tx } = yield* WriteTransaction;
         const { get } = yield* ReadTransactionManager;
 
         const set = <TTable extends Models.SyncTable>(
@@ -147,10 +150,14 @@ export namespace Replicache {
               >(table.DataTransferObject.pipe(Schema.asSchema)),
             ),
             Effect.flatMap((encoded) =>
-              Effect.tryPromise({
-                try: () => tx.set(`${table.name}/${id}`, encoded),
-                catch: (cause) => new WriteTransactionError({ cause }),
-              }),
+              WriteTransaction.pipe(
+                Effect.flatMap((tx) =>
+                  Effect.tryPromise({
+                    try: () => tx.set(`${table.name}/${id}`, encoded),
+                    catch: (cause) => new WriteTransactionError({ cause }),
+                  }),
+                ),
+              ),
             ),
             Effect.andThen(get(table, id)),
           );
@@ -161,10 +168,14 @@ export namespace Replicache {
         ) =>
           Effect.zipLeft(
             get(table, id),
-            Effect.tryPromise({
-              try: () => tx.del(`${table.name}/${id}`),
-              catch: (cause) => new WriteTransactionError({ cause }),
-            }),
+            WriteTransaction.pipe(
+              Effect.flatMap((tx) =>
+                Effect.tryPromise({
+                  try: () => tx.del(`${table.name}/${id}`),
+                  catch: (cause) => new WriteTransactionError({ cause }),
+                }),
+              ),
+            ),
           );
 
         return { set, del } as const;

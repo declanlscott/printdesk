@@ -1,5 +1,4 @@
 import * as Chunk from "effect/Chunk";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
 import * as Number from "effect/Number";
@@ -14,7 +13,7 @@ import { Invoices } from "../invoices";
 import { Models } from "../models";
 import { Orders } from "../orders";
 import { Products } from "../products";
-import { ReplicacheContract } from "../replicache/contract";
+import { ReplicachePullerContract } from "../replicache/contracts";
 import { ReplicacheClientViewEntriesModel } from "../replicache/models";
 import { Rooms } from "../rooms";
 import { SharedAccounts } from "../shared-accounts";
@@ -33,10 +32,6 @@ import type { ColumnsContract } from "../columns/contract";
 import type { ReplicacheClientViewsModel } from "../replicache/models";
 
 export namespace Queries {
-  export class DifferenceLimitExceededError extends Data.TaggedError(
-    "DifferenceLimitExceededError",
-  ) {}
-
   export class Differentiator extends Effect.Service<Differentiator>()(
     "@printdesk/core/queries/Differentiator",
     {
@@ -144,23 +139,27 @@ export namespace Queries {
                             >().pipe(
                               Match.tags({
                                 update: (update) =>
-                                  new ReplicacheClientViewEntriesModel.Record({
-                                    clientGroupId: clientView.clientGroupId,
-                                    clientViewVersion: clientViewVersion.next,
-                                    entity: update.value.entity,
-                                    entityId: update.value.data.id,
-                                    entityVersion: update.value.data.version,
-                                    tenantId: clientView.tenantId,
-                                  }),
+                                  new ReplicacheClientViewEntriesModel.Table.Record(
+                                    {
+                                      clientGroupId: clientView.clientGroupId,
+                                      clientViewVersion: clientViewVersion.next,
+                                      entity: update.value.entity,
+                                      entityId: update.value.data.id,
+                                      entityVersion: update.value.data.version,
+                                      tenantId: clientView.tenantId,
+                                    },
+                                  ),
                                 delete: (delete_) =>
-                                  new ReplicacheClientViewEntriesModel.Record({
-                                    clientGroupId: clientView.clientGroupId,
-                                    clientViewVersion: clientViewVersion.next,
-                                    entity: delete_.value.entity,
-                                    entityId: delete_.value.id,
-                                    entityVersion: null,
-                                    tenantId: clientView.tenantId,
-                                  }),
+                                  new ReplicacheClientViewEntriesModel.Table.Record(
+                                    {
+                                      clientGroupId: clientView.clientGroupId,
+                                      clientViewVersion: clientViewVersion.next,
+                                      entity: delete_.value.entity,
+                                      entityId: delete_.value.id,
+                                      entityVersion: null,
+                                      tenantId: clientView.tenantId,
+                                    },
+                                  ),
                               }),
                               Match.exhaustive,
                             ),
@@ -222,7 +221,8 @@ export namespace Queries {
                   Effect.scoped,
                 );
 
-              if (limit < 0) return yield* new DifferenceLimitExceededError();
+              if (limit < 0)
+                return yield* new QueriesContract.DifferenceLimitExceededError();
 
               // Fast-forward
               if (clientView.version < clientViewVersion.max)
@@ -232,7 +232,7 @@ export namespace Queries {
                     Stream.runFold(patch, (patch, { entity, data }) =>
                       patch.pipe(
                         Chunk.append(
-                          ReplicacheContract.makePutTableOperation({
+                          ReplicachePullerContract.makePutTableOperation({
                             table: Models.syncTables[entity],
                             value: data,
                           }),
@@ -254,19 +254,21 @@ export namespace Queries {
                           (result, { entity, data }) => ({
                             clientViewEntries: result.clientViewEntries.pipe(
                               Chunk.append(
-                                new ReplicacheClientViewEntriesModel.Record({
-                                  clientGroupId: clientView.clientGroupId,
-                                  clientViewVersion: clientViewVersion.next,
-                                  entity,
-                                  entityId: data.id,
-                                  entityVersion: data.version,
-                                  tenantId: clientView.tenantId,
-                                }),
+                                new ReplicacheClientViewEntriesModel.Table.Record(
+                                  {
+                                    clientGroupId: clientView.clientGroupId,
+                                    clientViewVersion: clientViewVersion.next,
+                                    entity,
+                                    entityId: data.id,
+                                    entityVersion: data.version,
+                                    tenantId: clientView.tenantId,
+                                  },
+                                ),
                               ),
                             ),
                             patch: result.patch.pipe(
                               Chunk.append(
-                                ReplicacheContract.makePutTableOperation({
+                                ReplicachePullerContract.makePutTableOperation({
                                   table: Models.syncTables[entity],
                                   value: data,
                                 }),
@@ -289,7 +291,7 @@ export namespace Queries {
                   ...result,
                   patch: result.patch.pipe(
                     Chunk.append(
-                      new ReplicacheContract.PutSyncStateOperation({
+                      new ReplicachePullerContract.PutSyncStateOperation({
                         value: isPartial ? "PARTIAL" : "COMPLETE",
                       }),
                     ),

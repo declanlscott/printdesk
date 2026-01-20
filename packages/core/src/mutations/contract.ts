@@ -177,9 +177,7 @@ export namespace MutationsContract {
         ? Dispatcher<TProcedureRecord, TRecord, TIsFinal>
         : never,
       name: TName,
-      args:
-        | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
+      args: Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
       user: ActorsContract.UserActor,
     ) {
       return this.#map.pipe(
@@ -204,38 +202,19 @@ export namespace MutationsContract {
                 Effect.dieMessage(
                   `Procedure "${mutation.name}" missing from record.`,
                 ),
-              onSome: ({ Args, Returns }) =>
-                ("encoded" in args
-                  ? Schema.decode<
-                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                      Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]>,
-                      never
-                    >(Args)(args.encoded)
-                  : Schema.decode<
-                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                      never
-                    >(Schema.typeSchema(Args))(args.decoded)
-                ).pipe(
-                  Effect.flatMap((args) =>
-                    mutation
-                      .mutator(args, user)
-                      .pipe(
-                        AccessControl.enforce(mutation.makePolicy(args)),
-                        Effect.flatMap(
-                          Schema.decode<
-                            Schema.Schema.Type<
-                              TProcedureRecord[TName]["Returns"]
-                            >,
-                            Schema.Schema.Type<
-                              TProcedureRecord[TName]["Returns"]
-                            >,
-                            never
-                          >(Schema.typeSchema(Returns)),
-                        ),
-                      ),
+              onSome: ({ Returns }) =>
+                mutation
+                  .mutator(args, user)
+                  .pipe(
+                    AccessControl.enforce(mutation.makePolicy(args)),
+                    Effect.flatMap(
+                      Schema.decode<
+                        Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+                        Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+                        never
+                      >(Schema.typeSchema(Returns)),
+                    ),
                   ),
-                ),
             }),
           ),
         ),

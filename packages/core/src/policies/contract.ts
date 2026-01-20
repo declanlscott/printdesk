@@ -4,8 +4,8 @@ import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
 import * as Option from "effect/Option";
 import * as Record from "effect/Record";
-import * as Schema from "effect/Schema";
 
+import type * as Schema from "effect/Schema";
 import type { AccessControl } from "../access-control";
 import type { ProceduresContract } from "../procedures/contract";
 
@@ -92,9 +92,7 @@ export namespace PoliciesContract {
         ? Dispatcher<TProcedureRecord, TRecord, TIsFinal>
         : never,
       name: TName,
-      args:
-        | { encoded: Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]> }
-        | { decoded: Schema.Schema.Type<TProcedureRecord[TName]["Args"]> },
+      args: Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
     ) {
       return this.#map.pipe(
         HashMap.get(name),
@@ -115,19 +113,7 @@ export namespace PoliciesContract {
                 Effect.dieMessage(
                   `Procedure "${policy.name}" missing from record.`,
                 ),
-              onSome: ({ Args }) =>
-                ("encoded" in args
-                  ? Schema.decode<
-                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                      Schema.Schema.Encoded<TProcedureRecord[TName]["Args"]>,
-                      never
-                    >(Args)(args.encoded)
-                  : Schema.decode<
-                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                      Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-                      never
-                    >(Schema.typeSchema(Args))(args.decoded)
-                ).pipe(Effect.flatMap(policy.make)),
+              onSome: () => policy.make(args),
             }),
           ),
         ),

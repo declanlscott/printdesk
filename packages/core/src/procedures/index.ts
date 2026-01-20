@@ -7,7 +7,7 @@ import { DeliveryOptionsContract } from "../delivery-options/contract";
 import { InvoicesContract } from "../invoices/contract";
 import { OrdersContract } from "../orders/contract";
 import { ProductsContract } from "../products/contract";
-import { ReplicacheContract } from "../replicache/contract";
+import { ReplicachePusherContract } from "../replicache/contracts";
 import { RoomsContract } from "../rooms/contract";
 import {
   SharedAccountManagerAccessContract,
@@ -99,9 +99,8 @@ export namespace Procedures {
 
         const ReplicacheSchema = registry.Schema.pipe(
           Schema.extend(
-            Schema.Struct(ReplicacheContract.MutationV1.fields).omit(
-              "name",
-              "args",
+            ReplicachePusherContract.MutationV1.pipe(
+              Schema.omit("name", "args"),
             ),
           ),
         );
@@ -110,4 +109,8 @@ export namespace Procedures {
       },
     },
   ) {}
+
+  export type Mutation = Effect.Effect.Success<
+    typeof Mutations.ReplicacheSchema
+  >["Type"];
 }

@@ -4,7 +4,9 @@ import { Credentials } from "@printdesk/core/aws";
 import { CredentialsApi } from "@printdesk/core/aws/api";
 import { Sst } from "@printdesk/core/sst";
 import { tenantTemplate } from "@printdesk/core/utils";
+import * as Cache from "effect/Cache";
 import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
@@ -22,39 +24,46 @@ export const realtimeSubscriberCredentialsIdentityLayer = Effect.gen(
   function* () {
     const resource = yield* Sst.Resource;
 
+    const cache = yield* Cache.make({
+      capacity: 100,
+      timeToLive: Duration.minutes(15),
+      lookup: (actor: ActorsContract.Actor["properties"]) =>
+        Match.value(actor).pipe(
+          Match.tag(
+            "PublicActor",
+            () =>
+              ({
+                RoleArn: resource.RealtimeSubscriberRole.pipe(Redacted.value)
+                  .arn,
+                RoleSessionName: "PublicRealtimeSubscriber",
+                ExternalId: resource.RealtimeSubscriberRoleExternalId.pipe(
+                  Redacted.value,
+                ).value,
+              }) satisfies FromTemporaryCredentialsOptions["params"],
+          ),
+          Match.orElse(
+            ({ tenantId }) =>
+              ({
+                RoleArn: tenantTemplate(
+                  resource.TenantRoles.pipe(Redacted.value).realtimeSubscriber
+                    .nameTemplate,
+                  tenantId,
+                ),
+                RoleSessionName: "TenantRealtimeSubscriber",
+              }) satisfies FromTemporaryCredentialsOptions["params"],
+          ),
+          (params) =>
+            Credentials.Identity.fromProvider(() =>
+              fromTemporaryCredentials({ params }),
+            ),
+        ),
+    });
+
     return CredentialsApi.Identity.of(
       Effect.context<never>().pipe(
         Effect.map(Context.unsafeGet(Actors.Actor)),
         Effect.map(Struct.get("properties")),
-        Effect.map(
-          Match.type<ActorsContract.Actor["properties"]>().pipe(
-            Match.tag(
-              "PublicActor",
-              () =>
-                ({
-                  RoleArn: resource.RealtimeSubscriberRole.pipe(Redacted.value)
-                    .arn,
-                  RoleSessionName: "PublicRealtimeSubscriber",
-                  ExternalId: resource.RealtimeSubscriberRoleExternalId.pipe(
-                    Redacted.value,
-                  ).value,
-                }) satisfies FromTemporaryCredentialsOptions["params"],
-            ),
-            Match.orElse(
-              ({ tenantId }) =>
-                ({
-                  RoleArn: tenantTemplate(
-                    resource.TenantRoles.pipe(Redacted.value).realtimeSubscriber
-                      .nameTemplate,
-                    tenantId,
-                  ),
-                  RoleSessionName: "TenantRealtimeSubscriber",
-                }) satisfies FromTemporaryCredentialsOptions["params"],
-            ),
-          ),
-        ),
-        Effect.map((params) => () => fromTemporaryCredentials({ params })),
-        Effect.flatMap(Credentials.Identity.fromProvider),
+        Effect.flatMap((actor) => cache.get(actor)),
       ),
     );
   },
@@ -67,23 +76,33 @@ export const tenantRealtimePublisherCredentialsIdentityLayer = Effect.gen(
   function* () {
     const resource = yield* Sst.Resource;
 
-    return CredentialsApi.Identity.of(
-      Effect.context<never>().pipe(
-        Effect.map(Context.unsafeGet(Actors.Actor)),
-        Effect.flatMap(Struct.get("assertPrivate")),
-        Effect.map(
-          ({ tenantId }) =>
-            ({
+    const cache = yield* Cache.make({
+      capacity: 100,
+      timeToLive: Duration.minutes(15),
+      lookup: ({
+        tenantId,
+      }: Effect.Effect.Success<
+        typeof ActorsContract.Actor.Type.assertPrivate
+      >) =>
+        Credentials.Identity.fromProvider(() =>
+          fromTemporaryCredentials({
+            params: {
               RoleArn: tenantTemplate(
                 resource.TenantRoles.pipe(Redacted.value).realtimePublisher
                   .nameTemplate,
                 tenantId,
               ),
               RoleSessionName: "TenantRealtimePublisher",
-            }) satisfies FromTemporaryCredentialsOptions["params"],
+            },
+          }),
         ),
-        Effect.map((params) => () => fromTemporaryCredentials({ params })),
-        Effect.flatMap(Credentials.Identity.fromProvider),
+    });
+
+    return CredentialsApi.Identity.of(
+      Effect.context<never>().pipe(
+        Effect.map(Context.unsafeGet(Actors.Actor)),
+        Effect.flatMap(Struct.get("assertPrivate")),
+        Effect.flatMap((actor) => cache.get(actor)),
       ),
     );
   },

@@ -13,18 +13,9 @@ import { Procedures } from "../procedures";
 import { ReplicacheContract, ReplicachePusherContract } from "./contracts";
 import { ReplicacheClientGroupsModel, ReplicacheClientsModel } from "./models";
 
-import type { ActorsContract } from "../actors/contract";
-
 interface PreprocessArgs {
-  readonly clientGroupId: ReplicacheClientGroupsModel.Id;
   readonly clientId: (typeof ReplicacheClientsModel.Table.Record.Type)["id"];
   readonly mutationId: Procedures.Mutation["id"];
-  readonly user: ActorsContract.UserActor;
-}
-
-interface MutateArgs {
-  readonly user: ActorsContract.UserActor;
-  readonly mutation: Procedures.Mutation;
 }
 
 interface PostprocessArgs {
@@ -76,17 +67,11 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 "push",
               );
 
-            const user = yield* Actors.Actor.pipe(
-              Effect.flatMap((actor) => actor.assert("UserActor")),
-            );
-
             yield* Effect.forEach(pushRequest.mutations, (mutationV1) =>
               Effect.gen(function* () {
                 const preprocessArgs = {
-                  clientGroupId: pushRequest.clientGroupId,
                   clientId: mutationV1.clientId,
                   mutationId: mutationV1.id,
-                  user,
                 } satisfies PreprocessArgs;
 
                 yield* decode(mutationV1).pipe(
@@ -97,7 +82,7 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                         const postprocessArgs =
                           yield* preprocess(preprocessArgs);
 
-                        yield* mutate({ user, mutation });
+                        yield* mutate(mutation);
 
                         yield* postprocess(postprocessArgs);
                       }),
@@ -146,13 +131,13 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
           ),
       );
 
-      const preprocess = ({
-        clientGroupId,
-        clientId,
-        mutationId,
-        user,
-      }: PreprocessArgs) =>
+      const preprocess = ({ clientId, mutationId }: PreprocessArgs) =>
         Effect.gen(function* () {
+          const clientGroupId = yield* Replicache.ClientGroupId;
+          const user = yield* Actors.Actor.pipe(
+            Effect.flatMap((actor) => actor.assert("UserActor")),
+          );
+
           const [clientGroup, client] = yield* Effect.all(
             [
               // 3: Get client group
@@ -235,8 +220,8 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
           ),
         );
 
-      const mutate = ({ mutation, user }: MutateArgs) =>
-        dispatcher.dispatch(mutation.name, mutation.args, user).pipe(
+      const mutate = (mutation: Procedures.Mutation) =>
+        dispatcher.dispatch(mutation.name, mutation.args).pipe(
           // 10(ii)(a,b): Log and abort
           Effect.tapErrorCause((cause) =>
             Effect.logError(

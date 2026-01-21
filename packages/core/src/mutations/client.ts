@@ -102,7 +102,7 @@ export namespace Mutations {
           .mutation(workflowStatuses.delete)
           .final();
 
-        return { client };
+        return { client } as const;
       }),
     },
   ) {}

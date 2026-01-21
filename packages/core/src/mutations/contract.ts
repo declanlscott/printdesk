@@ -7,6 +7,7 @@ import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
 import { AccessControl } from "../access-control";
+import { Actors } from "../actors";
 
 import type { ActorsContract } from "../actors/contract";
 import type { ProceduresContract } from "../procedures/contract";
@@ -178,7 +179,6 @@ export namespace MutationsContract {
         : never,
       name: TName,
       args: Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
-      user: ActorsContract.UserActor,
     ) {
       return this.#map.pipe(
         HashMap.get(name),
@@ -203,18 +203,18 @@ export namespace MutationsContract {
                   `Procedure "${mutation.name}" missing from record.`,
                 ),
               onSome: ({ Returns }) =>
-                mutation
-                  .mutator(args, user)
-                  .pipe(
-                    AccessControl.enforce(mutation.makePolicy(args)),
-                    Effect.flatMap(
-                      Schema.decode<
-                        Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
-                        Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
-                        never
-                      >(Schema.typeSchema(Returns)),
-                    ),
+                Actors.Actor.pipe(
+                  Effect.flatMap((actor) => actor.assert("UserActor")),
+                  Effect.flatMap((user) => mutation.mutator(args, user)),
+                  AccessControl.enforce(mutation.makePolicy(args)),
+                  Effect.flatMap(
+                    Schema.decode<
+                      Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+                      Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+                      never
+                    >(Returns.pipe(Schema.typeSchema)),
                   ),
+                ),
             }),
           ),
         ),

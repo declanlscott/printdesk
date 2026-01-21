@@ -37,7 +37,7 @@ export namespace UsersContract {
   export class ActiveView extends TablesContract.View<UsersSchema.ActiveView>(
     "active_users",
   )(
-    class Dto extends ColumnsContract.BaseEntity.extend<Dto>("ActiveUser")(
+    class Dto extends Schema.Class<Dto>("ActiveUser")(
       Struct.evolve(Table.DataTransferObject.fields, {
         deletedAt: (deletedAt) => deletedAt.from.members[1],
       }),

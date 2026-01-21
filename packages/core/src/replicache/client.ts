@@ -65,7 +65,7 @@ export namespace Replicache {
   // @effect-leakable-service
   export class ReadTransaction extends Context.Tag(
     "@printdesk/core/replicache/client/ReadTransaction",
-  )<ReadTransaction, ReadTx | WriteTx>() {}
+  )<ReadTransaction, ReadTx>() {}
 
   export class ReadTransactionError extends Data.TaggedError(
     "ReadTransactionError",

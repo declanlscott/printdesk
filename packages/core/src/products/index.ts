@@ -686,6 +686,7 @@ export namespace Products {
               ),
             ),
             Effect.flatMap(notifier.notify),
+            Effect.orElse(() => Effect.void),
           );
         const notifyEdit = notifyCreate;
 
@@ -722,6 +723,7 @@ export namespace Products {
               ),
             ),
             Effect.flatMap(notifier.notify),
+            Effect.orElse(() => Effect.void),
           );
         const notifyDraft = notifyPublish;
 

@@ -681,6 +681,7 @@ export namespace DeliveryOptions {
                 ),
               ),
               Effect.flatMap(notifier.notify),
+              Effect.orElse(() => Effect.void),
             );
         const notifyEdit = notifyCreate;
         const notifyDelete = notifyCreate;

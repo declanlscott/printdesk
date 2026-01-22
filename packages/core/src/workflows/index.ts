@@ -2915,6 +2915,7 @@ export namespace WorkflowStatuses {
                 ),
             ),
             Effect.flatMap(notifier.notify),
+            Effect.orElse(() => Effect.void),
           );
         const notifyEdit = notifyAppend;
         const notifyDelete = notifyAppend;

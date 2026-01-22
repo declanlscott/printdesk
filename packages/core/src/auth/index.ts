@@ -16,7 +16,7 @@ import type { TenantsContract } from "../tenants/contracts";
 export class Auth extends Effect.Service<Auth>()("@printdesk/core/auth/Auth", {
   accessors: true,
   dependencies: [
-    Sst.Resource.layer,
+    Sst.Resource.Default,
     IdentityProviders.Repository.Default,
     Users.Repository.Default,
   ],

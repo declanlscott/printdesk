@@ -2,7 +2,7 @@ import { LambdaHandler } from "@effect-aws/lambda";
 import { Logger } from "@effect-aws/powertools-logger";
 import { issuer } from "@openauthjs/openauth";
 import { Auth } from "@printdesk/core/auth";
-import { AuthContract } from "@printdesk/core/auth/contract";
+import { AuthContract } from "@printdesk/core/auth/contracts";
 import { Crypto } from "@printdesk/core/auth/crypto";
 import { Database } from "@printdesk/core/database";
 import { Graph } from "@printdesk/core/graph";
@@ -36,7 +36,7 @@ class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
     Database.TransactionManager.Default,
     Auth.Default,
     Crypto.Default,
-    Sst.Resource.layer,
+    Sst.Resource.Default,
   ],
   effect: Effect.gen(function* () {
     const db = yield* Database.TransactionManager;
@@ -206,7 +206,7 @@ class Issuer extends Effect.Service<Issuer>()("@printdesk/functions/Issuer", {
   }),
 }) {}
 
-const layer = Issuer.Default.pipe(Layer.provide(Sst.Resource.layer));
+const layer = Issuer.Default.pipe(Layer.provide(Sst.Resource.Default));
 
 const effectHandler: EffectHandler<
   APIGatewayProxyEventV2,

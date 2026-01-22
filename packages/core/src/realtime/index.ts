@@ -25,7 +25,7 @@ export namespace Realtime {
     {
       accessors: true,
       dependencies: [
-        Sst.Resource.layer,
+        Sst.Resource.Default,
         Signers.Appsync.Default,
         FetchHttpClient.layer,
         Procedures.Policies.Default,

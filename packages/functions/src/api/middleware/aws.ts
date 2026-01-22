@@ -69,7 +69,7 @@ export const realtimeSubscriberCredentialsIdentityLayer = Effect.gen(
   },
 ).pipe(
   Layer.effect(CredentialsApi.Identity),
-  Layer.provide(Sst.Resource.layer),
+  Layer.provide(Sst.Resource.Default),
 );
 
 export const tenantRealtimePublisherCredentialsIdentityLayer = Effect.gen(
@@ -108,5 +108,5 @@ export const tenantRealtimePublisherCredentialsIdentityLayer = Effect.gen(
   },
 ).pipe(
   Layer.effect(CredentialsApi.Identity),
-  Layer.provide(Sst.Resource.layer),
+  Layer.provide(Sst.Resource.Default),
 );

@@ -41,7 +41,7 @@ export namespace EntraId {
     "@printdesk/core/identity/EntraIdClient",
     {
       accessors: true,
-      dependencies: [Sst.Resource.layer],
+      dependencies: [Sst.Resource.Default],
       effect: (
         externalTenantId: (typeof IdentityProvidersContract.Table.DataTransferObject.Type)["externalTenantId"],
       ) =>

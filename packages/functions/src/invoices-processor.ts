@@ -25,7 +25,7 @@ const layer = Layer.mergeAll(
   Database.TransactionManager.Default,
   Invoices.Repository.Default,
   STS.defaultLayer,
-).pipe(Layer.provideMerge(Sst.Resource.layer));
+).pipe(Layer.provideMerge(Sst.Resource.Default));
 
 const effectHandler: EffectHandler<
   SQSEvent,

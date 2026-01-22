@@ -30,7 +30,7 @@ type DrizzleMigration = {
 const layer = Layer.mergeAll(
   Database.Database.Default,
   Logger.defaultLayer,
-).pipe(Layer.provideMerge(Sst.Resource.layer));
+).pipe(Layer.provideMerge(Sst.Resource.Default));
 
 export const handler = LambdaHandler.make({
   layer,

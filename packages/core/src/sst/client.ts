@@ -38,6 +38,11 @@ export namespace Sst {
 
         throw new Error(`Resource "${key}" is not linked.`);
       },
+      getOwnPropertyDescriptor: () => ({
+        configurable: true,
+        enumerable: true,
+      }),
+      ownKeys: () => Object.keys(raw),
     }) as ViteResource<TImportMetaEnv>;
   };
 }

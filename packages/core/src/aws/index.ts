@@ -111,7 +111,7 @@ export namespace Signers {
     export class Signer extends Effect.Service<Signer>()(
       "@printdesk/core/aws/CloudfrontSigner",
       {
-        dependencies: [Sst.Resource.layer],
+        dependencies: [Sst.Resource.Default],
         effect: Effect.gen(function* () {
           const resource = yield* Sst.Resource;
 
@@ -185,7 +185,7 @@ export namespace Signers {
 
     export const runtime = layer.pipe(
       Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
-      Layer.provide(Sst.Resource.layer),
+      Layer.provide(Sst.Resource.Default),
       ManagedRuntime.make,
     );
   }
@@ -341,7 +341,7 @@ export namespace Signers {
     "@printdesk/core/aws/AppsyncSigner",
     {
       accessors: true,
-      dependencies: [Sst.Resource.layer],
+      dependencies: [Sst.Resource.Default],
       effect: makeSignatureV4Signer("appsync"),
     },
   ) {}
@@ -350,7 +350,7 @@ export namespace Signers {
     "@printdesk/core/aws/ExecuteApiSigner",
     {
       accessors: true,
-      dependencies: [Sst.Resource.layer],
+      dependencies: [Sst.Resource.Default],
       effect: (host?: string) => makeSignatureV4Signer("execute-api", host),
     },
   ) {
@@ -366,7 +366,7 @@ export namespace Signers {
       ),
       Effect.map(this.Default),
       Layer.unwrapEffect,
-      Layer.provide(Sst.Resource.layer),
+      Layer.provide(Sst.Resource.Default),
     );
   }
 }

@@ -15,7 +15,7 @@ const layer = Layer.mergeAll(
   Replicache.ClientViewsRepository.Default,
   Replicache.ClientViewEntriesRepository.Default,
   Logger.defaultLayer,
-).pipe(Layer.provideMerge(Sst.Resource.layer));
+).pipe(Layer.provideMerge(Sst.Resource.Default));
 
 export const handler = LambdaHandler.make({
   layer,

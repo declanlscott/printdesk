@@ -16,7 +16,7 @@ import * as Struct from "effect/Struct";
 const layer = Layer.mergeAll(
   SQS.defaultLayer,
   Tenants.MetadataRepository.Default,
-).pipe(Layer.provideMerge(Sst.Resource.layer));
+).pipe(Layer.provideMerge(Sst.Resource.Default));
 
 export const handler = LambdaHandler.make({
   layer,

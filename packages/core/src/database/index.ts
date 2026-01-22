@@ -86,7 +86,7 @@ export namespace Database {
     "@printdesk/core/database/Database",
     {
       accessors: true,
-      dependencies: [Sst.Resource.layer, Logger.Default],
+      dependencies: [Sst.Resource.Default, Logger.Default],
       scoped: Effect.gen(function* () {
         const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
           Effect.map(Redacted.value),

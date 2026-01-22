@@ -14,7 +14,7 @@ export namespace Api {
   export class Http extends Effect.Service<Http>()("@printdesk/core/api/Http", {
     accessors: true,
     dependencies: [
-      Sst.Resource.layer,
+      Sst.Resource.Default,
       Signers.ExecuteApi.tenantLayer,
       Signers.Cloudfront.Signer.Default,
       FetchHttpClient.layer,

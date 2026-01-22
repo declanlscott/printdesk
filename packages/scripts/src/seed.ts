@@ -22,7 +22,7 @@ const seed = Effect.gen(function* () {
 
 void seed.pipe(
   Effect.provide(
-    Database.Database.Default.pipe(Layer.provide(Sst.Resource.layer)),
+    Database.Database.Default.pipe(Layer.provide(Sst.Resource.Default)),
   ),
   Effect.runFork,
 );

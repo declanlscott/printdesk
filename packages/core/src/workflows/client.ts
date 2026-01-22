@@ -9,11 +9,10 @@ import * as Ordering from "effect/Ordering";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
-import { Models } from "../models";
+import { Database } from "../database/client";
 import { MutationsContract } from "../mutations/contract";
 import { Orders } from "../orders/client";
 import { PoliciesContract } from "../policies/contract";
-import { Replicache } from "../replicache/client";
 import { SharedAccounts } from "../shared-accounts/client";
 import {
   RoomWorkflowsContract,
@@ -25,13 +24,11 @@ import type { ColumnsContract } from "../columns/contract";
 import type { SharedAccountManagerAccessContract } from "../shared-accounts/contracts";
 
 export namespace RoomWorkflows {
-  const Table = Models.syncTables[RoomWorkflowsContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/RoomsReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(Table),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(RoomWorkflowsContract.Table),
     },
   ) {}
 
@@ -41,11 +38,14 @@ export namespace RoomWorkflows {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(Table, repository);
+        const base = yield* Database.makeWriteRepository(
+          RoomWorkflowsContract.Table,
+          repository,
+        );
 
         const updateByRoomId = (
           roomId: (typeof RoomWorkflowsContract.Table.DataTransferObject.Type)["roomId"],
@@ -82,18 +82,18 @@ export namespace RoomWorkflows {
 }
 
 export namespace SharedAccountWorkflows {
-  const Table = Models.syncTables[SharedAccountWorkflowsContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/SharedAccountsReadRepository",
     {
       dependencies: [
-        Replicache.ReadTransactionManager.Default,
+        Database.ReadTransactionManager.Default,
         SharedAccounts.CustomerAccessReadRepository.Default,
         SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(Table);
+        const base = yield* Database.makeReadRepository(
+          SharedAccountWorkflowsContract.Table,
+        );
 
         const sharedAccountCustomerAccessRepository =
           yield* SharedAccounts.CustomerAccessReadRepository;
@@ -148,11 +148,14 @@ export namespace SharedAccountWorkflows {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(Table, repository),
+          Database.makeWriteRepository(
+            SharedAccountWorkflowsContract.Table,
+            repository,
+          ),
         ),
       ),
     },
@@ -213,14 +216,14 @@ export namespace SharedAccountWorkflows {
 }
 
 export namespace WorkflowStatuses {
-  const Table = Models.syncTables[WorkflowStatusesContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/workflows/client/StatusesReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
+      dependencies: [Database.ReadTransactionManager.Default],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(Table);
+        const base = yield* Database.makeReadRepository(
+          WorkflowStatusesContract.Table,
+        );
 
         const findLastByWorkflowId = (workflowId: ColumnsContract.EntityId) =>
           base
@@ -294,11 +297,14 @@ export namespace WorkflowStatuses {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(Table, repository),
+          Database.makeWriteRepository(
+            WorkflowStatusesContract.Table,
+            repository,
+          ),
         ),
       ),
     },

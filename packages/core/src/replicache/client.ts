@@ -1,31 +1,44 @@
-import * as Array from "effect/Array";
 import * as Cause from "effect/Cause";
-import * as Context from "effect/Context";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
-import { pipe } from "effect/Function";
+import * as Equal from "effect/Equal";
+import * as Layer from "effect/Layer";
+import * as ManagedRuntime from "effect/ManagedRuntime";
+import * as Record from "effect/Record";
+import * as Runtime from "effect/Runtime";
 import * as Schema from "effect/Schema";
 import { Replicache as ReplicacheClient } from "replicache";
 
-import type * as Option from "effect/Option";
+import { Actors } from "../actors";
+import { Database } from "../database/client";
+import { Mutations } from "../mutations/client";
+import { Procedures } from "../procedures";
+import { separatedString } from "../utils";
+
+import type { ParseError } from "effect/ParseResult";
 import type {
-  ReadTransaction as ReadTx,
+  LogLevel,
+  ReadTransaction,
   ReplicacheOptions,
-  WriteTransaction as WriteTx,
+  SubscribeOptions,
+  WriteTransaction,
 } from "replicache";
-import type { Models } from "../models";
+import type { AccessControl } from "../access-control";
 
 export namespace Replicache {
   type Mutators = Record<
     string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (tx: WriteTx, args?: any) => any
+    (tx: WriteTransaction, args?: any) => any
   >;
 
   type InferMutator<
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    TMutator extends (tx: WriteTx, ...args: Array<any>) => any,
-  > = TMutator extends (tx: WriteTx, ...args: infer TArgs) => infer TReturn
+    TMutator extends (tx: WriteTransaction, ...args: Array<any>) => any,
+  > = TMutator extends (
+    tx: WriteTransaction,
+    ...args: infer TArgs
+  ) => infer TReturn
     ? (
         ...args: TArgs
       ) => TReturn extends Promise<Awaited<TReturn>>
@@ -62,176 +75,161 @@ export namespace Replicache {
     readonly cause: unknown;
   }> {}
 
-  // @effect-leakable-service
-  export class ReadTransaction extends Context.Tag(
-    "@printdesk/core/replicache/client/ReadTransaction",
-  )<ReadTransaction, ReadTx>() {}
+  export interface MakeClientArgs {
+    logLevel: LogLevel;
+    baseUrl: URL;
+  }
 
-  export class ReadTransactionError extends Data.TaggedError(
-    "ReadTransactionError",
-  )<{ readonly cause: unknown }> {}
+  export const makeClient = ({ logLevel }: MakeClientArgs) =>
+    Effect.gen(function* () {
+      const { record: mutations } = yield* Procedures.Mutations.registry;
 
-  export class ReadTransactionManager extends Effect.Service<ReadTransactionManager>()(
-    "@printdesk/core/replicache/client/ReadTransactionManager",
-    {
-      sync: () => {
-        const scan = <TTable extends Models.SyncTable>(table: TTable) =>
-          ReadTransaction.pipe(
-            Effect.flatMap((tx) =>
+      const makeName = separatedString().pipe(Schema.encode);
+
+      const initialize = Effect.gen(function* () {
+        const user = yield* Actors.Actor.pipe(
+          Effect.flatMap((actor) => actor.assert("UserActor")),
+        );
+        const name = yield* makeName([user.tenantId, user.id]);
+
+        const mutatorRuntime = Actors.Actor.userLayer(
+          user.id,
+          user.tenantId,
+          user.role,
+        ).pipe(Layer.merge(Mutations.Dispatcher.Default), ManagedRuntime.make);
+
+        const mutators = Record.map(
+          mutations,
+          ({ name, Args: _Args }) =>
+            (tx: WriteTransaction, args: (typeof _Args)["Type"]) =>
+              Mutations.Dispatcher.client.pipe(
+                Effect.flatMap((client) => client.dispatch(name, args)),
+                Effect.provideService(Database.ReadTransaction, tx),
+                Effect.provideService(Database.WriteTransaction, tx),
+                mutatorRuntime.runPromise,
+              ),
+        ) as {
+          readonly [TKey in keyof typeof mutations]: (
+            tx: WriteTransaction,
+            args: (typeof mutations)[TKey]["Args"]["Type"],
+          ) => Promise<(typeof mutations)[TKey]["Returns"]["Type"]>;
+        };
+
+        const client = yield* Effect.try({
+          try: () =>
+            new Replicache.Client({
+              name,
+              logLevel,
+              mutators,
+              // TODO: Add other options
+            }),
+          catch: (cause) => new Replicache.ClientError({ cause }),
+        });
+
+        const query = <TSuccess, TError, TContext>(
+          body: Effect.Effect<
+            TSuccess,
+            TError,
+            TContext | Database.ReadTransaction
+          >,
+        ) =>
+          Effect.runtime<TContext>().pipe(
+            Effect.flatMap((runtime) =>
               Effect.tryPromise({
-                try: () => tx.scan({ prefix: `${table.name}/` }).toArray(),
-                catch: (cause) => new ReadTransactionError({ cause }),
+                try: (signal) =>
+                  client.query((tx) =>
+                    body.pipe(
+                      Effect.provideService(Database.ReadTransaction, tx),
+                      (body) => Runtime.runPromise(runtime, body, { signal }),
+                    ),
+                  ),
+                // Propagate errors back into effect
+                catch: (exception) => {
+                  if (Runtime.isFiberFailure(exception)) {
+                    const cause = exception[Runtime.FiberFailureCauseId];
+
+                    if (Cause.isFailure(cause) && Cause.isFailType(cause))
+                      return cause.error as TError;
+
+                    return new Replicache.ClientError({ cause });
+                  }
+
+                  return new Replicache.ClientError({ cause: exception });
+                },
               }),
             ),
-            Effect.flatMap(
-              Schema.decodeUnknown<
-                ReadonlyArray<TTable["DataTransferObject"]["Type"]>,
-                ReadonlyArray<TTable["DataTransferObject"]["Encoded"]>,
-                never
-              >(table.DataTransferObject.pipe(Schema.Array)),
+          );
+
+        const subscribe = <TSuccess, TError, TContext>(
+          body: Effect.Effect<
+            TSuccess,
+            TError,
+            TContext | Database.ReadTransaction
+          >,
+          opts: Omit<SubscribeOptions<TSuccess>, "isEqual">,
+        ) =>
+          Effect.runtime<TContext>().pipe(
+            Effect.flatMap((runtime) =>
+              Effect.try({
+                try: () =>
+                  client.subscribe(
+                    (tx: ReadTransaction) =>
+                      body.pipe(
+                        Effect.provideService(Database.ReadTransaction, tx),
+                        (body) => Runtime.runPromise(runtime, body),
+                      ),
+                    { ...opts, isEqual: Equal.equals<TSuccess, TSuccess> },
+                  ),
+                catch: (cause) => new Replicache.ClientError({ cause }),
+              }),
             ),
           );
 
-        const get = <TTable extends Models.SyncTable>(
-          table: TTable,
-          id: TTable["DataTransferObject"]["Type"]["id"],
+        const mutate = <TName extends keyof typeof mutations>(
+          name: TName,
+          args: (typeof mutations)[TName]["Args"]["Type"],
         ) =>
-          Effect.gen(function* () {
-            const tx = yield* ReadTransaction;
+          Effect.tryPromise({
+            try: () => Promise.resolve(client.mutate[name](args)),
+            // Propagate errors back into effect
+            catch: (exception) => {
+              if (Runtime.isFiberFailure(exception)) {
+                const cause = exception[Runtime.FiberFailureCauseId];
 
-            const value = yield* Effect.tryPromise({
-              try: () => tx.get(`${table.name}/${id}`),
-              catch: (cause) => new ReadTransactionError({ cause }),
-            });
-            if (!value) return yield* new Cause.NoSuchElementException();
+                if (Cause.isFailure(cause) && Cause.isFailType(cause))
+                  return cause.error as
+                    | ParseError
+                    | Effect.Effect.Error<
+                        AccessControl.Policy<
+                          Effect.Effect.Success<
+                            typeof Mutations.Dispatcher.client
+                          >["Record"][TName]["PolicyError"]
+                        >
+                      >
+                    | Effect.Effect.Success<
+                        typeof Mutations.Dispatcher.client
+                      >["Record"][TName]["MutatorError"];
 
-            return yield* pipe(
-              value,
-              Schema.decodeUnknown<
-                TTable["DataTransferObject"]["Type"],
-                TTable["DataTransferObject"]["Encoded"],
-                never
-              >(table.DataTransferObject.pipe(Schema.asSchema)),
-            );
+                return new Replicache.ClientError({ cause });
+              }
+
+              return new Replicache.ClientError({ cause: exception });
+            },
           });
 
-        return { scan, get } as const;
-      },
-    },
-  ) {}
+        const pull = Effect.tryPromise({
+          try: () => client.pull(),
+          catch: (cause) => new Replicache.ClientError({ cause }),
+        });
 
-  // @effect-leakable-service
-  export class WriteTransaction extends Context.Tag(
-    "@printdesk/core/replicache/client/WriteTransaction",
-  )<WriteTransaction, WriteTx>() {}
+        const close = Effect.tryPromise({
+          try: () => client.close(),
+          catch: (cause) => new Replicache.ClientError({ cause }),
+        });
 
-  export class WriteTransactionError extends Data.TaggedError(
-    "WriteTransactionError",
-  )<{ readonly cause: unknown }> {}
+        return { query, subscribe, mutate, pull, close } as const;
+      });
 
-  export class WriteTransactionManager extends Effect.Service<WriteTransactionManager>()(
-    "@printdesk/core/replicache/client/WriteTransactionManager",
-    {
-      dependencies: [ReadTransactionManager.Default],
-      effect: Effect.gen(function* () {
-        const { get } = yield* ReadTransactionManager;
-
-        const set = <TTable extends Models.SyncTable>(
-          table: TTable,
-          id: TTable["DataTransferObject"]["Type"]["id"],
-          value: TTable["DataTransferObject"]["Type"],
-        ) =>
-          Effect.succeed(value).pipe(
-            Effect.flatMap(
-              Schema.encode<
-                TTable["DataTransferObject"]["Type"],
-                TTable["DataTransferObject"]["Encoded"],
-                never
-              >(table.DataTransferObject.pipe(Schema.asSchema)),
-            ),
-            Effect.flatMap((encoded) =>
-              WriteTransaction.pipe(
-                Effect.flatMap((tx) =>
-                  Effect.tryPromise({
-                    try: () => tx.set(`${table.name}/${id}`, encoded),
-                    catch: (cause) => new WriteTransactionError({ cause }),
-                  }),
-                ),
-              ),
-            ),
-            Effect.andThen(get(table, id)),
-          );
-
-        const del = <TTable extends Models.SyncTable>(
-          table: TTable,
-          id: TTable["DataTransferObject"]["Type"]["id"],
-        ) =>
-          Effect.zipLeft(
-            get(table, id),
-            WriteTransaction.pipe(
-              Effect.flatMap((tx) =>
-                Effect.tryPromise({
-                  try: () => tx.del(`${table.name}/${id}`),
-                  catch: (cause) => new WriteTransactionError({ cause }),
-                }),
-              ),
-            ),
-          );
-
-        return { set, del } as const;
-      }),
-    },
-  ) {}
-
-  export const makeReadRepository = <TTable extends Models.SyncTable>(
-    table: TTable,
-  ) =>
-    Effect.gen(function* () {
-      const { scan, get } = yield* Replicache.ReadTransactionManager;
-
-      const findAll = scan(table);
-
-      const findById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>
-        get(table, id);
-
-      const findWhere = <TValue>(
-        filter: (
-          value: TTable["DataTransferObject"]["Type"],
-          index: number,
-        ) => Option.Option<TValue>,
-      ) => findAll.pipe(Effect.map(Array.filterMap(filter)));
-
-      return { findAll, findById, findWhere } as const;
-    });
-
-  export const makeWriteRepository = <TTable extends Models.SyncTable>(
-    table: TTable,
-    readRepository: Effect.Effect.Success<
-      ReturnType<typeof makeReadRepository<TTable>>
-    >,
-  ) =>
-    Effect.gen(function* () {
-      const { set, del } = yield* Replicache.WriteTransactionManager;
-
-      const create = (value: TTable["DataTransferObject"]["Type"]) =>
-        set(table, value.id, value);
-
-      const updateById = (
-        id: TTable["DataTransferObject"]["Type"]["id"],
-        next: (
-          prev: TTable["DataTransferObject"]["Type"],
-        ) => Partial<
-          Omit<TTable["DataTransferObject"]["Type"], "id" | "tenantId">
-        >,
-      ) =>
-        readRepository.findById(id).pipe(
-          Effect.map((prev) => ({ ...prev, ...next(prev) })),
-          Effect.flatMap((next) => set(table, next.id, next)),
-        );
-
-      const deleteById = (id: TTable["DataTransferObject"]["Type"]["id"]) =>
-        del(table, id);
-
-      return { create, updateById, deleteById } as const;
+      return { initialize } as const;
     });
 }

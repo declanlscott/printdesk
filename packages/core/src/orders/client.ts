@@ -7,10 +7,9 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
-import { Models } from "../models";
+import { Database } from "../database/client";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
-import { Replicache } from "../replicache/client";
 import { SharedAccounts } from "../shared-accounts/client";
 import { Users } from "../users/client";
 import { WorkflowStatuses } from "../workflows/client";
@@ -19,18 +18,16 @@ import { OrdersContract } from "./contract";
 import type { ColumnsContract } from "../columns/contract";
 
 export namespace Orders {
-  const Table = Models.syncTables[OrdersContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/orders/client/ReadRepository",
     {
       dependencies: [
-        Replicache.ReadTransactionManager.Default,
+        Database.ReadTransactionManager.Default,
         WorkflowStatuses.ReadRepository.Default,
         SharedAccounts.ManagerAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(Table);
+        const base = yield* Database.makeReadRepository(OrdersContract.Table);
 
         const workflowStatusesRepository =
           yield* WorkflowStatuses.ReadRepository;
@@ -92,11 +89,11 @@ export namespace Orders {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(Table, repository),
+          Database.makeWriteRepository(OrdersContract.Table, repository),
         ),
       ),
     },

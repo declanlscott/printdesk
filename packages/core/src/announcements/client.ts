@@ -4,20 +4,17 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
-import { Models } from "../models";
+import { Database } from "../database/client";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
-import { Replicache } from "../replicache/client";
 import { AnnouncementsContract } from "./contract";
 
 export namespace Announcements {
-  const Table = Models.syncTables[AnnouncementsContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/announcements/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(Table),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(AnnouncementsContract.Table),
     },
   ) {}
 
@@ -27,11 +24,14 @@ export namespace Announcements {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: Effect.gen(function* () {
         const repository = yield* ReadRepository;
-        const base = yield* Replicache.makeWriteRepository(Table, repository);
+        const base = yield* Database.makeWriteRepository(
+          AnnouncementsContract.Table,
+          repository,
+        );
 
         const updateByRoomId = (
           roomId: (typeof AnnouncementsContract.Table.DataTransferObject.Type)["roomId"],

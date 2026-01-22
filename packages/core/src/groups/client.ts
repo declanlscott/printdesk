@@ -6,9 +6,8 @@ import * as Option from "effect/Option";
 import { AccessControl } from "../access-control";
 import { Actors } from "../actors";
 import { ActorsContract } from "../actors/contract";
-import { Models } from "../models";
+import { Database } from "../database/client";
 import { PoliciesContract } from "../policies/contract";
-import { Replicache } from "../replicache/client";
 import { Users } from "../users/client";
 import {
   CustomerGroupMembershipsContract,
@@ -16,15 +15,13 @@ import {
 } from "./contracts";
 
 export namespace Groups {
-  const Table = Models.syncTables[CustomerGroupsContract.Table.name];
-  const MembershipsTable =
-    Models.syncTables[CustomerGroupMembershipsContract.Table.name];
-
   export class CustomerMembershipsReadRepository extends Effect.Service<CustomerMembershipsReadRepository>()(
     "@printdesk/core/groups/client/CustomerMembershipsReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(MembershipsTable),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(
+        CustomerGroupMembershipsContract.Table,
+      ),
     },
   ) {}
 
@@ -32,11 +29,13 @@ export namespace Groups {
     "@printdesk/core/groups/client/CustomersReadRepository",
     {
       dependencies: [
-        Replicache.ReadTransactionManager.Default,
+        Database.ReadTransactionManager.Default,
         CustomerMembershipsReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(Table);
+        const base = yield* Database.makeReadRepository(
+          CustomerGroupsContract.Table,
+        );
 
         const membershipsRepository = yield* CustomerMembershipsReadRepository;
 

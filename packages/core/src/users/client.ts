@@ -3,20 +3,17 @@ import * as Predicate from "effect/Predicate";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
-import { Models } from "../models";
+import { Database } from "../database/client";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
-import { Replicache } from "../replicache/client";
 import { UsersContract } from "./contract";
 
 export namespace Users {
-  const Table = Models.syncTables[UsersContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/users/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(Table),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(UsersContract.Table),
     },
   ) {}
 
@@ -26,11 +23,11 @@ export namespace Users {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(Table, repository),
+          Database.makeWriteRepository(UsersContract.Table, repository),
         ),
       ),
     },

@@ -8,10 +8,9 @@ import * as Struct from "effect/Struct";
 import { AccessControl } from "../access-control";
 import { Actors } from "../actors";
 import { ActorsContract } from "../actors/contract";
-import { Models } from "../models";
+import { Database } from "../database/client";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
-import { Replicache } from "../replicache/client";
 import { Users } from "../users/client";
 import {
   SharedAccountCustomerAccessContract,
@@ -21,19 +20,13 @@ import {
 } from "./contracts";
 
 export namespace SharedAccounts {
-  const CustomerAccessTable =
-    Models.syncTables[SharedAccountCustomerAccessContract.Table.name];
-  const ManagerAccessTable =
-    Models.syncTables[SharedAccountManagerAccessContract.Table.name];
-  const CustomerGroupAccessTable =
-    Models.syncTables[SharedAccountCustomerGroupAccessContract.Table.name];
-  const Table = Models.syncTables[SharedAccountsContract.Table.name];
-
   export class CustomerAccessReadRepository extends Effect.Service<CustomerAccessReadRepository>()(
     "@printdesk/core/shared-accounts/client/CustomerAccessReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(CustomerAccessTable),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(
+        SharedAccountCustomerAccessContract.Table,
+      ),
     },
   ) {}
 
@@ -43,11 +36,14 @@ export namespace SharedAccounts {
       accessors: true,
       dependencies: [
         CustomerAccessReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: CustomerAccessReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(CustomerAccessTable, repository),
+          Database.makeWriteRepository(
+            SharedAccountCustomerAccessContract.Table,
+            repository,
+          ),
         ),
       ),
     },
@@ -56,8 +52,10 @@ export namespace SharedAccounts {
   export class ManagerAccessReadRepository extends Effect.Service<ManagerAccessReadRepository>()(
     "@printdesk/core/shared-accounts/client/ManagerAccessReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(ManagerAccessTable),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(
+        SharedAccountManagerAccessContract.Table,
+      ),
     },
   ) {}
 
@@ -67,11 +65,14 @@ export namespace SharedAccounts {
       accessors: true,
       dependencies: [
         ManagerAccessReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ManagerAccessReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(ManagerAccessTable, repository),
+          Database.makeWriteRepository(
+            SharedAccountManagerAccessContract.Table,
+            repository,
+          ),
         ),
       ),
     },
@@ -196,8 +197,10 @@ export namespace SharedAccounts {
   export class CustomerGroupAccessReadRepository extends Effect.Service<CustomerGroupAccessReadRepository>()(
     "@printdesk/core/shared-accounts/client/CustomerGroupAccessReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(CustomerGroupAccessTable),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(
+        SharedAccountCustomerGroupAccessContract.Table,
+      ),
     },
   ) {}
 
@@ -207,11 +210,14 @@ export namespace SharedAccounts {
       accessors: true,
       dependencies: [
         CustomerGroupAccessReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: CustomerGroupAccessReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(CustomerGroupAccessTable, repository),
+          Database.makeWriteRepository(
+            SharedAccountCustomerGroupAccessContract.Table,
+            repository,
+          ),
         ),
       ),
     },
@@ -221,13 +227,15 @@ export namespace SharedAccounts {
     "@printdesk/core/shared-accounts/client/ReadRepository",
     {
       dependencies: [
-        Replicache.ReadTransactionManager.Default,
+        Database.ReadTransactionManager.Default,
         CustomerAccessReadRepository.Default,
         ManagerAccessReadRepository.Default,
         CustomerGroupAccessReadRepository.Default,
       ],
       effect: Effect.gen(function* () {
-        const base = yield* Replicache.makeReadRepository(Table);
+        const base = yield* Database.makeReadRepository(
+          SharedAccountsContract.Table,
+        );
 
         const customerAccessRepository = yield* CustomerAccessReadRepository;
         const managerAccessRepository = yield* ManagerAccessReadRepository;
@@ -298,11 +306,14 @@ export namespace SharedAccounts {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(Table, repository),
+          Database.makeWriteRepository(
+            SharedAccountsContract.Table,
+            repository,
+          ),
         ),
       ),
     },

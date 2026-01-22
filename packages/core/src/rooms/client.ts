@@ -5,24 +5,21 @@ import * as Tuple from "effect/Tuple";
 
 import { AccessControl } from "../access-control";
 import { Announcements } from "../announcements/client";
+import { Database } from "../database/client";
 import { DeliveryOptions } from "../delivery-options/client";
-import { Models } from "../models";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
 import { Products } from "../products/client";
-import { Replicache } from "../replicache/client";
 import { RoomWorkflows } from "../workflows/client";
 import { RoomWorkflowsContract } from "../workflows/contracts";
 import { RoomsContract } from "./contract";
 
 export namespace Rooms {
-  const Table = Models.syncTables[RoomsContract.Table.name];
-
   export class ReadRepository extends Effect.Service<ReadRepository>()(
     "@printdesk/core/rooms/client/ReadRepository",
     {
-      dependencies: [Replicache.ReadTransactionManager.Default],
-      effect: Replicache.makeReadRepository(Table),
+      dependencies: [Database.ReadTransactionManager.Default],
+      effect: Database.makeReadRepository(RoomsContract.Table),
     },
   ) {}
 
@@ -32,11 +29,11 @@ export namespace Rooms {
       accessors: true,
       dependencies: [
         ReadRepository.Default,
-        Replicache.WriteTransactionManager.Default,
+        Database.WriteTransactionManager.Default,
       ],
       effect: ReadRepository.pipe(
         Effect.flatMap((repository) =>
-          Replicache.makeWriteRepository(Table, repository),
+          Database.makeWriteRepository(RoomsContract.Table, repository),
         ),
       ),
     },

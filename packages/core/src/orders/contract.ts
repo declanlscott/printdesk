@@ -149,6 +149,7 @@ export namespace OrdersContract {
 
   class BaseDto extends Schema.Class<BaseDto>("BaseDto")({
     ...ColumnsContract.BaseEntity.fields,
+    shortId: ColumnsContract.NullableShortId,
     customerId: ColumnsContract.EntityId,
     managerId: ColumnsContract.NullableEntityId,
     operatorId: ColumnsContract.NullableEntityId,
@@ -273,6 +274,7 @@ export namespace OrdersContract {
   });
 
   const omittedOnCreate = [
+    "shortId",
     "managerId",
     "operatorId",
     "approvedAt",
@@ -293,6 +295,7 @@ export namespace OrdersContract {
     Args: BaseDto.pipe(
       Schema.omit(
         ...Struct.keys(ColumnsContract.BaseEntity.fields),
+        "shortId",
         "managerId",
         "operatorId",
         "approvedAt",

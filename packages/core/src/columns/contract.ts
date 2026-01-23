@@ -31,6 +31,13 @@ export namespace ColumnsContract {
     Schema.optionalWith({ default: () => null }),
   );
 
+  export const ShortId = Schema.Int.pipe(Schema.brand("ShortId"));
+  export type ShortId = typeof ShortId.Type;
+  export const NullableShortId = ShortId.pipe(
+    Schema.NullOr,
+    Schema.optionalWith({ default: () => null }),
+  );
+
   export const TenantId = EntityId.pipe(Schema.brand("TenantId"));
   export type TenantId = typeof TenantId.Type;
 

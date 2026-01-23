@@ -343,7 +343,7 @@ export namespace Orders {
               Match.when(
                 { sharedAccountWorkflowStatusId: Match.null },
                 (order) =>
-                  OrdersContract.RoomWorkflowStatusDto.make({
+                  new OrdersContract.RoomWorkflowStatusDto({
                     ...order,
                     tenantId,
                   }),

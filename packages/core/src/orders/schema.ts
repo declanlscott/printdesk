@@ -28,6 +28,7 @@ export namespace OrdersSchema {
   export const table = new Tables.Sync(
     "orders",
     {
+      shortId: Columns.shortId,
       customerId: Columns.entityId.notNull(),
       managerId: Columns.entityId,
       operatorId: Columns.entityId,

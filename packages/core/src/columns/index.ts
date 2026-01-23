@@ -144,6 +144,11 @@ export namespace Columns {
   export const entityId = id<ColumnsContract.EntityId>();
 
   /**
+   * Short ID column
+   */
+  export const shortId = integer().$type<ColumnsContract.ShortId>();
+
+  /**
    * Non-nullable Tenant ID column
    */
   export const tenantId = id<ColumnsContract.TenantId>().notNull();

@@ -9,39 +9,25 @@ export namespace Storage {
       "@printdesk/core/storage/DocumentsClient",
       {
         accessors: true,
-        dependencies: [Api.Http.Default],
+        dependencies: [Api.HttpClient.Default],
         effect: Effect.gen(function* () {
-          const httpClient = yield* Api.Http.client;
+          const { execute } = yield* Api.HttpClient;
 
           const getMimeTypes = HttpClientRequest.get(
             "/documents/mime-types",
-          ).pipe(
-            httpClient.execute,
-            Effect.withSpan("Storage.Documents.getMimeTypes"),
-          );
+          ).pipe(execute, Effect.withSpan("Storage.Documents.getMimeTypes"));
 
           const setMimeTypes = Effect.fn(
             "Storage.Documents.Client.setMimeTypes",
-          )(() =>
-            HttpClientRequest.put("/documents/mime-types").pipe(
-              httpClient.execute,
-            ),
-          );
+          )(() => HttpClientRequest.put("/documents/mime-types").pipe(execute));
 
           const getSizeLimit = HttpClientRequest.get(
             "/documents/size-limit",
-          ).pipe(
-            httpClient.execute,
-            Effect.withSpan("Storage.Documents.getSizeLimit"),
-          );
+          ).pipe(execute, Effect.withSpan("Storage.Documents.getSizeLimit"));
 
           const setSizeLimit = Effect.fn(
             "Storage.Documents.Client.setSizeLimit",
-          )(() =>
-            HttpClientRequest.put("/documents/size-limit").pipe(
-              httpClient.execute,
-            ),
-          );
+          )(() => HttpClientRequest.put("/documents/size-limit").pipe(execute));
 
           return {
             getMimeTypes,

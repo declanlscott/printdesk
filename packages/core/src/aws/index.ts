@@ -17,7 +17,6 @@ import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
-import { Actors } from "../actors";
 import { Sst } from "../sst";
 import { tenantTemplate } from "../utils";
 import { CredentialsContract } from "./contract";
@@ -200,6 +199,7 @@ export namespace Signers {
   > {
     expiresIn?: Duration.Duration;
     signingDate?: DateTime.Utc;
+    host?: string;
   }
 
   export interface RequestSigningArguments extends Omit<
@@ -207,9 +207,10 @@ export namespace Signers {
     "signingDate"
   > {
     signingDate?: DateTime.Utc;
+    host?: string;
   }
 
-  export const makeSignatureV4Signer = (service: string, host?: string) =>
+  export const makeSignatureV4Signer = (service: string) =>
     Effect.gen(function* () {
       const region = yield* Sst.Resource.Aws.pipe(
         Effect.map(Redacted.value),
@@ -264,7 +265,7 @@ export namespace Signers {
 
       const presignRequest = (
         request: HttpClientRequest.HttpClientRequest,
-        args: RequestPresigningArguments = {},
+        { host, ...args }: RequestPresigningArguments = {},
       ) =>
         Effect.gen(function* () {
           const { protocol, hostname, pathname: path } = new URL(request.url);
@@ -302,7 +303,7 @@ export namespace Signers {
 
       const signRequest = (
         request: HttpClientRequest.HttpClientRequest,
-        args: RequestSigningArguments = {},
+        { host, ...args }: RequestSigningArguments = {},
       ) =>
         Effect.gen(function* () {
           const { protocol, hostname, pathname: path } = new URL(request.url);
@@ -351,22 +352,7 @@ export namespace Signers {
     {
       accessors: true,
       dependencies: [Sst.Resource.Default],
-      effect: (host?: string) => makeSignatureV4Signer("execute-api", host),
+      effect: makeSignatureV4Signer("execute-api"),
     },
-  ) {
-    static readonly tenantLayer = Actors.Actor.pipe(
-      Effect.flatMap(Struct.get("assertPrivate")),
-      Effect.flatMap(({ tenantId }) =>
-        Sst.Resource.TenantDomains.pipe(
-          Effect.map(Redacted.value),
-          Effect.map((hosts) =>
-            tenantTemplate(hosts.api.nameTemplate, tenantId),
-          ),
-        ),
-      ),
-      Effect.map(this.Default),
-      Layer.unwrapEffect,
-      Layer.provide(Sst.Resource.Default),
-    );
-  }
+  ) {}
 }

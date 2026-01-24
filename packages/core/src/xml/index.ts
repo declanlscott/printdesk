@@ -227,23 +227,15 @@ export namespace Xml {
       }),
     );
 
-    export class Boolean extends Schema.TaggedClass<Boolean>("Boolean")(
-      "Boolean",
-      { value: Schema.Boolean },
-    ) {}
     export const BooleanResponse = methodResponse({
       params: Schema.Struct({
         param: ExplicitBoolean.pipe(Schema.encodedSchema),
       }),
     }).pipe(
-      Schema.transformOrFail(Boolean, {
+      Schema.transformOrFail(Schema.Boolean, {
         strict: true,
         decode: (response) =>
-          ParseResult.succeed(
-            new Boolean({
-              value: response.params.param.value.boolean === 1,
-            }),
-          ),
+          ParseResult.succeed(response.params.param.value.boolean === 1),
         encode: (boolean, _, ast) =>
           ParseResult.fail(
             new ParseResult.Forbidden(ast, boolean, "Not implemented"),
@@ -251,20 +243,15 @@ export namespace Xml {
       }),
     );
 
-    export class Int extends Schema.TaggedClass<Int>("Int")("Int", {
-      value: Schema.Int,
-    }) {}
     export const IntResponse = methodResponse({
       params: Schema.Struct({
         param: ExplicitInt.pipe(Schema.encodedSchema),
       }),
     }).pipe(
-      Schema.transformOrFail(Int, {
+      Schema.transformOrFail(Schema.Int, {
         strict: true,
         decode: (response) =>
-          ParseResult.succeed(
-            new Int({ value: response.params.param.value.int }),
-          ),
+          ParseResult.succeed(response.params.param.value.int),
         encode: (int, _, ast) =>
           ParseResult.fail(
             new ParseResult.Forbidden(ast, int, "Not implemented"),
@@ -272,109 +259,80 @@ export namespace Xml {
       }),
     );
 
-    export const tuple = <TValues extends Array<Schema.Schema.Any>>(
-      ...Values: TValues
-    ) =>
-      Schema.TaggedStruct("Tuple", {
-        values: Schema.Tuple(...Values),
-      });
     export const tupleResponse = <TValues extends Array<Schema.Schema.Any>>(
       ...Values: TValues
     ) =>
-      tuple(...Values).pipe((Tuple) =>
-        methodResponse({
-          params: Schema.Struct({
-            param: Schema.Struct({
-              value: Schema.Struct({
-                array: Schema.Struct({
-                  data: Schema.Struct({
-                    value: Schema.Tuple(...Values).pipe(Schema.encodedSchema),
-                  }),
+      methodResponse({
+        params: Schema.Struct({
+          param: Schema.Struct({
+            value: Schema.Struct({
+              array: Schema.Struct({
+                data: Schema.Struct({
+                  value: Schema.Tuple(...Values).pipe(Schema.encodedSchema),
                 }),
               }),
             }),
           }),
-        }).pipe(
-          Schema.transformOrFail(Tuple, {
-            strict: true,
-            decode: (response) =>
-              ParseResult.succeed({
-                _tag: "Tuple",
-                values: response.params.param.value.array.data.value,
-              }),
-            encode: (tuple, _, ast) =>
-              ParseResult.fail(
-                new ParseResult.Forbidden(ast, tuple, "Not implemented"),
-              ),
-          }),
-        ),
+        }),
+      }).pipe(
+        Schema.transformOrFail(Schema.Tuple(...Values), {
+          strict: true,
+          decode: (response) =>
+            ParseResult.succeed(response.params.param.value.array.data.value),
+          encode: (tuple, _, ast) =>
+            ParseResult.fail(
+              new ParseResult.Forbidden(ast, tuple, "Not implemented"),
+            ),
+        }),
       );
 
-    export const array = <TValue extends Schema.Schema.Any>(Value: TValue) =>
-      Schema.TaggedStruct("Array", { values: Schema.Array(Value) });
     export const arrayResponse = <TValue extends Schema.Schema.Any>(
       Value: TValue,
     ) =>
-      array(Value).pipe((Array) =>
-        methodResponse({
-          params: Schema.Struct({
-            param: Schema.Struct({
-              value: Schema.Struct({
-                array: Schema.Struct({
-                  data: Schema.Struct({
-                    value: Schema.Array(Value.pipe(Schema.encodedSchema)),
-                  }),
+      methodResponse({
+        params: Schema.Struct({
+          param: Schema.Struct({
+            value: Schema.Struct({
+              array: Schema.Struct({
+                data: Schema.Struct({
+                  value: Schema.Array(Value.pipe(Schema.encodedSchema)),
                 }),
               }),
             }),
           }),
-        }).pipe(
-          Schema.transformOrFail(Array, {
-            strict: true,
-            decode: (response) =>
-              ParseResult.succeed({
-                _tag: "Array",
-                values: response.params.param.value.array.data.value,
-              }),
-            encode: (array, _, ast) =>
-              ParseResult.fail(
-                new ParseResult.Forbidden(ast, array, "Not implemented"),
-              ),
-          }),
-        ),
+        }),
+      }).pipe(
+        Schema.transformOrFail(Schema.Array(Value), {
+          strict: true,
+          decode: (response) =>
+            ParseResult.succeed(response.params.param.value.array.data.value),
+          encode: (array, _, ast) =>
+            ParseResult.fail(
+              new ParseResult.Forbidden(ast, array, "Not implemented"),
+            ),
+        }),
       );
 
-    export const struct = <
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      TMembers extends Array<ReturnType<typeof Xml.member<any, any>>>,
-    >(
-      ...Members: TMembers
-    ) => Schema.TaggedStruct("Struct", { members: Schema.Tuple(...Members) });
     export const structResponse = <
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       TMembers extends Array<ReturnType<typeof Xml.member<any, any>>>,
     >(
       ...Members: TMembers
     ) =>
-      struct(...Members).pipe((Struct) =>
-        methodResponse({
-          params: Schema.Struct({
-            param: Xml.struct(...Members).pipe(Schema.encodedSchema),
-          }),
-        }).pipe(
-          Schema.transformOrFail(Struct, {
-            strict: true,
-            decode: (response) =>
-              ParseResult.succeed({
-                _tag: "Struct",
-                members: response.params.param.value.struct.member,
-              }),
-            encode: (struct, _, ast) =>
-              ParseResult.fail(
-                new ParseResult.Forbidden(ast, struct, "Not implemented"),
-              ),
-          }),
-        ),
+      methodResponse({
+        params: Schema.Struct({
+          param: Xml.struct(...Members).pipe(Schema.encodedSchema),
+        }),
+      }).pipe(
+        Schema.transformOrFail(Schema.Tuple(...Members), {
+          strict: true,
+          decode: (response) =>
+            ParseResult.succeed(response.params.param.value.struct.member),
+          encode: (struct, _, ast) =>
+            ParseResult.fail(
+              new ParseResult.Forbidden(ast, struct, "Not implemented"),
+            ),
+        }),
       );
 
     export class Client extends Effect.Service<Client>()(

@@ -1,6 +1,7 @@
 import * as HttpClientRequest from "@effect/platform/HttpClientRequest";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
+import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 
 import { Api } from "../api";
@@ -111,10 +112,9 @@ export namespace Papercut {
               Effect.map(gatewayInjectAuthTokenHeader()),
               Effect.flatMap(execute),
               Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
-              Effect.flatMap((response) =>
-                !response.value
-                  ? Effect.fail(new SharedAccountBalanceAdjustmentFailure())
-                  : Effect.void,
+              Effect.filterOrFail(
+                Predicate.isTruthy,
+                () => new SharedAccountBalanceAdjustmentFailure(),
               ),
             ),
         );
@@ -233,10 +233,9 @@ export namespace Papercut {
             Effect.map(gatewayInjectAuthTokenHeader()),
             Effect.flatMap(execute),
             Effect.flatMap(xmlRpc.response(Xml.Rpc.BooleanResponse)),
-            Effect.flatMap((response) =>
-              !response.value
-                ? Effect.fail(new UserAndGroupSyncFailure())
-                : Effect.void,
+            Effect.filterOrFail(
+              Predicate.isTruthy,
+              () => new UserAndGroupSyncFailure(),
             ),
             Effect.withSpan("Papercut.Client.performUserAndGroupSync"),
           );

@@ -31,6 +31,227 @@ import type {
 } from "@smithy/types";
 import type { ColumnsContract } from "../columns/contract";
 
+export class SignatureV4Error extends Data.TaggedError("SignatureV4Error")<{
+  readonly cause: unknown;
+}> {}
+
+export interface RequestPresigningArguments extends Omit<
+  SmithyRequestPresigningArguments,
+  "expiresIn" | "signingDate"
+> {
+  expiresIn?: Duration.Duration;
+  signingDate?: DateTime.Utc;
+  host?: string;
+}
+
+export interface RequestSigningArguments extends Omit<
+  SmithyRequestSigningArguments,
+  "signingDate"
+> {
+  signingDate?: DateTime.Utc;
+  host?: string;
+}
+
+export const makeSigner = (service: string) =>
+  Effect.gen(function* () {
+    const region = yield* Sst.Resource.Aws.pipe(
+      Effect.map(Redacted.value),
+      Effect.map(Struct.get("region")),
+    );
+
+    const make = Credentials.values.pipe(
+      Effect.flatMap((credentials) =>
+        Effect.try({
+          try: () =>
+            new SignatureV4({
+              credentials,
+              sha256: Sha256,
+              region,
+              service,
+            }),
+          catch: (cause) => new SignatureV4Error({ cause }),
+        }),
+      ),
+    );
+
+    const matchBody = Match.type<HttpBody.HttpBody>().pipe(
+      Match.tags({
+        Empty: () => undefined,
+        Raw: (body) => body.body,
+        Uint8Array: (body) => body.body,
+        FormData: (body) => body.formData,
+        Stream: (body) => body.stream,
+      }),
+      Match.exhaustive,
+    );
+
+    const presign = (...args: Parameters<SignatureV4["presign"]>) =>
+      make.pipe(
+        Effect.flatMap((sigv4) =>
+          Effect.tryPromise({
+            try: () => sigv4.presign(...args),
+            catch: (cause) => new SignatureV4Error({ cause }),
+          }),
+        ),
+      );
+
+    const sign = (...args: Parameters<SignatureV4["sign"]>) =>
+      make.pipe(
+        Effect.flatMap((sigv4) =>
+          Effect.tryPromise({
+            try: () => sigv4.sign(...args),
+            catch: (cause) => new SignatureV4Error({ cause }),
+          }),
+        ),
+      );
+
+    const presignRequest = (
+      request: HttpClientRequest.HttpClientRequest,
+      { host, ...args }: RequestPresigningArguments = {},
+    ) =>
+      Effect.gen(function* () {
+        const { protocol, hostname, pathname: path } = new URL(request.url);
+
+        const { headers, query } = yield* presign(
+          new HttpRequest({
+            method: request.method,
+            protocol,
+            hostname,
+            path,
+            headers: { ...request.headers, host: host ?? hostname },
+            body: matchBody(request.body),
+          }),
+          {
+            ...args,
+            expiresIn: args.expiresIn?.pipe(Duration.toSeconds),
+            signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
+          },
+        ).pipe(
+          Effect.mapError(
+            (cause) =>
+              new HttpClientError.RequestError({
+                reason: "Encode",
+                request,
+                cause,
+              }),
+          ),
+        );
+
+        return request.pipe(
+          HttpClientRequest.setHeaders(headers),
+          HttpClientRequest.setUrlParams(query ?? {}),
+        );
+      }).pipe(Effect.withSpan(`${service}.presignRequest`));
+
+    const signRequest = (
+      request: HttpClientRequest.HttpClientRequest,
+      { host, ...args }: RequestSigningArguments = {},
+    ) =>
+      Effect.gen(function* () {
+        const { protocol, hostname, pathname: path } = new URL(request.url);
+
+        const { headers } = yield* sign(
+          new HttpRequest({
+            method: request.method,
+            protocol,
+            hostname,
+            path,
+            headers: { ...request.headers, host: host ?? hostname },
+            body: matchBody(request.body),
+          }),
+          {
+            ...args,
+            signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
+          },
+        ).pipe(
+          Effect.mapError(
+            (cause) =>
+              new HttpClientError.RequestError({
+                reason: "Encode",
+                request,
+                cause,
+              }),
+          ),
+        );
+
+        return request.pipe(HttpClientRequest.setHeaders(headers));
+      }).pipe(Effect.withSpan(`${service}.signRequest`));
+
+    return { signRequest, presignRequest } as const;
+  });
+
+export class AppsyncSigner extends Effect.Service<AppsyncSigner>()(
+  "@printdesk/core/aws/AppsyncSigner",
+  {
+    accessors: true,
+    dependencies: [Sst.Resource.Default],
+    effect: makeSigner("appsync"),
+  },
+) {}
+
+export class CloudfrontSignerError extends Data.TaggedError(
+  "CloudfrontSignerError",
+)<{
+  readonly cause: unknown;
+}> {}
+
+export interface CloudfrontRequestSigningArguments extends Omit<
+  CloudfrontSignInput,
+  | "url"
+  | "keyPairId"
+  | "privateKey"
+  | "dateLessThan"
+  | "dateGreaterThan"
+  | "policy"
+> {
+  expiresIn: Duration.Duration;
+}
+
+export class CloudfrontSigner extends Effect.Service<CloudfrontSigner>()(
+  "@printdesk/core/aws/CloudfrontSigner",
+  {
+    accessors: true,
+    dependencies: [Sst.Resource.Default],
+    effect: Effect.gen(function* () {
+      const resource = yield* Sst.Resource;
+
+      const keyPairId = resource.CloudfrontKeyGroup.pipe(Redacted.value).id;
+      const privateKey = resource.CloudfrontPrivateKey.pipe(Redacted.value).pem;
+
+      const signUrl = Effect.fn("CloudfrontSigner.signUrl")(
+        (...args: Parameters<typeof getSignedUrl>) =>
+          Effect.try({
+            try: () => new URL(getSignedUrl(...args)),
+            catch: (error) => new CloudfrontSignerError({ cause: error }),
+          }),
+      );
+
+      const signRequest = Effect.fn("CloudfrontSigner.signRequest")(
+        (
+          request: HttpClientRequest.HttpClientRequest,
+          { expiresIn, ...args }: CloudfrontRequestSigningArguments = {
+            expiresIn: Duration.seconds(60),
+          },
+        ) =>
+          signUrl({
+            ...args,
+            url: request.url,
+            keyPairId,
+            privateKey,
+            dateLessThan: DateTime.unsafeNow().pipe(
+              DateTime.addDuration(expiresIn),
+              DateTime.toDateUtc,
+            ),
+          }).pipe(
+            Effect.map((url) => request.pipe(HttpClientRequest.setUrl(url))),
+          ),
+      );
+
+      return { signRequest } as const;
+    }),
+  },
+) {}
+
 export namespace Credentials {
   export const buildRoleArn = (
     accountId: string,
@@ -89,270 +310,44 @@ export namespace Credentials {
   ) satisfies Effect.Effect<AwsCredentialIdentity, never, Identity>;
 }
 
-export namespace Signers {
-  export namespace Cloudfront {
-    export class SignerError extends Data.TaggedError("SignerError")<{
-      readonly cause: unknown;
-    }> {}
+export namespace Dsql {
+  export const Signer = DsqlSigner;
 
-    export interface RequestSigningArguments extends Omit<
-      CloudfrontSignInput,
-      | "url"
-      | "keyPairId"
-      | "privateKey"
-      | "dateLessThan"
-      | "dateGreaterThan"
-      | "policy"
-    > {
-      expiresIn: Duration.Duration;
-    }
-
-    export class Signer extends Effect.Service<Signer>()(
-      "@printdesk/core/aws/CloudfrontSigner",
-      {
-        dependencies: [Sst.Resource.Default],
-        effect: Effect.gen(function* () {
-          const resource = yield* Sst.Resource;
-
-          const keyPairId = resource.CloudfrontKeyGroup.pipe(Redacted.value).id;
-          const privateKey = resource.CloudfrontPrivateKey.pipe(
-            Redacted.value,
-          ).pem;
-
-          const signUrl = Effect.fn("CloudfrontSigner.signUrl")(
-            (...args: Parameters<typeof getSignedUrl>) =>
-              Effect.try({
-                try: () => new URL(getSignedUrl(...args)),
-                catch: (error) => new SignerError({ cause: error }),
-              }),
-          );
-
-          const signRequest = Effect.fn("CloudfrontSigner.signRequest")(
-            (
-              request: HttpClientRequest.HttpClientRequest,
-              { expiresIn, ...args }: RequestSigningArguments = {
-                expiresIn: Duration.seconds(60),
-              },
-            ) =>
-              signUrl({
-                ...args,
-                url: request.url,
-                keyPairId,
-                privateKey,
-                dateLessThan: DateTime.unsafeNow().pipe(
-                  DateTime.addDuration(expiresIn),
-                  DateTime.toDateUtc,
-                ),
-              }).pipe(
-                Effect.map((url) =>
-                  request.pipe(HttpClientRequest.setUrl(url)),
-                ),
-              ),
-          );
-
-          return { signRequest } as const;
-        }),
-      },
-    ) {}
-  }
-
-  export namespace Dsql {
-    export const Signer = DsqlSigner;
-
-    export const makeLayer = (
-      { expiresIn }: { expiresIn?: Duration.Duration } = {
-        expiresIn: Duration.minutes(15),
-      },
-    ) =>
-      Effect.gen(function* () {
-        const credentials = yield* Credentials.values;
-        const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
-          Effect.map(Redacted.value),
-        );
-        const aws = yield* Sst.Resource.Aws.pipe(Effect.map(Redacted.value));
-
-        return DsqlSigner.layer({
-          credentials,
-          sha256: Sha256,
-          hostname: dsqlCluster.host,
-          region: aws.region,
-          expiresIn: expiresIn?.pipe(Duration.toSeconds),
-        });
-      }).pipe(Layer.unwrapEffect);
-
-    export const layer = makeLayer();
-
-    export const runtime = layer.pipe(
-      Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
-      Layer.provide(Sst.Resource.Default),
-      ManagedRuntime.make,
-    );
-  }
-
-  export class SignatureV4Error extends Data.TaggedError("SignatureV4Error")<{
-    readonly cause: unknown;
-  }> {}
-
-  export interface RequestPresigningArguments extends Omit<
-    SmithyRequestPresigningArguments,
-    "expiresIn" | "signingDate"
-  > {
-    expiresIn?: Duration.Duration;
-    signingDate?: DateTime.Utc;
-    host?: string;
-  }
-
-  export interface RequestSigningArguments extends Omit<
-    SmithyRequestSigningArguments,
-    "signingDate"
-  > {
-    signingDate?: DateTime.Utc;
-    host?: string;
-  }
-
-  export const makeSignatureV4Signer = (service: string) =>
+  export const makeSignerLayer = (
+    { expiresIn }: { expiresIn?: Duration.Duration } = {
+      expiresIn: Duration.minutes(15),
+    },
+  ) =>
     Effect.gen(function* () {
-      const region = yield* Sst.Resource.Aws.pipe(
+      const credentials = yield* Credentials.values;
+      const dsqlCluster = yield* Sst.Resource.DsqlCluster.pipe(
         Effect.map(Redacted.value),
-        Effect.map(Struct.get("region")),
       );
+      const aws = yield* Sst.Resource.Aws.pipe(Effect.map(Redacted.value));
 
-      const make = Credentials.values.pipe(
-        Effect.flatMap((credentials) =>
-          Effect.try({
-            try: () =>
-              new SignatureV4({
-                credentials,
-                sha256: Sha256,
-                region,
-                service,
-              }),
-            catch: (cause) => new SignatureV4Error({ cause }),
-          }),
-        ),
-      );
+      return DsqlSigner.layer({
+        credentials,
+        sha256: Sha256,
+        hostname: dsqlCluster.host,
+        region: aws.region,
+        expiresIn: expiresIn?.pipe(Duration.toSeconds),
+      });
+    }).pipe(Layer.unwrapEffect);
 
-      const matchBody = Match.type<HttpBody.HttpBody>().pipe(
-        Match.tags({
-          Empty: () => undefined,
-          Raw: (body) => body.body,
-          Uint8Array: (body) => body.body,
-          FormData: (body) => body.formData,
-          Stream: (body) => body.stream,
-        }),
-        Match.exhaustive,
-      );
+  export const signerLayer = makeSignerLayer();
 
-      const presign = (...args: Parameters<SignatureV4["presign"]>) =>
-        make.pipe(
-          Effect.flatMap((sigv4) =>
-            Effect.tryPromise({
-              try: () => sigv4.presign(...args),
-              catch: (cause) => new SignatureV4Error({ cause }),
-            }),
-          ),
-        );
-
-      const sign = (...args: Parameters<SignatureV4["sign"]>) =>
-        make.pipe(
-          Effect.flatMap((sigv4) =>
-            Effect.tryPromise({
-              try: () => sigv4.sign(...args),
-              catch: (cause) => new SignatureV4Error({ cause }),
-            }),
-          ),
-        );
-
-      const presignRequest = (
-        request: HttpClientRequest.HttpClientRequest,
-        { host, ...args }: RequestPresigningArguments = {},
-      ) =>
-        Effect.gen(function* () {
-          const { protocol, hostname, pathname: path } = new URL(request.url);
-
-          const { headers, query } = yield* presign(
-            new HttpRequest({
-              method: request.method,
-              protocol,
-              hostname,
-              path,
-              headers: { ...request.headers, host: host ?? hostname },
-              body: matchBody(request.body),
-            }),
-            {
-              ...args,
-              expiresIn: args.expiresIn?.pipe(Duration.toSeconds),
-              signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
-            },
-          ).pipe(
-            Effect.mapError(
-              (cause) =>
-                new HttpClientError.RequestError({
-                  reason: "Encode",
-                  request,
-                  cause,
-                }),
-            ),
-          );
-
-          return request.pipe(
-            HttpClientRequest.setHeaders(headers),
-            HttpClientRequest.setUrlParams(query ?? {}),
-          );
-        }).pipe(Effect.withSpan(`Signers.${service}.presignRequest`));
-
-      const signRequest = (
-        request: HttpClientRequest.HttpClientRequest,
-        { host, ...args }: RequestSigningArguments = {},
-      ) =>
-        Effect.gen(function* () {
-          const { protocol, hostname, pathname: path } = new URL(request.url);
-
-          const { headers } = yield* sign(
-            new HttpRequest({
-              method: request.method,
-              protocol,
-              hostname,
-              path,
-              headers: { ...request.headers, host: host ?? hostname },
-              body: matchBody(request.body),
-            }),
-            {
-              ...args,
-              signingDate: args.signingDate?.pipe(DateTime.toDateUtc),
-            },
-          ).pipe(
-            Effect.mapError(
-              (cause) =>
-                new HttpClientError.RequestError({
-                  reason: "Encode",
-                  request,
-                  cause,
-                }),
-            ),
-          );
-
-          return request.pipe(HttpClientRequest.setHeaders(headers));
-        }).pipe(Effect.withSpan(`Signers.${service}.signRequest`));
-
-      return { signRequest, presignRequest } as const;
-    });
-
-  export class Appsync extends Effect.Service<Appsync>()(
-    "@printdesk/core/aws/AppsyncSigner",
-    {
-      accessors: true,
-      dependencies: [Sst.Resource.Default],
-      effect: makeSignatureV4Signer("appsync"),
-    },
-  ) {}
-
-  export class ExecuteApi extends Effect.Service<ExecuteApi>()(
-    "@printdesk/core/aws/ExecuteApiSigner",
-    {
-      accessors: true,
-      dependencies: [Sst.Resource.Default],
-      effect: makeSignatureV4Signer("execute-api"),
-    },
-  ) {}
+  export const signerRuntime = signerLayer.pipe(
+    Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
+    Layer.provide(Sst.Resource.Default),
+    ManagedRuntime.make,
+  );
 }
+
+export class ExecuteApiSigner extends Effect.Service<ExecuteApiSigner>()(
+  "@printdesk/core/aws/ExecuteApiSigner",
+  {
+    accessors: true,
+    dependencies: [Sst.Resource.Default],
+    effect: makeSigner("execute-api"),
+  },
+) {}

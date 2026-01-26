@@ -9,7 +9,7 @@ import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 
 import { Actors } from "../actors";
-import { Signers } from "../aws";
+import { AppsyncSigner } from "../aws";
 import { Events } from "../events";
 import { Procedures } from "../procedures";
 import { Sst } from "../sst";
@@ -26,13 +26,13 @@ export namespace Realtime {
       accessors: true,
       dependencies: [
         Sst.Resource.Default,
-        Signers.Appsync.Default,
+        AppsyncSigner.Default,
         FetchHttpClient.layer,
         Procedures.Policies.Default,
       ],
       effect: Effect.gen(function* () {
         const resource = yield* Sst.Resource;
-        const signer = yield* Signers.Appsync;
+        const signer = yield* AppsyncSigner;
         const httpClient = yield* HttpClient.HttpClient;
 
         const Event = yield* Events.Event;

@@ -14,7 +14,7 @@ import * as Runtime from "effect/Runtime";
 import * as Schedule from "effect/Schedule";
 import { DatabaseError, Pool } from "pg";
 
-import { Signers } from "../aws";
+import { Dsql } from "../aws";
 import { Sst } from "../sst";
 import { paginate } from "../utils";
 import { Constants } from "../utils/constants";
@@ -102,11 +102,8 @@ export namespace Database {
                 ssl: dsqlCluster.ssl,
                 user: dsqlCluster.user,
                 password: () =>
-                  Signers.Dsql.Signer.pipe(
-                    Effect.andThen((signer) =>
-                      signer.getDbConnectAdminAuthToken(),
-                    ),
-                    Signers.Dsql.runtime.runPromise,
+                  Dsql.Signer.getDbConnectAdminAuthToken().pipe(
+                    Dsql.signerRuntime.runPromise,
                   ),
               }),
           ),

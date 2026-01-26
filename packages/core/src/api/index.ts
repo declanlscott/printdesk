@@ -6,7 +6,7 @@ import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
 import { Actors } from "../actors";
-import { Signers } from "../aws";
+import { CloudfrontSigner, ExecuteApiSigner } from "../aws";
 import { Sst } from "../sst";
 import { tenantTemplate } from "../utils";
 
@@ -17,8 +17,8 @@ export namespace Api {
       accessors: true,
       dependencies: [
         Sst.Resource.Default,
-        Signers.ExecuteApi.Default,
-        Signers.Cloudfront.Signer.Default,
+        ExecuteApiSigner.Default,
+        CloudfrontSigner.Default,
         FetchHttpClient.layer,
       ],
       effect: Effect.gen(function* () {
@@ -29,8 +29,8 @@ export namespace Api {
 
         const baseClient = yield* _HttpClient.HttpClient;
 
-        const executeApiSigner = yield* Signers.ExecuteApi;
-        const cloudfrontSigner = yield* Signers.Cloudfront.Signer;
+        const executeApiSigner = yield* ExecuteApiSigner;
+        const cloudfrontSigner = yield* CloudfrontSigner;
 
         const client = Effect.gen(function* () {
           const host = yield* Actors.Actor.pipe(

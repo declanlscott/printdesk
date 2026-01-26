@@ -6,10 +6,10 @@ import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Redacted from "effect/Redacted";
 
-import { Credentials, Signers } from "./src/aws";
+import { Credentials, Dsql } from "./src/aws";
 import { Sst } from "./src/sst";
 
-const runtime = Signers.Dsql.makeLayer({ expiresIn: Duration.hours(12) }).pipe(
+const runtime = Dsql.makeSignerLayer({ expiresIn: Duration.hours(12) }).pipe(
   Layer.provide(Credentials.Identity.providerLayer(fromNodeProviderChain)),
   Layer.provideMerge(Sst.Resource.Default),
   ManagedRuntime.make,
@@ -19,7 +19,7 @@ export default Effect.gen(function* () {
   const credentials = yield* Sst.Resource.DsqlCluster.pipe(
     Effect.map(Redacted.value),
   );
-  const password = yield* Signers.Dsql.Signer.getDbConnectAdminAuthToken();
+  const password = yield* Dsql.Signer.getDbConnectAdminAuthToken();
 
   return defineConfig({
     schema: ["./src/**/schema.ts", "./src/**/schemas.ts"],

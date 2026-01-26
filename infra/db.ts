@@ -1,3 +1,4 @@
+import { Constants } from "@printdesk/core/utils/constants";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
@@ -78,8 +79,14 @@ new sst.x.DevCommand("Studio", {
 });
 
 export const authTable = new sst.aws.Dynamo("AuthTable", {
-  fields: { pk: "string", sk: "string" },
-  primaryIndex: { hashKey: "pk", rangeKey: "sk" },
+  fields: {
+    [Constants.DDB_INDEXES.PK]: "string",
+    [Constants.DDB_INDEXES.SK]: "string",
+  },
+  primaryIndex: {
+    hashKey: Constants.DDB_INDEXES.PK,
+    rangeKey: Constants.DDB_INDEXES.SK,
+  },
   ttl: "expiry",
 });
 

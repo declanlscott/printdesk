@@ -56,6 +56,13 @@ export namespace Constants {
   export const POSTGRES_SERIALIZATION_FAILURE_ERROR_CODE = "40001";
   export const POSTGRES_DEADLOCK_DETECTED_ERROR_CODE = "40P01";
 
+  export const DDB_INDEXES = {
+    PK: "pk",
+    SK: "sk",
+    GSI1_PK: "gsi1_pk",
+    GSI1_SK: "gsi1_sk",
+  } as const;
+
   export const VARCHAR_LENGTH = 50;
 
   export const PAPERCUT_SERVICE_PATH = "/papercut/service";

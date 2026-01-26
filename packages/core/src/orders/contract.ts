@@ -5,6 +5,7 @@ import { ColumnsContract } from "../columns/contract";
 import { ProceduresContract } from "../procedures/contract";
 import { TablesContract } from "../tables/contract";
 import { IsoDate, IsoTimestamp } from "../utils";
+import { Constants } from "../utils/constants";
 
 import type { OrdersSchema } from "./schema";
 
@@ -212,6 +213,11 @@ export namespace OrdersContract {
       ),
     ),
   ) {}
+
+  export class Item extends Schema.Class<Item>("Item")({
+    [Constants.DDB_INDEXES.PK]: ColumnsContract.TenantIdRoomIdKeyFromString,
+    [Constants.DDB_INDEXES.SK]: ColumnsContract.OrderShortIdKeyFromString,
+  }) {}
 
   const IdOnly = Schema.Struct(
     Struct.evolve(Struct.pick(BaseDto.fields, "id"), {

@@ -1,3 +1,4 @@
+import { DynamoDBDocument } from "@effect-aws/dynamodb";
 import {
   and,
   eq,
@@ -11,34 +12,130 @@ import {
   or,
 } from "drizzle-orm";
 import * as Array from "effect/Array";
+import * as Cause from "effect/Cause";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
+import * as Ref from "effect/Ref";
+import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { AccessControl } from "../access-control";
+import { ColumnsContract } from "../columns/contract";
 import { Database } from "../database";
 import { Events } from "../events";
 import { MutationsContract } from "../mutations/contract";
 import { PoliciesContract } from "../policies/contract";
+import { ProductsSchema } from "../products/schema";
 import { QueriesContract } from "../queries/contract";
 import { Replicache } from "../replicache";
 import { ReplicacheNotifier } from "../replicache/notifier";
 import { ReplicacheClientViewEntriesSchema } from "../replicache/schemas";
 import { SharedAccounts } from "../shared-accounts";
+import { Sst } from "../sst";
 import { Users } from "../users";
+import { Constants } from "../utils/constants";
 import { WorkflowStatusesSchema } from "../workflows/schemas";
 import { OrdersContract } from "./contract";
 import { OrdersSchema } from "./schema";
 
 import type { InferInsertModel } from "drizzle-orm";
-import type { ColumnsContract } from "../columns/contract";
 import type { ReplicacheClientViewsSchema } from "../replicache/schemas";
 
 export namespace Orders {
+  export class ShortIdGenerator extends Effect.Service<ShortIdGenerator>()(
+    "@printdesk/core/orders/ShortIdGenerator",
+    {
+      accessors: true,
+      dependencies: [DynamoDBDocument.defaultLayer, Sst.Resource.Default],
+      effect: Effect.gen(function* () {
+        const ddb = yield* DynamoDBDocument;
+        const table = "TODO";
+
+        const schedule = Schedule.recurs(
+          Constants.DB_TRANSACTION_MAX_RETRIES,
+        ).pipe(
+          Schedule.intersect(Schedule.exponential(Duration.millis(10))),
+          Schedule.jittered,
+          Schedule.repetitions,
+          Schedule.modifyDelayEffect((attempt, delay) =>
+            Effect.logInfo(
+              `[Orders.ShortIdGenerator]: Generation attempt #${attempt + 1} failed conditional check, retrying again in ${delay.pipe(Duration.format)} ...`,
+            ).pipe(Effect.as(delay)),
+          ),
+        );
+
+        const generate = Effect.fn("Orders.ShortIdGenerator.generate")(
+          (pk: typeof OrdersContract.Item.fields.pk.Type) =>
+            Effect.succeed(pk).pipe(
+              Effect.flatMap(Schema.encode(OrdersContract.Item.fields.pk)),
+              Effect.flatMap((pk) =>
+                ddb.query({
+                  TableName: table,
+                  KeyConditionExpression: "#pk = :pk",
+                  ExpressionAttributeNames: {
+                    "#pk": Constants.DDB_INDEXES.PK,
+                  },
+                  ExpressionAttributeValues: {
+                    ":pk": pk,
+                  },
+                  ScanIndexForward: false,
+                  Limit: 1,
+                }),
+              ),
+              Effect.map(Struct.get("Items")),
+              Effect.filterOrFail(
+                Predicate.isNotUndefined,
+                () => new Cause.NoSuchElementException(),
+              ),
+              Effect.flatMap(Array.head),
+              Effect.flatMap(Schema.decodeUnknown(OrdersContract.Item)),
+              Effect.map(Struct.get(Constants.DDB_INDEXES.SK)),
+              Effect.catchTag("NoSuchElementException", () =>
+                Effect.succeed(ColumnsContract.ShortId.make(0)),
+              ),
+              Effect.flatMap(Ref.make),
+              Effect.flatMap((lastId) =>
+                lastId.pipe(
+                  Ref.updateAndGet((id) =>
+                    ColumnsContract.ShortId.make(id + 1),
+                  ),
+                  Effect.map((sk) => ({ pk, sk })),
+                  Effect.flatMap(Schema.encode(OrdersContract.Item)),
+                  Effect.flatMap((Item) =>
+                    ddb.put({
+                      TableName: table,
+                      Item,
+                      ConditionExpression: `attribute_not_exists(${Constants.DDB_INDEXES.PK})`,
+                    }),
+                  ),
+                  Effect.map(Struct.get("Attributes")),
+                  Effect.filterOrFail(
+                    Predicate.isNotUndefined,
+                    () => new Cause.NoSuchElementException(),
+                  ),
+                  Effect.flatMap(Schema.decodeUnknown(OrdersContract.Item)),
+                  Effect.map(Struct.get(Constants.DDB_INDEXES.SK)),
+                  Effect.retry({
+                    while: Predicate.isTagged(
+                      "ConditionalCheckFailedException",
+                    ),
+                    schedule,
+                  }),
+                ),
+              ),
+            ),
+        );
+
+        return { generate } as const;
+      }),
+    },
+  ) {}
+
   export class Repository extends Effect.Service<Repository>()(
     "@printdesk/core/orders/Repository",
     {
@@ -46,6 +143,7 @@ export namespace Orders {
       dependencies: [
         Database.TransactionManager.Default,
         Replicache.ClientViewEntriesQueryBuilder.Default,
+        ShortIdGenerator.Default,
       ],
       effect: Effect.gen(function* () {
         const db = yield* Database.TransactionManager;
@@ -59,19 +157,66 @@ export namespace Orders {
           yield* Replicache.ClientViewEntriesQueryBuilder;
         const entriesTable = ReplicacheClientViewEntriesSchema.table.definition;
 
+        const shortIdGenerator = yield* ShortIdGenerator;
+
         const create = Effect.fn("Orders.Repository.create")(
           (order: InferInsertModel<OrdersSchema.Table>) =>
-            db
-              .useTransaction(
-                (tx) =>
-                  tx.insert(table).values(order).returning() as Promise<
-                    Array<OrdersSchema.Row>
-                  >,
-              )
-              .pipe(
-                Effect.flatMap(Array.head),
-                Effect.catchTag("NoSuchElementException", Effect.die),
+            Effect.all(
+              [
+                db
+                  .useTransaction(
+                    (tx) =>
+                      tx.insert(table).values(order).returning() as Promise<
+                        Array<OrdersSchema.Row>
+                      >,
+                  )
+                  .pipe(Effect.flatMap(Array.head)),
+                db
+                  .useTransaction((tx) =>
+                    tx
+                      .select({
+                        roomId: ProductsSchema.table.definition.roomId,
+                      })
+                      .from(table)
+                      .innerJoin(
+                        ProductsSchema.table.definition,
+                        and(
+                          eq(
+                            table.productId,
+                            ProductsSchema.table.definition.id,
+                          ),
+                          eq(
+                            table.tenantId,
+                            ProductsSchema.table.definition.tenantId,
+                          ),
+                        ),
+                      ),
+                  )
+                  .pipe(Effect.flatMap(Array.head)),
+              ],
+              { concurrency: "unbounded" },
+            ).pipe(
+              Effect.catchTag("NoSuchElementException", Effect.die),
+              Effect.flatMap(([order, { roomId }]) =>
+                db
+                  .afterTransaction(
+                    shortIdGenerator
+                      .generate({ tenantId: order.tenantId, roomId })
+                      .pipe(
+                        Effect.flatMap((shortId) =>
+                          updateById(order.id, { shortId }, order.tenantId),
+                        ),
+                        Effect.catchAll((error) =>
+                          Effect.log(
+                            `[Orders.Repository]: Failed to save short ID for order "${order.id}":`,
+                            error,
+                          ),
+                        ),
+                      ),
+                  )
+                  .pipe(Effect.as(order)),
               ),
+            ),
         );
 
         const findCreates = Effect.fn("Orders.Repository.findCreates")(

@@ -52,4 +52,51 @@ export namespace ColumnsContract {
     Schema.NullOr,
     Schema.optionalWith({ default: () => null }),
   );
+
+  export class TenantIdRoomIdKey extends Schema.Class<TenantIdRoomIdKey>(
+    "TenantIdRoomIdKey",
+  )({
+    tenantId: TenantId,
+    roomId: EntityId,
+  }) {}
+
+  export const TenantIdRoomIdKeyFromString = Schema.TemplateLiteralParser(
+    Schema.Literal("TENANT"),
+    Schema.Literal(Constants.SEPARATOR),
+    TenantId,
+    Schema.Literal(Constants.SEPARATOR),
+    Schema.Literal("ROOM"),
+    Schema.Literal(Constants.SEPARATOR),
+    EntityId,
+  ).pipe(
+    Schema.transform(TenantIdRoomIdKey, {
+      strict: true,
+      decode: ([, , tenantId, , , roomId]) => ({ tenantId, roomId }),
+      encode: ({ tenantId, roomId }) => [
+        "TENANT",
+        Constants.SEPARATOR,
+        TenantId.make(tenantId),
+        Constants.SEPARATOR,
+        "ROOM",
+        Constants.SEPARATOR,
+        EntityId.make(roomId),
+      ],
+    }),
+  );
+
+  export const OrderShortIdKeyFromString = Schema.TemplateLiteralParser(
+    Schema.Literal("ORDER"),
+    Schema.Literal(Constants.SEPARATOR),
+    ShortId,
+  ).pipe(
+    Schema.transform(ShortId, {
+      strict: true,
+      decode: ([, , shortId]) => shortId,
+      encode: (shortId) => [
+        "ORDER",
+        Constants.SEPARATOR,
+        ShortId.make(shortId),
+      ],
+    }),
+  );
 }

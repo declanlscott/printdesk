@@ -25,9 +25,9 @@ import type {
 
 export namespace Oauth {
   export class ClientError extends Schema.TaggedError<ClientError>(
-    "ClientError",
+    "OauthClientError",
   )(
-    "ClientError",
+    "OauthClientError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}

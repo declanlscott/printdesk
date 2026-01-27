@@ -2,7 +2,6 @@ import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Data from "effect/Data";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
 import { Models } from "../models";
@@ -60,6 +59,7 @@ export namespace ReplicachePullerContract {
     schemaVersion: Schema.String,
     profileID: Schema.String,
     cookie: Cookie,
+    clientID: Schema.String,
     lastMutationID: Schema.Int,
   }) {}
 
@@ -76,6 +76,16 @@ export namespace ReplicachePullerContract {
 
   export const Request = Schema.Union(RequestV0, RequestV1);
   export type Request = typeof Request.Type;
+
+  export const isRequestV1 = <
+    TRequest extends typeof Request.Type | typeof Request.Encoded,
+  >(
+    request: TRequest,
+  ): request is Extract<TRequest, { pullVersion: 1 }> =>
+    request.pullVersion === 1;
+
+  export const Payload = Request.pipe(Schema.encodedSchema);
+  export type Payload = typeof Payload.Type;
 
   export const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
     Schema.TemplateLiteralParser(
@@ -239,32 +249,34 @@ export namespace ReplicachePullerContract {
 }
 
 export namespace ReplicachePusherContract {
-  export class MutationV0 extends Schema.TaggedClass<MutationV0>("MutationV0")(
-    "MutationV0",
-    {
-      name: Schema.String,
-      args: Schema.Any,
-      id: Schema.Number,
-      timestamp: Schema.Number,
-    },
-  ) {}
   export class Headers extends Schema.Class<Headers>("Headers")({
     "X-Replicache-RequestID": Schema.String,
   }) {}
 
-  export class MutationV1 extends Schema.TaggedClass<MutationV1>("MutationV1")(
-    "MutationV1",
-    {
-      ...Struct.omit(MutationV0.fields, "_tag"),
-      clientId: Schema.UUID.pipe(
-        Schema.propertySignature,
-        Schema.fromKey("clientID"),
-      ),
-    },
-  ) {}
+  export class MutationV0 extends Schema.Class<MutationV0>("MutationV0")({
+    name: Schema.String,
+    args: Schema.Any,
+    id: Schema.Number,
+    timestamp: Schema.Number,
+  }) {}
+
+  export class MutationV1 extends MutationV0.extend<MutationV1>("MutationV1")({
+    clientId: Schema.UUID.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("clientID"),
+    ),
+  }) {}
 
   export const Mutation = Schema.Union(MutationV0, MutationV1);
   export type Mutation = typeof Mutation.Type;
+
+  export class FutureMutationError extends Schema.TaggedError<FutureMutationError>(
+    "FutureMutationError",
+  )(
+    "FutureMutationError",
+    { mutationId: MutationV1.fields.id },
+    HttpApiSchema.annotations({ status: 500 }),
+  ) {}
 
   export class RequestV0 extends Schema.Class<RequestV0>("RequestV0")({
     pushVersion: Schema.tag(0),
@@ -291,22 +303,22 @@ export namespace ReplicachePusherContract {
   export const Request = Schema.Union(RequestV0, RequestV1);
   export type Request = typeof Request.Type;
 
+  export const isRequestV1 = <
+    TRequest extends typeof Request.Type | typeof Request.Encoded,
+  >(
+    request: TRequest,
+  ): request is Extract<TRequest, { pushVersion: 1 }> =>
+    request.pushVersion === 1;
+
   export const Payload = Request.pipe(Schema.encodedSchema);
   export type Payload = typeof Payload.Type;
+
   export const Response = Schema.Union(
-    Schema.Void,
     ReplicacheContract.ClientStateNotFoundResponse,
     ReplicacheContract.VersionNotSupportedResponse,
-  );
+  ).pipe(Schema.UndefinedOr);
   export type Response = typeof Response.Type;
 
-  export class FutureMutationError extends Schema.TaggedError<FutureMutationError>(
-    "FutureMutationError",
-  )(
-    "FutureMutationError",
-    { mutationId: MutationV1.fields.id },
-    HttpApiSchema.annotations({ status: 500 }),
-  ) {}
   export const Success = Response.pipe(Schema.encodedSchema);
   export type Success = typeof Success.Type;
 }

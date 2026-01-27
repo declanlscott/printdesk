@@ -59,78 +59,6 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
         Effect.map(Schema.decodeUnknown),
       );
 
-      const push = Effect.fn("ReplicachePusher.push")(
-        (pushRequest: ReplicachePusherContract.Request) =>
-          Effect.gen(function* () {
-            if (pushRequest.pushVersion !== 1)
-              return yield* new ReplicacheContract.VersionNotSupportedError(
-                "push",
-              );
-
-            yield* Effect.forEach(pushRequest.mutations, (mutationV1) =>
-              Effect.gen(function* () {
-                const preprocessArgs = {
-                  clientId: mutationV1.clientId,
-                  mutationId: mutationV1.id,
-                } satisfies PreprocessArgs;
-
-                yield* decode(mutationV1).pipe(
-                  Effect.flatMap((mutation) =>
-                    // 1, 2: Begin transaction
-                    db.withTransaction(() =>
-                      Effect.gen(function* () {
-                        const postprocessArgs =
-                          yield* preprocess(preprocessArgs);
-
-                        yield* mutate(mutation);
-
-                        yield* postprocess(postprocessArgs);
-                      }),
-                    ),
-                  ),
-                  Effect.catchTag("PastMutationError", (e) => e.log()),
-                  Effect.catchAll((error) =>
-                    Effect.log(
-                      `[ReplicachePusher]: Mutation "${mutationV1.id}" failed with error:`,
-                      error,
-                      "[ReplicachePusher]: Retrying transaction again in error mode ...",
-                    ).pipe(
-                      Effect.flatMap(() =>
-                        // 10(ii)(c): Retry transaction again without actually performing the mutation
-                        db.withTransaction(() =>
-                          preprocess(preprocessArgs).pipe(
-                            Effect.flatMap(postprocess),
-                          ),
-                        ),
-                      ),
-                      Effect.catchTag("PastMutationError", (e) => e.log()),
-                    ),
-                  ),
-                );
-              }),
-            ).pipe(
-              Effect.provideService(
-                Replicache.ClientGroupId,
-                pushRequest.clientGroupId,
-              ),
-            );
-          }).pipe(
-            Effect.timed,
-            Effect.flatMap(([duration]) =>
-              Effect.log(
-                `[ReplicachePusher]: Processed push request in ${duration.pipe(Duration.toMillis)}ms`,
-              ),
-            ),
-            Effect.tapErrorCause((error) =>
-              Effect.log(
-                "[ReplicachePusher]: Encountered error during push",
-                error,
-              ),
-            ),
-            Effect.andThen(Effect.void),
-          ),
-      );
-
       const preprocess = ({ clientId, mutationId }: PreprocessArgs) =>
         Effect.gen(function* () {
           const clientGroupId = yield* Replicache.ClientGroupId;
@@ -271,6 +199,78 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
             ),
           ),
         );
+
+      const push = Effect.fn("ReplicachePusher.push")(
+        (request: ReplicachePusherContract.Request) =>
+          Effect.succeed(request).pipe(
+            Effect.filterOrFail(
+              ReplicachePusherContract.isRequestV1,
+              () => new ReplicacheContract.VersionNotSupportedError("push"),
+            ),
+            Effect.flatMap((requestV1) =>
+              Effect.forEach(requestV1.mutations, (mutationV1) =>
+                Effect.gen(function* () {
+                  const preprocessArgs = {
+                    clientId: mutationV1.clientId,
+                    mutationId: mutationV1.id,
+                  } satisfies PreprocessArgs;
+
+                  yield* decode(mutationV1).pipe(
+                    Effect.flatMap((mutation) =>
+                      // 1, 2: Begin transaction
+                      db.withTransaction(() =>
+                        Effect.gen(function* () {
+                          const postprocessArgs =
+                            yield* preprocess(preprocessArgs);
+
+                          yield* mutate(mutation);
+
+                          yield* postprocess(postprocessArgs);
+                        }),
+                      ),
+                    ),
+                    Effect.catchTag("PastMutationError", (e) => e.log()),
+                    Effect.catchAll((error) =>
+                      Effect.log(
+                        `[ReplicachePusher]: Mutation "${mutationV1.id}" failed with error:`,
+                        error,
+                        "[ReplicachePusher]: Retrying transaction again in error mode ...",
+                      ).pipe(
+                        Effect.flatMap(() =>
+                          // 10(ii)(c): Retry transaction again without actually performing the mutation
+                          db.withTransaction(() =>
+                            preprocess(preprocessArgs).pipe(
+                              Effect.flatMap(postprocess),
+                            ),
+                          ),
+                        ),
+                        Effect.catchTag("PastMutationError", (e) => e.log()),
+                      ),
+                    ),
+                  );
+                }),
+              ).pipe(
+                Effect.provideService(
+                  Replicache.ClientGroupId,
+                  requestV1.clientGroupId,
+                ),
+              ),
+            ),
+            Effect.as(undefined),
+            Effect.timed,
+            Effect.flatMap(([duration, response]) =>
+              Effect.log(
+                `[ReplicachePusher]: Processed push request in ${duration.pipe(Duration.toMillis)}ms`,
+              ).pipe(Effect.as(response)),
+            ),
+            Effect.tapErrorCause((error) =>
+              Effect.log(
+                "[ReplicachePusher]: Encountered error during push",
+                error,
+              ),
+            ),
+          ),
+      );
 
       return { push } as const;
     }),

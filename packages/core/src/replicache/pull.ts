@@ -261,25 +261,25 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
         );
 
       const pull = Effect.fn("ReplicachePuller.pull")(
-        (pullRequest: ReplicachePullerContract.Request) =>
-          Effect.gen(function* () {
-            if (pullRequest.pullVersion !== 1)
-              return yield* new ReplicacheContract.VersionNotSupportedError(
-                "pull",
-              );
-
-            return yield* process(pullRequest.cookie).pipe(
-              Effect.catchTag("DifferenceLimitExceededError", () =>
-                Effect.log(
-                  "[ReplicachePuller]: Difference limit exceeded, trying again with client view reset ...",
-                ).pipe(Effect.flatMap(() => process(null))),
+        (request: ReplicachePullerContract.Request) =>
+          Effect.succeed(request).pipe(
+            Effect.filterOrFail(
+              ReplicachePullerContract.isRequestV1,
+              () => new ReplicacheContract.VersionNotSupportedError("pull"),
+            ),
+            Effect.flatMap((requestV1) =>
+              process(requestV1.cookie).pipe(
+                Effect.catchTag("DifferenceLimitExceededError", () =>
+                  Effect.log(
+                    "[ReplicachePuller]: Difference limit exceeded, trying again with client view reset ...",
+                  ).pipe(Effect.flatMap(() => process(null))),
+                ),
+                Effect.provideService(
+                  Replicache.ClientGroupId,
+                  requestV1.clientGroupId,
+                ),
               ),
-              Effect.provideService(
-                Replicache.ClientGroupId,
-                pullRequest.clientGroupId,
-              ),
-            );
-          }).pipe(
+            ),
             Effect.timed,
             Effect.flatMap(([duration, response]) =>
               Effect.log(

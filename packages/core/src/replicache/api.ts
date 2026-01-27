@@ -1,4 +1,5 @@
 import * as HttpApiEndpoint from "@effect/platform/HttpApiEndpoint";
+import * as HttpApiError from "@effect/platform/HttpApiError";
 import * as HttpApiGroup from "@effect/platform/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
@@ -14,21 +15,27 @@ import {
 
 export namespace ReplicacheApi {
   export const pull = HttpApiEndpoint.post("pull", "/pull")
-    .setPayload(ReplicachePullerContract.Request)
-    .addSuccess(ReplicachePullerContract.Response)
+    .setHeaders(ReplicachePullerContract.Headers)
+    .setPayload(ReplicachePullerContract.Payload)
+    .addSuccess(ReplicachePullerContract.Success, { status: 200 })
+    .addError(HttpApiError.HttpApiDecodeError)
     .addError(AccessControl.AccessDeniedError)
     .addError(ActorsContract.ForbiddenActorError)
     .addError(DatabaseContract.TransactionError)
     .addError(DatabaseContract.QueryBuilderError)
-    .addError(QueriesContract.DifferenceLimitExceededError);
+    .addError(QueriesContract.DifferenceLimitExceededError)
+    .addError(HttpApiError.InternalServerError);
 
   export const push = HttpApiEndpoint.post("push", "/push")
-    .setPayload(ReplicachePusherContract.Request)
-    .addSuccess(ReplicachePusherContract.Response)
+    .setHeaders(ReplicachePusherContract.Headers)
+    .setPayload(ReplicachePusherContract.Payload)
+    .addSuccess(ReplicachePusherContract.Success, { status: 200 })
+    .addError(HttpApiError.HttpApiDecodeError)
     .addError(AccessControl.AccessDeniedError)
     .addError(ActorsContract.ForbiddenActorError)
     .addError(DatabaseContract.TransactionError)
-    .addError(ReplicachePusherContract.FutureMutationError);
+    .addError(ReplicachePusherContract.FutureMutationError)
+    .addError(HttpApiError.InternalServerError);
 
   export class Group extends HttpApiGroup.make("replicache")
     .add(push)

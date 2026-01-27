@@ -47,6 +47,10 @@ export namespace ReplicacheContract {
 }
 
 export namespace ReplicachePullerContract {
+  export class Headers extends Schema.Class<Headers>("Headers")({
+    "X-Replicache-RequestID": Schema.String,
+  }) {}
+
   export const Cookie = Schema.Struct({ order: ColumnsContract.Version }).pipe(
     Schema.NullOr,
   );
@@ -229,6 +233,9 @@ export namespace ReplicachePullerContract {
 
   export const Response = Schema.Union(ResponseV0, ResponseV1);
   export type Response = typeof Response.Type;
+
+  export const Success = Response.pipe(Schema.encodedSchema);
+  export type Success = typeof Success.Type;
 }
 
 export namespace ReplicachePusherContract {
@@ -241,6 +248,9 @@ export namespace ReplicachePusherContract {
       timestamp: Schema.Number,
     },
   ) {}
+  export class Headers extends Schema.Class<Headers>("Headers")({
+    "X-Replicache-RequestID": Schema.String,
+  }) {}
 
   export class MutationV1 extends Schema.TaggedClass<MutationV1>("MutationV1")(
     "MutationV1",
@@ -281,6 +291,8 @@ export namespace ReplicachePusherContract {
   export const Request = Schema.Union(RequestV0, RequestV1);
   export type Request = typeof Request.Type;
 
+  export const Payload = Request.pipe(Schema.encodedSchema);
+  export type Payload = typeof Payload.Type;
   export const Response = Schema.Union(
     Schema.Void,
     ReplicacheContract.ClientStateNotFoundResponse,
@@ -295,4 +307,6 @@ export namespace ReplicachePusherContract {
     { mutationId: MutationV1.fields.id },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}
+  export const Success = Response.pipe(Schema.encodedSchema);
+  export type Success = typeof Success.Type;
 }

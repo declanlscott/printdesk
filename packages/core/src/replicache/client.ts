@@ -1,3 +1,5 @@
+import * as HttpApiClient from "@effect/platform/HttpApiClient";
+import * as HttpClient from "@effect/platform/HttpClient";
 import * as Cause from "effect/Cause";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
@@ -10,14 +12,23 @@ import * as Schema from "effect/Schema";
 import { Replicache as ReplicacheClient } from "replicache";
 
 import { Actors } from "../actors";
+import { ApiContract } from "../api/contract";
 import { Database } from "../database/client";
 import { Mutations } from "../mutations/client";
 import { Procedures } from "../procedures";
 import { separatedString } from "../utils";
+import {
+  ReplicacheContract,
+  ReplicachePullerContract,
+  ReplicachePusherContract,
+} from "./contracts";
 
 import type { ParseError } from "effect/ParseResult";
 import type {
   LogLevel,
+  Puller,
+  PullerResult,
+  Pusher,
   ReadTransaction,
   ReplicacheOptions,
   SubscribeOptions,
@@ -67,7 +78,7 @@ export namespace Replicache {
     }
   }
 
-  export class ClientError extends Data.TaggedError("ClientError")<{
+  export class ClientError extends Data.TaggedError("ReplicacheClientError")<{
     readonly cause: unknown;
   }> {}
 
@@ -80,11 +91,95 @@ export namespace Replicache {
     baseUrl: URL;
   }
 
-  export const makeClient = ({ logLevel }: MakeClientArgs) =>
+  export const makeClient = ({ logLevel, baseUrl }: MakeClientArgs) =>
     Effect.gen(function* () {
       const { record: mutations } = yield* Procedures.Mutations.registry;
 
+      const { pull, push } = yield* HttpClient.HttpClient.pipe(
+        Effect.map(HttpClient.filterStatusOk),
+        Effect.flatMap((httpClient) =>
+          HttpApiClient.group(ApiContract.Application, {
+            baseUrl,
+            httpClient,
+            group: "replicache",
+          }),
+        ),
+      );
+
       const makeName = separatedString().pipe(Schema.encode);
+
+      const decodeCookie = ReplicachePullerContract.Cookie.pipe(
+        Schema.encodedSchema,
+        Schema.decodeUnknown,
+      );
+
+      const puller = (...[request, id]: Parameters<Puller>) =>
+        decodeCookie(request.cookie).pipe(
+          Effect.map((cookie) => ({ ...request, cookie })),
+          Effect.filterOrFail(
+            ReplicachePullerContract.isRequestV1,
+            () => new ReplicacheContract.VersionNotSupportedError("pull"),
+          ),
+          Effect.flatMap((payload) =>
+            pull({
+              payload,
+              headers: { "X-Replicache-RequestID": id },
+              withResponse: true,
+            }),
+          ),
+          Effect.map(
+            ([response, { status: httpStatusCode }]) =>
+              ({
+                response,
+                httpRequestInfo: {
+                  httpStatusCode,
+                  errorMessage: "",
+                },
+              }) as PullerResult,
+          ),
+          Effect.catchTag("ResponseError", (e) =>
+            Effect.succeed({
+              httpRequestInfo: {
+                httpStatusCode: e.response.status,
+                errorMessage: e.message,
+              },
+            }),
+          ),
+          Effect.orDie,
+          Effect.runPromise,
+        );
+
+      const pusher = (...[request, id]: Parameters<Pusher>) =>
+        Effect.succeed(request).pipe(
+          Effect.filterOrFail(
+            ReplicachePusherContract.isRequestV1,
+            () => new ReplicacheContract.VersionNotSupportedError("push"),
+          ),
+          Effect.flatMap((payload) =>
+            push({
+              payload,
+              headers: { "X-Replicache-RequestID": id },
+              withResponse: true,
+            }),
+          ),
+          Effect.map(([response, { status: httpStatusCode }]) => ({
+            response,
+            httpRequestInfo: {
+              httpStatusCode,
+              errorMessage: "",
+            },
+          })),
+          Effect.catchTag("ResponseError", (e) =>
+            Effect.succeed({
+              httpRequestInfo: {
+                httpStatusCode: e.response.status,
+                errorMessage: e.message,
+              },
+            }),
+          ),
+          Effect.orDie,
+          Effect.runPromise,
+        );
 
       const initialize = Effect.gen(function* () {
         const user = yield* Actors.Actor.pipe(
@@ -121,7 +216,8 @@ export namespace Replicache {
               name,
               logLevel,
               mutators,
-              // TODO: Add other options
+              puller,
+              pusher,
             }),
           catch: (cause) => new Replicache.ClientError({ cause }),
         });

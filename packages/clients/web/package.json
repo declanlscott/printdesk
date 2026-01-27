@@ -7,10 +7,12 @@
     "build": "tsc -b && vite build"
   },
   "dependencies": {
+    "@effect/platform": "catalog:",
     "@printdesk/core": "workspace:*",
     "@printdesk/ui": "workspace:*",
-    "react-aria-components": "catalog:",
     "@tanstack/react-router": "catalog:",
+    "effect": "catalog:",
+    "react-aria-components": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
     "replicache": "catalog:"

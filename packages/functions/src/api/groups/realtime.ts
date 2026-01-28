@@ -8,22 +8,24 @@ import * as Layer from "effect/Layer";
 import { actorLayer } from "../middleware/actor";
 import { realtimeSubscriberCredentialsIdentityLayer } from "../middleware/aws";
 
-export const realtimeLayer = HttpApiBuilder.group(
-  ApiContract.Application,
-  "realtime",
-  (handlers) =>
-    handlers
-      .handle("getAuthorization", ({ payload }) =>
-        Realtime.Realtime.getAuthorization(payload.channel).pipe(
-          Effect.mapError(() => new HttpApiError.InternalServerError()),
+export const realtimeLayer = ApiContract.Application.pipe(
+  Effect.map((api) =>
+    HttpApiBuilder.group(api, "realtime", (handlers) =>
+      handlers
+        .handle("getAuthorization", ({ payload }) =>
+          Realtime.Realtime.getAuthorization(payload.channel).pipe(
+            Effect.mapError(() => new HttpApiError.InternalServerError()),
+          ),
+        )
+        .handle("getUrl", () =>
+          Realtime.Realtime.url.pipe(
+            Effect.mapError(() => new HttpApiError.InternalServerError()),
+          ),
         ),
-      )
-      .handle("getUrl", () =>
-        Realtime.Realtime.url.pipe(
-          Effect.mapError(() => new HttpApiError.InternalServerError()),
-        ),
-      ),
-).pipe(
+    ),
+  ),
+  Layer.unwrapEffect,
+  Layer.provide(ApiContract.Application.Default),
   Layer.provide(Realtime.Realtime.Default),
   Layer.provide(realtimeSubscriberCredentialsIdentityLayer),
   Layer.provide(actorLayer),

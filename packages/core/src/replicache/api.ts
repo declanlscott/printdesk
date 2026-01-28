@@ -8,7 +8,6 @@ import { ActorsApi } from "../actors/api";
 import { ActorsContract } from "../actors/contract";
 import { CredentialsApi } from "../aws/api";
 import { DatabaseContract } from "../database/contract";
-import { QueriesContract } from "../queries/contract";
 import {
   ReplicachePullerContract,
   ReplicachePusherContract,
@@ -23,7 +22,6 @@ export namespace ReplicacheApi {
     .addError(ActorsContract.ForbiddenActorError)
     .addError(DatabaseContract.TransactionError)
     .addError(DatabaseContract.QueryBuilderError)
-    .addError(QueriesContract.DifferenceLimitExceededError)
     .addError(HttpApiError.InternalServerError);
 
   export const push = ReplicachePusherContract.Payload.pipe(

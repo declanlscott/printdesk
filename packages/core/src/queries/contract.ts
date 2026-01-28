@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Array from "effect/Array";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
@@ -7,7 +6,6 @@ import * as HashMap from "effect/HashMap";
 import * as HashSet from "effect/HashSet";
 import * as Iterable from "effect/Iterable";
 import * as Option from "effect/Option";
-import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 
 import { AccessControl } from "../access-control";
@@ -574,12 +572,4 @@ export namespace QueriesContract {
       >;
     }
   }
-
-  export class DifferenceLimitExceededError extends Schema.TaggedError<DifferenceLimitExceededError>(
-    "DifferenceLimitExceededError",
-  )(
-    "DifferenceLimitExceededError",
-    {},
-    HttpApiSchema.annotations({ status: 500 }),
-  ) {}
 }

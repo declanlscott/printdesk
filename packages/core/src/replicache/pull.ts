@@ -270,10 +270,14 @@ export class ReplicachePuller extends Effect.Service<ReplicachePuller>()(
             Effect.flatMap((requestV1) =>
               process(requestV1.cookie).pipe(
                 Effect.catchTag("DifferenceLimitExceededError", () =>
-                  Effect.log(
-                    "[ReplicachePuller]: Difference limit exceeded, trying again with client view reset ...",
-                  ).pipe(Effect.flatMap(() => process(null))),
+                  Effect.zipRight(
+                    Effect.log(
+                      "[ReplicachePuller]: Difference limit exceeded, retrying with client view reset ...",
+                    ),
+                    process(null),
+                  ),
                 ),
+                Effect.catchTag("DifferenceLimitExceededError", Effect.die),
                 Effect.provideService(
                   Replicache.ClientGroupId,
                   requestV1.clientGroupId,

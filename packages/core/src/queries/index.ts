@@ -1,4 +1,5 @@
 import * as Chunk from "effect/Chunk";
+import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
 import * as Number from "effect/Number";
@@ -32,6 +33,10 @@ import type { ColumnsContract } from "../columns/contract";
 import type { ReplicacheClientViewsModel } from "../replicache/models";
 
 export namespace Queries {
+  export class DifferenceLimitExceededError extends Data.TaggedError(
+    "DifferenceLimitExceededError",
+  ) {}
+
   export class Differentiator extends Effect.Service<Differentiator>()(
     "@printdesk/core/queries/Differentiator",
     {
@@ -221,8 +226,7 @@ export namespace Queries {
                   Effect.scoped,
                 );
 
-              if (limit < 0)
-                return yield* new QueriesContract.DifferenceLimitExceededError();
+              if (limit < 0) return yield* new DifferenceLimitExceededError();
 
               // Fast-forward
               if (clientView.version < clientViewVersion.max)

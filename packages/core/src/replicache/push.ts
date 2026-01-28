@@ -203,47 +203,41 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
               () => new ReplicacheContract.VersionNotSupportedError("push"),
             ),
             Effect.flatMap((requestV1) =>
-              Effect.forEach(requestV1.mutations, (mutationV1) =>
-                Effect.gen(function* () {
-                  const preprocessArgs = {
-                    clientId: mutationV1.clientId,
-                    mutationId: mutationV1.id,
-                  } satisfies PreprocessArgs;
+              Effect.forEach(requestV1.mutations, (mutationV1) => {
+                const preprocessArgs = {
+                  clientId: mutationV1.clientId,
+                  mutationId: mutationV1.id,
+                } satisfies PreprocessArgs;
 
-                  // 1, 2: Begin transaction
-                  yield* db
-                    .withTransaction(() =>
-                      Effect.gen(function* () {
-                        const postprocessArgs =
-                          yield* preprocess(preprocessArgs);
-
-                        yield* mutate(mutationV1);
-
-                        yield* postprocess(postprocessArgs);
-                      }),
-                    )
-                    .pipe(
-                      Effect.catchTag("PastMutationError", (e) => e.log()),
-                      Effect.catchAll((error) =>
-                        Effect.log(
-                          `[ReplicachePusher]: Mutation "${mutationV1.id}" failed with error:`,
-                          error,
-                          "[ReplicachePusher]: Retrying transaction again in error mode ...",
-                        ).pipe(
-                          Effect.flatMap(() =>
-                            // 10(ii)(c): Retry transaction again without actually performing the mutation
-                            db.withTransaction(() =>
-                              preprocess(preprocessArgs).pipe(
-                                Effect.flatMap(postprocess),
-                              ),
+                // 1, 2: Begin transaction
+                return db
+                  .withTransaction(() =>
+                    preprocess(preprocessArgs).pipe(
+                      Effect.tap(() => mutate(mutationV1)),
+                      Effect.flatMap(postprocess),
+                    ),
+                  )
+                  .pipe(
+                    Effect.catchTag("PastMutationError", (e) => e.log()),
+                    Effect.catchAll((error) =>
+                      Effect.log(
+                        `[ReplicachePusher]: Mutation "${mutationV1.id}" failed with error:`,
+                        error,
+                        "[ReplicachePusher]: Retrying transaction again in error mode ...",
+                      ).pipe(
+                        Effect.flatMap(() =>
+                          // 10(ii)(c): Retry transaction again without actually performing the mutation
+                          db.withTransaction(() =>
+                            preprocess(preprocessArgs).pipe(
+                              Effect.flatMap(postprocess),
                             ),
                           ),
-                          Effect.catchTag("PastMutationError", (e) => e.log()),
                         ),
+                        Effect.catchTag("PastMutationError", (e) => e.log()),
                       ),
-                    );
-                }),
-              ).pipe(
+                    ),
+                  );
+              }).pipe(
                 Effect.provideService(
                   Replicache.ClientGroupId,
                   requestV1.clientGroupId,

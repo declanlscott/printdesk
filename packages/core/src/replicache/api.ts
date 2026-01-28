@@ -1,6 +1,7 @@
 import * as HttpApiEndpoint from "@effect/platform/HttpApiEndpoint";
 import * as HttpApiError from "@effect/platform/HttpApiError";
 import * as HttpApiGroup from "@effect/platform/HttpApiGroup";
+import * as Effect from "effect/Effect";
 
 import { AccessControl } from "../access-control";
 import { ActorsApi } from "../actors/api";
@@ -18,7 +19,6 @@ export namespace ReplicacheApi {
     .setHeaders(ReplicachePullerContract.Headers)
     .setPayload(ReplicachePullerContract.Payload)
     .addSuccess(ReplicachePullerContract.Success, { status: 200 })
-    .addError(HttpApiError.HttpApiDecodeError)
     .addError(AccessControl.AccessDeniedError)
     .addError(ActorsContract.ForbiddenActorError)
     .addError(DatabaseContract.TransactionError)
@@ -26,20 +26,27 @@ export namespace ReplicacheApi {
     .addError(QueriesContract.DifferenceLimitExceededError)
     .addError(HttpApiError.InternalServerError);
 
-  export const push = HttpApiEndpoint.post("push", "/push")
-    .setHeaders(ReplicachePusherContract.Headers)
-    .setPayload(ReplicachePusherContract.Payload)
-    .addSuccess(ReplicachePusherContract.Success, { status: 200 })
-    .addError(HttpApiError.HttpApiDecodeError)
-    .addError(AccessControl.AccessDeniedError)
-    .addError(ActorsContract.ForbiddenActorError)
-    .addError(DatabaseContract.TransactionError)
-    .addError(ReplicachePusherContract.FutureMutationError)
-    .addError(HttpApiError.InternalServerError);
+  export const push = ReplicachePusherContract.Payload.pipe(
+    Effect.map((Payload) =>
+      HttpApiEndpoint.post("push", "/push")
+        .setHeaders(ReplicachePusherContract.Headers)
+        .setPayload(Payload)
+        .addSuccess(ReplicachePusherContract.Success, { status: 200 })
+        .addError(AccessControl.AccessDeniedError)
+        .addError(ActorsContract.ForbiddenActorError)
+        .addError(DatabaseContract.TransactionError)
+        .addError(ReplicachePusherContract.FutureMutationError)
+        .addError(HttpApiError.InternalServerError),
+    ),
+  );
 
-  export class Group extends HttpApiGroup.make("replicache")
-    .add(push)
-    .middlewareEndpoints(CredentialsApi.Identity)
-    .add(pull)
-    .middleware(ActorsApi.Actor) {}
+  export const group = push.pipe(
+    Effect.map((push) =>
+      HttpApiGroup.make("replicache")
+        .add(push)
+        .middlewareEndpoints(CredentialsApi.Identity)
+        .add(pull)
+        .middleware(ActorsApi.Actor),
+    ),
+  );
 }

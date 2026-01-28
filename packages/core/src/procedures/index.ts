@@ -1,4 +1,5 @@
 import * as Effect from "effect/Effect";
+import * as Function from "effect/Function";
 import * as Schema from "effect/Schema";
 
 import { AnnouncementsContract } from "../announcements/contract";
@@ -7,7 +8,6 @@ import { DeliveryOptionsContract } from "../delivery-options/contract";
 import { InvoicesContract } from "../invoices/contract";
 import { OrdersContract } from "../orders/contract";
 import { ProductsContract } from "../products/contract";
-import { ReplicachePusherContract } from "../replicache/contracts";
 import { RoomsContract } from "../rooms/contract";
 import {
   SharedAccountManagerAccessContract,
@@ -26,7 +26,7 @@ export namespace Procedures {
     "@printdesk/core/procedures/Policies",
     {
       accessors: true,
-      succeed: {
+      sync: () => ({
         registry: new ProceduresContract.Registry()
           .procedure(CommentsContract.isAuthor)
           .procedure(OrdersContract.isCustomer)
@@ -39,7 +39,7 @@ export namespace Procedures {
           .procedure(SharedAccountWorkflowsContract.isManagerAuthorized)
           .procedure(UsersContract.isSelf)
           .final(),
-      } as const,
+      }),
     },
   ) {}
 
@@ -97,20 +97,36 @@ export namespace Procedures {
           .procedure(WorkflowStatusesContract.delete_)
           .final();
 
-        const ReplicacheSchema = registry.Schema.pipe(
+        const ReplicacheV0 = Schema.Struct({
+          name: Schema.String,
+          args: Schema.Any,
+        }).pipe(
+          Schema.transform(registry.Schema, {
+            strict: false,
+            decode: Function.identity,
+            encode: Function.identity,
+          }),
           Schema.extend(
-            ReplicachePusherContract.MutationV1.pipe(
-              Schema.omit("name", "args"),
-            ),
+            Schema.Struct({
+              id: Schema.Int,
+              timestamp: Schema.Number,
+            }),
           ),
         );
 
-        return { registry, ReplicacheSchema } as const;
+        const ReplicacheV1 = ReplicacheV0.pipe(
+          Schema.extend(
+            Schema.Struct({
+              clientId: Schema.UUID.pipe(
+                Schema.propertySignature,
+                Schema.fromKey("clientID"),
+              ),
+            }),
+          ),
+        );
+
+        return { registry, ReplicacheV0, ReplicacheV1 } as const;
       },
     },
   ) {}
-
-  export type Mutation = Effect.Effect.Success<
-    typeof Mutations.ReplicacheSchema
-  >["Type"];
 }

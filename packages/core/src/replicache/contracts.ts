@@ -1,10 +1,12 @@
 import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
 import { ColumnsContract } from "../columns/contract";
 import { Models } from "../models";
+import { Procedures } from "../procedures";
 import { Constants } from "../utils/constants";
 import { ReplicacheClientGroupsModel } from "./models";
 
@@ -57,16 +59,28 @@ export namespace ReplicachePullerContract {
   export class RequestV0 extends Schema.Class<RequestV0>("RequestV0")({
     pullVersion: Schema.tag(0),
     schemaVersion: Schema.String,
-    profileID: Schema.String,
+    profileId: Schema.String.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("profileID"),
+    ),
     cookie: Cookie,
-    clientID: Schema.String,
-    lastMutationID: Schema.Int,
+    clientId: Schema.UUID.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("clientID"),
+    ),
+    lastMutationId: Schema.Int.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("lastMutationID"),
+    ),
   }) {}
 
   export class RequestV1 extends Schema.Class<RequestV1>("RequestV1")({
     pullVersion: Schema.tag(1),
     schemaVersion: Schema.String,
-    profileID: Schema.String,
+    profileId: Schema.String.pipe(
+      Schema.propertySignature,
+      Schema.fromKey("profileID"),
+    ),
     cookie: Cookie,
     clientGroupId: ReplicacheClientGroupsModel.Id.pipe(
       Schema.propertySignature,
@@ -77,14 +91,10 @@ export namespace ReplicachePullerContract {
   export const Request = Schema.Union(RequestV0, RequestV1);
   export type Request = typeof Request.Type;
 
-  export const isRequestV1 = <
-    TRequest extends typeof Request.Type | typeof Request.Encoded,
-  >(
-    request: TRequest,
-  ): request is Extract<TRequest, { pullVersion: 1 }> =>
+  export const isRequestV1 = (request: Request): request is RequestV1 =>
     request.pullVersion === 1;
 
-  export const Payload = Request.pipe(Schema.encodedSchema);
+  export const Payload = Request;
   export type Payload = typeof Payload.Type;
 
   export const tableKey = <TName extends Models.SyncTableName>(name: TName) =>
@@ -253,65 +263,69 @@ export namespace ReplicachePusherContract {
     "X-Replicache-RequestID": Schema.String,
   }) {}
 
-  export class MutationV0 extends Schema.Class<MutationV0>("MutationV0")({
-    name: Schema.String,
-    args: Schema.Any,
-    id: Schema.Number,
-    timestamp: Schema.Number,
-  }) {}
+  export const MutationV0 = Procedures.Mutations.ReplicacheV0;
+  export type MutationV0 = Effect.Effect.Success<typeof MutationV0>["Type"];
 
-  export class MutationV1 extends MutationV0.extend<MutationV1>("MutationV1")({
-    clientId: Schema.UUID.pipe(
-      Schema.propertySignature,
-      Schema.fromKey("clientID"),
-    ),
-  }) {}
+  export const MutationV1 = Procedures.Mutations.ReplicacheV1;
+  export type MutationV1 = Effect.Effect.Success<typeof MutationV1>["Type"];
 
-  export const Mutation = Schema.Union(MutationV0, MutationV1);
-  export type Mutation = typeof Mutation.Type;
+  export const Mutation = Effect.all([MutationV0, MutationV1]).pipe(
+    Effect.map((members) => Schema.Union(...members)),
+  );
+  export type Mutation = Effect.Effect.Success<typeof Mutation>["Type"];
 
   export class FutureMutationError extends Schema.TaggedError<FutureMutationError>(
     "FutureMutationError",
   )(
     "FutureMutationError",
-    { mutationId: MutationV1.fields.id },
+    { mutationId: Schema.Int },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}
 
-  export class RequestV0 extends Schema.Class<RequestV0>("RequestV0")({
-    pushVersion: Schema.tag(0),
-    clientID: Schema.UUID,
-    mutations: MutationV0.pipe(Schema.Array),
-    profileID: Schema.String,
-    schemaVersion: Schema.String,
-  }) {}
-
-  export class RequestV1 extends Schema.Class<RequestV1>("RequestV1")({
-    pushVersion: Schema.tag(1),
-    clientGroupId: ReplicacheClientGroupsModel.Id.pipe(
-      Schema.propertySignature,
-      Schema.fromKey("clientGroupID"),
+  export const RequestV0 = MutationV0.pipe(
+    Effect.map(
+      (mutation) =>
+        class RequestV0 extends Schema.Class<RequestV0>("RequestV0")({
+          pushVersion: Schema.tag(0),
+          clientID: Schema.UUID,
+          mutations: mutation.pipe(Schema.Array),
+          profileID: Schema.String,
+          schemaVersion: Schema.String,
+        }) {},
     ),
-    mutations: MutationV1.pipe(Schema.Array),
-    profileId: Schema.UUID.pipe(
-      Schema.propertySignature,
-      Schema.fromKey("profileID"),
+  );
+  export type RequestV0 = Effect.Effect.Success<typeof RequestV0>["Type"];
+
+  export const RequestV1 = MutationV1.pipe(
+    Effect.map(
+      (mutation) =>
+        class RequestV1 extends Schema.Class<RequestV1>("RequestV1")({
+          pushVersion: Schema.tag(1),
+          clientGroupId: ReplicacheClientGroupsModel.Id.pipe(
+            Schema.propertySignature,
+            Schema.fromKey("clientGroupID"),
+          ),
+          mutations: mutation.pipe(Schema.Array),
+          profileId: Schema.UUID.pipe(
+            Schema.propertySignature,
+            Schema.fromKey("profileID"),
+          ),
+          schemaVersion: Schema.String,
+        }) {},
     ),
-    schemaVersion: Schema.String,
-  }) {}
+  );
+  export type RequestV1 = Effect.Effect.Success<typeof RequestV1>["Type"];
 
-  export const Request = Schema.Union(RequestV0, RequestV1);
-  export type Request = typeof Request.Type;
+  export const Request = Effect.all([RequestV0, RequestV1]).pipe(
+    Effect.map((members) => Schema.Union(...members)),
+  );
+  export type Request = Effect.Effect.Success<typeof Request>["Type"];
 
-  export const isRequestV1 = <
-    TRequest extends typeof Request.Type | typeof Request.Encoded,
-  >(
-    request: TRequest,
-  ): request is Extract<TRequest, { pushVersion: 1 }> =>
+  export const isRequestV1 = (request: Request): request is RequestV1 =>
     request.pushVersion === 1;
 
-  export const Payload = Request.pipe(Schema.encodedSchema);
-  export type Payload = typeof Payload.Type;
+  export const Payload = Request;
+  export type Payload = Effect.Effect.Success<typeof Payload>["Type"];
 
   export const Response = Schema.Union(
     ReplicacheContract.ClientStateNotFoundResponse,

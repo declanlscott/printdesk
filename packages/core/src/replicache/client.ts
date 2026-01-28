@@ -95,10 +95,11 @@ export namespace Replicache {
     Effect.gen(function* () {
       const { record: mutations } = yield* Procedures.Mutations.registry;
 
+      const Api = yield* ApiContract.Application;
       const { pull, push } = yield* HttpClient.HttpClient.pipe(
         Effect.map(HttpClient.filterStatusOk),
         Effect.flatMap((httpClient) =>
-          HttpApiClient.group(ApiContract.Application, {
+          HttpApiClient.group(Api, {
             baseUrl,
             httpClient,
             group: "replicache",
@@ -106,16 +107,18 @@ export namespace Replicache {
         ),
       );
 
+      const PushRequest = yield* ReplicachePusherContract.Request;
+
       const makeName = separatedString().pipe(Schema.encode);
 
       const decodeCookie = ReplicachePullerContract.Cookie.pipe(
-        Schema.encodedSchema,
         Schema.decodeUnknown,
       );
 
       const puller = (...[request, id]: Parameters<Puller>) =>
         decodeCookie(request.cookie).pipe(
           Effect.map((cookie) => ({ ...request, cookie })),
+          Effect.flatMap(Schema.decode(ReplicachePullerContract.Request)),
           Effect.filterOrFail(
             ReplicachePullerContract.isRequestV1,
             () => new ReplicacheContract.VersionNotSupportedError("pull"),
@@ -151,6 +154,7 @@ export namespace Replicache {
 
       const pusher = (...[request, id]: Parameters<Pusher>) =>
         Effect.succeed(request).pipe(
+          Effect.flatMap(Schema.decode(PushRequest)),
           Effect.filterOrFail(
             ReplicachePusherContract.isRequestV1,
             () => new ReplicacheContract.VersionNotSupportedError("push"),

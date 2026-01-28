@@ -1,4 +1,5 @@
 import * as FetchHttpClient from "@effect/platform/FetchHttpClient";
+import { ApiContract } from "@printdesk/core/api/contract";
 import { Procedures } from "@printdesk/core/procedures";
 import { Replicache } from "@printdesk/core/replicache/client";
 import * as Effect from "effect/Effect";
@@ -14,6 +15,7 @@ export class ReplicacheClient extends Effect.Service<ReplicacheClient>()(
     dependencies: [
       ViteResource.Default,
       Procedures.Mutations.Default,
+      ApiContract.Application.Default,
       FetchHttpClient.layer,
     ],
     effect: Effect.gen(function* () {

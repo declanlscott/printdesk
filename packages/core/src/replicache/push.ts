@@ -12,25 +12,13 @@ import { Procedures } from "../procedures";
 import { ReplicacheContract, ReplicachePusherContract } from "./contracts";
 import { ReplicacheClientGroupsModel, ReplicacheClientsModel } from "./models";
 
-interface PreprocessArgs {
-  readonly clientId: (typeof ReplicacheClientsModel.Table.Record.Type)["id"];
-  readonly mutationId: ReplicachePusherContract.Mutation["id"];
-}
-
-interface PostprocessArgs {
-  readonly clientGroup: typeof ReplicacheClientGroupsModel.Table.Record.Type;
-  readonly client: typeof ReplicacheClientsModel.Table.Record.Type;
-  readonly mutationId: ReplicachePusherContract.Mutation["id"];
-}
-
 export class PastMutationError extends Data.TaggedError("PastMutationError")<{
   readonly mutationId: ReplicachePusherContract.Mutation["id"];
 }> {
-  log() {
-    return Effect.log(
+  log = () =>
+    Effect.log(
       `[ReplicachePusher]: Mutation "${this.mutationId}" already processed - skipping`,
     );
-  }
 }
 
 /**
@@ -54,7 +42,10 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
 
       const dispatcher = yield* Mutations.Dispatcher.client;
 
-      const preprocess = ({ clientId, mutationId }: PreprocessArgs) =>
+      const preprocess = (args: {
+        clientId: (typeof ReplicacheClientsModel.Table.Record.Type)["id"];
+        mutationId: ReplicachePusherContract.Mutation["id"];
+      }) =>
         Effect.gen(function* () {
           const clientGroupId = yield* Replicache.ClientGroupId;
           const user = yield* Actors.Actor.pipe(
@@ -79,17 +70,19 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                 ),
 
               // 5: Get client
-              clientsRepository.findByIdForUpdate(clientId, user.tenantId).pipe(
-                Effect.catchTag("NoSuchElementException", () =>
-                  Effect.succeed(
-                    new ReplicacheClientsModel.Table.Record({
-                      id: clientId,
-                      tenantId: user.tenantId,
-                      clientGroupId,
-                    }),
+              clientsRepository
+                .findByIdForUpdate(args.clientId, user.tenantId)
+                .pipe(
+                  Effect.catchTag("NoSuchElementException", () =>
+                    Effect.succeed(
+                      new ReplicacheClientsModel.Table.Record({
+                        id: args.clientId,
+                        tenantId: user.tenantId,
+                        clientGroupId,
+                      }),
+                    ),
                   ),
                 ),
-              ),
             ],
             { concurrency: "unbounded" },
           );
@@ -111,33 +104,33 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
             }),
           );
 
-          if (client.lastMutationId === 0 && mutationId > 1)
+          if (client.lastMutationId === 0 && args.mutationId > 1)
             return yield* new ReplicacheContract.ClientStateNotFoundError();
 
           // 7: Next mutation ID
           const nextMutationId = client.lastMutationId + 1;
 
           // 8: Rollback and skip if mutation is from the past (already processed)
-          if (mutationId < nextMutationId)
+          if (args.mutationId < nextMutationId)
             return yield* new PastMutationError({
-              mutationId,
+              mutationId: args.mutationId,
             });
 
           // 9: Rollback if mutation is from the future
-          if (mutationId > nextMutationId)
+          if (args.mutationId > nextMutationId)
             return yield* new ReplicachePusherContract.FutureMutationError({
-              mutationId,
+              mutationId: args.mutationId,
             });
 
           return {
             clientGroup,
             client,
-            mutationId,
-          } satisfies PostprocessArgs;
+            mutationId: args.mutationId,
+          };
         }).pipe(
           Effect.tapErrorCause((cause) =>
             Effect.log(
-              `[ReplicachePusher]: Encountered error preprocessing mutation "${mutationId}"`,
+              `[ReplicachePusher]: Encountered error preprocessing mutation "${args.mutationId}"`,
               cause,
             ),
           ),
@@ -154,42 +147,35 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
           ),
         );
 
-      const postprocess = ({
-        clientGroup,
-        client,
-        mutationId,
-      }: PostprocessArgs) =>
-        Effect.gen(function* () {
-          const nextClientVersion = ColumnsContract.Version.make(
-            clientGroup.clientVersion + 1,
-          );
+      const postprocess = (
+        args: Effect.Effect.Success<ReturnType<typeof preprocess>>,
+      ) =>
+        Effect.succeed(
+          ColumnsContract.Version.make(args.clientGroup.clientVersion + 1),
+        ).pipe(
+          Effect.map((nextClientVersion) => [
+            // 11: Upsert client group
+            clientGroupsRepository.upsert({
+              id: args.clientGroup.id,
+              tenantId: args.clientGroup.tenantId,
+              userId: args.clientGroup.userId,
+              clientVersion: nextClientVersion,
+              clientViewVersion: args.clientGroup.clientViewVersion,
+            }),
 
-          yield* Effect.all(
-            [
-              // 11: Upsert client group
-              clientGroupsRepository.upsert({
-                id: clientGroup.id,
-                tenantId: clientGroup.tenantId,
-                userId: clientGroup.userId,
-                clientVersion: nextClientVersion,
-                clientViewVersion: clientGroup.clientViewVersion,
-              }),
-
-              // 12: Upsert client
-              clientsRepository.upsert({
-                id: client.id,
-                tenantId: client.tenantId,
-                clientGroupId: clientGroup.id,
-                lastMutationId: mutationId,
-                version: nextClientVersion,
-              }),
-            ],
-            { concurrency: "unbounded" },
-          );
-        }).pipe(
+            // 12: Upsert client
+            clientsRepository.upsert({
+              id: args.client.id,
+              tenantId: args.client.tenantId,
+              clientGroupId: args.clientGroup.id,
+              lastMutationId: args.mutationId,
+              version: nextClientVersion,
+            }),
+          ]),
+          Effect.flatMap(Effect.allWith({ concurrency: "unbounded" })),
           Effect.tapErrorCause((cause) =>
             Effect.log(
-              `[ReplicachePusher]: Encountered error postprocessing mutation "${mutationId}"`,
+              `[ReplicachePusher]: Encountered error postprocessing mutation "${args.mutationId}"`,
               cause,
             ),
           ),
@@ -204,15 +190,15 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
             ),
             Effect.flatMap((requestV1) =>
               Effect.forEach(requestV1.mutations, (mutationV1) => {
-                const preprocessArgs = {
+                const preprocessor = preprocess({
                   clientId: mutationV1.clientId,
                   mutationId: mutationV1.id,
-                } satisfies PreprocessArgs;
+                });
 
                 // 1, 2: Begin transaction
                 return db
                   .withTransaction(() =>
-                    preprocess(preprocessArgs).pipe(
+                    preprocessor.pipe(
                       Effect.tap(() => mutate(mutationV1)),
                       Effect.flatMap(postprocess),
                     ),
@@ -220,22 +206,19 @@ export class ReplicachePusher extends Effect.Service<ReplicachePusher>()(
                   .pipe(
                     Effect.catchTag("PastMutationError", (e) => e.log()),
                     Effect.catchAll((error) =>
-                      Effect.log(
-                        `[ReplicachePusher]: Mutation "${mutationV1.id}" failed with error:`,
-                        error,
-                        "[ReplicachePusher]: Retrying transaction again in error mode ...",
-                      ).pipe(
-                        Effect.flatMap(() =>
-                          // 10(ii)(c): Retry transaction again without actually performing the mutation
-                          db.withTransaction(() =>
-                            preprocess(preprocessArgs).pipe(
-                              Effect.flatMap(postprocess),
-                            ),
-                          ),
+                      Effect.zipRight(
+                        Effect.log(
+                          `[ReplicachePusher]: Mutation "${mutationV1.id}" failed with error:`,
+                          error,
+                          "[ReplicachePusher]: Retrying transaction again in error mode ...",
                         ),
-                        Effect.catchTag("PastMutationError", (e) => e.log()),
+                        // 10(ii)(c): Retry transaction again without actually performing the mutation
+                        db.withTransaction(() =>
+                          preprocessor.pipe(Effect.flatMap(postprocess)),
+                        ),
                       ),
                     ),
+                    Effect.catchTag("PastMutationError", (e) => e.log()),
                   );
               }).pipe(
                 Effect.provideService(

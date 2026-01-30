@@ -6,7 +6,7 @@ import { proxy, rateLimiter } from "./middleware";
 
 import type { FetchProxy } from "@mjackson/fetch-proxy";
 import type { VerifyResult } from "@openauthjs/openauth/client";
-import type { AuthContract } from "@printdesk/core/auth/contract";
+import type { AuthContract } from "@printdesk/core/auth/contracts";
 
 declare module "hono" {
   interface ContextVariableMap {

@@ -1,8 +1,10 @@
 import { createFetchProxy } from "@mjackson/fetch-proxy";
-import { AuthContract } from "@printdesk/core/auth/contract";
+import { AuthContract } from "@printdesk/core/auth/contracts";
 import { Oauth } from "@printdesk/core/auth/oauth";
+import { separatedString } from "@printdesk/core/utils";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
+import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import { bearerAuth } from "hono/bearer-auth";
 import { getConnInfo } from "hono/cloudflare-workers";
@@ -17,16 +19,16 @@ const oauthRuntime = Oauth.Client.runtime({
   clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
 });
 
+const encodeKey = separatedString().pipe(Schema.encodeSync);
+
 export const rateLimiter = createMiddleware(
   every(
     some(
       every(
         bearerAuth({
           verifyToken: (token, c) =>
-            Oauth.Client.pipe(
-              Effect.flatMap(({ verify }) =>
-                verify(AuthContract.subjects, token),
-              ),
+            Redacted.make(token).pipe(
+              Oauth.Client.verify,
               Effect.map(({ subject }) => {
                 if (subject.type !== AuthContract.UserSubject._tag) {
                   console.error("Invalid subject type:", subject.type);
@@ -44,8 +46,7 @@ export const rateLimiter = createMiddleware(
         createMiddleware<{
           Bindings: Bindings;
         }>(async (c, next) => {
-          const encode = Schema.encodeSync(AuthContract.Token);
-          const key = encode([
+          const key = encodeKey([
             "tenant",
             c.var.subject.properties.tenantId,
             c.var.subject.type,
@@ -69,8 +70,7 @@ export const rateLimiter = createMiddleware(
         const ip = getConnInfo(c).remote.address;
         if (!ip) throw new Error("Missing remote address");
 
-        const encode = Schema.encodeSync(AuthContract.Token);
-        const key = encode(["ip", ip]);
+        const key = encodeKey(["ip", ip]);
 
         console.log("Rate limiting by IP:", key);
         c.set(

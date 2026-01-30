@@ -1,4 +1,4 @@
-import { decode, encode } from "@msgpack/msgpack";
+import * as MsgPack from "@effect/platform/MsgPack";
 import { sql } from "drizzle-orm";
 import {
   char,
@@ -7,7 +7,6 @@ import {
   varchar as pgVarchar,
 } from "drizzle-orm/pg-core";
 import * as DateTime from "effect/DateTime";
-import * as ParseResult from "effect/ParseResult";
 import * as Schema from "effect/Schema";
 
 import { CryptoContract } from "../auth/contracts";
@@ -66,33 +65,7 @@ export namespace Columns {
   export function jsonb<TSchema extends Schema.Schema.AnyNoContext>(
     schema: TSchema,
   ) {
-    const Jsonb = Schema.transformOrFail(Schema.Uint8Array, schema, {
-      decode: (input, _, ast) =>
-        ParseResult.try({
-          try: (): TSchema["Encoded"] => decode(input),
-          catch: (error) =>
-            new ParseResult.Type(
-              ast,
-              input,
-              error instanceof Error
-                ? error.message
-                : "Failed to decode MessagePack",
-            ),
-        }),
-      encode: (input, _, ast) =>
-        ParseResult.try({
-          try: () => encode(input),
-          catch: (error) =>
-            new ParseResult.Type(
-              ast,
-              input,
-              error instanceof Error
-                ? error.message
-                : "Failed to encode MessagePack",
-            ),
-        }),
-      strict: true,
-    });
+    const Jsonb = schema.pipe(MsgPack.schema);
 
     const make = customType<{
       driverData: typeof Jsonb.Encoded;

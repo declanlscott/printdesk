@@ -9,9 +9,9 @@ export namespace Tailscale {
     "@printdesk/core/tailscale/Client",
     {
       accessors: true,
-      dependencies: [Api.HttpClient.Default],
+      dependencies: [Api.Tenant.Default],
       effect: Effect.gen(function* () {
-        const { execute } = yield* Api.HttpClient;
+        const { execute } = yield* Api.Tenant;
 
         const setOauthClient = Effect.fn("Tailscale.Client.setOauthClient")(
           (

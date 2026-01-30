@@ -9,9 +9,9 @@ export namespace Storage {
       "@printdesk/core/storage/DocumentsClient",
       {
         accessors: true,
-        dependencies: [Api.HttpClient.Default],
+        dependencies: [Api.Tenant.Default],
         effect: Effect.gen(function* () {
-          const { execute } = yield* Api.HttpClient;
+          const { execute } = yield* Api.Tenant;
 
           const getMimeTypes = HttpClientRequest.get(
             "/documents/mime-types",

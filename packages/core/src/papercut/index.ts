@@ -14,9 +14,9 @@ export namespace Papercut {
   export class Client extends Effect.Service<Client>()(
     "@printdesk/core/papercut/Client",
     {
-      dependencies: [Api.HttpClient.Default],
+      dependencies: [Api.Tenant.Default],
       effect: Effect.gen(function* () {
-        const { execute } = yield* Api.HttpClient;
+        const { execute } = yield* Api.Tenant;
 
         const setWebServicesAuthToken = Effect.fn(
           "Papercut.Client.setWebServicesAuthToken",
@@ -83,13 +83,13 @@ export namespace Papercut {
     "@printdesk/core/papercut/WebServicesClient",
     {
       dependencies: [
-        Api.HttpClient.Default,
+        Api.Tenant.Default,
         Xml.Rpc.Client.Default(
           `${Constants.PAPERCUT_SERVICE_PATH}${Constants.PAPERCUT_WEB_SERVICES_PATH}`,
         ),
       ],
       effect: Effect.gen(function* () {
-        const { execute } = yield* Api.HttpClient;
+        const { execute } = yield* Api.Tenant;
         const xmlRpc = yield* Xml.Rpc.Client;
 
         const gatewayInjectAuthTokenHeader = (inject = true) =>

@@ -9,7 +9,7 @@ import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Record from "effect/Record";
 import * as Runtime from "effect/Runtime";
 import * as Schema from "effect/Schema";
-import { Replicache as ReplicacheClient } from "replicache";
+import { Replicache as _Replicache } from "replicache";
 
 import { Actors } from "../actors";
 import { ApiContract } from "../api/contract";
@@ -68,7 +68,7 @@ export namespace Replicache {
     mutators: TMutators;
   }
 
-  export class Client<TMutators extends Mutators> extends ReplicacheClient {
+  export class Client<TMutators extends Mutators> extends _Replicache {
     constructor(opts: Options<TMutators>) {
       super(opts);
     }
@@ -78,7 +78,7 @@ export namespace Replicache {
     }
   }
 
-  export class ClientError extends Data.TaggedError("ReplicacheClientError")<{
+  export class ReplicacheError extends Data.TaggedError("ReplicacheError")<{
     readonly cause: unknown;
   }> {}
 
@@ -86,12 +86,12 @@ export namespace Replicache {
     readonly cause: unknown;
   }> {}
 
-  export interface MakeClientArgs {
+  export interface MakeArgs {
     logLevel: LogLevel;
     baseUrl: URL;
   }
 
-  export const makeClient = ({ logLevel, baseUrl }: MakeClientArgs) =>
+  export const make = ({ logLevel, baseUrl }: MakeArgs) =>
     Effect.gen(function* () {
       const { record: mutations } = yield* Procedures.Mutations.registry;
 
@@ -216,14 +216,14 @@ export namespace Replicache {
 
         const client = yield* Effect.try({
           try: () =>
-            new Replicache.Client({
+            new Client({
               name,
               logLevel,
               mutators,
               puller,
               pusher,
             }),
-          catch: (cause) => new Replicache.ClientError({ cause }),
+          catch: (cause) => new ReplicacheError({ cause }),
         });
 
         const query = <TSuccess, TError, TContext>(
@@ -251,10 +251,10 @@ export namespace Replicache {
                     if (Cause.isFailure(cause) && Cause.isFailType(cause))
                       return cause.error as TError;
 
-                    return new Replicache.ClientError({ cause });
+                    return new ReplicacheError({ cause });
                   }
 
-                  return new Replicache.ClientError({ cause: exception });
+                  return new ReplicacheError({ cause: exception });
                 },
               }),
             ),
@@ -280,7 +280,7 @@ export namespace Replicache {
                       ),
                     { ...opts, isEqual: Equal.equals<TSuccess, TSuccess> },
                   ),
-                catch: (cause) => new Replicache.ClientError({ cause }),
+                catch: (cause) => new ReplicacheError({ cause }),
               }),
             ),
           );
@@ -310,21 +310,21 @@ export namespace Replicache {
                         typeof Mutations.Dispatcher.client
                       >["Record"][TName]["MutatorError"];
 
-                return new Replicache.ClientError({ cause });
+                return new ReplicacheError({ cause });
               }
 
-              return new Replicache.ClientError({ cause: exception });
+              return new ReplicacheError({ cause: exception });
             },
           });
 
         const pull = Effect.tryPromise({
           try: () => client.pull(),
-          catch: (cause) => new Replicache.ClientError({ cause }),
+          catch: (cause) => new ReplicacheError({ cause }),
         });
 
         const close = Effect.tryPromise({
           try: () => client.close(),
-          catch: (cause) => new Replicache.ClientError({ cause }),
+          catch: (cause) => new ReplicacheError({ cause }),
         });
 
         return { query, subscribe, mutate, pull, close } as const;
@@ -332,4 +332,8 @@ export namespace Replicache {
 
       return { initialize } as const;
     });
+
+  export class Replicache extends Effect.Tag(
+    "@printdesk/core/replicache/client/Replicache",
+  )<Replicache, Effect.Effect.Success<ReturnType<typeof make>>>() {}
 }

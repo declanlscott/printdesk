@@ -54,6 +54,10 @@ export namespace ActorsContract {
     });
   }
 
+  export type PrivateActor = Effect.Effect.Success<
+    typeof Actor.Type.assertPrivate
+  >;
+
   export class ForbiddenActorError extends Schema.TaggedError<ForbiddenActorError>(
     "ForbiddenActorError",
   )(

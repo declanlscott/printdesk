@@ -18,6 +18,7 @@ import { RealtimeContract } from "./contract";
 
 import type * as Chunk from "effect/Chunk";
 import type * as Duration from "effect/Duration";
+import type { ActorsContract } from "../actors/contract";
 
 export namespace Realtime {
   export class Realtime extends Effect.Service<Realtime>()(
@@ -41,9 +42,7 @@ export namespace Realtime {
           Effect.flatMap(Struct.get("assertPrivate")),
           Effect.map(Option.some),
           Effect.catchTag("ForbiddenActorError", () =>
-            Option.none<
-              Effect.Effect.Success<Actors.Actor["Type"]["assertPrivate"]>
-            >().pipe(Effect.succeed),
+            Option.none<ActorsContract.PrivateActor>().pipe(Effect.succeed),
           ),
         );
         const dns = resource.AppsyncEventApi.pipe(Redacted.value).dns;

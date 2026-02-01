@@ -79,11 +79,7 @@ export const tenantRealtimePublisherCredentialsIdentityLayer = Effect.gen(
     const cache = yield* Cache.make({
       capacity: 100,
       timeToLive: Duration.minutes(15),
-      lookup: ({
-        tenantId,
-      }: Effect.Effect.Success<
-        typeof ActorsContract.Actor.Type.assertPrivate
-      >) =>
+      lookup: ({ tenantId }: ActorsContract.PrivateActor) =>
         Credentials.Identity.fromProvider(() =>
           fromTemporaryCredentials({
             params: {

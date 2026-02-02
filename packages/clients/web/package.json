@@ -7,13 +7,15 @@
     "build": "tsc -b && vite build"
   },
   "dependencies": {
+    "@effect-atom/atom-react": "^0.5.0",
     "@effect/platform": "catalog:",
+    "@effect/platform-browser": "^0.74.0",
     "@printdesk/core": "workspace:*",
     "@printdesk/ui": "workspace:*",
     "@tanstack/react-router": "catalog:",
     "effect": "catalog:",
-    "react-aria-components": "catalog:",
     "react": "catalog:",
+    "react-aria-components": "catalog:",
     "react-dom": "catalog:",
     "replicache": "catalog:"
   },

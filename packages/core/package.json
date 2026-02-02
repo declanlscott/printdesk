@@ -14,7 +14,7 @@
     "@aws-sdk/credential-providers": "catalog:",
     "@azure/msal-node": "^3.8.4",
     "@effect/platform": "catalog:",
-    "@effect-aws/dynamodb": "^1.0.2",
+    "@effect-aws/dynamodb": "^1.0.3",
     "@effect-aws/dsql": "^0.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "@openauthjs/openauth": "catalog:",

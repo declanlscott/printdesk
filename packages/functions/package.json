@@ -7,8 +7,8 @@
   },
   "dependencies": {
     "@aws-sdk/credential-providers": "catalog:",
-    "@effect-aws/client-sqs": "catalog:",
     "@effect-aws/client-sts": "catalog:",
+    "@effect-aws/client-sqs": "catalog:",
     "@effect-aws/lambda": "^1.5.1",
     "@effect-aws/powertools-logger": "^1.5.1",
     "@effect/platform": "catalog:",

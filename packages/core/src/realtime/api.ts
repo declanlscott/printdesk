@@ -12,11 +12,11 @@ export namespace RealtimeApi {
     "/authorization",
   )
     .setPayload(RealtimeContract.GetAuthorizationPayload)
-    .addSuccess(RealtimeContract.Authorization)
+    .addSuccess(RealtimeContract.GetAuthorizationSuccess)
     .addError(HttpApiError.InternalServerError);
 
   export const getUrl = HttpApiEndpoint.get("getUrl", "/url")
-    .addSuccess(RealtimeContract.Url)
+    .addSuccess(RealtimeContract.GetUrlSuccess)
     .addError(HttpApiError.InternalServerError);
 
   export class Group extends HttpApiGroup.make("realtime")

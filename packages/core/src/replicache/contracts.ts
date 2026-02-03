@@ -254,7 +254,9 @@ export namespace ReplicachePullerContract {
   export const Response = Schema.Union(ResponseV0, ResponseV1);
   export type Response = typeof Response.Type;
 
-  export const Success = Response.pipe(Schema.encodedSchema);
+  export const Success = Response.pipe(Schema.encodedSchema).annotations(
+    HttpApiSchema.annotations({ status: 200 }),
+  );
   export type Success = typeof Success.Type;
 }
 
@@ -331,6 +333,8 @@ export namespace ReplicachePusherContract {
   ).pipe(Schema.UndefinedOr);
   export type Response = typeof Response.Type;
 
-  export const Success = Response.pipe(Schema.encodedSchema);
+  export const Success = Response.pipe(Schema.encodedSchema).annotations(
+    HttpApiSchema.annotations({ status: 200 }),
+  );
   export type Success = typeof Success.Type;
 }

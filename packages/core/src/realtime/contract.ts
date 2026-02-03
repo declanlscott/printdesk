@@ -1,3 +1,4 @@
+import * as HttpApiSchema from "@effect/platform/HttpApiSchema";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
@@ -97,5 +98,13 @@ export namespace RealtimeContract {
     value: Schema.String,
   });
 
+  export const GetAuthorizationSuccess = Authorization.annotations(
+    HttpApiSchema.annotations({ status: 200 }),
+  );
+
   export const Url = Schema.URL;
+
+  export const GetUrlSuccess = Url.annotations(
+    HttpApiSchema.annotations({ status: 200 }),
+  );
 }

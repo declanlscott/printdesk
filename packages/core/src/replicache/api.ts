@@ -17,7 +17,7 @@ export namespace ReplicacheApi {
   export const pull = HttpApiEndpoint.post("pull", "/pull")
     .setHeaders(ReplicachePullerContract.Headers)
     .setPayload(ReplicachePullerContract.Payload)
-    .addSuccess(ReplicachePullerContract.Success, { status: 200 })
+    .addSuccess(ReplicachePullerContract.Success)
     .addError(AccessControl.AccessDeniedError)
     .addError(ActorsContract.ForbiddenActorError)
     .addError(DatabaseContract.TransactionError)
@@ -25,11 +25,11 @@ export namespace ReplicacheApi {
     .addError(HttpApiError.InternalServerError);
 
   export const push = ReplicachePusherContract.Payload.pipe(
-    Effect.map((Payload) =>
+    Effect.map((payload) =>
       HttpApiEndpoint.post("push", "/push")
         .setHeaders(ReplicachePusherContract.Headers)
-        .setPayload(Payload)
-        .addSuccess(ReplicachePusherContract.Success, { status: 200 })
+        .setPayload(payload)
+        .addSuccess(ReplicachePusherContract.Success)
         .addError(AccessControl.AccessDeniedError)
         .addError(ActorsContract.ForbiddenActorError)
         .addError(DatabaseContract.TransactionError)

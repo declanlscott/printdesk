@@ -187,12 +187,10 @@ export namespace Xml {
         methodResponse: Schema.Struct(fields),
       }).pipe(Schema.pluck("methodResponse"));
 
-    export class FaultError extends Schema.TaggedError<FaultError>(
+    export class FaultError extends Schema.TaggedError<FaultError>()(
       "FaultError",
-    )("FaultError", {
-      string: Schema.String,
-      code: Schema.Int,
-    }) {}
+      { string: Schema.String, code: Schema.Int },
+    ) {}
     export const FaultResponse = methodResponse({
       fault: Xml.struct(
         Xml.member(

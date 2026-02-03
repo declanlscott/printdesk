@@ -274,9 +274,7 @@ export namespace ReplicachePusherContract {
   );
   export type Mutation = Effect.Effect.Success<typeof Mutation>["Type"];
 
-  export class FutureMutationError extends Schema.TaggedError<FutureMutationError>(
-    "FutureMutationError",
-  )(
+  export class FutureMutationError extends Schema.TaggedError<FutureMutationError>()(
     "FutureMutationError",
     { mutationId: Schema.Int },
     HttpApiSchema.annotations({ status: 500 }),

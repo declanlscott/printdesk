@@ -24,9 +24,7 @@ import type {
 } from "@openauthjs/openauth/client";
 
 export namespace Oauth {
-  export class ClientError extends Schema.TaggedError<ClientError>(
-    "OauthClientError",
-  )(
+  export class ClientError extends Schema.TaggedError<ClientError>()(
     "OauthClientError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),
@@ -36,17 +34,13 @@ export namespace Oauth {
     "InvalidAuthorizationCodeError",
   )<{ readonly cause: InvalidAuthorizationCodeErrorCause }> {}
 
-  export class InvalidRefreshTokenError extends Schema.TaggedError<InvalidRefreshTokenError>(
-    "InvalidRefreshTokenError",
-  )(
+  export class InvalidRefreshTokenError extends Schema.TaggedError<InvalidRefreshTokenError>()(
     "InvalidRefreshTokenError",
     {},
     HttpApiSchema.annotations({ status: 401 }),
   ) {}
 
-  export class InvalidAccessTokenError extends Schema.TaggedError<InvalidAccessTokenError>(
-    "InvalidAccessTokenError",
-  )(
+  export class InvalidAccessTokenError extends Schema.TaggedError<InvalidAccessTokenError>()(
     "InvalidAccessTokenError",
     {},
     HttpApiSchema.annotations({ status: 401 }),

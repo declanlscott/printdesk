@@ -13,12 +13,15 @@ export namespace InvoicesContract {
   export const statuses = ["processing", "charged", "error"] as const;
   export type Status = (typeof statuses)[number];
 
-  export const LineItemV1 = Schema.TaggedStruct("LineItemV1", {
-    name: Schema.String,
-    description: Schema.String,
-    cost: Schema.Number,
-    style: Schema.Literal("OPTION_1", "OPTION_2"),
-  });
+  export class LineItemV1 extends Schema.TaggedClass<LineItemV1>()(
+    "InvoiceLineItemV1",
+    {
+      name: Schema.String,
+      description: Schema.String,
+      cost: Schema.Number,
+      style: Schema.Literal("OPTION_1", "OPTION_2"),
+    },
+  ) {}
   export const LineItem = Schema.Union(LineItemV1);
 
   export class Table extends TablesContract.Table<InvoicesSchema.Table>(

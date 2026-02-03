@@ -11,9 +11,7 @@ export namespace CredentialsContract {
     expiration: Schema.DateTimeUtc.pipe(Schema.Redacted, Schema.optional),
   }) {}
 
-  export class ProviderError extends Schema.TaggedError<ProviderError>(
-    "CredentialsProviderError",
-  )(
+  export class ProviderError extends Schema.TaggedError<ProviderError>()(
     "CredentialsProviderError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),

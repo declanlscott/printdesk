@@ -6,20 +6,19 @@ import { Permissions } from "../permissions";
 import { Procedures } from "../procedures";
 
 export namespace Events {
-  export class InfraProvisionResult extends Schema.TaggedClass<InfraProvisionResult>(
+  export class InfraProvisionResult extends Schema.TaggedClass<InfraProvisionResult>()(
     "InfraProvisionResult",
-  )("InfraProvisionResult", {
-    success: Schema.Boolean,
-    dispatchId: Schema.String,
-    retrying: Schema.Boolean,
-  }) {}
+    {
+      success: Schema.Boolean,
+      dispatchId: Schema.String,
+      retrying: Schema.Boolean,
+    },
+  ) {}
 
-  export class PapercutSyncResult extends Schema.TaggedClass<PapercutSyncResult>(
+  export class PapercutSyncResult extends Schema.TaggedClass<PapercutSyncResult>()(
     "PapercutSyncResult",
-  )("PapercutSyncResult", {
-    success: Schema.Boolean,
-    dispatchId: Schema.String,
-  }) {}
+    { success: Schema.Boolean, dispatchId: Schema.String },
+  ) {}
 
   export const ReplicachePullPermission = Permissions.syncReadPermissions.pipe(
     Effect.map((permissions) =>

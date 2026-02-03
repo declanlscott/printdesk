@@ -8,26 +8,23 @@ import { ColumnsContract } from "../columns/contract";
 import { UsersContract } from "../users/contract";
 
 export namespace ActorsContract {
-  export class PublicActor extends Schema.TaggedClass<PublicActor>(
+  export class PublicActor extends Schema.TaggedClass<PublicActor>()(
     "PublicActor",
-  )("PublicActor", {}) {}
-
-  export class SystemActor extends Schema.TaggedClass<SystemActor>(
-    "SystemActor",
-  )("SystemActor", {
-    tenantId: ColumnsContract.TenantId,
-  }) {}
-
-  export class UserActor extends Schema.TaggedClass<UserActor>("UserActor")(
-    "UserActor",
-    {
-      id: ColumnsContract.EntityId,
-      tenantId: ColumnsContract.TenantId,
-      role: UsersContract.Role,
-    },
+    {},
   ) {}
 
-  export class Actor extends Schema.TaggedClass<Actor>("Actor")("Actor", {
+  export class SystemActor extends Schema.TaggedClass<SystemActor>()(
+    "SystemActor",
+    { tenantId: ColumnsContract.TenantId },
+  ) {}
+
+  export class UserActor extends Schema.TaggedClass<UserActor>()("UserActor", {
+    id: ColumnsContract.EntityId,
+    tenantId: ColumnsContract.TenantId,
+    role: UsersContract.Role,
+  }) {}
+
+  export class Actor extends Schema.TaggedClass<Actor>()("Actor", {
     properties: Schema.Union(PublicActor, SystemActor, UserActor),
   }) {
     assert = <TActorTag extends Actor["properties"]["_tag"]>(
@@ -58,9 +55,7 @@ export namespace ActorsContract {
     typeof Actor.Type.assertPrivate
   >;
 
-  export class ForbiddenActorError extends Schema.TaggedError<ForbiddenActorError>(
-    "ForbiddenActorError",
-  )(
+  export class ForbiddenActorError extends Schema.TaggedError<ForbiddenActorError>()(
     "ForbiddenActorError",
     {
       actor: Schema.Literal(

@@ -30,99 +30,101 @@ export namespace ProductsContract {
         decodingFallback: () => Either.right(fallback),
       }),
     );
-  export class AttributesV1 extends Schema.TaggedClass<AttributesV1>(
-    "AttributesV1",
-  )("AttributesV1", {
-    copies: Schema.Struct({
-      visible: FallbackBoolean(),
-    }),
-    printColor: Schema.Struct({
-      visible: FallbackBoolean(),
-    }),
-    singleOrDoubleSided: Schema.Struct({
-      visible: FallbackBoolean(),
-    }),
-    due: Schema.Struct({
-      visible: FallbackBoolean(),
-      leadTimeDays: Schema.NonNegativeInt.pipe(
-        Schema.annotations({
-          decodingFallback: () => Either.right(0),
-        }),
-      ),
-      workingDays: Schema.Literal(
-        "Mon",
-        "Tue",
-        "Wed",
-        "Thu",
-        "Fri",
-        "Sat",
-        "Sun",
-      ),
-      paperStock: Schema.Struct({
-        options: Option.pipe(Schema.Array),
-      }).pipe(Schema.optional),
-      custom: Schema.Struct({
-        name: Schema.String,
-        fields: Field.pipe(Schema.Array),
-      }).pipe(Schema.optional),
-      customOperatorOnly: Schema.Struct({
-        name: Schema.String,
-        fields: Field.pipe(Schema.Array),
-      }).pipe(Schema.optional),
-      backCover: Schema.Struct({
-        options: Option.pipe(Schema.Array),
-      }).pipe(Schema.optional),
-      cutting: Schema.Struct({
-        options: Option.pipe(Schema.Array),
-      }).pipe(Schema.optional),
-      binding: Schema.Struct({
-        options: Schema.Struct({
-          ...Option.fields,
-          subAttributes: Schema.Struct({
-            name: Schema.Trim,
-            description: Schema.Trim.pipe(Schema.optional),
-            options: Option.pipe(Schema.Array),
+  export class AttributesV1 extends Schema.TaggedClass<AttributesV1>()(
+    "ProductAttributesV1",
+    {
+      copies: Schema.Struct({
+        visible: FallbackBoolean(),
+      }),
+      printColor: Schema.Struct({
+        visible: FallbackBoolean(),
+      }),
+      singleOrDoubleSided: Schema.Struct({
+        visible: FallbackBoolean(),
+      }),
+      due: Schema.Struct({
+        visible: FallbackBoolean(),
+        leadTimeDays: Schema.NonNegativeInt.pipe(
+          Schema.annotations({
+            decodingFallback: () => Either.right(0),
+          }),
+        ),
+        workingDays: Schema.Literal(
+          "Mon",
+          "Tue",
+          "Wed",
+          "Thu",
+          "Fri",
+          "Sat",
+          "Sun",
+        ),
+        paperStock: Schema.Struct({
+          options: Option.pipe(Schema.Array),
+        }).pipe(Schema.optional),
+        custom: Schema.Struct({
+          name: Schema.String,
+          fields: Field.pipe(Schema.Array),
+        }).pipe(Schema.optional),
+        customOperatorOnly: Schema.Struct({
+          name: Schema.String,
+          fields: Field.pipe(Schema.Array),
+        }).pipe(Schema.optional),
+        backCover: Schema.Struct({
+          options: Option.pipe(Schema.Array),
+        }).pipe(Schema.optional),
+        cutting: Schema.Struct({
+          options: Option.pipe(Schema.Array),
+        }).pipe(Schema.optional),
+        binding: Schema.Struct({
+          options: Schema.Struct({
+            ...Option.fields,
+            subAttributes: Schema.Struct({
+              name: Schema.Trim,
+              description: Schema.Trim.pipe(Schema.optional),
+              options: Option.pipe(Schema.Array),
+            }).pipe(Schema.Array),
           }).pipe(Schema.Array),
-        }).pipe(Schema.Array),
-      }).pipe(Schema.optional),
-      holePunching: Option.pipe(Schema.Array, Schema.optional),
-      folding: Option.pipe(Schema.Array, Schema.optional),
-      laminating: Option.pipe(Schema.Array, Schema.optional),
-      packaging: Schema.Struct({
-        name: Schema.Trim,
-        image: Schema.String,
-        cost: Cost,
-        showItemsPerSet: Schema.Boolean,
-      }).pipe(Schema.optional),
-      material: Schema.Struct({
-        name: Schema.Trim,
-        color: Schema.Struct({
+        }).pipe(Schema.optional),
+        holePunching: Option.pipe(Schema.Array, Schema.optional),
+        folding: Option.pipe(Schema.Array, Schema.optional),
+        laminating: Option.pipe(Schema.Array, Schema.optional),
+        packaging: Schema.Struct({
           name: Schema.Trim,
-          value: HexColor.pipe(Schema.optional),
-        }),
-        cost: Cost,
-      }).pipe(Schema.optional),
-      proofRequired: Schema.Struct({
-        options: Schema.Struct({
+          image: Schema.String,
+          cost: Cost,
+          showItemsPerSet: Schema.Boolean,
+        }).pipe(Schema.optional),
+        material: Schema.Struct({
           name: Schema.Trim,
-          description: Schema.optional(Schema.String),
-        }).pipe(Schema.Array),
+          color: Schema.Struct({
+            name: Schema.Trim,
+            value: HexColor.pipe(Schema.optional),
+          }),
+          cost: Cost,
+        }).pipe(Schema.optional),
+        proofRequired: Schema.Struct({
+          options: Schema.Struct({
+            name: Schema.Trim,
+            description: Schema.optional(Schema.String),
+          }).pipe(Schema.Array),
+        }).pipe(Schema.optional),
+      }),
+    },
+  ) {}
+  export class ConfigurationV1 extends Schema.TaggedClass<ConfigurationV1>()(
+    "ProductConfigurationV1",
+    {
+      image: Schema.String,
+      status: Schema.Literal(...statuses).pipe(
+        Schema.optionalWith({ default: () => "draft" }),
+      ),
+      orderAttachments: Schema.Struct({
+        fileUploadEnabled: Schema.Boolean,
+        physicalCopyEnabled: Schema.Boolean,
       }).pipe(Schema.optional),
-    }),
-  }) {}
-  export class ConfigurationV1 extends Schema.TaggedClass<ConfigurationV1>(
-    "ConfigurationV1",
-  )("ConfigurationV1", {
-    image: Schema.String,
-    status: Schema.Literal(...statuses).pipe(
-      Schema.optionalWith({ default: () => "draft" }),
-    ),
-    orderAttachments: Schema.Struct({
-      fileUploadEnabled: Schema.Boolean,
-      physicalCopyEnabled: Schema.Boolean,
-    }).pipe(Schema.optional),
-    attributes: AttributesV1,
-  }) {}
+      attributes: AttributesV1,
+    },
+  ) {}
   export const Configuration = Schema.Union(ConfigurationV1);
 
   export class Table extends TablesContract.Table<ProductsSchema.Table>(

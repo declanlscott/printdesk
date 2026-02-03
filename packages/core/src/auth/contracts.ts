@@ -12,9 +12,10 @@ import type { StandardSchemaV1 } from "@standard-schema/spec";
 import type { ColumnsContract } from "../columns/contract";
 
 export namespace AuthContract {
-  export class UserSubject extends Schema.TaggedClass<UserSubject>(
+  export class UserSubject extends Schema.TaggedClass<UserSubject>()(
     "UserSubject",
-  )("UserSubject", Struct.omit(ActorsContract.UserActor.fields, "_tag")) {}
+    Struct.omit(ActorsContract.UserActor.fields, "_tag"),
+  ) {}
 
   export const subjects: {
     [UserSubject._tag]: StandardSchemaV1<
@@ -53,45 +54,37 @@ export namespace AuthContract {
 }
 
 export namespace CryptoContract {
-  export class TokenGenerationError extends Schema.TaggedError<TokenGenerationError>(
-    "TokenGenerationError",
-  )(
+  export class TokenGenerationError extends Schema.TaggedError<TokenGenerationError>()(
     "TokenGenerationError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}
 
-  export class KeyDerivationError extends Schema.TaggedError<KeyDerivationError>(
-    "KeyDerivationError",
-  )(
+  export class KeyDerivationError extends Schema.TaggedError<KeyDerivationError>()(
     "KeyDerivationError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}
 
-  export class KeyBufferError extends Schema.TaggedClass<KeyBufferError>(
-    "KeyBufferError",
-  )(
+  export class KeyBufferError extends Schema.TaggedClass<KeyBufferError>()(
     "KeyBufferError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}
 
-  export class KeyVerificationError extends Schema.TaggedClass<KeyVerificationError>(
-    "KeyVerificationError",
-  )(
+  export class KeyVerificationError extends Schema.TaggedClass<KeyVerificationError>()(
     "KeyVerificationError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 500 }),
   ) {}
 
-  export class InvalidSecretError extends Schema.TaggedError<InvalidSecretError>(
+  export class InvalidSecretError extends Schema.TaggedError<InvalidSecretError>()(
     "InvalidSecretError",
-  )("InvalidSecretError", {}, HttpApiSchema.annotations({ status: 401 })) {}
+    {},
+    HttpApiSchema.annotations({ status: 401 }),
+  ) {}
 
-  export class JwtDecodeError extends Schema.TaggedError<JwtDecodeError>(
-    "JwtDecodeError",
-  )(
+  export class JwtDecodeError extends Schema.TaggedError<JwtDecodeError>()(
     "JwtDecodeError",
     { cause: Schema.Defect },
     HttpApiSchema.annotations({ status: 400 }),

@@ -181,9 +181,7 @@ export namespace AccessControl {
   );
   export type Entity = typeof Entity.Type;
 
-  export class AccessDeniedError extends Schema.TaggedError<AccessDeniedError>(
-    "AccessDeniedError",
-  )(
+  export class AccessDeniedError extends Schema.TaggedError<AccessDeniedError>()(
     "AccessDeniedError",
     {
       actor: ActorsContract.Actor.fields.properties,

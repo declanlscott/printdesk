@@ -23,5 +23,6 @@ export namespace RealtimeApi {
     .add(getAuthorization)
     .middlewareEndpoints(CredentialsApi.Identity)
     .add(getUrl)
-    .middleware(ActorsApi.Actor) {}
+    .middleware(ActorsApi.Actor)
+    .prefix("/realtime") {}
 }

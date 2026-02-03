@@ -44,7 +44,8 @@ export namespace ReplicacheApi {
         .add(push)
         .middlewareEndpoints(CredentialsApi.Identity)
         .add(pull)
-        .middleware(ActorsApi.Actor),
+        .middleware(ActorsApi.Actor)
+        .prefix("/replicache"),
     ),
   );
 }

@@ -3,8 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { ActorsContract } from "./contract";
 
-import type { ColumnsContract } from "../columns/contract";
-import type { UsersContract } from "../users/contract";
+import type * as Effect from "effect/Effect";
 
 export namespace Actors {
   // @effect-leakable-service
@@ -12,38 +11,8 @@ export namespace Actors {
     Actor,
     ActorsContract.Actor
   >() {
-    static readonly publicLayer = () =>
-      Layer.succeed(
-        this,
-        this.of(
-          new ActorsContract.Actor({
-            properties: new ActorsContract.PublicActor(),
-          }),
-        ),
-      );
-
-    static readonly systemLayer = (tenantId: ColumnsContract.TenantId) =>
-      Layer.succeed(
-        this,
-        this.of(
-          new ActorsContract.Actor({
-            properties: new ActorsContract.SystemActor({ tenantId }),
-          }),
-        ),
-      );
-
-    static readonly userLayer = (
-      id: ColumnsContract.EntityId,
-      tenantId: ColumnsContract.TenantId,
-      role: UsersContract.Role,
-    ) =>
-      Layer.succeed(
-        this,
-        this.of(
-          new ActorsContract.Actor({
-            properties: new ActorsContract.UserActor({ id, tenantId, role }),
-          }),
-        ),
-      );
+    static readonly layer = (
+      properties: Effect.Effect.Success<typeof Actor>["properties"],
+    ) => Layer.succeed(this, this.of(new ActorsContract.Actor({ properties })));
   }
 }

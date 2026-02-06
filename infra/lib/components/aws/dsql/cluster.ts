@@ -1,14 +1,34 @@
+import { PhysicalName } from "../../physical-name";
+
 import type { Link } from "~/.sst/platform/src/components/link";
 
 export type ClusterArgs = aws.dsql.ClusterArgs;
 
 export class Cluster extends aws.dsql.Cluster implements Link.Linkable {
+  readonly name: PhysicalName["result"];
+
   constructor(
     name: string,
     args?: ClusterArgs,
     opts?: $util.CustomResourceOptions,
   ) {
-    super(name, args, opts);
+    const physicalName = new PhysicalName(name, { max: 256 }).result;
+
+    super(
+      name,
+      {
+        ...args,
+        tags: $output(args?.tags).apply((tags) => ({
+          ...tags,
+          Name: physicalName,
+          "sst:app": $app.name,
+          "sst:stage": $app.stage,
+        })),
+      },
+      opts,
+    );
+
+    this.name = physicalName;
   }
 
   get endpoint() {

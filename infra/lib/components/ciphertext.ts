@@ -32,14 +32,21 @@ export class Ciphertext
     ] as const).apply(([key, plaintext, writeToFile]) => {
       const cipher = createCipheriv(
         "aes-256-gcm",
-        Buffer.from(key, "hex"),
-        Buffer.alloc(12, 0),
+        new Uint8Array(Buffer.from(key, "hex")),
+        new Uint8Array(Buffer.alloc(12, 0)),
       );
 
-      const ciphertext = Buffer.concat([
-        Buffer.concat([cipher.update(plaintext, "utf-8"), cipher.final()]),
-        cipher.getAuthTag(),
-      ]);
+      const ciphertext = new Uint8Array(
+        Buffer.concat([
+          new Uint8Array(
+            Buffer.concat([
+              new Uint8Array(cipher.update(plaintext, "utf-8")),
+              new Uint8Array(cipher.final()),
+            ]),
+          ),
+          new Uint8Array(cipher.getAuthTag()),
+        ]),
+      );
 
       writeFileSync(writeToFile, ciphertext);
     });

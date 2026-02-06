@@ -1,1 +1,2 @@
-export { Rotating, RotatingArgs } from "./rotating";
+export { Rotating } from "./rotating";
+export type { RotatingArgs } from "./rotating";

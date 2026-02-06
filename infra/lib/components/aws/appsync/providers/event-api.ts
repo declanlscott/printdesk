@@ -7,11 +7,11 @@ import { AppsyncBase } from "../base";
 import type { Api, CreateApiCommandInput } from "@aws-sdk/client-appsync";
 
 type EventApiInputs = {
-  [TKey in keyof Omit<CreateApiCommandInput, "tags">]: NonNullable<
+  [TKey in keyof Omit<CreateApiCommandInput, "name" | "tags">]: NonNullable<
     CreateApiCommandInput[TKey]
   >;
 };
-export type EventApiProviderInputs = Partial<EventApiInputs>;
+export type EventApiProviderInputs = EventApiInputs;
 
 type EventApiOutputs = Required<Api>;
 export type EventApiProviderOutputs = EventApiOutputs;

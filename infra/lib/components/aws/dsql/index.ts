@@ -1,1 +1,2 @@
-export { Cluster, ClusterArgs } from "./cluster";
+export { Cluster } from "./cluster";
+export type { ClusterArgs } from "./cluster";

@@ -1,1 +1,2 @@
-export { Function, FunctionArgs } from "./function";
+export { Function } from "./function";
+export type { FunctionArgs } from "./function";

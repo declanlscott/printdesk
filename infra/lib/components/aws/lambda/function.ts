@@ -12,7 +12,7 @@ export class Function extends sst.aws.Function {
     super(name, args, opts);
   }
 
-  getSSTLink() {
+  override getSSTLink() {
     const link = super.getSSTLink();
 
     return {

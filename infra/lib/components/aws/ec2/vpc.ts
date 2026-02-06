@@ -9,7 +9,7 @@ export class Vpc extends sst.aws.Vpc {
     super(name, props, opts);
   }
 
-  getSSTLink() {
+  override getSSTLink() {
     const link = super.getSSTLink();
 
     return {

@@ -6,6 +6,9 @@ export class Function extends sst.aws.Function {
     args: sst.aws.FunctionArgs,
     opts?: $util.ComponentResourceOptions,
   ) {
+    args.architecture ??= "arm64";
+    args.runtime ??= "nodejs22.x";
+
     super(name, args, opts);
   }
 
@@ -23,8 +26,3 @@ export class Function extends sst.aws.Function {
     };
   }
 }
-
-$transform(Function, (args) => {
-  args.architecture ??= "arm64";
-  args.runtime ??= "nodejs22.x";
-});

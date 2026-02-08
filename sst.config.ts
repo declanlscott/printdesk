@@ -1,11 +1,11 @@
 // eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="./.sst/platform/config.d.ts" />
 
-const AWS_REGION = process.env.AWS_REGION;
-if (!AWS_REGION) throw new Error("AWS_REGION is not set");
-
 export default $config({
   app(input) {
+    const AWS_REGION = process.env.AWS_REGION;
+    if (!AWS_REGION) throw new Error("AWS_REGION is not set");
+
     return {
       name: "printdesk",
       removal: input?.stage === "production" ? "retain" : "remove",
@@ -15,17 +15,16 @@ export default $config({
         aws: {
           profile: input?.stage === "production" ? "prod" : "dev",
           region: AWS_REGION as aws.Region,
-          version: "6.83.0",
+          version: "6.83.2",
         },
         awsx: true,
-        cloudflare: { version: "6.9.1" },
         azuread: true,
+        cloudflare: { version: "6.13.0" },
+        command: { version: "1.1.3" },
+        random: { version: "4.19.1" },
+        tls: { version: "5.3.0" },
         "@pulumiverse/time": true,
-        tls: true,
-        random: true,
-        command: true,
       },
-      version: ">= 3.0.1",
     };
   },
   async run() {
@@ -41,6 +40,7 @@ export default $config({
     const dir = await readdir("./infra");
     for (const file of dir) {
       if (file === "lib") continue;
+
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const infra = await import(`./infra/${file}`);
 

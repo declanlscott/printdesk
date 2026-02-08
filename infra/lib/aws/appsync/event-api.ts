@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 import { EventApiProvider } from "./providers/event-api";
 
-import type { Link } from "~/.sst/platform/src/components/link";
+import type { Link } from "~/sst/link";
 import type {
   EventApiProviderInputs,
   EventApiProviderOutputs,

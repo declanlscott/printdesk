@@ -28,7 +28,7 @@
 
     "baseUrl": ".",
     "paths": {
-      "~/.sst/*": [".sst/*"],
+      "~/sst/*": [".sst/platform/src/components/*"],
       "@printdesk/core/*": ["./packages/core/src/*"]
     },
 

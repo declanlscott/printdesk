@@ -1,4 +1,4 @@
-import type { Link } from "~/.sst/platform/src/components/link";
+import type { Link } from "~/sst/link";
 
 export type RotatingArgs = time.RotatingArgs;
 

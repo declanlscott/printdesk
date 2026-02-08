@@ -1,7 +1,4 @@
-import {
-  logicalName,
-  physicalName,
-} from "~/.sst/platform/src/components/naming";
+import { logicalName, physicalName } from "~/sst/naming";
 import { AppsyncBase } from "../base";
 
 import type { Api, CreateApiCommandInput } from "@aws-sdk/client-appsync";

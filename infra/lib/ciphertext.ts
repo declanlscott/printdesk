@@ -1,7 +1,7 @@
 import { createCipheriv } from "node:crypto";
 import { writeFileSync } from "node:fs";
 
-import type { Link } from "~/.sst/platform/src/components/link";
+import type { Link } from "~/sst/link";
 
 export interface CiphertextArgs {
   plaintext: $util.Input<string>;
@@ -12,6 +12,8 @@ export class Ciphertext
   extends $util.ComponentResource
   implements Link.Linkable
 {
+  static readonly __pulumiType = "pd:resource:Ciphertext";
+
   private _encryptionKey: random.RandomBytes;
 
   constructor(
@@ -19,7 +21,7 @@ export class Ciphertext
     args: CiphertextArgs,
     opts?: $util.ComponentResourceOptions,
   ) {
-    super("pd:resource:Ciphertext", name, args, opts);
+    super(Ciphertext.__pulumiType, name, args, opts);
 
     this._encryptionKey = new random.RandomBytes(`${name}EncryptionKey`, {
       length: 32,
@@ -49,10 +51,6 @@ export class Ciphertext
       );
 
       writeFileSync(writeToFile, ciphertext);
-    });
-
-    this.registerOutputs({
-      encryptionKey: this._encryptionKey.id,
     });
   }
 

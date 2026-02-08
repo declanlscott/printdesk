@@ -1,7 +1,4 @@
-import {
-  hashStringToPrettyString,
-  prefixName,
-} from "~/.sst/platform/src/components/naming";
+import { hashStringToPrettyString, prefixName } from "~/sst/naming";
 
 export type PhysicalNameArgs = {
   max: number;
@@ -32,11 +29,5 @@ export class PhysicalName extends $util.ComponentResource {
     ).hex.apply((hex) => hashStringToPrettyString(hex, 8));
 
     this.result = $interpolate`${this._main}-${this._randomSuffix}${suffix}`;
-
-    this.registerOutputs({
-      main: this._main,
-      randomSuffix: this._randomSuffix,
-      result: this.result,
-    });
   }
 }

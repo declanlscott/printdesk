@@ -1,7 +1,7 @@
 import * as R from "remeda";
 
-import { DEFAULT_ACCOUNT_ID as CLOUDFLARE_ACCOUNT_ID } from "~/.sst/platform/src/components/cloudflare";
-import { cfFetch } from "~/.sst/platform/src/components/cloudflare/helpers/fetch";
+import { DEFAULT_ACCOUNT_ID as CLOUDFLARE_ACCOUNT_ID } from "~/sst/cloudflare";
+import { cfFetch } from "~/sst/cloudflare/helpers/fetch";
 
 import type { Binding } from "wrangler";
 

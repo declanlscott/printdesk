@@ -1,0 +1,10 @@
+{
+  "name": "@printdesk/invoices-processor",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@effect-aws/lambda": "catalog:",
+    "@printdesk/core": "workspace:^",
+    "effect": "catalog:"
+  }
+}

@@ -1,4 +1,5 @@
-export * as workers from "./workers";
+export { StaticSite } from "./static-site";
+export type { StaticSiteArgs } from "./static-site";
 
-export { TanstackStart } from "./tanstack-start";
-export type { TanstackStartArgs } from "./tanstack-start";
+export { Worker } from "./worker";
+export type { WorkerArgs } from "./worker";

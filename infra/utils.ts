@@ -1,36 +1,58 @@
+// oxlint-disable typescript/no-non-null-assertion
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
-import * as Iterable from "effect/Iterable";
-import * as Record from "effect/Record";
-import * as Struct from "effect/Struct";
+import { Link } from "~/sst/link";
 
-import { Link } from "~/.sst/platform/src/components/link";
+export const isDevMode = $dev;
+export const isProdStage = $app.stage === "prod";
 
-export const normalizePath = (path: string, root = $cli.paths.root) =>
-  join(root, path);
+export const aws_ = new sst.Linkable("Aws", {
+  properties: {
+    account: { id: aws.getCallerIdentityOutput().accountId },
+    region: $app.providers!.aws.region as string,
+  },
+});
 
-export const injectLinkables = (
-  prefix: string,
-  ...linkables: Array<$util.Input<unknown>>
-) =>
+export const cloudflare_ = new sst.Linkable("Cloudflare", {
+  properties: {
+    account: { id: cloudflare.getAccountsOutput().results[0]!.id },
+    apiToken: $util.secret($app.providers!.cloudflare.apiToken as string),
+  },
+});
+
+export const environment = new sst.Linkable("Environment", {
+  properties: {
+    isDevMode,
+    isProdStage,
+  },
+});
+
+export const nanoId = new sst.Linkable("NanoId", {
+  properties: {
+    alphabet: Constants.NANOID_ALPHABET,
+    length: Constants.NANOID_LENGTH,
+    pattern: Constants.NANOID_REGEX.source,
+  },
+});
+
+export const snsTopicEmail = new sst.Secret("SnsTopicEmail");
+
+export const injectLinkables = (prefix: string, ...linkables: Array<$util.Input<unknown>>) =>
   Link.getProperties(linkables).apply((properties) =>
-    Record.fromEntries(
-      Iterable.map(Struct.entries(properties), ([key, value]) => [
-        `${prefix}${key}`,
-        JSON.stringify(value),
-      ]),
+    Object.fromEntries(
+      Object.entries(properties).map(([key, value]) => [`${prefix}${key}`, JSON.stringify(value)]),
     ),
   );
 
-export function calculateHash(dirPath: string) {
-  const files = readdirSync(dirPath);
+export function hashFiles(path: string) {
+  const files = readdirSync(path);
   const hashes: Array<string> = [];
 
   for (const file of files) {
-    const filePath = normalizePath(file, dirPath);
+    const filePath = join(path, file);
     const stats = statSync(filePath);
 
     if (stats.isFile())
@@ -39,14 +61,8 @@ export function calculateHash(dirPath: string) {
           .update(new Uint8Array(readFileSync(filePath)))
           .digest("hex")}`,
       );
-    else if (stats.isDirectory())
-      hashes.push(`${file}:${calculateHash(filePath)}`);
+    else if (stats.isDirectory()) hashes.push(`${file}:${hashFiles(filePath)}`);
   }
 
-  return createHash("sha256").update(hashes.sort().join("|")).digest("hex");
+  return createHash("sha256").update(hashes.toSorted().join("|")).digest("hex");
 }
-
-export const buildTenantTemplate = <TIdentifier extends string>(
-  identifier: TIdentifier,
-) =>
-  `pd-${$app.stage}-${Constants.TENANT_ID_PLACEHOLDER}-${identifier}` as const;

@@ -1,0 +1,12 @@
+{
+  "name": "@printdesk/www-redirect",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "hono": "catalog:",
+    "sst": "catalog:"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "catalog:"
+  }
+}

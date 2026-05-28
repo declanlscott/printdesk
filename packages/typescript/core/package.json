@@ -1,0 +1,43 @@
+{
+  "name": "@printdesk/core",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "drizzle:generate": "drizzle-kit generate",
+    "drizzle:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@aws-crypto/sha256-js": "catalog:",
+    "@aws-sdk/credential-providers": "catalog:",
+    "@azure/msal-node": "^5.2.2",
+    "@effect-aws/cloudfront": "beta",
+    "@effect-aws/dsql": "beta",
+    "@effect-aws/dynamodb": "catalog:",
+    "@effect/platform-node": "catalog:",
+    "@effect/sql-pg": "catalog:",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "@openauthjs/openauth": "catalog:",
+    "@oslojs/encoding": "^1.1.0",
+    "@oslojs/jwt": "^0.3.0",
+    "@smithy/protocol-http": "^5.4.4",
+    "@smithy/signature-v4": "^5.4.4",
+    "cloudflare": "^6.3.0",
+    "drizzle-orm": "catalog:",
+    "effect": "catalog:",
+    "fast-xml-builder": "^1.2.0",
+    "fast-xml-parser": "^5.8.0",
+    "nanoid": "^5.1.11",
+    "pg": "catalog:",
+    "replicache": "catalog:",
+    "sst": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "@microsoft/microsoft-graph-types": "^2.43.1",
+    "@smithy/types": "^4.14.2",
+    "@standard-schema/spec": "^1.1.0",
+    "@types/node": "catalog:",
+    "@types/pg": "catalog:",
+    "drizzle-kit": "rc"
+  }
+}

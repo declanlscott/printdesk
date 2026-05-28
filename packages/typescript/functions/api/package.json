@@ -1,0 +1,17 @@
+{
+  "name": "@printdesk/api",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/credential-providers": "catalog:",
+    "@effect-aws/dynamodb": "catalog:",
+    "@effect-aws/lambda": "catalog:",
+    "@printdesk/core": "workspace:*",
+    "aws4fetch": "catalog:",
+    "drizzle-orm": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:"
+  }
+}

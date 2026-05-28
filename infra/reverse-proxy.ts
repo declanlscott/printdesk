@@ -1,47 +1,26 @@
-import { Constants } from "@printdesk/core/utils/constants";
+import { api, invokeApiFunctionUrl } from "./api";
+import { invokeIssuerFunctionUrl, issuer } from "./auth";
+import { hostnames } from "./dns";
+import * as lib from "./lib";
+import { aws_ } from "./utils";
 
-import { issuer } from "./auth";
-import { domains, zone } from "./dns";
-import * as lib from "./lib/components";
+export const rateLimit = new sst.cloudflare.RateLimit("RateLimit", {
+  namespaceId: 1001,
+  limit: 100,
+  period: "1 minute",
+});
 
-export const reverseProxyWorker = new sst.cloudflare.Worker(
-  "ReverseProxyWorker",
-  {
-    handler: "packages/workers/src/reverse-proxy/index.ts",
-    link: [issuer],
-    url: false,
+export const reverseProxyAwsPermissions = new sst.Linkable("ReverseProxyAwsPermissions", {
+  properties: {},
+  include: [invokeApiFunctionUrl, invokeIssuerFunctionUrl],
+});
+
+export const reverseProxy = new lib.cloudflare.Worker("ReverseProxy", {
+  handler: "packages/typescript/functions/reverse-proxy/src/index.ts",
+  domains: {
+    api: hostnames.properties.api,
+    auth: hostnames.properties.auth,
   },
-);
-
-export const reverseProxyWorkerAuxiliaryBindings =
-  new lib.cloudflare.workers.AuxiliaryBindings(
-    "ReverseProxyWorkerAuxiliaryBindings",
-    {
-      scriptName: reverseProxyWorker.nodes.worker.scriptName,
-      bindings: {
-        [Constants.CLOUDFLARE_BINDING_NAMES.RATE_LIMITER]: {
-          type: "ratelimit",
-          namespace_id: "1001",
-          simple: { limit: 100, period: 60 },
-        },
-      },
-    },
-  );
-
-export const reverseProxyApiRoute = new cloudflare.WorkersRoute(
-  "ReverseProxyApiRoute",
-  {
-    zoneId: zone.properties.id,
-    pattern: $interpolate`${domains.properties.api}/*`,
-    script: reverseProxyWorker.nodes.worker.scriptName,
-  },
-);
-
-export const reverseProxyAuthRoute = new cloudflare.WorkersRoute(
-  "ReverseProxyAuthRoute",
-  {
-    zoneId: zone.properties.id,
-    pattern: $interpolate`${domains.properties.auth}/*`,
-    script: reverseProxyWorker.nodes.worker.scriptName,
-  },
-);
+  placement: { region: `aws:${aws_.properties.region}` },
+  link: [aws_, api, hostnames, issuer, rateLimit, reverseProxyAwsPermissions],
+});

@@ -1,33 +1,35 @@
 import { hashStringToPrettyString, prefixName } from "~/sst/naming";
 
 export type PhysicalNameArgs = {
-  max: number;
-  suffix?: string;
+  max: $util.Input<number>;
+  suffix?: $util.Input<string>;
+  transform?: $util.Input<(name: string) => $util.Input<string>>;
 };
 
 export class PhysicalName extends $util.ComponentResource {
-  private _main: $util.Output<string>;
-  private _randomSuffix: $util.Output<string>;
+  public readonly logical: string;
+  public readonly result: $util.Output<string>;
 
-  result: $util.Output<string>;
+  public constructor(name: string, args: PhysicalNameArgs, opts?: $util.ComponentResourceOptions) {
+    super("pd:resource:PhysicalName", name, {}, opts);
 
-  constructor(
-    name: string,
-    args: PhysicalNameArgs,
-    opts?: $util.ComponentResourceOptions,
-  ) {
-    super("pd:resource:PhysicalName", name, args, opts);
+    this.logical = name;
 
-    const { max, suffix = "" } = args;
+    const { max, suffix = "", transform = (n) => n } = args;
 
-    this._main = $util.output(prefixName(max - 9 - suffix.length, name));
+    const main = $resolve({ max: $output(max), suffix: $output(suffix) }).apply(({ max, suffix }) =>
+      prefixName(max - 9 - suffix.length, name),
+    );
 
-    this._randomSuffix = new random.RandomBytes(
+    const randomSuffix = new random.RandomBytes(
       `${name}PhysicalNameRandomSuffix`,
       { length: 8 },
       { parent: this },
     ).hex.apply((hex) => hashStringToPrettyString(hex, 8));
 
-    this.result = $interpolate`${this._main}-${this._randomSuffix}${suffix}`;
+    this.result = $resolve({
+      name: $interpolate`${main}-${randomSuffix}${suffix}`,
+      transform: $output(transform),
+    }).apply(({ name, transform }) => $output(transform(name)));
   }
 }

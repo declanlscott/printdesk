@@ -1,0 +1,72 @@
+import * as Chunk from "effect/Chunk";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Request from "effect/Request";
+import * as RequestResolver from "effect/RequestResolver";
+import * as Struct from "effect/Struct";
+
+import { ReplicacheNotifier, ReplicacheNotifyError, ReplicacheNotifyRequest } from ".";
+import { Actor } from "../../actors";
+import { AwsCredentialIdentity } from "../../aws/credential-identity";
+import { Database } from "../../database";
+import { Realtime } from "../../realtime";
+import { ReplicacheClientGroupId } from "../client-group-id";
+
+import type { Events } from "../../events";
+
+export type ServiceShape = Effect.Success<typeof makeService>;
+
+export const makeService = Effect.gen(function* () {
+  const realtime = yield* Realtime;
+  const db = yield* Database;
+
+  const resolver = Effect.context<Actor | AwsCredentialIdentity>().pipe(
+    Effect.map((context) =>
+      RequestResolver.make<ReplicacheNotifyRequest>((entries) =>
+        realtime
+          .publish(
+            "/replicache",
+            Chunk.fromIterable(entries).pipe(Chunk.map(Struct.get("request"))),
+          )
+          .pipe(
+            Effect.provideContext(context),
+            Effect.andThen((success) =>
+              Effect.forEach(entries, Request.completeEffect(Effect.succeed(success))),
+            ),
+            Effect.catch((error) =>
+              Effect.forEach(
+                entries,
+                Request.completeEffect(new ReplicacheNotifyError({ cause: error })),
+              ),
+            ),
+          ),
+      ).pipe(RequestResolver.withSpan("ReplicacheNotifier.resolver")),
+    ),
+  );
+
+  const notify = Effect.fn("ReplicacheNotifier.notify")(
+    (data: Events.ReplicacheNotification["data"]) =>
+      Effect.context<ReplicacheClientGroupId | Actor | AwsCredentialIdentity>().pipe(
+        Effect.flatMap((context) =>
+          Effect.request(
+            new ReplicacheNotifyRequest({
+              clientGroupId: context.pipe(Context.get(ReplicacheClientGroupId)),
+              data,
+            }),
+            resolver,
+          ).pipe(
+            Effect.catchTag("ReplicacheNotifyError", (error) =>
+              Effect.logError("[ReplicacheNotifier]: Replicache notification failed.", error.cause),
+            ),
+            Effect.provideContext(context.pipe(Context.pick(Actor, AwsCredentialIdentity))),
+            db.afterTransaction,
+          ),
+        ),
+      ),
+  );
+
+  return { notify } as const;
+});
+
+export const layer = makeService.pipe(Layer.effect(ReplicacheNotifier));

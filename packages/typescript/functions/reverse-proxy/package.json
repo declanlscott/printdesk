@@ -1,0 +1,16 @@
+{
+  "name": "@printdesk/reverse-proxy",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@openauthjs/openauth": "catalog:",
+    "@printdesk/core": "workspace:^",
+    "aws4fetch": "catalog:",
+    "effect": "catalog:",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

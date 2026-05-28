@@ -1,9 +1,6 @@
 # build output
 dist/
 
-# generated types
-.astro/
-
 # dependencies
 node_modules/
 
@@ -29,9 +26,13 @@ pnpm-debug.log*
 # drizzle
 .drizzle
 
+# tanstack
+.tanstack
+
 # wrangler
 .wrangler
 wrangler.jsonc
+!packages/typescript/functions/papercut-api-gateway/wrangler.jsonc
 .dev.vars*
 worker-configuration.d.ts
 
@@ -41,5 +42,7 @@ stats.html
 
 # python
 .venv
+__pycache__
 
-resource.enc
+**/pulumi_home/*
+!**/pulumi_home/.gitkeep

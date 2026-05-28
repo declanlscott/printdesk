@@ -1,66 +1,45 @@
 import { Constants } from "@printdesk/core/utils/constants";
-import * as Record from "effect/Record";
+import { ZoneLookup } from "~/sst/cloudflare/providers/zone-lookup";
 
-export const rootDomain = new sst.Secret("RootDomain");
+import { cloudflare_, isProdStage } from "./utils";
 
-export const zone = new sst.Linkable("Zone", {
-  properties: {
-    id: cloudflare
-      .getZoneOutput({ filter: { name: rootDomain.value } })
-      .apply(({ zoneId }) => zoneId!),
-    name: rootDomain.value,
-  },
-});
+export const apexDomain = new sst.Secret("ApexDomain");
 
-const buildSubdomain = <
-  TMaybeIdentifier extends string | undefined,
-  TWithTenantId extends boolean,
->(
-  identifier?: TMaybeIdentifier,
-  withTenantId: TWithTenantId = false as TWithTenantId,
-) =>
-  ((
-    ({
-      production: [identifier],
-      dev: [identifier, "dev"],
-    })[$app.stage] ?? [identifier, "dev", $app.stage]
-  )
-    .toSpliced(1, 0, withTenantId ? Constants.TENANT_ID_PLACEHOLDER : undefined)
-    .filter(Boolean)
-    .join("-") || undefined) as TMaybeIdentifier extends string
-    ? string
-    : TWithTenantId extends true
-      ? string
-      : string | undefined;
-
-const buildFqdn = (subdomain?: string) =>
-  rootDomain.value.apply((rootDomain) =>
-    [subdomain, rootDomain].filter(Boolean).join("."),
+const buildHostname = (identifier?: string) =>
+  apexDomain.value.apply((apex) =>
+    [
+      (
+        { prod: [identifier], dev: [identifier, "dev"] }[$app.stage] ?? [
+          identifier,
+          "dev",
+          $app.stage,
+        ]
+      )
+        .filter(Boolean)
+        .join("-"),
+      apex,
+    ]
+      .filter(Boolean)
+      .join("."),
   );
 
-export const subdomains = {
-  api: buildSubdomain("api"),
-  auth: buildSubdomain("auth"),
-  realtime: buildSubdomain("realtime"),
-  web: buildSubdomain(),
-  www: buildSubdomain("www"),
-};
-
-export const domains = new sst.Linkable("Domains", {
+export const hostnames = new sst.Linkable("Hostnames", {
   properties: {
-    root: rootDomain.value,
-    ...Record.map(subdomains, buildFqdn),
+    api: buildHostname("api"),
+    auth: buildHostname("auth"),
+    assets: buildHostname("assets"),
+    papercutApiTemplate: buildHostname(`pcapi-${Constants.TENANT_ID_PLACEHOLDER}`), // base32 encoded id
+    realtime: buildHostname("realtime"),
+    web: buildHostname(isProdStage ? "*" : undefined),
+    www: buildHostname(isProdStage ? undefined : "www"),
   },
 });
 
-export const tenantSubdomainTemplates = {
-  cdn: buildSubdomain("cdn", true),
-  api: buildSubdomain("api", true),
-  realtime: buildSubdomain("realtime", true),
-};
+export const zoneLookup = new ZoneLookup("ZoneLookup", {
+  accountId: cloudflare_.properties.account.id,
+  domain: apexDomain.value,
+});
 
-export const tenantDomains = new sst.Linkable("TenantDomains", {
-  properties: Record.map(tenantSubdomainTemplates, (subdomainTemplate) => ({
-    nameTemplate: buildFqdn(subdomainTemplate),
-  })),
+export const zone = new sst.Linkable("Zone", {
+  properties: { id: zoneLookup.zoneId, name: zoneLookup.zoneName },
 });

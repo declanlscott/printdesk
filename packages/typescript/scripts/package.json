@@ -1,0 +1,17 @@
+{
+  "name": "@printdesk/scripts",
+  "private": true,
+  "scripts": {
+    "seed": "tsx ./src/seed.ts",
+    "tsx": "tsx"
+  },
+  "dependencies": {
+    "@printdesk/core": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "tsx": "^4.22.3"
+  }
+}

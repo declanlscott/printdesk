@@ -1,214 +1,120 @@
-import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
+import { join } from "node:path";
 
+import { Constants } from "@printdesk/core/utils/constants";
+
+import { api } from "./api";
+import { assetsBucket, assetsBucketAccessPointTemplate, assetsRouter } from "./assets";
+import { issuer } from "./auth";
+import { appconfigApplication, appconfigEnvironment, appconfigRoleTemplate } from "./config";
+import { dynamo } from "./db";
+import { hostnames, zone } from "./dns";
+import * as lib from "./lib";
 import {
-  // api,
-  tenantApiFunctionImage,
-  tenantApiFunctionResourceCiphertext,
-} from "./api";
-import {
-  cloudfrontApiCachePolicy,
-  cloudfrontKeyGroup,
-  cloudfrontPublicKey,
-  cloudfrontS3OriginAccessControl,
-  routerSecretRotation,
-} from "./cdn";
-import { dbMigratorInvocationSuccess, dsqlCluster } from "./db";
-import { domains, tenantDomains, zone } from "./dns";
-import {
-  cloudflareApiToken,
-  pulumiRole,
-  pulumiRoleExternalId,
-  realtimePublisherRole,
-  realtimePublisherRoleExternalId,
-  tenantApiFunctionRole,
-  tenantRoles,
-} from "./iam";
-import * as lib from "./lib/components";
-import {
-  appData,
-  aws_,
-  headerNames,
-  resourceFileName,
-  resourcePrefix,
-} from "./misc";
-import {
-  invoicesProcessor,
-  papercut,
-  papercutGatewayImage,
-  papercutGatewaySstKeyParameter,
-  // papercutSync,
+  invoicesProcessorQueueSenderRoleTemplate,
+  papercutApiAuthTokenConfigurationProfileTemplate,
+  papercutApiGatewayAwsAccessKey,
+  papercutApiGatewayOauthClientConfigurationProfileTemplate,
+  papercutApiGatewayScriptObject,
+  papercutSync,
 } from "./papercut";
-import { infraQueue, pulumiBucket, repository, tenantBuckets } from "./storage";
-import { injectLinkables, normalizePath } from "./utils";
-import { vpc, vpcLink } from "./vpc";
+import {
+  realtimeApi,
+  realtimePublicChannelNamespacePublisherRole,
+  realtimeTenantChannelNamespacePublisherRoleTemplate,
+  realtimeTenantChannelNamespaceSubscriberRoleTemplate,
+} from "./realtime";
+import { aws_, cloudflare_, nanoId, snsTopicEmail } from "./utils";
 
-const infraFunctionPath = normalizePath("packages/functions/infra");
+export const pulumiBucket = new sst.aws.Bucket("PulumiBucket");
 
-const infraFunctionResourceCiphertext = new lib.Ciphertext(
-  "InfraFunctionResourceCiphertext",
-  {
-    plaintext: $jsonStringify(
-      injectLinkables(
-        resourcePrefix,
-        // api,
-        appData,
-        aws_,
-        cloudflareApiToken,
-        cloudfrontApiCachePolicy,
-        cloudfrontKeyGroup,
-        cloudfrontPublicKey,
-        cloudfrontS3OriginAccessControl,
-        domains,
-        headerNames,
-        invoicesProcessor,
-        papercut,
-        // papercutSync,
-        papercutGatewayImage,
-        papercutGatewaySstKeyParameter,
-        pulumiBucket,
-        pulumiRole,
-        pulumiRoleExternalId,
-        realtimePublisherRole,
-        realtimePublisherRoleExternalId,
-        routerSecretRotation,
-        tenantApiFunctionImage,
-        tenantApiFunctionResourceCiphertext,
-        tenantApiFunctionRole,
-        tenantBuckets,
-        tenantDomains,
-        tenantRoles,
-        vpc,
-        vpcLink,
-        zone
-      )
-    ),
-    writeToFile: normalizePath(resourceFileName, infraFunctionPath),
-  }
+const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", { length: 32 }).result;
+
+export const pulumiRole = new lib.aws.iam.ExternalRole("PulumiRole", {
+  transform: { role: { managedPolicyArns: [aws.iam.ManagedPolicy.AdministratorAccess] } },
+});
+
+export const infraManagerFailureTopic = new sst.aws.SnsTopic("InfraManagerFailureTopic");
+export const infraManagerFailureTopicEmailSubscription = new aws.sns.TopicSubscription(
+  "InfraManagerFailureTopicEmailSubscription",
+  { topic: infraManagerFailureTopic.arn, protocol: "email", endpoint: snsTopicEmail.value },
 );
 
-export const infraFunctionImage = new awsx.ecr.Image(
-  "InfraFunctionImage",
+export const infraManager = dynamo.subscribe(
+  "InfraManager",
   {
-    repositoryUrl: repository.url,
-    context: infraFunctionPath,
-    platform: "linux/arm64",
-    imageTag: "latest",
-  },
-  { dependsOn: [infraFunctionResourceCiphertext] }
-);
-
-const infraFunctionName = new lib.PhysicalName("InfraFunction", { max: 64 });
-
-export const infraFunctionRole = new aws.iam.Role("InfraFunctionRole", {
-  assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
-    Service: "lambda.amazonaws.com",
-  }),
-  managedPolicyArns: [aws.iam.ManagedPolicy.AWSLambdaBasicExecutionRole],
-  inlinePolicies: [
-    {
-      policy: aws.iam.getPolicyDocumentOutput({
-        statements: [
-          {
-            actions: [
-              "sqs:ChangeMessageVisibility",
-              "sqs:DeleteMessage",
-              "sqs:GetQueueAttributes",
-              "sqs:GetQueueUrl",
-              "sqs:ReceiveMessage",
-            ],
-            resources: [infraQueue.arn],
-          },
-          {
-            actions: ["s3:*"],
-            resources: [pulumiBucket.arn, $interpolate`${pulumiBucket.arn}/*`],
-          },
-          {
-            actions: ["sts:AssumeRole"],
-            resources: [pulumiRole.arn, realtimePublisherRole.arn],
-          },
-        ],
-      }).json,
+    runtime: "python3.14",
+    python: { container: true },
+    handler: "packages/python/functions/infra_manager/main.handler",
+    timeout: "900 seconds",
+    ...($dev ? {} : { memory: "3008 MB", storage: "1536 MB" }),
+    environment: {
+      PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
+      ...($dev
+        ? {
+            PULUMI_HONE: join(
+              $cli.paths.root,
+              "packages/python/functions/infra_manager/pulumi_home",
+            ),
+          }
+        : {}),
     },
-  ],
-});
-
-export const infraFunctionLogGroup = new aws.cloudwatch.LogGroup(
-  "InfraFunctionLogGroup",
-  {
-    name: $interpolate`/aws/lambda/${infraFunctionName.result}`,
-    retentionInDays: 14,
-  }
-);
-
-const pulumiPassphrase = new random.RandomPassword("PulumiPassphrase", {
-  length: 32,
-  special: true,
-});
-
-export const infraFunction = new aws.lambda.Function("InfraFunction", {
-  name: infraFunctionName.result,
-  packageType: "Image",
-  imageUri: infraFunctionImage.imageUri,
-  role: infraFunctionRole.arn,
-  timeout: 900,
-  architectures: ["arm64"],
-  memorySize: 3008,
-  ephemeralStorage: { size: 1536 },
-  loggingConfig: {
-    logFormat: "Text",
-    logGroup: infraFunctionLogGroup.name,
+    link: [
+      api,
+      appconfigApplication,
+      appconfigEnvironment,
+      appconfigRoleTemplate,
+      assetsBucket,
+      assetsBucketAccessPointTemplate,
+      assetsRouter,
+      aws_,
+      cloudflare_,
+      dynamo,
+      hostnames,
+      infraManagerFailureTopic,
+      invoicesProcessorQueueSenderRoleTemplate,
+      issuer,
+      nanoId,
+      papercutApiAuthTokenConfigurationProfileTemplate,
+      papercutApiGatewayAwsAccessKey,
+      papercutApiGatewayOauthClientConfigurationProfileTemplate,
+      papercutApiGatewayScriptObject,
+      papercutSync,
+      pulumiBucket,
+      pulumiRole,
+      realtimeApi,
+      realtimePublicChannelNamespacePublisherRole,
+      realtimeTenantChannelNamespacePublisherRoleTemplate,
+      realtimeTenantChannelNamespaceSubscriberRoleTemplate,
+      zone,
+    ],
   },
-  environment: {
-    variables: {
-      SST_KEY: infraFunctionResourceCiphertext.encryptionKey,
-      SST_KEY_FILE: resourceFileName,
-      PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase.result,
+  {
+    filters: [
+      {
+        dynamodb: {
+          Keys: {
+            [Constants.DYNAMO_KEYS.PK]: {
+              S: [{ prefix: Constants.KEY_LITERALS.TENANT + Constants.SEPARATOR }],
+            },
+            [Constants.DYNAMO_KEYS.SK]: {
+              S: [
+                Constants.KEY_LITERALS.INFRA +
+                  Constants.SEPARATOR +
+                  Constants.KEY_LITERALS.INPUT +
+                  Constants.SEPARATOR,
+              ],
+            },
+          },
+        },
+      },
+    ],
+    transform: {
+      eventSourceMapping: {
+        batchSize: 1,
+        maximumRetryAttempts: 3,
+        functionResponseTypes: ["ReportBatchItemFailures"],
+        destinationConfig: { onFailure: { destinationArn: infraManagerFailureTopic.arn } },
+      },
     },
   },
-});
-new aws.lambda.EventSourceMapping("InfraFunctionEventSourceMapping", {
-  eventSourceArn: infraQueue.arn,
-  functionName: infraFunction.name,
-  functionResponseTypes: ["ReportBatchItemFailures"],
-  batchSize: 10,
-  maximumBatchingWindowInSeconds: 0,
-});
-
-export const infraDispatcher = new sst.aws.Function("InfraDispatcher", {
-  handler: "packages/functions/node/src/infra-dispatcher.handler",
-  link: [aws_, dsqlCluster, infraQueue],
-});
-
-export const infraDispatcherInvocation = new aws.lambda.Invocation(
-  "InfraDispatcherInvocation",
-  {
-    functionName: infraDispatcher.name,
-    input: JSON.stringify({}),
-    triggers: {
-      dbMigratorInvocationSuccess: $jsonStringify(dbMigratorInvocationSuccess),
-      infraFunction: infraFunction.lastModified,
-    },
-  }
 );
-
-export const infraDispatcherInvocationSuccess =
-  infraDispatcherInvocation.result.apply(
-    Schema.decodeSync(
-      Schema.transform(
-        Schema.parseJson(
-          Schema.Struct({
-            success: Schema.Literal(true).annotations({
-              message: () => "Infra dispatch failed",
-            }),
-          }).annotations({ message: () => "Invalid infra dispatch result" })
-        ),
-        Schema.Literal(true),
-        {
-          strict: true,
-          decode: Struct.get("success"),
-          encode: (success) => ({ success }),
-        }
-      )
-    )
-  );

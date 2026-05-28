@@ -1,9 +1,6 @@
 # build output
 dist/
 
-# generated types
-.astro/
-
 # dependencies
 node_modules/
 
@@ -41,3 +38,6 @@ diagrams
 # python
 .venv
 .ruff_cache
+__pycache__
+
+pulumi_home

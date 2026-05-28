@@ -1,0 +1,161 @@
+diff --git a/dist/dts/DynamoDBDocumentServiceConfig.d.ts b/dist/dts/DynamoDBDocumentServiceConfig.d.ts
+index 007cea3712aa774a22b70b4daef17a3d2fa89d40..7419e76bce1cfad80b9ef263cddbe19180b18b4d 100644
+--- a/dist/dts/DynamoDBDocumentServiceConfig.d.ts
++++ b/dist/dts/DynamoDBDocumentServiceConfig.d.ts
+@@ -1,10 +1,15 @@
+ /**
+  * @since 1.0.0
+  */
+-import type { TranslateConfig } from "@aws-sdk/lib-dynamodb";
++import * as Context from "effect/Context";
+ import * as Effect from "effect/Effect";
+ import * as Layer from "effect/Layer";
+ import type { DynamoDBDocumentService } from "./DynamoDBDocumentService.js";
++/**
++ * @since 1.0.0
++ * @category dynamodb service config
++ */
++export declare const DynamoDBDocumentServiceConfig: Context.Reference<DynamoDBDocumentService.Config>;
+ /**
+  * @since 1.0.0
+  * @category dynamodb service config
+@@ -18,9 +23,4 @@ export declare const withDynamoDBDocumentServiceConfig: {
+  * @category dynamodb service config
+  */
+ export declare const setDynamoDBDocumentServiceConfig: (config: DynamoDBDocumentService.Config) => Layer.Layer<never, never, never>;
+-/**
+- * @since 1.0.0
+- * @category adapters
+- */
+-export declare const toTranslateConfig: Effect.Effect<TranslateConfig>;
+ //# sourceMappingURL=DynamoDBDocumentServiceConfig.d.ts.map
+\ No newline at end of file
+diff --git a/dist/esm/DynamoDBDocumentClientInstance.js b/dist/esm/DynamoDBDocumentClientInstance.js
+index 27937092b2d8a9003da77a60ac0abb9c72836a37..751d28b34b5ce7f89c6def8b13dbc30d5b878eec 100644
+--- a/dist/esm/DynamoDBDocumentClientInstance.js
++++ b/dist/esm/DynamoDBDocumentClientInstance.js
+@@ -18,8 +18,8 @@ export class DynamoDBDocumentClientInstance extends Context.Service()("@effect-a
+  * @category constructors
+  */
+ export const make = Effect.all([
+-    DynamoDBClientInstance.DynamoDBClientInstance.asEffect(),
+-    DynamoDBDocumentServiceConfig.toTranslateConfig,
++    DynamoDBClientInstance.DynamoDBClientInstance,
++    DynamoDBDocumentServiceConfig.DynamoDBDocumentServiceConfig,
+ ]).pipe(Effect.map(([client, config]) => DynamoDBDocumentClient.from(client, config)));
+ /**
+  * @since 1.0.0
+diff --git a/dist/esm/DynamoDBDocumentServiceConfig.js b/dist/esm/DynamoDBDocumentServiceConfig.js
+index 3d13ef0eeefd485201d62f99d2aecd5cbd03564a..14cd448c9564db75887b74e74cf7d82e91e9c8b9 100644
+--- a/dist/esm/DynamoDBDocumentServiceConfig.js
++++ b/dist/esm/DynamoDBDocumentServiceConfig.js
+@@ -6,20 +6,15 @@ import * as Layer from "effect/Layer";
+  * @since 1.0.0
+  * @category dynamodb service config
+  */
+-const currentDynamoDBDocumentServiceConfig = Context.Reference("@effect-aws/dynamodb/currentDynamoDBDocumentServiceConfig", { defaultValue: () => ({}) });
++const DynamoDBDocumentServiceConfig = Context.Reference("@effect-aws/dynamodb/DynamoDBDocumentServiceConfig", { defaultValue: () => ({}) });
+ /**
+  * @since 1.0.0
+  * @category dynamodb service config
+  */
+-export const withDynamoDBDocumentServiceConfig = dual(2, (effect, config) => Effect.provideService(effect, currentDynamoDBDocumentServiceConfig, config));
++export const withDynamoDBDocumentServiceConfig = dual(2, (effect, config) => Effect.provideService(effect, DynamoDBDocumentServiceConfig, config));
+ /**
+  * @since 1.0.0
+  * @category dynamodb service config
+  */
+-export const setDynamoDBDocumentServiceConfig = (config) => Layer.succeed(currentDynamoDBDocumentServiceConfig, config);
+-/**
+- * @since 1.0.0
+- * @category adapters
+- */
+-export const toTranslateConfig = currentDynamoDBDocumentServiceConfig.asEffect();
++export const setDynamoDBDocumentServiceConfig = (config) => Layer.succeed(DynamoDBDocumentServiceConfig, config);
+ //# sourceMappingURL=DynamoDBDocumentServiceConfig.js.map
+\ No newline at end of file
+diff --git a/dist/esm/DynamoDBStore.js b/dist/esm/DynamoDBStore.js
+index 0c59f0265122508ba54f856704cabfbb0858d4c3..39d115b91409d7aad9d0138c16cd27de51a2a7f9 100644
+--- a/dist/esm/DynamoDBStore.js
++++ b/dist/esm/DynamoDBStore.js
+@@ -51,6 +51,6 @@ export const makeDynamoDBStore = Effect.fn(function* (props) {
+  */
+ export class DynamoDBStore extends Context.Service()("@effect-aws/dynamodb/DynamoDBStore") {
+     static layer = (props) => Layer.effect(this, makeDynamoDBStore(props));
+-    static layerConfig = (config) => Layer.effect(this, Config.unwrap(config).asEffect().pipe(Effect.flatMap(makeDynamoDBStore)));
++    static layerConfig = (config) => Layer.effect(this, Config.unwrap(config).pipe(Effect.flatMap(makeDynamoDBStore)));
+ }
+ //# sourceMappingURL=DynamoDBStore.js.map
+\ No newline at end of file
+diff --git a/src/DynamoDBDocumentClientInstance.ts b/src/DynamoDBDocumentClientInstance.ts
+index 12783e4793502c241d45195f87eb6f2ec04aa998..32cce9c3f0d92add09c77fc389799222bea81991 100644
+--- a/src/DynamoDBDocumentClientInstance.ts
++++ b/src/DynamoDBDocumentClientInstance.ts
+@@ -23,8 +23,8 @@ export class DynamoDBDocumentClientInstance
+  * @category constructors
+  */
+ export const make = Effect.all([
+-  DynamoDBClientInstance.DynamoDBClientInstance.asEffect(),
+-  DynamoDBDocumentServiceConfig.toTranslateConfig,
++  DynamoDBClientInstance.DynamoDBClientInstance,
++  DynamoDBDocumentServiceConfig.DynamoDBDocumentServiceConfig,
+ ]).pipe(
+   Effect.map(([client, config]) => DynamoDBDocumentClient.from(client, config)),
+ );
+diff --git a/src/DynamoDBDocumentServiceConfig.ts b/src/DynamoDBDocumentServiceConfig.ts
+index 11899bf0873f8b2cc1245466cdba648a51f9a249..3a16d0e98ecbc4d616a15696682cab6d073d41a0 100644
+--- a/src/DynamoDBDocumentServiceConfig.ts
++++ b/src/DynamoDBDocumentServiceConfig.ts
+@@ -1,7 +1,6 @@
+ /**
+  * @since 1.0.0
+  */
+-import type { TranslateConfig } from "@aws-sdk/lib-dynamodb";
+ import * as Context from "effect/Context";
+ import * as Effect from "effect/Effect";
+ import { dual } from "effect/Function";
+@@ -12,8 +11,8 @@ import type { DynamoDBDocumentService } from "./DynamoDBDocumentService.js";
+  * @since 1.0.0
+  * @category dynamodb service config
+  */
+-const currentDynamoDBDocumentServiceConfig = Context.Reference<DynamoDBDocumentService.Config>(
+-  "@effect-aws/dynamodb/currentDynamoDBDocumentServiceConfig",
++export const DynamoDBDocumentServiceConfig = Context.Reference<DynamoDBDocumentService.Config>(
++  "@effect-aws/dynamodb/DynamoDBDocumentServiceConfig",
+   { defaultValue: () => ({}) },
+ );
+ 
+@@ -27,7 +26,7 @@ export const withDynamoDBDocumentServiceConfig: {
+ } = dual(
+   2,
+   <A, E, R>(effect: Effect.Effect<A, E, R>, config: DynamoDBDocumentService.Config): Effect.Effect<A, E, R> =>
+-    Effect.provideService(effect, currentDynamoDBDocumentServiceConfig, config),
++    Effect.provideService(effect, DynamoDBDocumentServiceConfig, config),
+ );
+ 
+ /**
+@@ -35,10 +34,4 @@ export const withDynamoDBDocumentServiceConfig: {
+  * @category dynamodb service config
+  */
+ export const setDynamoDBDocumentServiceConfig = (config: DynamoDBDocumentService.Config) =>
+-  Layer.succeed(currentDynamoDBDocumentServiceConfig, config);
+-
+-/**
+- * @since 1.0.0
+- * @category adapters
+- */
+-export const toTranslateConfig: Effect.Effect<TranslateConfig> = currentDynamoDBDocumentServiceConfig.asEffect();
++  Layer.succeed(DynamoDBDocumentServiceConfig, config);
+diff --git a/src/DynamoDBStore.ts b/src/DynamoDBStore.ts
+index 54f4b06cc57a2898a11367852578328e241fa98e..7596f87522bad8abfcab1b9b61661e9807befbe3 100644
+--- a/src/DynamoDBStore.ts
++++ b/src/DynamoDBStore.ts
+@@ -103,7 +103,7 @@ export class DynamoDBStore extends Context.Service<
+ >()("@effect-aws/dynamodb/DynamoDBStore") {
+   static layer = (props: DynamoDBStore.Config) => Layer.effect(this, makeDynamoDBStore(props));
+   static layerConfig = (config: Config.Wrap<DynamoDBStore.Config>) =>
+-    Layer.effect(this, Config.unwrap(config).asEffect().pipe(Effect.flatMap(makeDynamoDBStore)));
++    Layer.effect(this, Config.unwrap(config).pipe(Effect.flatMap(makeDynamoDBStore)));
+ }
+ 
+ /**

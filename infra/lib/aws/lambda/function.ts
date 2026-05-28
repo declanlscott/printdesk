@@ -1,18 +1,18 @@
 export type FunctionArgs = sst.aws.FunctionArgs;
 
 export class Function extends sst.aws.Function {
-  constructor(
+  public constructor(
     name: string,
     args: sst.aws.FunctionArgs,
     opts?: $util.ComponentResourceOptions,
   ) {
     args.architecture ??= "arm64";
-    args.runtime ??= "nodejs22.x";
+    args.runtime ??= "nodejs24.x";
 
     super(name, args, opts);
   }
 
-  override getSSTLink() {
+  public override getSSTLink() {
     const link = super.getSSTLink();
 
     return {
@@ -20,7 +20,6 @@ export class Function extends sst.aws.Function {
       properties: {
         ...link.properties,
         arn: this.arn,
-        invokeArn: this.nodes.function.invokeArn,
         roleArn: this.nodes.role.arn,
       },
     };

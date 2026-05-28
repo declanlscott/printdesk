@@ -1,95 +1,87 @@
+// oxlint-disable typescript/no-non-null-assertion
 import { Constants } from "@printdesk/core/utils/constants";
-import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
 
-import * as lib from "./lib/components";
-import { aws_, isProdStage } from "./misc";
-import { calculateHash, normalizePath } from "./utils";
+import * as lib from "./lib";
+import { aws_, hashFiles, isProdStage } from "./utils";
 
-export const dsqlCluster = new lib.aws.dsql.Cluster(
-  "DsqlCluster",
-  {
-    tags: {
-      "sst:app": $app.name,
-      "sst:stage": $app.stage,
+import { VisibleError } from "~/sst/error";
+
+const name = new lib.PhysicalName("Dsql", { max: 256 });
+export const dsql = new sst.aws.Dsql(name.logical, {
+  transform: {
+    cluster(args) {
+      args.deletionProtectionEnabled = isProdStage;
+      args.tags = { ...args.tags, Name: name.result };
     },
-    deletionProtectionEnabled: isProdStage,
+  },
+});
+
+const migrationsPath = "packages/typescript/core/migrations";
+
+export const migrator = new sst.aws.Function("Migrator", {
+  handler: "packages/typescript/functions/migrator/src/index.handler",
+  link: [aws_, dsql],
+  copyFiles: [{ from: migrationsPath, to: "migrations" }],
+});
+
+export const migratorInvocation = new aws.lambda.Invocation("MigratorInvocation", {
+  functionName: migrator.name,
+  input: JSON.stringify({}),
+  triggers: { migrations: hashFiles(migrationsPath) },
+});
+
+export const migratorInvocationSuccess = $jsonParse(migratorInvocation.result).apply((result) => {
+  const success =
+    typeof result === "object" &&
+    result !== null &&
+    "success" in result &&
+    typeof result.success === "boolean";
+
+  if (!success) throw new VisibleError("Migration failed, see function logs.");
+  return success;
+});
+
+new sst.x.DevCommand("Studio", {
+  link: [aws_, dsql],
+  dev: {
+    command: "vp run drizzle:studio",
+    directory: "packages/typescript/core",
+    autostart: true,
+  },
+  environment: {
+    AWS_REGION: process.env.SST_AWS_REGION!,
+    AWS_ACCESS_KEY_ID: process.env.SST_AWS_ACCESS_KEY_ID!,
+    AWS_SECRET_ACCESS_KEY: process.env.SST_AWS_SECRET_ACCESS_KEY!,
+    AWS_SESSION_TOKEN: process.env.SST_AWS_SESSION_TOKEN!,
+  },
+});
+
+export const dynamo = new sst.aws.Dynamo(
+  "Dynamo",
+  {
+    fields: {
+      [Constants.DYNAMO_KEYS.PK]: "string",
+      [Constants.DYNAMO_KEYS.SK]: "string",
+      [Constants.DYNAMO_KEYS.GSI1_PK]: "string",
+      [Constants.DYNAMO_KEYS.GSI1_SK]: "string",
+    },
+    primaryIndex: {
+      hashKey: Constants.DYNAMO_KEYS.PK,
+      rangeKey: Constants.DYNAMO_KEYS.SK,
+    },
+    globalIndexes: {
+      [Constants.DYNAMO_SECONDARY_INDEXES.GSI1]: {
+        hashKey: Constants.DYNAMO_KEYS.GSI1_PK,
+        rangeKey: Constants.DYNAMO_KEYS.GSI1_SK,
+      },
+    },
+    ttl: "expiry",
+    stream: "new-and-old-images",
+    deletionProtection: isProdStage,
   },
   { retainOnDelete: isProdStage },
 );
 
-const migrationsFolderPath = "packages/core/migrations";
-
-export const dbMigrator = new sst.aws.Function("DbMigrator", {
-  handler: "packages/functions/node/src/db-migrator.handler",
-  link: [aws_, dsqlCluster],
-  copyFiles: [{ from: migrationsFolderPath, to: "migrations" }],
-});
-
-export const dbMigratorInvocation = new aws.lambda.Invocation(
-  "DbMigratorInvocation",
-  {
-    functionName: dbMigrator.name,
-    input: JSON.stringify({}),
-    triggers: {
-      migrations: calculateHash(normalizePath(migrationsFolderPath)),
-    },
-  },
-);
-
-export const dbMigratorInvocationSuccess = dbMigratorInvocation.result.apply(
-  Schema.decodeSync(
-    Schema.transform(
-      Schema.parseJson(
-        Schema.Struct({
-          success: Schema.Literal(true).annotations({
-            message: () => "Database migration failed",
-          }),
-        }).annotations({ message: () => "Invalid database migration result" }),
-      ),
-      Schema.Literal(true),
-      {
-        strict: true,
-        decode: Struct.get("success"),
-        encode: (success) => ({ success }),
-      },
-    ),
-  ),
-);
-
-export const dbGarbageCollection = new sst.aws.Cron("DbGarbageCollection", {
-  job: {
-    handler: "packages/functions/node/src/db-garbage-collection.handler",
-    timeout: "10 seconds",
-    link: [aws_, dsqlCluster],
-    architecture: "arm64",
-    runtime: "nodejs22.x",
-  },
-  schedule: "rate(1 day)",
-  enabled: dbMigratorInvocationSuccess,
-});
-
-new sst.x.DevCommand("Studio", {
-  link: [aws_, dsqlCluster],
-  dev: {
-    command: "bun run drizzle:studio",
-    directory: "packages/core",
-    autostart: true,
-  },
-});
-
-export const authTable = new sst.aws.Dynamo("AuthTable", {
-  fields: {
-    [Constants.DDB_INDEXES.PK]: "string",
-    [Constants.DDB_INDEXES.SK]: "string",
-  },
-  primaryIndex: {
-    hashKey: Constants.DDB_INDEXES.PK,
-    rangeKey: Constants.DDB_INDEXES.SK,
-  },
-  ttl: "expiry",
-});
-
 export const outputs = {
-  dsql: dsqlCluster.endpoint,
+  dsql: dsql.endpoint,
 };

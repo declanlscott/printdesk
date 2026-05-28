@@ -2,35 +2,67 @@
 /* tslint:disable */
 /* eslint-disable */
 /* deno-fmt-ignore-file */
+/* biome-ignore-all lint: auto-generated */
 
 declare module "sst" {
   export interface Resource {
+    "ApexDomain": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
     "Api": {
       "arn": string
-      "invokeArn": string
       "name": string
       "roleArn": string
       "type": "sst.aws.Function"
       "url": string
     }
-    "AppData": {
-      "isDevMode": boolean
-      "isProdStage": boolean
-      "name": string
-      "stage": string
+    "AppconfigAgent": {
+      "port": number
       "type": "sst.sst.Linkable"
     }
-    "AppsyncEventApi": {
-      "dns": {
-        "http": string
-        "realtime": string
-      }
-      "type": "pulumi-nodejs.dynamic.Resource"
-    }
-    "AuthTable": {
+    "AppconfigAgentDevRole": {
       "arn": string
+      "externalId": string
       "name": string
-      "type": "sst.aws.Dynamo"
+      "type": "pd.aws.IamExternalRole"
+    }
+    "AppconfigApplication": {
+      "id": string
+      "name": string
+      "type": "aws.appconfig/application.Application"
+    }
+    "AppconfigEnvironment": {
+      "id": string
+      "name": string
+      "type": "aws.appconfig/environment.Environment"
+    }
+    "AppconfigRoleTemplate": {
+      "name": string
+      "type": "pd.templates.AwsIamRole"
+    }
+    "AssetsBucket": {
+      "name": string
+      "type": "sst.aws.Bucket"
+    }
+    "AssetsBucketAccessPointTemplate": {
+      "name": string
+      "type": "pd.templates.AwsS3AccessPoint"
+    }
+    "AssetsKeyGroup": {
+      "id": string
+      "type": "aws.cloudfront/keyGroup.KeyGroup"
+    }
+    "AssetsPrivateKey": {
+      "pem": string
+      "type": "tls.index/privateKey.PrivateKey"
+    }
+    "AssetsRouter": {
+      "distributionId": string
+      "keyValueStoreArn": string
+      "keyValueStoreNamespace": string
+      "type": "sst.aws.Router"
+      "url": string
     }
     "Aws": {
       "account": {
@@ -39,77 +71,63 @@ declare module "sst" {
       "region": string
       "type": "sst.sst.Linkable"
     }
-    "BudgetEmail": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
     "Cloudflare": {
       "account": {
         "id": string
       }
+      "apiToken": string
       "type": "sst.sst.Linkable"
     }
-    "CloudflareAccountId": {
-      "type": "sst.sst.Secret"
-      "value": string
+    "DevBridgeCodeUseast2Bridge": {
+      "bucket": string
+      "key": string
+      "type": "aws.s3/bucketObjectv2.BucketObjectv2"
     }
-    "CloudflareApiToken": {
-      "type": "sst.sst.Linkable"
-      "value": string
-    }
-    "CloudfrontApiCachePolicy": {
-      "id": string
-      "type": "aws.cloudfront/cachePolicy.CachePolicy"
-    }
-    "CloudfrontKeyGroup": {
-      "id": string
-      "type": "aws.cloudfront/keyGroup.KeyGroup"
-    }
-    "CloudfrontPrivateKey": {
-      "pem": string
-      "type": "tls.index/privateKey.PrivateKey"
-    }
-    "CloudfrontPublicKey": {
-      "id": string
-      "type": "aws.cloudfront/publicKey.PublicKey"
-    }
-    "CloudfrontRewriteUriFunction": {
-      "arn": string
-      "type": "aws.cloudfront/function.Function"
-    }
-    "CloudfrontS3OriginAccessControl": {
-      "id": string
-      "type": "aws.cloudfront/originAccessControl.OriginAccessControl"
-    }
-    "CodeBucket": {
-      "name": string
-      "type": "sst.aws.Bucket"
-    }
-    "ConfigTable": {
-      "arn": string
-      "name": string
-      "type": "sst.aws.Dynamo"
-    }
-    "DbMigrator": {
-      "name": string
-      "type": "sst.aws.Function"
-    }
-    "Domains": {
-      "api": string
-      "auth": string
-      "realtime": string
-      "root": string
-      "type": "sst.sst.Linkable"
-      "web": string
-      "www": string
-    }
-    "DsqlCluster": {
+    "Dsql": {
       "database": string
       "host": string
       "port": number
       "ssl": boolean
-      "type": "pulumi-nodejs.dynamic.Resource"
+      "type": "sst.aws.Dsql"
       "user": string
+    }
+    "Dynamo": {
+      "globalSecondaryIndexes": {
+        "gsi1": {
+          "hashKey": string
+          "rangeKey": string
+        }
+      }
+      "hashKey": string
+      "keyLiterals": {
+        "CLIENT": string
+        "INFRA": string
+        "INPUT": string
+        "IP": string
+        "ORDER": string
+        "OUTPUT": string
+        "ROOM": string
+        "TENANT": string
+        "USER": string
+      }
+      "name": string
+      "rangeKey": string
+      "type": "sst.aws.Dynamo"
+    }
+    "Environment": {
+      "isDevMode": boolean
+      "isProdStage": boolean
+      "type": "sst.sst.Linkable"
+    }
+    "Hostnames": {
+      "api": string
+      "assets": string
+      "auth": string
+      "papercutApiTemplate": string
+      "realtime": string
+      "type": "sst.sst.Linkable"
+      "web": string
+      "www": string
     }
     "IdentityProviders": {
       "entra_id": {
@@ -122,29 +140,57 @@ declare module "sst" {
       }
       "type": "sst.sst.Linkable"
     }
-    "InfraDeadLetterQueue": {
-      "type": "sst.aws.Queue"
-      "url": string
-    }
-    "InfraQueue": {
-      "type": "sst.aws.Queue"
-      "url": string
+    "InfraManagerFailureTopic": {
+      "arn": string
+      "type": "sst.aws.SnsTopic"
     }
     "InvoicesProcessor": {
       "arn": string
-      "invokeArn": string
       "name": string
       "roleArn": string
       "type": "sst.aws.Function"
     }
-    "Issuer": {
+    "InvoicesProcessorQueueSenderRoleTemplate": {
       "name": string
+      "type": "pd.templates.AwsIamRole"
+    }
+    "Issuer": {
+      "arn": string
+      "name": string
+      "roleArn": string
       "type": "sst.aws.Function"
       "url": string
     }
+    "Migrator": {
+      "name": string
+      "type": "sst.aws.Function"
+    }
+    "NanoId": {
+      "alphabet": string
+      "length": number
+      "pattern": string
+      "type": "sst.sst.Linkable"
+    }
+    "PapercutApiAuthTokenConfigurationProfileTemplate": {
+      "name": string
+      "type": "pd.templates.AwsAppConfigConfigurationProfile"
+    }
+    "PapercutApiGatewayAwsAccessKey": {
+      "id": string
+      "secret": string
+      "type": "pd.aws.IamAccessKey"
+    }
+    "PapercutApiGatewayOauthClientConfigurationProfileTemplate": {
+      "name": string
+      "type": "pd.templates.AwsAppConfigConfigurationProfile"
+    }
+    "PapercutApiGatewayScriptObject": {
+      "bucket": string
+      "key": string
+      "type": "aws.s3/bucketObjectv2.BucketObjectv2"
+    }
     "PapercutSync": {
       "arn": string
-      "invokeArn": string
       "name": string
       "roleArn": string
       "type": "sst.aws.Function"
@@ -155,103 +201,69 @@ declare module "sst" {
     }
     "PulumiRole": {
       "arn": string
+      "externalId": string
       "name": string
-      "type": "aws.iam/role.Role"
+      "type": "pd.aws.IamExternalRole"
     }
-    "PulumiRoleExternalId": {
-      "type": "random.index/randomPassword.RandomPassword"
-      "value": string
-    }
-    "RealtimePublisherRole": {
+    "RateLimit": import("@cloudflare/workers-types").RateLimit
+    "RealtimeApi": {
       "arn": string
-      "name": string
-      "type": "aws.iam/role.Role"
+      "dns": {
+        "http": string
+        "realtime": string
+      }
+      "id": string
+      "type": "aws.appsync/api.Api"
     }
-    "RealtimePublisherRoleExternalId": {
-      "type": "random.index/randomPassword.RandomPassword"
-      "value": string
-    }
-    "RealtimeSubscriberRole": {
+    "RealtimePublicChannelNamespacePublisherRole": {
       "arn": string
+      "externalId": string
       "name": string
-      "type": "aws.iam/role.Role"
+      "type": "pd.aws.IamExternalRole"
     }
-    "RealtimeSubscriberRoleExternalId": {
-      "type": "random.index/randomPassword.RandomPassword"
-      "value": string
+    "RealtimePublicChannelNamespaceSubscriberRole": {
+      "arn": string
+      "externalId": string
+      "name": string
+      "type": "pd.aws.IamExternalRole"
     }
-    "ReplicacheLicenseKey": {
+    "RealtimeTenantChannelNamespacePublisherRoleTemplate": {
+      "name": string
+      "type": "pd.templates.AwsIamRole"
+    }
+    "RealtimeTenantChannelNamespaceSubscriberRoleTemplate": {
+      "name": string
+      "type": "pd.templates.AwsIamRole"
+    }
+    "ReverseProxy": {
+      "type": "pd.cloudflare.Worker"
+      "urls": {
+        "api": string
+        "auth": string
+      }
+    }
+    "ReverseProxyAwsPermissions": {
+      "type": "sst.sst.Linkable"
+    }
+    "SnsTopicEmail": {
       "type": "sst.sst.Secret"
       "value": string
-    }
-    "ReverseProxyWorker": {
-      "type": "sst.cloudflare.Worker"
-    }
-    "RootDomain": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "Router": {
-      "type": "sst.aws.Router"
-      "url": string
-    }
-    "RouterSecret": {
-      "type": "random.index/randomPassword.RandomPassword"
-      "value": string
-    }
-    "TemporaryBucket": {
-      "name": string
-      "type": "sst.aws.Bucket"
-    }
-    "TenantDomains": {
-      "cdn": {
-        "nameTemplate": string
-      },
-      "api": {
-        "nameTemplate": string
-      },
-      "realtime": {
-        "nameTemplate": string
-      },
-      "type": "sst.sst.Linkable"
-    },
-    "TenantRoles": {
-      "apiAccess": {
-        "nameTemplate": string
-      }
-      "bucketsAccess": {
-        "nameTemplate": string
-      }
-      "realtimePublisher": {
-        "nameTemplate": string
-      }
-      "realtimeSubscriber": {
-        "nameTemplate": string
-      }
-      "type": "sst.sst.Linkable"
-      "updateConfig": {
-        "nameTemplate": string
-      }
     }
     "Web": {
-      "type": "sst.aws.StaticSite"
+      "type": "pd.cloudflare.StaticSite"
       "url": string
-    }
-    "WebPassword": {
-      "type": "sst.sst.Secret"
-      "value": string
-    }
-    "WebUsername": {
-      "type": "sst.sst.Secret"
-      "value": string
     }
     "Www": {
-      "type": "sst.aws.Astro"
+      "type": "sst.cloudflare.TanStackStart"
       "url": string
+    }
+    "Zone": {
+      "id": string
+      "name": string
+      "type": "sst.sst.Linkable"
     }
   }
 }
-/// <reference path="sst-env.d.ts" />
 
 import "sst"
 export {}

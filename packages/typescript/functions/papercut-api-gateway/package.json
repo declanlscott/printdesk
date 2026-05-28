@@ -1,0 +1,19 @@
+{
+  "name": "@printdesk/papercut-api-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vpx wrangler deploy --dry-run --outdir dist --minify",
+    "typegen": "vpx wrangler types"
+  },
+  "dependencies": {
+    "@printdesk/core": "workspace:^",
+    "aws4fetch": "catalog:",
+    "effect": "catalog:",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

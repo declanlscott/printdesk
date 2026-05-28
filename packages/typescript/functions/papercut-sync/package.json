@@ -1,0 +1,13 @@
+{
+  "name": "@printdesk/papercut-sync",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@effect-aws/lambda": "catalog:",
+    "@printdesk/core": "workspace:*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:"
+  }
+}

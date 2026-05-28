@@ -1,29 +1,46 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { issuer } from "./auth";
-import { router } from "./cdn";
-import { domains } from "./dns";
-import { appData, isProdStage } from "./misc";
-import { injectLinkables } from "./utils";
+import { apexDomain, hostnames } from "./dns";
+import * as lib from "./lib";
+import { reverseProxy } from "./reverse-proxy";
+import { environment, injectLinkables, isProdStage } from "./utils";
 
-export const web = new sst.aws.StaticSite("Web", {
-  path: "packages/web",
-  build: {
-    command: "bun run build",
-    output: "dist",
-  },
-  router: {
-    instance: router,
-    domain: isProdStage ? $interpolate`*.${domains.properties.web}` : undefined,
-  },
+export const web = new lib.cloudflare.StaticSite("Web", {
+  path: "packages/typescript/web",
+  build: { command: "vp run build", output: "dist" },
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
-    appData,
-    domains,
-    issuer,
+    reverseProxy,
+    environment,
+    hostnames,
   ),
+  domain: hostnames.properties.web,
+  server: {
+    handler: "./src/bff/index.ts",
+    routes: Object.values(Constants.WEB_BFF_PATHS),
+  },
 });
+
+export const www = new sst.cloudflare.TanStackStart("Www", {
+  path: "packages/typescript/www",
+  buildCommand: "vp run build",
+  environment: injectLinkables(
+    Constants.VITE_RESOURCE_PREFIX,
+    reverseProxy,
+    environment,
+    hostnames,
+  ),
+  domain: hostnames.properties.www,
+});
+
+if (isProdStage)
+  new sst.cloudflare.Worker("WwwRedirect", {
+    handler: "packages/typescript/functions/www-redirect/src/index.ts",
+    link: [apexDomain],
+    domain: $interpolate`www.${apexDomain.value}`,
+  });
 
 export const outputs = {
   web: web.url,
+  www: www.url,
 };

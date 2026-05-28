@@ -1,108 +1,74 @@
-import { Constants } from "@printdesk/core/utils/constants";
+import { resolve, join } from "node:path";
 
-import { identityProviders } from "./auth";
-import { cloudfrontPrivateKey, cloudfrontPublicKey, routerSecret } from "./cdn";
-import { dsqlCluster } from "./db";
-import { domains, tenantDomains } from "./dns";
-import { tenantRoles } from "./iam";
-import * as lib from "./lib/components";
-import {
-  appData,
-  aws_,
-  headerNames,
-  resourceFileName,
-  resourcePrefix,
-} from "./misc";
-import { repository } from "./storage";
-import { injectLinkables, normalizePath } from "./utils";
+import { siteBuilder } from "~/sst/aws/helpers/site-builder";
+import { VisibleError } from "~/sst/error";
 
-export const papercut = new sst.Linkable("Papercut", {
-  properties: {
-    servicePath: Constants.PAPERCUT_SERVICE_PATH,
-    webServicesPath: Constants.PAPERCUT_WEB_SERVICES_PATH,
-  },
+import { assetsBucket } from "./assets";
+import { invokeIssuerFunctionUrl } from "./auth";
+import { dsql } from "./db";
+import { hostnames } from "./dns";
+import * as lib from "./lib";
+
+export const invoicesProcessorQueueSenderRoleTemplate = new lib.templates.aws.iam.Role(
+  "InvoicesProcessorQueueSenderRoleTemplate",
+  { identifier: "InvoicesSenderRole" },
+);
+
+export const papercutApiGatewayOauthClientConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "PapercutApiGatewayOauthClientConfigurationProfileTemplate",
+    { identifier: "PapercutApiGatewayOauthClient" },
+  );
+
+export const papercutApiAuthTokenConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "PapercutApiAuthTokenConfigurationProfileTemplate",
+    { identifier: "PapercutApiAuthToken" },
+  );
+
+const papercutApiGatewayPackagePath = resolve(
+  join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
+);
+const papercutApiGatewayScriptOutDir = "dist";
+const papercutApiGatewayScriptAssetPath = `${papercutApiGatewayScriptOutDir}/index.js`;
+export const papercutApiGatewayScriptBuilder = siteBuilder("PapercutApiGatewayScriptBuilder", {
+  create: `vpx wrangler deploy --dry-run --outdir ${papercutApiGatewayScriptOutDir} --minify`,
+  dir: papercutApiGatewayPackagePath,
+  triggers: [Date.now()],
+  assetPaths: [papercutApiGatewayScriptAssetPath],
 });
 
-const papercutGatewayPath = normalizePath("packages/services/papercut-gateway");
+export const papercutApiGatewayScriptSource = papercutApiGatewayScriptBuilder.assets.apply(
+  (assets) => {
+    const asset = assets?.[papercutApiGatewayScriptAssetPath];
+    if (!asset || asset instanceof $util.asset.Archive)
+      throw new VisibleError(`Missing asset at ${papercutApiGatewayScriptAssetPath}`);
 
-export const papercutGatewayResourceCiphertext = new lib.Ciphertext(
-  "PapercutGatewayResourceCiphertext",
-  {
-    plaintext: $jsonStringify(
-      injectLinkables(
-        resourcePrefix,
-        appData,
-        aws_,
-        headerNames,
-        papercut,
-        routerSecret,
-        tenantDomains
-      )
-    ),
-    writeToFile: normalizePath(resourceFileName, papercutGatewayPath),
-  }
-);
-
-export const papercutGatewaySstKeyParameter = new aws.ssm.Parameter(
-  "PapercutGatewaySstKey",
-  {
-    name: `/${$app.name}/${$app.stage}/papercut-gateway/sst-key`,
-    type: aws.ssm.ParameterType.SecureString,
-    value: papercutGatewayResourceCiphertext.encryptionKey,
-  }
-);
-
-export const papercutGatewayImage = new awsx.ecr.Image(
-  "PapercutGatewayImage",
-  {
-    repositoryUrl: repository.url,
-    context: papercutGatewayPath,
-    platform: "linux/arm64",
-    imageTag: "latest",
+    return asset;
   },
-  { dependsOn: [papercutGatewayResourceCiphertext] }
 );
 
-// export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
-//   handler: "packages/functions/src/papercut-sync.handler",
-//   timeout: "20 seconds",
-//   link: [
-//     appData,
-//     aws_,
-//     cloudfrontPublicKey,
-//     cloudfrontPrivateKey,
-//     domains,
-//     dsqlCluster,
-//     identityProviders,
-//     tenantDomains,
-//     tenantRoles,
-//   ],
-// });
-
-export const invoicesProcessor = new lib.aws.lambda.Function(
-  "InvoicesProcessor",
+export const papercutApiGatewayScriptObject = new aws.s3.BucketObjectv2(
+  "PapercutApiGatewayScriptObject",
   {
-    handler: "packages/functions/src/invoices-processor.handler",
-    timeout: "20 seconds",
-    link: [
-      appData,
-      aws_,
-      cloudfrontPublicKey,
-      cloudfrontPrivateKey,
-      domains,
-      dsqlCluster,
-      tenantDomains,
-      tenantRoles,
-    ],
-    permissions: [
-      {
-        actions: ["sts:AssumeRole"],
-        resources: [
-          $interpolate`arn:aws:iam::${
-            aws.getCallerIdentityOutput().accountId
-          }:role/*`,
-        ],
-      },
-    ],
-  }
+    bucket: assetsBucket.name,
+    key: "code/papercut-api-gateway.js",
+    source: papercutApiGatewayScriptSource,
+    contentType: "text/javascript",
+  },
 );
+
+export const papercutApiGatewayAwsAccessKey = new lib.aws.iam.AccessKey(
+  "PapercutApiGatewayAwsAccessKey",
+  { permissions: [invokeIssuerFunctionUrl] },
+);
+
+export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
+  handler: "packages/typescript/functions/papercut-sync/src/index.handler",
+  link: [dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
+});
+
+export const invoicesProcessor = new lib.aws.lambda.Function("InvoicesProcessor", {
+  handler: "packages/typescript/functions/invoices-processor/src/index.handler",
+  link: [dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
+});

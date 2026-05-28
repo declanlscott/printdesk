@@ -1,0 +1,22 @@
+[project]
+name = "printdesk"
+version = "0.0.0"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [
+    "packages/python/functions",
+]
+
+[tool.hatch.build.targets.sdist]
+packages = [
+    "packages/python/functions",
+]
+
+[tool.uv.workspace]
+members = [
+    "packages/python/functions/*",
+]

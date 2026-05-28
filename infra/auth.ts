@@ -1,13 +1,15 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { router, routerSecret } from "./cdn";
-import { authTable, dsqlCluster } from "./db";
-import { domains } from "./dns";
-import { aws_ } from "./misc";
+import { dsql, dynamo } from "./db";
+import { hostnames } from "./dns";
+import * as lib from "./lib";
+import { aws_ } from "./utils";
+
+import type { DynamoStorageOptions } from "@openauthjs/openauth/storage/dynamo";
 
 const oauthAppName =
   {
-    production: $output($app.name.charAt(0).toUpperCase() + $app.name.slice(1)),
+    prod: $output($app.name.charAt(0).toUpperCase() + $app.name.slice(1)),
     dev: $interpolate`${$app.name}-${$app.stage}`,
   }[$app.stage] ?? $interpolate`${$app.name}-dev-${$app.stage}`;
 
@@ -18,30 +20,30 @@ export const entraIdApplication = new azuread.ApplicationRegistration(
     signInAudience: "AzureADMultipleOrgs",
     implicitAccessTokenIssuanceEnabled: true,
     implicitIdTokenIssuanceEnabled: true,
-    homepageUrl: $interpolate`https://${domains.properties.web}`,
+    homepageUrl: $interpolate`https://${hostnames.properties.www}`,
   },
 );
 
-export const entraIdApplicationRedirectUris =
-  new azuread.ApplicationRedirectUris("EntraIdApplicationRedirectUris", {
+export const entraIdApplicationRedirectUris = new azuread.ApplicationRedirectUris(
+  "EntraIdApplicationRedirectUris",
+  {
     applicationId: entraIdApplication.id,
     type: "Web",
     redirectUris: [
-      $interpolate`https://${domains.properties.auth}/${Constants.ENTRA_ID}/callback`,
+      $interpolate`https://${hostnames.properties.auth}/${Constants.ENTRA_ID}/callback`,
     ],
-  });
+  },
+);
 
 const graphAppId = azuread
   .getApplicationPublishedAppIdsOutput()
-  .result.apply((result) => result.MicrosoftGraph);
+  // oxlint-disable-next-line typescript/no-non-null-assertion
+  .result.apply((result) => result.MicrosoftGraph!);
 
-const graphServicePrincipal = new azuread.ServicePrincipal(
-  "GraphServicePrincipal",
-  {
-    clientId: graphAppId,
-    useExisting: true,
-  },
-);
+const graphServicePrincipal = new azuread.ServicePrincipal("GraphServicePrincipal", {
+  clientId: graphAppId,
+  useExisting: true,
+});
 
 export const entraIdApplicationApiAccess = new azuread.ApplicationApiAccess(
   "EntraIdApplicationApiAccess",
@@ -50,29 +52,27 @@ export const entraIdApplicationApiAccess = new azuread.ApplicationApiAccess(
     apiClientId: graphAppId,
     scopeIds: Constants.ENTRA_ID_OAUTH_SCOPES.map(
       (scope) => graphServicePrincipal.oauth2PermissionScopeIds[scope],
-    ),
+    ).filter(Boolean),
     roleIds: Constants.ENTRA_ID_APP_ROLES.map(
       (role) => graphServicePrincipal.appRoleIds[role],
-    ),
+    ).filter(Boolean),
   },
 );
 
-export const rotationHours = 24 * 7 * 26; // 6 months
-export const entraIdClientSecretRotation = new time.Rotating(
-  "EntraIdClientSecretRotation",
-  { rotationHours },
+export const entraIdClientSecretRotation = new time.Rotating("EntraIdClientSecretRotation", {
+  rotationMonths: 6,
+});
+
+export const entraIdClientSecretRotationOffset = new time.Offset(
+  "EntraIdClientSecretRotationOffset",
+  { baseRfc3339: entraIdClientSecretRotation.rotationRfc3339, offsetDays: 30 },
 );
 
-export const entraIdClientSecret = new azuread.ApplicationPassword(
-  "EntraIdClientSecret",
-  {
-    applicationId: entraIdApplication.id,
-    endDateRelative: `${rotationHours.toString()}h`,
-    rotateWhenChanged: {
-      rotation: entraIdClientSecretRotation.id,
-    },
-  },
-);
+export const entraIdClientSecret = new azuread.ApplicationPassword("EntraIdClientSecret", {
+  applicationId: entraIdApplication.id,
+  rotateWhenChanged: { rotation: entraIdClientSecretRotation.id },
+  endDate: entraIdClientSecretRotationOffset.rfc3339,
+});
 
 export const identityProviders = new sst.Linkable("IdentityProviders", {
   properties: {
@@ -87,31 +87,26 @@ export const identityProviders = new sst.Linkable("IdentityProviders", {
   },
 });
 
-export const issuer = new sst.aws.Function("Issuer", {
-  handler: "packages/functions/node/src/issuer.handler",
-  link: [
-    authTable,
-    aws_,
-    dsqlCluster,
-    domains,
-    identityProviders,
-    routerSecret,
-  ],
+export const issuer = new lib.aws.lambda.Function("Issuer", {
+  handler: "packages/typescript/functions/issuer/src/index.handler",
+  url: { authorization: "iam" },
+  link: [aws_, dsql, dynamo, identityProviders],
   environment: {
     OPENAUTH_STORAGE: $jsonStringify({
       type: "dynamo",
-      options: { table: authTable.name },
+      options: {
+        table: dynamo.name,
+        pk: dynamo.nodes.table.hashKey,
+        sk: dynamo.nodes.table.rangeKey,
+        ttl: dynamo.nodes.table.ttl.attributeName,
+      } satisfies {
+        [TKey in keyof DynamoStorageOptions]: $util.Input<DynamoStorageOptions[TKey]>;
+      },
     }),
-  },
-  url: {
-    router: {
-      instance: router,
-      domain: domains.properties.auth,
-    },
-    cors: false,
   },
 });
 
-export const outputs = {
-  issuer: issuer.url,
-};
+export const invokeIssuerFunctionUrl = sst.aws.permission({
+  actions: ["lambda:InvokeFunctionUrl"],
+  resources: [issuer.arn],
+});

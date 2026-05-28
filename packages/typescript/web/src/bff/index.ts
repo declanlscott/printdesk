@@ -1,0 +1,19 @@
+import * as Layer from "effect/Layer";
+import * as HttpRouter from "effect/unstable/http/HttpRouter";
+import * as HttpServer from "effect/unstable/http/HttpServer";
+import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
+
+import { Bff } from "./contract";
+import { authGroupLayer } from "./groups/auth";
+import { spaGroupLayer } from "./groups/spa";
+
+export default {
+  fetch: Bff.pipe(
+    HttpApiBuilder.layer,
+    Layer.provide(authGroupLayer),
+    Layer.provide(spaGroupLayer),
+    Layer.provide(HttpServer.layerServices),
+    Layer.provide(HttpRouter.layer),
+    HttpRouter.toWebHandler,
+  ).handler,
+};

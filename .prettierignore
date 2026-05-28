@@ -1,8 +1,0 @@
-node_modules
-bun.lock
-routeTree.gen.ts
-.astro/
-dist
-.sst
-migrations
-sst-env.d.ts

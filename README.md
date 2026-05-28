@@ -5,4 +5,4 @@
 
 ## License
 
-Licensed under FSL-1.1-ALv2, see [LICENSE](LICENSE.md).
+Licensed under GNU Affero General Public License (AGPL), see [LICENSE](LICENSE).

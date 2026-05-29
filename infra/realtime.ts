@@ -1,7 +1,7 @@
-import { useProvider } from "~/sst/aws/helpers/provider";
-
 import { hostnames } from "./dns";
 import * as lib from "./lib";
+
+import { useProvider } from "~/sst/aws/helpers/provider";
 
 export const realtimeApi = new aws.appsync.Api("RealtimeApi", {
   eventConfig: {

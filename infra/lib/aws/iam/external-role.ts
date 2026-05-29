@@ -1,7 +1,6 @@
-import { transform } from "~/sst/component";
-
 import { PhysicalName } from "../../physical-name";
 
+import { transform } from "~/sst/component";
 import type { Transform } from "~/sst/component";
 import type { Link } from "~/sst/link";
 

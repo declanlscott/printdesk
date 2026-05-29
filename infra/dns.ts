@@ -1,7 +1,8 @@
 import { Constants } from "@printdesk/core/utils/constants";
-import { ZoneLookup } from "~/sst/cloudflare/providers/zone-lookup";
 
 import { cloudflare_, isProdStage } from "./utils";
+
+import { ZoneLookup } from "~/sst/cloudflare/providers/zone-lookup";
 
 export const apexDomain = new sst.Secret("ApexDomain");
 

@@ -1,5 +1,3 @@
-import { VisibleError } from "~/sst/error";
-
 import { assetsPrivateKey, assetsPublicKey, assetsRouter } from "./assets";
 import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
 import { appconfigAgent, appconfigAgentDevContainer } from "./config";
@@ -19,6 +17,8 @@ import {
   realtimeTenantChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, isProdStage } from "./utils";
+
+import { VisibleError } from "~/sst/error";
 
 export const api = new lib.aws.lambda.Function(
   "Api",

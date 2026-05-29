@@ -90,6 +90,30 @@ import type { LogLevel } from "replicache";
 
 export type ServiceShape = Effect.Success<ReturnType<typeof makeService>>;
 
+export const queryLayer = Layer.mergeAll(
+  AnnouncementsReadRepository.layer,
+  CommentsReadRepository.layer,
+  DeliveryOptionsReadRepository.layer,
+  InvoicesReadRepository.layer,
+  OrdersReadRepository.layer,
+  ProductsReadRepository.layer,
+  RoomsReadRepository.layer,
+  SharedAccountsReadRepository.layer,
+  TenantsReadRepository.layer,
+  UsersReadRepository.layer,
+  RoomWorkflowsReadRepository.layer,
+  SharedAccountWorkflowsReadRepository.layer,
+).pipe(
+  Layer.provideMerge([
+    WorkflowStatusesReadRepository.layer,
+    SharedAccountManagerAccessReadRepository.layer,
+    SharedAccountCustomerAccessReadRepository.layer,
+    SharedAccountManagerAccessReadRepository.layer,
+    SharedAccountCustomerGroupAccessReadRepository.layer,
+  ]),
+  Layer.provide(ReadTransactionManager.layer),
+);
+
 export const mutationsDispatcherLayer = baseMutationsDispatcherLayer.pipe(
   Layer.provide([
     AnnouncementsMutations.layer,
@@ -133,27 +157,7 @@ export const mutationsDispatcherLayer = baseMutationsDispatcherLayer.pipe(
     RoomWorkflowsWriteRepository.layer,
     WorkflowStatusesWriteRepository.layer,
   ]),
-  Layer.provide([
-    AnnouncementsReadRepository.layer,
-    CommentsReadRepository.layer,
-    DeliveryOptionsReadRepository.layer,
-    InvoicesReadRepository.layer,
-    OrdersReadRepository.layer,
-    ProductsReadRepository.layer,
-    RoomsReadRepository.layer,
-    SharedAccountsReadRepository.layer,
-    TenantsReadRepository.layer,
-    UsersReadRepository.layer,
-    RoomWorkflowsReadRepository.layer,
-    SharedAccountWorkflowsReadRepository.layer,
-  ]),
-  Layer.provide([
-    WorkflowStatusesReadRepository.layer,
-    SharedAccountManagerAccessReadRepository.layer,
-    SharedAccountCustomerAccessReadRepository.layer,
-    SharedAccountManagerAccessReadRepository.layer,
-    SharedAccountCustomerGroupAccessReadRepository.layer,
-  ]),
+  Layer.provide(queryLayer),
   Layer.provide(WriteTransactionManager.layer),
   Layer.provide(ReadTransactionManager.layer),
 );

@@ -7,6 +7,7 @@ import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
 import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
+import * as SynchronizedRef from "effect/SynchronizedRef";
 
 import type { PgEffectTransaction } from "drizzle-orm/pg-core/effect";
 
@@ -22,7 +23,7 @@ export class Transaction extends Context.Service<Transaction>()(
       tx: PgEffectTransaction<PgDrizzle.EffectPgQueryEffectHKT, PgDrizzle.EffectPgQueryResultHKT>,
     ) {
       {
-        const afterEffectsRef = yield* Ref.make(Chunk.empty<TransactionAfterEffect>());
+        const afterEffectsRef = yield* SynchronizedRef.make(Chunk.empty<TransactionAfterEffect>());
 
         yield* Effect.addFinalizer(
           Effect.fn("Database.Transaction.finalizer")((exit) =>

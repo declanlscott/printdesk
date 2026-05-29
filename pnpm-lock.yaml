@@ -534,6 +534,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.6(react@19.2.6)
+      replicache:
+        specifier: 'catalog:'
+        version: 15.3.0
     devDependencies:
       '@cloudflare/vite-plugin':
         specifier: 'catalog:'

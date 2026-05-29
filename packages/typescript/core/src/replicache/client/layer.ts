@@ -337,7 +337,6 @@ export const makeService = Effect.fn(function* ({
           catch: (cause) => new Replicache.SubscribeError({ cause }),
         }),
       ),
-      Effect.map(Effect.sync),
     );
 
   const mutate = <TName extends keyof Mutations.Record>(

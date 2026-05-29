@@ -53,6 +53,7 @@ export namespace XmlRpc {
 
       const request = Effect.fn("XmlRpc.request")(function* <
         TMethodName extends string,
+        // oxlint-disable-next-line typescript/no-explicit-any
         TSchemas extends Array<Schema.Encoder<any>>,
       >(
         methodName: TMethodName,

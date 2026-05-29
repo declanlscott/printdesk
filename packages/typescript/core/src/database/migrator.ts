@@ -101,9 +101,11 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
           Effect.map(HashMap.fromIterable),
         );
 
+      // oxlint-disable-next-line unicorn/no-array-for-each
       yield* Effect.forEach(
         migrations,
         (migration) =>
+          // oxlint-disable-next-line unicorn/no-array-for-each
           Effect.forEach(
             migration.sql,
             Effect.fn(function* (statement, index) {

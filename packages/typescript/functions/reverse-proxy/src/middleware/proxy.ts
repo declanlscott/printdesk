@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-non-null-assertion
 import { createMiddleware } from "hono/factory";
 import { proxy as fetchProxy } from "hono/proxy";
 

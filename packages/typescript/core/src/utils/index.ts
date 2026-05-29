@@ -153,7 +153,9 @@ export const pluck =
   ): Schema.decodeTo<Schema.toType<TSchema>, Schema.Struct<{ [K in TPropertyKey]: TSchema }>> =>
     schema.mapFields(Struct.pick([propertyKey])).pipe(
       Schema.decodeTo(Schema.toType(schema.fields[propertyKey]), {
+        // oxlint-disable-next-line typescript/no-explicit-any
         decode: SchemaGetter.transform((whole: any) => whole[propertyKey]),
+        // oxlint-disable-next-line typescript/no-explicit-any
         encode: SchemaGetter.transform((value) => ({ [propertyKey]: value }) as any),
       }),
     );

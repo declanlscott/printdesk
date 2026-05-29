@@ -13,7 +13,7 @@ import { Database } from "../../database";
 import { Realtime } from "../../realtime";
 import { ReplicacheClientGroupId } from "../client-group-id";
 
-import type { Events } from "../../events";
+import type { ReplicacheContract } from "../contracts";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -32,9 +32,11 @@ export const makeService = Effect.gen(function* () {
           .pipe(
             Effect.provideContext(context),
             Effect.andThen((success) =>
+              // oxlint-disable-next-line unicorn/no-array-for-each
               Effect.forEach(entries, Request.completeEffect(Effect.succeed(success))),
             ),
             Effect.catch((error) =>
+              // oxlint-disable-next-line unicorn/no-array-for-each
               Effect.forEach(
                 entries,
                 Request.completeEffect(new ReplicacheNotifyError({ cause: error })),
@@ -46,7 +48,7 @@ export const makeService = Effect.gen(function* () {
   );
 
   const notify = Effect.fn("ReplicacheNotifier.notify")(
-    (data: Events.ReplicacheNotification["data"]) =>
+    (data: ReplicacheContract.Notification["data"]) =>
       Effect.context<ReplicacheClientGroupId | Actor | AwsCredentialIdentity>().pipe(
         Effect.flatMap((context) =>
           Effect.request(

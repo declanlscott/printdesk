@@ -110,6 +110,7 @@ export const makeService = Effect.gen(function* () {
         streamer
           .streamDeletes(clientView, userId)
           .pipe(Stream.map((delete_) => Object.assign(delete_, { _tag: "delete" }))),
+        // oxlint-disable-next-line typescript/no-explicit-any
       ] as any,
       { concurrency: "unbounded" },
     );

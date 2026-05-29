@@ -108,6 +108,7 @@ export namespace XmlRpcContract {
     }),
   );
 
+  // oxlint-disable-next-line typescript/no-explicit-any
   export const tupleResponse = <TValues extends Array<Schema.Decoder<any>>>(...Values: TValues) =>
     methodResponse({
       params: Schema.Struct({
@@ -128,6 +129,7 @@ export namespace XmlRpcContract {
       }),
     );
 
+  // oxlint-disable-next-line typescript/no-explicit-any
   export const arrayResponse = <TValue extends Schema.Decoder<any>>(Value: TValue) =>
     methodResponse({
       params: Schema.Struct({

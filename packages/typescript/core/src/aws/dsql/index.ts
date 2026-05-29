@@ -8,6 +8,7 @@ export class DataConflictError extends Schema.TaggedErrorClass<DataConflictError
 ) {
   public static readonly code = "OC000";
 
+  // oxlint-disable-next-line class-methods-use-this
   public get isRetryable() {
     return true;
   }
@@ -19,6 +20,7 @@ export class SchemaConflictError extends Schema.TaggedErrorClass<SchemaConflictE
 ) {
   public static readonly code = "OC001";
 
+  // oxlint-disable-next-line class-methods-use-this
   public get isRetryable() {
     return true;
   }

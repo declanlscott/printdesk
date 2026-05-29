@@ -33,7 +33,7 @@ export default defineConfig({
     jsPlugins: [
       "@tanstack/eslint-plugin-router",
       "eslint-plugin-drizzle",
-      "eslint-plugin-react-hooks",
+      { name: "react-hooks-js", specifier: "eslint-plugin-react-hooks" },
     ],
     categories: {
       correctness: "error",
@@ -48,7 +48,9 @@ export default defineConfig({
       "eslint/no-param-reassign": "off",
       "eslint/no-shadow": "off",
       "eslint/no-undefined": "off",
+      "eslint/no-underscore-dangle": "off",
       "eslint/no-use-before-define": "off",
+      "react/forbid-component-props": "off",
       "react/jsx-filename-extension": "off",
       "react/react-in-jsx-scope": "off",
       "typescript/no-namespace": "off",

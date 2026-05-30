@@ -17,8 +17,8 @@ import type { Models } from "../models";
 import type { ReplicacheClientViewsModel } from "../replicache/models";
 import type { Version } from "../utils";
 
-export namespace SyncContract {
-  export class SyncLimitExceededError extends Schema.TaggedErrorClass<SyncLimitExceededError>()(
+export namespace Sync {
+  export class LimitExceededError extends Schema.TaggedErrorClass<LimitExceededError>()(
     "SyncLimitExceededError",
     {},
   ) {}

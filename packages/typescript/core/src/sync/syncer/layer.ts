@@ -8,6 +8,7 @@ import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 
 import { Syncer } from ".";
+import { Sync } from "..";
 import { AnnouncementsSync } from "../../announcements/sync";
 import { CommentsSync } from "../../comments/sync";
 import { DeliveryOptionsSync } from "../../delivery-options/sync";
@@ -32,7 +33,6 @@ import { Constants } from "../../utils/constants";
 import { RoomWorkflowsSync } from "../../workflows/room/sync";
 import { SharedAccountWorkflowsSync } from "../../workflows/shared-account/sync";
 import { WorkflowStatusesSync } from "../../workflows/status/sync";
-import { SyncContract } from "../contract";
 
 import type { ActorsContract } from "../../actors/contract";
 import type { Version } from "../../utils";
@@ -67,7 +67,7 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountWorkflows = yield* SharedAccountWorkflowsSync.useSync(Struct.get("streamer"));
   const workflowStatuses = yield* WorkflowStatusesSync.useSync(Struct.get("streamer"));
 
-  const streamer = new SyncContract.Streamer()
+  const streamer = new Sync.Streamer()
     .entity(announcements)
     .entity(comments)
     .entity(customerGroups)
@@ -186,7 +186,7 @@ export const makeService = Effect.gen(function* () {
       Effect.scoped,
     );
 
-    if (limit < 0) return yield* new SyncContract.SyncLimitExceededError();
+    if (limit < 0) return yield* new Sync.LimitExceededError();
 
     // Fast-forward
     if (clientView.version < clientViewVersion.max)

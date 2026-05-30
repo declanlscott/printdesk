@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { SharedAccountManagerAccessSync } from ".";
 import { AccessControl } from "../../../access-control";
-import { SyncContract } from "../../../sync/contract";
+import { Sync } from "../../../sync";
 import { sharedAccountManagerAccess } from "../../sql";
 import { SharedAccountManagerAccessRepository } from "../repository";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* SharedAccountManagerAccessRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(sharedAccountManagerAccess.name)
+  const streamer = new Sync.EntityStreamerBuilder(sharedAccountManagerAccess.name)
     .source(AccessControl.userPermissionPolicy("shared_account_manager_access:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { CommentsSync } from ".";
 import { AccessControl } from "../../access-control";
-import { SyncContract } from "../../sync/contract";
+import { Sync } from "../../sync";
 import { CommentsRepository } from "../repository";
 import { comments } from "../sql";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* CommentsRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(comments.name)
+  const streamer = new Sync.EntityStreamerBuilder(comments.name)
     .source(AccessControl.userPermissionPolicy("comments:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

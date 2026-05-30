@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { DeliveryOptionsSync } from ".";
 import { AccessControl } from "../../access-control";
-import { SyncContract } from "../../sync/contract";
+import { Sync } from "../../sync";
 import { DeliveryOptionsRepository } from "../repository";
 import { deliveryOptions } from "../sql";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* DeliveryOptionsRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(deliveryOptions.name)
+  const streamer = new Sync.EntityStreamerBuilder(deliveryOptions.name)
     .source(AccessControl.userPermissionPolicy("delivery_options:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

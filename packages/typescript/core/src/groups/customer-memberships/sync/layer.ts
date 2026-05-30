@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { CustomerGroupMembershipsSync } from ".";
 import { AccessControl } from "../../../access-control";
-import { SyncContract } from "../../../sync/contract";
+import { Sync } from "../../../sync";
 import { customerGroupMemberships } from "../../sql";
 import { CustomerGroupMembershipsRepository } from "../repository";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* CustomerGroupMembershipsRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(customerGroupMemberships.name)
+  const streamer = new Sync.EntityStreamerBuilder(customerGroupMemberships.name)
     .source(AccessControl.userPermissionPolicy("customer_group_memberships:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

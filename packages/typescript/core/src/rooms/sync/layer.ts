@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { RoomsSync } from ".";
 import { AccessControl } from "../../access-control";
-import { SyncContract } from "../../sync/contract";
+import { Sync } from "../../sync";
 import { RoomsRepository } from "../repository";
 import { rooms } from "../sql";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* RoomsRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(rooms.name)
+  const streamer = new Sync.EntityStreamerBuilder(rooms.name)
     .source(AccessControl.userPermissionPolicy("rooms:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

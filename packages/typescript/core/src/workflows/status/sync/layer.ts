@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { WorkflowStatusesSync } from ".";
 import { AccessControl } from "../../../access-control";
-import { SyncContract } from "../../../sync/contract";
+import { Sync } from "../../../sync";
 import { workflowStatuses } from "../../sql";
 import { WorkflowStatusesRepository } from "../repository";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* WorkflowStatusesRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(workflowStatuses.name)
+  const streamer = new Sync.EntityStreamerBuilder(workflowStatuses.name)
     .source(AccessControl.userPermissionPolicy("workflow_statuses:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

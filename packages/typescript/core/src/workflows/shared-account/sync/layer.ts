@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { SharedAccountWorkflowsSync } from ".";
 import { AccessControl } from "../../../access-control";
-import { SyncContract } from "../../../sync/contract";
+import { Sync } from "../../../sync";
 import { sharedAccountWorkflows } from "../../sql";
 import { SharedAccountWorkflowsRepository } from "../repository";
 
@@ -12,7 +12,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* SharedAccountWorkflowsRepository;
 
-  const streamer = new SyncContract.EntityStreamerBuilder(sharedAccountWorkflows.name)
+  const streamer = new Sync.EntityStreamerBuilder(sharedAccountWorkflows.name)
     .source(AccessControl.userPermissionPolicy("shared_account_workflows:read"), {
       findCreates: repository.findCreates,
       findUpdates: repository.findUpdates,

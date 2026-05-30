@@ -5,7 +5,6 @@ import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
-import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
 import * as SynchronizedRef from "effect/SynchronizedRef";
 
@@ -28,7 +27,7 @@ export class Transaction extends Context.Service<Transaction>()(
         yield* Effect.addFinalizer(
           Effect.fn("Database.Transaction.finalizer")((exit) =>
             afterEffectsRef.pipe(
-              Ref.get,
+              SynchronizedRef.get,
               Effect.map(
                 Chunk.filterMap(({ onSuccessOnly, effect }) =>
                   onSuccessOnly && exit.pipe(Predicate.not(Exit.isSuccess))
@@ -44,7 +43,7 @@ export class Transaction extends Context.Service<Transaction>()(
         );
 
         const registerAfterEffect = (afterEffect: TransactionAfterEffect) =>
-          afterEffectsRef.pipe(Ref.update(Chunk.append(afterEffect)));
+          afterEffectsRef.pipe(SynchronizedRef.update(Chunk.append(afterEffect)));
 
         return { tx, registerAfterEffect } as const;
       }

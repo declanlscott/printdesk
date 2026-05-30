@@ -7,8 +7,8 @@ import * as MutableHashMap from "effect/MutableHashMap";
 import * as MutableHashSet from "effect/MutableHashSet";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
-import * as Semaphore from "effect/Semaphore";
 import * as Stream from "effect/Stream";
+import * as SynchronizedRef from "effect/SynchronizedRef";
 
 import { AccessControl } from "../access-control";
 
@@ -218,28 +218,25 @@ export namespace SyncContract {
       >,
     ) =>
       MutableHashMap.empty<TData["id"], TData>().pipe(
-        Effect.fn(function* (map) {
-          const mutex = yield* Semaphore.make(1);
-
-          yield* Effect.all(
+        SynchronizedRef.make,
+        Effect.tap((ref) =>
+          Effect.all(
             Iterable.map(effects, (effect) =>
               effect.pipe(
                 Effect.catchTag("AccessDeniedError", () => Effect.sync(Array.empty<TData>)),
                 Effect.map(
                   Array.map((data) =>
-                    Effect.sync(() => map.pipe(MutableHashMap.set(data.id, data))).pipe(
-                      mutex.withPermits(1),
-                    ),
+                    ref.pipe(SynchronizedRef.update(MutableHashMap.set(data.id, data))),
                   ),
                 ),
                 Effect.flatMap((effects) => Effect.all(effects, { discard: true })),
               ),
             ),
             { concurrency: "unbounded", discard: true },
-          );
-
-          return map.pipe(MutableHashMap.values);
-        }),
+          ),
+        ),
+        Effect.flatMap(SynchronizedRef.get),
+        Effect.map(MutableHashMap.values),
         Stream.fromIterableEffect,
       );
 
@@ -250,27 +247,24 @@ export namespace SyncContract {
       >,
     ) =>
       MutableHashSet.empty<TData["id"]>().pipe(
-        Effect.fn(function* (set) {
-          const mutex = yield* Semaphore.make(1);
-
-          yield* Effect.all(
+        SynchronizedRef.make,
+        Effect.tap((ref) =>
+          Effect.all(
             Iterable.map(effects, (effect) =>
               effect.pipe(
                 Effect.catchTag("AccessDeniedError", () => Effect.sync(Array.empty<TData>)),
                 Effect.map(
                   Array.map((data) =>
-                    Effect.sync(() => set.pipe(MutableHashSet.add(data.id))).pipe(
-                      mutex.withPermits(1),
-                    ),
+                    ref.pipe(SynchronizedRef.update(MutableHashSet.add(data.id))),
                   ),
                 ),
+                Effect.flatMap((effects) => Effect.all(effects, { discard: true })),
               ),
             ),
             { concurrency: "unbounded", discard: true },
-          );
-
-          return set;
-        }),
+          ),
+        ),
+        Effect.flatMap(SynchronizedRef.get),
         Stream.fromIterableEffect,
       );
 

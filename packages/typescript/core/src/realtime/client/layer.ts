@@ -30,7 +30,7 @@ export const makeService = Effect.fn(function* (baseUrls: { api: URL; realtime: 
     .pipe(Effect.flatMap(Schema.encodeEffect(RealtimeContract.WebSocketAuthorizationProtocol)));
 
   const socket = yield* Socket.makeWebSocket(new URL("/event/realtime", baseUrls.realtime).href, {
-    protocols: [authProtocol, "aws-appsync-event-ws"],
+    protocols: ["aws-appsync-event-ws", authProtocol],
   });
   const write = yield* socket.writer;
 
@@ -68,9 +68,9 @@ export const makeService = Effect.fn(function* (baseUrls: { api: URL; realtime: 
     Stream.tap(
       Effect.fn(function* (ack) {
         yield* Effect.all(
-          Record.collect(Events.registry.record, (_, event) =>
+          Record.collect(Events.registry.record, (name) =>
             subscriptions.add({
-              name: event.name,
+              name,
               getAuthorization: (channel) => api.getAuthorization({ payload: { channel } }),
               send: write,
             }),

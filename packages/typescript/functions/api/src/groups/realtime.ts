@@ -18,7 +18,7 @@ export const baseRealtimeGroupLayer = HttpApiBuilder.group(
       "getAuthorization",
       Effect.fn("Api.Realtime.getAuthorization")(({ payload }) =>
         realtime
-          .getAuthorization(payload.channel)
+          .getAuthorization(payload)
           .pipe(Effect.mapError(() => new HttpApiError.InternalServerError())),
       ),
     );

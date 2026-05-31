@@ -1,9 +1,19 @@
+import * as Array from "effect/Array";
 import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as String from "effect/String";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
-import { Events } from "../events";
+import { Events } from "../handlers/events";
 
 export namespace RealtimeContract {
+  export const Authorization = Schema.Record(Schema.String, Schema.String);
+
+  export const Event = Events.registry.Schema.mapMembers(
+    Array.map((member) => member.fields.input),
+  );
+  export type Event = typeof Event.Type;
+
   const success = <TKind extends string>(kind: TKind) =>
     Schema.Struct({
       type: Schema.tag(`${kind}_success`),
@@ -44,13 +54,13 @@ export namespace RealtimeContract {
     type: Schema.tag("subscribe"),
     id: SubscriptionId,
     channel: Channel,
-    authorization: Schema.Record(Schema.String, Schema.String),
+    authorization: Authorization,
   }) {}
 
   export class Data extends Schema.Class<Data>("Data")({
     type: Schema.tag("data"),
     id: SubscriptionId,
-    event: Schema.Unknown,
+    event: Event,
   }) {}
 
   export class KeepAlive extends Schema.Class<KeepAlive>("KeepAlive")({
@@ -69,19 +79,30 @@ export namespace RealtimeContract {
     error("broadcast"),
     KeepAlive,
     ...result("unsubscribe"),
-  ]);
+  ]).pipe(Schema.fromJsonString);
+  export type Message = typeof Message.Type;
 
-  export class Event extends Schema.Class<Event>("Event")({
-    type: Schema.tag("event"),
-    id: SubscriptionId,
-    event: Events.Event,
+  export const AuthorizationPayload = Schema.Struct({ channel: Channel }).pipe(Schema.optional);
+  export type AuthorizationPayload = typeof AuthorizationPayload.Type;
+
+  export const AuthorizationSuccess = Authorization.pipe(HttpApiSchema.status(200));
+
+  const headerPrefix = "header-";
+  const Base64Url = Schema.NonEmptyString.pipe(Schema.check(Schema.isBase64Url()));
+  export const WebSocketAuthorizationProtocol = Authorization.pipe(
+    Schema.fromJsonString,
+    Schema.encodeTo(Base64Url, {
+      encode: SchemaGetter.encodeBase64Url(),
+      decode: SchemaGetter.decodeBase64UrlString(),
+    }),
+    Schema.encodeTo(Schema.TemplateLiteral([Schema.Literal(headerPrefix), Base64Url]), {
+      encode: SchemaGetter.transform((base64Url) => `${headerPrefix}${base64Url}` as const),
+      decode: SchemaGetter.transform(String.replace(headerPrefix, "")),
+    }),
+  );
+
+  export class PublishPayload extends Schema.Class<PublishPayload>("PublishPayload")({
+    channel: Channel,
+    events: Event.pipe(Schema.Array),
   }) {}
-
-  export class GetAuthorizationPayload extends Schema.Class<GetAuthorizationPayload>(
-    "GetAuthorizationPayload",
-  )({ channel: Channel.pipe(Schema.toEncoded) }) {}
-
-  export const Authorization = Schema.Record(Schema.String, Schema.String);
-
-  export const GetAuthorizationSuccess = Authorization.pipe(HttpApiSchema.status(200));
 }

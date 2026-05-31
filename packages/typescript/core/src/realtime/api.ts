@@ -6,8 +6,8 @@ import { RealtimeContract } from "./contract";
 
 export namespace RealtimeApi {
   export const getAuthorization = HttpApiEndpoint.post("getAuthorization", "/authorization", {
-    payload: RealtimeContract.GetAuthorizationPayload,
-    success: RealtimeContract.GetAuthorizationSuccess,
+    payload: RealtimeContract.AuthorizationPayload,
+    success: RealtimeContract.AuthorizationSuccess,
     error: HttpApiError.InternalServerError,
   });
 

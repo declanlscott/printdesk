@@ -7,10 +7,14 @@ import * as Realtime from "@printdesk/core/realtime/client/layer";
 import * as Subscriptions from "@printdesk/core/realtime/client/subscriptions/layer";
 import * as ReplicacheEvents from "@printdesk/core/replicache/client/events/layer";
 import * as Replicache from "@printdesk/core/replicache/client/layer";
+import * as Cause from "effect/Cause";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
 import * as Redacted from "effect/Redacted";
+import * as Result from "effect/Result";
+import * as Schedule from "effect/Schedule";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
@@ -45,10 +49,34 @@ export const realtimeAtom = realtimeRuntime.atom((get) =>
         realtime: new URL(`wss://${realtime}`),
       }),
     ),
-    Effect.scoped,
+  ),
+);
+
+export const realtimeSocketAtom = Atom.make((get) =>
+  realtimeAtom.pipe(get.result, Effect.map(Struct.get("socket"))),
+);
+
+export const realtimeStreamAtom = Atom.make((get) =>
+  realtimeAtom.pipe(
+    get.result,
     Effect.map(Struct.get("stream")),
     Stream.unwrap,
     Stream.scoped,
     Stream.provideService(Actor, Actor.of(get(actorAtom))),
+    Stream.catchCause((cause) =>
+      cause.pipe(
+        Cause.findError,
+        Result.match({
+          onSuccess: Stream.fail,
+          onFailure: () => Stream.fail(new Cause.TimeoutError("An unexpected error occurred")),
+        }),
+      ),
+    ),
+    Stream.retry(
+      Schedule.exponential(Duration.millis(300), 1.1).pipe(
+        Schedule.jittered,
+        Schedule.map(Duration.min(Duration.seconds(5))),
+      ),
+    ),
   ),
 );

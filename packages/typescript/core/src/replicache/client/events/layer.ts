@@ -17,8 +17,10 @@ export const makeService = Effect.gen(function* () {
   const policiesDispatcher = yield* PoliciesDispatcher;
 
   const notification = EventsContract.makeEvent(ReplicacheContract.notification, {
-    handler: (notification) =>
-      Effect.firstSuccessOf(
+    handler: Effect.fn(function* (notification) {
+      if ((yield* replicache.clientGroupId) === notification.clientGroupId) return;
+
+      return yield* Effect.firstSuccessOf(
         Iterable.map(notification.data, (data) =>
           Match.value(data).pipe(
             Match.tagsExhaustive({
@@ -36,7 +38,8 @@ export const makeService = Effect.gen(function* () {
         Effect.flatMap(() => replicache.pull),
         Effect.catchTag("ReplicachePullError", Effect.logError),
         Effect.catch(() => Effect.void),
-      ),
+      );
+    }),
   });
 
   return { notification } as const;

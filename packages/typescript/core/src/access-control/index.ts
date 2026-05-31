@@ -196,6 +196,7 @@ export namespace AccessControl {
     never,
     SchemaAST.String,
     ResourceString
+    // oxlint-disable-next-line typescript/no-empty-object-type
   > {}
 
   export const ResourceString: ResourceString = Schema.String;

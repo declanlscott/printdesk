@@ -18,7 +18,6 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import * as Socket from "effect/unstable/socket/Socket";
 
 import { actorAtom } from "./actor";
-import { atomRegistryLayer } from "./atom";
 import { networkMonitorLayer } from "./network";
 import { replicacheLayer } from "./replicache";
 import { ViteResource } from "./sst";
@@ -31,7 +30,7 @@ export const realtimeRuntime = Layer.mergeAll(
     Layer.provide([BrowserCrypto.layer, Path.layer, EventsDispatcher.layer]),
     Layer.provide([PapercutEvents.layer, ReplicacheEvents.layer]),
     Layer.provide([PoliciesDispatcher.layer, replicacheLayer]),
-    Layer.provide([Replicache.policiesLayer, atomRegistryLayer]),
+    Layer.provide(Replicache.policiesLayer),
   ),
 ).pipe(Atom.runtime);
 

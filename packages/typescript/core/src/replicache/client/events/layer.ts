@@ -27,10 +27,14 @@ export const makeService = Effect.gen(function* () {
               ReplicachePullPolicy: (policy) =>
                 policiesDispatcher.dispatch(policy.name, policy.input).pipe(replicache.query),
             }),
+            Effect.tapError((error) =>
+              error._tag === "AccessDeniedError" ? Effect.void : Effect.logError(error),
+            ),
           ),
         ),
       ).pipe(
         Effect.flatMap(() => replicache.pull),
+        Effect.catchTag("ReplicachePullError", Effect.logError),
         Effect.catch(() => Effect.void),
       ),
   });

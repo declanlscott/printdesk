@@ -5,9 +5,9 @@ import { MutationsDispatcher } from ".";
 import { AnnouncementsMutations } from "../../../announcements/client/mutations";
 import { CommentsMutations } from "../../../comments/client/mutations";
 import { DeliveryOptionsMutations } from "../../../delivery-options/client/mutations";
+import { Mutations } from "../../../handlers/mutations";
 import { InvoicesMutations } from "../../../invoices/client/mutations";
 import { OrdersMutations } from "../../../orders/client/mutations";
-import { Mutations } from "../../../procedures/mutations";
 import { ProductsMutations } from "../../../products/client/mutations";
 import { RoomsMutations } from "../../../rooms/client/mutations";
 import { SharedAccountManagerAccessMutations } from "../../../shared-accounts/client/manager-access/mutations";
@@ -34,7 +34,7 @@ export const makeService = Effect.gen(function* () {
   const workflowStatuses = yield* WorkflowStatusesMutations;
 
   return new MutationsContract.Dispatcher({
-    procedureRegistry: Mutations.registry,
+    handlerRegistry: Mutations.registry,
   })
     .mutation(announcements.create)
     .mutation(announcements.edit)

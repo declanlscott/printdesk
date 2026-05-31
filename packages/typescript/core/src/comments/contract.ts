@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId } from "../utils";
 
@@ -45,41 +45,41 @@ export namespace CommentsContract {
     }),
   );
 
-  export const isAuthor = new ProceduresContract.Procedure({
+  export const isAuthor = new HandlersContract.Handler({
     name: "isCommentAuthor",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign({ authorId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
     ),
-    Returns: Schema.Void,
+    Output: Schema.Void,
   });
 
-  export const canEdit = new ProceduresContract.Procedure({
+  export const canEdit = new HandlersContract.Handler({
     name: "canEditComment",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canDelete = new ProceduresContract.Procedure({
+  export const canDelete = new HandlersContract.Handler({
     name: "canDeleteComment",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canRestore = new ProceduresContract.Procedure({
+  export const canRestore = new HandlersContract.Handler({
     name: "canRestoreComment",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const create = new ProceduresContract.Procedure({
+  export const create = new HandlersContract.Handler({
     name: "createComment",
-    Args: Table.Dto.mapFields(Struct.omit(["authorId", "deletedAt", "tenantId"])),
-    Returns: Table.Dto,
+    Input: Table.Dto.mapFields(Struct.omit(["authorId", "deletedAt", "tenantId"])),
+    Output: Table.Dto,
   });
 
-  export const edit = new ProceduresContract.Procedure({
+  export const edit = new HandlersContract.Handler({
     name: "editComment",
-    Args: Table.Dto.mapFields(
+    Input: Table.Dto.mapFields(
       Struct.omit([
         ...Struct.keys(TablesContract.BaseModel.fields),
         "orderId",
@@ -95,24 +95,24 @@ export namespace CommentsContract {
           }),
         ),
       ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const delete_ = new ProceduresContract.Procedure({
+  export const delete_ = new HandlersContract.Handler({
     name: "deleteComment",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {
           deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
         }),
       ),
     ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const restore = new ProceduresContract.Procedure({
+  export const restore = new HandlersContract.Handler({
     name: "restoreComment",
-    Args: IdOnly,
-    Returns: Table.Dto,
+    Input: IdOnly,
+    Output: Table.Dto,
   });
 }

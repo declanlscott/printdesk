@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 import { Constants } from "../utils/constants";
 
@@ -33,15 +33,15 @@ export namespace TenantsContract {
     ["version", "lastPapercutSyncAt"],
   ) {}
 
-  export const isSubdomainAvailable = new ProceduresContract.Procedure({
+  export const isSubdomainAvailable = new HandlersContract.Handler({
     name: "isTenantSubdomainAvailable",
-    Args: Table.Model.mapFields(Struct.pick(["subdomain"])),
-    Returns: Schema.Void,
+    Input: Table.Model.mapFields(Struct.pick(["subdomain"])),
+    Output: Schema.Void,
   });
 
-  export const edit = new ProceduresContract.Procedure({
+  export const edit = new HandlersContract.Handler({
     name: "editTenant",
-    Args: Table.Dto.mapFields(
+    Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "status"]),
     )
       .mapFields(Struct.map(Schema.optional))
@@ -52,6 +52,6 @@ export namespace TenantsContract {
           }),
         ),
       ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 }

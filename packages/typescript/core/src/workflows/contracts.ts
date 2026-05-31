@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId, HexColor } from "../utils";
 import { Constants } from "../utils/constants";
@@ -67,20 +67,20 @@ export namespace SharedAccountWorkflowsContract {
     }),
   );
 
-  export const isCustomerAuthorized = new ProceduresContract.Procedure({
+  export const isCustomerAuthorized = new HandlersContract.Handler({
     name: "isCustomerAuthorizedSharedAccountWorkflow",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign({ customerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
     ),
-    Returns: Schema.Void,
+    Output: Schema.Void,
   });
 
-  export const isManagerAuthorized = new ProceduresContract.Procedure({
+  export const isManagerAuthorized = new HandlersContract.Handler({
     name: "isManagerAuthorizedSharedAccountWorkflow",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
     ),
-    Returns: Schema.Void,
+    Output: Schema.Void,
   });
 }
 
@@ -146,31 +146,31 @@ export namespace WorkflowStatusesContract {
     Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), { id: (id) => id.from.schema.members[0] }),
   );
 
-  export const canEdit = new ProceduresContract.Procedure({
+  export const canEdit = new HandlersContract.Handler({
     name: "canEditWorkflowStatus",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canDelete = new ProceduresContract.Procedure({
+  export const canDelete = new HandlersContract.Handler({
     name: "canDeleteWorkflowStatus",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
   const omittedOnAppend = [...Table.dtoOmitKeys, "index", "deletedAt", "tenantId"] as const;
-  export const append = new ProceduresContract.Procedure({
+  export const append = new HandlersContract.Handler({
     name: "appendWorkflowStatus",
-    Args: Schema.Union([
+    Input: Schema.Union([
       SharedAccountWorkflowModel.mapFields(Struct.omit(omittedOnAppend)),
       RoomWorkflowModel.mapFields(Struct.omit(omittedOnAppend)),
     ]),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const edit = new ProceduresContract.Procedure({
+  export const edit = new HandlersContract.Handler({
     name: "editWorkflowStatus",
-    Args: BaseModel.mapFields(
+    Input: BaseModel.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseSyncModel.fields), "index"]),
     )
       .mapFields(Struct.map(Schema.optional))
@@ -181,28 +181,28 @@ export namespace WorkflowStatusesContract {
           }),
         ),
       ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const reorder = new ProceduresContract.Procedure({
+  export const reorder = new HandlersContract.Handler({
     name: "reorderWorkflowStatus",
-    Args: Schema.Struct(
+    Input: Schema.Struct(
       Struct.evolve(Struct.pick(BaseModel.fields, ["id", "index", "updatedAt"]), {
         id: (id) => id.from.schema.members[0],
       }),
     ),
-    Returns: Table.Dto.pipe(Schema.Array),
+    Output: Table.Dto.pipe(Schema.Array),
   });
 
-  export const delete_ = new ProceduresContract.Procedure({
+  export const delete_ = new HandlersContract.Handler({
     name: "deleteWorkflowStatus",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(BaseModel.fields, ["deletedAt"]), {
           deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
         }),
       ),
     ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 }

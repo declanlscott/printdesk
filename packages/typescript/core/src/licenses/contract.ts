@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 
 import type { LicensesTable } from "./sql";
@@ -25,9 +25,9 @@ export namespace LicensesContract {
     ["key"],
   ) {}
 
-  export const isAvailable = new ProceduresContract.Procedure({
+  export const isAvailable = new HandlersContract.Handler({
     name: "isLicenseAvailable",
-    Args: Table.Model.mapFields(Struct.pick(["key"])),
-    Returns: Schema.Void,
+    Input: Table.Model.mapFields(Struct.pick(["key"])),
+    Output: Schema.Void,
   });
 }

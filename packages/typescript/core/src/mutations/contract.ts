@@ -10,7 +10,7 @@ import { AccessControl } from "../access-control";
 import { Actor } from "../actors";
 
 import type { ActorsContract } from "../actors/contract";
-import type { ProceduresContract } from "../procedures/contract";
+import type { HandlersContract } from "../handlers/contract";
 
 export namespace MutationsContract {
   export type Mutator<TArgs extends Schema.Top, TSuccess, TError, TServices> = (
@@ -23,138 +23,138 @@ export namespace MutationsContract {
     TArgs extends Schema.Top,
     TMutatorSuccess,
     TMutatorError,
-    TMutatorContext,
+    TMutatorServices,
     TPolicyError,
-    TPolicyContext,
+    TPolicyServices,
   > = {
     readonly name: TName;
-    readonly makePolicy: AccessControl.MakePolicy<TArgs, TPolicyError, TPolicyContext>;
-    readonly mutator: Mutator<TArgs, TMutatorSuccess, TMutatorError, TMutatorContext>;
+    readonly makePolicy: AccessControl.MakePolicy<TArgs, TPolicyError, TPolicyServices>;
+    readonly mutator: Mutator<TArgs, TMutatorSuccess, TMutatorError, TMutatorServices>;
   };
 
   export const makeMutation = <
-    TProcedure extends ProceduresContract.Procedure,
-    TMutatorSuccess extends Schema.Schema.Type<TProcedure["Returns"]>,
+    THandler extends HandlersContract.Handler,
+    TMutatorSuccess extends Schema.Schema.Type<THandler["Output"]>,
     TMutatorError,
-    TMutatorContext,
+    TMutatorServices,
     TPolicyError,
-    TPolicyContext,
+    TPolicyServices,
   >(
-    procedure: TProcedure,
+    handler: THandler,
     properties: Omit<
       Mutation<
-        TProcedure["name"],
-        TProcedure["Args"],
+        THandler["name"],
+        THandler["Input"],
         TMutatorSuccess,
         TMutatorError,
-        TMutatorContext,
+        TMutatorServices,
         TPolicyError,
-        TPolicyContext
+        TPolicyServices
       >,
       "name"
     >,
   ): Mutation<
-    TProcedure["name"],
-    TProcedure["Args"],
+    THandler["name"],
+    THandler["Input"],
     TMutatorSuccess,
     TMutatorError,
-    TMutatorContext,
+    TMutatorServices,
     TPolicyError,
-    TPolicyContext
-  > => Object.assign(properties, { name: procedure.name });
+    TPolicyServices
+  > => Object.assign(properties, { name: handler.name });
 
   type MutationRecord<
     TName extends string = string,
     TMutatorSuccess = any,
     TMutatorError = any,
-    TMutatorContext = any,
+    TMutatorServices = any,
     TPolicyError = any,
-    TPolicyContext = any,
+    TPolicyServices = any,
   > = Record<
     TName,
     {
       readonly MutatorSuccess: TMutatorSuccess;
       readonly MutatorError: TMutatorError;
-      readonly MutatorContext: TMutatorContext;
+      readonly MutatorServices: TMutatorServices;
       readonly PolicyError: TPolicyError;
-      readonly PolicyContext: TPolicyContext;
+      readonly PolicyServices: TPolicyServices;
     }
   >;
 
   export class Dispatcher<
-    TProcedureRecord extends ProceduresContract.ProcedureRecord,
+    THandlerRecord extends HandlersContract.HandlerRecord,
     // oxlint-disable-next-line typescript/no-empty-object-type
     TRecord extends MutationRecord = {},
     TIsFinal extends boolean = false,
   > extends Data.Class<{
-    readonly procedureRegistry: ProceduresContract.Registry<TProcedureRecord, true>;
+    readonly handlerRegistry: HandlersContract.Registry<THandlerRecord, true>;
   }> {
     #isFinal = false;
     #map = HashMap.empty<
-      keyof TProcedureRecord & string,
+      keyof THandlerRecord & string,
       Mutation<
-        keyof TProcedureRecord & string,
-        TProcedureRecord[keyof TProcedureRecord]["Args"],
-        TProcedureRecord[keyof TProcedureRecord]["Returns"]["Type"],
+        keyof THandlerRecord & string,
+        THandlerRecord[keyof THandlerRecord]["Input"],
+        THandlerRecord[keyof THandlerRecord]["Output"]["Type"],
         TRecord[keyof TRecord]["MutatorError"],
-        TRecord[keyof TRecord]["MutatorContext"],
+        TRecord[keyof TRecord]["MutatorServices"],
         TRecord[keyof TRecord]["PolicyError"],
-        TRecord[keyof TRecord]["PolicyContext"]
+        TRecord[keyof TRecord]["PolicyServices"]
       >
     >();
 
     public readonly Record = {} as TRecord;
 
     public mutation<
-      TName extends keyof TProcedureRecord & string,
-      TMutatorSuccess extends Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>,
+      TName extends keyof THandlerRecord & string,
+      TMutatorSuccess extends Schema.Schema.Type<THandlerRecord[TName]["Output"]>,
       TMutatorError,
-      TMutatorContext,
+      TMutatorServices,
       TPolicyError,
-      TPolicyContext,
+      TPolicyServices,
     >(
-      this: TIsFinal extends false ? Dispatcher<TProcedureRecord, TRecord, TIsFinal> : never,
+      this: TIsFinal extends false ? Dispatcher<THandlerRecord, TRecord, TIsFinal> : never,
       mutation: Mutation<
         TName,
-        TProcedureRecord[TName]["Args"],
+        THandlerRecord[TName]["Input"],
         TMutatorSuccess,
         TMutatorError,
-        TMutatorContext,
+        TMutatorServices,
         TPolicyError,
-        TPolicyContext
+        TPolicyServices
       >,
     ) {
       if (!this.#isFinal) this.#map = HashMap.set(this.#map, mutation.name, mutation);
 
       return this as Dispatcher<
-        TProcedureRecord,
+        THandlerRecord,
         TRecord &
           MutationRecord<
             TName,
             TMutatorSuccess,
             TMutatorError,
-            TMutatorContext,
+            TMutatorServices,
             TPolicyError,
-            TPolicyContext
+            TPolicyServices
           >,
         TIsFinal
       >;
     }
 
     public final(
-      this: keyof TProcedureRecord extends keyof TRecord
-        ? Dispatcher<TProcedureRecord, TRecord, TIsFinal>
+      this: keyof THandlerRecord extends keyof TRecord
+        ? Dispatcher<THandlerRecord, TRecord, TIsFinal>
         : never,
     ) {
       this.#isFinal = true;
 
-      return this as Dispatcher<TProcedureRecord, TRecord, true>;
+      return this as Dispatcher<THandlerRecord, TRecord, true>;
     }
 
     public dispatch<TName extends keyof TRecord & string>(
-      this: TIsFinal extends true ? Dispatcher<TProcedureRecord, TRecord, TIsFinal> : never,
+      this: TIsFinal extends true ? Dispatcher<THandlerRecord, TRecord, TIsFinal> : never,
       name: TName,
-      args: Schema.Schema.Type<TProcedureRecord[TName]["Args"]>,
+      args: Schema.Schema.Type<THandlerRecord[TName]["Input"]>,
     ) {
       return Effect.gen({ self: this }, function* () {
         const user = yield* Actor.pipe(Effect.flatMap(Struct.get("assertUser")));
@@ -165,22 +165,22 @@ export namespace MutationsContract {
           Effect.orDie,
         )) as Mutation<
           TName,
-          TProcedureRecord[TName]["Args"],
+          THandlerRecord[TName]["Input"],
           TRecord[TName]["MutatorSuccess"],
           TRecord[TName]["MutatorError"],
-          TRecord[TName]["MutatorContext"],
+          TRecord[TName]["MutatorServices"],
           TRecord[TName]["PolicyError"],
-          TRecord[TName]["PolicyContext"]
+          TRecord[TName]["PolicyServices"]
         >;
 
-        const { Args, Returns } = yield* Record.get(
-          this.procedureRegistry.record,
+        const { Input: Args, Output: Returns } = yield* Record.get(
+          this.handlerRegistry.record,
           mutation.name,
         ).pipe(Effect.fromOption, Effect.orDie);
 
         const safeArgs = yield* Schema.decodeEffect(
           Args.pipe(Schema.toType) as Schema.Decoder<
-            Schema.Schema.Type<TProcedureRecord[TName]["Args"]>
+            Schema.Schema.Type<THandlerRecord[TName]["Input"]>
           >,
         )(args);
 
@@ -191,7 +191,7 @@ export namespace MutationsContract {
             Effect.flatMap(
               Schema.decodeEffect(
                 Returns.pipe(Schema.toType) as Schema.Decoder<
-                  Schema.Schema.Type<TProcedureRecord[TName]["Returns"]>
+                  Schema.Schema.Type<THandlerRecord[TName]["Output"]>
                 >,
               ),
             ),

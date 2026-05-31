@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId } from "../utils";
 
@@ -43,33 +43,33 @@ export namespace UsersContract {
     }),
   );
 
-  export const isSelf = new ProceduresContract.Procedure({
+  export const isSelf = new HandlersContract.Handler({
     name: "isUserSelf",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canEdit = new ProceduresContract.Procedure({
+  export const canEdit = new HandlersContract.Handler({
     name: "canEditUser",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canDelete = new ProceduresContract.Procedure({
+  export const canDelete = new HandlersContract.Handler({
     name: "canDeleteUser",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canRestore = new ProceduresContract.Procedure({
+  export const canRestore = new HandlersContract.Handler({
     name: "canRestoreUser",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const edit = new ProceduresContract.Procedure({
+  export const edit = new HandlersContract.Handler({
     name: "editUser",
-    Args: Table.Dto.mapFields(
+    Input: Table.Dto.mapFields(
       Struct.omit([
         ...Struct.keys(TablesContract.BaseModel.fields),
         "origin",
@@ -90,24 +90,24 @@ export namespace UsersContract {
           }),
         ),
       ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const delete_ = new ProceduresContract.Procedure({
+  export const delete_ = new HandlersContract.Handler({
     name: "deleteUser",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {
           deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
         }),
       ),
     ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const restore = new ProceduresContract.Procedure({
+  export const restore = new HandlersContract.Handler({
     name: "restoreUser",
-    Args: IdOnly,
-    Returns: Table.Dto,
+    Input: IdOnly,
+    Output: Table.Dto,
   });
 }

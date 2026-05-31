@@ -3,8 +3,8 @@ import * as Layer from "effect/Layer";
 
 import { PoliciesDispatcher } from ".";
 import { CommentsPolicies } from "../../../comments/client/policies";
+import { Policies } from "../../../handlers/policies";
 import { OrdersPolicies } from "../../../orders/client/policies";
-import { Policies } from "../../../procedures/policies";
 import { SharedAccountsPolicies } from "../../../shared-accounts/client/policies";
 import { UsersPolicies } from "../../../users/client/policies";
 import { SharedAccountWorkflowsPolicies } from "../../../workflows/client/shared-account/policies";
@@ -19,7 +19,7 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountWorkflows = yield* SharedAccountWorkflowsPolicies;
   const users = yield* UsersPolicies;
 
-  const client = new PoliciesContract.Dispatcher({ procedureRegistry: Policies.registry })
+  return new PoliciesContract.Dispatcher({ handlerRegistry: Policies.registry })
     .policy(comments.isAuthor)
     .policy(orders.isCustomer)
     .policy(orders.isManager)
@@ -31,8 +31,6 @@ export const makeService = Effect.gen(function* () {
     .policy(sharedAccountWorkflows.isManagerAuthorized)
     .policy(users.isSelf)
     .final();
-
-  return { client } as const;
 });
 
 export const layer = makeService.pipe(Layer.effect(PoliciesDispatcher));

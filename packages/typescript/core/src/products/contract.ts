@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 import { Cost, EntityId, HexColor } from "../utils";
 
@@ -132,67 +132,67 @@ export namespace ProductsContract {
     Struct.assign(Struct.pick(Table.Model.fields, ["updatedAt"])),
   );
 
-  export const canEdit = new ProceduresContract.Procedure({
+  export const canEdit = new HandlersContract.Handler({
     name: "canEditProduct",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canDelete = new ProceduresContract.Procedure({
+  export const canDelete = new HandlersContract.Handler({
     name: "canDeleteProduct",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canRestore = new ProceduresContract.Procedure({
+  export const canRestore = new HandlersContract.Handler({
     name: "canRestoreProduct",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const create = new ProceduresContract.Procedure({
+  export const create = new HandlersContract.Handler({
     name: "createProduct",
-    Args: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
-    Returns: Table.Dto,
+    Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
+    Output: Table.Dto,
   });
 
-  export const edit = new ProceduresContract.Procedure({
+  export const edit = new HandlersContract.Handler({
     name: "editProduct",
-    Args: Table.Dto.mapFields(
+    Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "status", "roomId"]),
     )
       .mapFields(Struct.map(Schema.optional))
       .mapFields(Struct.assign(IdAndUpdatedAt.fields)),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const publish = new ProceduresContract.Procedure({
+  export const publish = new HandlersContract.Handler({
     name: "publishProduct",
-    Args: IdAndUpdatedAt,
-    Returns: Table.Dto,
+    Input: IdAndUpdatedAt,
+    Output: Table.Dto,
   });
 
-  export const draft = new ProceduresContract.Procedure({
+  export const draft = new HandlersContract.Handler({
     name: "draftProduct",
-    Args: IdAndUpdatedAt,
-    Returns: Table.Dto,
+    Input: IdAndUpdatedAt,
+    Output: Table.Dto,
   });
 
-  export const delete_ = new ProceduresContract.Procedure({
+  export const delete_ = new HandlersContract.Handler({
     name: "deleteProduct",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {
           deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
         }),
       ),
     ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const restore = new ProceduresContract.Procedure({
+  export const restore = new HandlersContract.Handler({
     name: "restoreProduct",
-    Args: IdOnly,
-    Returns: Table.Dto,
+    Input: IdOnly,
+    Output: Table.Dto,
   });
 }

@@ -10,7 +10,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { actorAtom } from "./actor";
 import { ViteResource } from "./sst";
 
-import type { Mutations } from "@printdesk/core/procedures/mutations";
+import type { Mutations } from "@printdesk/core/handlers/mutations";
 import type { SubscribeOptions } from "replicache";
 
 export const replicacheAtomRuntime = FetchHttpClient.layer.pipe(Atom.runtime);
@@ -69,7 +69,7 @@ export const makeQueryAtom = <
   );
 
 export const makeMutationAtom = <TName extends keyof Mutations.Record>(name: TName) =>
-  Atom.fn((args: Mutations.Record[TName]["Args"]["Type"], get) =>
+  Atom.fn((args: Mutations.Record[TName]["Input"]["Type"], get) =>
     replicacheAtom.pipe(
       get.result,
       Effect.flatMap((replicache) => replicache.mutate(name, args)),

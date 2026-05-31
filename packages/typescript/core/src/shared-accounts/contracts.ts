@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Struct from "effect/Struct";
 
-import { ProceduresContract } from "../procedures/contract";
+import { HandlersContract } from "../handlers/contract";
 import { TablesContract } from "../tables/contract";
 import { Cost, EntityId } from "../utils";
 
@@ -69,43 +69,43 @@ export namespace SharedAccountsContract {
     }),
   );
 
-  export const isCustomerAuthorized = new ProceduresContract.Procedure({
+  export const isCustomerAuthorized = new HandlersContract.Handler({
     name: "isCustomerAuthorizedSharedAccount",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign({ customerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
     ),
-    Returns: Schema.Void,
+    Output: Schema.Void,
   });
 
-  export const isManagerAuthorized = new ProceduresContract.Procedure({
+  export const isManagerAuthorized = new HandlersContract.Handler({
     name: "isManagerAuthorizedSharedAccount",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
     ),
-    Returns: Schema.Void,
+    Output: Schema.Void,
   });
 
-  export const canEdit = new ProceduresContract.Procedure({
+  export const canEdit = new HandlersContract.Handler({
     name: "canEditSharedAccount",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canDelete = new ProceduresContract.Procedure({
+  export const canDelete = new HandlersContract.Handler({
     name: "canDeleteSharedAccount",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canRestore = new ProceduresContract.Procedure({
+  export const canRestore = new HandlersContract.Handler({
     name: "canRestoreSharedAccount",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const edit = new ProceduresContract.Procedure({
+  export const edit = new HandlersContract.Handler({
     name: "editSharedAccount",
-    Args: Table.Dto.mapFields(
+    Input: Table.Dto.mapFields(
       Struct.omit([
         ...Struct.keys(TablesContract.BaseModel.fields),
         "name",
@@ -121,25 +121,25 @@ export namespace SharedAccountsContract {
           }),
         ),
       ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const delete_ = new ProceduresContract.Procedure({
+  export const delete_ = new HandlersContract.Handler({
     name: "deleteSharedAccount",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {
           deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
         }),
       ),
     ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const restore = new ProceduresContract.Procedure({
+  export const restore = new HandlersContract.Handler({
     name: "restoreSharedAccount",
-    Args: IdOnly,
-    Returns: Table.Dto,
+    Input: IdOnly,
+    Output: Table.Dto,
   });
 }
 
@@ -196,40 +196,40 @@ export namespace SharedAccountManagerAccessContract {
     }),
   );
 
-  export const canDelete = new ProceduresContract.Procedure({
+  export const canDelete = new HandlersContract.Handler({
     name: "canDeleteSharedAccountManagerAccess",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const canRestore = new ProceduresContract.Procedure({
+  export const canRestore = new HandlersContract.Handler({
     name: "canRestoreSharedAccountManagerAccess",
-    Args: IdOnly,
-    Returns: Schema.Void,
+    Input: IdOnly,
+    Output: Schema.Void,
   });
 
-  export const create = new ProceduresContract.Procedure({
+  export const create = new HandlersContract.Handler({
     name: "createSharedAccountManagerAccess",
-    Args: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
-    Returns: Table.Dto,
+    Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
+    Output: Table.Dto,
   });
 
-  export const delete_ = new ProceduresContract.Procedure({
+  export const delete_ = new HandlersContract.Handler({
     name: "deleteSharedAccountManagerAccess",
-    Args: IdOnly.mapFields(
+    Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {
           deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
         }),
       ),
     ),
-    Returns: Table.Dto,
+    Output: Table.Dto,
   });
 
-  export const restore = new ProceduresContract.Procedure({
+  export const restore = new HandlersContract.Handler({
     name: "restoreSharedAccountManagerAccess",
-    Args: IdOnly,
-    Returns: Table.Dto,
+    Input: IdOnly,
+    Output: Table.Dto,
   });
 }
 

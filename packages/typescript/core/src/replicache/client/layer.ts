@@ -28,6 +28,7 @@ import * as DeliveryOptionsMutations from "../../delivery-options/client/mutatio
 import * as DeliveryOptionsPolicies from "../../delivery-options/client/policies/layer";
 import * as DeliveryOptionsReadRepository from "../../delivery-options/client/read-repository/layer";
 import * as DeliveryOptionsWriteRepository from "../../delivery-options/client/write-repository/layer";
+import { Mutations } from "../../handlers/mutations";
 import * as InvoicesMutations from "../../invoices/client/mutations/layer";
 import * as InvoicesReadRepository from "../../invoices/client/read-repository/layer";
 import * as InvoicesWriteRepository from "../../invoices/client/write-repository/layer";
@@ -37,7 +38,6 @@ import * as OrdersMutations from "../../orders/client/mutations/layer";
 import * as OrdersPolicies from "../../orders/client/policies/layer";
 import * as OrdersReadRepository from "../../orders/client/read-repository/layer";
 import * as OrdersWriteRepository from "../../orders/client/write-repository/layer";
-import { Mutations } from "../../procedures/mutations";
 import * as ProductsMutations from "../../products/client/mutations/layer";
 import * as ProductsPolicies from "../../products/client/policies/layer";
 import * as ProductsReadRepository from "../../products/client/read-repository/layer";
@@ -180,7 +180,7 @@ export const makeService = Effect.fn(function* ({
 
   const mutators = Record.map(
     Mutations.registry.record,
-    (mutation) => (tx: WriteTx, args: typeof mutation.Args.Type) =>
+    (mutation) => (tx: WriteTx, args: typeof mutation.Input.Type) =>
       MutationsDispatcher.use((dispatcher) => dispatcher.dispatch(mutation.name, args)).pipe(
         Effect.provideService(ReadTransaction, tx),
         Effect.provideService(WriteTransaction, tx),
@@ -189,10 +189,10 @@ export const makeService = Effect.fn(function* ({
   ) as {
     readonly [TKey in keyof Mutations.Record]: (
       tx: WriteTx,
-      args: Mutations.Record[TKey]["Args"]["Type"],
+      args: Mutations.Record[TKey]["Input"]["Type"],
     ) => Promise<
       Exit.Exit<
-        Mutations.Record[TKey]["Returns"]["Type"],
+        Mutations.Record[TKey]["Output"]["Type"],
         Effect.Error<ReturnType<typeof MutationsDispatcher.Service.dispatch<TKey>>>
       >
     >;
@@ -341,7 +341,7 @@ export const makeService = Effect.fn(function* ({
 
   const mutate = <TName extends keyof Mutations.Record>(
     name: TName,
-    args: Mutations.Record[TName]["Args"]["Type"],
+    args: Mutations.Record[TName]["Input"]["Type"],
   ) =>
     Effect.tryPromise({
       try: () => client.mutate[name](args),

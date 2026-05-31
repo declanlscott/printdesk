@@ -6,10 +6,10 @@ import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
+import { Mutations } from "../handlers/mutations";
+import { Policies } from "../handlers/policies";
 import { Models } from "../models";
 import { Permissions } from "../permissions";
-import { Mutations } from "../procedures/mutations";
-import { Policies } from "../procedures/policies";
 import { ChunkFromArray, EntityId, Version } from "../utils";
 import { Constants } from "../utils/constants";
 
@@ -54,9 +54,7 @@ export namespace ReplicacheContract {
     { permission: Schema.Literals(Permissions.syncReadPermissions) },
   ) {}
 
-  export const PullPolicy = Policies.registry.Schema.mapMembers(
-    Tuple.map(Schema.fieldsAssign({ _tag: Schema.tag("ReplicachePullPolicy") })),
-  );
+  export const PullPolicy = Policies.registry.ReplicachePullPolicySchema;
   export type PullPolicy = typeof PullPolicy.Type;
 
   export class Notification extends Schema.Class<Notification>("ReplicacheNotification")({

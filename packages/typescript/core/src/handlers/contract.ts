@@ -5,35 +5,39 @@ import * as Iterable from "effect/Iterable";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
-export namespace ProceduresContract {
-  export class Procedure<
+export namespace HandlersContract {
+  export class Handler<
     TName extends string = string,
-    TArgs extends Schema.Top = Schema.Top,
-    TReturns extends Schema.Top = Schema.Top,
-  > extends Data.Class<{ readonly name: TName; readonly Args: TArgs; readonly Returns: TReturns }> {
-    public readonly make = (args: Schema.Schema.Type<TArgs>) => ({ name: this.name, args });
+    TInput extends Schema.Top = Schema.Top,
+    TOutput extends Schema.Top = Schema.Top,
+  > extends Data.Class<{
+    readonly name: TName;
+    readonly Input: TInput;
+    readonly Output: TOutput;
+  }> {
+    public readonly make = (input: Schema.Schema.Type<TInput>) => ({ name: this.name, input });
   }
 
-  export type ProcedureRecord<TProcedure extends Procedure = Procedure> = Record<
-    TProcedure["name"],
-    TProcedure
+  export type HandlerRecord<THandler extends Handler = Handler> = Record<
+    THandler["name"],
+    THandler
   >;
 
   export class Registry<
     // oxlint-disable-next-line typescript/no-empty-object-type
-    TRecord extends ProcedureRecord = {},
+    TRecord extends HandlerRecord = {},
     TIsFinal extends boolean = false,
   > {
     #isFinal = false;
-    #map = HashMap.empty<Procedure["name"], Procedure>();
+    #map = HashMap.empty<Handler["name"], Handler>();
 
-    public procedure<TProcedure extends Procedure>(
+    public handle<THandler extends Handler>(
       this: TIsFinal extends false ? Registry<TRecord, TIsFinal> : never,
-      procedure: TProcedure,
+      handler: THandler,
     ) {
-      if (!this.#isFinal) this.#map = HashMap.set(this.#map, procedure.name, procedure);
+      if (!this.#isFinal) this.#map = HashMap.set(this.#map, handler.name, handler);
 
-      return this as Registry<TRecord & ProcedureRecord<TProcedure>, TIsFinal>;
+      return this as Registry<TRecord & HandlerRecord<THandler>, TIsFinal>;
     }
 
     public final(this: TIsFinal extends false ? Registry<TRecord, TIsFinal> : never) {
@@ -45,7 +49,7 @@ export namespace ProceduresContract {
     public get record() {
       return this.#map.pipe(HashMap.entries, Record.fromEntries) as {
         readonly [TName in keyof TRecord]: TName extends string
-          ? Procedure<TName, TRecord[TName]["Args"], TRecord[TName]["Returns"]>
+          ? Handler<TName, TRecord[TName]["Input"], TRecord[TName]["Output"]>
           : never;
       };
     }
@@ -54,15 +58,15 @@ export namespace ProceduresContract {
       return this.#map.pipe(
         HashMap.values,
         Iterable.map(
-          (procedure) =>
+          (handler) =>
             Schema.Struct({
-              name: Schema.tag(procedure.name),
-              args: procedure.Args,
+              name: Schema.tag(handler.name),
+              input: handler.Input,
             }) as {
               readonly [TName in keyof TRecord]: TName extends string
                 ? Schema.Struct<{
                     name: Schema.tag<TName>;
-                    args: TRecord[TName]["Args"];
+                    input: TRecord[TName]["Input"];
                   }>
                 : never;
             }[keyof TRecord],
@@ -75,18 +79,18 @@ export namespace ProceduresContract {
       return this.#map.pipe(
         HashMap.values,
         Iterable.map(
-          (procedure) =>
+          (handler) =>
             Schema.Struct({
               id: Schema.Int,
-              name: Schema.tag(procedure.name),
-              args: procedure.Args,
+              name: Schema.tag(handler.name),
+              args: handler.Input,
               timestamp: Schema.Number,
             }) as {
               readonly [TName in keyof TRecord]: TName extends string
                 ? Schema.Struct<{
                     id: Schema.Int;
                     name: Schema.tag<TName>;
-                    args: TRecord[TName]["Args"];
+                    args: TRecord[TName]["Input"];
                     timestamp: Schema.Number;
                   }>
                 : never;
@@ -100,11 +104,11 @@ export namespace ProceduresContract {
       return this.#map.pipe(
         HashMap.values,
         Iterable.map(
-          (procedure) =>
+          (handler) =>
             Schema.Struct({
               id: Schema.Int,
-              name: Schema.tag(procedure.name),
-              args: procedure.Args,
+              name: Schema.tag(handler.name),
+              args: handler.Input,
               timestamp: Schema.Number,
               clientId: Schema.String.pipe(Schema.check(Schema.isUUID())),
             }).pipe(Schema.encodeKeys({ clientId: "clientID" })) as {
@@ -113,12 +117,35 @@ export namespace ProceduresContract {
                     Schema.Struct<{
                       id: Schema.Int;
                       name: Schema.tag<TName>;
-                      args: TRecord[TName]["Args"];
+                      args: TRecord[TName]["Input"];
                       timestamp: Schema.Number;
                       clientId: Schema.String;
                     }>,
                     { clientId: "clientID" }
                   >
+                : never;
+            }[keyof TRecord],
+        ),
+        (members) => Schema.Union(Array.fromIterable(members)),
+      );
+    }
+
+    public get ReplicachePullPolicySchema() {
+      return this.#map.pipe(
+        HashMap.values,
+        Iterable.map(
+          (handler) =>
+            Schema.Struct({
+              _tag: Schema.tag("ReplicachePullPolicy"),
+              name: Schema.tag(handler.name),
+              input: handler.Input,
+            }) as {
+              readonly [TName in keyof TRecord]: TName extends string
+                ? Schema.Struct<{
+                    _tag: Schema.tag<"ReplicachePullPolicy">;
+                    name: Schema.tag<TName>;
+                    input: TRecord[TName]["Input"];
+                  }>
                 : never;
             }[keyof TRecord],
         ),

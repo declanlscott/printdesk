@@ -6,6 +6,7 @@ import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
+import { HandlersContract } from "../handlers/contract";
 import { Mutations } from "../handlers/mutations";
 import { Policies } from "../handlers/policies";
 import { Models } from "../models";
@@ -61,6 +62,12 @@ export namespace ReplicacheContract {
     clientGroupId: ClientGroupId,
     data: Schema.Union([PullPermission, PullPolicy]).pipe(Schema.Array),
   }) {}
+
+  export const notification = new HandlersContract.Handler({
+    name: `/${Constants.TENANT_ID_PLACEHOLDER}/replicache/notification`,
+    Input: Notification,
+    Output: Schema.Void,
+  });
 }
 
 export namespace ReplicachePullerContract {

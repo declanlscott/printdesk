@@ -114,6 +114,19 @@ export const queryLayer = Layer.mergeAll(
   Layer.provide(ReadTransactionManager.layer),
 );
 
+export const policiesLayer = Layer.mergeAll(
+  AnnouncementsPolicies.layer,
+  CommentsPolicies.layer,
+  DeliveryOptionsPolicies.layer,
+  OrdersPolicies.layer,
+  ProductsPolicies.layer,
+  RoomsPolicies.layer,
+  SharedAccountsPolicies.layer,
+  SharedAccountManagerAccessPolicies.layer,
+  UsersPolicies.layer,
+  WorkflowStatusesPolicies.layer,
+).pipe(Layer.provideMerge(SharedAccountWorkflowsPolicies.layer), Layer.provide(queryLayer));
+
 export const mutationsDispatcherLayer = baseMutationsDispatcherLayer.pipe(
   Layer.provide([
     AnnouncementsMutations.layer,
@@ -129,19 +142,7 @@ export const mutationsDispatcherLayer = baseMutationsDispatcherLayer.pipe(
     UsersMutations.layer,
     WorkflowStatusesMutations.layer,
   ]),
-  Layer.provide([
-    AnnouncementsPolicies.layer,
-    CommentsPolicies.layer,
-    DeliveryOptionsPolicies.layer,
-    OrdersPolicies.layer,
-    ProductsPolicies.layer,
-    RoomsPolicies.layer,
-    SharedAccountsPolicies.layer,
-    SharedAccountManagerAccessPolicies.layer,
-    UsersPolicies.layer,
-    WorkflowStatusesPolicies.layer,
-  ]),
-  Layer.provide(SharedAccountWorkflowsPolicies.layer),
+  Layer.provide(policiesLayer),
   Layer.provide([
     AnnouncementsWriteRepository.layer,
     CommentsWriteRepository.layer,

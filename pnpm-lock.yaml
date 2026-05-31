@@ -30,6 +30,9 @@ catalogs:
     '@effect/language-service':
       specifier: ^0.86.2
       version: 0.86.2
+    '@effect/platform-browser':
+      specifier: beta
+      version: 4.0.0-beta.74
     '@effect/platform-node':
       specifier: 4.0.0-beta.70
       version: 4.0.0-beta.70
@@ -507,6 +510,9 @@ importers:
       '@effect/atom-react':
         specifier: 'catalog:'
         version: 4.0.0-beta.67(effect@4.0.0-beta.69)(react@19.2.6)(scheduler@0.27.0)
+      '@effect/platform-browser':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.74(effect@4.0.0-beta.69)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../core
@@ -988,6 +994,11 @@ packages:
   '@effect/language-service@0.86.2':
     resolution: {integrity: sha512-SaPln+8srOqDJDUwNTDmP5e+IYpEDr9+1epGznnsLqu8xvo6VnxyWARdeLpqvZJlb0Pgy9ca7ppqvvdWbHPXAg==}
     hasBin: true
+
+  '@effect/platform-browser@4.0.0-beta.74':
+    resolution: {integrity: sha512-kHKT+TqWe/XvWm7LiOLkDsC8U5PL8xnBVReNiOrMYvo6zcItp74r6ZPlEJEpXMzh6pQuCcara46IkISaMGEeNA==}
+    peerDependencies:
+      effect: ^4.0.0-beta.74
 
   '@effect/platform-node-shared@4.0.0-beta.70':
     resolution: {integrity: sha512-3VXuL63IDmq13We+ApRKn2JW3Rb9g5gj1YEmfb8u2b73norur1VsIJ/pRE4qjShevg19dQYi2JsLawSZ6gApug==}
@@ -4817,6 +4828,11 @@ snapshots:
       scheduler: 0.27.0
 
   '@effect/language-service@0.86.2': {}
+
+  '@effect/platform-browser@4.0.0-beta.74(effect@4.0.0-beta.69)':
+    dependencies:
+      effect: 4.0.0-beta.69
+      multipasta: 0.2.7
 
   '@effect/platform-node-shared@4.0.0-beta.70(effect@4.0.0-beta.69)':
     dependencies:

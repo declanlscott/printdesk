@@ -1,5 +1,6 @@
 import { Actor } from "@printdesk/core/actors";
 import { ReadTransaction } from "@printdesk/core/database/client/read-transaction";
+import { Replicache as Service } from "@printdesk/core/replicache/client";
 import * as Replicache from "@printdesk/core/replicache/client/layer";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -35,6 +36,11 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
     ),
     Effect.provideService(Actor, Actor.of(get(actorAtom))),
   ),
+);
+
+export const replicacheLayer = Layer.effect(
+  Service.Replicache,
+  replicacheAtom.pipe(Atom.getResult),
 );
 
 export const queryAtomRuntime = Replicache.queryLayer.pipe(Atom.runtime);

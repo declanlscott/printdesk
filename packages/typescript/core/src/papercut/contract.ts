@@ -4,7 +4,6 @@ import * as Schema from "effect/Schema";
 
 import { HandlersContract } from "../handlers/contract";
 import { Ipv4, Timezone } from "../utils";
-import { Constants } from "../utils/constants";
 
 export namespace PapercutContract {
   export class ApiHostNameConfig extends Schema.TaggedClass<ApiHostNameConfig>()(
@@ -60,7 +59,7 @@ export namespace PapercutContract {
   }) {}
 
   export const syncResult = new HandlersContract.Handler({
-    name: `/${Constants.TENANT_ID_PLACEHOLDER}/papercut/sync`,
+    name: "/papercut/sync",
     Input: SyncResult,
     Output: Schema.Void,
   });

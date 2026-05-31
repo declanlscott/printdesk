@@ -64,7 +64,7 @@ export namespace ReplicacheContract {
   }) {}
 
   export const notification = new HandlersContract.Handler({
-    name: `/${Constants.TENANT_ID_PLACEHOLDER}/replicache/notification`,
+    name: "/replicache/notification",
     Input: Notification,
     Output: Schema.Void,
   });

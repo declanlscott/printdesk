@@ -8,22 +8,29 @@ import { Events } from "../handlers/events";
 
 export namespace RealtimeContract {
   export const Authorization = Schema.Record(Schema.String, Schema.String);
+  export type Authorization = typeof Authorization.Type;
 
   export const Event = Events.registry.Schema.mapMembers(
     Array.map((member) => member.fields.input),
   );
   export type Event = typeof Event.Type;
 
+  export const SubscriptionId = Schema.String.pipe(
+    Schema.check(Schema.isUUID()),
+    Schema.brand("SubscriptionId"),
+  );
+  export type SubscriptionId = typeof SubscriptionId.Type;
+
   const success = <TKind extends string>(kind: TKind) =>
     Schema.Struct({
       type: Schema.tag(`${kind}_success`),
-      id: Schema.String,
+      id: SubscriptionId,
     });
 
   const error = <TKind extends string>(kind: TKind) =>
     Schema.Struct({
       type: Schema.tag(`${kind}_error`),
-      id: Schema.String,
+      id: SubscriptionId,
       errors: Schema.Struct({
         errorType: Schema.String,
         message: Schema.String,
@@ -40,12 +47,6 @@ export namespace RealtimeContract {
     type: Schema.tag("connection_ack"),
     connectionTimeout: Schema.DurationFromMillis,
   }).pipe(Schema.encodeKeys({ connectionTimeout: "connectionTimeoutMs" }));
-
-  export const SubscriptionId = Schema.String.pipe(
-    Schema.check(Schema.isUUID()),
-    Schema.brand("SubscriptionId"),
-  );
-  export type SubscriptionId = typeof SubscriptionId.Type;
 
   export const Channel = Schema.TemplateLiteral([Schema.Literal("/"), Schema.NonEmptyString]);
   export type Channel = typeof Channel.Type;

@@ -8,7 +8,6 @@ import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
 import { AppsyncSigner } from "../aws/sigv4-signers/appsync";
-import { Events } from "../events";
 import { SstResource } from "../sst/resource";
 import { RealtimeContract } from "./contract";
 
@@ -45,7 +44,7 @@ export class Realtime extends Context.Service<Realtime>()("@printdesk/core/realt
       );
 
     const publish = Effect.fn("Realtime.Realtime.publish")(
-      (channel: RealtimeContract.Channel, events: Chunk.Chunk<Events.Event>) =>
+      (channel: RealtimeContract.Channel, events: Chunk.Chunk<RealtimeContract.Event>) =>
         events.pipe(
           Stream.fromIterable,
           Stream.grouped(5),

@@ -7,7 +7,6 @@ import * as Realtime from "@printdesk/core/realtime/client/layer";
 import * as Subscriptions from "@printdesk/core/realtime/client/subscriptions/layer";
 import * as ReplicacheEvents from "@printdesk/core/replicache/client/events/layer";
 import * as Replicache from "@printdesk/core/replicache/client/layer";
-import { NetworkMonitor } from "@printdesk/core/utils/client/network-monitor";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Path from "effect/Path";
@@ -20,10 +19,12 @@ import * as Socket from "effect/unstable/socket/Socket";
 
 import { actorAtom } from "./actor";
 import { atomRegistryLayer } from "./atom";
+import { networkMonitorLayer } from "./network";
 import { replicacheLayer } from "./replicache";
 import { ViteResource } from "./sst";
 
 export const realtimeRuntime = Layer.mergeAll(
+  networkMonitorLayer,
   FetchHttpClient.layer,
   Socket.layerWebSocketConstructorGlobal,
   Subscriptions.layer.pipe(
@@ -32,11 +33,6 @@ export const realtimeRuntime = Layer.mergeAll(
     Layer.provide([PoliciesDispatcher.layer, replicacheLayer]),
     Layer.provide([Replicache.policiesLayer, atomRegistryLayer]),
   ),
-  NetworkMonitor.layer({
-    initialOnline: globalThis.window.navigator.onLine,
-    addEventListener: globalThis.window.addEventListener,
-    removeEventListener: globalThis.window.removeEventListener,
-  }),
 ).pipe(Atom.runtime);
 
 export const realtimeAtom = realtimeRuntime.atom((get) =>

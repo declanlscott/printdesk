@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { AnnouncementsMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { AnnouncementsContract } from "../../contract";
 import { AnnouncementsPolicies } from "../policies";
 import { AnnouncementsWriteRepository } from "../write-repository";
@@ -15,7 +15,7 @@ export const makeService = Effect.gen(function* () {
 
   const policies = yield* AnnouncementsPolicies;
 
-  const create = MutationsContract.makeMutation(AnnouncementsContract.create, {
+  const create = Mutation.make(AnnouncementsContract.create, {
     makePolicy: () => AccessControl.userPermissionPolicy("announcements:create"),
     mutator: (announcement, user) =>
       AnnouncementsContract.Table.Dto.makeEffect({
@@ -25,7 +25,7 @@ export const makeService = Effect.gen(function* () {
       }).pipe(Effect.flatMap(repository.create)),
   });
 
-  const edit = MutationsContract.makeMutation(AnnouncementsContract.edit, {
+  const edit = Mutation.make(AnnouncementsContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("announcements:update"),
@@ -35,7 +35,7 @@ export const makeService = Effect.gen(function* () {
       repository.updateById(id, () => Effect.succeed(announcement)),
   });
 
-  const delete_ = MutationsContract.makeMutation(AnnouncementsContract.delete_, {
+  const delete_ = Mutation.make(AnnouncementsContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("announcements:delete"),
@@ -50,7 +50,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const restore = MutationsContract.makeMutation(AnnouncementsContract.restore, {
+  const restore = Mutation.make(AnnouncementsContract.restore, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("announcements:delete"),

@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { Constants } from "../utils/constants";
 
@@ -33,13 +33,13 @@ export namespace TenantsContract {
     ["version", "lastPapercutSyncAt"],
   ) {}
 
-  export const isSubdomainAvailable = new HandlersContract.Handler({
+  export const isSubdomainAvailable = new Handler.Handler({
     name: "isTenantSubdomainAvailable",
     Input: Table.Model.mapFields(Struct.pick(["subdomain"])),
     Output: Schema.Void,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editTenant",
     Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "status"]),

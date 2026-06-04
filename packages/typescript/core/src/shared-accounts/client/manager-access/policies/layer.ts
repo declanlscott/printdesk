@@ -5,7 +5,7 @@ import * as Struct from "effect/Struct";
 
 import { SharedAccountManagerAccessPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
-import { PoliciesContract } from "../../../../policies/contract";
+import { Policy } from "../../../../policies";
 import { SharedAccountManagerAccessContract } from "../../../contracts";
 import { SharedAccountManagerAccessReadRepository } from "../read-repository";
 
@@ -14,7 +14,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* SharedAccountManagerAccessReadRepository;
 
-  const canDelete = PoliciesContract.makePolicy(SharedAccountManagerAccessContract.canDelete, {
+  const canDelete = Policy.make(SharedAccountManagerAccessContract.canDelete, {
     make: ({ id }) =>
       repository.findById(id).pipe(
         Effect.map(Struct.get("deletedAt")),
@@ -26,7 +26,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const canRestore = PoliciesContract.makePolicy(SharedAccountManagerAccessContract.canRestore, {
+  const canRestore = Policy.make(SharedAccountManagerAccessContract.canRestore, {
     make: ({ id }) =>
       repository.findById(id).pipe(
         Effect.map(Struct.get("deletedAt")),

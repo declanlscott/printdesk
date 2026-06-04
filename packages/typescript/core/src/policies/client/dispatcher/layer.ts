@@ -1,14 +1,14 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-import { PoliciesDispatcher } from ".";
+import { PolicyDispatcher } from ".";
+import { Policy } from "../..";
 import { CommentsPolicies } from "../../../comments/client/policies";
-import { Policies } from "../../../handlers/policies";
+import { PolicyHandlers } from "../../../handlers/policies";
 import { OrdersPolicies } from "../../../orders/client/policies";
 import { SharedAccountsPolicies } from "../../../shared-accounts/client/policies";
 import { UsersPolicies } from "../../../users/client/policies";
 import { SharedAccountWorkflowsPolicies } from "../../../workflows/client/shared-account/policies";
-import { PoliciesContract } from "../../contract";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -19,7 +19,7 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountWorkflows = yield* SharedAccountWorkflowsPolicies;
   const users = yield* UsersPolicies;
 
-  return new PoliciesContract.Dispatcher({ handlerRegistry: Policies.registry })
+  return new Policy.Dispatcher({ handlerRegistry: PolicyHandlers.registry })
     .policy(comments.isAuthor)
     .policy(orders.isCustomer)
     .policy(orders.isManager)
@@ -33,4 +33,4 @@ export const makeService = Effect.gen(function* () {
     .final();
 });
 
-export const layer = makeService.pipe(Layer.effect(PoliciesDispatcher));
+export const layer = makeService.pipe(Layer.effect(PolicyDispatcher));

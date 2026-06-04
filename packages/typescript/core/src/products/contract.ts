@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { Cost, EntityId, HexColor } from "../utils";
 
@@ -132,31 +132,31 @@ export namespace ProductsContract {
     Struct.assign(Struct.pick(Table.Model.fields, ["updatedAt"])),
   );
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditProduct",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteProduct",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreProduct",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createProduct",
     Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
     Output: Table.Dto,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editProduct",
     Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "status", "roomId"]),
@@ -166,19 +166,19 @@ export namespace ProductsContract {
     Output: Table.Dto,
   });
 
-  export const publish = new HandlersContract.Handler({
+  export const publish = new Handler.Handler({
     name: "publishProduct",
     Input: IdAndUpdatedAt,
     Output: Table.Dto,
   });
 
-  export const draft = new HandlersContract.Handler({
+  export const draft = new Handler.Handler({
     name: "draftProduct",
     Input: IdAndUpdatedAt,
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteProduct",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -190,7 +190,7 @@ export namespace ProductsContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreProduct",
     Input: IdOnly,
     Output: Table.Dto,

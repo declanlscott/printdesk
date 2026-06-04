@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { EntityId } from "../utils";
 
@@ -40,31 +40,31 @@ export namespace AnnouncementsContract {
     }),
   );
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditAnnouncement",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteAnnouncement",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreAnnouncement",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createAnnouncement",
     Input: Table.Dto.mapFields(Struct.omit(["authorId", "deletedAt", "tenantId"])),
     Output: Table.Dto,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editAnnouncement",
     Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "roomId", "authorId"]),
@@ -80,7 +80,7 @@ export namespace AnnouncementsContract {
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteAnnouncement",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -92,7 +92,7 @@ export namespace AnnouncementsContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreAnnouncement",
     Input: IdOnly,
     Output: Table.Dto,

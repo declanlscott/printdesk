@@ -5,7 +5,7 @@ import * as Struct from "effect/Struct";
 
 import { DeliveryOptionsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
-import { PoliciesContract } from "../../../policies/contract";
+import { Policy } from "../../../policies";
 import { DeliveryOptionsContract } from "../../contract";
 import { DeliveryOptionsReadRepository } from "../read-repository";
 
@@ -14,7 +14,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* DeliveryOptionsReadRepository;
 
-  const canEdit = PoliciesContract.makePolicy(DeliveryOptionsContract.canEdit, {
+  const canEdit = Policy.make(DeliveryOptionsContract.canEdit, {
     make: ({ id }) =>
       repository
         .findById(id)
@@ -25,11 +25,11 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(DeliveryOptionsContract.canDelete, {
+  const canDelete = Policy.make(DeliveryOptionsContract.canDelete, {
     make: canEdit.make,
   });
 
-  const canRestore = PoliciesContract.makePolicy(DeliveryOptionsContract.canRestore, {
+  const canRestore = Policy.make(DeliveryOptionsContract.canRestore, {
     make: ({ id }) =>
       repository
         .findById(id)

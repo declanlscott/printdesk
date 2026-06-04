@@ -10,9 +10,9 @@ import { AccessControl } from "../access-control";
 import { Actor } from "../actors";
 
 import type { ActorsContract } from "../actors/contract";
-import type { HandlersContract } from "../handlers/contract";
+import type { Handler } from "../handlers";
 
-export namespace MutationsContract {
+export namespace Mutation {
   export type Mutator<TArgs extends Schema.Top, TSuccess, TError, TServices> = (
     args: Schema.Schema.Type<TArgs>,
     user: ActorsContract.UserActor,
@@ -32,8 +32,8 @@ export namespace MutationsContract {
     readonly mutator: Mutator<TArgs, TMutatorSuccess, TMutatorError, TMutatorServices>;
   };
 
-  export const makeMutation = <
-    THandler extends HandlersContract.Handler,
+  export const make = <
+    THandler extends Handler.Handler,
     TMutatorSuccess extends Schema.Schema.Type<THandler["Output"]>,
     TMutatorError,
     TMutatorServices,
@@ -82,12 +82,12 @@ export namespace MutationsContract {
   >;
 
   export class Dispatcher<
-    THandlerRecord extends HandlersContract.HandlerRecord,
+    THandlerRecord extends Handler.HandlerRecord,
     // oxlint-disable-next-line typescript/no-empty-object-type
     TRecord extends MutationRecord = {},
     TIsFinal extends boolean = false,
   > extends Data.Class<{
-    readonly handlerRegistry: HandlersContract.Registry<THandlerRecord, true>;
+    readonly handlerRegistry: Handler.Registry<THandlerRecord, true>;
   }> {
     #isFinal = false;
     #map = HashMap.empty<

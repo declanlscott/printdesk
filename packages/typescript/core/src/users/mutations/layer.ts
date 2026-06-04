@@ -5,7 +5,7 @@ import * as Match from "effect/Match";
 
 import { UsersMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { UsersContract } from "../contract";
@@ -44,7 +44,7 @@ export const makeService = Effect.gen(function* () {
     );
   const notifyRestore = notifyDelete;
 
-  const edit = MutationsContract.makeMutation(UsersContract.edit, {
+  const edit = Mutation.make(UsersContract.edit, {
     makePolicy: Effect.fn("Users.Mutations.edit.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("users:update"),
@@ -56,7 +56,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const delete_ = MutationsContract.makeMutation(UsersContract.delete_, {
+  const delete_ = Mutation.make(UsersContract.delete_, {
     makePolicy: Effect.fn("Users.Mutations.delete.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -71,7 +71,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const restore = MutationsContract.makeMutation(UsersContract.restore, {
+  const restore = Mutation.make(UsersContract.restore, {
     makePolicy: Effect.fn("Users.Mutations.restore.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("users:delete"),

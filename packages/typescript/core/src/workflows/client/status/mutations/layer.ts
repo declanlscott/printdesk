@@ -11,7 +11,7 @@ import * as Struct from "effect/Struct";
 
 import { WorkflowStatusesMutations } from ".";
 import { AccessControl } from "../../../../access-control";
-import { MutationsContract } from "../../../../mutations/contract";
+import { Mutation } from "../../../../mutations";
 import { WorkflowStatusesContract } from "../../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
 import { WorkflowStatusesPolicies } from "../policies";
@@ -27,7 +27,7 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountWorkflowPolicies = yield* SharedAccountWorkflowsPolicies;
   const policies = yield* WorkflowStatusesPolicies;
 
-  const append = MutationsContract.makeMutation(WorkflowStatusesContract.append, {
+  const append = Mutation.make(WorkflowStatusesContract.append, {
     makePolicy: (args) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("workflow_statuses:create"),
@@ -61,7 +61,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const edit = MutationsContract.makeMutation(WorkflowStatusesContract.edit, {
+  const edit = Mutation.make(WorkflowStatusesContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("workflow_statuses:update"),
@@ -71,7 +71,7 @@ export const makeService = Effect.gen(function* () {
       writeRepository.updateById(id, () => Effect.succeed(workflowStatus)),
   });
 
-  const reorder = MutationsContract.makeMutation(WorkflowStatusesContract.reorder, {
+  const reorder = Mutation.make(WorkflowStatusesContract.reorder, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("workflow_statuses:update"),
@@ -120,7 +120,7 @@ export const makeService = Effect.gen(function* () {
     }),
   });
 
-  const delete_ = MutationsContract.makeMutation(WorkflowStatusesContract.delete_, {
+  const delete_ = Mutation.make(WorkflowStatusesContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("workflow_statuses:delete"),

@@ -3,7 +3,7 @@ import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { Cost, EntityId } from "../utils";
 
@@ -50,31 +50,31 @@ export namespace DeliveryOptionsContract {
     }),
   );
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditDeliveryOption",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteDeliveryOption",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreDeliveryOption",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createDeliveryOption",
     Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
     Output: Table.Dto,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editDeliveryOption",
     Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "roomId"]),
@@ -90,7 +90,7 @@ export namespace DeliveryOptionsContract {
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteDeliveryOption",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -102,7 +102,7 @@ export namespace DeliveryOptionsContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreDeliveryOption",
     Input: IdOnly,
     Output: Table.Dto,

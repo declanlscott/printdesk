@@ -5,7 +5,7 @@ import * as Option from "effect/Option";
 
 import { CommentsMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { OrdersContract } from "../../orders/contract";
 import { OrdersPolicies } from "../../orders/policies";
 import { ReplicacheContract } from "../../replicache/contracts";
@@ -41,7 +41,7 @@ export const makeService = Effect.gen(function* () {
       ),
     );
 
-  const create = MutationsContract.makeMutation(CommentsContract.create, {
+  const create = Mutation.make(CommentsContract.create, {
     makePolicy: Effect.fn("Comments.Mutations.create.makePolicy")(({ orderId }) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("comments:create"),
@@ -56,7 +56,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const edit = MutationsContract.makeMutation(CommentsContract.edit, {
+  const edit = Mutation.make(CommentsContract.edit, {
     makePolicy: Effect.fn("Comments.Mutations.edit.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -71,7 +71,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const delete_ = MutationsContract.makeMutation(CommentsContract.delete_, {
+  const delete_ = Mutation.make(CommentsContract.delete_, {
     makePolicy: Effect.fn("Comments.Mutations.delete.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -86,7 +86,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const restore = MutationsContract.makeMutation(CommentsContract.restore, {
+  const restore = Mutation.make(CommentsContract.restore, {
     makePolicy: Effect.fn("Comments.Mutations.restore.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("comments:delete"),

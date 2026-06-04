@@ -9,7 +9,7 @@ import * as Struct from "effect/Struct";
 
 import { OrdersPolicies } from ".";
 import { AccessControl } from "../../../access-control";
-import { PoliciesContract } from "../../../policies/contract";
+import { Policy } from "../../../policies";
 import { OrdersContract } from "../../contract";
 import { OrdersReadRepository } from "../read-repository";
 
@@ -18,7 +18,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* OrdersReadRepository;
 
-  const isCustomer = PoliciesContract.makePolicy(OrdersContract.isCustomer, {
+  const isCustomer = Policy.make(OrdersContract.isCustomer, {
     make: ({ id, customerId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -30,7 +30,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const isManager = PoliciesContract.makePolicy(OrdersContract.isManager, {
+  const isManager = Policy.make(OrdersContract.isManager, {
     make: ({ id, managerId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -42,7 +42,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const isCustomerOrManager = PoliciesContract.makePolicy(OrdersContract.isCustomerOrManager, {
+  const isCustomerOrManager = Policy.make(OrdersContract.isCustomerOrManager, {
     make: ({ id, userId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -57,7 +57,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const isManagerAuthorized = PoliciesContract.makePolicy(OrdersContract.isManagerAuthorized, {
+  const isManagerAuthorized = Policy.make(OrdersContract.isManagerAuthorized, {
     make: ({ id, managerId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -68,7 +68,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const canEdit = PoliciesContract.makePolicy(OrdersContract.canEdit, {
+  const canEdit = Policy.make(OrdersContract.canEdit, {
     make: ({ id }) =>
       repository.findByIdWithWorkflowStatus(id).pipe(
         Effect.map(({ order, workflowStatus }) =>
@@ -91,7 +91,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const canApprove = PoliciesContract.makePolicy(OrdersContract.canApprove, {
+  const canApprove = Policy.make(OrdersContract.canApprove, {
     make: ({ id }) =>
       repository.findByIdWithWorkflowStatus(id).pipe(
         Effect.map(({ order }) =>
@@ -104,7 +104,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const canTransition = PoliciesContract.makePolicy(OrdersContract.canTransition, {
+  const canTransition = Policy.make(OrdersContract.canTransition, {
     make: ({ id }) =>
       repository.findByIdWithWorkflowStatus(id).pipe(
         Effect.map(({ order, workflowStatus }) =>
@@ -117,11 +117,11 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(OrdersContract.canDelete, {
+  const canDelete = Policy.make(OrdersContract.canDelete, {
     make: canEdit.make,
   });
 
-  const canRestore = PoliciesContract.makePolicy(OrdersContract.canRestore, {
+  const canRestore = Policy.make(OrdersContract.canRestore, {
     make: ({ id }) =>
       repository
         .findById(id)

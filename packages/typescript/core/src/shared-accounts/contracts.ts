@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Struct from "effect/Struct";
 
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { Cost, EntityId } from "../utils";
 
@@ -69,7 +69,7 @@ export namespace SharedAccountsContract {
     }),
   );
 
-  export const isCustomerAuthorized = new HandlersContract.Handler({
+  export const isCustomerAuthorized = new Handler.Handler({
     name: "isCustomerAuthorizedSharedAccount",
     Input: IdOnly.mapFields(
       Struct.assign({ customerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -77,7 +77,7 @@ export namespace SharedAccountsContract {
     Output: Schema.Void,
   });
 
-  export const isManagerAuthorized = new HandlersContract.Handler({
+  export const isManagerAuthorized = new Handler.Handler({
     name: "isManagerAuthorizedSharedAccount",
     Input: IdOnly.mapFields(
       Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -85,25 +85,25 @@ export namespace SharedAccountsContract {
     Output: Schema.Void,
   });
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditSharedAccount",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteSharedAccount",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreSharedAccount",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editSharedAccount",
     Input: Table.Dto.mapFields(
       Struct.omit([
@@ -124,7 +124,7 @@ export namespace SharedAccountsContract {
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteSharedAccount",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -136,7 +136,7 @@ export namespace SharedAccountsContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreSharedAccount",
     Input: IdOnly,
     Output: Table.Dto,
@@ -196,25 +196,25 @@ export namespace SharedAccountManagerAccessContract {
     }),
   );
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteSharedAccountManagerAccess",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreSharedAccountManagerAccess",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createSharedAccountManagerAccess",
     Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteSharedAccountManagerAccess",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -226,7 +226,7 @@ export namespace SharedAccountManagerAccessContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreSharedAccountManagerAccess",
     Input: IdOnly,
     Output: Table.Dto,

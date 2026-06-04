@@ -1,3 +1,4 @@
+import { Handler } from ".";
 import { AnnouncementsContract } from "../announcements/contract";
 import { CommentsContract } from "../comments/contract";
 import { DeliveryOptionsContract } from "../delivery-options/contract";
@@ -12,10 +13,9 @@ import {
 import { TenantsContract } from "../tenants/contract";
 import { UsersContract } from "../users/contract";
 import { WorkflowStatusesContract } from "../workflows/contracts";
-import { HandlersContract } from "./contract";
 
-export namespace Mutations {
-  export const registry = new HandlersContract.Registry()
+export namespace MutationHandlers {
+  export const registry = new Handler.Registry()
     .handle(AnnouncementsContract.create)
     .handle(AnnouncementsContract.edit)
     .handle(AnnouncementsContract.delete_)

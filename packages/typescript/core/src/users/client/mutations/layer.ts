@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { UsersMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { UsersContract } from "../../contract";
 import { UsersPolicies } from "../policies";
 import { UsersWriteRepository } from "../write-repository";
@@ -15,7 +15,7 @@ export const makeService = Effect.gen(function* () {
 
   const policies = yield* UsersPolicies;
 
-  const edit = MutationsContract.makeMutation(UsersContract.edit, {
+  const edit = Mutation.make(UsersContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("users:update"),
@@ -24,7 +24,7 @@ export const makeService = Effect.gen(function* () {
     mutator: ({ id, ...user }) => repository.updateById(id, () => Effect.succeed(user)),
   });
 
-  const delete_ = MutationsContract.makeMutation(UsersContract.delete_, {
+  const delete_ = Mutation.make(UsersContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -42,7 +42,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const restore = MutationsContract.makeMutation(UsersContract.restore, {
+  const restore = Mutation.make(UsersContract.restore, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("users:delete"),

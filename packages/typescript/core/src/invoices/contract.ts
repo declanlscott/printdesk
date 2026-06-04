@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { OrdersContract } from "../orders/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId, TenantId } from "../utils";
@@ -55,7 +55,7 @@ export namespace InvoicesContract {
     `active_manager_authorized_shared_account_order_${Table.name}`,
   )({ ...ActiveView.Model.fields, authorizedManagerId: EntityId }) {}
 
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createInvoice",
     Input: Table.Dto.mapFields(Struct.omit(["status", "chargedAt", "deletedAt", "tenantId"])),
     Output: Table.Dto,

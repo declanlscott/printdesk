@@ -5,7 +5,7 @@ import * as Option from "effect/Option";
 
 import { OrdersMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { SharedAccountsPolicies } from "../../../shared-accounts/client/policies";
 import { UsersPolicies } from "../../../users/client/policies";
 import { OrdersContract } from "../../contract";
@@ -21,7 +21,7 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountPolicies = yield* SharedAccountsPolicies;
   const policies = yield* OrdersPolicies;
 
-  const create = MutationsContract.makeMutation(OrdersContract.create, {
+  const create = Mutation.make(OrdersContract.create, {
     makePolicy: (order) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("orders:create"),
@@ -50,7 +50,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const edit = MutationsContract.makeMutation(OrdersContract.edit, {
+  const edit = Mutation.make(OrdersContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -65,7 +65,7 @@ export const makeService = Effect.gen(function* () {
     mutator: (order) => repository.updateById(order.id, () => Effect.succeed(order)),
   });
 
-  const approve = MutationsContract.makeMutation(OrdersContract.approve, {
+  const approve = Mutation.make(OrdersContract.approve, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -77,22 +77,19 @@ export const makeService = Effect.gen(function* () {
     mutator: ({ id, ...order }) => repository.updateById(id, () => Effect.succeed(order)),
   });
 
-  const transitionRoomWorkflowStatus = MutationsContract.makeMutation(
-    OrdersContract.transitionRoomWorkflowStatus,
-    {
-      makePolicy: ({ id }) =>
-        AccessControl.every(
-          AccessControl.userPermissionPolicy("orders:update"),
-          policies.canTransition.make({ id }),
-        ),
-      mutator: ({ id, ...order }) =>
-        repository.updateById(id, () =>
-          Effect.succeed({ ...order, sharedAccountWorkflowStatusId: null }),
-        ),
-    },
-  );
+  const transitionRoomWorkflowStatus = Mutation.make(OrdersContract.transitionRoomWorkflowStatus, {
+    makePolicy: ({ id }) =>
+      AccessControl.every(
+        AccessControl.userPermissionPolicy("orders:update"),
+        policies.canTransition.make({ id }),
+      ),
+    mutator: ({ id, ...order }) =>
+      repository.updateById(id, () =>
+        Effect.succeed({ ...order, sharedAccountWorkflowStatusId: null }),
+      ),
+  });
 
-  const transitionSharedAccountWorkflowStatus = MutationsContract.makeMutation(
+  const transitionSharedAccountWorkflowStatus = Mutation.make(
     OrdersContract.transitionSharedAccountWorkflowStatus,
     {
       makePolicy: ({ id }) =>
@@ -108,7 +105,7 @@ export const makeService = Effect.gen(function* () {
     },
   );
 
-  const delete_ = MutationsContract.makeMutation(OrdersContract.delete_, {
+  const delete_ = Mutation.make(OrdersContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.some(
@@ -129,7 +126,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const restore = MutationsContract.makeMutation(OrdersContract.restore, {
+  const restore = Mutation.make(OrdersContract.restore, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("orders:delete"),

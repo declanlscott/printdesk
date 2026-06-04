@@ -5,7 +5,7 @@ import * as Option from "effect/Option";
 
 import { SharedAccountsMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { SharedAccountsContract } from "../contracts";
@@ -41,7 +41,7 @@ export const makeService = Effect.gen(function* () {
       ),
     );
 
-  const edit = MutationsContract.makeMutation(SharedAccountsContract.edit, {
+  const edit = Mutation.make(SharedAccountsContract.edit, {
     makePolicy: Effect.fn("SharedAccounts.Mutations.edit.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("shared_accounts:update"),
@@ -53,7 +53,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const delete_ = MutationsContract.makeMutation(SharedAccountsContract.delete_, {
+  const delete_ = Mutation.make(SharedAccountsContract.delete_, {
     makePolicy: Effect.fn("SharedAccounts.Mutations.delete.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("shared_accounts:delete"),
@@ -65,7 +65,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const restore = MutationsContract.makeMutation(SharedAccountsContract.restore, {
+  const restore = Mutation.make(SharedAccountsContract.restore, {
     makePolicy: Effect.fn("SharedAccounts.Mutations.restore.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("shared_accounts:delete"),

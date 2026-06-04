@@ -4,16 +4,11 @@ import * as SchemaGetter from "effect/SchemaGetter";
 import * as String from "effect/String";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
-import { Events } from "../handlers/events";
+import { RealtimeEventHandlers } from "../handlers/realtime-events";
 
 export namespace RealtimeContract {
   export const Authorization = Schema.Record(Schema.String, Schema.String);
   export type Authorization = typeof Authorization.Type;
-
-  export const Event = Events.registry.Schema.mapMembers(
-    Array.map((member) => member.fields.input),
-  );
-  export type Event = typeof Event.Type;
 
   export const SubscriptionId = Schema.String.pipe(
     Schema.check(Schema.isUUID()),
@@ -101,6 +96,11 @@ export namespace RealtimeContract {
       decode: SchemaGetter.transform(String.replace(headerPrefix, "")),
     }),
   );
+
+  export const Event = RealtimeEventHandlers.registry.Schema.mapMembers(
+    Array.map((member) => member.fields.input),
+  );
+  export type Event = typeof Event.Type;
 
   export class PublishPayload extends Schema.Class<PublishPayload>("PublishPayload")({
     channel: Channel,

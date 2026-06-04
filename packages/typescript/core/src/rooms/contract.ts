@@ -3,7 +3,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { EntityId, generateEntityId } from "../utils";
 
@@ -49,25 +49,25 @@ export namespace RoomsContract {
     Struct.assign(Struct.pick(Table.Model.fields, ["updatedAt"])),
   );
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditRoom",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteRoom",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreRoom",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createRoom",
     Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])).mapFields(
       Struct.assign({
@@ -77,7 +77,7 @@ export namespace RoomsContract {
     Output: Table.Dto,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editRoom",
     Input: Table.Dto.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseModel.fields), "status"]),
@@ -87,19 +87,19 @@ export namespace RoomsContract {
     Output: Table.Dto,
   });
 
-  export const publish = new HandlersContract.Handler({
+  export const publish = new Handler.Handler({
     name: "publishRoom",
     Input: IdAndUpdatedAt,
     Output: Table.Dto,
   });
 
-  export const draft = new HandlersContract.Handler({
+  export const draft = new Handler.Handler({
     name: "draftRoom",
     Input: IdAndUpdatedAt,
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteRoom",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -111,7 +111,7 @@ export namespace RoomsContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreRoom",
     Input: IdOnly,
     Output: Table.Dto,

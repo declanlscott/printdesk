@@ -5,7 +5,7 @@ import * as Struct from "effect/Struct";
 
 import { AnnouncementsPolicies } from ".";
 import { AccessControl } from "../../access-control";
-import { PoliciesContract } from "../../policies/contract";
+import { Policy } from "../../policies";
 import { AnnouncementsContract } from "../contract";
 import { AnnouncementsRepository } from "../repository";
 
@@ -14,7 +14,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* AnnouncementsRepository;
 
-  const canEdit = PoliciesContract.makePolicy(AnnouncementsContract.canEdit, {
+  const canEdit = Policy.make(AnnouncementsContract.canEdit, {
     make: Effect.fn("Announcements.Policies.canEdit.make")(({ id }) =>
       AccessControl.userPolicy({ name: AnnouncementsContract.Table.name, id }, ({ tenantId }) =>
         repository
@@ -24,11 +24,11 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(AnnouncementsContract.canDelete, {
+  const canDelete = Policy.make(AnnouncementsContract.canDelete, {
     make: Effect.fn("Announcements.Policies.canDelete.make")(canEdit.make),
   });
 
-  const canRestore = PoliciesContract.makePolicy(AnnouncementsContract.canRestore, {
+  const canRestore = Policy.make(AnnouncementsContract.canRestore, {
     make: Effect.fn("Announcements.Policies.canRestore.make")(({ id }) =>
       AccessControl.userPolicy({ name: AnnouncementsContract.Table.name, id }, ({ tenantId }) =>
         repository

@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { EntityId, HexColor } from "../utils";
 import { Constants } from "../utils/constants";
@@ -67,7 +67,7 @@ export namespace SharedAccountWorkflowsContract {
     }),
   );
 
-  export const isCustomerAuthorized = new HandlersContract.Handler({
+  export const isCustomerAuthorized = new Handler.Handler({
     name: "isCustomerAuthorizedSharedAccountWorkflow",
     Input: IdOnly.mapFields(
       Struct.assign({ customerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -75,7 +75,7 @@ export namespace SharedAccountWorkflowsContract {
     Output: Schema.Void,
   });
 
-  export const isManagerAuthorized = new HandlersContract.Handler({
+  export const isManagerAuthorized = new Handler.Handler({
     name: "isManagerAuthorizedSharedAccountWorkflow",
     Input: IdOnly.mapFields(
       Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -146,20 +146,20 @@ export namespace WorkflowStatusesContract {
     Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), { id: (id) => id.from.schema.members[0] }),
   );
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditWorkflowStatus",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteWorkflowStatus",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
   const omittedOnAppend = [...Table.dtoOmitKeys, "index", "deletedAt", "tenantId"] as const;
-  export const append = new HandlersContract.Handler({
+  export const append = new Handler.Handler({
     name: "appendWorkflowStatus",
     Input: Schema.Union([
       SharedAccountWorkflowModel.mapFields(Struct.omit(omittedOnAppend)),
@@ -168,7 +168,7 @@ export namespace WorkflowStatusesContract {
     Output: Table.Dto,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editWorkflowStatus",
     Input: BaseModel.mapFields(
       Struct.omit([...Struct.keys(TablesContract.BaseSyncModel.fields), "index"]),
@@ -184,7 +184,7 @@ export namespace WorkflowStatusesContract {
     Output: Table.Dto,
   });
 
-  export const reorder = new HandlersContract.Handler({
+  export const reorder = new Handler.Handler({
     name: "reorderWorkflowStatus",
     Input: Schema.Struct(
       Struct.evolve(Struct.pick(BaseModel.fields, ["id", "index", "updatedAt"]), {
@@ -194,7 +194,7 @@ export namespace WorkflowStatusesContract {
     Output: Table.Dto.pipe(Schema.Array),
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteWorkflowStatus",
     Input: IdOnly.mapFields(
       Struct.assign(

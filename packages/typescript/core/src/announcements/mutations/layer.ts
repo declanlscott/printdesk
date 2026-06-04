@@ -5,7 +5,7 @@ import * as Match from "effect/Match";
 
 import { AnnouncementsMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { RoomsRepository } from "../../rooms/repository";
@@ -48,7 +48,7 @@ export const makeService = Effect.gen(function* () {
       Effect.catch(() => Effect.void),
     );
 
-  const create = MutationsContract.makeMutation(AnnouncementsContract.create, {
+  const create = Mutation.make(AnnouncementsContract.create, {
     makePolicy: Effect.fn("Announcements.Mutations.create.makePolicy")(() =>
       AccessControl.userPermissionPolicy("announcements:create"),
     ),
@@ -59,7 +59,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const edit = MutationsContract.makeMutation(AnnouncementsContract.edit, {
+  const edit = Mutation.make(AnnouncementsContract.edit, {
     makePolicy: Effect.fn("Announcements.Mutations.edit.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("announcements:update"),
@@ -71,7 +71,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const delete_ = MutationsContract.makeMutation(AnnouncementsContract.delete_, {
+  const delete_ = Mutation.make(AnnouncementsContract.delete_, {
     makePolicy: Effect.fn("Announcements.Mutations.delete.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("announcements:delete"),
@@ -83,7 +83,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const restore = MutationsContract.makeMutation(AnnouncementsContract.restore, {
+  const restore = Mutation.make(AnnouncementsContract.restore, {
     makePolicy: Effect.fn("Announcements.Mutations.restore.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("announcements:delete"),

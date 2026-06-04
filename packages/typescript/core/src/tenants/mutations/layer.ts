@@ -4,7 +4,7 @@ import * as Layer from "effect/Layer";
 
 import { TenantsMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { TenantsContract } from "../contract";
@@ -22,7 +22,7 @@ export const makeService = Effect.gen(function* () {
       Array.make(ReplicacheContract.PullPermission.make({ permission: "tenants:read" })),
     );
 
-  const edit = MutationsContract.makeMutation(TenantsContract.edit, {
+  const edit = Mutation.make(TenantsContract.edit, {
     makePolicy: Effect.fn("Tenants.Mutations.edit.makePolicy")(() =>
       AccessControl.userPermissionPolicy("tenants:update"),
     ),

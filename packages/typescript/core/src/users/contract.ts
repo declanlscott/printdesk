@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { EntityId } from "../utils";
 
@@ -43,31 +43,31 @@ export namespace UsersContract {
     }),
   );
 
-  export const isSelf = new HandlersContract.Handler({
+  export const isSelf = new Handler.Handler({
     name: "isUserSelf",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditUser",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteUser",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreUser",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editUser",
     Input: Table.Dto.mapFields(
       Struct.omit([
@@ -93,7 +93,7 @@ export namespace UsersContract {
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteUser",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -105,7 +105,7 @@ export namespace UsersContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreUser",
     Input: IdOnly,
     Output: Table.Dto,

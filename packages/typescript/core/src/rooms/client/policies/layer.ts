@@ -5,7 +5,7 @@ import * as Struct from "effect/Struct";
 
 import { RoomsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
-import { PoliciesContract } from "../../../policies/contract";
+import { Policy } from "../../../policies";
 import { RoomsContract } from "../../contract";
 import { RoomsReadRepository } from "../read-repository";
 
@@ -14,7 +14,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* RoomsReadRepository;
 
-  const canEdit = PoliciesContract.makePolicy(RoomsContract.canEdit, {
+  const canEdit = Policy.make(RoomsContract.canEdit, {
     make: ({ id }) =>
       repository
         .findById(id)
@@ -25,11 +25,11 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(RoomsContract.canDelete, {
+  const canDelete = Policy.make(RoomsContract.canDelete, {
     make: canEdit.make,
   });
 
-  const canRestore = PoliciesContract.makePolicy(RoomsContract.canRestore, {
+  const canRestore = Policy.make(RoomsContract.canRestore, {
     make: ({ id }) =>
       repository
         .findById(id)

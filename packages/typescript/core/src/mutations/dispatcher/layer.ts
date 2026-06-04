@@ -1,11 +1,12 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-import { MutationsDispatcher } from ".";
+import { MutationDispatcher } from ".";
+import { Mutation } from "..";
 import { AnnouncementsMutations } from "../../announcements/mutations";
 import { CommentsMutations } from "../../comments/mutations";
 import { DeliveryOptionsMutations } from "../../delivery-options/mutations";
-import { Mutations } from "../../handlers/mutations";
+import { MutationHandlers } from "../../handlers/mutations";
 import { InvoicesMutations } from "../../invoices/mutations";
 import { OrdersMutations } from "../../orders/mutations";
 import { ProductsMutations } from "../../products/mutations";
@@ -15,7 +16,6 @@ import { SharedAccountsMutations } from "../../shared-accounts/mutations";
 import { TenantsMutations } from "../../tenants/mutations";
 import { UsersMutations } from "../../users/mutations";
 import { WorkflowStatusesMutations } from "../../workflows/status/mutations";
-import { MutationsContract } from "../contract";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -33,7 +33,7 @@ export const makeService = Effect.gen(function* () {
   const users = yield* UsersMutations;
   const workflowStatuses = yield* WorkflowStatusesMutations;
 
-  return new MutationsContract.Dispatcher({ handlerRegistry: Mutations.registry })
+  return new Mutation.Dispatcher({ handlerRegistry: MutationHandlers.registry })
     .mutation(announcements.create)
     .mutation(announcements.edit)
     .mutation(announcements.delete)
@@ -83,4 +83,4 @@ export const makeService = Effect.gen(function* () {
     .final();
 });
 
-export const layer = makeService.pipe(Layer.effect(MutationsDispatcher));
+export const layer = makeService.pipe(Layer.effect(MutationDispatcher));

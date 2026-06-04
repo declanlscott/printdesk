@@ -7,7 +7,7 @@ import { PastMutationError, ReplicachePusher } from ".";
 import { AccessControl } from "../../access-control";
 import { Actor } from "../../actors";
 import { Database } from "../../database";
-import { MutationsDispatcher } from "../../mutations/dispatcher";
+import { MutationDispatcher } from "../../mutations/dispatcher";
 import { Version } from "../../utils";
 import { ReplicacheClientGroupId } from "../client-group-id";
 import { ReplicacheContract, ReplicachePusherContract } from "../contracts";
@@ -22,7 +22,7 @@ export const makeService = Effect.gen(function* () {
   const clientGroupsRepository = yield* ReplicacheClientGroupsRepository;
   const clientsRepository = yield* ReplicacheClientsRepository;
 
-  const dispatcher = yield* MutationsDispatcher;
+  const dispatcher = yield* MutationDispatcher;
 
   const preprocess = Effect.fn("ReplicachePusher.preprocess")(
     function* (args: {

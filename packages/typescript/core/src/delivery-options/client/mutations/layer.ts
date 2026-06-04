@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { DeliveryOptionsMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { DeliveryOptionsContract } from "../../contract";
 import { DeliveryOptionsPolicies } from "../policies";
 import { DeliveryOptionsWriteRepository } from "../write-repository";
@@ -15,7 +15,7 @@ export const makeService = Effect.gen(function* () {
 
   const policies = yield* DeliveryOptionsPolicies;
 
-  const create = MutationsContract.makeMutation(DeliveryOptionsContract.create, {
+  const create = Mutation.make(DeliveryOptionsContract.create, {
     makePolicy: () => AccessControl.userPermissionPolicy("delivery_options:create"),
     mutator: (deliveryOption, { tenantId }) =>
       DeliveryOptionsContract.Table.Dto.makeEffect({ ...deliveryOption, tenantId }).pipe(
@@ -23,7 +23,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const edit = MutationsContract.makeMutation(DeliveryOptionsContract.edit, {
+  const edit = Mutation.make(DeliveryOptionsContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("delivery_options:update"),
@@ -33,7 +33,7 @@ export const makeService = Effect.gen(function* () {
       repository.updateById(id, () => Effect.succeed(deliveryOption)),
   });
 
-  const delete_ = MutationsContract.makeMutation(DeliveryOptionsContract.delete_, {
+  const delete_ = Mutation.make(DeliveryOptionsContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("delivery_options:delete"),
@@ -48,7 +48,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const restore = MutationsContract.makeMutation(DeliveryOptionsContract.restore, {
+  const restore = Mutation.make(DeliveryOptionsContract.restore, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("delivery_options:delete"),

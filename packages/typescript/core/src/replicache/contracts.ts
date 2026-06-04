@@ -6,9 +6,9 @@ import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
-import { HandlersContract } from "../handlers/contract";
-import { Mutations } from "../handlers/mutations";
-import { Policies } from "../handlers/policies";
+import { Handler } from "../handlers";
+import { MutationHandlers } from "../handlers/mutations";
+import { PolicyHandlers } from "../handlers/policies";
 import { Models } from "../models";
 import { Permissions } from "../permissions";
 import { ChunkFromArray, EntityId, Version } from "../utils";
@@ -55,15 +55,15 @@ export namespace ReplicacheContract {
     { permission: Schema.Literals(Permissions.syncReadPermissions) },
   ) {}
 
-  export const PullPolicy = Policies.registry.ReplicachePullPolicySchema;
+  export const PullPolicy = PolicyHandlers.registry.ReplicachePullPolicySchema;
   export type PullPolicy = typeof PullPolicy.Type;
 
-  export class Notification extends Schema.Class<Notification>("ReplicacheNotification")({
+  export class Notification extends Schema.TaggedClass<Notification>()("ReplicacheNotification", {
     clientGroupId: ClientGroupId,
     data: Schema.Union([PullPermission, PullPolicy]).pipe(Schema.Array),
   }) {}
 
-  export const notification = new HandlersContract.Handler({
+  export const notification = new Handler.Handler({
     name: "/replicache/notification",
     Input: Notification,
     Output: Schema.Void,
@@ -280,10 +280,10 @@ export namespace ReplicachePusherContract {
     "X-Replicache-RequestID": Schema.String,
   }) {}
 
-  export const MutationV0 = Mutations.registry.ReplicacheMutationV0Schema;
+  export const MutationV0 = MutationHandlers.registry.ReplicacheMutationV0Schema;
   export type MutationV0 = typeof MutationV0.Type;
 
-  export const MutationV1 = Mutations.registry.ReplicacheMutationV1Schema;
+  export const MutationV1 = MutationHandlers.registry.ReplicacheMutationV1Schema;
   export type MutationV1 = typeof MutationV1.Type;
 
   export const Mutation = Schema.Union([MutationV0, MutationV1]);

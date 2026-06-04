@@ -10,7 +10,7 @@ import * as Struct from "effect/Struct";
 
 import { OrdersPolicies } from ".";
 import { AccessControl } from "../../access-control";
-import { PoliciesContract } from "../../policies/contract";
+import { Policy } from "../../policies";
 import { OrdersContract } from "../contract";
 import { OrdersRepository } from "../repository";
 
@@ -21,7 +21,7 @@ export const makeService = Effect.gen(function* () {
 
   const decode = Schema.decodeUnknownEffect(OrdersContract.Table.Model);
 
-  const isCustomer = PoliciesContract.makePolicy(OrdersContract.isCustomer, {
+  const isCustomer = Policy.make(OrdersContract.isCustomer, {
     make: Effect.fn("Orders.Policies.isCustomer.make")(({ id, customerId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -34,7 +34,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const isManager = PoliciesContract.makePolicy(OrdersContract.isManager, {
+  const isManager = Policy.make(OrdersContract.isManager, {
     make: Effect.fn("Orders.Policies.isManager.make")(({ id, managerId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -47,7 +47,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const isCustomerOrManager = PoliciesContract.makePolicy(OrdersContract.isCustomerOrManager, {
+  const isCustomerOrManager = Policy.make(OrdersContract.isCustomerOrManager, {
     make: Effect.fn("Orders.Policies.isCustomerOrManager")(({ id, userId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -63,7 +63,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const isManagerAuthorized = PoliciesContract.makePolicy(OrdersContract.isManagerAuthorized, {
+  const isManagerAuthorized = Policy.make(OrdersContract.isManagerAuthorized, {
     make: Effect.fn("Orders.Policies.isManagerAuthorized")(({ id, managerId }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
         repository
@@ -75,7 +75,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canEdit = PoliciesContract.makePolicy(OrdersContract.canEdit, {
+  const canEdit = Policy.make(OrdersContract.canEdit, {
     make: Effect.fn("Orders.Policies.canEdit.make")(({ id }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
         repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
@@ -105,7 +105,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canApprove = PoliciesContract.makePolicy(OrdersContract.canApprove, {
+  const canApprove = Policy.make(OrdersContract.canApprove, {
     make: Effect.fn("Orders.Policies.canApprove.make")(({ id }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
         repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
@@ -123,7 +123,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canTransition = PoliciesContract.makePolicy(OrdersContract.canTransition, {
+  const canTransition = Policy.make(OrdersContract.canTransition, {
     make: Effect.fn("Orders.Policies.canTransition.make")(({ id }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
         repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
@@ -138,11 +138,11 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(OrdersContract.canDelete, {
+  const canDelete = Policy.make(OrdersContract.canDelete, {
     make: Effect.fn("Orders.Policies.canDelete.make")(canEdit.make),
   });
 
-  const canRestore = PoliciesContract.makePolicy(OrdersContract.canRestore, {
+  const canRestore = Policy.make(OrdersContract.canRestore, {
     make: Effect.fn("Orders.Policies.canRestore.make")(({ id }) =>
       AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
         repository

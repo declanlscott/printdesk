@@ -5,7 +5,7 @@ import * as Iterable from "effect/Iterable";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
-export namespace HandlersContract {
+export namespace Handler {
   export class Handler<
     TName extends string = string,
     TInput extends Schema.Top = Schema.Top,

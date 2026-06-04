@@ -1,12 +1,12 @@
+import { Handler } from ".";
 import { CommentsContract } from "../comments/contract";
 import { OrdersContract } from "../orders/contract";
 import { SharedAccountsContract } from "../shared-accounts/contracts";
 import { UsersContract } from "../users/contract";
 import { SharedAccountWorkflowsContract } from "../workflows/contracts";
-import { HandlersContract } from "./contract";
 
-export namespace Policies {
-  export const registry = new HandlersContract.Registry()
+export namespace PolicyHandlers {
+  export const registry = new Handler.Registry()
     .handle(CommentsContract.isAuthor)
     .handle(OrdersContract.isCustomer)
     .handle(OrdersContract.isManager)

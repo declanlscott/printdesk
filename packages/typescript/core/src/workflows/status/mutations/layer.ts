@@ -10,7 +10,7 @@ import * as Struct from "effect/Struct";
 
 import { WorkflowStatusesMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { ReplicacheContract } from "../../../replicache/contracts";
 import { ReplicacheNotifier } from "../../../replicache/notifier";
 import { WorkflowStatusesContract, SharedAccountWorkflowsContract } from "../../contracts";
@@ -81,7 +81,7 @@ export const makeService = Effect.gen(function* () {
       Effect.catch(() => Effect.void),
     );
 
-  const append = MutationsContract.makeMutation(WorkflowStatusesContract.append, {
+  const append = Mutation.make(WorkflowStatusesContract.append, {
     makePolicy: Effect.fn("WorkflowStatuses.Mutations.append.makePolicy")((workflowStatus) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("workflow_statuses:create"),
@@ -112,7 +112,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const edit = MutationsContract.makeMutation(WorkflowStatusesContract.edit, {
+  const edit = Mutation.make(WorkflowStatusesContract.edit, {
     makePolicy: Effect.fn("WorkflowStatuses.Mutations.edit.makePolicy")(({ id }) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("workflow_statuses:update"),
@@ -125,7 +125,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const reorder = MutationsContract.makeMutation(WorkflowStatusesContract.reorder, {
+  const reorder = Mutation.make(WorkflowStatusesContract.reorder, {
     makePolicy: Effect.fn("WorkflowStatuses.Mutations.reorder.makePolicy")(({ id }) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("workflow_statuses:update"),
@@ -177,7 +177,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const delete_ = MutationsContract.makeMutation(WorkflowStatusesContract.delete_, {
+  const delete_ = Mutation.make(WorkflowStatusesContract.delete_, {
     makePolicy: Effect.fn("WorkflowStatuses.Mutations.delete.makePolicy")(({ id }) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("workflow_statuses:delete"),

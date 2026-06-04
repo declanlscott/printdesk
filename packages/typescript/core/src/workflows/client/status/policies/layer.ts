@@ -7,7 +7,7 @@ import * as Option from "effect/Option";
 import { WorkflowStatusesPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
 import { OrdersReadRepository } from "../../../../orders/client/read-repository";
-import { PoliciesContract } from "../../../../policies/contract";
+import { Policy } from "../../../../policies";
 import { WorkflowStatusesContract, SharedAccountWorkflowsContract } from "../../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
 import { WorkflowStatusesReadRepository } from "../read-repository";
@@ -20,7 +20,7 @@ export const makeService = Effect.gen(function* () {
 
   const sharedAccountWorkflowPolicies = yield* SharedAccountWorkflowsPolicies;
 
-  const canEdit = PoliciesContract.makePolicy(WorkflowStatusesContract.canEdit, {
+  const canEdit = Policy.make(WorkflowStatusesContract.canEdit, {
     make: ({ id }) =>
       repository.findById(id).pipe(
         Effect.flatMap((workflowStatus) =>
@@ -37,7 +37,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(WorkflowStatusesContract.canDelete, {
+  const canDelete = Policy.make(WorkflowStatusesContract.canDelete, {
     make: ({ id }) =>
       AccessControl.every(
         ordersRepository

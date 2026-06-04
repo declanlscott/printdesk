@@ -1,7 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { EntityId } from "../utils";
 
@@ -36,7 +36,7 @@ export namespace CustomerGroupsContract {
     `active_membership_${Table.name}`,
   )({ ...ActiveView.Model.fields, memberId: EntityId }) {}
 
-  export const isMemberOf = new HandlersContract.Handler({
+  export const isMemberOf = new Handler.Handler({
     name: "isMemberOfCustomerGroup",
     Input: Schema.Struct({
       ...Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {

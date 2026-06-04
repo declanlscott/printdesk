@@ -6,7 +6,7 @@ import * as Option from "effect/Option";
 
 import { CustomerGroupsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
-import { PoliciesContract } from "../../../policies/contract";
+import { Policy } from "../../../policies";
 import { CustomerGroupsContract } from "../../contracts";
 import { CustomerGroupsRepository } from "../repository";
 
@@ -15,7 +15,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* CustomerGroupsRepository;
 
-  const isMemberOf = PoliciesContract.makePolicy(CustomerGroupsContract.isMemberOf, {
+  const isMemberOf = Policy.make(CustomerGroupsContract.isMemberOf, {
     make: Effect.fn("Groups.CustomersPolicies.isMemberOf.make")(({ id, memberId }) =>
       AccessControl.userPolicy({ name: CustomerGroupsContract.Table.name, id }, (user) =>
         repository

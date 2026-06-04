@@ -5,7 +5,7 @@ import * as Option from "effect/Option";
 
 import { InvoicesMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { OrdersContract } from "../../orders/contract";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
@@ -36,7 +36,7 @@ export const makeService = Effect.gen(function* () {
       ),
     );
 
-  const create = MutationsContract.makeMutation(InvoicesContract.create, {
+  const create = Mutation.make(InvoicesContract.create, {
     makePolicy: Effect.fn("Invoices.Mutations.create.makePolicy")(() =>
       AccessControl.userPermissionPolicy("invoices:create"),
     ),

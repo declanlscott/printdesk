@@ -4,7 +4,7 @@ import * as Redacted from "effect/Redacted";
 
 import { LicensesPolicies } from ".";
 import { AccessControl } from "../../access-control";
-import { PoliciesContract } from "../../policies/contract";
+import { Policy } from "../../policies";
 import { LicensesContract } from "../contract";
 import { LicensesRepository } from "../repository";
 
@@ -13,7 +13,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* LicensesRepository;
 
-  const isAvailable = PoliciesContract.makePolicy(LicensesContract.isAvailable, {
+  const isAvailable = Policy.make(LicensesContract.isAvailable, {
     make: Effect.fn("Tenants.LicensesPolicies.isAvailable.make")(({ key }) =>
       repository.findByKeyWithTenant(key).pipe(
         Effect.map(

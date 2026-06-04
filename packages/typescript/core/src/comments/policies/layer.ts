@@ -7,7 +7,7 @@ import * as Struct from "effect/Struct";
 
 import { CommentsPolicies } from ".";
 import { AccessControl } from "../../access-control";
-import { PoliciesContract } from "../../policies/contract";
+import { Policy } from "../../policies";
 import { CommentsContract } from "../contract";
 import { CommentsRepository } from "../repository";
 
@@ -16,7 +16,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* CommentsRepository;
 
-  const isAuthor = PoliciesContract.makePolicy(CommentsContract.isAuthor, {
+  const isAuthor = Policy.make(CommentsContract.isAuthor, {
     make: Effect.fn("Comments.Policies.isAuthor.make")(({ id, authorId }) =>
       AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, (user) =>
         repository
@@ -29,7 +29,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canEdit = PoliciesContract.makePolicy(CommentsContract.canEdit, {
+  const canEdit = Policy.make(CommentsContract.canEdit, {
     make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
       AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, ({ tenantId }) =>
         repository
@@ -39,11 +39,11 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(CommentsContract.canDelete, {
+  const canDelete = Policy.make(CommentsContract.canDelete, {
     make: Effect.fn("Comments.Policies.canDelete.make")(canEdit.make),
   });
 
-  const canRestore = PoliciesContract.makePolicy(CommentsContract.canRestore, {
+  const canRestore = Policy.make(CommentsContract.canRestore, {
     make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
       AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, ({ tenantId }) =>
         repository

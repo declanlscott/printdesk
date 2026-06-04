@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { SharedAccountsMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { SharedAccountsContract } from "../../contracts";
 import { SharedAccountsPolicies } from "../policies";
 import { SharedAccountsWriteRepository } from "../write-repository";
@@ -15,7 +15,7 @@ export const makeService = Effect.gen(function* () {
 
   const policies = yield* SharedAccountsPolicies;
 
-  const edit = MutationsContract.makeMutation(SharedAccountsContract.edit, {
+  const edit = Mutation.make(SharedAccountsContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("shared_accounts:update"),
@@ -25,7 +25,7 @@ export const makeService = Effect.gen(function* () {
       repository.updateById(id, () => Effect.succeed(sharedAccount)),
   });
 
-  const delete_ = MutationsContract.makeMutation(SharedAccountsContract.delete_, {
+  const delete_ = Mutation.make(SharedAccountsContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.every(
@@ -42,7 +42,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const restore = MutationsContract.makeMutation(SharedAccountsContract.restore, {
+  const restore = Mutation.make(SharedAccountsContract.restore, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("shared_accounts:delete"),

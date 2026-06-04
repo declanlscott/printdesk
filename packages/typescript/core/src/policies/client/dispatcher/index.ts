@@ -2,6 +2,6 @@ import * as Context from "effect/Context";
 
 import type { ServiceShape } from "./layer";
 
-export class PoliciesDispatcher extends Context.Service<PoliciesDispatcher, ServiceShape>()(
+export class PolicyDispatcher extends Context.Service<PolicyDispatcher, ServiceShape>()(
   "@printdesk/core/policies/client/Dispatcher",
 ) {}

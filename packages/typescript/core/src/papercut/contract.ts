@@ -2,7 +2,7 @@ import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { Ipv4, Timezone } from "../utils";
 
 export namespace PapercutContract {
@@ -58,7 +58,7 @@ export namespace PapercutContract {
     dispatchId: Schema.String,
   }) {}
 
-  export const syncResult = new HandlersContract.Handler({
+  export const syncResult = new Handler.Handler({
     name: "/papercut/sync",
     Input: SyncResult,
     Output: Schema.Void,

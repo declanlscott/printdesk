@@ -9,7 +9,7 @@ import { WorkflowStatusesPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Actor } from "../../../actors";
 import { OrdersRepository } from "../../../orders/repository";
-import { PoliciesContract } from "../../../policies/contract";
+import { Policy } from "../../../policies";
 import { WorkflowStatusesContract } from "../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
 import { WorkflowStatusesRepository } from "../repository";
@@ -22,7 +22,7 @@ export const makeService = Effect.gen(function* () {
 
   const sharedAccountWorkflowPolicies = yield* SharedAccountWorkflowsPolicies;
 
-  const canEdit = PoliciesContract.makePolicy(WorkflowStatusesContract.canEdit, {
+  const canEdit = Policy.make(WorkflowStatusesContract.canEdit, {
     make: Effect.fn("WorkflowStatuses.Policies.canEdit.make")(({ id }) =>
       Actor.pipe(
         Effect.flatMap(Struct.get("assertUser")),
@@ -45,7 +45,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const canDelete = PoliciesContract.makePolicy(WorkflowStatusesContract.canDelete, {
+  const canDelete = Policy.make(WorkflowStatusesContract.canDelete, {
     make: Effect.fn("WorkflowStatuses.Policies.canDelete.make")(({ id }) =>
       AccessControl.every(
         AccessControl.userPolicy(

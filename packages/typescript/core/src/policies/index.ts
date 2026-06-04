@@ -6,15 +6,15 @@ import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 
 import type { AccessControl } from "../access-control";
-import type { HandlersContract } from "../handlers/contract";
+import type { Handler } from "../handlers";
 
-export namespace PoliciesContract {
+export namespace Policy {
   export interface Policymaker<TName extends string, TArgs extends Schema.Top, TError, TServices> {
     readonly name: TName;
     readonly make: AccessControl.MakePolicy<TArgs, TError, TServices>;
   }
 
-  export const makePolicy = <THandler extends HandlersContract.Handler, TError, TServices>(
+  export const make = <THandler extends Handler.Handler, TError, TServices>(
     handler: THandler,
     properties: Omit<Policymaker<THandler["name"], THandler["Input"], TError, TServices>, "name">,
   ): Policymaker<THandler["name"], THandler["Input"], TError, TServices> =>
@@ -26,12 +26,12 @@ export namespace PoliciesContract {
   >;
 
   export class Dispatcher<
-    THandlerRecord extends HandlersContract.HandlerRecord,
+    THandlerRecord extends Handler.HandlerRecord,
     // oxlint-disable-next-line typescript/no-empty-object-type
     TRecord extends PolicyRecord = {},
     TIsFinal extends boolean = false,
   > extends Data.Class<{
-    readonly handlerRegistry: HandlersContract.Registry<THandlerRecord, true>;
+    readonly handlerRegistry: Handler.Registry<THandlerRecord, true>;
   }> {
     #isFinal = false;
     #map = HashMap.empty<

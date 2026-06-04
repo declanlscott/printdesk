@@ -9,7 +9,7 @@ import { RoomsMutations } from ".";
 import { AccessControl } from "../../access-control";
 import { AnnouncementsRepository } from "../../announcements/repository";
 import { DeliveryOptionsRepository } from "../../delivery-options/repository";
-import { MutationsContract } from "../../mutations/contract";
+import { Mutation } from "../../mutations";
 import { ProductsRepository } from "../../products/repository";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
@@ -131,7 +131,7 @@ export const makeService = Effect.gen(function* () {
       ),
     );
 
-  const create = MutationsContract.makeMutation(RoomsContract.create, {
+  const create = Mutation.make(RoomsContract.create, {
     makePolicy: Effect.fn("Rooms.Mutations.create.makePolicy")(() =>
       AccessControl.userPermissionPolicy("rooms:create"),
     ),
@@ -152,7 +152,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const edit = MutationsContract.makeMutation(RoomsContract.edit, {
+  const edit = Mutation.make(RoomsContract.edit, {
     makePolicy: Effect.fn("Rooms.Mutations.edit.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("rooms:update"),
@@ -164,7 +164,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const publish = MutationsContract.makeMutation(RoomsContract.publish, {
+  const publish = Mutation.make(RoomsContract.publish, {
     makePolicy: Effect.fn("Rooms.Mutations.publish.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("rooms:update"),
@@ -178,7 +178,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const draft = MutationsContract.makeMutation(RoomsContract.draft, {
+  const draft = Mutation.make(RoomsContract.draft, {
     makePolicy: Effect.fn("Rooms.Mutations.draft.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("rooms:update"),
@@ -196,7 +196,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const delete_ = MutationsContract.makeMutation(RoomsContract.delete_, {
+  const delete_ = Mutation.make(RoomsContract.delete_, {
     makePolicy: Effect.fn("Rooms.Mutations.delete.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("rooms:delete"),
@@ -217,7 +217,7 @@ export const makeService = Effect.gen(function* () {
     ),
   });
 
-  const restore = MutationsContract.makeMutation(RoomsContract.restore, {
+  const restore = Mutation.make(RoomsContract.restore, {
     makePolicy: Effect.fn("Rooms.Mutations.restore.makePolicy")(({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("rooms:delete"),

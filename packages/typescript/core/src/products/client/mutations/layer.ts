@@ -3,7 +3,7 @@ import * as Layer from "effect/Layer";
 
 import { ProductsMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { MutationsContract } from "../../../mutations/contract";
+import { Mutation } from "../../../mutations";
 import { ProductsContract } from "../../contract";
 import { ProductsPolicies } from "../policies";
 import { ProductsWriteRepository } from "../write-repository";
@@ -15,7 +15,7 @@ export const makeService = Effect.gen(function* () {
 
   const policies = yield* ProductsPolicies;
 
-  const create = MutationsContract.makeMutation(ProductsContract.create, {
+  const create = Mutation.make(ProductsContract.create, {
     makePolicy: () => AccessControl.userPermissionPolicy("products:create"),
     mutator: (product, { tenantId }) =>
       ProductsContract.Table.Dto.makeEffect({ ...product, tenantId }).pipe(
@@ -23,7 +23,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const edit = MutationsContract.makeMutation(ProductsContract.edit, {
+  const edit = Mutation.make(ProductsContract.edit, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("products:update"),
@@ -32,7 +32,7 @@ export const makeService = Effect.gen(function* () {
     mutator: ({ id, ...product }) => repository.updateById(id, () => Effect.succeed(product)),
   });
 
-  const publish = MutationsContract.makeMutation(ProductsContract.publish, {
+  const publish = Mutation.make(ProductsContract.publish, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("products:update"),
@@ -46,7 +46,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const draft = MutationsContract.makeMutation(ProductsContract.draft, {
+  const draft = Mutation.make(ProductsContract.draft, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("products:update"),
@@ -60,7 +60,7 @@ export const makeService = Effect.gen(function* () {
       ),
   });
 
-  const delete_ = MutationsContract.makeMutation(ProductsContract.delete_, {
+  const delete_ = Mutation.make(ProductsContract.delete_, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("products:delete"),
@@ -75,7 +75,7 @@ export const makeService = Effect.gen(function* () {
         ),
   });
 
-  const restore = MutationsContract.makeMutation(ProductsContract.restore, {
+  const restore = Mutation.make(ProductsContract.restore, {
     makePolicy: ({ id }) =>
       AccessControl.every(
         AccessControl.userPermissionPolicy("products:delete"),

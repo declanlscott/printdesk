@@ -3,7 +3,7 @@ import * as Struct from "effect/Struct";
 
 import { AttributesContract } from "../attributes/contract";
 import { ColumnsContract } from "../columns/contract";
-import { HandlersContract } from "../handlers/contract";
+import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
 import { EntityId, IsoDate, IsoTimestamp } from "../utils";
 import { Constants } from "../utils/constants";
@@ -229,7 +229,7 @@ export namespace OrdersContract {
     Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), { id: (id) => id.from.schema.members[0] }),
   );
 
-  export const isCustomer = new HandlersContract.Handler({
+  export const isCustomer = new Handler.Handler({
     name: "isOrderCustomer",
     Input: IdOnly.mapFields(
       Struct.assign({ customerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -237,7 +237,7 @@ export namespace OrdersContract {
     Output: Schema.Void,
   });
 
-  export const isManager = new HandlersContract.Handler({
+  export const isManager = new Handler.Handler({
     name: "isOrderManager",
     Input: IdOnly.mapFields(
       Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -245,13 +245,13 @@ export namespace OrdersContract {
     Output: Schema.Void,
   });
 
-  export const isCustomerOrManager = new HandlersContract.Handler({
+  export const isCustomerOrManager = new Handler.Handler({
     name: "isOrderCustomerOrManager",
     Input: IdOnly.mapFields(Struct.assign({ userId: EntityId.pipe(Schema.OptionFromUndefinedOr) })),
     Output: Schema.Void,
   });
 
-  export const isManagerAuthorized = new HandlersContract.Handler({
+  export const isManagerAuthorized = new Handler.Handler({
     name: "isOrderManagerAuthorized",
     Input: IdOnly.mapFields(
       Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
@@ -259,31 +259,31 @@ export namespace OrdersContract {
     Output: Schema.Void,
   });
 
-  export const canEdit = new HandlersContract.Handler({
+  export const canEdit = new Handler.Handler({
     name: "canEditOrder",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canApprove = new HandlersContract.Handler({
+  export const canApprove = new Handler.Handler({
     name: "canApproveOrder",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canTransition = new HandlersContract.Handler({
+  export const canTransition = new Handler.Handler({
     name: "canTransitionOrder",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canDelete = new HandlersContract.Handler({
+  export const canDelete = new Handler.Handler({
     name: "canDeleteOrder",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
-  export const canRestore = new HandlersContract.Handler({
+  export const canRestore = new Handler.Handler({
     name: "canRestoreOrder",
     Input: IdOnly,
     Output: Schema.Void,
@@ -298,7 +298,7 @@ export namespace OrdersContract {
     "deletedAt",
     "tenantId",
   ] as const;
-  export const create = new HandlersContract.Handler({
+  export const create = new Handler.Handler({
     name: "createOrder",
     Input: Schema.Union([
       SharedAccountWorkflowStatusModel.mapFields(Struct.omit(omittedOnCreate)),
@@ -307,7 +307,7 @@ export namespace OrdersContract {
     Output: Table.Dto,
   });
 
-  export const edit = new HandlersContract.Handler({
+  export const edit = new Handler.Handler({
     name: "editOrder",
     Input: BaseModel.mapFields(Struct.omit([...Struct.keys(TablesContract.BaseSyncModel.fields)]))
       .mapFields(Struct.map(Schema.optional))
@@ -321,7 +321,7 @@ export namespace OrdersContract {
     Output: Table.Dto,
   });
 
-  export const approve = new HandlersContract.Handler({
+  export const approve = new Handler.Handler({
     name: "approveOrder",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -334,7 +334,7 @@ export namespace OrdersContract {
     Output: Table.Dto,
   });
 
-  export const transitionRoomWorkflowStatus = new HandlersContract.Handler({
+  export const transitionRoomWorkflowStatus = new Handler.Handler({
     name: "transitionOrderRoomWorkflowStatus",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -344,7 +344,7 @@ export namespace OrdersContract {
     Output: Table.Dto,
   });
 
-  export const transitionSharedAccountWorkflowStatus = new HandlersContract.Handler({
+  export const transitionSharedAccountWorkflowStatus = new Handler.Handler({
     name: "transitionOrderSharedAccountWorkflowStatus",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -357,7 +357,7 @@ export namespace OrdersContract {
     Output: Table.Dto,
   });
 
-  export const delete_ = new HandlersContract.Handler({
+  export const delete_ = new Handler.Handler({
     name: "deleteOrder",
     Input: IdOnly.mapFields(
       Struct.assign(
@@ -369,7 +369,7 @@ export namespace OrdersContract {
     Output: Table.Dto,
   });
 
-  export const restore = new HandlersContract.Handler({
+  export const restore = new Handler.Handler({
     name: "restoreOrder",
     Input: IdOnly,
     Output: Table.Dto,

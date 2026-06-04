@@ -1,7 +1,6 @@
 import { Actor } from "@printdesk/core/actors";
 import { ReadTransaction } from "@printdesk/core/database/client/read-transaction";
-import { Replicache as Service } from "@printdesk/core/replicache/client";
-import * as Replicache from "@printdesk/core/replicache/client/layer";
+import { Replicache } from "@printdesk/core/replicache/client";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
@@ -11,7 +10,7 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { actorAtom } from "./actor";
 import { ViteResource } from "./sst";
 
-import type { Mutations } from "@printdesk/core/handlers/mutations";
+import type { MutationHandlers } from "@printdesk/core/handlers/mutations";
 import type { SubscribeOptions } from "replicache";
 
 export const replicacheAtomRuntime = FetchHttpClient.layer.pipe(Atom.runtime);
@@ -20,7 +19,7 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
   ViteResource.atom.pipe(
     get.result,
     Effect.flatMap(({ Environment, ReverseProxy }) =>
-      Replicache.makeService({
+      Replicache.make({
         baseUrl: new URL(ReverseProxy.pipe(Redacted.value).urls.api),
         logLevel: Environment.pipe(Redacted.value).isDevMode ? "info" : "error",
       }),
@@ -36,11 +35,6 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
     ),
     Effect.provideService(Actor, Actor.of(get(actorAtom))),
   ),
-);
-
-export const replicacheLayer = Layer.effect(
-  Service.Replicache,
-  replicacheAtom.pipe(Atom.getResult),
 );
 
 export const queryAtomRuntime = Replicache.queryLayer.pipe(Atom.runtime);
@@ -74,8 +68,8 @@ export const makeQueryAtom = <
     ),
   );
 
-export const makeMutationAtom = <TName extends keyof Mutations.Record>(name: TName) =>
-  Atom.fn((args: Mutations.Record[TName]["Input"]["Type"], get) =>
+export const makeMutationAtom = <TName extends keyof MutationHandlers.Record>(name: TName) =>
+  Atom.fn((args: MutationHandlers.Record[TName]["Input"]["Type"], get) =>
     replicacheAtom.pipe(
       get.result,
       Effect.flatMap((replicache) => replicache.mutate(name, args)),

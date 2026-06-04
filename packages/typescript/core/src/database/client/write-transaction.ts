@@ -16,7 +16,7 @@ export class WriteTransaction extends Context.Service<
 
 export class WriteTransactionError extends Schema.TaggedErrorClass<WriteTransactionError>()(
   "WriteTransactionError",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export class WriteTransactionManager extends Context.Service<WriteTransactionManager>()(

@@ -20,10 +20,10 @@
     "eslint-plugin-drizzle": "^0.2.3",
     "eslint-plugin-react-hooks": "^7.1.1",
     "pg": "catalog:",
-    "remeda": "^2.35.0",
+    "remeda": "^2.37.0",
     "sst": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "^0.1.22"
+    "vite-plus": "^0.1.24"
   },
-  "packageManager": "pnpm@11.5.0"
+  "packageManager": "pnpm@11.5.1"
 }

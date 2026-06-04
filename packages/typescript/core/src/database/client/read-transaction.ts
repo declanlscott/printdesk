@@ -15,7 +15,7 @@ export class ReadTransaction extends Context.Service<ReadTransaction, Replicache
 
 export class ReadTransactionError extends Schema.TaggedErrorClass<ReadTransactionError>()(
   "ReadTransactionError",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export class ReadTransactionManager extends Context.Service<ReadTransactionManager>()(

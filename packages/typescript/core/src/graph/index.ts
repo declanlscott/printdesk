@@ -8,7 +8,7 @@ import type { ClientOptions } from "@microsoft/microsoft-graph-client";
 import type { Group, User } from "@microsoft/microsoft-graph-types";
 
 export class GraphError extends Schema.TaggedErrorClass<GraphError>()("GraphError", {
-  cause: Schema.Defect,
+  cause: Schema.Defect(),
 }) {}
 
 export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph", {

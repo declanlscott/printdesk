@@ -12,7 +12,7 @@ import type {
 
 export class AwsCredentialIdentityProviderError extends Schema.TaggedErrorClass<AwsCredentialIdentityProviderError>()(
   "AwsCredentialIdentityProviderError",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdentitySchema>(

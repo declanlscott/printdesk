@@ -11,7 +11,7 @@ export namespace CryptoContract {
   ) {}
 
   export class JwtDecodeError extends Schema.TaggedErrorClass<JwtDecodeError>()("JwtDecodeError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class Hash extends Schema.Class<Hash>("Hash")({

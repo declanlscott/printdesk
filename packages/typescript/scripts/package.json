@@ -12,6 +12,6 @@
   },
   "devDependencies": {
     "@effect/language-service": "catalog:",
-    "tsx": "^4.22.3"
+    "tsx": "^4.22.4"
   }
 }

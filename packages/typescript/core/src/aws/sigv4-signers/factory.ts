@@ -22,7 +22,7 @@ import type * as HttpBody from "effect/unstable/http/HttpBody";
 
 export class SignatureV4Error extends Schema.TaggedErrorClass<SignatureV4Error>()(
   "SignatureV4Error",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export interface RequestPresigningArguments extends Omit<

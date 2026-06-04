@@ -25,7 +25,7 @@ export namespace OauthContract {
   }).pipe(Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI }));
 
   export class OpenauthError extends Schema.TaggedErrorClass<OpenauthError>()("OpenauthError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class InvalidScopeError extends Schema.TaggedErrorClass<InvalidScopeError>()(
@@ -52,7 +52,7 @@ export namespace OauthContract {
   ) {}
 
   export class TokensError extends Schema.TaggedErrorClass<TokensError>()("TokensError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class InvalidAudienceError extends Schema.TaggedErrorClass<InvalidAudienceError>()(
@@ -123,7 +123,7 @@ export namespace OauthContract {
   }) {}
 
   export class AuthorizeError extends Schema.TaggedErrorClass<AuthorizeError>()("AuthorizeError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class AuthorizeSuccess extends Schema.Class<AuthorizeSuccess>("AuthorizeSuccess")({
@@ -135,7 +135,7 @@ export namespace OauthContract {
   }) {}
 
   export class ExchangeError extends Schema.TaggedErrorClass<ExchangeError>()("ExchangeError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class ExchangeSuccess extends Schema.Class<ExchangeSuccess>("ExchangeSuccess")({
@@ -143,7 +143,7 @@ export namespace OauthContract {
   }) {}
 
   export class RefreshError extends Schema.TaggedErrorClass<RefreshError>()("RefreshError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class RefreshSuccess extends Schema.Class<RefreshSuccess>("RefreshSuccess")({
@@ -152,7 +152,7 @@ export namespace OauthContract {
 
   export class VerifyError extends Schema.TaggedErrorClass<VerifyError>()(
     "VerifyError",
-    { cause: Schema.Defect },
+    { cause: Schema.Defect() },
     { httpApiStatus: 401 },
   ) {}
 

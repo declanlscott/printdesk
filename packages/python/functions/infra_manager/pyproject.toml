@@ -4,14 +4,14 @@ version = "0.0.0"
 requires-python = "==3.14.*"
 dependencies = [
   "aws-lambda-powertools>=3.29.0",
-  "boto3>=1.43.15",
-  "pulumi>=3.243.0",
-  "pulumi-aws>=7.31.0",
+  "boto3>=1.43.23",
+  "pulumi>=3.245.0",
+  "pulumi-aws>=7.32.0",
   "pulumi-cloudflare>=6.17.0",
   "pulumiverse-time>=0.1.1",
   "pydantic>=2.13.4",
   "requests>=2.34.2",
-  "sst-sdk>=4.14.3",
+  "sst-sdk>=4.15.2",
   "types-boto3-cloudfront-keyvaluestore>=1.43.0",
   "types-boto3-sts>=1.43.0",
 ]

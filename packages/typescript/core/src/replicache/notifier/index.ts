@@ -7,7 +7,7 @@ import type { ServiceShape } from "./layer";
 
 export class ReplicacheNotifyError extends Schema.TaggedErrorClass<ReplicacheNotifyError>()(
   "ReplicacheNotifyError",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export class ReplicacheNotifyRequest extends Request.Class<

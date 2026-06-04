@@ -37,7 +37,7 @@ export const MigratorConfig = Context.Reference<MigrationConfig>(
 
 export class ReadMigrationsError extends Schema.TaggedErrorClass<ReadMigrationsError>()(
   "ReadMigrationsError",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export const DsqlStatement = Schema.Trim.pipe(

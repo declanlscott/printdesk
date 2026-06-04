@@ -25,7 +25,7 @@ import type { APIGatewayProxyEventV2 } from "@effect-aws/lambda";
 import type { Context } from "aws-lambda";
 
 export class IssuerError extends Schema.TaggedErrorClass<IssuerError>()("IssuerError", {
-  cause: Schema.Defect,
+  cause: Schema.Defect(),
 }) {}
 
 export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2, context: Context) {

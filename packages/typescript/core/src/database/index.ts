@@ -20,7 +20,7 @@ import type { AnyPgSelectQueryBuilder, PgSelectDynamic } from "drizzle-orm/pg-co
 
 export class QueryBuilderError extends Schema.TaggedErrorClass<QueryBuilderError>()(
   "QueryBuilderError",
-  { cause: Schema.Defect },
+  { cause: Schema.Defect() },
 ) {}
 
 export class Database extends Context.Service<Database>()("@printdesk/core/database/Database", {

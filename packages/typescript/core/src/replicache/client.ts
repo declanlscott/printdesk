@@ -126,28 +126,28 @@ export namespace Replicache {
   }
 
   export class ClientError extends Schema.TaggedErrorClass<ClientError>()("ReplicacheClientError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class QueryError extends Schema.TaggedErrorClass<QueryError>()("ReplicacheQueryError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class SubscribeError extends Schema.TaggedErrorClass<SubscribeError>()(
     "ReplicacheSubscribeError",
-    { cause: Schema.Defect },
+    { cause: Schema.Defect() },
   ) {}
 
   export class MutateError extends Schema.TaggedErrorClass<MutateError>()("ReplicacheMutateError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class PullError extends Schema.TaggedErrorClass<PullError>()("ReplicachePullError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class CloseError extends Schema.TaggedErrorClass<CloseError>()("ReplicacheCloseError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export const queryLayer = Layer.mergeAll(

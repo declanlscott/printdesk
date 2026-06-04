@@ -6,11 +6,11 @@ import { pluck, StringFromUnknown } from "../utils";
 
 export namespace XmlContract {
   export class BuilderError extends Schema.TaggedErrorClass<BuilderError>()("BuilderError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 
   export class ParserError extends Schema.TaggedErrorClass<ParserError>()("ParserError", {
-    cause: Schema.Defect,
+    cause: Schema.Defect(),
   }) {}
 }
 

@@ -12,8 +12,7 @@ import { AwsCredentialIdentity } from "../../aws/credential-identity";
 import { Database } from "../../database";
 import { Realtime } from "../../realtime";
 import { ReplicacheClientGroupId } from "../client-group-id";
-
-import type { ReplicacheContract } from "../contracts";
+import { ReplicacheContract } from "../contracts";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -52,10 +51,12 @@ export const makeService = Effect.gen(function* () {
       Effect.context<ReplicacheClientGroupId | Actor | AwsCredentialIdentity>().pipe(
         Effect.flatMap((context) =>
           Effect.request(
-            new ReplicacheNotifyRequest({
-              clientGroupId: context.pipe(Context.get(ReplicacheClientGroupId)),
-              data,
-            }),
+            new ReplicacheNotifyRequest(
+              new ReplicacheContract.Notification({
+                clientGroupId: context.pipe(Context.get(ReplicacheClientGroupId)),
+                data,
+              }),
+            ),
             resolver,
           ).pipe(
             Effect.catchTag("ReplicacheNotifyError", (error) =>

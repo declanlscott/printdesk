@@ -5,11 +5,11 @@ import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 
-import type { ReadTransaction as ReadTx } from "replicache";
+import type { ReadTransaction as ReplicacheReadTransaction } from "replicache";
 import type { Models } from "../../models";
 
 // @effect-leakable-service
-export class ReadTransaction extends Context.Service<ReadTransaction, ReadTx>()(
+export class ReadTransaction extends Context.Service<ReadTransaction, ReplicacheReadTransaction>()(
   "@printdesk/core/database/client/ReadTransaction",
 ) {}
 

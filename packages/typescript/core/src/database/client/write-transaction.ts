@@ -5,13 +5,14 @@ import * as Schema from "effect/Schema";
 
 import { ReadTransactionManager } from "./read-transaction";
 
-import type { WriteTransaction as WriteTx } from "replicache";
+import type { WriteTransaction as ReplicacheWriteTransaction } from "replicache";
 import type { Models } from "../../models";
 
 // @effect-leakable-service
-export class WriteTransaction extends Context.Service<WriteTransaction, WriteTx>()(
-  "@printdesk/core/database/client/WriteTransaction",
-) {}
+export class WriteTransaction extends Context.Service<
+  WriteTransaction,
+  ReplicacheWriteTransaction
+>()("@printdesk/core/database/client/WriteTransaction") {}
 
 export class WriteTransactionError extends Schema.TaggedErrorClass<WriteTransactionError>()(
   "WriteTransactionError",

@@ -32,8 +32,6 @@ export namespace RealtimeContract {
       }).pipe(Schema.Array),
     });
 
-  const result = <TKind extends string>(kind: TKind) => [success(kind), error(kind)] as const;
-
   export class ConnectionInit extends Schema.Class<ConnectionInit>("ConnectionInit")({
     type: Schema.tag("connection_init"),
   }) {}
@@ -42,6 +40,7 @@ export namespace RealtimeContract {
     type: Schema.tag("connection_ack"),
     connectionTimeout: Schema.DurationFromMillis,
   }).pipe(Schema.encodeKeys({ connectionTimeout: "connectionTimeoutMs" }));
+  export type ConnectionAck = typeof ConnectionAck.Type;
 
   export const Channel = Schema.TemplateLiteral([Schema.Literal("/"), Schema.NonEmptyString]);
   export type Channel = typeof Channel.Type;
@@ -53,11 +52,20 @@ export namespace RealtimeContract {
     authorization: Authorization,
   }) {}
 
+  export const SubscribeSuccess = success("subscribe");
+  export type SubscribeSuccess = typeof SubscribeSuccess.Type;
+
+  export const SubscribeError = error("subscribe");
+  export type SubscribeError = typeof SubscribeError.Type;
+
   export class Data extends Schema.Class<Data>("Data")({
     type: Schema.tag("data"),
     id: SubscriptionId,
-    event: Event,
+    event: Schema.UnknownFromJsonString,
   }) {}
+
+  export const BroadcastError = error("broadcast");
+  export type BroadcastError = typeof BroadcastError.Type;
 
   export class KeepAlive extends Schema.Class<KeepAlive>("KeepAlive")({
     type: Schema.tag("ka"),
@@ -68,13 +76,21 @@ export namespace RealtimeContract {
     id: SubscriptionId,
   }) {}
 
+  export const UnsubscribeSuccess = success("unsubscribe");
+  export type UnsubscribeSuccess = typeof UnsubscribeSuccess.Type;
+
+  export const UnsubscribeError = error("unsubscribe");
+  export type UnsubscribeError = typeof UnsubscribeError.Type;
+
   export const Message = Schema.Union([
     ConnectionAck,
-    ...result("subscribe"),
+    SubscribeSuccess,
+    SubscribeError,
     Data,
-    error("broadcast"),
+    BroadcastError,
     KeepAlive,
-    ...result("unsubscribe"),
+    UnsubscribeSuccess,
+    UnsubscribeError,
   ]).pipe(Schema.fromJsonString);
   export type Message = typeof Message.Type;
 

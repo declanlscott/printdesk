@@ -1,6 +1,5 @@
 import { NetworkMonitor } from "@printdesk/core/utils/client/network-monitor";
 import * as Effect from "effect/Effect";
-import * as Layer from "effect/Layer";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 import * as SubscriptionRef from "effect/SubscriptionRef";
@@ -12,11 +11,6 @@ export const networkMonitorAtom = Atom.make(
     addEventListener: globalThis.window.addEventListener,
     removeEventListener: globalThis.window.removeEventListener,
   }),
-);
-
-export const networkMonitorLayer = Layer.effect(
-  NetworkMonitor,
-  networkMonitorAtom.pipe(Atom.getResult),
 );
 
 export const onlineAtom = Atom.make((get) =>

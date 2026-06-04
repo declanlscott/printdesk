@@ -178,7 +178,7 @@ export namespace Realtime {
     >,
   ) =>
     Atom.readable((get) => {
-      const stream = Effect.gen(function* () {
+      const streamEffect = Effect.gen(function* () {
         const crypto = yield* Crypto.Crypto;
         const realtime = yield* opts.atoms.realtime.pipe(get.result);
         const write = yield* realtime.socket.writer;
@@ -248,15 +248,20 @@ export namespace Realtime {
         opts.atoms.networkMonitor.pipe(
           get.result,
           Effect.flatMap((monitor) => effect.pipe(monitor.onlineLatch.whenOpen)),
-          Stream.unwrap,
         ),
+      );
+
+      const disconnection = opts.atoms.realtime.pipe(
+        get.result,
+        Effect.map(Struct.get("disconnection")),
+        Effect.flatMap(Deferred.await),
       );
 
       const getSelf = () =>
         get.self<
           AsyncResult.AsyncResult<
-            Stream.Success<typeof stream>,
-            Stream.Error<typeof stream> | Cause.NoSuchElementError
+            Stream.Success<Effect.Success<typeof streamEffect>>,
+            Stream.Error<Effect.Success<typeof streamEffect>> | Cause.NoSuchElementError
           >
         >();
 
@@ -271,27 +276,19 @@ export namespace Realtime {
         Effect.runForkWith,
       );
 
-      const fiber = Effect.scopedWith((scope) =>
-        Channel.toPullScoped(stream.channel, scope).pipe(
-          Effect.flatMap((pull) =>
-            Effect.whileLoop({
-              while: Function.constTrue,
-              body: () => pull,
-              step: (events) =>
-                AsyncResult.success(Array.lastNonEmpty(events), { waiting: true }).pipe(
-                  get.setSelf,
-                ),
-            }),
-          ),
+      const fiber = streamEffect.pipe(
+        Effect.map(Stream.toChannel),
+        Effect.flatMap(Channel.toPull),
+        Effect.flatMap((pull) =>
+          Effect.whileLoop({
+            while: Function.constTrue,
+            body: () => pull,
+            step: (events) =>
+              AsyncResult.success(Array.lastNonEmpty(events), { waiting: true }).pipe(get.setSelf),
+          }),
         ),
-      ).pipe(
-        Effect.raceFirst(
-          opts.atoms.realtime.pipe(
-            get.result,
-            Effect.map(Struct.get("disconnection")),
-            Effect.flatMap(Deferred.await),
-          ),
-        ),
+        Effect.scoped,
+        Effect.raceFirst(disconnection),
         Effect.catchCause((cause) =>
           Effect.sync(() =>
             cause.pipe(Pull.isDoneCause)
@@ -305,9 +302,10 @@ export namespace Realtime {
                     onSome: (event) => get.setSelf(AsyncResult.success(event)),
                   }),
                 )
-              : AsyncResult.failureWithPrevious(cause as Cause.Cause<Stream.Error<typeof stream>>, {
-                  previous: getSelf(),
-                }).pipe(get.setSelf),
+              : AsyncResult.failureWithPrevious(
+                  cause as Cause.Cause<Stream.Error<Effect.Success<typeof streamEffect>>>,
+                  { previous: getSelf() },
+                ).pipe(get.setSelf),
           ),
         ),
         runFork,
@@ -320,9 +318,10 @@ export namespace Realtime {
         Option.match({
           onSome: (previous) => previous.pipe(Option.some, AsyncResult.waitingFrom),
           onNone: () =>
-            AsyncResult.initial<Stream.Success<typeof stream>, Stream.Error<typeof stream>>().pipe(
-              AsyncResult.waiting,
-            ),
+            AsyncResult.initial<
+              Stream.Success<Effect.Success<typeof streamEffect>>,
+              Stream.Error<Effect.Success<typeof streamEffect>>
+            >().pipe(AsyncResult.waiting),
         }),
       );
     });

@@ -126,7 +126,7 @@ export namespace Realtime {
     },
     (effect, opts) =>
       effect.pipe(
-        opts.networkMonitor.onlineLatch.whenOpen,
+        opts.networkMonitor.whenOnline,
         Effect.retry(opts.retrySchedule ?? defaultRetrySchedule),
       ),
   );
@@ -260,7 +260,7 @@ export namespace Realtime {
       }).pipe((effect) =>
         opts.atoms.networkMonitor.pipe(
           get.result,
-          Effect.flatMap((monitor) => effect.pipe(monitor.onlineLatch.whenOpen)),
+          Effect.flatMap((monitor) => effect.pipe(monitor.whenOnline)),
         ),
       );
 

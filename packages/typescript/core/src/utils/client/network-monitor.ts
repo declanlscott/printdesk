@@ -37,7 +37,10 @@ export namespace NetworkMonitor {
       Effect.forkDetach,
     );
 
-    return { onlineLatch, onlineRef };
+    const whenOnline = onlineLatch.whenOpen;
+    const onlineChanges = onlineRef.pipe(SubscriptionRef.changes);
+
+    return { whenOnline, onlineChanges };
   });
 
   export type NetworkMonitor = Effect.Success<ReturnType<typeof make>>;

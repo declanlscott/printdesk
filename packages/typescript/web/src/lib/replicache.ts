@@ -19,18 +19,17 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
   ViteResource.atom.pipe(
     get.result,
     Effect.flatMap(({ Environment, ReverseProxy }) =>
-      Replicache.make({
-        baseUrl: new URL(ReverseProxy.pipe(Redacted.value).urls.api),
-        logLevel: Environment.pipe(Redacted.value).isDevMode ? "info" : "error",
-      }),
-    ),
-    Effect.tap((replicache) =>
-      Effect.addFinalizer(() =>
-        replicache.close.pipe(
-          Effect.catchTag("ReplicacheCloseError", (error) =>
-            Effect.log("Encountered error closing replicache instance:", error.cause),
+      Effect.acquireRelease(
+        Replicache.make({
+          baseUrl: new URL(ReverseProxy.pipe(Redacted.value).urls.api),
+          logLevel: Environment.pipe(Redacted.value).isDevMode ? "info" : "error",
+        }),
+        (replicache) =>
+          replicache.close.pipe(
+            Effect.catchTag("ReplicacheCloseError", (error) =>
+              Effect.logError("Error closing replicache instance:", error.cause),
+            ),
           ),
-        ),
       ),
     ),
     Effect.provideService(Actor, Actor.of(get(actorAtom))),

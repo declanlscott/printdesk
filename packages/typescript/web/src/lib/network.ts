@@ -2,7 +2,6 @@ import { NetworkMonitor } from "@printdesk/core/utils/client/network-monitor";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
-import * as SubscriptionRef from "effect/SubscriptionRef";
 import * as Atom from "effect/unstable/reactivity/Atom";
 
 export const networkMonitorAtom = Atom.make(
@@ -14,10 +13,5 @@ export const networkMonitorAtom = Atom.make(
 ).pipe(Atom.keepAlive);
 
 export const onlineAtom = Atom.make((get) =>
-  networkMonitorAtom.pipe(
-    get.result,
-    Effect.map(Struct.get("onlineRef")),
-    Effect.map(SubscriptionRef.changes),
-    Stream.unwrap,
-  ),
+  networkMonitorAtom.pipe(get.result, Effect.map(Struct.get("onlineChanges")), Stream.unwrap),
 );

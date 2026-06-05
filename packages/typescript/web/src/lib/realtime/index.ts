@@ -7,6 +7,7 @@ import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import * as Socket from "effect/unstable/socket/Socket";
 
+import { networkMonitorAtom } from "../network";
 import { ViteResource } from "../sst";
 
 export const realtimeRuntime = Layer.mergeAll(
@@ -15,17 +16,22 @@ export const realtimeRuntime = Layer.mergeAll(
 ).pipe(Atom.runtime);
 
 export const realtimeAtom = realtimeRuntime
-  .atom((get) =>
-    ViteResource.atom.pipe(
-      get.result,
-      Effect.map(Struct.get("Hostnames")),
-      Effect.map(Redacted.value),
-      Effect.flatMap(({ api, realtime }) =>
-        Realtime.make({
-          apiBaseUrl: new URL(`https://${api}`),
-          realtimeBaseUrl: new URL(`wss://${realtime}`),
-        }),
-      ),
-    ),
+  .atom(
+    Effect.fn(function* (get) {
+      const hostnames = yield* ViteResource.atom.pipe(
+        get.result,
+        Effect.map(Struct.get("Hostnames")),
+        Effect.map(Redacted.value),
+      );
+      const networkMonitor = yield* networkMonitorAtom.pipe(get.result);
+
+      return yield* Realtime.make({
+        baseUrls: {
+          api: new URL(`https://${hostnames.api}`),
+          realtime: new URL(`wss://${hostnames.realtime}`),
+        },
+        networkMonitor,
+      });
+    }),
   )
   .pipe(Atom.keepAlive);

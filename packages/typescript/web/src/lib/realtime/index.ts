@@ -14,16 +14,18 @@ export const realtimeRuntime = Layer.mergeAll(
   Socket.layerWebSocketConstructorGlobal,
 ).pipe(Atom.runtime);
 
-export const realtimeAtom = realtimeRuntime.atom((get) =>
-  ViteResource.atom.pipe(
-    get.result,
-    Effect.map(Struct.get("Hostnames")),
-    Effect.map(Redacted.value),
-    Effect.flatMap(({ api, realtime }) =>
-      Realtime.make({
-        apiBaseUrl: new URL(`https://${api}`),
-        realtimeBaseUrl: new URL(`wss://${realtime}`),
-      }),
+export const realtimeAtom = realtimeRuntime
+  .atom((get) =>
+    ViteResource.atom.pipe(
+      get.result,
+      Effect.map(Struct.get("Hostnames")),
+      Effect.map(Redacted.value),
+      Effect.flatMap(({ api, realtime }) =>
+        Realtime.make({
+          apiBaseUrl: new URL(`https://${api}`),
+          realtimeBaseUrl: new URL(`wss://${realtime}`),
+        }),
+      ),
     ),
-  ),
-);
+  )
+  .pipe(Atom.keepAlive);

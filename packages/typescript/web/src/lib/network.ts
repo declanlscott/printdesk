@@ -11,7 +11,7 @@ export const networkMonitorAtom = Atom.make(
     addEventListener: globalThis.window.addEventListener,
     removeEventListener: globalThis.window.removeEventListener,
   }),
-);
+).pipe(Atom.keepAlive);
 
 export const onlineAtom = Atom.make((get) =>
   networkMonitorAtom.pipe(

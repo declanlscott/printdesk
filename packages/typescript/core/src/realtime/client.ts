@@ -38,19 +38,17 @@ export namespace Realtime {
   );
 
   export interface Options {
-    readonly apiBaseUrl: URL;
-    readonly realtimeBaseUrl: URL;
+    readonly baseUrls: { readonly api: URL; readonly realtime: URL };
+    readonly networkMonitor: NetworkMonitor.NetworkMonitor;
     // oxlint-disable-next-line typescript/no-explicit-any
     readonly retrySchedule?: Schedule.Schedule<any>;
   }
 
   export const make = Effect.fn(
     function* (opts: Options) {
-      const { apiBaseUrl, realtimeBaseUrl } = opts;
-
       const api = yield* HttpClient.HttpClient.pipe(
         Effect.flatMap((httpClient) =>
-          HttpApiClient.group(Api, { baseUrl: apiBaseUrl, httpClient, group: "realtime" }),
+          HttpApiClient.group(Api, { baseUrl: opts.baseUrls.api, httpClient, group: "realtime" }),
         ),
       );
 
@@ -58,9 +56,10 @@ export namespace Realtime {
         .getAuthorization({ payload: undefined })
         .pipe(Effect.flatMap(Schema.encodeEffect(RealtimeContract.WebSocketAuthorizationProtocol)));
 
-      const socket = yield* Socket.makeWebSocket(new URL("/event/realtime", realtimeBaseUrl).href, {
-        protocols: ["aws-appsync-event-ws", authProtocol],
-      });
+      const socket = yield* Socket.makeWebSocket(
+        new URL("/event/realtime", opts.baseUrls.realtime).href,
+        { protocols: ["aws-appsync-event-ws", authProtocol] },
+      );
       const write = yield* socket.writer;
 
       const pubSub = yield* PubSub.unbounded<RealtimeContract.Message>();
@@ -125,8 +124,14 @@ export namespace Realtime {
         disconnection,
       } as const;
     },
-    (effect, opts) => effect.pipe(Effect.retry(opts.retrySchedule ?? defaultRetrySchedule)),
+    (effect, opts) =>
+      effect.pipe(
+        opts.networkMonitor.onlineLatch.whenOpen,
+        Effect.retry(opts.retrySchedule ?? defaultRetrySchedule),
+      ),
   );
+
+  export type Realtime = Effect.Success<ReturnType<typeof make>>;
 
   export interface EventAtomOptions<
     THandler extends Handler.Handler,
@@ -144,14 +149,9 @@ export namespace Realtime {
       TRuntimeError
     >;
     readonly atoms: {
-      readonly realtime: Atom.Atom<
-        AsyncResult.AsyncResult<Effect.Success<ReturnType<typeof make>>, TRealtimeError>
-      >;
+      readonly realtime: Atom.Atom<AsyncResult.AsyncResult<Realtime.Realtime, TRealtimeError>>;
       readonly networkMonitor: Atom.Atom<
-        AsyncResult.AsyncResult<
-          Effect.Success<ReturnType<typeof NetworkMonitor.make>>,
-          TNetworkMonitorError
-        >
+        AsyncResult.AsyncResult<NetworkMonitor.NetworkMonitor, TNetworkMonitorError>
       >;
     };
     readonly getChannel: (

@@ -39,4 +39,6 @@ export namespace NetworkMonitor {
 
     return { onlineLatch, onlineRef };
   });
+
+  export type NetworkMonitor = Effect.Success<ReturnType<typeof make>>;
 }

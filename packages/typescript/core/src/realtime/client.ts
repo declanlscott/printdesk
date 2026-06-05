@@ -11,6 +11,7 @@ import * as Option from "effect/Option";
 import * as PubSub from "effect/PubSub";
 import * as Pull from "effect/Pull";
 import * as Result from "effect/Result";
+import * as Schedule from "effect/Schedule";
 import * as Scheduler from "effect/Scheduler";
 import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
@@ -31,91 +32,101 @@ import type { Handler } from "../handlers";
 export namespace Realtime {
   const timeoutDuration = Duration.seconds(5);
 
+  export const defaultRetrySchedule = Schedule.exponential(Duration.millis(300), 1.1).pipe(
+    Schedule.jittered,
+    Schedule.map(Duration.min(Duration.seconds(5))),
+  );
+
   export interface Options {
     readonly apiBaseUrl: URL;
     readonly realtimeBaseUrl: URL;
+    // oxlint-disable-next-line typescript/no-explicit-any
+    readonly retrySchedule?: Schedule.Schedule<any>;
   }
 
-  export const make = Effect.fn(function* (opts: Options) {
-    const { apiBaseUrl, realtimeBaseUrl } = opts;
+  export const make = Effect.fn(
+    function* (opts: Options) {
+      const { apiBaseUrl, realtimeBaseUrl } = opts;
 
-    const api = yield* HttpClient.HttpClient.pipe(
-      Effect.flatMap((httpClient) =>
-        HttpApiClient.group(Api, { baseUrl: apiBaseUrl, httpClient, group: "realtime" }),
-      ),
-    );
-
-    const authProtocol = yield* api
-      .getAuthorization({ payload: undefined })
-      .pipe(Effect.flatMap(Schema.encodeEffect(RealtimeContract.WebSocketAuthorizationProtocol)));
-
-    const socket = yield* Socket.makeWebSocket(new URL("/event/realtime", realtimeBaseUrl).href, {
-      protocols: ["aws-appsync-event-ws", authProtocol],
-    });
-    const write = yield* socket.writer;
-
-    const pubSub = yield* PubSub.unbounded<RealtimeContract.Message>();
-
-    yield* socket.runString(
-      (string) =>
-        Effect.succeed(string).pipe(
-          Effect.flatMap(Schema.decodeEffect(RealtimeContract.Message)),
-          Effect.flatMap((message) => pubSub.pipe(PubSub.publish(message))),
+      const api = yield* HttpClient.HttpClient.pipe(
+        Effect.flatMap((httpClient) =>
+          HttpApiClient.group(Api, { baseUrl: apiBaseUrl, httpClient, group: "realtime" }),
         ),
-      {
-        onOpen: RealtimeContract.ConnectionInit.makeEffect().pipe(
-          Effect.flatMap(
-            Schema.encodeEffect(RealtimeContract.ConnectionInit.pipe(Schema.fromJsonString)),
+      );
+
+      const authProtocol = yield* api
+        .getAuthorization({ payload: undefined })
+        .pipe(Effect.flatMap(Schema.encodeEffect(RealtimeContract.WebSocketAuthorizationProtocol)));
+
+      const socket = yield* Socket.makeWebSocket(new URL("/event/realtime", realtimeBaseUrl).href, {
+        protocols: ["aws-appsync-event-ws", authProtocol],
+      });
+      const write = yield* socket.writer;
+
+      const pubSub = yield* PubSub.unbounded<RealtimeContract.Message>();
+
+      yield* socket.runString(
+        (string) =>
+          Effect.succeed(string).pipe(
+            Effect.flatMap(Schema.decodeEffect(RealtimeContract.Message)),
+            Effect.flatMap((message) => pubSub.pipe(PubSub.publish(message))),
           ),
-          Effect.flatMap(write),
-          Effect.catch(Effect.log),
+        {
+          onOpen: RealtimeContract.ConnectionInit.makeEffect().pipe(
+            Effect.flatMap(
+              Schema.encodeEffect(RealtimeContract.ConnectionInit.pipe(Schema.fromJsonString)),
+            ),
+            Effect.flatMap(write),
+            Effect.catch(Effect.log),
+          ),
+        },
+      );
+
+      const stream = yield* pubSub.pipe(
+        Stream.fromPubSub,
+        Stream.share({ capacity: 32, strategy: "suspend" }),
+      );
+
+      const connection = yield* Deferred.make<RealtimeContract.ConnectionAck, Cause.TimeoutError>();
+      const disconnection = yield* Deferred.make<never, Cause.TimeoutError>();
+
+      yield* stream.pipe(
+        Stream.filter((message) => message.type === "connection_ack"),
+        Stream.take(1),
+        Stream.timeoutOrElse({
+          duration: timeoutDuration,
+          orElse: () => Stream.fail(new Cause.TimeoutError("Connection timed out")),
+        }),
+        Stream.tapBoth({
+          onElement: (ack) => connection.pipe(Deferred.succeed(ack)),
+          onError: (cause) => connection.pipe(Deferred.fail(cause)),
+        }),
+        Stream.tap((ack) =>
+          stream.pipe(
+            Stream.filter((message) => message.type === "ka"),
+            Stream.timeoutOrElse({
+              duration: ack.connectionTimeout,
+              orElse: () => Stream.fail(new Cause.TimeoutError("Keep-alive timed out")),
+            }),
+            Stream.runDrain,
+          ),
         ),
-      },
-    );
+        Stream.runDrain,
+        Effect.tapError((error) => disconnection.pipe(Deferred.fail(error))),
+        Effect.forkScoped,
+      );
 
-    const stream = yield* pubSub.pipe(
-      Stream.fromPubSub,
-      Stream.share({ capacity: 32, strategy: "suspend" }),
-    );
-
-    const connection = yield* Deferred.make<RealtimeContract.ConnectionAck, Cause.TimeoutError>();
-    const disconnection = yield* Deferred.make<never, Cause.TimeoutError>();
-
-    yield* stream.pipe(
-      Stream.filter((message) => message.type === "connection_ack"),
-      Stream.take(1),
-      Stream.timeoutOrElse({
-        duration: timeoutDuration,
-        orElse: () => Stream.fail(new Cause.TimeoutError("Connection timed out")),
-      }),
-      Stream.tapBoth({
-        onElement: (ack) => connection.pipe(Deferred.succeed(ack)),
-        onError: (cause) => connection.pipe(Deferred.fail(cause)),
-      }),
-      Stream.tap((ack) =>
-        stream.pipe(
-          Stream.filter((message) => message.type === "ka"),
-          Stream.timeoutOrElse({
-            duration: ack.connectionTimeout,
-            orElse: () => Stream.fail(new Cause.TimeoutError("Keep-alive timed out")),
-          }),
-          Stream.runDrain,
-        ),
-      ),
-      Stream.runDrain,
-      Effect.tapError((error) => disconnection.pipe(Deferred.fail(error))),
-      Effect.forkScoped,
-    );
-
-    return {
-      api,
-      socket,
-      pubSub,
-      stream,
-      connection,
-      disconnection,
-    } as const;
-  });
+      return {
+        api,
+        socket,
+        pubSub,
+        stream,
+        connection,
+        disconnection,
+      } as const;
+    },
+    (effect, opts) => effect.pipe(Effect.retry(opts.retrySchedule ?? defaultRetrySchedule)),
+  );
 
   export interface EventAtomOptions<
     THandler extends Handler.Handler,
@@ -151,6 +162,8 @@ export namespace Realtime {
       get: Atom.AtomContext,
       event: THandler["Input"]["Type"],
     ) => Effect.Effect<void, THandlerError, THandlerServices>;
+    // oxlint-disable-next-line typescript/no-explicit-any
+    readonly retrySchedule?: Schedule.Schedule<any>;
   }
 
   export const makeEventAtom = <
@@ -288,6 +301,7 @@ export namespace Realtime {
           }),
         ),
         Effect.scoped,
+        Effect.retry(opts.retrySchedule ?? defaultRetrySchedule),
         Effect.raceFirst(disconnection),
         Effect.catchCause((cause) =>
           Effect.sync(() =>

@@ -18,12 +18,10 @@ export const realtimeRuntime = Layer.mergeAll(
 export const realtimeAtom = realtimeRuntime
   .atom(
     Effect.fn(function* (get) {
-      const hostnames = yield* ViteResource.atom.pipe(
-        get.result,
-        Effect.map(Struct.get("Hostnames")),
-        Effect.map(Redacted.value),
-      );
-      const networkMonitor = yield* networkMonitorAtom.pipe(get.result);
+      const hostnames = yield* get
+        .resultOnce(ViteResource.atom)
+        .pipe(Effect.map(Struct.get("Hostnames")), Effect.map(Redacted.value));
+      const networkMonitor = yield* get.resultOnce(networkMonitorAtom);
 
       return yield* Realtime.make({
         baseUrls: {

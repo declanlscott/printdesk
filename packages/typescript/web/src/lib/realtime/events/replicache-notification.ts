@@ -38,7 +38,7 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContr
       ),
     ),
   handler: Effect.fn(function* (get, notification) {
-    const replicache = yield* replicacheAtom.pipe(get.result);
+    const replicache = yield* get.result(replicacheAtom);
 
     if ((yield* replicache.clientGroupId) === notification.clientGroupId) return;
 

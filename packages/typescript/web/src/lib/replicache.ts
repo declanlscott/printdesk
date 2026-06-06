@@ -16,8 +16,7 @@ import type { SubscribeOptions } from "replicache";
 export const replicacheAtomRuntime = FetchHttpClient.layer.pipe(Atom.runtime);
 
 export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
-  ViteResource.atom.pipe(
-    get.result,
+  get.resultOnce(ViteResource.atom).pipe(
     Effect.flatMap(({ Environment, ReverseProxy }) =>
       Effect.acquireRelease(
         Replicache.make({
@@ -47,8 +46,7 @@ export const makeQueryAtom = <
   opts?: Omit<SubscribeOptions<TSuccess>, "isEqual">,
 ) =>
   queryAtomRuntime.atom((get) =>
-    replicacheAtom.pipe(
-      get.result,
+    get.resultOnce(replicacheAtom).pipe(
       Effect.flatMap((replicache) =>
         replicache.query(query).pipe(
           Effect.tap(() =>
@@ -69,8 +67,5 @@ export const makeQueryAtom = <
 
 export const makeMutationAtom = <TName extends keyof MutationHandlers.Record>(name: TName) =>
   Atom.fn((args: MutationHandlers.Record[TName]["Input"]["Type"], get) =>
-    replicacheAtom.pipe(
-      get.result,
-      Effect.flatMap((replicache) => replicache.mutate(name, args)),
-    ),
+    get.result(replicacheAtom).pipe(Effect.flatMap((replicache) => replicache.mutate(name, args))),
   );

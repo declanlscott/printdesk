@@ -5,28 +5,22 @@ import * as Stream from "effect/Stream";
 import * as SubscriptionRef from "effect/SubscriptionRef";
 
 export namespace NetworkMonitor {
-  export interface Options {
-    initialOnline: boolean;
-    addEventListener: (type: "online" | "offline", listener: () => void) => void;
-    removeEventListener: (type: "online" | "offline", listener: () => void) => void;
-  }
-
-  export const make = Effect.fn(function* (opts: Options) {
-    const onlineLatch = yield* Latch.make(opts.initialOnline);
-    const onlineRef = yield* SubscriptionRef.make(opts.initialOnline);
+  export const make = Effect.gen(function* () {
+    const onlineRef = yield* SubscriptionRef.make(globalThis.window.navigator.onLine);
+    const onlineLatch = yield* Latch.make(onlineRef.value);
 
     yield* Stream.callback<boolean>(
       Effect.fn(function* (queue) {
-        const onlineListener = () => Queue.offer(queue, true);
-        const offlineListener = () => Queue.offer(queue, false);
+        const onlineListener = () => Queue.offerUnsafe(queue, true);
+        const offlineListener = () => Queue.offerUnsafe(queue, false);
 
-        opts.addEventListener("online", onlineListener);
-        opts.addEventListener("offline", offlineListener);
+        globalThis.window.addEventListener("online", onlineListener);
+        globalThis.window.addEventListener("offline", offlineListener);
 
         yield* Effect.addFinalizer(() =>
           Effect.sync(() => {
-            opts.removeEventListener("online", onlineListener);
-            opts.removeEventListener("offline", offlineListener);
+            globalThis.window.removeEventListener("online", onlineListener);
+            globalThis.window.removeEventListener("offline", offlineListener);
           }),
         );
       }),
@@ -38,10 +32,13 @@ export namespace NetworkMonitor {
     );
 
     const whenOnline = onlineLatch.whenOpen;
-    const onlineChanges = onlineRef.pipe(SubscriptionRef.changes);
+    const onlineChanges = yield* onlineRef.pipe(
+      SubscriptionRef.changes,
+      Stream.share({ capacity: 16, strategy: "suspend" }),
+    );
 
     return { whenOnline, onlineChanges };
   });
 
-  export type NetworkMonitor = Effect.Success<ReturnType<typeof make>>;
+  export type NetworkMonitor = Effect.Success<typeof make>;
 }

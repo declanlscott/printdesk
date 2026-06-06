@@ -193,7 +193,7 @@ export namespace Realtime {
     Atom.readable((get) => {
       const streamEffect = Effect.gen(function* () {
         const crypto = yield* Crypto.Crypto;
-        const realtime = yield* opts.atoms.realtime.pipe(get.result);
+        const realtime = yield* get.resultOnce(opts.atoms.realtime);
         const write = yield* realtime.socket.writer;
 
         yield* realtime.connection.pipe(Deferred.await);
@@ -258,17 +258,14 @@ export namespace Realtime {
           Stream.tap((event) => opts.handler(get, event)),
         );
       }).pipe((effect) =>
-        opts.atoms.networkMonitor.pipe(
-          get.result,
-          Effect.flatMap((monitor) => effect.pipe(monitor.whenOnline)),
-        ),
+        get
+          .resultOnce(opts.atoms.networkMonitor)
+          .pipe(Effect.flatMap((monitor) => effect.pipe(monitor.whenOnline))),
       );
 
-      const disconnection = opts.atoms.realtime.pipe(
-        get.result,
-        Effect.map(Struct.get("disconnection")),
-        Effect.flatMap(Deferred.await),
-      );
+      const disconnection = get
+        .resultOnce(opts.atoms.realtime)
+        .pipe(Effect.map(Struct.get("disconnection")), Effect.flatMap(Deferred.await));
 
       const getSelf = () =>
         get.self<

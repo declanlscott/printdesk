@@ -57,14 +57,14 @@ export const makeService = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
-  const findBySubdomain = Effect.fn("IdentityProviders.Repository.findBySubdomain")(
-    (subdomain: Tenant["subdomain"]) =>
+  const findByTenantSlug = Effect.fn("IdentityProviders.Repository.findByTenantSlug")(
+    (slug: Tenant["slug"]) =>
       db.useTransaction((tx) =>
         tx
           .select(getTableColumns(table))
           .from(tenantsTable)
           .innerJoin(table, eq(tenantsTable.id, table.tenantId))
-          .where(eq(tenantsTable.subdomain, subdomain)),
+          .where(eq(tenantsTable.slug, slug)),
       ),
   );
 
@@ -103,7 +103,7 @@ export const makeService = Effect.gen(function* () {
     upsert,
     findAll,
     findById,
-    findBySubdomain,
+    findByTenantSlug,
     findWithTenantAndUserByExternalIds,
   } as const;
 });

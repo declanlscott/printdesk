@@ -314,7 +314,7 @@ CREATE TABLE "tenants" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"subdomain" varchar(50) NOT NULL,
+	"slug" varchar(50) NOT NULL,
 	"name" varchar(50) NOT NULL,
 	"status" varchar(50) DEFAULT 'setup' NOT NULL,
 	"last_papercut_sync_at" timestamp,

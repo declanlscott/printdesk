@@ -13,16 +13,16 @@ export namespace TenantsContract {
   export const statuses = ["setup", "active", "suspended"] as const;
   export type Status = (typeof statuses)[number];
 
-  export const Subdomain = Schema.String.pipe(
-    Schema.check(Schema.isPattern(Constants.TENANT_SUBDOMAIN_REGEX)),
-    Schema.brand("Subdomain"),
+  export const Slug = Schema.String.pipe(
+    Schema.check(Schema.isPattern(Constants.TENANT_SLUG_REGEX)),
+    Schema.brand("Slug"),
   );
-  export type Subdomain = typeof Subdomain.Type;
+  export type Slug = typeof Slug.Type;
 
   export class Table extends TablesContract.Table<TenantsTable>("tenants")(
     {
       ...TablesContract.BaseSyncModel.fields,
-      subdomain: Subdomain,
+      slug: Slug,
       name: Schema.String,
       status: Schema.Literals(statuses).pipe(
         Schema.withDecodingDefaultType(Effect.succeed("setup")),
@@ -33,9 +33,9 @@ export namespace TenantsContract {
     ["version", "lastPapercutSyncAt"],
   ) {}
 
-  export const isSubdomainAvailable = new Handler.Handler({
-    name: "isTenantSubdomainAvailable",
-    Input: Table.Model.mapFields(Struct.pick(["subdomain"])),
+  export const isSlugAvailable = new Handler.Handler({
+    name: "isTenantSlugAvailable",
+    Input: Table.Model.mapFields(Struct.pick(["slug"])),
     Output: Schema.Void,
   });
 

@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "4ffbd808-52e5-403b-9407-31f1dc8ce488",
+  "id": "e55f7fc3-a9de-4b15-ae1c-f9b02ee3b944",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -2562,7 +2562,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "subdomain",
+      "name": "slug",
       "entityType": "columns",
       "schema": "public",
       "table": "tenants"

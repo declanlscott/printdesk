@@ -126,11 +126,10 @@ export const makeService = Effect.gen(function* () {
       .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
-  const findBySubdomain = Effect.fn("Tenants.Repository.findBySubdomain")(
-    (subdomain: Tenant["subdomain"]) =>
-      db
-        .useTransaction((tx) => tx.select().from(table).where(eq(table.subdomain, subdomain)))
-        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  const findBySlug = Effect.fn("Tenants.Repository.findBySlug")((slug: Tenant["slug"]) =>
+    db
+      .useTransaction((tx) => tx.select().from(table).where(eq(table.slug, slug)))
+      .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
   const updateById = Effect.fn("Tenants.Repository.updateById")(
@@ -147,7 +146,7 @@ export const makeService = Effect.gen(function* () {
     findDeletes,
     findFastForward,
     findById,
-    findBySubdomain,
+    findBySlug,
     updateById,
   } as const;
 });

@@ -24,6 +24,7 @@ export namespace Constants {
 
   export const URL_PARAM_NAMES = {
     REDIRECT_URI: "redirect_uri",
+    TENANT_SLUG: "tenant_slug",
   } as const;
 
   export const OPENAUTH_CLIENT_IDS = {

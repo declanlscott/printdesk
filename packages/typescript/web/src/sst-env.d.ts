@@ -3,6 +3,7 @@
 
 /// <reference types="vite/client" />
 interface ImportMetaEnv {
+  readonly VITE_RESOURCE_ApexDomain: string
   readonly VITE_RESOURCE_ReverseProxy: string
   readonly VITE_RESOURCE_Environment: string
   readonly VITE_RESOURCE_Hostnames: string

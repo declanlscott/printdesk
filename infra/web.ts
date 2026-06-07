@@ -10,6 +10,7 @@ export const web = new lib.cloudflare.StaticSite("Web", {
   build: { command: "vp run build", output: "dist" },
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
+    apexDomain,
     reverseProxy,
     environment,
     hostnames,
@@ -26,6 +27,7 @@ export const www = new sst.cloudflare.TanStackStart("Www", {
   buildCommand: "vp run build",
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
+    apexDomain,
     reverseProxy,
     environment,
     hostnames,

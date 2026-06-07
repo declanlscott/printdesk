@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { existsSync } from "node:fs";
-import { join, resolve, dirname } from "node:path";
+import Path from "node:path";
 
 import * as R from "remeda";
 
@@ -108,7 +108,7 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
         2,
       ),
       path: $output(args.handler).apply((handler) =>
-        findPackagePath(resolve(join($cli.paths.root, handler))),
+        findPackagePath(Path.resolve(Path.join($cli.paths.root, handler))),
       ),
       secrets: bindings.apply((bindings) =>
         bindings
@@ -117,12 +117,12 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
           .join("\n"),
       ),
     }).apply(({ config, path, secrets }) => {
-      const configPath = resolve(join(path, "wrangler.jsonc"));
-      mkdirSync(dirname(configPath), { recursive: true });
+      const configPath = Path.resolve(Path.join(path, "wrangler.jsonc"));
+      mkdirSync(Path.dirname(configPath), { recursive: true });
       writeFileSync(configPath, config);
 
-      const secretsPath = resolve(join(path, ".dev.vars"));
-      mkdirSync(dirname(secretsPath), { recursive: true });
+      const secretsPath = Path.resolve(Path.join(path, ".dev.vars"));
+      mkdirSync(Path.dirname(secretsPath), { recursive: true });
       writeFileSync(secretsPath, secrets);
 
       siteBuilder(
@@ -137,9 +137,9 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
     });
 
     function findPackagePath(path: string) {
-      if (existsSync(join(path, "package.json"))) return path;
+      if (existsSync(Path.join(path, "package.json"))) return path;
 
-      const parent = dirname(path);
+      const parent = Path.dirname(path);
       if (parent === path)
         throw new VisibleError(`Arrived at root, could not find ${name}'s package.json`);
 

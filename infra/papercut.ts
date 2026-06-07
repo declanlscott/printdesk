@@ -1,4 +1,4 @@
-import { resolve, join } from "node:path";
+import Path from "node:path";
 
 import { assetsBucket } from "./assets";
 import { invokeIssuerFunctionUrl } from "./auth";
@@ -26,8 +26,8 @@ export const papercutApiAuthTokenConfigurationProfileTemplate =
     { identifier: "PapercutApiAuthToken" },
   );
 
-const papercutApiGatewayPackagePath = resolve(
-  join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
+const papercutApiGatewayPackagePath = Path.resolve(
+  Path.join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
 );
 const papercutApiGatewayScriptOutDir = "dist";
 const papercutApiGatewayScriptAssetPath = `${papercutApiGatewayScriptOutDir}/index.js`;

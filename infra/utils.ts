@@ -1,7 +1,7 @@
 // oxlint-disable typescript/no-non-null-assertion
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join } from "node:path";
+import Path from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
 
@@ -53,7 +53,7 @@ export function hashFiles(path: string) {
   const hashes: Array<string> = [];
 
   for (const file of files) {
-    const filePath = join(path, file);
+    const filePath = Path.join(path, file);
     const stats = statSync(filePath);
 
     if (stats.isFile())

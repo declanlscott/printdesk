@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import Path from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
 
@@ -51,7 +51,7 @@ export const infraManager = dynamo.subscribe(
       PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
       ...($dev
         ? {
-            PULUMI_HONE: join(
+            PULUMI_HONE: Path.join(
               $cli.paths.root,
               "packages/python/functions/infra_manager/pulumi_home",
             ),

@@ -15,15 +15,6 @@ import { TenantId } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace OauthContract {
-  export const AuthorizeUrlParams = Schema.Struct({ redirectUri: Schema.URL }).pipe(
-    Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI }),
-  );
-
-  export const CallbackUrlParams = Schema.Struct({
-    ...AuthorizeUrlParams.to.fields,
-    code: Schema.NonEmptyString,
-  }).pipe(Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI }));
-
   export class OpenauthError extends Schema.TaggedErrorClass<OpenauthError>()("OpenauthError", {
     cause: Schema.Defect(),
   }) {}

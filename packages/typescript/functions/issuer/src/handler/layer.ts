@@ -11,12 +11,10 @@ import * as UsersRepository from "@printdesk/core/users/repository/layer";
 import * as Layer from "effect/Layer";
 
 export const layer = Oauth.layer.pipe(
-  Layer.provide(ClientsRepository.layer),
-  Layer.provide(IdentityProvidersRepository.layer),
-  Layer.provide(UsersRepository.layer),
+  Layer.provide([ClientsRepository.layer, UsersRepository.layer]),
   Layer.provide(SyncQueryBuilder.layer),
-  Layer.provideMerge(Crypto.layer),
-  Layer.provideMerge(Database.layer),
+  Layer.provideMerge(IdentityProvidersRepository.layer),
+  Layer.provideMerge([Crypto.layer, Database.layer]),
   Layer.provide(Drizzle.layerWithDrizzleServices),
   Layer.provide(PgClient.layer),
   Layer.provideMerge(SstResource.layer),

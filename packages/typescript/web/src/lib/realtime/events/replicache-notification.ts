@@ -46,13 +46,12 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContr
 
     return yield* Effect.firstSuccessOf(
       Iterable.map(notification.data, (data) =>
-        Match.value(data).pipe(
-          Match.tagsExhaustive({
-            ReplicachePullPermission: ({ permission }) =>
-              AccessControl.userPermissionPolicy(permission),
-            ReplicachePullPolicy: (policy) =>
-              policyDispatcher.dispatch(policy.name, policy.input).pipe(replicache.query),
-          }),
+        Match.valueTags(data, {
+          ReplicachePullPermission: ({ permission }) =>
+            AccessControl.userPermissionPolicy(permission),
+          ReplicachePullPolicy: (policy) =>
+            policyDispatcher.dispatch(policy.name, policy.input).pipe(replicache.query),
+        }).pipe(
           Effect.tapError((error) =>
             error._tag === "AccessDeniedError" ? Effect.void : Effect.logError(error),
           ),

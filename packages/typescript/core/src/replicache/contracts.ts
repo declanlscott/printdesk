@@ -2,7 +2,6 @@ import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
@@ -139,30 +138,11 @@ export namespace ReplicachePullerContract {
     }>;
   };
 
-  interface AsPutTableOperationSchemaEntry extends Struct.Lambda {
-    <TTable extends Models.SyncTable>(
-      table: TTable,
-    ): [
-      TTable["name"],
-      Schema.Struct<{
-        op: Schema.tag<"put">;
-        key: Schema.TemplateLiteralParser<
-          readonly [Schema.Literal<TTable["name"]>, Schema.Literal<"/">, typeof EntityId]
-        >;
-        value: Models.SyncTableByName<TTable["name"]>["Dto"];
-      }>,
-    ];
-    readonly "~lambda.out": Array<this["~lambda.in"]>;
-  }
-
   export const putTableOperationSchemas = Record.fromEntries(
-    Array.map(
-      Models.syncTables,
-      Struct.lambda<AsPutTableOperationSchemaEntry>((table) =>
-        Tuple.make(
-          table.name,
-          Schema.Struct({ op: Schema.tag("put"), key: tableKey(table.name), value: table.Dto }),
-        ),
+    Array.map(Models.syncTables, (table) =>
+      Tuple.make(
+        table.name,
+        Schema.Struct({ op: Schema.tag("put"), key: tableKey(table.name), value: table.Dto }),
       ),
     ),
   ) as PutTableOperationSchemas;
@@ -192,27 +172,9 @@ export namespace ReplicachePullerContract {
     }>;
   };
 
-  interface AsDeleteTableOperationSchemaEntry extends Struct.Lambda {
-    <TTable extends Models.SyncTable>(
-      table: TTable,
-    ): [
-      TTable["name"],
-      Schema.Struct<{
-        op: Schema.tag<"del">;
-        key: Schema.TemplateLiteralParser<
-          readonly [Schema.Literal<TTable["name"]>, Schema.Literal<"/">, typeof EntityId]
-        >;
-      }>,
-    ];
-    readonly "~lambda.out": Array<this["~lambda.in"]>;
-  }
-
   export const deleteTableOperationSchemas = Record.fromEntries(
-    Array.map(
-      Models.syncTables,
-      Struct.lambda<AsDeleteTableOperationSchemaEntry>((table) =>
-        Tuple.make(table.name, Schema.Struct({ op: Schema.tag("del"), key: tableKey(table.name) })),
-      ),
+    Array.map(Models.syncTables, (table) =>
+      Tuple.make(table.name, Schema.Struct({ op: Schema.tag("del"), key: tableKey(table.name) })),
     ),
   ) as DeleteTableOperationSchemas;
 

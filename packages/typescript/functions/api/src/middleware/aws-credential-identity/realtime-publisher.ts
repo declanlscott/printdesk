@@ -72,7 +72,9 @@ export const realtimePublisherAwsCredentialIdentityLayer =
   realtimePublisherAwsCredentialIdentityMiddleware
     .combine(actorMiddleware)
     .layer.pipe(
-      Layer.provide(ActorLayerMap.layer),
-      Layer.provide(RealtimePublisherAwsCredentialIdentityLayerMap.layer),
-      Layer.provide(openauthLayer),
+      Layer.provide([
+        ActorLayerMap.layer,
+        RealtimePublisherAwsCredentialIdentityLayerMap.layer,
+        openauthLayer,
+      ]),
     );

@@ -5,7 +5,6 @@ import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 
 export const realtimeLayer = Realtime.layer.pipe(
-  Layer.provide(AppsyncSigner.layer),
-  Layer.provide(FetchHttpClient.layer),
+  Layer.provide([AppsyncSigner.layer, FetchHttpClient.layer]),
   Layer.provide(SstResource.layer),
 );

@@ -72,7 +72,9 @@ export const realtimeSubscriberAwsCredentialIdentityLayer =
   realtimeSubscriberAwsCredentialIdentityMiddleware
     .combine(actorMiddleware)
     .layer.pipe(
-      Layer.provide(ActorLayerMap.layer),
-      Layer.provide(RealtimeSubscriberAwsCredentialIdentityLayerMap.layer),
-      Layer.provide(openauthLayer),
+      Layer.provide([
+        ActorLayerMap.layer,
+        RealtimeSubscriberAwsCredentialIdentityLayerMap.layer,
+        openauthLayer,
+      ]),
     );

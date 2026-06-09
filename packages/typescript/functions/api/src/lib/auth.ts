@@ -28,6 +28,5 @@ export const openauthLayer = Effect.gen(function* () {
   });
 }).pipe(
   Layer.unwrap,
-  Layer.provide(AwsCredentialIdentity.providerLayer(fromNodeProviderChain)),
-  Layer.provide(SstResource.layer),
+  Layer.provide([AwsCredentialIdentity.providerLayer(fromNodeProviderChain), SstResource.layer]),
 );

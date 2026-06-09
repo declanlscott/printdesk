@@ -4,13 +4,10 @@ import { Oauth } from "@printdesk/core/oauth/client";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import * as Effect from "effect/Effect";
 import * as Filter from "effect/Filter";
-import * as Layer from "effect/Layer";
 import * as Result from "effect/Result";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
-
-import { openauthLayer } from "../lib/auth";
 
 import type { Actor } from "@printdesk/core/actors";
 
@@ -54,9 +51,4 @@ export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
       ),
     ),
   ),
-);
-
-export const actorLayer = actorMiddleware.layer.pipe(
-  Layer.provide(ActorLayerMap.layer),
-  Layer.provide(openauthLayer),
 );

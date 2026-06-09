@@ -26,6 +26,5 @@ export const baseRealtimeGroupLayer = HttpApiBuilder.group(
 );
 
 export const realtimeGroupLayer = baseRealtimeGroupLayer.pipe(
-  Layer.provide(realtimeSubscriberAwsCredentialIdentityLayer),
-  Layer.provide(realtimeLayer),
+  Layer.provide([realtimeSubscriberAwsCredentialIdentityLayer, realtimeLayer]),
 );

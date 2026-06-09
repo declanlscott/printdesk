@@ -1,4 +1,4 @@
-import { Actor } from "@printdesk/core/actors";
+import { ActorLayerMap } from "@printdesk/core/actors";
 import { ReadTransaction } from "@printdesk/core/database/client/read-transaction";
 import { Replicache } from "@printdesk/core/replicache/client";
 import * as Effect from "effect/Effect";
@@ -13,7 +13,10 @@ import { ViteResource } from "./sst";
 import type { MutationHandlers } from "@printdesk/core/handlers/mutations";
 import type { SubscribeOptions } from "replicache";
 
-export const replicacheAtomRuntime = FetchHttpClient.layer.pipe(Atom.runtime);
+export const replicacheAtomRuntime = FetchHttpClient.layer.pipe(
+  Layer.merge(ActorLayerMap.layer),
+  Atom.runtime,
+);
 
 export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
   get.resultOnce(ViteResource.atom).pipe(
@@ -31,7 +34,7 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
           ),
       ),
     ),
-    Effect.provideService(Actor, Actor.of(get(actorAtom))),
+    Effect.provide(ActorLayerMap.get(get(actorAtom))),
   ),
 );
 

@@ -12,7 +12,6 @@ import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
-import * as Cookies from "effect/unstable/http/Cookies";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
@@ -91,14 +90,6 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     const openauth = yield* Oauth.Openauth;
 
-    const cookieOptions = {
-      httpOnly: true,
-      maxAge: "52 weeks",
-      path: "/",
-      sameSite: "lax",
-      secure: true,
-    } satisfies Cookies.Cookie["options"];
-
     return handlers
       .handle("me", () =>
         OauthContract.AuthCookies.pipe(
@@ -136,12 +127,12 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
                 [
                   Constants.COOKIE_NAMES.ACCESS_TOKEN,
                   tokens.access.pipe(Redacted.value),
-                  cookieOptions,
+                  Constants.COOKIE_OPTIONS,
                 ],
                 [
                   Constants.COOKIE_NAMES.REFRESH_TOKEN,
                   tokens.refresh.pipe(Redacted.value),
-                  cookieOptions,
+                  Constants.COOKIE_OPTIONS,
                 ],
               ]),
             ),

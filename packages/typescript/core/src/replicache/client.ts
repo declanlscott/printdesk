@@ -235,7 +235,7 @@ export namespace Replicache {
 
     const name = yield* Schema.encodeEffect(separatedString())([user.tenantId, user.id]);
 
-    const mutatorRuntime = Actor.layer(user).pipe(
+    const mutatorRuntime = Actor.layer(user.wrap).pipe(
       Layer.merge(mutationDispatcherLayer),
       ManagedRuntime.make,
     );

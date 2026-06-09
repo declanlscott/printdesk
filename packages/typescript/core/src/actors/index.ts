@@ -9,15 +9,15 @@ import { ActorsContract } from "./contract";
 export class Actor extends Context.Service<Actor, ActorsContract.Actor>()(
   "@printdesk/core/actors/Actor",
 ) {
-  public static readonly layer = (properties: typeof Actor.Service.properties) =>
-    Layer.succeed(this, this.of(new ActorsContract.Actor({ properties })));
+  public static readonly layer = (actor: typeof Actor.Service) =>
+    Layer.succeed(this, this.of(actor));
 }
 
 export class ActorLayerMap extends LayerMap.Service<ActorLayerMap>()(
   "@printdesk/core/actors/ActorLayerMap",
   {
     idleTimeToLive: Duration.minutes(15),
-    preloadKeys: [ActorsContract.publicActor],
+    preloadKeys: [ActorsContract.PublicActor.singleton.wrap],
     lookup: Actor.layer,
   },
 ) {}

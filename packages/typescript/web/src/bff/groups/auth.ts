@@ -100,7 +100,6 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
       .handle("login", ({ request }) =>
         redirectUri(request).pipe(
           Effect.flatMap((redirectUri) => openauth.authorize(redirectUri, "code")),
-          Effect.catchTag("AuthorizeError", () => new HttpApiError.InternalServerError()),
           Effect.flatMap(
             Effect.fn(function* ({ url }) {
               url.searchParams.set(Constants.URL_PARAM_NAMES.TENANT_SLUG, yield* TenantSlug);
@@ -128,10 +127,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
               ]),
             ),
           ),
-          Effect.catchTags({
-            ExchangeError: () => new HttpApiError.InternalServerError(),
-            CookieError: () => new HttpApiError.InternalServerError(),
-          }),
+          Effect.catchTag("CookieError", () => new HttpApiError.InternalServerError()),
         ),
       );
   }),

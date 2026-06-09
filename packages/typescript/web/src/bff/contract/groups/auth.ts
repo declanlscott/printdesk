@@ -13,7 +13,7 @@ export namespace AuthApi {
     query: Schema.Struct({ redirectUri: Schema.URLFromString.pipe(Schema.optional) }).pipe(
       Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI }),
     ),
-    error: [HttpApiError.InternalServerError],
+    error: [OauthContract.AuthorizeError],
   });
 
   export class TenantSlugValidator extends HttpApiMiddleware.Service<
@@ -29,7 +29,11 @@ export namespace AuthApi {
         code: Schema.NonEmptyString,
         redirectUri: Schema.URLFromString,
       }).pipe(Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI })),
-      error: [OauthContract.InvalidAuthorizationCodeError, HttpApiError.InternalServerError],
+      error: [
+        OauthContract.ExchangeError,
+        OauthContract.InvalidAuthorizationCodeError,
+        HttpApiError.InternalServerError,
+      ],
     },
   );
 

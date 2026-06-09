@@ -1,5 +1,5 @@
 import { AccessControl } from "@printdesk/core/access-control";
-import { Actor } from "@printdesk/core/actors";
+import { ActorLayerMap } from "@printdesk/core/actors";
 import { PolicyDispatcher } from "@printdesk/core/policies/client/dispatcher";
 import { layer as policyDispatcherLayer } from "@printdesk/core/policies/client/dispatcher/layer";
 import { Realtime } from "@printdesk/core/realtime/client";
@@ -21,7 +21,7 @@ import { replicacheAtom } from "../../replicache";
 
 export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContract.notification, {
   runtime: realtimeEventAtomLayer.pipe(
-    Layer.merge([Path.layer, policyDispatcherLayer]),
+    Layer.merge([Path.layer, ActorLayerMap.layer, policyDispatcherLayer]),
     Layer.provide(Replicache.policiesLayer),
     Atom.runtime,
   ),
@@ -59,7 +59,7 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContr
         ),
       ),
     ).pipe(
-      Effect.provideService(Actor, actorAtom.pipe(get)),
+      Effect.provide(ActorLayerMap.get(get(actorAtom))),
       Effect.flatMap(() => replicache.pull),
       Effect.catchTag("ReplicachePullError", Effect.logError),
       Effect.catch(() => Effect.void),

@@ -35,13 +35,11 @@ export const ratelimit = createMiddleware(async function (c, next) {
       .then(
         Exit.match({
           onSuccess: (result) =>
-            Match.value(result.subject.properties).pipe(
-              Match.tagsExhaustive({
-                ClientSubject: (client) =>
-                  encodeKey({ tenantId: client.tenantId, clientId: client.id }),
-                UserSubject: (user) => encodeKey({ tenantId: user.tenantId, userId: user.id }),
-              }),
-            ),
+            Match.valueTags(result.subject.properties, {
+              ClientSubject: (client) =>
+                encodeKey({ tenantId: client.tenantId, clientId: client.id }),
+              UserSubject: (user) => encodeKey({ tenantId: user.tenantId, userId: user.id }),
+            }),
           onFailure: getKeyByIp,
         }),
       );

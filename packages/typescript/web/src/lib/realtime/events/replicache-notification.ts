@@ -30,9 +30,8 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContr
     networkMonitor: networkMonitorAtom,
   },
   getChannel: (get, name) =>
-    actorAtom.pipe(
-      get,
-      Struct.get("assertUser"),
+    get.resultOnce(actorAtom).pipe(
+      Effect.flatMap(Struct.get("assertUser")),
       Effect.flatMap(({ tenantId }) =>
         Path.Path.useSync((path) => `/${path.join(tenantId, name)}` as const),
       ),
@@ -58,7 +57,7 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContr
         ),
       ),
     ).pipe(
-      Effect.provide(ActorLayerMap.get(get(actorAtom))),
+      Effect.provide(get.resultOnce(actorAtom).pipe(Effect.map(ActorLayerMap.get), Layer.unwrap)),
       Effect.flatMap(() => replicache.pull),
       Effect.catchTag("ReplicachePullError", Effect.logError),
       Effect.catch(() => Effect.void),

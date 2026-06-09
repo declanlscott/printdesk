@@ -34,7 +34,7 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
           ),
       ),
     ),
-    Effect.provide(ActorLayerMap.get(get(actorAtom))),
+    Effect.provide(get.resultOnce(actorAtom).pipe(Effect.map(ActorLayerMap.get), Layer.unwrap)),
   ),
 );
 

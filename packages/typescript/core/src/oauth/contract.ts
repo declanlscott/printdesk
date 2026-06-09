@@ -71,8 +71,8 @@ export namespace OauthContract {
     { tenantId: TenantId },
   ) {}
 
-  interface Actable {
-    actor: typeof ActorsContract.Actor.fields.properties.Type;
+  interface Actable<TTag extends typeof ActorsContract.Actor.fields.properties.Type._tag> {
+    actor: Extract<typeof ActorsContract.Actor.fields.properties.Type, { _tag: TTag }>;
   }
 
   export class ClientSubject
@@ -80,7 +80,7 @@ export namespace OauthContract {
       ...Struct.omit(ActorsContract.ClientActor.fields, ["_tag"]),
       scopes: Schema.NonEmptyString.pipe(Schema.Array, Schema.optional),
     })
-    implements Actable
+    implements Actable<typeof ActorsContract.ClientActor.Type._tag>
   {
     public get actor() {
       return new ActorsContract.ClientActor({
@@ -96,7 +96,7 @@ export namespace OauthContract {
       "UserSubject",
       Struct.omit(ActorsContract.UserActor.fields, ["_tag"]),
     )
-    implements Actable
+    implements Actable<typeof ActorsContract.UserActor.Type._tag>
   {
     public get actor() {
       return new ActorsContract.UserActor({
@@ -106,8 +106,6 @@ export namespace OauthContract {
       });
     }
   }
-
-  export const Subjects = Schema.Union([ClientSubject, UserSubject]);
 
   export const subjects = {
     [ClientSubject.fields._tag.schema.literal]: ClientSubject.pipe(Schema.toStandardSchemaV1),
@@ -172,8 +170,15 @@ export namespace OauthContract {
     tokens: Tokens.pipe(Schema.OptionFromUndefinedOr),
     audience: Schema.NonEmptyString,
     subject: Schema.Union(
-      Array.map(Record.toEntries(subjects), ([type, properties]) =>
-        Schema.Struct({ type: Schema.Literal(type), properties }),
+      Array.map(
+        Record.toEntries(subjects),
+        ([type, properties]) =>
+          Schema.Struct({ type: Schema.Literal(type), properties }) as {
+            readonly [TKey in keyof typeof subjects]: Schema.Struct<{
+              type: Schema.Literal<TKey>;
+              properties: (typeof subjects)[TKey];
+            }>;
+          }[keyof typeof subjects],
       ),
     ),
   }).pipe(Schema.encodeKeys({ audience: "aud" }));

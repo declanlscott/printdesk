@@ -122,41 +122,37 @@ export const makeService = Effect.gen(function* () {
           {
             clientViewEntries: stream.pipe(
               Stream.map((diff) =>
-                Match.value(diff).pipe(
-                  Match.tagsExhaustive({
-                    update: ({ entity, data }) =>
-                      ReplicacheClientViewEntriesModel.Table.Model.make({
-                        clientGroupId: clientView.clientGroupId,
-                        clientViewVersion: clientViewVersion.next,
-                        entity,
-                        entityId: data.id,
-                        entityVersion: data.version,
-                        tenantId: clientView.tenantId,
-                      }),
-                    delete: ({ entity, id: entityId }) =>
-                      ReplicacheClientViewEntriesModel.Table.Model.make({
-                        clientGroupId: clientView.clientGroupId,
-                        clientViewVersion: clientViewVersion.next,
-                        entity,
-                        entityId,
-                        tenantId: clientView.tenantId,
-                      }),
-                  }),
-                ),
+                Match.valueTags(diff, {
+                  update: ({ entity, data }) =>
+                    ReplicacheClientViewEntriesModel.Table.Model.make({
+                      clientGroupId: clientView.clientGroupId,
+                      clientViewVersion: clientViewVersion.next,
+                      entity,
+                      entityId: data.id,
+                      entityVersion: data.version,
+                      tenantId: clientView.tenantId,
+                    }),
+                  delete: ({ entity, id: entityId }) =>
+                    ReplicacheClientViewEntriesModel.Table.Model.make({
+                      clientGroupId: clientView.clientGroupId,
+                      clientViewVersion: clientViewVersion.next,
+                      entity,
+                      entityId,
+                      tenantId: clientView.tenantId,
+                    }),
+                }),
               ),
               Stream.runCollect,
               Effect.map(Chunk.fromIterable),
             ),
             patch: stream.pipe(
               Stream.map((diff) =>
-                Match.value(diff).pipe(
-                  Match.tagsExhaustive({
-                    update: ({ entity, data }) =>
-                      ReplicachePullerContract.makePutTableOperation(entity, data),
-                    delete: ({ entity, id }) =>
-                      ReplicachePullerContract.makeDeleteTableOperation(entity, id),
-                  }),
-                ),
+                Match.valueTags(diff, {
+                  update: ({ entity, data }) =>
+                    ReplicachePullerContract.makePutTableOperation(entity, data),
+                  delete: ({ entity, id }) =>
+                    ReplicachePullerContract.makeDeleteTableOperation(entity, id),
+                }),
               ),
               Stream.runCollect,
               Effect.map(Chunk.fromIterable),
@@ -169,12 +165,10 @@ export const makeService = Effect.gen(function* () {
             ),
             excludes: stream.pipe(
               Stream.map((diff) =>
-                Match.value(diff).pipe(
-                  Match.tagsExhaustive({
-                    update: ({ entity, data }) => ({ entity, id: data.id }),
-                    delete: ({ entity, id }) => ({ entity, id }),
-                  }),
-                ),
+                Match.valueTags(diff, {
+                  update: ({ entity, data }) => ({ entity, id: data.id }),
+                  delete: ({ entity, id }) => ({ entity, id }),
+                }),
               ),
               Stream.runCollect,
               Effect.map(Chunk.fromIterable),

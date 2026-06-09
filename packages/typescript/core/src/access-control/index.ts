@@ -227,17 +227,14 @@ export namespace AccessControl {
         Match.orElse(({ name, id }) => `"${name}" (${id})`),
       );
 
-      const matchActor = Match.type<ActorsContract.Actor["properties"]>().pipe(
-        Match.tags({
-          ClientActor: (client) =>
-            `Client actor (${client.id}) is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
-          PublicActor: () =>
-            `Public actor is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
-          UserActor: (user) =>
-            `User actor (${user.id}) is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
-        }),
-        Match.exhaustive,
-      );
+      const matchActor = Match.typeTags<ActorsContract.Actor["properties"]>()({
+        ClientActor: (client) =>
+          `Client actor (${client.id}) is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
+        PublicActor: () =>
+          `Public actor is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
+        UserActor: (user) =>
+          `User actor (${user.id}) is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
+      });
 
       return matchActor(this.actor);
     }
@@ -385,13 +382,10 @@ export namespace AccessControl {
         privateActorPolicy(
           resource,
           (privateActor) =>
-            Match.value(privateActor).pipe(
-              Match.tagsExhaustive({
-                ClientActor: (client) => clientRoleAcls.pipe(Effect.map(Struct.get(client.role))),
-                UserActor: (user) => userRoleAcls.pipe(Effect.map(Struct.get(user.role))),
-              }),
-              Effect.map(HashSet.has(permission)),
-            ),
+            Match.valueTags(privateActor, {
+              ClientActor: (client) => clientRoleAcls.pipe(Effect.map(Struct.get(client.role))),
+              UserActor: (user) => userRoleAcls.pipe(Effect.map(Struct.get(user.role))),
+            }).pipe(Effect.map(HashSet.has(permission))),
           action,
         ),
       ),

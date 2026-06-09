@@ -56,16 +56,13 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
     ),
   );
 
-  const matchBody = Match.type<HttpBody.HttpBody>().pipe(
-    Match.tags({
-      Empty: () => undefined,
-      Raw: (body) => body.body,
-      Uint8Array: (body) => body.body,
-      FormData: (body) => body.formData,
-      Stream: (body) => body.stream,
-    }),
-    Match.exhaustive,
-  );
+  const matchBody = Match.typeTags<HttpBody.HttpBody>()({
+    Empty: () => undefined,
+    Raw: (body) => body.body,
+    Uint8Array: (body) => body.body,
+    FormData: (body) => body.formData,
+    Stream: (body) => body.stream,
+  });
 
   const presign = (...args: Parameters<SignatureV4["presign"]>) =>
     make.pipe(

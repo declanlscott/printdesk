@@ -260,7 +260,7 @@ export namespace Replicache {
       >;
     };
 
-    const api = yield* HttpClient.HttpClient.pipe(
+    const server = yield* HttpClient.HttpClient.pipe(
       Effect.map(HttpClient.filterStatusOk),
       Effect.flatMap((httpClient) =>
         HttpApiClient.group(Api, { baseUrl, httpClient, group: "replicache" }),
@@ -277,7 +277,7 @@ export namespace Replicache {
           Effect.die(ReplicacheContract.VersionNotSupportedError.new("pull")),
         ),
         Effect.flatMap((payload) =>
-          api.pull({
+          server.pull({
             payload,
             headers: { "X-Replicache-RequestID": id },
             responseMode: "decoded-and-response",
@@ -313,7 +313,7 @@ export namespace Replicache {
           Effect.die(ReplicacheContract.VersionNotSupportedError.new("push")),
         ),
         Effect.flatMap((payload) =>
-          api.push({
+          server.push({
             payload,
             headers: { "X-Replicache-RequestID": id },
             responseMode: "decoded-and-response",

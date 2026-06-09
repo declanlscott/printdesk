@@ -1,3 +1,4 @@
+import { ActorsContract } from "@printdesk/core/actors/contract";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Schema from "effect/Schema";
@@ -9,6 +10,17 @@ import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
 import type { TenantSlug } from "@printdesk/core/tenants/slug";
 
 export namespace AuthApi {
+  export const me = HttpApiEndpoint.get("me", "/me", {
+    success: ActorsContract.UserActor,
+    error: [
+      OauthContract.InvalidCookiesError,
+      OauthContract.InvalidAccessTokenError,
+      OauthContract.InvalidRefreshTokenError,
+      OauthContract.VerifyError,
+      ActorsContract.ForbiddenActorError,
+    ],
+  });
+
   export const login = HttpApiEndpoint.get("login", Constants.WEB_BFF_PATHS.login, {
     query: Schema.Struct({ redirectUri: Schema.URLFromString.pipe(Schema.optional) }).pipe(
       Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI }),
@@ -38,6 +50,7 @@ export namespace AuthApi {
   );
 
   export class Group extends HttpApiGroup.make("auth")
+    .add(me)
     .add(login.middleware(TenantSlugValidator))
     .add(oauthCallback) {}
 }

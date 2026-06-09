@@ -1,9 +1,12 @@
+import { ActorsContract } from "@printdesk/core/actors/contract";
 import { Oauth } from "@printdesk/core/oauth/client";
+import { OauthContract } from "@printdesk/core/oauth/contract";
 import { TenantsContract } from "@printdesk/core/tenants/contract";
 import { TenantSlug } from "@printdesk/core/tenants/slug";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
@@ -97,6 +100,22 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
     } satisfies Cookies.Cookie["options"];
 
     return handlers
+      .handle("me", () =>
+        OauthContract.AuthCookies.pipe(
+          HttpServerRequest.schemaCookies,
+          Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
+          Effect.flatMap((cookies) =>
+            openauth.verify(cookies.accessToken, { refresh: cookies.refreshToken }),
+          ),
+          Effect.flatMap((result) =>
+            Match.valueTags(result.subject.properties.actor, {
+              ClientActor: (client) =>
+                new ActorsContract.ForbiddenActorError({ actor: client._tag }),
+              UserActor: (user) => Effect.succeed(user),
+            }),
+          ),
+        ),
+      )
       .handle("login", ({ request }) =>
         redirectUri(request).pipe(
           Effect.flatMap((redirectUri) => openauth.authorize(redirectUri, "code")),

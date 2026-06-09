@@ -1,19 +1,29 @@
 import * as Context from "effect/Context";
+import * as Data from "effect/Data";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import type {
   AwsCredentialIdentity as SmithyAwsCredentialIdentity,
   AwsCredentialIdentityProvider,
 } from "@smithy/types";
 
-export class AwsCredentialIdentityProviderError extends Schema.TaggedErrorClass<AwsCredentialIdentityProviderError>()(
-  "AwsCredentialIdentityProviderError",
-  { cause: Schema.Defect() },
-) {}
+export class AwsCredentialIdentityProviderError
+  extends Schema.TaggedErrorClass<AwsCredentialIdentityProviderError>()(
+    "AwsCredentialIdentityProviderError",
+    { cause: Schema.Defect() },
+    { httpApiStatus: 500 },
+  )
+  implements HttpServerRespondable.Respondable
+{
+  public [HttpServerRespondable.symbol] = () =>
+    HttpServerResponse.schemaJson(AwsCredentialIdentityProviderError)(this, { status: 500 });
+}
 
 export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdentitySchema>(
   "AwsCredentialIdentity",
@@ -26,10 +36,25 @@ export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdent
   expiration: Schema.DateTimeUtcFromDate.pipe(Schema.RedactedFromValue, Schema.optional),
 }) {}
 
+export class InvalidAwsCredentialIdentityError
+  extends Data.TaggedError("InvalidAwsCredentialIdentityError")<{
+    readonly cause: Schema.SchemaError;
+  }>
+  implements HttpServerRespondable.Respondable
+{
+  public [HttpServerRespondable.symbol] = () => HttpServerResponse.json(this, { status: 500 });
+}
+
 // @effect-leakable-service
 export class AwsCredentialIdentity extends Context.Service<AwsCredentialIdentity>()(
   "@printdesk/core/aws/CredentialIdentity",
-  { make: Schema.decodeEffect(AwsCredentialIdentitySchema) },
+  {
+    make: (identity: SmithyAwsCredentialIdentity) =>
+      Effect.succeed(identity).pipe(
+        Effect.flatMap(Schema.decodeEffect(AwsCredentialIdentitySchema)),
+        Effect.mapError((error) => new InvalidAwsCredentialIdentityError({ cause: error })),
+      ),
+  },
 ) {
   public static fromProvider(provider: () => AwsCredentialIdentityProvider) {
     return Effect.tryPromise({

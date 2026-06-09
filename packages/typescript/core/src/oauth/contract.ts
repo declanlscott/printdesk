@@ -4,7 +4,6 @@ import {
   InvalidRefreshTokenError as OpenauthInvalidRefreshTokenError,
 } from "@openauthjs/openauth/error";
 import * as Array from "effect/Array";
-import * as Data from "effect/Data";
 import * as Number from "effect/Number";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
@@ -126,9 +125,11 @@ export namespace OauthContract {
     ),
   }) {}
 
-  export class AuthorizeError extends Schema.TaggedErrorClass<AuthorizeError>()("AuthorizeError", {
-    cause: Schema.Defect(),
-  }) {}
+  export class AuthorizeError extends Schema.TaggedErrorClass<AuthorizeError>()(
+    "AuthorizeError",
+    { cause: Schema.Defect() },
+    { httpApiStatus: 500 },
+  ) {}
 
   export class AuthorizeSuccess extends Schema.Class<AuthorizeSuccess>("AuthorizeSuccess")({
     challenge: Schema.Struct({
@@ -138,9 +139,11 @@ export namespace OauthContract {
     url: Schema.URLFromString,
   }) {}
 
-  export class ExchangeError extends Schema.TaggedErrorClass<ExchangeError>()("ExchangeError", {
-    cause: Schema.Defect(),
-  }) {}
+  export class ExchangeError extends Schema.TaggedErrorClass<ExchangeError>()(
+    "ExchangeError",
+    { cause: Schema.Defect() },
+    { httpApiStatus: 500 },
+  ) {}
 
   export class ExchangeSuccess extends Schema.Class<ExchangeSuccess>("ExchangeSuccess")({
     tokens: Tokens,
@@ -196,11 +199,12 @@ export namespace OauthContract {
   export const Cookies = Schema.Union([Schema.Struct({}), AuthCookies]);
 
   export class InvalidCookiesError
-    extends Data.TaggedError("InvalidCookiesError")<{
-      readonly cause: Schema.SchemaError;
-    }>
+    extends Schema.TaggedErrorClass<InvalidCookiesError>()("InvalidCookiesError", {
+      cause: Schema.instanceOf(Schema.SchemaError),
+    })
     implements HttpServerRespondable.Respondable
   {
-    public [HttpServerRespondable.symbol] = () => HttpServerResponse.json(this, { status: 400 });
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(InvalidCookiesError)(this, { status: 400 });
   }
 }

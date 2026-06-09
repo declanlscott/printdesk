@@ -1,5 +1,4 @@
 import * as Context from "effect/Context";
-import * as Data from "effect/Data";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -37,12 +36,14 @@ export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdent
 }) {}
 
 export class InvalidAwsCredentialIdentityError
-  extends Data.TaggedError("InvalidAwsCredentialIdentityError")<{
-    readonly cause: Schema.SchemaError;
-  }>
+  extends Schema.TaggedErrorClass<InvalidAwsCredentialIdentityError>()(
+    "InvalidAwsCredentialIdentityError",
+    { cause: Schema.instanceOf(Schema.SchemaError) },
+  )
   implements HttpServerRespondable.Respondable
 {
-  public [HttpServerRespondable.symbol] = () => HttpServerResponse.json(this, { status: 500 });
+  public [HttpServerRespondable.symbol] = () =>
+    HttpServerResponse.schemaJson(InvalidAwsCredentialIdentityError)(this, { status: 500 });
 }
 
 // @effect-leakable-service

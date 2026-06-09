@@ -7,20 +7,47 @@ import { UsersContract } from "../users/contract";
 import { EntityId, TenantId } from "../utils";
 
 export namespace ActorsContract {
-  export class PublicActor extends Schema.TaggedClass<PublicActor>()("PublicActor", {}) {}
-  export const publicActor = new PublicActor();
+  export interface Wrapper {
+    get wrap(): Actor;
+  }
 
-  export class ClientActor extends Schema.TaggedClass<ClientActor>()("ClientActor", {
-    id: EntityId,
-    tenantId: TenantId,
-    role: ClientsContract.Role,
-  }) {}
+  export class PublicActor
+    extends Schema.TaggedClass<PublicActor>()("PublicActor", {})
+    implements Wrapper
+  {
+    public static readonly singleton = new this();
 
-  export class UserActor extends Schema.TaggedClass<UserActor>()("UserActor", {
-    id: EntityId,
-    tenantId: TenantId,
-    role: UsersContract.Role,
-  }) {}
+    // oxlint-disable-next-line class-methods-use-this
+    public get wrap() {
+      return new Actor({ properties: PublicActor.singleton });
+    }
+  }
+
+  export class ClientActor
+    extends Schema.TaggedClass<ClientActor>()("ClientActor", {
+      id: EntityId,
+      tenantId: TenantId,
+      role: ClientsContract.Role,
+    })
+    implements Wrapper
+  {
+    public get wrap() {
+      return new Actor({ properties: new ClientActor(this) });
+    }
+  }
+
+  export class UserActor
+    extends Schema.TaggedClass<UserActor>()("UserActor", {
+      id: EntityId,
+      tenantId: TenantId,
+      role: UsersContract.Role,
+    })
+    implements Wrapper
+  {
+    public get wrap() {
+      return new Actor({ properties: new UserActor(this) });
+    }
+  }
 
   export class Actor extends Schema.TaggedClass<Actor>()("Actor", {
     properties: Schema.Union([PublicActor, ClientActor, UserActor]),

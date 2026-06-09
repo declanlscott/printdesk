@@ -9,7 +9,6 @@ import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
-import * as Struct from "effect/Struct";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 
 import { openauthLayer } from "../../lib/auth";
@@ -24,13 +23,13 @@ export class RealtimeSubscriberAwsCredentialIdentityLayerMap extends LayerMap.Se
     idleTimeToLive: Duration.minutes(15),
     dependencies: [SstResource.layer],
     lookup: Effect.fn(
-      function* (actor: typeof Actor.Service.properties) {
+      function* (actor: typeof Actor.Service) {
         const {
           RealtimePublicChannelNamespaceSubscriberRole,
           RealtimeTenantChannelNamespaceSubscriberRoleTemplate,
         } = yield* SstResource;
 
-        return Match.value(actor).pipe(
+        return Match.value(actor.properties).pipe(
           Match.tag("PublicActor", () => ({
             RoleArn: RealtimePublicChannelNamespaceSubscriberRole.pipe(Redacted.value).arn,
             RoleSessionName: "PublicRealtimeSubscriber",
@@ -60,11 +59,7 @@ export const realtimeSubscriberAwsCredentialIdentityMiddleware = HttpRouter.midd
   provides: AwsCredentialIdentity;
 }>()(
   RealtimeSubscriberAwsCredentialIdentityLayerMap.pipe(
-    Effect.map((layerMap) =>
-      Effect.provide(
-        Actor.pipe(Effect.map(Struct.get("properties")), Effect.map(layerMap.get), Layer.unwrap),
-      ),
-    ),
+    Effect.map((layerMap) => Effect.provide(Actor.pipe(Effect.map(layerMap.get), Layer.unwrap))),
   ),
 ).combine(awsCredentialIdentityErrorMiddleware);
 

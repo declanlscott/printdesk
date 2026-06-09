@@ -27,11 +27,13 @@ export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
           .verify(cookies.accessToken, { refresh: cookies.refreshToken })
           .pipe(
             Effect.flatMap((result) =>
-              httpEffect.pipe(Effect.provide(layerMap.get(result.subject.properties.actor))),
+              httpEffect.pipe(Effect.provide(layerMap.get(result.subject.properties.actor.wrap))),
             ),
           );
 
-      return yield* httpEffect.pipe(Effect.provide(layerMap.get(ActorsContract.publicActor)));
+      return yield* httpEffect.pipe(
+        Effect.provide(layerMap.get(ActorsContract.PublicActor.singleton.wrap)),
+      );
     });
   }),
 ).combine(

@@ -9,10 +9,12 @@ import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
+import * as Struct from "effect/Struct";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 
 import { openauthLayer } from "../../lib/auth";
 import { actorMiddleware } from "../actor";
+import { awsCredentialIdentityErrorMiddleware } from "./error";
 
 import type { FromTemporaryCredentialsOptions } from "@aws-sdk/credential-providers";
 
@@ -57,18 +59,14 @@ export class RealtimeSubscriberAwsCredentialIdentityLayerMap extends LayerMap.Se
 export const realtimeSubscriberAwsCredentialIdentityMiddleware = HttpRouter.middleware<{
   provides: AwsCredentialIdentity;
 }>()(
-  Effect.gen(function* () {
-    const layerMap = yield* RealtimeSubscriberAwsCredentialIdentityLayerMap;
-
-    return Effect.fn(function* (httpEffect) {
-      const actor = yield* Actor;
-
-      return yield* httpEffect.pipe(
-        Effect.provide(layerMap.get(actor.properties).pipe(Layer.orDie)),
-      );
-    });
-  }),
-);
+  RealtimeSubscriberAwsCredentialIdentityLayerMap.pipe(
+    Effect.map((layerMap) =>
+      Effect.provide(
+        Actor.pipe(Effect.map(Struct.get("properties")), Effect.map(layerMap.get), Layer.unwrap),
+      ),
+    ),
+  ),
+).combine(awsCredentialIdentityErrorMiddleware);
 
 export const realtimeSubscriberAwsCredentialIdentityLayer =
   realtimeSubscriberAwsCredentialIdentityMiddleware

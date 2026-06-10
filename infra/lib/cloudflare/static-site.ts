@@ -53,7 +53,6 @@ export class StaticSite extends $util.ComponentResource implements Link.Linkable
       { parent: this },
     );
 
-    const compatibilityDate = new Date().toISOString().slice(0, 10);
     const compatibilityFlags = ["nodejs_compat"];
     const htmlHandling = normalizeHtmlHandling();
     const notFoundHandling = normalizeNotFoundHandling();
@@ -65,7 +64,7 @@ export class StaticSite extends $util.ComponentResource implements Link.Linkable
         {
           $schema: "node_modules/wrangler/config-schema.json",
           name: serverName.result,
-          compatibility_date: compatibilityDate,
+          compatibility_date: "2026-06-08",
           compatibility_flags: compatibilityFlags,
           main: $output(args.server).apply(R.prop("handler")),
           vars: environment,

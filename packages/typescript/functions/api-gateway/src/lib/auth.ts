@@ -7,7 +7,7 @@ import { lambda } from "./aws";
 import { resource } from "./sst";
 
 export const openauthRuntime = Oauth.Openauth.layer({
-  clientID: Constants.OPENAUTH_CLIENT_IDS.REVERSE_PROXY,
+  clientID: Constants.OPENAUTH_CLIENT_IDS.API_GATEWAY,
   fetch: (req) => lambda.fetch(req),
   issuer: resource.Issuer.pipe(Redacted.value).url,
 }).pipe(ManagedRuntime.make);

@@ -17,6 +17,16 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
+    "ApiGateway": {
+      "type": "pd.cloudflare.Worker"
+      "urls": {
+        "api": string
+        "auth": string
+      }
+    }
+    "ApiGatewayAwsPermissions": {
+      "type": "sst.sst.Linkable"
+    }
     "AppconfigAgent": {
       "port": number
       "type": "sst.sst.Linkable"
@@ -234,16 +244,6 @@ declare module "sst" {
     "RealtimeTenantChannelNamespaceSubscriberRoleTemplate": {
       "name": string
       "type": "pd.templates.AwsIamRole"
-    }
-    "ReverseProxy": {
-      "type": "pd.cloudflare.Worker"
-      "urls": {
-        "api": string
-        "auth": string
-      }
-    }
-    "ReverseProxyAwsPermissions": {
-      "type": "sst.sst.Linkable"
     }
     "SnsTopicEmail": {
       "type": "sst.sst.Secret"

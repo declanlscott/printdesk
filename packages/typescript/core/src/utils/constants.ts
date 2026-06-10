@@ -29,8 +29,8 @@ export namespace Constants {
 
   export const OPENAUTH_CLIENT_IDS = {
     API: "api",
+    API_GATEWAY: "api-gateway",
     PAPERCUT_API_GATEWAY: "papercut-api-gateway",
-    REVERSE_PROXY: "reverse-proxy",
     WEB: "web",
   } as const;
 

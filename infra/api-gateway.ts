@@ -10,17 +10,17 @@ export const rateLimit = new sst.cloudflare.RateLimit("RateLimit", {
   period: "1 minute",
 });
 
-export const reverseProxyAwsPermissions = new sst.Linkable("ReverseProxyAwsPermissions", {
+export const apiGatewayAwsPermissions = new sst.Linkable("ApiGatewayAwsPermissions", {
   properties: {},
   include: [invokeApiFunctionUrl, invokeIssuerFunctionUrl],
 });
 
-export const reverseProxy = new lib.cloudflare.Worker("ReverseProxy", {
-  handler: "packages/typescript/functions/reverse-proxy/src/index.ts",
+export const apiGateway = new lib.cloudflare.Worker("ApiGateway", {
+  handler: "packages/typescript/functions/api-gateway/src/index.ts",
   domains: {
     api: hostnames.properties.api,
     auth: hostnames.properties.auth,
   },
   placement: { region: `aws:${aws_.properties.region}` },
-  link: [aws_, api, hostnames, issuer, rateLimit, reverseProxyAwsPermissions],
+  link: [aws_, api, hostnames, issuer, rateLimit, apiGatewayAwsPermissions],
 });

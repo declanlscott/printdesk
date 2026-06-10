@@ -22,6 +22,8 @@ import { Bff } from "../contract";
 import { AuthApi } from "../contract/groups/auth";
 import { ViteResource } from "../lib/sst";
 
+import type * as Cookies from "effect/unstable/http/Cookies";
+
 export const tenantSlugValidatorLayer = Effect.gen(function* () {
   const resource = yield* ViteResource;
 
@@ -90,6 +92,14 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     const openauth = yield* Oauth.Openauth;
 
+    const cookieOptions = {
+      httpOnly: true,
+      maxAge: "52 weeks",
+      path: "/",
+      sameSite: "lax",
+      secure: true,
+    } satisfies Cookies.Cookie["options"];
+
     return handlers
       .handle("me", () =>
         OauthContract.AuthCookies.pipe(
@@ -127,12 +137,12 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
                 [
                   Constants.COOKIE_NAMES.ACCESS_TOKEN,
                   tokens.access.pipe(Redacted.value),
-                  Constants.COOKIE_OPTIONS,
+                  cookieOptions,
                 ],
                 [
                   Constants.COOKIE_NAMES.REFRESH_TOKEN,
                   tokens.refresh.pipe(Redacted.value),
-                  Constants.COOKIE_OPTIONS,
+                  cookieOptions,
                 ],
               ]),
             ),
@@ -145,7 +155,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
 
 export const authGroupLayer = baseAuthGroupLayer.pipe(
   Layer.provide(
-    ViteResource.useSync((resource) => resource.ReverseProxy.pipe(Redacted.value).urls.auth).pipe(
+    ViteResource.useSync((resource) => resource.ApiGateway.pipe(Redacted.value).urls.auth).pipe(
       Effect.map((issuer) =>
         Oauth.Openauth.layer({ clientID: Constants.OPENAUTH_CLIENT_IDS.WEB, issuer }),
       ),

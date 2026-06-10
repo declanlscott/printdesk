@@ -1,8 +1,8 @@
 import { Constants } from "@printdesk/core/utils/constants";
 
+import { apiGateway } from "./api-gateway";
 import { apexDomain, hostnames } from "./dns";
 import * as lib from "./lib";
-import { reverseProxy } from "./reverse-proxy";
 import { environment, injectLinkables, isProdStage } from "./utils";
 
 export const web = new lib.cloudflare.StaticSite("Web", {
@@ -11,7 +11,7 @@ export const web = new lib.cloudflare.StaticSite("Web", {
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
     apexDomain,
-    reverseProxy,
+    apiGateway,
     environment,
     hostnames,
   ),
@@ -28,7 +28,7 @@ export const www = new sst.cloudflare.TanStackStart("Www", {
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
     apexDomain,
-    reverseProxy,
+    apiGateway,
     environment,
     hostnames,
   ),

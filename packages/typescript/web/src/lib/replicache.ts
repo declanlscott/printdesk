@@ -20,10 +20,10 @@ export const replicacheAtomRuntime = FetchHttpClient.layer.pipe(
 
 export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
   get.resultOnce(ViteResource.atom).pipe(
-    Effect.flatMap(({ Environment, ReverseProxy }) =>
+    Effect.flatMap(({ ApiGateway, Environment }) =>
       Effect.acquireRelease(
         Replicache.make({
-          baseUrl: new URL(ReverseProxy.pipe(Redacted.value).urls.api),
+          baseUrl: new URL(ApiGateway.pipe(Redacted.value).urls.api),
           logLevel: Environment.pipe(Redacted.value).isDevMode ? "info" : "error",
         }),
         (replicache) =>

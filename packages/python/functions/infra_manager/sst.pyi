@@ -13,6 +13,13 @@ class Resource:
         roleArn: str
         type: str
         url: str
+    class ApiGateway:
+        type: str
+        class urls:
+            api: str
+            auth: str
+    class ApiGatewayAwsPermissions:
+        type: str
     class App:
         name: str
         stage: str
@@ -190,13 +197,6 @@ class Resource:
         type: str
     class RealtimeTenantChannelNamespaceSubscriberRoleTemplate:
         name: str
-        type: str
-    class ReverseProxy:
-        type: str
-        class urls:
-            api: str
-            auth: str
-    class ReverseProxyAwsPermissions:
         type: str
     class SnsTopicEmail:
         type: str

@@ -6,6 +6,11 @@ import { Constants } from "../utils/constants";
 import type { Provider } from "@openauthjs/openauth/provider/provider";
 import type { ClientsContract } from "../clients/contract";
 
+export interface ClientCredentials {
+  id: typeof ClientsContract.Table.Model.Type.id;
+  secret: Redacted.Redacted<string>;
+}
+
 export type ClientCredentialsProviderVerifyResult = Pick<
   typeof ClientsContract.Table.Model.Type,
   "role" | "scopes" | "tenantId"
@@ -16,8 +21,7 @@ export type ClientCredentialsProviderProperties = ClientCredentialsProviderVerif
 
 export interface ClientCredentialsProviderConfig {
   verify: (
-    clientId: typeof ClientsContract.Table.Model.Type.id,
-    clientSecret: Redacted.Redacted<string>,
+    credentials: ClientCredentials,
     requestedScopes?: Array<string>,
   ) => Promise<ClientCredentialsProviderVerifyResult>;
 }
@@ -31,8 +35,7 @@ export const ClientCredentialsProvider = (
     const id = EntityId.make(input.clientID);
 
     const result = await config.verify(
-      id,
-      Redacted.make(input.clientSecret),
+      { id, secret: Redacted.make(input.clientSecret) },
       input.params.scope?.split(" ").filter(Boolean),
     );
 

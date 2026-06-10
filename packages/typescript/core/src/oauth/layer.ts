@@ -108,13 +108,11 @@ export const makeService = Effect.gen(function* () {
   });
 
   const verifyClient = Effect.fn("Oauth.verifyClient")(function* (
-    ...[clientId, clientSecret, requestedScopes]: Parameters<
-      ClientCredentialsProviderConfig["verify"]
-    >
+    ...[credentials, requestedScopes]: Parameters<ClientCredentialsProviderConfig["verify"]>
   ) {
-    const client = yield* clientsRepository.findActiveById(clientId);
+    const client = yield* clientsRepository.findActiveById(credentials.id);
 
-    yield* crypto.verifySecret(clientSecret, client.secretHash);
+    yield* crypto.verifySecret(credentials.secret, client.secretHash);
 
     if (requestedScopes && requestedScopes.length > 0) {
       const invalidScopes = Array.filter(

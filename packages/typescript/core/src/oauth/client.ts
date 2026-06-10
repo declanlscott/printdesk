@@ -11,7 +11,10 @@ import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
+import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
+import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
 
+import { Constants } from "../utils/constants";
 import { OauthContract } from "./contract";
 
 import type {
@@ -19,8 +22,13 @@ import type {
   RefreshOptions as OpenauthRefreshOptions,
   VerifyOptions as OpenauthVerifyOptions,
 } from "@openauthjs/openauth/client";
+import type { ClientCredentials } from "./client-credentials";
 
 export namespace Oauth {
+  export interface ClientInput extends Omit<OpenauthClientInput, "issuer"> {
+    issuer: string;
+  }
+
   export interface RefreshOptions extends Omit<OpenauthRefreshOptions, "access"> {
     access?: Redacted.Redacted<string>;
   }
@@ -30,24 +38,24 @@ export namespace Oauth {
   }
 
   export class Openauth extends Context.Service<Openauth>()("@printdesk/core/oauth/Openauth", {
-    make: Effect.fn(function* (input: OpenauthClientInput) {
-      const client = yield* Effect.try({
+    make: Effect.fn(function* (input: ClientInput) {
+      const openauth = yield* Effect.try({
         try: () => createClient(input),
         catch: (cause) => new OauthContract.OpenauthError({ cause }),
       });
 
-      const authorize = (...args: Parameters<typeof client.authorize>) =>
+      const authorize = (...args: Parameters<typeof openauth.authorize>) =>
         Effect.tryPromise({
-          try: () => client.authorize(...args),
+          try: () => openauth.authorize(...args),
           catch: (cause) => new OauthContract.AuthorizeError({ cause }),
         }).pipe(
           Effect.flatMap(Schema.decodeEffect(OauthContract.AuthorizeSuccess)),
           Effect.catchTag("SchemaError", Effect.die),
         );
 
-      const exchange = Effect.fn(function* (...args: Parameters<typeof client.exchange>) {
+      const exchange = Effect.fn(function* (...args: Parameters<typeof openauth.exchange>) {
         const result = yield* Effect.tryPromise({
-          try: () => client.exchange(...args),
+          try: () => openauth.exchange(...args),
           catch: (cause) => new OauthContract.ExchangeError({ cause }),
         });
 
@@ -71,7 +79,7 @@ export namespace Oauth {
       ) {
         const result = yield* Effect.tryPromise({
           try: () =>
-            client.refresh(refresh.pipe(Redacted.value), {
+            openauth.refresh(refresh.pipe(Redacted.value), {
               ...opts,
               access: opts?.access?.pipe(Redacted.value),
             }),
@@ -99,7 +107,7 @@ export namespace Oauth {
       const verify = Effect.fn(function* (token: Redacted.Redacted<string>, opts?: VerifyOptions) {
         const result = yield* Effect.tryPromise({
           try: () =>
-            client.verify(OauthContract.subjects, token.pipe(Redacted.value), {
+            openauth.verify(OauthContract.subjects, token.pipe(Redacted.value), {
               ...opts,
               refresh: opts?.refresh?.pipe(Redacted.value),
             }),
@@ -124,7 +132,37 @@ export namespace Oauth {
         return yield* decode(result).pipe(Effect.orDie);
       });
 
-      return { authorize, exchange, refresh, verify };
+      const clientCredentials = Effect.fn(function* (credentials: ClientCredentials) {
+        const request = yield* HttpClientRequest.post(new URL("/token", input.issuer)).pipe(
+          HttpClientRequest.bodyUrlParams({
+            grant_type: Constants.CLIENT_CREDENTIALS,
+            provider: Constants.CLIENT_CREDENTIALS,
+            client_id: credentials.id,
+            client_secret: credentials.secret.pipe(Redacted.value),
+          }),
+          HttpClientRequest.toWeb,
+        );
+
+        const response = (yield* Effect.tryPromise({
+          try: (signal) => (input.fetch || fetch)(request, { signal }),
+          catch: (cause) => new OauthContract.ClientCredentialsError({ cause }),
+        })) as Response;
+
+        const tokens = yield* HttpClientResponse.fromWeb(
+          HttpClientRequest.fromWeb(request),
+          response,
+        ).pipe(HttpClientResponse.schemaBodyJson(OauthContract.Tokens));
+
+        return { tokens };
+      });
+
+      return {
+        authorize,
+        exchange,
+        refresh,
+        verify,
+        clientCredentials,
+      };
     }),
   }) {
     public static layer(...args: Parameters<typeof Openauth.make>) {

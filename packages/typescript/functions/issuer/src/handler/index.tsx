@@ -105,7 +105,9 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
         .then(
           Exit.match({
             onSuccess: Array.filterMap((provider) =>
-              !provider.deletedAt ? Result.succeed(provider.kind) : Result.failVoid,
+              Record.keys(providers).includes(provider.kind) && !provider.deletedAt
+                ? Result.succeed(provider.kind)
+                : Result.failVoid,
             ),
             onFailure(cause) {
               throw cause.pipe(
@@ -117,8 +119,7 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
               );
             },
           }),
-        )
-        .then(Array.intersection(Record.keys(providers)));
+        );
 
       if (tenantProviders.length === 0) throw new HTTPException(404);
       if (tenantProviders.length === 1)

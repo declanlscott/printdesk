@@ -54,7 +54,7 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
         // TODO: Google provider
         // [Constants.GOOGLE]: GoogleProvider(),
         [Constants.CLIENT_CREDENTIALS]: ClientCredentialsProvider({
-          verify: async (...args) =>
+          verify: (...args) =>
             verifyClient(...args)
               .pipe(Effect.runPromiseExit)
               .then(
@@ -178,7 +178,7 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
 
       return new Response(jsx.toString(), { headers: { "Content-Type": "text/html" } });
     },
-    success: async (response, result) => {
+    success: (response, result) => {
       const subject = <TSubjectArgs extends Parameters<typeof response.subject>>(
         ...[properties, opts]: TSubjectArgs extends [string, ...infer TArgs] ? TArgs : never
       ) =>

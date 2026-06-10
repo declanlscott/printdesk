@@ -33,10 +33,10 @@ export const subject = createMiddleware((c, next) =>
   ).then(
     Exit.match({
       onSuccess: async function (tokens) {
-        if (!("accessToken" in tokens)) return next();
+        if (!("access" in tokens)) return next();
 
         await Oauth.Openauth.use((openauth) =>
-          openauth.verify(tokens.accessToken, { refresh: tokens.refreshToken }),
+          openauth.verify(tokens.access, { refresh: tokens.refresh }),
         )
           .pipe(openauthRuntime.runPromiseExit)
           .then(

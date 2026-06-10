@@ -130,6 +130,7 @@ export namespace OauthContract {
           encode: Number.divideUnsafe(1_000),
         }),
       ),
+      Schema.optional,
     ),
   }) {}
 
@@ -162,7 +163,7 @@ export namespace OauthContract {
   }) {}
 
   export class RefreshSuccess extends Schema.Class<RefreshSuccess>("RefreshSuccess")({
-    tokens: Tokens.pipe(Schema.OptionFromUndefinedOr),
+    tokens: Tokens.pipe(Schema.OptionFromOptional),
   }) {}
 
   export class VerifyError
@@ -178,7 +179,7 @@ export namespace OauthContract {
   }
 
   export const VerifySuccess = Schema.Struct({
-    tokens: Tokens.pipe(Schema.OptionFromUndefinedOr),
+    tokens: Tokens.pipe(Schema.OptionFromOptional),
     audience: Schema.NonEmptyString,
     subject: Schema.Union(
       Array.map(
@@ -194,13 +195,10 @@ export namespace OauthContract {
     ),
   }).pipe(Schema.encodeKeys({ audience: "aud" }));
 
-  export const AuthCookies = Schema.Struct({
-    accessToken: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
-    refreshToken: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
-  }).pipe(
+  export const AuthCookies = Tokens.mapFields(Struct.omit(["expiresIn"])).pipe(
     Schema.encodeKeys({
-      accessToken: Constants.COOKIE_NAMES.ACCESS_TOKEN,
-      refreshToken: Constants.COOKIE_NAMES.REFRESH_TOKEN,
+      access: Constants.COOKIE_NAMES.ACCESS_TOKEN,
+      refresh: Constants.COOKIE_NAMES.REFRESH_TOKEN,
     }),
   );
 

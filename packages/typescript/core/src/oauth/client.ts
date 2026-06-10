@@ -93,7 +93,7 @@ export namespace Oauth {
 
         const decode = Schema.decodeEffect(OauthContract.RefreshSuccess);
 
-        return yield* decode({ tokens: result.tokens }).pipe(Effect.orDie);
+        return yield* decode(result).pipe(Effect.orDie);
       });
 
       const verify = Effect.fn(function* (token: Redacted.Redacted<string>, opts?: VerifyOptions) {
@@ -121,11 +121,7 @@ export namespace Oauth {
 
         const decode = Schema.decodeEffect(OauthContract.VerifySuccess);
 
-        return yield* decode({
-          tokens: result.tokens,
-          aud: result.aud,
-          subject: result.subject,
-        }).pipe(Effect.catchTag("SchemaError", Effect.die));
+        return yield* decode(result).pipe(Effect.orDie);
       });
 
       return { authorize, exchange, refresh, verify };

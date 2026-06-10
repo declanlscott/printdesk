@@ -25,10 +25,10 @@ export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
         Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
       );
 
-      if ("accessToken" in cookies)
+      if ("access" in cookies)
         return yield* httpEffect.pipe(
           Effect.provide(
-            openauth.verify(cookies.accessToken).pipe(
+            openauth.verify(cookies.access).pipe(
               Effect.map((result) => layerMap.get(result.subject.properties.actor.wrap)),
               Layer.unwrap,
             ),

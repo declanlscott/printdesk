@@ -8,6 +8,6 @@ import { resource } from "./sst";
 
 export const openauthRuntime = Oauth.Openauth.layer({
   clientID: Constants.OPENAUTH_CLIENT_IDS.API_GATEWAY,
-  fetch: (req) => lambda.fetch(req),
+  fetch: (input) => lambda.fetch(input),
   issuer: resource.Issuer.pipe(Redacted.value).url,
 }).pipe(ManagedRuntime.make);

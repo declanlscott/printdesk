@@ -23,7 +23,7 @@ export const openauthLayer = Effect.gen(function* () {
 
   return Oauth.Openauth.layer({
     clientID: Constants.OPENAUTH_CLIENT_IDS.API,
-    fetch: lambda.fetch,
+    fetch: (input) => lambda.fetch(input),
     issuer: Issuer.pipe(Redacted.value).url,
   });
 }).pipe(

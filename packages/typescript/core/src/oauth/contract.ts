@@ -17,9 +17,17 @@ import { TenantId } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace OauthContract {
-  export class OpenauthError extends Schema.TaggedErrorClass<OpenauthError>()("OpenauthError", {
-    cause: Schema.Defect(),
-  }) {}
+  export class OpenauthError
+    extends Schema.TaggedErrorClass<OpenauthError>()(
+      "OpenauthError",
+      { cause: Schema.Defect() },
+      { httpApiStatus: 500 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(OpenauthError)(this, { status: 500 });
+  }
 
   export class InvalidScopeError extends Schema.TaggedErrorClass<InvalidScopeError>()(
     "InvalidScopeError",

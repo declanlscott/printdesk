@@ -5,6 +5,8 @@ import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import * as SchemaAST from "effect/SchemaAST";
 import * as Struct from "effect/Struct";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { Actor } from "../actors";
 import { ActorsContract } from "../actors/contract";
@@ -207,15 +209,18 @@ export namespace AccessControl {
   ]);
   export type Resource = typeof Resource.Type;
 
-  export class AccessDeniedError extends Schema.TaggedErrorClass<AccessDeniedError>()(
-    "AccessDeniedError",
-    {
-      actor: ActorsContract.Actor.fields.properties,
-      resource: Resource,
-      action: Permissions.Action.pipe(Schema.optional),
-    },
-    { httpApiStatus: 403 },
-  ) {
+  export class AccessDeniedError
+    extends Schema.TaggedErrorClass<AccessDeniedError>()(
+      "AccessDeniedError",
+      {
+        actor: ActorsContract.Actor.fields.properties,
+        resource: Resource,
+        action: Permissions.Action.pipe(Schema.optional),
+      },
+      { httpApiStatus: 403 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
     public override get message() {
       const matchAction = Match.type<Permissions.Action | undefined>().pipe(
         Match.when(Match.undefined, () => "access"),
@@ -238,6 +243,9 @@ export namespace AccessControl {
 
       return matchActor(this.actor);
     }
+
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(AccessDeniedError)(this, { status: 403 });
   }
 
   export type Policy<TError = never, TServices = never> = Effect.Effect<

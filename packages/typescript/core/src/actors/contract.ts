@@ -1,6 +1,8 @@
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ClientsContract } from "../clients/contract";
 import { UsersContract } from "../users/contract";
@@ -74,13 +76,19 @@ export namespace ActorsContract {
 
   export type PrivateActor = Effect.Success<typeof Actor.Type.assertPrivate>;
 
-  export class ForbiddenActorError extends Schema.TaggedErrorClass<ForbiddenActorError>()(
-    "ForbiddenActorError",
-    {
-      actor: Schema.Literals(
-        Array.map(Actor.fields.properties.members, (member) => member.fields._tag.schema.literal),
-      ),
-    },
-    { httpApiStatus: 403 },
-  ) {}
+  export class ForbiddenActorError
+    extends Schema.TaggedErrorClass<ForbiddenActorError>()(
+      "ForbiddenActorError",
+      {
+        actor: Schema.Literals(
+          Array.map(Actor.fields.properties.members, (member) => member.fields._tag.schema.literal),
+        ),
+      },
+      { httpApiStatus: 403 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(ForbiddenActorError)(this, { status: 403 });
+  }
 }

@@ -38,6 +38,7 @@ export namespace Permissions {
   const syncViewPermissions = Array.map(Models.syncViews, Struct.get("permission"));
 
   const externalPermissions = makeFromConfig({
+    cloudflare_tunnel_tokens: ["read"],
     document_constraints: ["read", "update"],
     papercut_api_gateway: ["read", "update"],
     papercut_sync: ["create", "read", "update"],

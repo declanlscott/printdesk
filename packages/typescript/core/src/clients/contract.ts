@@ -6,7 +6,7 @@ import { TablesContract } from "../tables/contract";
 import type { ClientsTable } from "./sql";
 
 export namespace ClientsContract {
-  export const roles = ["api", "invoicesProcessor", "papercutSync"] as const;
+  export const roles = ["api", "invoicesProcessor", "papercutSync", "setup"] as const;
 
   export const Role = Schema.Literals(roles);
   export type Role = (typeof Role)["Type"];

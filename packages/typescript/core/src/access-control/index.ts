@@ -31,6 +31,7 @@ export namespace AccessControl {
           "announcements:read",
           "announcements:update",
           "announcements:delete",
+          "cloudflare_tunnel_tokens:read",
           "comments:create",
           "comments:read",
           "comments:update",
@@ -187,6 +188,10 @@ export namespace AccessControl {
           "papercut_api_gateway:read",
         ),
         papercutSync: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+          "papercut_api_gateway:read",
+        ),
+        setup: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+          "cloudflare_tunnel_tokens:read",
           "papercut_api_gateway:read",
         ),
       }) satisfies ClientRoleAcl,

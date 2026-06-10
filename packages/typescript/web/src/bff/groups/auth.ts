@@ -105,7 +105,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
         OauthContract.AuthCookies.pipe(
           HttpServerRequest.schemaCookies,
           Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
-          Effect.flatMap(({ access, refresh }) => openauth.verify(access, { refresh })),
+          Effect.flatMap((tokens) => openauth.verify(tokens.access)),
           Effect.flatMap((result) =>
             Match.valueTags(result.subject.properties.actor, {
               ClientActor: (client) =>

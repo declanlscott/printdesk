@@ -1,5 +1,5 @@
 import type * as Duration from "effect/Duration";
-
+import type * as Cookies from "effect/unstable/http/Cookies";
 export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
 
@@ -21,6 +21,14 @@ export namespace Constants {
     ACCESS_TOKEN: "access_token",
     REFRESH_TOKEN: "refresh_token",
   } as const;
+
+  export const COOKIE_OPTIONS = {
+    httpOnly: true,
+    maxAge: "30 days",
+    path: "/",
+    sameSite: "lax",
+    secure: true,
+  } as const satisfies Cookies.Cookie["options"];
 
   export const URL_PARAM_NAMES = {
     REDIRECT_URI: "redirect_uri",

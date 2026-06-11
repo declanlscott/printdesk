@@ -144,7 +144,7 @@ export namespace Oauth {
         );
 
         const response = (yield* Effect.tryPromise({
-          try: (signal) => (input.fetch || fetch)(request, { signal }),
+          try: (signal) => (input.fetch || globalThis.fetch)(request, { signal }),
           catch: (cause) => new OauthContract.ClientCredentialsError({ cause }),
         })) as Response;
 

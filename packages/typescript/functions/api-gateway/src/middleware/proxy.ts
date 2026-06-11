@@ -1,6 +1,6 @@
 // oxlint-disable typescript/no-non-null-assertion
 import { createMiddleware } from "hono/factory";
-import { proxy as fetchProxy } from "hono/proxy";
+import { proxy as honoProxy } from "hono/proxy";
 
 import { lambda } from "../lib/aws";
 
@@ -16,5 +16,5 @@ export const proxy = (origin: URL) =>
     headers.set("authorization", signedRequest.headers.get("authorization")!);
     headers.set("x-amz-date", signedRequest.headers.get("x-amz-date")!);
 
-    return fetchProxy(signedRequest, { headers });
+    return honoProxy(signedRequest, { headers });
   });

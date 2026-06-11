@@ -22,8 +22,6 @@ import { Bff } from "../contract";
 import { AuthApi } from "../contract/groups/auth";
 import { ViteResource } from "../lib/sst";
 
-import type * as Cookies from "effect/unstable/http/Cookies";
-
 export const tenantSlugValidatorLayer = Effect.gen(function* () {
   const resource = yield* ViteResource;
 
@@ -92,20 +90,12 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     const openauth = yield* Oauth.Openauth;
 
-    const cookieOptions = {
-      httpOnly: true,
-      maxAge: "52 weeks",
-      path: "/",
-      sameSite: "lax",
-      secure: true,
-    } satisfies Cookies.Cookie["options"];
-
     return handlers
       .handle("me", () =>
         OauthContract.AuthCookies.pipe(
           HttpServerRequest.schemaCookies,
           Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
-          Effect.flatMap((tokens) => openauth.verify(tokens.access)),
+          Effect.flatMap((tokens) => openauth.verify(tokens.accessToken)),
           Effect.flatMap((result) =>
             Match.valueTags(result.subject.properties.actor, {
               ClientActor: (client) =>
@@ -135,12 +125,12 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
                 [
                   Constants.COOKIE_NAMES.ACCESS_TOKEN,
                   tokens.access.pipe(Redacted.value),
-                  cookieOptions,
+                  Constants.COOKIE_OPTIONS,
                 ],
                 [
                   Constants.COOKIE_NAMES.REFRESH_TOKEN,
                   tokens.refresh.pipe(Redacted.value),
-                  cookieOptions,
+                  Constants.COOKIE_OPTIONS,
                 ],
               ]),
             ),

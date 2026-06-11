@@ -1,25 +1,12 @@
 import { Oauth } from "@printdesk/core/oauth/client";
 import { OauthContract } from "@printdesk/core/oauth/contract";
-import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Option from "effect/Option";
-import * as Redacted from "effect/Redacted";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import { setCookie } from "hono/cookie";
 import { createMiddleware } from "hono/factory";
 
 import { openauthRuntime } from "../lib/auth";
-
-import type { CookieOptions } from "hono/utils/cookie";
-
-const cookieOptions = {
-  httpOnly: true,
-  maxAge: 31_449_600, // 52 weeks
-  path: "/",
-  sameSite: "lax",
-  secure: true,
-} satisfies CookieOptions;
 
 export const subject = createMiddleware((c, next) =>
   OauthContract.Cookies.pipe(
@@ -28,42 +15,21 @@ export const subject = createMiddleware((c, next) =>
       HttpServerRequest.HttpServerRequest,
       HttpServerRequest.fromWeb(c.req.raw),
     ),
-    Effect.tapError(Effect.log),
-    Effect.runPromiseExit,
+    Effect.flatMap((cookies) =>
+      "accessToken" in cookies
+        ? Oauth.Openauth.use((openauth) => openauth.verify(cookies.accessToken)).pipe(
+            Effect.map(Option.some),
+          )
+        : Effect.succeedNone,
+    ),
+    Effect.tapCause(Effect.logError),
+    openauthRuntime.runPromiseExit,
   ).then(
     Exit.match({
-      onSuccess: async function (tokens) {
-        if (!("access" in tokens)) return next();
+      onSuccess: (verified) => {
+        if (Option.isSome(verified)) c.set("subject", verified.value.subject.properties);
 
-        await Oauth.Openauth.use((openauth) =>
-          openauth.verify(tokens.access, { refresh: tokens.refresh }),
-        )
-          .pipe(openauthRuntime.runPromiseExit)
-          .then(
-            Exit.match({
-              onSuccess: (result) => {
-                c.set("subject", result.subject.properties);
-
-                if (Option.isSome(result.tokens)) {
-                  setCookie(
-                    c,
-                    Constants.COOKIE_NAMES.ACCESS_TOKEN,
-                    result.tokens.value.access.pipe(Redacted.value),
-                    cookieOptions,
-                  );
-                  setCookie(
-                    c,
-                    Constants.COOKIE_NAMES.REFRESH_TOKEN,
-                    result.tokens.value.refresh.pipe(Redacted.value),
-                    cookieOptions,
-                  );
-                }
-
-                return next();
-              },
-              onFailure: next,
-            }),
-          );
+        return next();
       },
       onFailure: next,
     }),

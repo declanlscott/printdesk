@@ -28,7 +28,9 @@ export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
       );
 
       if ("accessToken" in cookies) {
-        const { subject, tokens } = yield* openauth.verify(cookies.accessToken);
+        const { subject, tokens } = yield* openauth.verify(cookies.accessToken, {
+          refresh: cookies.refreshToken,
+        });
 
         const providedHttpEffect = httpEffect.pipe(
           Effect.provide(layerMap.get(subject.properties.actor.wrap)),

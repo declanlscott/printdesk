@@ -2,9 +2,11 @@ import { ActorLayerMap } from "@printdesk/core/actors";
 import { ActorsContract } from "@printdesk/core/actors/contract";
 import { Oauth } from "@printdesk/core/oauth/client";
 import { OauthContract } from "@printdesk/core/oauth/contract";
+import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
 import * as Filter from "effect/Filter";
-import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
+import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
 import * as Cookies from "effect/unstable/http/Cookies";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
@@ -25,15 +27,32 @@ export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
         Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
       );
 
-      if ("access" in cookies)
-        return yield* httpEffect.pipe(
-          Effect.provide(
-            openauth.verify(cookies.access).pipe(
-              Effect.map((result) => layerMap.get(result.subject.properties.actor.wrap)),
-              Layer.unwrap,
-            ),
+      if ("accessToken" in cookies) {
+        const { subject, tokens } = yield* openauth.verify(cookies.accessToken);
+
+        const providedHttpEffect = httpEffect.pipe(
+          Effect.provide(layerMap.get(subject.properties.actor.wrap)),
+        );
+
+        if (Option.isNone(tokens)) return yield* providedHttpEffect;
+
+        return yield* providedHttpEffect.pipe(
+          Effect.flatMap(
+            HttpServerResponse.setCookies([
+              [
+                Constants.COOKIE_NAMES.ACCESS_TOKEN,
+                tokens.value.access.pipe(Redacted.value),
+                Constants.COOKIE_OPTIONS,
+              ],
+              [
+                Constants.COOKIE_NAMES.REFRESH_TOKEN,
+                tokens.value.refresh.pipe(Redacted.value),
+                Constants.COOKIE_OPTIONS,
+              ],
+            ]),
           ),
         );
+      }
 
       return yield* httpEffect.pipe(
         Effect.provide(layerMap.get(ActorsContract.PublicActor.singleton.wrap)),

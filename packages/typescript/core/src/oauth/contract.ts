@@ -119,6 +119,20 @@ export namespace OauthContract {
     [UserSubject.fields._tag.schema.literal]: UserSubject.pipe(Schema.toStandardSchemaV1),
   };
 
+  export const Subject = Schema.Union(
+    Array.map(
+      Record.toEntries(subjects),
+      ([type, properties]) =>
+        Schema.Struct({ type: Schema.Literal(type), properties }) as {
+          readonly [TKey in keyof typeof subjects]: Schema.Struct<{
+            type: Schema.Literal<TKey>;
+            properties: (typeof subjects)[TKey];
+          }>;
+        }[keyof typeof subjects],
+    ),
+  );
+  export type Subject = typeof Subject.Type;
+
   export class Tokens extends Schema.Class<Tokens>("Tokens")({
     access: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
     refresh: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
@@ -193,26 +207,17 @@ export namespace OauthContract {
   export const VerifySuccess = Schema.Struct({
     tokens: Tokens.pipe(Schema.OptionFromOptional),
     audience: Schema.NonEmptyString,
-    subject: Schema.Union(
-      Array.map(
-        Record.toEntries(subjects),
-        ([type, properties]) =>
-          Schema.Struct({ type: Schema.Literal(type), properties }) as {
-            readonly [TKey in keyof typeof subjects]: Schema.Struct<{
-              type: Schema.Literal<TKey>;
-              properties: (typeof subjects)[TKey];
-            }>;
-          }[keyof typeof subjects],
-      ),
-    ),
+    subject: Subject,
   }).pipe(Schema.encodeKeys({ audience: "aud" }));
 
-  export const AuthCookies = Tokens.mapFields(Struct.omit(["expiresIn"])).pipe(
-    Schema.encodeKeys({
-      access: Constants.COOKIE_NAMES.ACCESS_TOKEN,
-      refresh: Constants.COOKIE_NAMES.REFRESH_TOKEN,
-    }),
-  );
+  export const AuthCookies = Tokens.mapFields(Struct.pick(["access", "refresh"]))
+    .mapFields(Struct.renameKeys({ access: "accessToken", refresh: "refreshToken" }))
+    .pipe(
+      Schema.encodeKeys({
+        accessToken: Constants.COOKIE_NAMES.ACCESS_TOKEN,
+        refreshToken: Constants.COOKIE_NAMES.REFRESH_TOKEN,
+      }),
+    );
 
   export const Cookies = Schema.Union([Schema.Struct({}), AuthCookies]);
 

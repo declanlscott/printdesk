@@ -4,7 +4,7 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
-import * as _String from "effect/String";
+import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 import { customAlphabet } from "nanoid";
 
@@ -47,8 +47,8 @@ export const separatedString = (separator = Constants.SEPARATOR) =>
         Schema.isPattern(new RegExp(`^(?:[^${separator}]+(?:${separator}[^${separator}]+)*)?$`)),
       ),
       Schema.decodeTo(Schema.Trim.pipe(Schema.Array), {
-        decode: SchemaGetter.transform((input) => input.split(separator) as ReadonlyArray<string>),
-        encode: SchemaGetter.transform((input) => input.join(separator)),
+        decode: SchemaGetter.transform(String.split(separator)),
+        encode: SchemaGetter.transform(Array.join(separator)),
       }),
     ),
     { separator },
@@ -68,7 +68,7 @@ export const HexColor = Schema.String.pipe(
 
 export const StringFromUnknown = Schema.Unknown.pipe(
   Schema.decodeTo(Schema.String, {
-    decode: SchemaGetter.transform(String),
+    decode: SchemaGetter.transform(globalThis.String),
     encode: SchemaGetter.passthrough(),
   }),
 );
@@ -95,17 +95,17 @@ export const getUserInitials = Effect.fn(function* (name: string) {
   const splitName = name.split(" ");
 
   const firstInitial = yield* Array.head(splitName).pipe(
-    Option.flatMap((firstName) => _String.charAt(firstName, 0)),
+    Option.flatMap((firstName) => String.charAt(firstName, 0)),
     Effect.fromOption,
-    Effect.map(_String.toUpperCase),
+    Effect.map(String.toUpperCase),
   );
 
   if (splitName.length === 1) return firstInitial;
 
   const lastInitial = yield* Array.last(splitName).pipe(
-    Option.flatMap((lastName) => _String.charAt(lastName, 0)),
+    Option.flatMap((lastName) => String.charAt(lastName, 0)),
     Effect.fromOption,
-    Effect.map(_String.toUpperCase),
+    Effect.map(String.toUpperCase),
   );
 
   return `${firstInitial}${lastInitial}`;

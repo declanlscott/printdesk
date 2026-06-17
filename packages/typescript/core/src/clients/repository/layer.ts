@@ -73,7 +73,22 @@ export const makeService = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
-  return { create, findById, findActiveById, updateById } as const;
+  const deleteById = Effect.fn("Clients.Repository.deleteById")(
+    (id: Client["id"], tenantId: Client["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx.delete(table).where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+        )
+        .pipe(Effect.asVoid),
+  );
+
+  return {
+    create,
+    findById,
+    findActiveById,
+    updateById,
+    deleteById,
+  } as const;
 });
 
 export const layer = makeService.pipe(Layer.effect(ClientsRepository));

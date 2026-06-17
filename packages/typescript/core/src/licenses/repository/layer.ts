@@ -20,12 +20,9 @@ export const makeService = Effect.gen(function* () {
     db
       .useTransaction((tx) =>
         tx
-          .select({
-            license: table,
-            tenant: tenants.table,
-          })
+          .select({ license: table, tenant: tenants.table })
           .from(table)
-          .leftJoin(tenants.table, eq(tenants.table.id, table.tenantId))
+          .leftJoin(tenants.table, eq(tenants.table.licenseKey, table.key))
           .where(eq(table.key, key)),
       )
       .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),

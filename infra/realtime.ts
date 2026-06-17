@@ -12,11 +12,6 @@ export const realtimeApi = new aws.appsync.Api("RealtimeApi", {
   },
 });
 
-export const publicChannelNamespace = new aws.appsync.ChannelNamespace(
-  "RealtimePublicChannelNamespace",
-  { apiId: realtimeApi.apiId, name: "public" },
-);
-
 export const certificate = new sst.aws.DnsValidatedCertificate(
   "RealtimeCertificate",
   {
@@ -49,60 +44,12 @@ export const alias = sst.cloudflare.dns({ proxy: true }).createAlias(
   {},
 );
 
-export const realtimePublicChannelNamespacePublisherRole = new lib.aws.iam.ExternalRole(
-  "RealtimePublicChannelNamespacePublisherRole",
-  {
-    transform: {
-      role: {
-        inlinePolicies: [
-          {
-            policy: aws.iam.getPolicyDocumentOutput({
-              statements: [
-                {
-                  actions: ["appsync:EventPublish"],
-                  resources: [publicChannelNamespace.channelNamespaceArn],
-                },
-              ],
-            }).json,
-          },
-        ],
-      },
-    },
-  },
-);
-
-export const realtimePublicChannelNamespaceSubscriberRole = new lib.aws.iam.ExternalRole(
-  "RealtimePublicChannelNamespaceSubscriberRole",
-  {
-    transform: {
-      role: {
-        inlinePolicies: [
-          {
-            policy: aws.iam.getPolicyDocumentOutput({
-              statements: [
-                {
-                  actions: ["appsync:EventConnect"],
-                  resources: [realtimeApi.apiArn],
-                },
-                {
-                  actions: ["appsync:EventSubscribe"],
-                  resources: [publicChannelNamespace.channelNamespaceArn],
-                },
-              ],
-            }).json,
-          },
-        ],
-      },
-    },
-  },
-);
-
-export const realtimeTenantChannelNamespacePublisherRoleTemplate = new lib.templates.aws.iam.Role(
-  "RealtimeTenantChannelNamespacePublisherRoleTemplate",
+export const realtimeChannelNamespacePublisherRoleTemplate = new lib.templates.aws.iam.Role(
+  "RealtimeChannelNamespacePublisherRoleTemplate",
   { identifier: "RealtimePublisherRole" },
 );
 
-export const realtimeTenantChannelNamespaceSubscriberRoleTemplate = new lib.templates.aws.iam.Role(
-  "RealtimeTenantChannelNamespaceSubscriberRoleTemplate",
+export const realtimeChannelNamespaceSubscriberRoleTemplate = new lib.templates.aws.iam.Role(
+  "RealtimeChannelNamespaceSubscriberRoleTemplate",
   { identifier: "RealtimeSubscriberRole" },
 );

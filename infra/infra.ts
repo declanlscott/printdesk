@@ -19,9 +19,8 @@ import {
 } from "./papercut";
 import {
   realtimeApi,
-  realtimePublicChannelNamespacePublisherRole,
-  realtimeTenantChannelNamespacePublisherRoleTemplate,
-  realtimeTenantChannelNamespaceSubscriberRoleTemplate,
+  realtimeChannelNamespacePublisherRoleTemplate,
+  realtimeChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, nanoId, snsTopicEmail } from "./utils";
 
@@ -82,9 +81,8 @@ export const infraManager = dynamo.subscribe(
       pulumiBucket,
       pulumiRole,
       realtimeApi,
-      realtimePublicChannelNamespacePublisherRole,
-      realtimeTenantChannelNamespacePublisherRoleTemplate,
-      realtimeTenantChannelNamespaceSubscriberRoleTemplate,
+      realtimeChannelNamespacePublisherRoleTemplate,
+      realtimeChannelNamespaceSubscriberRoleTemplate,
       zone,
     ],
   },

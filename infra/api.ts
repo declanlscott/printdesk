@@ -11,10 +11,8 @@ import {
 } from "./papercut";
 import {
   realtimeApi,
-  realtimePublicChannelNamespacePublisherRole,
-  realtimePublicChannelNamespaceSubscriberRole,
-  realtimeTenantChannelNamespacePublisherRoleTemplate,
-  realtimeTenantChannelNamespaceSubscriberRoleTemplate,
+  realtimeChannelNamespacePublisherRoleTemplate,
+  realtimeChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, isProdStage } from "./utils";
 
@@ -41,10 +39,8 @@ export const api = new lib.aws.lambda.Function(
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,
       realtimeApi,
-      realtimePublicChannelNamespacePublisherRole,
-      realtimePublicChannelNamespaceSubscriberRole,
-      realtimeTenantChannelNamespacePublisherRoleTemplate,
-      realtimeTenantChannelNamespaceSubscriberRoleTemplate,
+      realtimeChannelNamespacePublisherRoleTemplate,
+      realtimeChannelNamespaceSubscriberRoleTemplate,
     ],
     permissions: [invokeIssuerFunctionUrl],
     environment: {

@@ -226,23 +226,11 @@ declare module "sst" {
       "id": string
       "type": "aws.appsync/api.Api"
     }
-    "RealtimePublicChannelNamespacePublisherRole": {
-      "arn": string
-      "externalId": string
-      "name": string
-      "type": "pd.aws.IamExternalRole"
-    }
-    "RealtimePublicChannelNamespaceSubscriberRole": {
-      "arn": string
-      "externalId": string
-      "name": string
-      "type": "pd.aws.IamExternalRole"
-    }
-    "RealtimeTenantChannelNamespacePublisherRoleTemplate": {
+    "RealtimeChannelNamespacePublisherRoleTemplate": {
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
-    "RealtimeTenantChannelNamespaceSubscriberRoleTemplate": {
+    "RealtimeChannelNamespaceSubscriberRoleTemplate": {
       "name": string
       "type": "pd.templates.AwsIamRole"
     }

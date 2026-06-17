@@ -38,7 +38,7 @@ class Realtime(pulumi.ComponentResource):
             args=aws.iam.RoleArgs(
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.RealtimeTenantChannelNamespacePublisherRoleTemplate.name,
+                        name_template=Resource.RealtimeChannelNamespacePublisherRoleTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -78,7 +78,7 @@ class Realtime(pulumi.ComponentResource):
             args=aws.iam.RoleArgs(
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.RealtimeTenantChannelNamespaceSubscriberRoleTemplate.name,
+                        name_template=Resource.RealtimeChannelNamespaceSubscriberRoleTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),

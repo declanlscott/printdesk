@@ -5,11 +5,7 @@ import { Constants } from "../utils/constants";
 
 import type { Provider } from "@openauthjs/openauth/provider/provider";
 import type { ClientsContract } from "../clients/contract";
-
-export interface ClientCredentials {
-  id: typeof ClientsContract.Table.Model.Type.id;
-  secret: Redacted.Redacted<string>;
-}
+import type { OauthContract } from "./contract";
 
 export type ClientCredentialsProviderVerifyResult = Pick<
   typeof ClientsContract.Table.Model.Type,
@@ -21,7 +17,7 @@ export type ClientCredentialsProviderProperties = ClientCredentialsProviderVerif
 
 export interface ClientCredentialsProviderConfig {
   verify: (
-    credentials: ClientCredentials,
+    credentials: OauthContract.ClientCredentials,
     requestedScopes?: Array<string>,
   ) => Promise<ClientCredentialsProviderVerifyResult>;
 }

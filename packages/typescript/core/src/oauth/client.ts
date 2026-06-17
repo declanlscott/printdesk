@@ -22,7 +22,6 @@ import type {
   RefreshOptions as OpenauthRefreshOptions,
   VerifyOptions as OpenauthVerifyOptions,
 } from "@openauthjs/openauth/client";
-import type { ClientCredentials } from "./client-credentials";
 
 export namespace Oauth {
   export interface ClientInput extends Omit<OpenauthClientInput, "issuer"> {
@@ -132,29 +131,34 @@ export namespace Oauth {
         return yield* decode(result).pipe(Effect.orDie);
       });
 
-      const clientCredentials = Effect.fn(function* (credentials: ClientCredentials) {
-        const request = yield* HttpClientRequest.post(new URL("/token", input.issuer)).pipe(
-          HttpClientRequest.bodyUrlParams({
-            grant_type: Constants.CLIENT_CREDENTIALS,
-            provider: Constants.CLIENT_CREDENTIALS,
-            client_id: credentials.id,
-            client_secret: credentials.secret.pipe(Redacted.value),
-          }),
-          HttpClientRequest.toWeb,
-        );
+      const clientCredentials = Effect.fn(
+        function* (credentials: OauthContract.ClientCredentials) {
+          const request = yield* HttpClientRequest.post(new URL("/token", input.issuer)).pipe(
+            HttpClientRequest.bodyUrlParams({
+              grant_type: Constants.CLIENT_CREDENTIALS,
+              provider: Constants.CLIENT_CREDENTIALS,
+              client_id: credentials.id,
+              client_secret: credentials.secret.pipe(Redacted.value),
+            }),
+            HttpClientRequest.toWeb,
+          );
 
-        const response = (yield* Effect.tryPromise({
-          try: (signal) => (input.fetch || globalThis.fetch)(request, { signal }),
-          catch: (cause) => new OauthContract.ClientCredentialsError({ cause }),
-        })) as Response;
+          const response = (yield* Effect.tryPromise((signal) =>
+            (input.fetch || globalThis.fetch)(request, { signal }),
+          )) as Response;
 
-        const tokens = yield* HttpClientResponse.fromWeb(
-          HttpClientRequest.fromWeb(request),
-          response,
-        ).pipe(HttpClientResponse.schemaBodyJson(OauthContract.Tokens));
+          const tokens = yield* HttpClientResponse.fromWeb(
+            HttpClientRequest.fromWeb(request),
+            response,
+          ).pipe(HttpClientResponse.schemaBodyJson(OauthContract.Tokens));
 
-        return { tokens };
-      });
+          return { tokens };
+        },
+        (effect) =>
+          effect.pipe(
+            Effect.mapError((error) => new OauthContract.ClientCredentialsError({ cause: error })),
+          ),
+      );
 
       return {
         authorize,

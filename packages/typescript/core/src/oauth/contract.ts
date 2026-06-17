@@ -13,7 +13,7 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ActorsContract } from "../actors/contract";
-import { TenantId } from "../utils";
+import { EntityId, TenantId } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace OauthContract {
@@ -188,6 +188,11 @@ export namespace OauthContract {
     public [HttpServerRespondable.symbol] = () =>
       HttpServerResponse.schemaJson(VerifyError)(this, { status: 500 });
   }
+
+  export class ClientCredentials extends Schema.Class<ClientCredentials>("ClientCredentials")({
+    id: EntityId,
+    secret: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
+  }) {}
 
   export class ClientCredentialsError
     extends Schema.TaggedErrorClass<ClientCredentialsError>()(

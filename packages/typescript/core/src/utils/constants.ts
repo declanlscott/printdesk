@@ -68,6 +68,7 @@ export namespace Constants {
   } as const;
   export const KEY_LITERALS = {
     CLIENT: "CLIENT",
+    DEPLOYMENT: "DEPLOYMENT",
     INFRA: "INFRA",
     INPUT: "INPUT",
     IP: "IP",

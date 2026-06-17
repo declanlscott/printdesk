@@ -89,6 +89,7 @@ class Resource:
         hashKey: str
         class keyLiterals:
             CLIENT: str
+            DEPLOYMENT: str
             INFRA: str
             INPUT: str
             IP: str

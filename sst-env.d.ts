@@ -111,6 +111,7 @@ declare module "sst" {
       "hashKey": string
       "keyLiterals": {
         "CLIENT": string
+        "DEPLOYMENT": string
         "INFRA": string
         "INPUT": string
         "IP": string

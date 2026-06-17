@@ -49,6 +49,7 @@ export namespace AccessControl {
           "identity_providers:create",
           "identity_providers:read",
           "identity_providers:delete",
+          "licenses:read",
           "orders:create",
           "orders:read",
           "orders:update",
@@ -191,8 +192,12 @@ export namespace AccessControl {
           "papercut_api_gateway:read",
         ),
         setup: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+          "clients:delete",
           "cloudflare_tunnel_tokens:read",
+          "identity_providers:delete",
+          "infra_input:delete",
           "papercut_api_gateway:read",
+          "tenants:delete",
         ),
       }) satisfies ClientRoleAcl,
   );

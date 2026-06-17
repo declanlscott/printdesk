@@ -1,3 +1,4 @@
+import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
@@ -6,8 +7,11 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
+import { IdentityProvidersContract } from "../identity/contract";
 import { LicensesContract } from "../licenses/contract";
+import { PapercutContract } from "../papercut/contract";
 import { TablesContract } from "../tables/contract";
+import { EntityId } from "../utils";
 import { Constants } from "../utils/constants";
 
 import type { TenantsTable } from "./sql";
@@ -75,4 +79,24 @@ export namespace TenantsContract {
       ),
     Output: Table.Dto,
   });
+
+  export class Registration extends Schema.Class<Registration>("Registration")({
+    tenant: Table.Model.mapFields(Struct.pick(["name", "slug", "licenseKey"])),
+    identityProviders: IdentityProvidersContract.Table.Model.mapFields(
+      Struct.pick(["kind", "externalTenantId"]),
+    ).pipe(
+      Schema.NonEmptyArray,
+      Schema.check(
+        Schema.makeFilter((providers) =>
+          Array.length(Array.dedupeWith(providers, (a, b) => a.kind === b.kind)) !==
+          Array.length(providers)
+            ? ["Identity provider kind must be unique"]
+            : [],
+        ),
+      ),
+    ),
+    papercutConfig: PapercutContract.EnabledConfig.mapFields(Struct.omit(["enabled"])).pipe(
+      Schema.OptionFromOptional,
+    ),
+  }) {}
 }

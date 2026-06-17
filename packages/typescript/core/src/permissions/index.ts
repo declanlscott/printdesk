@@ -40,6 +40,7 @@ export namespace Permissions {
   const externalPermissions = makeFromConfig({
     cloudflare_tunnel_tokens: ["read"],
     document_constraints: ["read", "update"],
+    infra_input: ["delete"],
     papercut_api_gateway: ["read", "update"],
     papercut_sync: ["create", "read", "update"],
   });

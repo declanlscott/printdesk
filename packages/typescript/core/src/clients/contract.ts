@@ -19,6 +19,6 @@ export namespace ClientsContract {
       role: Role,
       scopes: Schema.NonEmptyString.pipe(Schema.Array),
     },
-    ["read"],
+    ["read", "delete"],
   ) {}
 }

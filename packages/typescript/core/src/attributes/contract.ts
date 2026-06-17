@@ -1,3 +1,4 @@
+import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 
@@ -6,6 +7,7 @@ import { Constants } from "../utils/constants";
 
 export namespace AttributesContract {
   export const Client = Schema.Literal(Constants.KEY_LITERALS.CLIENT);
+  export const Deployment = Schema.Literal(Constants.KEY_LITERALS.DEPLOYMENT);
   export const Infra = Schema.Literal(Constants.KEY_LITERALS.INFRA);
   export const Input = Schema.Literal(Constants.KEY_LITERALS.INPUT);
   export const Ip = Schema.Literal(Constants.KEY_LITERALS.IP);
@@ -88,6 +90,35 @@ export namespace AttributesContract {
       ]),
     }),
   );
+
+  export class TenantDeploymentId extends Schema.Class<TenantDeploymentId>("TenantDeploymentId")({
+    tenantId: TenantId,
+    deploymentId: EntityId,
+  }) {}
+  export const TenantDeploymentIdFromString = Schema.TemplateLiteralParser([
+    Tenant,
+    Separator,
+    TenantId,
+    Separator,
+    Deployment,
+    Separator,
+    EntityId,
+  ]).pipe(
+    Schema.decodeTo(TenantDeploymentId, {
+      decode: SchemaGetter.transform(([, , tenantId, , , , deploymentId]) => ({
+        tenantId: String(tenantId),
+        deploymentId: String(deploymentId),
+      })),
+      encode: SchemaGetter.transform(({ tenantId, deploymentId }) => [
+        Tenant.literal,
+        Separator.literal,
+        TenantId.make(tenantId),
+        Separator.literal,
+        Deployment.literal,
+        Separator.literal,
+        EntityId.make(deploymentId),
+      ]),
+    }),
   );
 
   export class TenantRoomId extends Schema.Class<TenantRoomId>("TenantIdRoomId")({

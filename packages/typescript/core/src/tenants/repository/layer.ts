@@ -22,15 +22,9 @@ export const makeService = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const upsert = Effect.fn("Tenants.Repository.upsert")((value: InferInsertModel<TenantsTable>) =>
+  const create = Effect.fn("Tenants.Repository.create")((value: InferInsertModel<TenantsTable>) =>
     db
-      .useTransaction((tx) =>
-        tx
-          .insert(table)
-          .values(value)
-          .onConflictDoUpdate({ target: [table.id], set: tenants.conflictSet })
-          .returning(),
-      )
+      .useTransaction((tx) => tx.insert(table).values(value).returning())
       .pipe(
         Effect.map(Array.head),
         Effect.flatMap(Effect.fromOption),
@@ -139,8 +133,12 @@ export const makeService = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
+  const deleteById = Effect.fn("Tenants.Repository.deleteById")((id: Tenant["id"]) =>
+    db.useTransaction((tx) => tx.delete(table).where(eq(table.id, id))).pipe(Effect.asVoid),
+  );
+
   return {
-    upsert,
+    create,
     findCreates,
     findUpdates,
     findDeletes,
@@ -148,6 +146,7 @@ export const makeService = Effect.gen(function* () {
     findById,
     findBySlug,
     updateById,
+    deleteById,
   } as const;
 });
 

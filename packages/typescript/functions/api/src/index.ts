@@ -6,9 +6,15 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { realtimeGroupLayer } from "./groups/realtime";
 import { replicacheGroupLayer } from "./groups/replicache";
+import { tenantGroupLayer } from "./groups/tenant";
 
 export const handler = Api.pipe(
   HttpApiBuilder.layer,
-  Layer.provide([realtimeGroupLayer, replicacheGroupLayer, HttpServer.layerServices]),
+  Layer.provide([
+    realtimeGroupLayer,
+    replicacheGroupLayer,
+    tenantGroupLayer,
+    HttpServer.layerServices,
+  ]),
   LambdaHandler.fromHttpApi,
 );

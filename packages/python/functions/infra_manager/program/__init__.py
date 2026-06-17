@@ -35,8 +35,19 @@ def inline(tenant_id: str, _input: Input):
 
         resources.append(papercut)
 
-    output_pk = f"{Resource.Dynamo.keyLiterals.TENANT}{SEPARATOR}{tenant_id}{SEPARATOR}"
-    output_sk = f"{Resource.Dynamo.keyLiterals.INFRA}{SEPARATOR}{Resource.Dynamo.keyLiterals.OUTPUT}{SEPARATOR}"
+    output_pk = SEPARATOR.join([Resource.Dynamo.keyLiterals.TENANT, tenant_id])
+    output_sk = SEPARATOR.join(
+        [Resource.Dynamo.keyLiterals.INFRA, Resource.Dynamo.keyLiterals.OUTPUT]
+    )
+    output_gsi1_pk = SEPARATOR.join(
+        [
+            Resource.Dynamo.keyLiterals.TENANT,
+            tenant_id,
+            Resource.Dynamo.keyLiterals.DEPLOYMENT,
+            _input.deployment_id,
+        ]
+    )
+    output_gsi1_sk = output_sk
     deployed_at = time.Static(
         resource_name="DeployedAt",
         args=time.StaticArgs(triggers={"now": datetime.now()}),
@@ -60,6 +71,8 @@ def inline(tenant_id: str, _input: Input):
                 lambda data: Output(
                     pk=output_pk,
                     sk=output_sk,
+                    gsi1_pk=output_gsi1_pk,
+                    gsi1_sk=output_gsi1_sk,
                     papercut_api_tunnel_id=data["papercut_api_tunnel_id"],
                     deployed_at=data["deployed_at"],
                 ).model_dump_json()

@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
 
 import { Base64 } from "../utils";
 import { Constants } from "../utils/constants";
@@ -24,12 +24,13 @@ export namespace CryptoContract {
     Schema.Literal(Constants.SEPARATOR),
     Base64, // derived key
   ]).pipe(
-    Schema.decodeTo(
-      Hash,
-      SchemaTransformation.transform({
-        decode: ([salt, , derivedKey]) => ({ salt, derivedKey }),
-        encode: ({ salt, derivedKey }) => [salt, Constants.SEPARATOR, derivedKey],
-      }),
-    ),
+    Schema.decodeTo(Hash, {
+      decode: SchemaGetter.transform(([salt, , derivedKey]) => ({ salt, derivedKey })),
+      encode: SchemaGetter.transform(({ salt, derivedKey }) => [
+        salt,
+        Constants.SEPARATOR,
+        derivedKey,
+      ]),
+    }),
   );
 }

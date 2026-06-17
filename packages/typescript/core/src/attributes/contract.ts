@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
 
 import { EntityId, Separator, ShortId, TenantId } from "../utils";
 import { Constants } from "../utils/constants";
@@ -23,13 +23,10 @@ export namespace AttributesContract {
   export const InfraOutput = Schema.TemplateLiteralParser([Infra, Separator, Output]);
 
   export const IpFromString = Schema.TemplateLiteralParser([Ip, Separator, Schema.String]).pipe(
-    Schema.decodeTo(
-      Schema.String,
-      SchemaTransformation.transform({
-        decode: ([, , ip]) => ip,
-        encode: (ip) => [Ip.literal, Separator.literal, ip],
-      }),
-    ),
+    Schema.decodeTo(Schema.String, {
+      decode: SchemaGetter.transform(([, , ip]) => ip),
+      encode: SchemaGetter.transform((ip) => [Ip.literal, Separator.literal, ip]),
+    }),
   );
 
   export const OrderShortIdFromString = Schema.TemplateLiteralParser([
@@ -37,13 +34,14 @@ export namespace AttributesContract {
     Separator,
     ShortId,
   ]).pipe(
-    Schema.decodeTo(
-      ShortId,
-      SchemaTransformation.transform({
-        decode: ([, , shortId]) => Number(shortId),
-        encode: (shortId) => [Order.literal, Separator.literal, ShortId.make(shortId)],
-      }),
-    ),
+    Schema.decodeTo(ShortId, {
+      decode: SchemaGetter.transform(([, , shortId]) => Number(shortId)),
+      encode: SchemaGetter.transform((shortId) => [
+        Order.literal,
+        Separator.literal,
+        ShortId.make(shortId),
+      ]),
+    }),
   );
 
   export const TenantIdFromString = Schema.TemplateLiteralParser([
@@ -51,13 +49,14 @@ export namespace AttributesContract {
     Separator,
     TenantId,
   ]).pipe(
-    Schema.decodeTo(
-      TenantId,
-      SchemaTransformation.transform({
-        decode: ([, , tenantId]) => String(tenantId),
-        encode: (tenantId) => [Tenant.literal, Separator.literal, TenantId.make(tenantId)],
-      }),
-    ),
+    Schema.decodeTo(TenantId, {
+      decode: SchemaGetter.transform(([, , tenantId]) => String(tenantId)),
+      encode: SchemaGetter.transform((tenantId) => [
+        Tenant.literal,
+        Separator.literal,
+        TenantId.make(tenantId),
+      ]),
+    }),
   );
 
   export class TenantClientId extends Schema.Class<TenantClientId>("TenantClientId")({
@@ -73,25 +72,22 @@ export namespace AttributesContract {
     Separator,
     EntityId,
   ]).pipe(
-    Schema.decodeTo(
-      TenantClientId,
-      SchemaTransformation.transform({
-        decode: ([, , tenantId, , , , clientId]) => ({
-          tenantId: String(tenantId),
-          clientId: String(clientId),
-        }),
-        encode: ({ tenantId, clientId }) => [
-          Tenant.literal,
-          Separator.literal,
-          TenantId.make(tenantId),
-          Separator.literal,
-          Client.literal,
-          Separator.literal,
-          EntityId.make(clientId),
-          Separator.literal,
-        ],
-      }),
-    ),
+    Schema.decodeTo(TenantClientId, {
+      decode: SchemaGetter.transform(([, , tenantId, , , , clientId]) => ({
+        tenantId: String(tenantId),
+        clientId: String(clientId),
+      })),
+      encode: SchemaGetter.transform(({ tenantId, clientId }) => [
+        Tenant.literal,
+        Separator.literal,
+        TenantId.make(tenantId),
+        Separator.literal,
+        Client.literal,
+        Separator.literal,
+        EntityId.make(clientId),
+      ]),
+    }),
+  );
   );
 
   export class TenantRoomId extends Schema.Class<TenantRoomId>("TenantIdRoomId")({
@@ -107,24 +103,21 @@ export namespace AttributesContract {
     Separator,
     EntityId,
   ]).pipe(
-    Schema.decodeTo(
-      TenantRoomId,
-      SchemaTransformation.transform({
-        decode: ([, , tenantId, , , , roomId]) => ({
-          tenantId: String(tenantId),
-          roomId: String(roomId),
-        }),
-        encode: ({ tenantId, roomId }) => [
-          Tenant.literal,
-          Separator.literal,
-          TenantId.make(tenantId),
-          Separator.literal,
-          Room.literal,
-          Separator.literal,
-          EntityId.make(roomId),
-        ],
-      }),
-    ),
+    Schema.decodeTo(TenantRoomId, {
+      decode: SchemaGetter.transform(([, , tenantId, , , , roomId]) => ({
+        tenantId: String(tenantId),
+        roomId: String(roomId),
+      })),
+      encode: SchemaGetter.transform(({ tenantId, roomId }) => [
+        Tenant.literal,
+        Separator.literal,
+        TenantId.make(tenantId),
+        Separator.literal,
+        Room.literal,
+        Separator.literal,
+        EntityId.make(roomId),
+      ]),
+    }),
   );
 
   export class TenantUserId extends Schema.Class<TenantUserId>("TenantUserId")({
@@ -140,23 +133,20 @@ export namespace AttributesContract {
     Separator,
     EntityId,
   ]).pipe(
-    Schema.decodeTo(
-      TenantUserId,
-      SchemaTransformation.transform({
-        decode: ([, , tenantId, , , , userId]) => ({
-          tenantId: String(tenantId),
-          userId: String(userId),
-        }),
-        encode: ({ tenantId, userId }) => [
-          Tenant.literal,
-          Separator.literal,
-          TenantId.make(tenantId),
-          Separator.literal,
-          User.literal,
-          Separator.literal,
-          EntityId.make(userId),
-        ],
-      }),
-    ),
+    Schema.decodeTo(TenantUserId, {
+      decode: SchemaGetter.transform(([, , tenantId, , , , userId]) => ({
+        tenantId: String(tenantId),
+        userId: String(userId),
+      })),
+      encode: SchemaGetter.transform(({ tenantId, userId }) => [
+        Tenant.literal,
+        Separator.literal,
+        TenantId.make(tenantId),
+        Separator.literal,
+        User.literal,
+        Separator.literal,
+        EntityId.make(userId),
+      ]),
+    }),
   );
 }

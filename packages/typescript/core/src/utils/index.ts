@@ -4,7 +4,6 @@ import * as Effect from "effect/Effect";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
-import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as _String from "effect/String";
 import * as Struct from "effect/Struct";
 import { customAlphabet } from "nanoid";
@@ -47,13 +46,10 @@ export const separatedString = (separator = Constants.SEPARATOR) =>
       Schema.check(
         Schema.isPattern(new RegExp(`^(?:[^${separator}]+(?:${separator}[^${separator}]+)*)?$`)),
       ),
-      Schema.decodeTo(
-        Schema.Trim.pipe(Schema.Array),
-        SchemaTransformation.transform({
-          decode: (input) => input.split(separator) as ReadonlyArray<string>,
-          encode: (input) => input.join(separator),
-        }),
-      ),
+      Schema.decodeTo(Schema.Trim.pipe(Schema.Array), {
+        decode: SchemaGetter.transform((input) => input.split(separator) as ReadonlyArray<string>),
+        encode: SchemaGetter.transform((input) => input.join(separator)),
+      }),
     ),
     { separator },
   );
@@ -71,13 +67,10 @@ export const HexColor = Schema.String.pipe(
 );
 
 export const StringFromUnknown = Schema.Unknown.pipe(
-  Schema.decodeTo(
-    Schema.String,
-    SchemaTransformation.transform({
-      decode: (unknown) => String(unknown),
-      encode: (string) => string,
-    }),
-  ),
+  Schema.decodeTo(Schema.String, {
+    decode: SchemaGetter.transform(String),
+    encode: SchemaGetter.passthrough(),
+  }),
 );
 
 export const Timezone = Schema.Literals(Intl.supportedValuesOf("timeZone"));

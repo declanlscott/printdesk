@@ -2,7 +2,7 @@ import * as Array from "effect/Array";
 import * as Record from "effect/Record";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
 import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 
@@ -70,15 +70,17 @@ export namespace Permissions {
         ),
         action: Action,
       }),
-      SchemaTransformation.transform({
-        decode: (permission) => {
+      {
+        decode: SchemaGetter.transform((permission) => {
           const [resource, action] = String.split(permission, separator) as [Resource, Action];
 
           return { resource, action };
-        },
-        encode: ({ resource, action }) =>
-          Array.join([resource, action], separator) as Permissions[number],
-      }),
+        }),
+        encode: SchemaGetter.transform(
+          ({ resource, action }) =>
+            Array.join([resource, action], separator) as Permissions[number],
+        ),
+      },
     ),
   );
   export type Permission = typeof Permission.Encoded;

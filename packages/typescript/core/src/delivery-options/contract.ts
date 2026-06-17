@@ -1,5 +1,5 @@
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
@@ -21,10 +21,10 @@ export namespace DeliveryOptionsContract {
       description: ColumnsContract.VarChar,
       detailsLabel: ColumnsContract.VarChar.pipe(Schema.NullOr),
       cost: Cost.pipe(
-        Schema.decodeTo(
-          Schema.String,
-          SchemaTransformation.transform({ decode: String, encode: Number }),
-        ),
+        Schema.decodeTo(Schema.String, {
+          decode: SchemaGetter.transform(String),
+          encode: SchemaGetter.transform(Number),
+        }),
         Schema.NullOr,
       ),
       roomId: EntityId,

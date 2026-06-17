@@ -4,10 +4,10 @@ import {
   InvalidRefreshTokenError as OpenauthInvalidRefreshTokenError,
 } from "@openauthjs/openauth/error";
 import * as Array from "effect/Array";
-import * as Number from "effect/Number";
+import * as Duration from "effect/Duration";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
@@ -137,13 +137,10 @@ export namespace OauthContract {
     access: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
     refresh: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
     expiresIn: Schema.Number.pipe(
-      Schema.decodeTo(
-        Schema.DurationFromMillis,
-        SchemaTransformation.transform({
-          decode: Number.multiply(1_000),
-          encode: Number.divideUnsafe(1_000),
-        }),
-      ),
+      Schema.decodeTo(Schema.Duration, {
+        decode: SchemaGetter.transform(Duration.seconds),
+        encode: SchemaGetter.transform(Duration.toSeconds),
+      }),
       Schema.optional,
     ),
   }) {}

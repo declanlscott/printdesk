@@ -1,5 +1,6 @@
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as Struct from "effect/Struct";
 
 import { TablesContract } from "../tables/contract";
 import { Constants } from "../utils/constants";
@@ -16,19 +17,10 @@ export namespace IdentityProvidersContract {
     aud: Schema.String,
     tid: Schema.String,
   }).pipe(
-    Schema.decodeTo(
-      AccessToken,
-      SchemaTransformation.transform({
-        decode: (entraIdAccessToken) => ({
-          audience: entraIdAccessToken.aud,
-          tenantId: entraIdAccessToken.tid,
-        }),
-        encode: (accessToken) => ({
-          aud: accessToken.audience,
-          tid: accessToken.tenantId,
-        }),
-      }),
-    ),
+    Schema.decodeTo(AccessToken, {
+      decode: SchemaGetter.transform(Struct.renameKeys({ aud: "audience", tid: "tenantId" })),
+      encode: SchemaGetter.transform(Struct.renameKeys({ audience: "aud", tenantId: "tid" })),
+    }),
   );
 
   export class User extends Schema.Class<User>("User")({
@@ -44,23 +36,22 @@ export namespace IdentityProvidersContract {
     preferredName: Schema.String,
     mail: Schema.String,
   }).pipe(
-    Schema.decodeTo(
-      User,
-      SchemaTransformation.transform({
-        decode: (entraIdUser) => ({
-          id: entraIdUser.id,
-          username: entraIdUser.userPrincipalName,
-          name: entraIdUser.preferredName,
-          email: entraIdUser.mail,
+    Schema.decodeTo(User, {
+      decode: SchemaGetter.transform(
+        Struct.renameKeys({
+          userPrincipalName: "username",
+          preferredName: "name",
+          mail: "email",
         }),
-        encode: (user) => ({
-          id: user.id,
-          userPrincipalName: user.username,
-          preferredName: user.name,
-          mail: user.email,
+      ),
+      encode: SchemaGetter.transform(
+        Struct.renameKeys({
+          username: "userPrincipalName",
+          name: "preferredName",
+          email: "mail",
         }),
-      }),
-    ),
+      ),
+    }),
   );
   export type EntraIdUser = typeof EntraIdUser.Type;
 

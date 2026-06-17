@@ -1,6 +1,5 @@
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
-import * as SchemaTransformation from "effect/SchemaTransformation";
 
 import { pluck, StringFromUnknown } from "../utils";
 
@@ -18,13 +17,10 @@ export namespace XmlRpcContract {
   export const Boolean = Schema.Struct({
     value: Schema.Struct({
       boolean: Schema.Literals([0, 1]).pipe(
-        Schema.decodeTo(
-          Schema.Boolean,
-          SchemaTransformation.transform({
-            decode: (binary) => binary === 1,
-            encode: (boolean) => (boolean ? 1 : 0),
-          }),
-        ),
+        Schema.decodeTo(Schema.Boolean, {
+          decode: SchemaGetter.transform((binary) => binary === 1),
+          encode: SchemaGetter.transform((boolean) => (boolean ? 1 : 0)),
+        }),
       ),
     }),
   });

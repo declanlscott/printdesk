@@ -1,6 +1,6 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
 
 import { Handler } from "../handlers";
@@ -33,10 +33,10 @@ export namespace SharedAccountsContract {
       ),
       name: Schema.String,
       reviewThreshold: Cost.pipe(
-        Schema.decodeTo(
-          Schema.String,
-          SchemaTransformation.transform({ decode: String, encode: Number }),
-        ),
+        Schema.decodeTo(Schema.String, {
+          decode: SchemaGetter.transform(String),
+          encode: SchemaGetter.transform(Number),
+        }),
         Schema.NullOr,
       ),
       papercutAccountId: Schema.Union([

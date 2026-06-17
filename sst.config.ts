@@ -43,11 +43,15 @@ export default $config({
     const R = await import("remeda");
 
     sst.Linkable.wrap(aws.appconfig.Application, (app) => ({
-      properties: { id: app.id, name: app.name },
+      properties: { id: app.id, name: app.name, arn: app.arn },
     }));
 
     sst.Linkable.wrap(aws.appconfig.Environment, (env) => ({
-      properties: { id: env.id, name: env.name },
+      properties: { id: env.id, name: env.name, arn: env.arn },
+    }));
+
+    sst.Linkable.wrap(aws.appconfig.DeploymentStrategy, (strategy) => ({
+      properties: { id: strategy.id, arn: strategy.arn },
     }));
 
     sst.Linkable.wrap(aws.appsync.Api, (api) => ({

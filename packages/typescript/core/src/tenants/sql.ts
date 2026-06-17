@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { check } from "drizzle-orm/pg-core";
+import { check, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
@@ -14,8 +14,13 @@ export const tenants = new Tables.Sync(
     name: Columns.varchar().notNull(),
     status: Columns.union(TenantsContract.statuses).notNull().default("setup"),
     lastPapercutSyncAt: Columns.dateTime(),
+    licenseKey: Columns.redactedUuid().notNull(),
   },
-  (table) => [check("tenant_id", eq(table.id, table.tenantId))],
+  (table) => [
+    check("tenant_id", eq(table.id, table.tenantId)),
+    uniqueIndex().on(table.slug),
+    uniqueIndex().on(table.licenseKey),
+  ],
 );
 export const tenantsTable = tenants.table;
 export type TenantsTable = typeof tenantsTable;

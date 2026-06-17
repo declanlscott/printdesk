@@ -130,14 +130,11 @@ CREATE TABLE "invoices" (
 
 --> statement-breakpoint
 CREATE TABLE "licenses" (
-	"id" char(11),
-	"tenant_id" char(11) UNIQUE,
+	"key" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"expires_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
-	"deleted_at" timestamp,
-	"key" uuid DEFAULT gen_random_uuid() NOT NULL,
-	"status" varchar(50) DEFAULT 'active' NOT NULL,
-	CONSTRAINT "licenses_pkey" PRIMARY KEY("id", "tenant_id")
+	"deleted_at" timestamp
 );
 
 --> statement-breakpoint
@@ -318,6 +315,7 @@ CREATE TABLE "tenants" (
 	"name" varchar(50) NOT NULL,
 	"status" varchar(50) DEFAULT 'setup' NOT NULL,
 	"last_papercut_sync_at" timestamp,
+	"license_key" uuid NOT NULL,
 	CONSTRAINT "tenants_pkey" PRIMARY KEY("id", "tenant_id"),
 	CONSTRAINT "tenant_id" CHECK ("id" = "tenant_id")
 );
@@ -402,9 +400,6 @@ CREATE UNIQUE INDEX "identity_providers_kind_external_tenant_id_index" ON "ident
 CREATE INDEX "invoices_order_id_index" ON "invoices" ("order_id");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "licenses_key_index" ON "licenses" ("key");
-
---> statement-breakpoint
 CREATE INDEX "orders_customer_id_index" ON "orders" ("customer_id");
 
 --> statement-breakpoint
@@ -473,6 +468,12 @@ CREATE UNIQUE INDEX "shared_accounts_origin_name_papercut_account_id_tenant_id_i
 	"papercut_account_id",
 	"tenant_id"
 );
+
+--> statement-breakpoint
+CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" ("slug");
+
+--> statement-breakpoint
+CREATE UNIQUE INDEX "tenants_license_key_index" ON "tenants" ("license_key");
 
 --> statement-breakpoint
 CREATE UNIQUE INDEX "users_origin_username_tenant_id_index" ON "users" ("origin", "username", "tenant_id");

@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "e55f7fc3-a9de-4b15-ae1c-f9b02ee3b944",
+  "id": "019ddcd6-165f-4ff2-9f53-71ac462c6baa",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -1112,27 +1112,27 @@
       "table": "invoices"
     },
     {
-      "type": "char(11)",
+      "type": "uuid",
       "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
-      "default": null,
+      "default": "gen_random_uuid()",
       "generated": null,
       "identity": null,
-      "name": "id",
+      "name": "key",
       "entityType": "columns",
       "schema": "public",
       "table": "licenses"
     },
     {
-      "type": "char(11)",
+      "type": "timestamp",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "tenant_id",
+      "name": "expires_at",
       "entityType": "columns",
       "schema": "public",
       "table": "licenses"
@@ -1172,32 +1172,6 @@
       "generated": null,
       "identity": null,
       "name": "deleted_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "licenses"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "gen_random_uuid()",
-      "generated": null,
-      "identity": null,
-      "name": "key",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "licenses"
-    },
-    {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'active'",
-      "generated": null,
-      "identity": null,
-      "name": "status",
       "entityType": "columns",
       "schema": "public",
       "table": "licenses"
@@ -2607,6 +2581,19 @@
       "table": "tenants"
     },
     {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "license_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
       "type": "char(11)",
       "typeSchema": null,
       "notNull": true,
@@ -3221,27 +3208,6 @@
       "nameExplicit": false,
       "columns": [
         {
-          "value": "key",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": true,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "licenses_key_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "licenses"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        {
           "value": "customer_id",
           "isExpression": false,
           "asc": true,
@@ -3718,6 +3684,48 @@
       "nameExplicit": false,
       "columns": [
         {
+          "value": "slug",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tenants_slug_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "license_key",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tenants_license_key_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tenants"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
           "value": "origin",
           "isExpression": false,
           "asc": true,
@@ -3979,8 +3987,7 @@
     },
     {
       "columns": [
-        "id",
-        "tenant_id"
+        "key"
       ],
       "nameExplicit": false,
       "name": "licenses_pkey",
@@ -4200,17 +4207,6 @@
       "entityType": "uniques",
       "schema": "public",
       "table": "customer_groups"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "tenant_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "licenses_tenant_id_unique",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "licenses"
     },
     {
       "nameExplicit": false,

@@ -4,13 +4,17 @@ import * as Result from "effect/Result";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 
+import type { ActorsContract } from "@printdesk/core/actors/contract";
 import type {
   AwsCredentialIdentityProviderError,
   InvalidAwsCredentialIdentityError,
 } from "@printdesk/core/aws/credential-identity";
 
 export const awsCredentialIdentityErrorMiddleware = HttpRouter.middleware<{
-  handles: InvalidAwsCredentialIdentityError | AwsCredentialIdentityProviderError;
+  handles:
+    | ActorsContract.ForbiddenActorError
+    | AwsCredentialIdentityProviderError
+    | InvalidAwsCredentialIdentityError;
 }>()((httpEffect) =>
   httpEffect.pipe(
     Effect.catchFilter(

@@ -7,8 +7,8 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
-import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
+import * as Struct from "effect/Struct";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 
 import { openauthLayer } from "../../lib/auth";
@@ -24,33 +24,23 @@ export class RealtimeSubscriberAwsCredentialIdentityLayerMap extends LayerMap.Se
     dependencies: [SstResource.layer],
     lookup: Effect.fn(
       function* (actor: typeof Actor.Service) {
-        const {
-          RealtimePublicChannelNamespaceSubscriberRole,
-          RealtimeTenantChannelNamespaceSubscriberRoleTemplate,
-        } = yield* SstResource;
-
-        return Match.value(actor.properties).pipe(
-          Match.tag("PublicActor", () => ({
-            RoleArn: RealtimePublicChannelNamespaceSubscriberRole.pipe(Redacted.value).arn,
-            RoleSessionName: "PublicRealtimeSubscriber",
-          })),
-          Match.orElse(({ tenantId }) => ({
-            RoleArn: tenantTemplate(
-              RealtimeTenantChannelNamespaceSubscriberRoleTemplate.pipe(Redacted.value).name,
-              tenantId,
-            ),
-            RoleSessionName: "TenantRealtimeSubscriber",
-          })),
+        const { name: template } = yield* SstResource.pipe(
+          Effect.map(Struct.get("RealtimeChannelNamespaceSubscriberRoleTemplate")),
+          Effect.map(Redacted.value),
         );
-      },
-      (effect) =>
-        effect.pipe(
+
+        return yield* actor.assertPrivate.pipe(
+          Effect.map(({ tenantId }) => ({
+            RoleArn: tenantTemplate(template, tenantId),
+            RoleSessionName: "RealtimeSubscriber",
+          })),
           Effect.satisfiesSuccessType<FromTemporaryCredentialsOptions["params"]>(),
           Effect.map((params) =>
             AwsCredentialIdentity.providerLayer(() => fromTemporaryCredentials({ params })),
           ),
-          Layer.unwrap,
-        ),
+        );
+      },
+      (effect) => effect.pipe(Layer.unwrap),
     ),
   },
 ) {}

@@ -1,4 +1,4 @@
-import { NetworkMonitor } from "@printdesk/core/utils/client/network-monitor";
+import { NetworkMonitor } from "@printdesk/core/network/client/monitor";
 import * as Effect from "effect/Effect";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";

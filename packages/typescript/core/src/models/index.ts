@@ -1,6 +1,7 @@
 import * as Array from "effect/Array";
 
 import { AnnouncementsContract } from "../announcements/contract";
+import { ClientsContract } from "../clients/contract";
 import { CommentsContract } from "../comments/contract";
 import { DeliveryOptionsContract } from "../delivery-options/contract";
 import { CustomerGroupMembershipsContract, CustomerGroupsContract } from "../groups/contracts";
@@ -49,7 +50,11 @@ export namespace Models {
   export type SyncTableName = SyncTable["name"];
   export type SyncTableByName<TName extends SyncTableName> = Extract<SyncTable, { name: TName }>;
 
-  export const nonSyncTables = Array.make(IdentityProvidersContract.Table, LicensesContract.Table);
+  export const nonSyncTables = Array.make(
+    ClientsContract.Table,
+    IdentityProvidersContract.Table,
+    LicensesContract.Table,
+  );
   export type NonSyncTable = (typeof nonSyncTables)[number];
   export type NonSyncTableName = NonSyncTable["name"];
   export type NonSyncTableByName<TName extends NonSyncTableName> = Extract<

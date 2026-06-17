@@ -22,26 +22,25 @@ export namespace PapercutContract {
     { ipv4: Ipv4 },
   ) {}
 
+  export class ApiConfig extends Schema.Class<ApiConfig>("ApiConfig")({
+    protocol: Schema.Literals(["http", "https"]),
+    host: Schema.Union([ApiHostNameConfig, ApiHostIpv4Config]),
+    port: Schema.Int.pipe(Schema.check(Schema.isGreaterThan(0), Schema.isLessThan(2 ** 16))),
+  }) {}
+
   export class SyncConfig extends Schema.Class<SyncConfig>("SyncConfig")({
     cronExpression: Schema.NonEmptyString,
     timezone: Timezone,
   }) {}
 
-  export class ApiConfig extends Schema.Class<ApiConfig>("ApiConfig")({
-    protocol: Schema.Literals(["http", "https"]),
-    host: Schema.Union([ApiHostNameConfig, ApiHostIpv4Config]),
-    port: Schema.Int.pipe(Schema.check(Schema.isGreaterThan(0), Schema.isLessThan(2 ** 16))),
-    pathname: Schema.NonEmptyString.pipe(Schema.check(Schema.isStartsWith("/"))),
-  }) {}
-
   export class EnabledConfig extends Schema.Class<EnabledConfig>("EnabledConfig")({
-    enabled: Schema.Literal(true),
+    enabled: Schema.Literal(true).pipe(Schema.withConstructorDefault(Effect.succeed(true))),
     api: ApiConfig,
     sync: SyncConfig,
   }) {}
 
   export class DisabledConfig extends Schema.Class<DisabledConfig>("DisabledConfig")({
-    enabled: Schema.Literal(false),
+    enabled: Schema.Literal(false).pipe(Schema.withConstructorDefault(Effect.succeed(false))),
   }) {}
 
   export const Config = Schema.Union([EnabledConfig, DisabledConfig]);

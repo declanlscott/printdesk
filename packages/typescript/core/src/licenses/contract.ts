@@ -3,26 +3,22 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { Handler } from "../handlers";
+import { ColumnsContract } from "../columns/contract";
 import { TablesContract } from "../tables/contract";
 
 import type { LicensesTable } from "./sql";
 
 export namespace LicensesContract {
-  export const statuses = ["active", "expired"] as const;
-  export type Status = (typeof statuses)[number];
-
   export const Key = Schema.String.pipe(Schema.check(Schema.isUUID()), Schema.Redacted);
 
   export class Table extends TablesContract.Table<LicensesTable>("licenses")(
     {
-      ...TablesContract.BaseModel.fields,
       key: Key,
-      status: Schema.Literals(statuses).pipe(
-        Schema.withDecodingDefaultType(Effect.succeed("active")),
-      ),
+      expiresAt: ColumnsContract.NullableTimestamp,
+      ...ColumnsContract.Timestamps.fields,
     },
     ["read"],
-    ["key"],
+    [],
   ) {}
 
   export const isAvailable = new Handler.Handler({

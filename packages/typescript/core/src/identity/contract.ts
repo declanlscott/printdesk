@@ -56,7 +56,8 @@ export namespace IdentityProvidersContract {
   export type EntraIdUser = typeof EntraIdUser.Type;
 
   export const kinds = [Constants.ENTRA_ID, Constants.GOOGLE] as const;
-  export type Kind = (typeof kinds)[number];
+  export const Kind = Schema.Literals(kinds);
+  export type Kind = typeof Kind.Type;
 
   export class Table extends TablesContract.Table<IdentityProvidersTable>("identity_providers")(
     {

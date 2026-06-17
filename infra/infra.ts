@@ -97,9 +97,7 @@ export const infraManager = dynamo.subscribe(
               S: [{ prefix: Constants.KEY_LITERALS.TENANT + Constants.SEPARATOR }],
             },
             [Constants.DYNAMO_KEYS.SK]: {
-              S: [Constants.KEY_LITERALS.INFRA, Constants.KEY_LITERALS.INPUT].join(
-                Constants.SEPARATOR,
-              ),
+              S: [Constants.KEY_LITERALS.INFRA, Constants.SEPARATOR, Constants.KEY_LITERALS.INPUT],
             },
           },
         },

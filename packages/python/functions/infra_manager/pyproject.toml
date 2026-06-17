@@ -9,6 +9,7 @@ dependencies = [
   "pulumi-aws>=7.33.0",
   "pulumi-cloudflare>=6.17.0",
   "pulumiverse-time>=0.1.1",
+  "pyawscron>=1.0.7",
   "pydantic>=2.13.4",
   "requests>=2.34.2",
   "sst-sdk>=4.15.2",

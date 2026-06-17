@@ -213,6 +213,7 @@ dependencies = [
     { name = "pulumi-aws" },
     { name = "pulumi-cloudflare" },
     { name = "pulumiverse-time" },
+    { name = "pyawscron" },
     { name = "pydantic" },
     { name = "requests" },
     { name = "sst-sdk" },
@@ -228,6 +229,7 @@ requires-dist = [
     { name = "pulumi-aws", specifier = ">=7.33.0" },
     { name = "pulumi-cloudflare", specifier = ">=6.17.0" },
     { name = "pulumiverse-time", specifier = ">=0.1.1" },
+    { name = "pyawscron", specifier = ">=1.0.7" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "requests", specifier = ">=2.34.2" },
     { name = "sst-sdk", specifier = ">=4.15.2" },
@@ -457,6 +459,18 @@ dependencies = [
     { name = "semver" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8a/6b/89e78d25f6a8ec58fdb02a2daef019bb7a277bc0c1af6ee504c4d4ca2dc8/pulumiverse_time-0.1.1.tar.gz", hash = "sha256:4567837b6f2c1112871ff8a2cf4433308af8ab7a2814ca3aabd424825b2ad6ec", size = 15567, upload-time = "2024-12-29T17:07:24.188Z" }
+
+[[package]]
+name = "pyawscron"
+version = "1.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "python-dateutil" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0e/cc/0d9553f92de8cd84e25479c36d4e277fb7c4354711f21edfe7d4e8e9b909/pyawscron-1.0.7.tar.gz", hash = "sha256:57b3231562ab7411e6814a09f0ed0804f52899aa30a689dd9575be30bbe3a0db", size = 9961, upload-time = "2024-08-14T18:48:20.336Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bf/36/b2627ddd2e87cd84a1cbdfcd5919ce8ce9a743fc329c5d7732db771d763f/pyawscron-1.0.7-py3-none-any.whl", hash = "sha256:e492cc77596b4db76b4e7be10700441ccdfebd5b6990b9ee5cca615d02c1e4bd", size = 9004, upload-time = "2024-08-14T18:48:19.092Z" },
+]
 
 [[package]]
 name = "pycryptodomex"

@@ -2,6 +2,7 @@ from typing import Literal, Union, Sequence, Optional, Annotated
 from zoneinfo import ZoneInfo
 
 from pydantic import BaseModel, Field, field_validator
+from pyawscron import AWSCron
 
 from utils import ipv4_pattern
 
@@ -27,14 +28,19 @@ PapercutApiHostConfig = Union[PapercutApiHostNameConfig, PapercutApiHostIpv4Conf
 class PapercutApiConfig(BaseModel):
     protocol: Literal["http", "https"]
     host: Annotated[PapercutApiHostConfig, Field(discriminator="_tag")]
-    port: Annotated[int, Field(gt=0, lt=65535)]
+    port: Annotated[int, Field(gt=0, lt=2**16)]
 
 
 class PapercutSyncConfig(BaseModel):
     cron_expression: Annotated[str, Field(alias="cronExpression")]
     timezone: str
 
-    @field_validator
+    @field_validator("cron_expression")
+    def validate_cron_expression(self, cron_expression: str):
+        AWSCron(cron_expression)
+        return cron_expression
+
+    @field_validator("timezone")
     def validate_timezone(self, timezone: str):
         ZoneInfo(timezone)
         return timezone

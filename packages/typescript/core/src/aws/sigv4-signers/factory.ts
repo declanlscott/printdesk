@@ -25,6 +25,11 @@ export class SignatureV4Error extends Schema.TaggedErrorClass<SignatureV4Error>(
   { cause: Schema.Defect() },
 ) {}
 
+export class SigningError extends Schema.TaggedErrorClass<SigningError>()("SigningError", {
+  service: Schema.NonEmptyString,
+  cause: Schema.Defect(),
+}) {}
+
 export interface RequestPresigningArguments extends Omit<
   SmithyRequestPresigningArguments,
   "expiresIn" | "signingDate"
@@ -69,7 +74,7 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
       Effect.flatMap((sigv4) =>
         Effect.tryPromise({
           try: () => sigv4.presign(...args),
-          catch: (cause) => new SignatureV4Error({ cause }),
+          catch: (cause) => new SigningError({ service, cause }),
         }),
       ),
     );
@@ -79,7 +84,7 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
       Effect.flatMap((sigv4) =>
         Effect.tryPromise({
           try: () => sigv4.sign(...args),
-          catch: (cause) => new SignatureV4Error({ cause }),
+          catch: (cause) => new SigningError({ service, cause }),
         }),
       ),
     );

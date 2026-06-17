@@ -4,7 +4,7 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
-import { ReplicachePullerContract, ReplicachePusherContract } from "./contracts";
+import { ReplicachePullerContract, ReplicachePusherContract } from "../replicache/contracts";
 
 export namespace ReplicacheApi {
   export const pull = HttpApiEndpoint.post("pull", "/pull", {

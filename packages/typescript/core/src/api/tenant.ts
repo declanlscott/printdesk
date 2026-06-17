@@ -7,7 +7,7 @@ import { ActorsContract } from "../actors/contract";
 import { InfraContract } from "../infra/contract";
 import { LicensesContract } from "../licenses/contract";
 import { OauthContract } from "../oauth/contract";
-import { TenantsContract } from "./contract";
+import { TenantsContract } from "../tenants/contract";
 
 export namespace TenantApi {
   export const registration = HttpApiEndpoint.post("registration", "/registration", {

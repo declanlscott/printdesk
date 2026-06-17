@@ -99,4 +99,11 @@ export namespace TenantsContract {
       Schema.OptionFromOptional,
     ),
   }) {}
+
+  export const RegistrationPayload = Registration;
+
+  export class RegistrationSuccess extends Schema.Class<RegistrationSuccess>("RegistrationSuccess")(
+    { deploymentId: EntityId },
+    { httpApiStatus: 200 },
+  ) {}
 }

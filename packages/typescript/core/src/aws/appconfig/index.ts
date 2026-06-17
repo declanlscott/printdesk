@@ -1,0 +1,149 @@
+import {
+  AppConfigClient,
+  CreateHostedConfigurationVersionCommand,
+  StartDeploymentCommand,
+} from "@aws-sdk/client-appconfig";
+import * as Context from "effect/Context";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+import * as Predicate from "effect/Predicate";
+import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
+
+import { SstResource } from "../../sst/resource";
+import { AwsCredentialIdentity } from "../credential-identity";
+
+export class AppconfigError extends Schema.TaggedErrorClass<AppconfigError>()("AppconfigError", {
+  cause: Schema.Defect(),
+}) {}
+
+export class VersionError extends Schema.TaggedErrorClass<VersionError>()("VersionError", {
+  cause: Schema.Defect(),
+}) {}
+
+export class DeployError extends Schema.TaggedErrorClass<DeployError>()("DeployError", {
+  cause: Schema.Defect(),
+}) {}
+
+export interface VersionArgs<TType extends object, TEncoded, TServices> {
+  profileId: string;
+  value: TType;
+  codec: Schema.Codec<TType, TEncoded, never, TServices>;
+  client?: AppConfigClient;
+}
+
+export interface DeployArgs {
+  profileId: string;
+  version: number;
+  deploymentStrategyId: string;
+  client?: AppConfigClient;
+}
+
+export interface PublishArgs<TType extends object, TEncoded, TServices> {
+  profileId: string;
+  value: TType;
+  codec: Schema.Codec<TType, TEncoded, never, TServices>;
+  deploymentStrategyId: string;
+}
+
+export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws/Appconfig", {
+  make: Effect.gen(function* () {
+    const resource = yield* SstResource;
+
+    const application = resource.AppconfigApplication.pipe(Redacted.value);
+    const environment = resource.AppconfigEnvironment.pipe(Redacted.value);
+
+    const make = AwsCredentialIdentity.values.pipe(
+      Effect.flatMap((credentials) =>
+        Effect.acquireRelease(
+          Effect.try({
+            try: () =>
+              new AppConfigClient({
+                credentials,
+                region: resource.Aws.pipe(Redacted.value).region,
+              }),
+            catch: (cause) => new AppconfigError({ cause }),
+          }),
+          (client) => Effect.sync(() => client.destroy()),
+        ),
+      ),
+    );
+
+    const version = Effect.fn("Appconfig.version")(function* <
+      TType extends object,
+      TEncoded,
+      TServices,
+    >(args: VersionArgs<TType, TEncoded, TServices>) {
+      const client = args.client ?? (yield* make);
+
+      const encode = args.codec.pipe(Schema.fromJsonString, Schema.encodeEffect);
+      const Content = yield* encode(args.value);
+
+      return yield* Effect.tryPromise({
+        try: (abortSignal) =>
+          client.send(
+            new CreateHostedConfigurationVersionCommand({
+              ApplicationId: application.id,
+              ConfigurationProfileId: args.profileId,
+              Content,
+              ContentType: "application/json",
+            }),
+            { abortSignal },
+          ),
+        catch: (cause) => new VersionError({ cause }),
+      }).pipe(
+        Effect.map(Struct.get("VersionNumber")),
+        Effect.filterOrFail(
+          Predicate.isNotUndefined,
+          () => new VersionError({ cause: new Error("undefined version number") }),
+        ),
+      );
+    });
+
+    const deploy = Effect.fn("Appconfig.deploy")((args: DeployArgs) =>
+      Effect.succeed(args.client).pipe(
+        Effect.filterOrElse(Predicate.isNotUndefined, () => make),
+        Effect.flatMap((client) =>
+          Effect.tryPromise({
+            try: (abortSignal) =>
+              client.send(
+                new StartDeploymentCommand({
+                  ApplicationId: application.id,
+                  EnvironmentId: environment.id,
+                  ConfigurationProfileId: args.profileId,
+                  ConfigurationVersion: String(args.version),
+                  DeploymentStrategyId: args.deploymentStrategyId,
+                }),
+                { abortSignal },
+              ),
+            catch: (cause) => new DeployError({ cause }),
+          }),
+        ),
+      ),
+    );
+
+    const publish = Effect.fn("Appconfig.publish")(
+      <TType extends object, TEncoded, TServices>(args: PublishArgs<TType, TEncoded, TServices>) =>
+        make.pipe(
+          Effect.flatMap((client) =>
+            version({ profileId: args.profileId, value: args.value, codec: args.codec }).pipe(
+              Effect.andThen((version) =>
+                deploy({
+                  profileId: args.profileId,
+                  version,
+                  deploymentStrategyId: args.deploymentStrategyId,
+                  client,
+                }),
+              ),
+            ),
+          ),
+          Effect.scoped,
+        ),
+    );
+
+    return { version, deploy, publish };
+  }),
+}) {
+  public static readonly layer = this.make.pipe(Layer.effect(this));
+}

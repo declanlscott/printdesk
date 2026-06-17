@@ -154,7 +154,7 @@ class Resource:
         id: str
         secret: str
         type: str
-    class PapercutApiGatewayOauthClientConfigurationProfileTemplate:
+    class PapercutApiGatewayClientCredentialsConfigurationProfileTemplate:
         name: str
         type: str
     class PapercutApiGatewayScriptObject:
@@ -183,20 +183,10 @@ class Resource:
             realtime: str
         id: str
         type: str
-    class RealtimePublicChannelNamespacePublisherRole:
-        arn: str
-        externalId: str
+    class RealtimeChannelNamespacePublisherRoleTemplate:
         name: str
         type: str
-    class RealtimePublicChannelNamespaceSubscriberRole:
-        arn: str
-        externalId: str
-        name: str
-        type: str
-    class RealtimeTenantChannelNamespacePublisherRoleTemplate:
-        name: str
-        type: str
-    class RealtimeTenantChannelNamespaceSubscriberRoleTemplate:
+    class RealtimeChannelNamespaceSubscriberRoleTemplate:
         name: str
         type: str
     class SnsTopicEmail:

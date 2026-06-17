@@ -154,7 +154,7 @@ class Resource:
         id: str
         secret: str
         type: str
-    class PapercutApiGatewayOauthClientConfigurationProfileTemplate:
+    class PapercutApiGatewayClientCredentialsConfigurationProfileTemplate:
         name: str
         type: str
     class PapercutApiGatewayScriptObject:

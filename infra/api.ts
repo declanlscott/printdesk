@@ -7,7 +7,7 @@ import * as lib from "./lib";
 import {
   invoicesProcessorQueueSenderRoleTemplate,
   papercutApiAuthTokenConfigurationProfileTemplate,
-  papercutApiGatewayOauthClientConfigurationProfileTemplate,
+  papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
 } from "./papercut";
 import {
   realtimeApi,
@@ -34,7 +34,7 @@ export const api = new lib.aws.lambda.Function(
       dynamo,
       hostnames,
       papercutApiAuthTokenConfigurationProfileTemplate,
-      papercutApiGatewayOauthClientConfigurationProfileTemplate,
+      papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,

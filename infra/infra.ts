@@ -13,7 +13,7 @@ import {
   invoicesProcessorQueueSenderRoleTemplate,
   papercutApiAuthTokenConfigurationProfileTemplate,
   papercutApiGatewayAwsAccessKey,
-  papercutApiGatewayOauthClientConfigurationProfileTemplate,
+  papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
   papercutApiGatewayScriptObject,
   papercutSync,
 } from "./papercut";
@@ -75,7 +75,7 @@ export const infraManager = dynamo.subscribe(
       nanoId,
       papercutApiAuthTokenConfigurationProfileTemplate,
       papercutApiGatewayAwsAccessKey,
-      papercutApiGatewayOauthClientConfigurationProfileTemplate,
+      papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
       papercutApiGatewayScriptObject,
       papercutSync,
       pulumiBucket,

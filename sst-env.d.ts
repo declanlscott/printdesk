@@ -191,7 +191,7 @@ declare module "sst" {
       "secret": string
       "type": "pd.aws.IamAccessKey"
     }
-    "PapercutApiGatewayOauthClientConfigurationProfileTemplate": {
+    "PapercutApiGatewayClientCredentialsConfigurationProfileTemplate": {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }

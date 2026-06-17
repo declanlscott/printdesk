@@ -14,18 +14,18 @@ export const invoicesProcessorQueueSenderRoleTemplate = new lib.templates.aws.ia
   { identifier: "InvoicesSenderRole" },
 );
 
-export const papercutApiGatewayOauthClientConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "PapercutApiGatewayOauthClientConfigurationProfileTemplate",
-    { identifier: "PapercutApiGatewayOauthClient" },
-  );
-
 export const papercutApiAuthTokenConfigurationProfileTemplate =
   new lib.templates.aws.appconfig.ConfigurationProfile(
     "PapercutApiAuthTokenConfigurationProfileTemplate",
     { identifier: "PapercutApiAuthToken" },
   );
 
+
+export const papercutApiGatewayClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "PapercutApiGatewayClientCredentialsConfigurationProfileTemplate",
+    { identifier: "PapercutApiGatewayClientCredentials" },
+  );
 const papercutApiGatewayPackagePath = Path.resolve(
   Path.join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
 );

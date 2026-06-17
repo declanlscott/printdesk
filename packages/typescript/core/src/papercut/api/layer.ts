@@ -15,7 +15,7 @@ import {
   type SharedAccountPropertySchemas,
 } from ".";
 import { Actor } from "../../actors";
-import { AppconfigAgent } from "../../aws/appconfig-agent";
+import { AppconfigAgent } from "../../aws/appconfig/agent";
 import { SstResource } from "../../sst/resource";
 import { TenantId, tenantTemplate } from "../../utils";
 import { XmlRpcContract } from "../../xml/contracts";
@@ -196,6 +196,7 @@ export const makeService = Effect.gen(function* () {
     Effect.flatMap(httpClientExecute),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
     Effect.filterOrFail(Predicate.isTruthy, () => new UserAndGroupSyncFailure()),
+    Effect.asVoid,
     Effect.withSpan("Papercut.Api.performUserAndGroupSync"),
   );
 

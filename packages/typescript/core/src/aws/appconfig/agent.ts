@@ -7,7 +7,7 @@ import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
 
-import { SstResource } from "../sst/resource";
+import { SstResource } from "../../sst/resource";
 
 export class AppconfigAgent extends Context.Service<AppconfigAgent>()(
   "@printdesk/core/aws/AppconfigAgent",
@@ -25,10 +25,10 @@ export class AppconfigAgent extends Context.Service<AppconfigAgent>()(
       );
 
       const getConfiguration = Effect.fn("AppconfigAgent.getConfiguration")(
-        <TType, TServices>(name: string, schema: Schema.Decoder<TType, TServices>) =>
+        <TType, TServices>(name: string, decoder: Schema.Decoder<TType, TServices>) =>
           HttpClientRequest.get(
             `/applications/${application}/environments/${environment}/configurations/${name}`,
-          ).pipe(httpClient.execute, Effect.flatMap(HttpClientResponse.schemaBodyJson(schema))),
+          ).pipe(httpClient.execute, Effect.flatMap(HttpClientResponse.schemaBodyJson(decoder))),
       );
 
       return { getConfiguration } as const;

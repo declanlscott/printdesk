@@ -1,3 +1,5 @@
+import * as R from "remeda";
+
 import * as lib from "./lib";
 
 const applicationName = new lib.PhysicalName("AppconfigApplication", {
@@ -34,15 +36,12 @@ if ($dev) {
         inlinePolicies: [
           {
             policy: aws.iam.getPolicyDocumentOutput({
-              statements: [
-                {
-                  actions: [
-                    "appconfig:StartConfigurationSession",
-                    "appconfig:GetLatestConfiguration",
-                  ],
-                  resources: ["*"],
-                },
-              ],
+              statements: appconfigAgent
+                .getSSTLink()
+                .include?.map(({ effect = "allow", ...statement }) => ({
+                  effect: effect.charAt(0).toUpperCase() + effect.slice(1),
+                  ...R.omit(statement, ["type"]),
+                })),
             }).json,
           },
         ],

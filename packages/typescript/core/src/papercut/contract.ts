@@ -2,8 +2,10 @@ import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
+import { AwsCron } from "../aws/cron";
 import { Handler } from "../handlers";
 import { Ipv4, Timezone } from "../utils";
+import { Constants } from "../utils/constants";
 
 export namespace PapercutContract {
   export class ApiHostNameConfig extends Schema.TaggedClass<ApiHostNameConfig>()(
@@ -24,12 +26,16 @@ export namespace PapercutContract {
 
   export class ApiConfig extends Schema.Class<ApiConfig>("ApiConfig")({
     protocol: Schema.Literals(["http", "https"]),
-    host: Schema.Union([ApiHostNameConfig, ApiHostIpv4Config]),
+    host: Schema.Union([ApiHostNameConfig, ApiHostIpv4Config]).pipe(Schema.toTaggedUnion("_tag")),
     port: Schema.Int.pipe(Schema.check(Schema.isGreaterThan(0), Schema.isLessThan(2 ** 16))),
   }) {}
 
   export class SyncConfig extends Schema.Class<SyncConfig>("SyncConfig")({
-    cronExpression: Schema.NonEmptyString,
+    cronExpression: AwsCron.Expression.pipe(
+      Schema.withConstructorDefault(
+        Effect.succeed(Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION),
+      ),
+    ),
     timezone: Timezone,
   }) {}
 

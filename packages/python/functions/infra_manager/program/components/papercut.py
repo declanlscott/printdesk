@@ -27,7 +27,7 @@ class Papercut(pulumi.ComponentResource):
         self, args: PapercutArgs, opts: Optional[pulumi.ResourceOptions] = None
     ):
         super().__init__(
-            t="pd:aws:Papercut", name="Papercut", props=vars(args), opts=opts
+            t="pd:awscf:Papercut", name="Papercut", props=vars(args), opts=opts
         )
 
         self._sync_schedule_role = aws.iam.Role(
@@ -330,38 +330,6 @@ class Papercut(pulumi.ComponentResource):
                     )
                 ),
                 service=self._api_gateway_script.script_name,
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self._api_gateway_oauth_client_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="PapercutApiGatewayOauthClientConfigurationProfile",
-            args=aws.appconfig.ConfigurationProfileArgs(
-                application_id=Resource.AppconfigApplication.id,
-                type="AWS.Freeform",
-                location_uri="hosted",
-                name=pulumi.Output.from_input(args.tenant_id).apply(
-                    lambda tenant_id: naming.template(
-                        name_template=Resource.PapercutApiGatewayOauthClientConfigurationProfileTemplate.name,
-                        tenant_id=tenant_id,
-                    )
-                ),
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self._api_auth_token_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="PapercutApiAuthTokenConfigurationProfile",
-            args=aws.appconfig.ConfigurationProfileArgs(
-                application_id=Resource.AppconfigApplication.id,
-                type="AWS.Freeform",
-                location_uri="hosted",
-                name=pulumi.Output.from_input(args.tenant_id).apply(
-                    lambda tenant_id: naming.template(
-                        name_template=Resource.PapercutApiAuthTokenConfigurationProfileTemplate.name,
-                        tenant_id=tenant_id,
-                    )
-                ),
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )

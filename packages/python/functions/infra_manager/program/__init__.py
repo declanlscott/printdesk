@@ -10,6 +10,8 @@ from utils import SEPARATOR
 from program.components import (
     Assets,
     AssetsArgs,
+    Config,
+    ConfigArgs,
     Papercut,
     PapercutArgs,
     Realtime,
@@ -21,6 +23,7 @@ from models import Input, Output
 def inline(tenant_id: str, _input: Input):
     resources: List[pulumi.Input[pulumi.Resource]] = [
         Assets(args=AssetsArgs(tenant_id=tenant_id)),
+        Config(args=ConfigArgs(tenant_id=tenant_id)),
         Realtime(args=RealtimeArgs(tenant_id=tenant_id)),
     ]
 

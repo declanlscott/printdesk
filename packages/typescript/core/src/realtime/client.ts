@@ -24,7 +24,7 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Socket from "effect/unstable/socket/Socket";
 
 import { Api } from "../api";
-import { NetworkMonitor } from "../utils/client/network-monitor";
+import { NetworkMonitor } from "../network/client/monitor";
 import { RealtimeContract } from "./contract";
 
 import type { Handler } from "../handlers";

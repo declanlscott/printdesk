@@ -1,6 +1,8 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
@@ -34,6 +36,29 @@ export namespace TenantsContract {
     ["lastPapercutSyncAt", "licenseKey", "version"],
   ) {}
 
+  export class TenantSlugConflictError
+    extends Schema.TaggedErrorClass<TenantSlugConflictError>()(
+      "TenantSlugConflictError",
+      { slug: Slug },
+      { httpApiStatus: 409 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(TenantSlugConflictError)(this, { status: 409 });
+  }
+
+  export class InactiveTenantError
+    extends Schema.TaggedErrorClass<InactiveTenantError>()(
+      "InactiveTenantError",
+      { status: Status },
+      { httpApiStatus: 403 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(InactiveTenantError)(this, { status: 403 });
+  }
 
   export const edit = new Handler.Handler({
     name: "editTenant",

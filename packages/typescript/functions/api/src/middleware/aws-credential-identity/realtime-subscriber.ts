@@ -8,7 +8,6 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 import * as Redacted from "effect/Redacted";
-import * as Struct from "effect/Struct";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 
 import { openauthLayer } from "../../lib/auth";
@@ -24,9 +23,9 @@ export class RealtimeSubscriberAwsCredentialIdentityLayerMap extends LayerMap.Se
     dependencies: [SstResource.layer],
     lookup: Effect.fn(
       function* (actor: typeof Actor.Service) {
-        const { name: template } = yield* SstResource.pipe(
-          Effect.map(Struct.get("RealtimeChannelNamespaceSubscriberRoleTemplate")),
-          Effect.map(Redacted.value),
+        const template = yield* SstResource.useSync(
+          (resource) =>
+            resource.RealtimeChannelNamespaceSubscriberRoleTemplate.pipe(Redacted.value).name,
         );
 
         return yield* actor.assertPrivate.pipe(

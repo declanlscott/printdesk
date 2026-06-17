@@ -20,24 +20,9 @@ export const makeService = Effect.gen(function* () {
   const db = yield* Database;
   const table = identityProviders.table;
 
-  const upsert = Effect.fn("IdentityProviders.Repository.upsert")(
-    (value: InferInsertModel<IdentityProvidersTable>) =>
-      db
-        .useTransaction((tx) =>
-          tx
-            .insert(table)
-            .values(value)
-            .onConflictDoUpdate({
-              target: [table.id, table.tenantId],
-              set: identityProviders.conflictSet,
-            })
-            .returning(),
-        )
-        .pipe(
-          Effect.map(Array.head),
-          Effect.flatMap(Effect.fromOption),
-          Effect.catchTag("NoSuchElementError", Effect.die),
-        ),
+  const createMany = Effect.fn("IdentityProviders.Repository.createMany")(
+    (values: Array.NonEmptyArray<InferInsertModel<IdentityProvidersTable>>) =>
+      db.useTransaction((tx) => tx.insert(table).values(values).returning()),
   );
 
   const findAll = Effect.fn("IdentityProviders.Repository.findAll")(
@@ -99,12 +84,20 @@ export const makeService = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
+  const deleteByTenantId = Effect.fn("IdentityProviders.Repository.deleteByTenantId")(
+    (tenantId: IdentityProvider["tenantId"]) =>
+      db
+        .useTransaction((tx) => tx.delete(table).where(eq(table.tenantId, tenantId)))
+        .pipe(Effect.asVoid),
+  );
+
   return {
-    upsert,
+    createMany,
     findAll,
     findById,
     findByTenantSlug,
     findWithTenantAndUserByExternalIds,
+    deleteByTenantId,
   } as const;
 });
 

@@ -38,11 +38,13 @@ declare module "sst" {
       "type": "pd.aws.IamExternalRole"
     }
     "AppconfigApplication": {
+      "arn": string
       "id": string
       "name": string
       "type": "aws.appconfig/application.Application"
     }
     "AppconfigEnvironment": {
+      "arn": string
       "id": string
       "name": string
       "type": "aws.appconfig/environment.Environment"
@@ -186,6 +188,11 @@ declare module "sst" {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }
+    "PapercutApiAuthTokenDeploymentStrategy": {
+      "arn": string
+      "id": string
+      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
+    }
     "PapercutApiGatewayAwsAccessKey": {
       "id": string
       "secret": string
@@ -194,6 +201,11 @@ declare module "sst" {
     "PapercutApiGatewayClientCredentialsConfigurationProfileTemplate": {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
+    }
+    "PapercutApiGatewayClientCredentialsDeploymentStrategy": {
+      "arn": string
+      "id": string
+      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
     }
     "PapercutApiGatewayScriptObject": {
       "bucket": string

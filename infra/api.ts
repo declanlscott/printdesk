@@ -1,13 +1,15 @@
 import { assetsPrivateKey, assetsPublicKey, assetsRouter } from "./assets";
 import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
-import { appconfigAgent, appconfigAgentDevContainer } from "./config";
+import { appconfigAgent, appconfigAgentDevContainer, appconfigRoleTemplate } from "./config";
 import { dsql, dynamo } from "./db";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
 import {
   invoicesProcessorQueueSenderRoleTemplate,
   papercutApiAuthTokenConfigurationProfileTemplate,
+  papercutApiAuthTokenDeploymentStrategy,
   papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
+  papercutApiGatewayClientCredentialsDeploymentStrategy,
 } from "./papercut";
 import {
   realtimeApi,
@@ -25,6 +27,7 @@ export const api = new lib.aws.lambda.Function(
     url: { authorization: "iam" },
     link: [
       appconfigAgent,
+      appconfigRoleTemplate,
       assetsPublicKey,
       assetsPrivateKey,
       assetsRouter,
@@ -34,7 +37,9 @@ export const api = new lib.aws.lambda.Function(
       dynamo,
       hostnames,
       papercutApiAuthTokenConfigurationProfileTemplate,
+      papercutApiAuthTokenDeploymentStrategy,
       papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
+      papercutApiGatewayClientCredentialsDeploymentStrategy,
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,

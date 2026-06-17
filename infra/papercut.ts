@@ -2,6 +2,7 @@ import Path from "node:path";
 
 import { assetsBucket } from "./assets";
 import { invokeIssuerFunctionUrl } from "./auth";
+import { appconfigAgent } from "./config";
 import { dsql } from "./db";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
@@ -20,12 +21,32 @@ export const papercutApiAuthTokenConfigurationProfileTemplate =
     { identifier: "PapercutApiAuthToken" },
   );
 
+export const papercutApiAuthTokenDeploymentStrategy = new aws.appconfig.DeploymentStrategy(
+  "PapercutApiAuthTokenDeploymentStrategy",
+  {
+    growthType: "LINEAR",
+    deploymentDurationInMinutes: 0,
+    growthFactor: 100,
+    finalBakeTimeInMinutes: 0,
+    replicateTo: "NONE",
+  },
+);
 
 export const papercutApiGatewayClientCredentialsConfigurationProfileTemplate =
   new lib.templates.aws.appconfig.ConfigurationProfile(
     "PapercutApiGatewayClientCredentialsConfigurationProfileTemplate",
     { identifier: "PapercutApiGatewayClientCredentials" },
   );
+
+export const papercutApiGatewayClientCredentialsDeploymentStrategy =
+  new aws.appconfig.DeploymentStrategy("PapercutApiGatewayClientCredentialsDeploymentStrategy", {
+    growthType: "LINEAR",
+    deploymentDurationInMinutes: 30,
+    growthFactor: 20,
+    finalBakeTimeInMinutes: 30,
+    replicateTo: "NONE",
+  });
+
 const papercutApiGatewayPackagePath = Path.resolve(
   Path.join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
 );
@@ -65,10 +86,10 @@ export const papercutApiGatewayAwsAccessKey = new lib.aws.iam.AccessKey(
 
 export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
   handler: "packages/typescript/functions/papercut-sync/src/index.handler",
-  link: [dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
+  link: [appconfigAgent, dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
 });
 
 export const invoicesProcessor = new lib.aws.lambda.Function("InvoicesProcessor", {
   handler: "packages/typescript/functions/invoices-processor/src/index.handler",
-  link: [dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
+  link: [appconfigAgent, dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
 });

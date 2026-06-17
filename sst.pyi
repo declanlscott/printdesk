@@ -32,10 +32,12 @@ class Resource:
         name: str
         type: str
     class AppconfigApplication:
+        arn: str
         id: str
         name: str
         type: str
     class AppconfigEnvironment:
+        arn: str
         id: str
         name: str
         type: str
@@ -150,12 +152,20 @@ class Resource:
     class PapercutApiAuthTokenConfigurationProfileTemplate:
         name: str
         type: str
+    class PapercutApiAuthTokenDeploymentStrategy:
+        arn: str
+        id: str
+        type: str
     class PapercutApiGatewayAwsAccessKey:
         id: str
         secret: str
         type: str
     class PapercutApiGatewayClientCredentialsConfigurationProfileTemplate:
         name: str
+        type: str
+    class PapercutApiGatewayClientCredentialsDeploymentStrategy:
+        arn: str
+        id: str
         type: str
     class PapercutApiGatewayScriptObject:
         bucket: str

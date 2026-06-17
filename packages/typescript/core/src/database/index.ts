@@ -94,21 +94,20 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
       );
     });
 
-    const useTransaction = Effect.fn("Database.TransactionManager.useTransaction")(function* <
-      TSuccess,
-      TError,
-      TServices,
-    >(execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>) {
-      return yield* Transaction.pipe(
-        Effect.serviceOption,
-        Effect.flatMap(
-          Option.match({
-            onSome: ({ tx }) => execute(tx),
-            onNone: () => withTransaction(execute),
-          }),
+    const useTransaction = Effect.fn("Database.TransactionManager.useTransaction")(
+      <TSuccess, TError, TServices>(
+        execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
+      ) =>
+        Transaction.pipe(
+          Effect.serviceOption,
+          Effect.flatMap(
+            Option.match({
+              onSome: ({ tx }) => execute(tx),
+              onNone: () => withTransaction(execute),
+            }),
+          ),
         ),
-      );
-    });
+    );
 
     const useQueryBuilder = Effect.fn("Database.TransactionManager.useQueryBuilder")(function* <
       TQueryBuilder extends AnyPgSelectQueryBuilder,

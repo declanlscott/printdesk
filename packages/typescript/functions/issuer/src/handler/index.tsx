@@ -13,10 +13,7 @@ import { SstResource } from "@printdesk/core/sst/resource";
 import { TenantsContract } from "@printdesk/core/tenants/contract";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Array from "effect/Array";
-import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
-import * as Exit from "effect/Exit";
-import * as Function from "effect/Function";
 import * as Match from "effect/Match";
 import * as Record from "effect/Record";
 import * as Redacted from "effect/Redacted";
@@ -25,6 +22,8 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 import { handle } from "hono/aws-lambda";
 import { HTTPException } from "hono/http-exception";
+
+import { runPromise } from "./runtime";
 
 import type { APIGatewayProxyEventV2 } from "@effect-aws/lambda";
 import type { Context } from "aws-lambda";
@@ -54,39 +53,7 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
         // TODO: Google provider
         // [Constants.GOOGLE]: GoogleProvider(),
         [Constants.CLIENT_CREDENTIALS]: ClientCredentialsProvider({
-          verify: (...args) =>
-            verifyClient(...args)
-              .pipe(Effect.runPromiseExit)
-              .then(
-                Exit.match({
-                  onSuccess: Function.identity,
-                  onFailure(cause) {
-                    throw cause.pipe(
-                      Cause.findError,
-                      Result.match({
-                        onSuccess: (error) =>
-                          Match.value(error).pipe(
-                            Match.tag(
-                              "InvalidScopeError",
-                              (error) =>
-                                new HTTPException(400, {
-                                  cause: error,
-                                  res: new Response(
-                                    JSON.stringify({
-                                      error: "invalid_scope",
-                                      error_description: error.message,
-                                    }),
-                                  ),
-                                }),
-                            ),
-                            Match.orElse((error) => new HTTPException(500, { cause: error.cause })),
-                          ),
-                        onFailure: (cause) => new HTTPException(500, { cause }),
-                      }),
-                    );
-                  },
-                }),
-              ),
+          verify: (...args) => verifyClient(...args).pipe(runPromise(Effect.runPromiseExit)),
         }),
       })),
     ),
@@ -101,24 +68,15 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
 
       const tenantProviders = await identityProvidersRepository
         .findByTenantSlug(tenantSlug.success)
-        .pipe(Effect.runPromiseExit)
-        .then(
-          Exit.match({
-            onSuccess: Array.filterMap((provider) =>
+        .pipe(
+          Effect.map(
+            Array.filterMap((provider) =>
               Record.keys(providers).includes(provider.kind) && !provider.deletedAt
                 ? Result.succeed(provider.kind)
                 : Result.failVoid,
             ),
-            onFailure(cause) {
-              throw cause.pipe(
-                Cause.findError,
-                Result.match({
-                  onSuccess: (error) => new HTTPException(500, { cause: error.cause }),
-                  onFailure: (cause) => new HTTPException(500, { cause }),
-                }),
-              );
-            },
-          }),
+          ),
+          runPromise(Effect.runPromiseExit),
         );
 
       if (tenantProviders.length === 0) throw new HTTPException(404);
@@ -187,89 +145,47 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
           catch: (cause) => new IssuerError({ cause }),
         });
 
-      return Match.value(result)
-        .pipe(
-          Match.when({ provider: Match.is(Constants.ENTRA_ID) }, (entraId) =>
-            Effect.gen(function* () {
-              const accessToken = yield* decodeJwt(
-                entraId.tokenset.access,
-                IdentityProvidersContract.EntraIdAccessToken,
-              );
+      return Match.value(result).pipe(
+        Match.when({ provider: Match.is(Constants.ENTRA_ID) }, (entraId) =>
+          Effect.gen(function* () {
+            const accessToken = yield* decodeJwt(
+              entraId.tokenset.access,
+              IdentityProvidersContract.EntraIdAccessToken,
+            );
 
-              if (accessToken.audience !== entraId.clientID)
-                return yield* new OauthContract.InvalidAudienceError({
-                  expected: entraId.clientID,
-                  received: accessToken.audience,
-                });
+            if (accessToken.audience !== entraId.clientID)
+              return yield* new OauthContract.InvalidAudienceError({
+                expected: entraId.clientID,
+                received: accessToken.audience,
+              });
 
-              const user = yield* Graph.use(Struct.get("me")).pipe(
-                Effect.provide(
-                  Graph.layer({
-                    authProvider: { getAccessToken: async () => entraId.tokenset.access },
-                  }),
-                ),
-                Effect.flatMap(Schema.decodeUnknownEffect(IdentityProvidersContract.EntraIdUser)),
-                Effect.flatMap((user) =>
-                  db.withTransaction(() =>
-                    handleUser(entraId.provider, accessToken.tenantId, user),
-                  ),
-                ),
-              );
-
-              return yield* subject(user);
-            }),
-          ),
-          Match.when({ provider: Match.is(Constants.CLIENT_CREDENTIALS) }, (client) =>
-            subject(new OauthContract.ClientSubject(client)),
-          ),
-          Match.exhaustive,
-          Effect.runPromiseExit,
-        )
-        .then(
-          Exit.match({
-            onSuccess: Function.identity,
-            onFailure: (cause) =>
-              cause.pipe(
-                Cause.findError,
-                Result.match({
-                  onSuccess: (error) => {
-                    throw Match.value(error).pipe(
-                      Match.tag(
-                        "InvalidAudienceError",
-                        (error) =>
-                          new HTTPException(401, {
-                            cause: error,
-                            res: new Response(
-                              JSON.stringify({
-                                error: "invalid_token",
-                                error_description: "Audience mismatch",
-                              }),
-                            ),
-                          }),
-                      ),
-                      Match.orElse(
-                        (error) =>
-                          new HTTPException(500, {
-                            cause: "cause" in error ? error.cause : error,
-                          }),
-                      ),
-                    );
-                  },
-                  onFailure: (cause) => {
-                    throw new HTTPException(500, { cause });
-                  },
+            const user = yield* Graph.use(Struct.get("me")).pipe(
+              Effect.provide(
+                Graph.layer({
+                  authProvider: { getAccessToken: async () => entraId.tokenset.access },
                 }),
               ),
+              Effect.flatMap(Schema.decodeUnknownEffect(IdentityProvidersContract.EntraIdUser)),
+              Effect.flatMap((user) =>
+                db.withTransaction(() => handleUser(entraId.provider, accessToken.tenantId, user)),
+              ),
+            );
+
+            return yield* subject(user);
           }),
-        );
+        ),
+        Match.when({ provider: Match.is(Constants.CLIENT_CREDENTIALS) }, (client) =>
+          subject(new OauthContract.ClientSubject(client)),
+        ),
+        Match.exhaustive,
+        runPromise(Effect.runPromiseExit),
+      );
     },
-  }).onError((e, c) => {
-    Effect.logError(e.message).pipe(Effect.runSync);
-
-    if ("getResponse" in e) return e.getResponse();
-
-    return c.newResponse(e.message, 500);
-  });
+  }).onError((e, c) =>
+    "getResponse" in e
+      ? e.getResponse()
+      : c.json({ error: "server_error", error_description: e.message }, 500),
+  );
 
   const adapter = handle(app);
 

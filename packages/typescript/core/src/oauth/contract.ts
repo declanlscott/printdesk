@@ -13,7 +13,12 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ActorsContract } from "../actors/contract";
-import { EntityId, TenantId } from "../utils";
+import { ClientsContract } from "../clients/contract";
+import { CryptoContract } from "../crypto/contract";
+import { IdentityProvidersContract } from "../identity/contract";
+import { TenantsContract } from "../tenants/contract";
+import { UsersContract } from "../users/contract";
+import { EntityId } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace OauthContract {
@@ -29,10 +34,50 @@ export namespace OauthContract {
       HttpServerResponse.schemaJson(OpenauthError)(this, { status: 500 });
   }
 
-  export class InvalidScopeError extends Schema.TaggedErrorClass<InvalidScopeError>()(
-    "InvalidScopeError",
-    { scopes: Schema.String.pipe(Schema.Array) },
-  ) {}
+  export class AccessDeniedError
+    extends Schema.TaggedErrorClass<AccessDeniedError>()("OauthAccessDeniedError", {
+      reason: Schema.Union([
+        IdentityProvidersContract.NotFoundError,
+        UsersContract.NotFoundError,
+        TenantsContract.InactiveTenantError,
+      ]).pipe(Schema.toTaggedUnion("_tag")),
+    })
+    implements HttpServerRespondable.Respondable
+  {
+    // oxlint-disable-next-line class-methods-use-this
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.json({ error: "access_denied" }, { status: 403 });
+  }
+
+  export class InvalidClientError
+    extends Schema.TaggedErrorClass<InvalidClientError>()("InvalidClientError", {
+      id: ClientsContract.Table.Model.fields.id,
+      reason: Schema.Union([CryptoContract.InvalidSecretError, ClientsContract.NotFoundError]).pipe(
+        Schema.toTaggedUnion("_tag"),
+      ),
+    })
+    implements HttpServerRespondable.Respondable
+  {
+    // oxlint-disable-next-line class-methods-use-this
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.json({ error: "invalid_client" }, { status: 401 });
+  }
+
+  export class InvalidScopeError
+    extends Schema.TaggedErrorClass<InvalidScopeError>()("InvalidScopeError", {
+      scopes: Schema.String.pipe(Schema.Array),
+    })
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.json(
+        {
+          error: "invalid_scope",
+          error_description: `Invalid requested scopes: ${this.scopes.join(", ")}`,
+        },
+        { status: 400 },
+      );
+  }
 
   export class InvalidAuthorizationCodeError extends Schema.TaggedErrorClass<InvalidAuthorizationCodeError>()(
     "InvalidAuthorizationCodeError",
@@ -68,15 +113,20 @@ export namespace OauthContract {
     cause: Schema.Defect(),
   }) {}
 
-  export class InvalidAudienceError extends Schema.TaggedErrorClass<InvalidAudienceError>()(
-    "InvalidAudienceError",
-    { expected: Schema.NonEmptyString, received: Schema.NonEmptyString },
-  ) {}
-
-  export class TenantSuspendedError extends Schema.TaggedErrorClass<TenantSuspendedError>()(
-    "TenantSuspendedError",
-    { tenantId: TenantId },
-  ) {}
+  export class InvalidAudienceError
+    extends Schema.TaggedErrorClass<InvalidAudienceError>()("InvalidAudienceError", {
+      expected: Schema.NonEmptyString,
+      received: Schema.NonEmptyString,
+    })
+    implements HttpServerRespondable.Respondable
+  {
+    // oxlint-disable-next-line class-methods-use-this
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.json(
+        { error: "invalid_token", error_description: "Audience mismatch" },
+        { status: 401 },
+      );
+  }
 
   interface Actable<TTag extends typeof ActorsContract.Actor.fields.properties.Type._tag> {
     actor: Extract<typeof ActorsContract.Actor.fields.properties.Type, { _tag: TTag }>;

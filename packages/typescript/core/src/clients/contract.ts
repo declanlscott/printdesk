@@ -21,4 +21,9 @@ export namespace ClientsContract {
     },
     ["read", "delete"],
   ) {}
+
+  export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
+    "ClientNotFoundError",
+    { id: Table.Model.fields.id },
+  ) {}
 }

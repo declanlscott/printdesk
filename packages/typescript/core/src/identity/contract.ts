@@ -68,4 +68,9 @@ export namespace IdentityProvidersContract {
     ["create", "read", "delete"],
     [],
   ) {}
+
+  export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
+    "IdentityProviderNotFoundError",
+    Table.Dto.mapFields(Struct.pick(["kind", "externalTenantId"])),
+  ) {}
 }

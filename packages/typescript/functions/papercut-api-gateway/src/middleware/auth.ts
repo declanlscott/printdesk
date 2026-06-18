@@ -40,9 +40,12 @@ export const auth = createMiddleware((c, next) =>
       onFailure: (cause) =>
         cause.pipe(
           Cause.findError,
+          Result.flatMap((error) =>
+            HttpServerRespondable.isRespondable(error) ? Result.succeed(error) : Result.fail(error),
+          ),
           Result.match({
-            onSuccess: (error) => {
-              throw error.pipe(
+            onSuccess: (respondable) => {
+              throw respondable.pipe(
                 HttpServerRespondable.toResponse,
                 Effect.map(HttpServerResponse.toWeb),
                 Effect.map(
@@ -52,7 +55,7 @@ export const auth = createMiddleware((c, next) =>
                         Match.when(Match.is(401), () => 407),
                         Match.orElse((status) => status),
                       ) as ContentfulStatusCode,
-                      { res, cause: error.cause },
+                      { res, cause: respondable },
                     ),
                 ),
                 Effect.runSync,

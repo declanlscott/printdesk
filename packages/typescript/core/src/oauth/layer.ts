@@ -1,18 +1,19 @@
 import * as Array from "effect/Array";
-import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Match from "effect/Match";
 import * as Struct from "effect/Struct";
 
 import { Oauth } from ".";
+import { ClientsContract } from "../clients/contract";
 import { ClientsRepository } from "../clients/repository";
 import { Crypto } from "../crypto";
+import { IdentityProvidersContract } from "../identity/contract";
 import { IdentityProvidersRepository } from "../identity/providers-repository";
+import { TenantsContract } from "../tenants/contract";
+import { UsersContract } from "../users/contract";
 import { UsersRepository } from "../users/repository";
 import { OauthContract } from "./contract";
 
-import type { IdentityProvidersContract } from "../identity/contract";
 import type {
   ClientCredentialsProviderConfig,
   ClientCredentialsProviderVerifyResult,
@@ -31,88 +32,100 @@ export const makeService = Effect.gen(function* () {
     idpTenantId: IdentityProvidersContract.AccessToken["tenantId"],
     idpUser: IdentityProvidersContract.User,
   ) {
-    const { identityProvider, tenant, user } =
-      yield* identityProvidersRepository.findWithTenantAndUserByExternalIds(
-        idpKind,
-        idpTenantId,
-        idpUser.id,
+    const { identityProvider, tenant, user } = yield* identityProvidersRepository
+      .findWithTenantAndUserByExternalIds(idpKind, idpTenantId, idpUser.id)
+      .pipe(
+        Effect.catchTag(
+          "NoSuchElementError",
+          () =>
+            new OauthContract.AccessDeniedError({
+              reason: new IdentityProvidersContract.NotFoundError({
+                kind: idpKind,
+                externalTenantId: idpTenantId,
+              }),
+            }),
+        ),
       );
 
-    return yield* Match.value(tenant.status).pipe(
-      Match.when(Match.is("setup"), () =>
-        Effect.gen(function* () {
-          if (!user) {
-            const admin = yield* usersRepository.create({
-              origin: "internal",
-              username: idpUser.username,
-              externalId: idpUser.id,
-              identityProviderId: identityProvider.id,
-              role: "administrator",
-              name: idpUser.name,
-              email: idpUser.email,
-              tenantId: identityProvider.tenantId,
-            });
+    if (tenant.status === "suspended")
+      return yield* new OauthContract.AccessDeniedError({
+        reason: new TenantsContract.InactiveTenantError({ status: tenant.status }),
+      });
 
-            return new OauthContract.UserSubject(Struct.pick(admin, ["id", "tenantId", "role"]));
-          }
-
-          if (
-            idpUser.username !== user.username ||
-            idpUser.name !== user.name ||
-            idpUser.email !== user.email
-          )
-            yield* usersRepository.updateById(
-              user.id,
-              {
-                username: idpUser.username,
-                name: idpUser.name,
-                email: idpUser.email,
-              },
-              user.tenantId,
-            );
-
-          return new OauthContract.UserSubject(Struct.pick(user, ["id", "tenantId", "role"]));
-        }),
-      ),
-      Match.when(Match.is("active"), () =>
-        Effect.gen(function* () {
-          if (!user) return yield* new Cause.NoSuchElementError();
-
-          if (
-            idpUser.username !== user.username ||
-            idpUser.name !== user.name ||
-            idpUser.email !== user.email
-          )
-            yield* usersRepository.updateById(
-              user.id,
-              {
-                username: idpUser.username,
-                name: idpUser.name,
-                email: idpUser.email,
-              },
-              user.tenantId,
-            );
-
-          return new OauthContract.UserSubject(Struct.pick(user, ["id", "tenantId", "role"]));
-        }),
-      ),
-      Match.when(Match.is("suspended"), () =>
-        Effect.fail(
-          new OauthContract.TenantSuspendedError({
-            tenantId: identityProvider.tenantId,
+    if (!user) {
+      if (tenant.status === "active")
+        return yield* new OauthContract.AccessDeniedError({
+          reason: new UsersContract.NotFoundError({
+            id: { _tag: "external", value: idpUser.id },
           }),
-        ),
-      ),
-      Match.exhaustive,
-    );
+        });
+
+      const admin = yield* usersRepository.create({
+        origin: "internal",
+        username: idpUser.username,
+        externalId: idpUser.id,
+        identityProviderId: identityProvider.id,
+        role: "administrator",
+        name: idpUser.name,
+        email: idpUser.email,
+        tenantId: identityProvider.tenantId,
+      });
+
+      return new OauthContract.UserSubject(Struct.pick(admin, ["id", "tenantId", "role"]));
+    }
+
+    if (
+      idpUser.username !== user.username ||
+      idpUser.name !== user.name ||
+      idpUser.email !== user.email
+    )
+      yield* usersRepository
+        .updateById(
+          user.id,
+          {
+            username: idpUser.username,
+            name: idpUser.name,
+            email: idpUser.email,
+          },
+          user.tenantId,
+        )
+        .pipe(
+          Effect.catchTag(
+            "NoSuchElementError",
+            () =>
+              new OauthContract.AccessDeniedError({
+                reason: new UsersContract.NotFoundError({
+                  id: { _tag: "internal", value: user.id },
+                }),
+              }),
+          ),
+        );
+
+    return new OauthContract.UserSubject(Struct.pick(user, ["id", "tenantId", "role"]));
   });
 
   const verifyClient = Effect.fn("Oauth.verifyClient")(function* (
     ...[credentials, requestedScopes]: Parameters<ClientCredentialsProviderConfig["verify"]>
   ) {
-    const client = yield* clientsRepository.findActiveById(credentials.id);
+    const client = yield* clientsRepository.findActiveById(credentials.id).pipe(
+      Effect.catchTag(
+        "NoSuchElementError",
+        () =>
+          new OauthContract.InvalidClientError({
+            id: credentials.id,
+            reason: new ClientsContract.NotFoundError({ id: credentials.id }),
+          }),
+      ),
+    );
 
-    yield* crypto.verifySecret(credentials.secret, client.secretHash);
+    yield* crypto
+      .verifySecret(credentials.secret, client.secretHash)
+      .pipe(
+        Effect.catchTag(
+          "InvalidSecretError",
+          (reason) => new OauthContract.InvalidClientError({ id: client.id, reason }),
+        ),
+      );
 
     if (requestedScopes && requestedScopes.length > 0) {
       const invalidScopes = Array.filter(

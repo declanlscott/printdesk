@@ -46,7 +46,7 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
               ? error.reason.cause.message
               : undefined;
 
-            if (code === DataConflictError.code || message?.includes(DataConflictError.code)) {
+            if (code === DataConflictError.code || message?.includes(DataConflictError.code))
               return new DsqlError({
                 reason: new DataConflictError(
                   error.reason.pipe(
@@ -54,9 +54,8 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
                   ),
                 ),
               });
-            }
 
-            if (code === SchemaConflictError.code || message?.includes(SchemaConflictError.code)) {
+            if (code === SchemaConflictError.code || message?.includes(SchemaConflictError.code))
               return new DsqlError({
                 reason: new SchemaConflictError(
                   error.reason.pipe(
@@ -64,7 +63,6 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
                   ),
                 ),
               });
-            }
           }
 
           return error;

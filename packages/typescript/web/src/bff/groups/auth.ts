@@ -1,6 +1,6 @@
 import { ActorsContract } from "@printdesk/core/actors/contract";
-import { Oauth } from "@printdesk/core/oauth/client";
 import { OauthContract } from "@printdesk/core/oauth/contract";
+import { Openauth } from "@printdesk/core/oauth/openauth";
 import { TenantsContract } from "@printdesk/core/tenants/contract";
 import { TenantSlug } from "@printdesk/core/tenants/slug";
 import { Constants } from "@printdesk/core/utils/constants";
@@ -88,7 +88,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
   Bff,
   "auth",
   Effect.fn(function* (handlers) {
-    const openauth = yield* Oauth.Openauth;
+    const openauth = yield* Openauth.Openauth;
 
     return handlers
       .handle("me", () =>
@@ -145,7 +145,7 @@ export const authGroupLayer = baseAuthGroupLayer.pipe(
   Layer.provide(
     ViteResource.useSync((resource) => resource.ApiGateway.pipe(Redacted.value).urls.auth).pipe(
       Effect.map((issuer) =>
-        Oauth.Openauth.layer({ clientID: Constants.OPENAUTH_CLIENT_IDS.WEB, issuer }),
+        Openauth.Openauth.layer({ clientID: Constants.OPENAUTH_CLIENT_IDS.WEB, issuer }),
       ),
       Layer.unwrap,
     ),

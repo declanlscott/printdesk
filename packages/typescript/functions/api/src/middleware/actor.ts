@@ -1,7 +1,7 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { ActorsContract } from "@printdesk/core/actors/contract";
-import { Oauth } from "@printdesk/core/oauth/client";
 import { OauthContract } from "@printdesk/core/oauth/contract";
+import { Openauth } from "@printdesk/core/oauth/openauth";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
 import * as Filter from "effect/Filter";
@@ -19,7 +19,7 @@ import type { Actor } from "@printdesk/core/actors";
 export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
   Effect.gen(function* () {
     const layerMap = yield* ActorLayerMap;
-    const openauth = yield* Oauth.Openauth;
+    const openauth = yield* Openauth.Openauth;
 
     return Effect.fn(function* (httpEffect) {
       const cookies = yield* OauthContract.Cookies.pipe(

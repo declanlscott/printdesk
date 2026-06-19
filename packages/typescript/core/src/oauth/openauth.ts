@@ -23,7 +23,7 @@ import type {
   VerifyOptions as OpenauthVerifyOptions,
 } from "@openauthjs/openauth/client";
 
-export namespace Oauth {
+export namespace Openauth {
   export interface ClientInput extends Omit<OpenauthClientInput, "issuer"> {
     issuer: string;
   }

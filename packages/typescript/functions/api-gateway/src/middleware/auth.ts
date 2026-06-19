@@ -1,5 +1,5 @@
-import { Oauth } from "@printdesk/core/oauth/client";
 import { OauthContract } from "@printdesk/core/oauth/contract";
+import { Openauth } from "@printdesk/core/oauth/openauth";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Option from "effect/Option";
@@ -17,7 +17,7 @@ export const subject = createMiddleware((c, next) =>
     ),
     Effect.flatMap((cookies) =>
       "accessToken" in cookies
-        ? Oauth.Openauth.use((openauth) => openauth.verify(cookies.accessToken)).pipe(
+        ? Openauth.Openauth.use((openauth) => openauth.verify(cookies.accessToken)).pipe(
             Effect.map(Option.some),
           )
         : Effect.succeedNone,

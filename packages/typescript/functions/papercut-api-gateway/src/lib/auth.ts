@@ -1,5 +1,5 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
-import { Oauth } from "@printdesk/core/oauth/client";
+import { Openauth } from "@printdesk/core/oauth/openauth";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
@@ -11,7 +11,7 @@ import * as Tuple from "effect/Tuple";
 import { lambda } from "./aws";
 import { resource } from "./sst";
 
-export const authRuntime = Oauth.Openauth.layer({
+export const authRuntime = Openauth.Openauth.layer({
   clientID: Constants.OPENAUTH_CLIENT_IDS.PAPERCUT_API_GATEWAY,
   fetch: (input) => lambda.fetch(input),
   issuer: resource.Issuer.pipe(Redacted.value).url,

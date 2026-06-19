@@ -1,6 +1,6 @@
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { AwsCredentialIdentity } from "@printdesk/core/aws/credential-identity";
-import { Oauth } from "@printdesk/core/oauth/client";
+import { Openauth } from "@printdesk/core/oauth/openauth";
 import { SstResource } from "@printdesk/core/sst/resource";
 import { Constants } from "@printdesk/core/utils/constants";
 import { AwsClient } from "aws4fetch";
@@ -21,7 +21,7 @@ export const openauthLayer = Effect.gen(function* () {
     retries: 0,
   });
 
-  return Oauth.Openauth.layer({
+  return Openauth.Openauth.layer({
     clientID: Constants.OPENAUTH_CLIENT_IDS.API,
     fetch: (input) => lambda.fetch(input),
     issuer: Issuer.pipe(Redacted.value).url,

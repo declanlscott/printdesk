@@ -1,6 +1,6 @@
 import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
-import { Oauth } from "@printdesk/core/oauth/client";
+import { Openauth } from "@printdesk/core/oauth/openauth";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
@@ -26,7 +26,7 @@ export const auth = createMiddleware((c, next) =>
       HttpServerRequest.fromWeb(c.req.raw),
     ),
     Effect.flatMap(({ accessToken }) =>
-      Oauth.Openauth.use((openauth) => openauth.verify(accessToken)),
+      Openauth.Openauth.use((openauth) => openauth.verify(accessToken)),
     ),
     Effect.flatMap(({ subject }) =>
       AccessControl.clientPermissionPolicy("papercut_api_gateway:read").pipe(

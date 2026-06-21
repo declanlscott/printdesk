@@ -1,3 +1,4 @@
+import { DefectMiddleware } from "@printdesk/core/middleware/defect";
 import * as Layer from "effect/Layer";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServer from "effect/unstable/http/HttpServer";
@@ -10,10 +11,13 @@ import { spaGroupLayer } from "./groups/spa";
 export default {
   fetch: Bff.pipe(
     HttpApiBuilder.layer,
-    Layer.provide(authGroupLayer),
-    Layer.provide(spaGroupLayer),
-    Layer.provide(HttpServer.layerServices),
-    Layer.provide(HttpRouter.layer),
+    Layer.provide([
+      authGroupLayer,
+      DefectMiddleware.layer,
+      HttpRouter.layer,
+      HttpServer.layerServices,
+      spaGroupLayer,
+    ]),
     HttpRouter.toWebHandler,
   ).handler,
 };

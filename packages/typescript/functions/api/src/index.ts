@@ -1,5 +1,6 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import { Api } from "@printdesk/core/api";
+import { DefectMiddleware } from "@printdesk/core/middleware/defect";
 import * as Layer from "effect/Layer";
 import * as HttpServer from "effect/unstable/http/HttpServer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
@@ -11,10 +12,11 @@ import { tenantGroupLayer } from "./groups/tenant";
 export const handler = Api.pipe(
   HttpApiBuilder.layer,
   Layer.provide([
+    DefectMiddleware.layer,
+    HttpServer.layerServices,
     realtimeGroupLayer,
     replicacheGroupLayer,
     tenantGroupLayer,
-    HttpServer.layerServices,
   ]),
   LambdaHandler.fromHttpApi,
 );

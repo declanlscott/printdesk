@@ -127,7 +127,12 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
       <TType extends object, TEncoded, TServices>(args: PublishArgs<TType, TEncoded, TServices>) =>
         make.pipe(
           Effect.flatMap((client) =>
-            version({ profileId: args.profileId, Codec: args.Codec, value: args.value }).pipe(
+            version({
+              profileId: args.profileId,
+              Codec: args.Codec,
+              value: args.value,
+              client,
+            }).pipe(
               Effect.andThen((version) =>
                 deploy({
                   profileId: args.profileId,

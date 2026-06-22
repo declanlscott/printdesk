@@ -76,6 +76,7 @@ import * as WorkflowStatusesSync from "@printdesk/core/workflows/status/sync/lay
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
@@ -98,13 +99,13 @@ export const baseReplicacheGroupLayer = HttpApiBuilder.group(
             Effect.catchTags({
               ClientStateNotFoundError: (e) => Effect.succeed(e.response),
               VersionNotSupportedError: (e) => Effect.succeed(e.response),
-              EffectDrizzleQueryError: () => new HttpApiError.InternalServerError(),
-              SqlError: () => new HttpApiError.InternalServerError(),
-              DsqlError: () => new HttpApiError.InternalServerError(),
-              QueryBuilderError: () => new HttpApiError.InternalServerError(),
             }),
             Effect.flatMap(Schema.encodeEffect(ReplicachePullerContract.Response)),
-            Effect.catchTag("SchemaError", () => new HttpApiError.InternalServerError()),
+            Effect.mapError((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? error
+                : new HttpApiError.InternalServerError(),
+            ),
           ),
         ),
       )
@@ -115,10 +116,12 @@ export const baseReplicacheGroupLayer = HttpApiBuilder.group(
             Effect.catchTags({
               ClientStateNotFoundError: (e) => Effect.succeed(e.response),
               VersionNotSupportedError: (e) => Effect.succeed(e.response),
-              EffectDrizzleQueryError: () => new HttpApiError.InternalServerError(),
-              SqlError: () => new HttpApiError.InternalServerError(),
-              DsqlError: () => new HttpApiError.InternalServerError(),
             }),
+            Effect.mapError((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? error
+                : new HttpApiError.InternalServerError(),
+            ),
           ),
         ),
       );

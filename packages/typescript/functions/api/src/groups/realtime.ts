@@ -10,7 +10,7 @@ import { realtimeSubscriberAwsCredentialIdentityLayer } from "../middleware/aws-
 
 export const baseRealtimeGroupLayer = HttpApiBuilder.group(
   Api,
-  "realtime",
+  "Realtime",
   Effect.fn(function* (handlers) {
     const realtime = yield* Realtime;
 

@@ -85,7 +85,7 @@ import { realtimePublisherAwsCredentialIdentityLayer } from "../middleware/aws-c
 
 export const baseReplicacheGroupLayer = HttpApiBuilder.group(
   Api,
-  "replicache",
+  "Replicache",
   Effect.fn(function* (handlers) {
     const puller = yield* ReplicachePuller;
     const pusher = yield* ReplicachePusher;

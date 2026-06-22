@@ -20,8 +20,9 @@ export class AwsCredentialIdentityProviderError
   )
   implements HttpServerRespondable.Respondable
 {
+  // oxlint-disable-next-line class-methods-use-this
   public [HttpServerRespondable.symbol] = () =>
-    HttpServerResponse.schemaJson(AwsCredentialIdentityProviderError)(this, { status: 500 });
+    HttpServerResponse.empty({ status: 500 }).pipe(Effect.succeed);
 }
 
 export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdentitySchema>(
@@ -42,8 +43,9 @@ export class InvalidAwsCredentialIdentityError
   )
   implements HttpServerRespondable.Respondable
 {
+  // oxlint-disable-next-line class-methods-use-this
   public [HttpServerRespondable.symbol] = () =>
-    HttpServerResponse.schemaJson(InvalidAwsCredentialIdentityError)(this, { status: 500 });
+    HttpServerResponse.empty({ status: 500 }).pipe(Effect.succeed);
 }
 
 // @effect-leakable-service

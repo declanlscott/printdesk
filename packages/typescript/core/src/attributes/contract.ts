@@ -22,7 +22,11 @@ export namespace AttributesContract {
       Effect.succeed([Infra.literal, Separator.literal, Input.literal]),
     ),
   );
-  export const InfraOutput = Schema.TemplateLiteralParser([Infra, Separator, Output]);
+  export const InfraOutput = Schema.TemplateLiteralParser([Infra, Separator, Output]).pipe(
+    Schema.withConstructorDefault(
+      Effect.succeed([Infra.literal, Separator.literal, Output.literal]),
+    ),
+  );
 
   export const IpFromString = Schema.TemplateLiteralParser([Ip, Separator, Schema.String]).pipe(
     Schema.decodeTo(Schema.String, {

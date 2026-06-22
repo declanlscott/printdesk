@@ -73,12 +73,10 @@ export const makeService = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
-  const deleteById = Effect.fn("Clients.Repository.deleteById")(
-    (id: Client["id"], tenantId: Client["tenantId"]) =>
+  const deleteByTenantId = Effect.fn("Clients.Repository.deleteByTenantId")(
+    (tenantId: Client["tenantId"]) =>
       db
-        .useTransaction((tx) =>
-          tx.delete(table).where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
-        )
+        .useTransaction((tx) => tx.delete(table).where(eq(table.tenantId, tenantId)))
         .pipe(Effect.asVoid),
   );
 
@@ -87,7 +85,7 @@ export const makeService = Effect.gen(function* () {
     findById,
     findActiveById,
     updateById,
-    deleteById,
+    deleteByTenantId,
   } as const;
 });
 

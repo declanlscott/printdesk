@@ -28,8 +28,8 @@ export class DeployError extends Schema.TaggedErrorClass<DeployError>()("DeployE
 
 export interface VersionArgs<TType extends object, TEncoded, TServices> {
   profileId: string;
+  Codec: Schema.Codec<TType, TEncoded, never, TServices>;
   value: TType;
-  codec: Schema.Codec<TType, TEncoded, never, TServices>;
   client?: AppConfigClient;
 }
 
@@ -42,8 +42,8 @@ export interface DeployArgs {
 
 export interface PublishArgs<TType extends object, TEncoded, TServices> {
   profileId: string;
+  Codec: Schema.Codec<TType, TEncoded, never, TServices>;
   value: TType;
-  codec: Schema.Codec<TType, TEncoded, never, TServices>;
   deploymentStrategyId: string;
 }
 
@@ -77,7 +77,7 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
     >(args: VersionArgs<TType, TEncoded, TServices>) {
       const client = args.client ?? (yield* make);
 
-      const encode = args.codec.pipe(Schema.fromJsonString, Schema.encodeEffect);
+      const encode = args.Codec.pipe(Schema.fromJsonString, Schema.encodeEffect);
       const Content = yield* encode(args.value);
 
       return yield* Effect.tryPromise({
@@ -127,7 +127,7 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
       <TType extends object, TEncoded, TServices>(args: PublishArgs<TType, TEncoded, TServices>) =>
         make.pipe(
           Effect.flatMap((client) =>
-            version({ profileId: args.profileId, value: args.value, codec: args.codec }).pipe(
+            version({ profileId: args.profileId, Codec: args.Codec, value: args.value }).pipe(
               Effect.andThen((version) =>
                 deploy({
                   profileId: args.profileId,
@@ -142,7 +142,7 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
         ),
     );
 
-    return { version, deploy, publish };
+    return { version, deploy, publish } as const;
   }),
 }) {
   public static readonly layer = this.make.pipe(Layer.effect(this));

@@ -25,10 +25,10 @@ export class AppconfigAgent extends Context.Service<AppconfigAgent>()(
       );
 
       const getConfiguration = Effect.fn("AppconfigAgent.getConfiguration")(
-        <TType, TServices>(name: string, decoder: Schema.Decoder<TType, TServices>) =>
+        <TType, TServices>(name: string, Decoder: Schema.Decoder<TType, TServices>) =>
           HttpClientRequest.get(
             `/applications/${application}/environments/${environment}/configurations/${name}`,
-          ).pipe(httpClient.execute, Effect.flatMap(HttpClientResponse.schemaBodyJson(decoder))),
+          ).pipe(httpClient.execute, Effect.flatMap(HttpClientResponse.schemaBodyJson(Decoder))),
       );
 
       return { getConfiguration } as const;

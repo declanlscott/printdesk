@@ -32,21 +32,6 @@ export const papercutApiAuthTokenDeploymentStrategy = new aws.appconfig.Deployme
   },
 );
 
-export const papercutApiGatewayClientCredentialsConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "PapercutApiGatewayClientCredentialsConfigurationProfileTemplate",
-    { identifier: "PapercutApiGatewayClientCredentials" },
-  );
-
-export const papercutApiGatewayClientCredentialsDeploymentStrategy =
-  new aws.appconfig.DeploymentStrategy("PapercutApiGatewayClientCredentialsDeploymentStrategy", {
-    growthType: "LINEAR",
-    deploymentDurationInMinutes: 30,
-    growthFactor: 20,
-    finalBakeTimeInMinutes: 30,
-    replicateTo: "NONE",
-  });
-
 const papercutApiGatewayPackagePath = Path.resolve(
   Path.join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
 );

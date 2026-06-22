@@ -17,6 +17,15 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
+    "ApiClientCredentialsConfigurationProfileTemplate": {
+      "name": string
+      "type": "pd.templates.AwsAppConfigConfigurationProfile"
+    }
+    "ApiClientCredentialsDeploymentStrategy": {
+      "arn": string
+      "id": string
+      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
+    }
     "ApiGateway": {
       "type": "pd.cloudflare.Worker"
       "urls": {
@@ -197,15 +206,6 @@ declare module "sst" {
       "id": string
       "secret": string
       "type": "pd.aws.IamAccessKey"
-    }
-    "PapercutApiGatewayClientCredentialsConfigurationProfileTemplate": {
-      "name": string
-      "type": "pd.templates.AwsAppConfigConfigurationProfile"
-    }
-    "PapercutApiGatewayClientCredentialsDeploymentStrategy": {
-      "arn": string
-      "id": string
-      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
     }
     "PapercutApiGatewayScriptObject": {
       "bucket": string

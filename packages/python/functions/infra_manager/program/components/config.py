@@ -38,15 +38,15 @@ class Config:
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self._papercut_api_gateway_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="ConfigPapercutApiGatewayClientCredentialsConfigurationProfile",
+        self._api_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="ConfigApiClientCredentialsConfigurationProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
                 application_id=Resource.AppconfigApplication.id,
                 type="AWS.Freeform",
                 location_uri="hosted",
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.PapercutApiGatewayClientCredentialsConfigurationProfileTemplate.name,
+                        name_template=Resource.ApiClientCredentialsConfigurationProfileTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -80,7 +80,7 @@ class Config:
                         policy=aws.iam.get_policy_document_output(
                             statements=pulumi.Output.all(
                                 papercut_api_auth_token_configuration_profile=self._papercut_api_auth_token_configuration_profile.arn,
-                                papercut_api_gateway_client_credentials_configuration_profile=self._papercut_api_gateway_client_credentials_configuration_profile.arn,
+                                api_client_credentials_configuration_profile=self._api_client_credentials_configuration_profile.arn,
                             ).apply(
                                 lambda arns: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
@@ -93,7 +93,7 @@ class Config:
                                                 "papercut_api_auth_token_configuration_profile"
                                             ],
                                             arns[
-                                                "papercut_api_gateway_client_credentials_configuration_profile"
+                                                "api_client_credentials_configuration_profile"
                                             ],
                                         ],
                                     ),
@@ -106,10 +106,10 @@ class Config:
                                                 "papercut_api_auth_token_configuration_profile"
                                             ],
                                             arns[
-                                                "papercut_api_gateway_client_credentials_configuration_profile"
+                                                "api_client_credentials_configuration_profile"
                                             ],
                                             Resource.PapercutApiAuthTokenDeploymentStrategy.arn,
-                                            Resource.PapercutApiGatewayClientCredentialsDeploymentStrategy.arn,
+                                            Resource.ApiClientCredentialsDeploymentStrategy.arn,
                                         ],
                                     ),
                                 ]

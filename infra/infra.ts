@@ -2,7 +2,11 @@ import Path from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { api } from "./api";
+import {
+  api,
+  apiClientCredentialsConfigurationProfileTemplate,
+  apiClientCredentialsDeploymentStrategy,
+} from "./api";
 import { assetsBucket, assetsBucketAccessPointTemplate, assetsRouter } from "./assets";
 import { issuer } from "./auth";
 import { appconfigApplication, appconfigEnvironment, appconfigRoleTemplate } from "./config";
@@ -13,12 +17,10 @@ import {
   invoicesProcessorQueueSenderRoleTemplate,
   papercutApiAuthTokenConfigurationProfileTemplate,
   papercutApiGatewayAwsAccessKey,
-  papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
   papercutApiGatewayScriptObject,
   papercutSync,
   invoicesProcessor,
   papercutApiAuthTokenDeploymentStrategy,
-  papercutApiGatewayClientCredentialsDeploymentStrategy,
 } from "./papercut";
 import {
   realtimeApi,
@@ -62,6 +64,8 @@ export const infraManager = dynamo.subscribe(
     },
     link: [
       api,
+      apiClientCredentialsConfigurationProfileTemplate,
+      apiClientCredentialsDeploymentStrategy,
       appconfigApplication,
       appconfigEnvironment,
       appconfigRoleTemplate,
@@ -80,8 +84,6 @@ export const infraManager = dynamo.subscribe(
       papercutApiAuthTokenConfigurationProfileTemplate,
       papercutApiAuthTokenDeploymentStrategy,
       papercutApiGatewayAwsAccessKey,
-      papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
-      papercutApiGatewayClientCredentialsDeploymentStrategy,
       papercutApiGatewayScriptObject,
       papercutSync,
       pulumiBucket,

@@ -8,8 +8,6 @@ import {
   invoicesProcessorQueueSenderRoleTemplate,
   papercutApiAuthTokenConfigurationProfileTemplate,
   papercutApiAuthTokenDeploymentStrategy,
-  papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
-  papercutApiGatewayClientCredentialsDeploymentStrategy,
 } from "./papercut";
 import {
   realtimeApi,
@@ -20,12 +18,31 @@ import { aws_, cloudflare_, isProdStage } from "./utils";
 
 import { VisibleError } from "~/sst/error";
 
+export const apiClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "ApiClientCredentialsConfigurationProfileTemplate",
+    { identifier: "ApiClientCredentials" },
+  );
+
+export const apiClientCredentialsDeploymentStrategy = new aws.appconfig.DeploymentStrategy(
+  "ApiClientCredentialsDeploymentStrategy",
+  {
+    growthType: "LINEAR",
+    deploymentDurationInMinutes: 30,
+    growthFactor: 20,
+    finalBakeTimeInMinutes: 30,
+    replicateTo: "NONE",
+  },
+);
+
 export const api = new lib.aws.lambda.Function(
   "Api",
   {
     handler: "packages/typescript/functions/api/src/index.handler",
     url: { authorization: "iam" },
     link: [
+      apiClientCredentialsConfigurationProfileTemplate,
+      apiClientCredentialsDeploymentStrategy,
       appconfigAgent,
       appconfigRoleTemplate,
       assetsPublicKey,
@@ -38,8 +55,6 @@ export const api = new lib.aws.lambda.Function(
       hostnames,
       papercutApiAuthTokenConfigurationProfileTemplate,
       papercutApiAuthTokenDeploymentStrategy,
-      papercutApiGatewayClientCredentialsConfigurationProfileTemplate,
-      papercutApiGatewayClientCredentialsDeploymentStrategy,
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,

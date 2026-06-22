@@ -13,6 +13,13 @@ class Resource:
         roleArn: str
         type: str
         url: str
+    class ApiClientCredentialsConfigurationProfileTemplate:
+        name: str
+        type: str
+    class ApiClientCredentialsDeploymentStrategy:
+        arn: str
+        id: str
+        type: str
     class ApiGateway:
         type: str
         class urls:
@@ -159,13 +166,6 @@ class Resource:
     class PapercutApiGatewayAwsAccessKey:
         id: str
         secret: str
-        type: str
-    class PapercutApiGatewayClientCredentialsConfigurationProfileTemplate:
-        name: str
-        type: str
-    class PapercutApiGatewayClientCredentialsDeploymentStrategy:
-        arn: str
-        id: str
         type: str
     class PapercutApiGatewayScriptObject:
         bucket: str

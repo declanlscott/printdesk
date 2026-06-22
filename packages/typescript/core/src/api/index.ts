@@ -7,4 +7,5 @@ import { TenantApi } from "./tenant";
 export class Api extends HttpApi.make("Api")
   .add(RealtimeApi.Group)
   .add(ReplicacheApi.Group)
-  .add(TenantApi.Group) {}
+  .add(TenantApi.RegistrationGroup)
+  .add(TenantApi.SetupGroup) {}

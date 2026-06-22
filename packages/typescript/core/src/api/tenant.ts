@@ -10,20 +10,38 @@ import { OauthContract } from "../oauth/contract";
 import { TenantsContract } from "../tenants/contract";
 
 export namespace TenantApi {
-  export const registration = HttpApiEndpoint.post("registration", "/registration", {
-    payload: TenantsContract.RegistrationPayload,
-    error: [
-      ActorsContract.ForbiddenActorError,
-      AccessControl.AccessDeniedError,
-      LicensesContract.NoSuchLicenseError,
-      LicensesContract.LicenseKeyConflictError,
-      TenantsContract.TenantSlugConflictError,
-      OauthContract.ClientCredentialsError,
-      InfraContract.InputError,
-      HttpApiError.InternalServerError,
-    ],
-    success: TenantsContract.RegistrationSuccess,
-  });
+  export class RegistrationGroup extends HttpApiGroup.make("TenantRegistration")
+    .add(
+      HttpApiEndpoint.post("register", "/", {
+        payload: TenantsContract.RegistrationPayload,
+        success: TenantsContract.RegistrationSuccess,
+        error: [
+          ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
+          LicensesContract.NoSuchLicenseError,
+          LicensesContract.LicenseKeyConflictError,
+          TenantsContract.TenantSlugConflictError,
+          OauthContract.ClientCredentialsError,
+          InfraContract.InputError,
+          HttpApiError.InternalServerError,
+        ],
+      }),
+    )
+    .prefix("/tenant/registration") {}
 
-  export class Group extends HttpApiGroup.make("tenant").add(registration).prefix("/tenant") {}
+  export class SetupGroup extends HttpApiGroup.make("TenantSetup")
+    .add(
+      HttpApiEndpoint.post("setup", "/", {
+        payload: TenantsContract.SetupPayload,
+        success: TenantsContract.SetupSuccess,
+        error: [
+          ActorsContract.ForbiddenActorError,
+          InfraContract.OutputError,
+          InfraContract.NotDeployedError,
+          TenantsContract.UnexpectedPapercutApiAuthTokenPayloadError,
+          HttpApiError.InternalServerError,
+        ],
+      }),
+    )
+    .prefix("/tenant/setup") {}
 }

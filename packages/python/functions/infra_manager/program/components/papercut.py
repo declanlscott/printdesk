@@ -244,7 +244,7 @@ class Papercut(pulumi.ComponentResource):
         self._api_gateway_script = cloudflare.WorkersScript(
             resource_name="PapercutApiGatewayScript",
             args=cloudflare.WorkersScriptArgs(
-                script_name="",
+                script_name="PapercutApiGatewayScript",
                 account_id=Resource.Cloudflare.account.id,
                 compatibility_date="2026-05-05",
                 content=aws.s3.get_object_output(

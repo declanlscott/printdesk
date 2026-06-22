@@ -15,39 +15,23 @@ import {
   type SharedAccountPropertySchemas,
 } from ".";
 import { Actor } from "../../actors";
-import { AppconfigAgent } from "../../aws/appconfig/agent";
+import { Config } from "../../config";
 import { SstResource } from "../../sst/resource";
 import { TenantId, tenantTemplate } from "../../utils";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
-import { PapercutContract } from "../contract";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const privateActor = Actor.pipe(Effect.flatMap(Struct.get("assertPrivate")));
-
+  const config = yield* Config;
   const resource = yield* SstResource;
-
   const xmlRpc = yield* XmlRpc.XmlRpc;
-
-  const appconfigAgent = yield* AppconfigAgent;
-  const authToken = privateActor.pipe(
-    Effect.map(({ tenantId }) =>
-      tenantTemplate(
-        resource.PapercutApiAuthTokenConfigurationProfileTemplate.pipe(Redacted.value).name,
-        tenantId,
-      ),
-    ),
-    Effect.flatMap((name) => appconfigAgent.getConfiguration(name, PapercutContract.ApiAuthToken)),
-    Effect.map(Redacted.value),
-    Effect.withSpan("Papercut.Api.authToken"),
-  );
 
   const baseClient = yield* HttpClient.HttpClient;
   const textEncoder = new TextEncoder();
   const httpClient = Effect.gen(function* () {
-    const url = yield* privateActor.pipe(
+    const url = yield* Actor.use(Struct.get("assertPrivate")).pipe(
       Effect.map(({ tenantId }) =>
         TenantId.make(encodeBase32LowerCaseNoPadding(textEncoder.encode(tenantId)), {
           disableChecks: true,
@@ -72,10 +56,10 @@ export const makeService = Effect.gen(function* () {
   const adjustSharedAccountAccountBalance = Effect.fn(
     "Papercut.Api.adjustSharedAccountAccountBalance",
   )((sharedAccountName: string, amount: number, comment: string) =>
-    authToken.pipe(
+    config.getPapercutApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
         xmlRpc.request("api.adjustSharedAccountAccountBalance", [
-          XmlRpc.string(authToken),
+          XmlRpc.string(authToken.pipe(Redacted.value)),
           XmlRpc.string(sharedAccountName),
           XmlRpc.double(amount),
           XmlRpc.string(comment),
@@ -89,10 +73,10 @@ export const makeService = Effect.gen(function* () {
 
   const getGroupMembers = Effect.fn("Papercut.Api.getGroupMembers")(
     (groupName: string, offset: number, limit: number) =>
-      authToken.pipe(
+      config.getPapercutApiAuthToken.pipe(
         Effect.flatMap((authToken) =>
           xmlRpc.request("api.getGroupMembers", [
-            XmlRpc.string(authToken),
+            XmlRpc.string(authToken.pipe(Redacted.value)),
             XmlRpc.string(groupName),
             XmlRpc.int(offset),
             XmlRpc.int(limit),
@@ -113,10 +97,10 @@ export const makeService = Effect.gen(function* () {
     sharedAccountName: string,
     ...propertyKeys: TPropertyKeys
   ) =>
-    authToken.pipe(
+    config.getPapercutApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
         xmlRpc.request("api.getSharedAccountProperties", [
-          XmlRpc.string(authToken),
+          XmlRpc.string(authToken.pipe(Redacted.value)),
           XmlRpc.string(sharedAccountName),
           XmlRpc.stringArray(propertyKeys),
         ]),
@@ -149,8 +133,10 @@ export const makeService = Effect.gen(function* () {
       Effect.withSpan("Papercut.Api.getTaskStatus"),
     );
 
-  const getTotalUsers = authToken.pipe(
-    Effect.flatMap((authToken) => xmlRpc.request("api.getTotalUsers", [XmlRpc.string(authToken)])),
+  const getTotalUsers = config.getPapercutApiAuthToken.pipe(
+    Effect.flatMap((authToken) =>
+      xmlRpc.request("api.getTotalUsers", [XmlRpc.string(authToken.pipe(Redacted.value))]),
+    ),
     Effect.flatMap(httpClientExecute),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.IntResponse)),
     Effect.withSpan("Papercut.Api.getTotalUsers"),
@@ -158,10 +144,10 @@ export const makeService = Effect.gen(function* () {
 
   const listSharedAccounts = Effect.fn("Papercut.Api.listSharedAccounts")(
     (offset: number, limit: number) =>
-      authToken.pipe(
+      config.getPapercutApiAuthToken.pipe(
         Effect.flatMap((authToken) =>
           xmlRpc.request("api.listSharedAccounts", [
-            XmlRpc.string(authToken),
+            XmlRpc.string(authToken.pipe(Redacted.value)),
             XmlRpc.int(offset),
             XmlRpc.int(limit),
           ]),
@@ -174,10 +160,10 @@ export const makeService = Effect.gen(function* () {
   );
 
   const listUserGroups = Effect.fn("Papercut.Api.listUserGroups")((offset: number, limit: number) =>
-    authToken.pipe(
+    config.getPapercutApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
         xmlRpc.request("api.listUserGroups", [
-          XmlRpc.string(authToken),
+          XmlRpc.string(authToken.pipe(Redacted.value)),
           XmlRpc.int(offset),
           XmlRpc.int(limit),
         ]),
@@ -189,9 +175,11 @@ export const makeService = Effect.gen(function* () {
     ),
   );
 
-  const performUserAndGroupSync = authToken.pipe(
+  const performUserAndGroupSync = config.getPapercutApiAuthToken.pipe(
     Effect.flatMap((authToken) =>
-      xmlRpc.request("api.performUserAndGroupSync", [XmlRpc.string(authToken)]),
+      xmlRpc.request("api.performUserAndGroupSync", [
+        XmlRpc.string(authToken.pipe(Redacted.value)),
+      ]),
     ),
     Effect.flatMap(httpClientExecute),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),

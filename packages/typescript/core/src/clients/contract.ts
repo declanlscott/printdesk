@@ -19,7 +19,7 @@ export namespace ClientsContract {
       role: Role,
       scopes: Schema.NonEmptyString.pipe(Schema.Array),
     },
-    ["read", "delete"],
+    ["create", "read", "delete"],
   ) {}
 
   export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(

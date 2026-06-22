@@ -36,6 +36,7 @@ export namespace TenantApi {
         success: TenantsContract.SetupSuccess,
         error: [
           ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
           InfraContract.OutputError,
           InfraContract.NotDeployedError,
           TenantsContract.UnexpectedPapercutApiAuthTokenPayloadError,

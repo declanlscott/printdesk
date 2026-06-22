@@ -104,11 +104,11 @@ export const makeService = Effect.gen(function* () {
               ),
               AccessControl.enforce(
                 AccessControl.every(
-                  AccessControl.clientPolicy(
+                  AccessControl.privateActorPolicy(
                     { name: "tenants", id: tenant.id },
-                    (client) =>
+                    (actor) =>
                       Effect.succeed(
-                        client.tenantId === tenant.tenantId && tenant.status === "setup",
+                        actor.tenantId === tenant.tenantId && tenant.status === "setup",
                       ).pipe(
                         Effect.filterOrFail(
                           Predicate.isTruthy,
@@ -120,10 +120,10 @@ export const makeService = Effect.gen(function* () {
                       ),
                     "delete",
                   ),
-                  AccessControl.clientPermissionPolicy("clients:delete"),
-                  AccessControl.clientPermissionPolicy("identity_providers:delete"),
-                  AccessControl.clientPermissionPolicy("tenants:delete"),
-                  AccessControl.clientPermissionPolicy("infra_input:delete"),
+                  AccessControl.privateActorPermissionPolicy("clients:delete"),
+                  AccessControl.privateActorPermissionPolicy("identity_providers:delete"),
+                  AccessControl.privateActorPermissionPolicy("tenants:delete"),
+                  AccessControl.privateActorPermissionPolicy("infra_input:delete"),
                 ),
               ),
             ),
@@ -171,70 +171,81 @@ export const makeService = Effect.gen(function* () {
       }),
     );
 
-    return { setupClientTokens, deploymentId };
+    return { setupClientTokens, deploymentId } as const;
   });
 
-  const setup = Effect.fn("Tenants.Provisioner.setup")(function* (
-    payload: TenantsContract.SetupPayload,
-  ) {
-    const tenantId = yield* Actor.use(Struct.get("assertPrivate")).pipe(
-      Effect.map(Struct.get("tenantId")),
-    );
+  const setup = Effect.fn("Tenants.Provisioner.setup")(
+    function* (payload: TenantsContract.SetupPayload) {
+      const tenantId = yield* Actor.use(Struct.get("assertPrivate")).pipe(
+        Effect.map(Struct.get("tenantId")),
+      );
 
-    const output = yield* InfraContract.OutputSecondaryKey.makeEffect({
-      [Constants.DYNAMO_KEYS.GSI1_PK]: { tenantId, deploymentId: payload.deploymentId },
-    }).pipe(
-      Effect.andThen((Key) => ddb.get({ TableName: ddbTableName, Key })),
-      Effect.mapError((error) =>
-        error._tag === "ResourceNotFoundException"
-          ? new InfraContract.NotDeployedError({ deploymentId: payload.deploymentId })
-          : new InfraContract.OutputError({ cause: error }),
-      ),
-      Effect.map(Struct.get("Item")),
-      Effect.filterOrFail(
-        Predicate.isNotUndefined,
-        () => new InfraContract.NotDeployedError({ deploymentId: payload.deploymentId }),
-      ),
-      Effect.flatMap(Schema.decodeUnknownEffect(InfraContract.OutputItem)),
-    );
+      const output = yield* InfraContract.OutputSecondaryKey.makeEffect({
+        [Constants.DYNAMO_KEYS.GSI1_PK]: { tenantId, deploymentId: payload.deploymentId },
+      }).pipe(
+        Effect.andThen((Key) => ddb.get({ TableName: ddbTableName, Key })),
+        Effect.mapError((error) =>
+          error._tag === "ResourceNotFoundException"
+            ? new InfraContract.NotDeployedError({ deploymentId: payload.deploymentId })
+            : new InfraContract.OutputError({ cause: error }),
+        ),
+        Effect.map(Struct.get("Item")),
+        Effect.filterOrFail(
+          Predicate.isNotUndefined,
+          () => new InfraContract.NotDeployedError({ deploymentId: payload.deploymentId }),
+        ),
+        Effect.flatMap(Schema.decodeUnknownEffect(InfraContract.OutputItem)),
+      );
 
-    if (payload.papercutApiAuthToken._tag !== output.papercutApiTunnelId._tag)
-      return yield* new TenantsContract.UnexpectedPapercutApiAuthTokenPayloadError();
+      if (payload.papercutApiAuthToken._tag !== output.papercutApiTunnelId._tag)
+        return yield* new TenantsContract.UnexpectedPapercutApiAuthTokenPayloadError();
 
-    const papercutApiTunnelToken = yield* output.papercutApiTunnelId.pipe(
-      Option.match({
-        onNone: () =>
-          Option.none<Effect.Success<ReturnType<typeof cloudflare.getTunnelToken>>>().pipe(
-            Effect.succeed,
+      const papercutApiTunnelToken = yield* output.papercutApiTunnelId.pipe(
+        Option.match({
+          onNone: () =>
+            Option.none<Effect.Success<ReturnType<typeof cloudflare.getTunnelToken>>>().pipe(
+              Effect.succeed,
+            ),
+          onSome: (tunnelId) => cloudflare.getTunnelToken(tunnelId).pipe(Effect.map(Option.some)),
+        }),
+      );
+
+      const apiClientSecret = yield* crypto.generateToken();
+      const apiClientSecretHash = yield* apiClientSecret.pipe(crypto.hashSecret);
+
+      yield* db.withTransaction(() =>
+        clientsRepository
+          .create({
+            name: "API Client",
+            secretHash: apiClientSecretHash,
+            role: "api",
+            scopes: ["api"],
+            tenantId,
+          })
+          .pipe(
+            Effect.andThen(({ id }) =>
+              config.setApiClientCredentials({ id, secret: apiClientSecret }),
+            ),
           ),
-        onSome: (tunnelId) => cloudflare.getTunnelToken(tunnelId).pipe(Effect.map(Option.some)),
-      }),
-    );
+      );
 
-    const apiClientSecret = yield* crypto.generateToken();
-    const apiClientSecretHash = yield* apiClientSecret.pipe(crypto.hashSecret);
+      if (Option.isSome(payload.papercutApiAuthToken))
+        yield* config.setPapercutApiAuthToken(payload.papercutApiAuthToken.value);
 
-    yield* db.withTransaction(() =>
-      clientsRepository
-        .create({
-          name: "API Client",
-          secretHash: apiClientSecretHash,
-          role: "api",
-          scopes: ["api"],
-          tenantId,
-        })
-        .pipe(
-          Effect.andThen(({ id }) =>
-            config.setApiClientCredentials({ id, secret: apiClientSecret }),
+      return { papercutApiTunnelToken } as const;
+    },
+    (effect) =>
+      effect.pipe(
+        AccessControl.enforce(
+          AccessControl.every(
+            AccessControl.privateActorPermissionPolicy("infra_output:read"),
+            AccessControl.privateActorPermissionPolicy("cloudflare_tunnel_tokens:read"),
+            AccessControl.privateActorPermissionPolicy("config:update"),
+            AccessControl.privateActorPermissionPolicy("clients:create"),
           ),
         ),
-    );
-
-    if (Option.isSome(payload.papercutApiAuthToken))
-      yield* config.setPapercutApiAuthToken(payload.papercutApiAuthToken.value);
-
-    return { papercutApiTunnelToken } as const;
-  });
+      ),
+  );
 
   return { register, setup } as const;
 });

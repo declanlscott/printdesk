@@ -48,7 +48,7 @@ export namespace Realtime {
     function* (opts: Options) {
       const api = yield* HttpClient.HttpClient.pipe(
         Effect.flatMap((httpClient) =>
-          HttpApiClient.group(Api, { baseUrl: opts.baseUrls.api, httpClient, group: "realtime" }),
+          HttpApiClient.group(Api, { baseUrl: opts.baseUrls.api, httpClient, group: "Realtime" }),
         ),
       );
 

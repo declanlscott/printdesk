@@ -30,7 +30,7 @@ export namespace ReplicacheApi {
     ],
   });
 
-  export class Group extends HttpApiGroup.make("replicache")
+  export class Group extends HttpApiGroup.make("Replicache")
     .add(pull)
     .add(push)
     .prefix("/replicache") {}

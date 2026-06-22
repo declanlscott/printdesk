@@ -11,7 +11,7 @@ export namespace RealtimeApi {
     error: HttpApiError.InternalServerError,
   });
 
-  export class Group extends HttpApiGroup.make("realtime")
+  export class Group extends HttpApiGroup.make("Realtime")
     .add(getAuthorization)
     .prefix("/realtime") {}
 }

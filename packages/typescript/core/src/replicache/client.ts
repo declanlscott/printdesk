@@ -263,7 +263,7 @@ export namespace Replicache {
     const server = yield* HttpClient.HttpClient.pipe(
       Effect.map(HttpClient.filterStatusOk),
       Effect.flatMap((httpClient) =>
-        HttpApiClient.group(Api, { baseUrl, httpClient, group: "replicache" }),
+        HttpApiClient.group(Api, { baseUrl, httpClient, group: "Replicache" }),
       ),
     );
 

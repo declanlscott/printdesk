@@ -8,6 +8,7 @@
   "dependencies": {
     "@effect/atom-react": "catalog:",
     "@effect/platform-browser": "catalog:",
+    "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",
     "@tanstack/devtools-vite": "catalog:",
     "@tanstack/react-devtools": "catalog:",

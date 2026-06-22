@@ -1,3 +1,4 @@
+import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import { DefectMiddleware } from "@printdesk/core/middleware/defect";
 import * as Layer from "effect/Layer";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
@@ -18,6 +19,7 @@ export default {
       HttpServer.layerServices,
       spaGroupLayer,
     ]),
+    Layer.provide(NodeCrypto.layer),
     HttpRouter.toWebHandler,
   ).handler,
 };

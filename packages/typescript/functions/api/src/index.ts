@@ -1,4 +1,5 @@
 import { LambdaHandler } from "@effect-aws/lambda";
+import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import { Api } from "@printdesk/core/api";
 import { DefectMiddleware } from "@printdesk/core/middleware/defect";
 import * as Layer from "effect/Layer";
@@ -18,5 +19,6 @@ export const handler = Api.pipe(
     replicacheGroupLayer,
     tenantGroupLayer,
   ]),
+  Layer.provide(NodeCrypto.layer),
   LambdaHandler.fromHttpApi,
 );

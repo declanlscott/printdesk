@@ -1,6 +1,5 @@
 import { scrypt, timingSafeEqual } from "node:crypto";
 
-import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import { decodeJWT } from "@oslojs/jwt";
 import * as EffectCrypto from "effect/Crypto";
 import * as Effect from "effect/Effect";
@@ -135,4 +134,4 @@ export const makeService = Effect.gen(function* () {
   } as const;
 });
 
-export const layer = makeService.pipe(Layer.effect(Crypto), Layer.provide(NodeCrypto.layer));
+export const layer = makeService.pipe(Layer.effect(Crypto));

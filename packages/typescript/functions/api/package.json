@@ -6,6 +6,7 @@
     "@aws-sdk/credential-providers": "catalog:",
     "@effect-aws/dynamodb": "catalog:",
     "@effect-aws/lambda": "catalog:",
+    "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",
     "aws4fetch": "catalog:",
     "drizzle-orm": "catalog:",

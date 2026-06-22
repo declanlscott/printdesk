@@ -212,9 +212,6 @@ importers:
       '@effect-aws/dynamodb':
         specifier: 'catalog:'
         version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
-      '@effect/platform-node':
-        specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
       '@effect/sql-pg':
         specifier: 'catalog:'
         version: 4.0.0-beta.83(effect@4.0.0-beta.83)
@@ -300,6 +297,9 @@ importers:
       '@effect-aws/lambda':
         specifier: 'catalog:'
         version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.83(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
@@ -519,6 +519,9 @@ importers:
       '@effect/platform-browser':
         specifier: 'catalog:'
         version: 4.0.0-beta.78(effect@4.0.0-beta.83)
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../core

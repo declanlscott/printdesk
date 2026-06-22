@@ -6,6 +6,7 @@ import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 
 import { SstResource } from "../sst/resource";
+import { CloudflareContract } from "./contract";
 
 export class CloudflareError extends Schema.TaggedErrorClass<CloudflareError>()("CloudflareError", {
   cause: Schema.Defect(),
@@ -24,12 +25,17 @@ export class Cloudflare extends Context.Service<Cloudflare>()(
         catch: (cause) => new CloudflareError({ cause }),
       });
 
-      const getTunnelToken = Effect.fn("Cloudflare.getTunnelToken")((tunnelId: string) =>
-        Effect.tryPromise({
-          try: () =>
-            client.zeroTrust.tunnels.cloudflared.token.get(tunnelId, { account_id: account.id }),
-          catch: (cause) => new CloudflareError({ cause }),
-        }),
+      const getTunnelToken = Effect.fn("Cloudflare.getTunnelToken")(
+        (tunnelId: CloudflareContract.TunnelId) =>
+          Effect.tryPromise({
+            try: (signal) =>
+              client.zeroTrust.tunnels.cloudflared.token.get(
+                tunnelId,
+                { account_id: account.id },
+                { signal },
+              ),
+            catch: (cause) => new CloudflareError({ cause }),
+          }).pipe(Effect.flatMap(Schema.decodeEffect(CloudflareContract.TunnelToken))),
       );
 
       return { getTunnelToken } as const;

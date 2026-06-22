@@ -3,6 +3,8 @@ import * as Effect from "effect/Effect";
 import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 import * as Tuple from "effect/Tuple";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
 import { Handler } from "../handlers";
@@ -251,11 +253,17 @@ export namespace ReplicachePusherContract {
   export const Mutation = Schema.Union([MutationV0, MutationV1]);
   export type Mutation = typeof Mutation.Type;
 
-  export class FutureMutationError extends Schema.TaggedErrorClass<FutureMutationError>()(
-    "FutureMutationError",
-    { mutationId: Schema.Int },
-    { httpApiStatus: 400 },
-  ) {}
+  export class FutureMutationError
+    extends Schema.TaggedErrorClass<FutureMutationError>()(
+      "FutureMutationError",
+      { mutationId: Schema.Int },
+      { httpApiStatus: 400 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(FutureMutationError)(this, { status: 400 });
+  }
 
   export const RequestV0 = Schema.Struct({
     pushVersion: Schema.tag(0),

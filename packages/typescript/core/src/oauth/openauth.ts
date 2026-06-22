@@ -152,7 +152,7 @@ export namespace Openauth {
             response,
           ).pipe(HttpClientResponse.schemaBodyJson(OauthContract.Tokens));
 
-          return { tokens };
+          return { tokens } as const;
         },
         (effect) =>
           effect.pipe(
@@ -166,7 +166,7 @@ export namespace Openauth {
         refresh,
         verify,
         clientCredentials,
-      };
+      } as const;
     }),
   }) {
     public static layer(...args: Parameters<typeof Openauth.make>) {

@@ -153,7 +153,6 @@ export const makeService = Effect.gen(function* () {
         ReplicacheContract.VersionNotSupportedError.new("push"),
       ),
       Effect.flatMap((requestV1) =>
-        // oxlint-disable-next-line unicorn/no-array-for-each
         Effect.forEach(requestV1.mutations, (mutationV1) => {
           const preprocessor = preprocess({
             clientId: mutationV1.clientId,

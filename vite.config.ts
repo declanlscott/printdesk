@@ -57,6 +57,7 @@ export default defineConfig({
       "typescript/explicit-function-return-type": "off",
       "typescript/explicit-module-boundary-types": "off",
       "typescript/no-invalid-void-type": "off",
+      "unicorn/no-array-for-each": "off",
       "unicorn/no-array-reduce": "off",
     },
     ignorePatterns: ["**/sst-env.d.ts", "**/routeTree.gen.ts"],

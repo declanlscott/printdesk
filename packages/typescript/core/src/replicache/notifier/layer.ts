@@ -30,16 +30,9 @@ export const makeService = Effect.gen(function* () {
           )
           .pipe(
             Effect.provideContext(context),
-            Effect.andThen((success) =>
-              // oxlint-disable-next-line unicorn/no-array-for-each
-              Effect.forEach(entries, Request.completeEffect(Effect.succeed(success))),
-            ),
-            Effect.catch((error) =>
-              // oxlint-disable-next-line unicorn/no-array-for-each
-              Effect.forEach(
-                entries,
-                Request.completeEffect(new ReplicacheNotifyError({ cause: error })),
-              ),
+            Effect.andThen((success) => Effect.forEach(entries, Request.succeed(success))),
+            Effect.catchCause((cause) =>
+              Effect.forEach(entries, Request.fail(new ReplicacheNotifyError({ cause }))),
             ),
           ),
       ).pipe(RequestResolver.withSpan("ReplicacheNotifier.resolver")),

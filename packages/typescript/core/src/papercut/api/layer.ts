@@ -18,7 +18,6 @@ import {
   SharedAccountBalanceAdjustmentFailure,
   sharedAccountPropertySchemas,
   UserAndGroupSyncFailure,
-  type SharedAccountPropertySchemas,
 } from ".";
 import { Actor } from "../../actors";
 import { Config } from "../../config";
@@ -27,6 +26,8 @@ import { TenantId, tenantTemplate } from "../../utils";
 import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
+
+import type { SharedAccountPropertySchemas } from ".";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

@@ -82,7 +82,8 @@ export namespace Constants {
   export const VARCHAR_LENGTH = 50;
 
   export const PAPERCUT_API_PAGINATION_LIMIT = 1_000;
-  export const PAPERCUT_API_REQUEST_BATCH_SIZE = 10;
+  export const PAPERCUT_API_REQUEST_BATCH_SIZE = 50;
+  export const PAPERCUT_API_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
 
   export const ASSETS_MIME_TYPES = [
     "image/jpeg",

@@ -219,12 +219,12 @@ export const makeService = Effect.gen(function* () {
       ),
       Effect.flatMap((requestV1) =>
         process(requestV1.cookie).pipe(
-          Effect.catchTag("SyncLimitExceededError", () =>
+          Effect.catchTag("ExceededCapacityError", () =>
             Effect.log(
               "[ReplicachePuller]: Sync limit exceeded, retrying with client view reset ...",
             ).pipe(Effect.andThen(process(null))),
           ),
-          Effect.catchTag("SyncLimitExceededError", Effect.die),
+          Effect.catchTag("ExceededCapacityError", Effect.die),
           Effect.provideService(ReplicacheClientGroupId, requestV1.clientGroupId),
         ),
       ),

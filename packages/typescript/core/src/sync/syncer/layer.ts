@@ -1,3 +1,4 @@
+import * as Cause from "effect/Cause";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -180,7 +181,7 @@ export const makeService = Effect.gen(function* () {
       Effect.scoped,
     );
 
-    if (limit < 0) return yield* new Sync.LimitExceededError();
+    if (limit < 0) return yield* new Cause.ExceededCapacityError();
 
     // Fast-forward
     if (clientView.version < clientViewVersion.max)

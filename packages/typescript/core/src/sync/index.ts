@@ -6,7 +6,6 @@ import * as Iterable from "effect/Iterable";
 import * as MutableHashMap from "effect/MutableHashMap";
 import * as MutableHashSet from "effect/MutableHashSet";
 import * as Result from "effect/Result";
-import * as Schema from "effect/Schema";
 import * as Stream from "effect/Stream";
 import * as SynchronizedRef from "effect/SynchronizedRef";
 
@@ -18,11 +17,6 @@ import type { ReplicacheClientViewsModel } from "../replicache/models";
 import type { Version } from "../utils";
 
 export namespace Sync {
-  export class LimitExceededError extends Schema.TaggedErrorClass<LimitExceededError>()(
-    "SyncLimitExceededError",
-    {},
-  ) {}
-
   export type VersionedEntityDto<TEntity extends Models.SyncTableName> =
     Models.SyncTableByName<TEntity>["Dto"]["Type"] & {
       version: Version;

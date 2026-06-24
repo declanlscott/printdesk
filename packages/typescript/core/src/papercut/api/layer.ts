@@ -1,14 +1,17 @@
 import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
+import * as Cache from "effect/Cache";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
+import * as RequestResolver from "effect/RequestResolver";
 import * as Struct from "effect/Struct";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
 import {
   PapercutApi,
+  PapercutApiRequest,
   SharedAccountBalanceAdjustmentFailure,
   sharedAccountPropertySchemas,
   UserAndGroupSyncFailure,
@@ -18,6 +21,7 @@ import { Actor } from "../../actors";
 import { Config } from "../../config";
 import { SstResource } from "../../sst/resource";
 import { TenantId, tenantTemplate } from "../../utils";
+import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
 
@@ -28,29 +32,45 @@ export const makeService = Effect.gen(function* () {
   const resource = yield* SstResource;
   const xmlRpc = yield* XmlRpc.XmlRpc;
 
-  const baseClient = yield* HttpClient.HttpClient;
   const textEncoder = new TextEncoder();
-  const httpClient = Effect.gen(function* () {
-    const url = yield* Actor.use(Struct.get("assertPrivate")).pipe(
-      Effect.map(({ tenantId }) =>
+  const httpClientCache = yield* Cache.make({
+    capacity: 10,
+    lookup: Effect.fn(function* (tenantId: TenantId) {
+      const httpClient = yield* HttpClient.HttpClient;
+
+      const url = tenantTemplate(
+        resource.Hostnames.pipe(Redacted.value).papercutApiTemplate,
         TenantId.make(encodeBase32LowerCaseNoPadding(textEncoder.encode(tenantId)), {
           disableChecks: true,
         }),
-      ),
-      Effect.map((tenantId) =>
-        tenantTemplate(resource.Hostnames.pipe(Redacted.value).papercutApiTemplate, tenantId),
-      ),
-      Effect.map((hostname) => `https://${hostname}`),
-    );
+      );
 
-    return baseClient.pipe(
-      HttpClient.mapRequest(HttpClientRequest.prependUrl(url)),
-      HttpClient.filterStatusOk,
-    );
-  }).pipe(Effect.withSpan("Papercut.Api.httpClient"));
-  const httpClientExecute = Effect.fn("Papercut.Api.httpClientExecute")(
+      return httpClient.pipe(
+        HttpClient.mapRequest(HttpClientRequest.prependUrl(url)),
+        HttpClient.filterStatusOk,
+      );
+    }),
+  });
+
+  const resolver = RequestResolver.make<PapercutApiRequest>((entries) =>
+    Effect.forEach(entries, (entry) =>
+      Actor.use(Struct.get("assertPrivate")).pipe(
+        Effect.provideContext(entry.context),
+        Effect.flatMap(({ tenantId }) => httpClientCache.pipe(Cache.get(tenantId))),
+        Effect.flatMap((client) => client.execute(entry.request)),
+        Effect.exit,
+        Effect.map(entry.completeUnsafe),
+      ),
+    ),
+  ).pipe(
+    RequestResolver.setDelay(Constants.PAPERCUT_API_REQUEST_BATCH_DELAY),
+    RequestResolver.batchN(Constants.PAPERCUT_API_REQUEST_BATCH_SIZE),
+    RequestResolver.withSpan("Papercut.Api.resolver"),
+  );
+
+  const batchRequest = Effect.fn("Papercut.Api.batchRequest")(
     (request: HttpClientRequest.HttpClientRequest) =>
-      httpClient.pipe(Effect.flatMap((client) => client.execute(request))),
+      new PapercutApiRequest(request).pipe(Effect.request(resolver)),
   );
 
   const adjustSharedAccountAccountBalance = Effect.fn(
@@ -65,9 +85,10 @@ export const makeService = Effect.gen(function* () {
           XmlRpc.string(comment),
         ]),
       ),
-      Effect.flatMap(httpClientExecute),
+      Effect.flatMap(batchRequest),
       Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
       Effect.filterOrFail(Predicate.isTruthy, () => new SharedAccountBalanceAdjustmentFailure()),
+      Effect.asVoid,
     ),
   );
 
@@ -82,7 +103,7 @@ export const makeService = Effect.gen(function* () {
             XmlRpc.int(limit),
           ]),
         ),
-        Effect.flatMap(httpClientExecute),
+        Effect.flatMap(batchRequest),
         Effect.flatMap(
           xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
         ),
@@ -105,7 +126,7 @@ export const makeService = Effect.gen(function* () {
           XmlRpc.stringArray(propertyKeys),
         ]),
       ),
-      Effect.flatMap(httpClientExecute),
+      Effect.flatMap(batchRequest),
       Effect.flatMap(
         xmlRpc.response(
           XmlRpcContract.tupleResponse(
@@ -121,7 +142,7 @@ export const makeService = Effect.gen(function* () {
   const getTaskStatus = xmlRpc
     .request("api.getTaskStatus", [])
     .pipe(
-      Effect.flatMap(httpClientExecute),
+      Effect.flatMap(batchRequest),
       Effect.flatMap(
         xmlRpc.response(
           XmlRpcContract.structResponse(
@@ -137,7 +158,7 @@ export const makeService = Effect.gen(function* () {
     Effect.flatMap((authToken) =>
       xmlRpc.request("api.getTotalUsers", [XmlRpc.string(authToken.pipe(Redacted.value))]),
     ),
-    Effect.flatMap(httpClientExecute),
+    Effect.flatMap(batchRequest),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.IntResponse)),
     Effect.withSpan("Papercut.Api.getTotalUsers"),
   );
@@ -152,7 +173,7 @@ export const makeService = Effect.gen(function* () {
             XmlRpc.int(limit),
           ]),
         ),
-        Effect.flatMap(httpClientExecute),
+        Effect.flatMap(batchRequest),
         Effect.flatMap(
           xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
         ),
@@ -168,7 +189,7 @@ export const makeService = Effect.gen(function* () {
           XmlRpc.int(limit),
         ]),
       ),
-      Effect.flatMap(httpClientExecute),
+      Effect.flatMap(batchRequest),
       Effect.flatMap(
         xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
       ),
@@ -181,7 +202,7 @@ export const makeService = Effect.gen(function* () {
         XmlRpc.string(authToken.pipe(Redacted.value)),
       ]),
     ),
-    Effect.flatMap(httpClientExecute),
+    Effect.flatMap(batchRequest),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
     Effect.filterOrFail(Predicate.isTruthy, () => new UserAndGroupSyncFailure()),
     Effect.asVoid,

@@ -1,8 +1,15 @@
 import * as Context from "effect/Context";
+import * as Request from "effect/Request";
 import * as Schema from "effect/Schema";
 
 import { separatedString, StringFromUnknown } from "../../utils";
+import { PapercutContract } from "../contract";
 
+import type { HttpClientError } from "effect/unstable/http/HttpClientError";
+import type { HttpClientRequest } from "effect/unstable/http/HttpClientRequest";
+import type { HttpClientResponse } from "effect/unstable/http/HttpClientResponse";
+import type { Actor } from "../../actors";
+import type { ActorsContract } from "../../actors/contract";
 import type { ServiceShape } from "./layer";
 
 const CommaSeparatedString = separatedString(",");
@@ -10,7 +17,7 @@ const CommaSeparatedString = separatedString(",");
 export const sharedAccountPropertySchemas = {
   "access-groups": CommaSeparatedString,
   "access-users": CommaSeparatedString,
-  "account-id": Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0))),
+  "account-id": PapercutContract.SharedAccountId,
   balance: Schema.Number,
   "comment-option": Schema.Literals(["NO_COMMENT", "COMMENT_REQUIRED", "COMMENT_OPTIONAL"]),
   disabled: Schema.Boolean,
@@ -37,6 +44,13 @@ export class UserAndGroupSyncFailure extends Schema.TaggedErrorClass<UserAndGrou
   "UserAndGroupSyncFailure",
   {},
 ) {}
+
+export class PapercutApiRequest extends Request.Class<
+  HttpClientRequest,
+  HttpClientResponse,
+  ActorsContract.ForbiddenActorError | HttpClientError,
+  Actor
+> {}
 
 export class PapercutApi extends Context.Service<PapercutApi, ServiceShape>()(
   "@printdesk/core/papercut/Api",

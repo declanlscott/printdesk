@@ -9,6 +9,7 @@ import { Oauth } from "@printdesk/core/oauth";
 import { ClientCredentialsProvider } from "@printdesk/core/oauth/client-credentials";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import { EntraIdProvider } from "@printdesk/core/oauth/entra-id";
+import { GoogleProvider } from "@printdesk/core/oauth/google";
 import { SstResource } from "@printdesk/core/sst/resource";
 import { TenantsContract } from "@printdesk/core/tenants/contract";
 import { Constants } from "@printdesk/core/utils/constants";
@@ -20,6 +21,7 @@ import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import { handle } from "hono/aws-lambda";
 import { HTTPException } from "hono/http-exception";
 
@@ -45,17 +47,16 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
     providers: yield* SstResource.useSync(Struct.get("IdentityProviders")).pipe(
       Effect.map(Redacted.value),
       Effect.map((providers) => ({
+        [Constants.CLIENT_CREDENTIALS]: ClientCredentialsProvider({
+          verify: (...args) => verifyClient(...args).pipe(runPromise(Effect.runPromiseExit)),
+        }),
         [Constants.ENTRA_ID]: EntraIdProvider({
           tenant: "organizations",
           clientID: providers[Constants.ENTRA_ID].clientId,
           clientSecret: providers[Constants.ENTRA_ID].clientSecret,
           scopes: [...Constants.ENTRA_ID_OAUTH_SCOPES],
         }),
-        // TODO: Google provider
-        // [Constants.GOOGLE]: GoogleProvider(),
-        [Constants.CLIENT_CREDENTIALS]: ClientCredentialsProvider({
-          verify: (...args) => verifyClient(...args).pipe(runPromise(Effect.runPromiseExit)),
-        }),
+        [Constants.GOOGLE]: GoogleProvider(),
       })),
     ),
     select: async (providers, request) => {
@@ -117,6 +118,9 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
         });
 
       return Match.value(result).pipe(
+        Match.when({ provider: Match.is(Constants.CLIENT_CREDENTIALS) }, (client) =>
+          subject(new OauthContract.ClientSubject(client)),
+        ),
         Match.when({ provider: Match.is(Constants.ENTRA_ID) }, (entraId) =>
           Effect.gen(function* () {
             const accessToken = yield* decodeJwt(
@@ -145,8 +149,8 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
             return yield* subject(user);
           }),
         ),
-        Match.when({ provider: Match.is(Constants.CLIENT_CREDENTIALS) }, (client) =>
-          subject(new OauthContract.ClientSubject(client)),
+        Match.when({ provider: Match.is(Constants.GOOGLE) }, () =>
+          Effect.fail(new HttpApiError.NotImplemented()),
         ),
         Match.exhaustive,
         runPromise(Effect.runPromiseExit),

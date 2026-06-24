@@ -56,8 +56,8 @@ export const makeService = Effect.gen(function* () {
     }),
   });
 
-  const resolver = RequestResolver.make<PapercutApiRequest>((entries) =>
-    Effect.forEach(entries, (entry) =>
+  const resolver = RequestResolver.make<PapercutApiRequest>(
+    Effect.forEach((entry) =>
       Actor.use(Struct.get("assertPrivate")).pipe(
         Effect.provideContext(entry.context),
         Effect.flatMap(({ tenantId }) => httpClientCache.pipe(Cache.get(tenantId))),
@@ -211,6 +211,36 @@ export const makeService = Effect.gen(function* () {
     ),
   );
 
+  const listUserAccounts = Effect.fn("Papercut.Api.listUserAccounts")(
+    (offset: number, limit: number) =>
+      config.getPapercutApiAuthToken.pipe(
+        Effect.flatMap((authToken) =>
+          xmlRpc.request("api.listUserAccounts", [
+            XmlRpc.string(authToken.pipe(Redacted.value)),
+            XmlRpc.int(offset),
+            XmlRpc.int(limit),
+          ]),
+        ),
+        Effect.flatMap(batchRequest),
+        Effect.flatMap(
+          xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
+        ),
+      ),
+  );
+
+  const listUserAccountsStream = Stream.paginate(0, (offset) =>
+    listUserAccounts(offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+      Effect.map((page) =>
+        Tuple.make(
+          page,
+          page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+            ? Option.some(offset + page.length)
+            : Option.none(),
+        ),
+      ),
+    ),
+  );
+
   const listUserGroups = Effect.fn("Papercut.Api.listUserGroups")((offset: number, limit: number) =>
     config.getPapercutApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
@@ -262,6 +292,8 @@ export const makeService = Effect.gen(function* () {
     getTotalUsers,
     listSharedAccounts,
     listSharedAccountsStream,
+    listUserAccounts,
+    listUserAccountsStream,
     listUserGroups,
     listUserGroupsStream,
     performUserAndGroupSync,

@@ -1,6 +1,8 @@
-import { Oauth2Provider, type Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
+import { Oauth2Provider } from "@openauthjs/openauth/provider/oauth2";
 
 import { Constants } from "../utils/constants";
+
+import type { Oauth2WrappedConfig } from "@openauthjs/openauth/provider/oauth2";
 
 export interface EntraIdProviderConfig extends Oauth2WrappedConfig {
   tenant: string;

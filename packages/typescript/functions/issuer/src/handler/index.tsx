@@ -21,7 +21,6 @@ import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import { handle } from "hono/aws-lambda";
 import { HTTPException } from "hono/http-exception";
 
@@ -149,8 +148,8 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
             return yield* subject(user);
           }),
         ),
-        Match.when({ provider: Match.is(Constants.GOOGLE) }, () =>
-          Effect.fail(new HttpApiError.NotImplemented()),
+        Match.when({ provider: Match.is(Constants.GOOGLE) }, (google) =>
+          Effect.fail(new IdentityProvidersContract.NotImplementedError({ kind: google.provider })),
         ),
         Match.exhaustive,
         runPromise(Effect.runPromiseExit),

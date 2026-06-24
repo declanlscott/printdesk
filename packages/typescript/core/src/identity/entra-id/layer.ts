@@ -1,6 +1,7 @@
 import { ConfidentialClientApplication } from "@azure/msal-node";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
@@ -33,17 +34,7 @@ export const makeService = Effect.fn(function* (
         scopes: ["https://graph.microsoft.com/.default"],
       }),
     catch: (cause) => new EntraIdError({ cause }),
-  }).pipe(
-    Effect.flatMap((result) =>
-      result === null
-        ? Effect.fail(
-            new EntraIdError({
-              cause: new globalThis.Error("Missing authentication result"),
-            }),
-          )
-        : Effect.succeed(result.accessToken),
-    ),
-  );
+  }).pipe(Effect.filterOrFail(Predicate.isNotNull), Effect.map(Struct.get("accessToken")));
 
   return { accessToken } as const;
 });

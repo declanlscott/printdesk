@@ -126,12 +126,10 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-    );
+    ).pipe(Stream.withSpan("Papercut.Api.getGroupMembersStream"));
 
-  // NOTE: Not using `Effect.fn` here because TypeScript will error with:
-  // "Type instantiation is excessively deep and possibly infinite."
   const getSharedAccountProperties = <
-    TPropertyKeys extends Array<keyof SharedAccountPropertySchemas>,
+    const TPropertyKeys extends Array<keyof SharedAccountPropertySchemas>,
   >(
     sharedAccountName: string,
     ...propertyKeys: TPropertyKeys
@@ -209,7 +207,7 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-  );
+  ).pipe(Stream.withSpan("Papercut.Api.listSharedAccountsStream"));
 
   const listUserAccounts = Effect.fn("Papercut.Api.listUserAccounts")(
     (offset: number, limit: number) =>
@@ -239,7 +237,7 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-  );
+  ).pipe(Stream.withSpan("Papercut.Api.listUserAccountsStream"));
 
   const listUserGroups = Effect.fn("Papercut.Api.listUserGroups")((offset: number, limit: number) =>
     config.getPapercutApiAuthToken.pipe(
@@ -268,7 +266,7 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-  );
+  ).pipe(Stream.withSpan("Papercut.Api.listUserGroupsStream"));
 
   const performUserAndGroupSync = config.getPapercutApiAuthToken.pipe(
     Effect.flatMap((authToken) =>

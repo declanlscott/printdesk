@@ -2,10 +2,13 @@ import { encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import * as Cache from "effect/Cache";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as RequestResolver from "effect/RequestResolver";
+import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
@@ -110,6 +113,20 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
+  const getGroupMembersStream = (groupName: string) =>
+    Stream.paginate(0, (offset) =>
+      getGroupMembers(groupName, offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+        Effect.map((page) =>
+          Tuple.make(
+            page,
+            page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+              ? Option.some(offset + page.length)
+              : Option.none(),
+          ),
+        ),
+      ),
+    );
+
   // NOTE: Not using `Effect.fn` here because TypeScript will error with:
   // "Type instantiation is excessively deep and possibly infinite."
   const getSharedAccountProperties = <
@@ -180,6 +197,19 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
+  const listSharedAccountsStream = Stream.paginate(0, (offset) =>
+    listSharedAccounts(offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+      Effect.map((page) =>
+        Tuple.make(
+          page,
+          page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+            ? Option.some(offset + page.length)
+            : Option.none(),
+        ),
+      ),
+    ),
+  );
+
   const listUserGroups = Effect.fn("Papercut.Api.listUserGroups")((offset: number, limit: number) =>
     config.getPapercutApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
@@ -192,6 +222,19 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap(batchRequest),
       Effect.flatMap(
         xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
+      ),
+    ),
+  );
+
+  const listUserGroupsStream = Stream.paginate(0, (offset) =>
+    listUserGroups(offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+      Effect.map((page) =>
+        Tuple.make(
+          page,
+          page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+            ? Option.some(offset + page.length)
+            : Option.none(),
+        ),
       ),
     ),
   );
@@ -212,11 +255,14 @@ export const makeService = Effect.gen(function* () {
   return {
     adjustSharedAccountAccountBalance,
     getGroupMembers,
+    getGroupMembersStream,
     getSharedAccountProperties,
     getTaskStatus,
     getTotalUsers,
     listSharedAccounts,
+    listSharedAccountsStream,
     listUserGroups,
+    listUserGroupsStream,
     performUserAndGroupSync,
   } as const;
 });

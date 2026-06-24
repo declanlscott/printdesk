@@ -73,4 +73,16 @@ export namespace IdentityProvidersContract {
     "IdentityProviderNotFoundError",
     Table.Dto.mapFields(Struct.pick(["kind", "externalTenantId"])),
   ) {}
+
+  export class NotImplementedError
+    extends Schema.TaggedErrorClass<NotImplementedError>()(
+      "IdentityProviderNotImplementedError",
+      { kind: Kind },
+      { httpApiStatus: 501 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(NotImplementedError)(this, { status: 501 });
+  }
 }

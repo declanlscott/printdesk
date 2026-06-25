@@ -85,6 +85,9 @@ export namespace Constants {
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 50;
   export const PAPERCUT_API_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
 
+  export const GRAPH_REQUEST_BATCH_SIZE = 50;
+  export const GRAPH_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
+
   export const ASSETS_MIME_TYPES = [
     "image/jpeg",
     "image/png",

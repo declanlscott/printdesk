@@ -11,7 +11,6 @@ import { activeUsersView, users } from "../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { ReplicacheClientView } from "../../replicache/sql";
-import type { Prettify } from "../../utils";
 import type { ActiveUser, User, UserByOrigin, UsersTable } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
@@ -241,17 +240,7 @@ export const makeService = Effect.gen(function* () {
             .from(table)
             .where(and(eq(table.origin, origin), eq(table.tenantId, tenantId))),
         )
-        .pipe(Effect.map((users) => users as Array<Prettify<UserByOrigin<TUserOrigin>>>)),
-  );
-
-  const findByUsernames = Effect.fn("Users.Repository.findByUsernames")(
-    (usernames: ReadonlyArray<User["username"]>, tenantId: User["tenantId"]) =>
-      db.useTransaction((tx) =>
-        tx
-          .select()
-          .from(table)
-          .where(and(inArray(table.username, usernames), eq(table.tenantId, tenantId))),
-      ),
+        .pipe(Effect.map((users) => users as Array<UserByOrigin<TUserOrigin>>)),
   );
 
   const updateById = Effect.fn("Users.Repository.updateById")(
@@ -280,7 +269,6 @@ export const makeService = Effect.gen(function* () {
     findActiveFastForward,
     findById,
     findByOrigin,
-    findByUsernames,
     updateById,
   } as const;
 });

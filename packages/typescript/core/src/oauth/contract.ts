@@ -79,11 +79,17 @@ export namespace OauthContract {
       );
   }
 
-  export class InvalidAuthorizationCodeError extends Schema.TaggedErrorClass<InvalidAuthorizationCodeError>()(
-    "InvalidAuthorizationCodeError",
-    { cause: Schema.instanceOf(OpenauthInvalidAuthorizationCodeError) },
-    { httpApiStatus: 400 },
-  ) {}
+  export class InvalidAuthorizationCodeError
+    extends Schema.TaggedErrorClass<InvalidAuthorizationCodeError>()(
+      "InvalidAuthorizationCodeError",
+      { cause: Schema.instanceOf(OpenauthInvalidAuthorizationCodeError) },
+      { httpApiStatus: 400 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(InvalidAuthorizationCodeError)(this, { status: 400 });
+  }
 
   export class InvalidAccessTokenError
     extends Schema.TaggedErrorClass<InvalidAccessTokenError>()(
@@ -209,11 +215,17 @@ export namespace OauthContract {
     url: Schema.URLFromString,
   }) {}
 
-  export class ExchangeError extends Schema.TaggedErrorClass<ExchangeError>()(
-    "ExchangeError",
-    { cause: Schema.Defect() },
-    { httpApiStatus: 500 },
-  ) {}
+  export class ExchangeError
+    extends Schema.TaggedErrorClass<ExchangeError>()(
+      "ExchangeError",
+      { cause: Schema.Defect() },
+      { httpApiStatus: 500 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(ExchangeError)(this, { status: 500 });
+  }
 
   export class ExchangeSuccess extends Schema.Class<ExchangeSuccess>("ExchangeSuccess")({
     tokens: Tokens,

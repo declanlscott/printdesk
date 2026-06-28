@@ -41,11 +41,7 @@ export namespace AuthApi {
         code: Schema.NonEmptyString,
         redirectUri: Schema.URLFromString,
       }).pipe(Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI })),
-      error: [
-        OauthContract.ExchangeError,
-        OauthContract.InvalidAuthorizationCodeError,
-        HttpApiError.InternalServerError,
-      ],
+      error: [OauthContract.ExchangeError, OauthContract.InvalidAuthorizationCodeError],
     },
   );
 

@@ -1,9 +1,14 @@
 import * as Context from "effect/Context";
 import * as Request from "effect/Request";
 import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
+import { CustomerGroupsContract } from "../../groups/contracts";
+import { SharedAccountsContract } from "../../shared-accounts/contracts";
+import { UsersContract } from "../../users/contract";
 import { separatedString, StringFromUnknown } from "../../utils";
-import { PapercutContract } from "../contract";
 
 import type { HttpClientError } from "effect/unstable/http/HttpClientError";
 import type { HttpClientRequest } from "effect/unstable/http/HttpClientRequest";
@@ -15,9 +20,19 @@ import type { ServiceShape } from "./layer";
 const CommaSeparatedString = separatedString(",");
 
 export const sharedAccountPropertySchemas = {
-  "access-groups": CommaSeparatedString,
-  "access-users": CommaSeparatedString,
-  "account-id": PapercutContract.SharedAccountId,
+  "access-groups": CommaSeparatedString.pipe(
+    Schema.decodeTo(CustomerGroupsContract.Name.pipe(Schema.Array), {
+      decode: SchemaGetter.passthrough(),
+      encode: SchemaGetter.passthrough(),
+    }),
+  ),
+  "access-users": CommaSeparatedString.pipe(
+    Schema.decodeTo(UsersContract.Username.pipe(Schema.Array), {
+      decode: SchemaGetter.passthrough(),
+      encode: SchemaGetter.passthrough(),
+    }),
+  ),
+  "account-id": SharedAccountsContract.PapercutId,
   balance: Schema.Number,
   "comment-option": Schema.Literals(["NO_COMMENT", "COMMENT_REQUIRED", "COMMENT_OPTIONAL"]),
   disabled: Schema.Boolean,
@@ -32,7 +47,6 @@ export const sharedAccountPropertySchemas = {
   pin: StringFromUnknown,
   restricted: Schema.Boolean,
 } as const;
-
 export type SharedAccountPropertySchemas = typeof sharedAccountPropertySchemas;
 
 export class SharedAccountBalanceAdjustmentFailure extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(

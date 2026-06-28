@@ -74,11 +74,12 @@ import * as WorkflowStatusesPolicies from "@printdesk/core/workflows/status/poli
 import * as WorkflowStatusesRepository from "@printdesk/core/workflows/status/repository/layer";
 import * as WorkflowStatusesSync from "@printdesk/core/workflows/status/sync/layer";
 import * as Effect from "effect/Effect";
+import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
+import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
 import { databaseLayer, dynamoLayer } from "../lib/database";
 import { realtimeLayer } from "../lib/realtime";
@@ -101,10 +102,13 @@ export const baseReplicacheGroupLayer = HttpApiBuilder.group(
               VersionNotSupportedError: (e) => Effect.succeed(e.response),
             }),
             Effect.flatMap(Schema.encodeEffect(ReplicachePullerContract.Response)),
-            Effect.mapError((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? error
-                : new HttpApiError.InternalServerError(),
+            Effect.catchFilter(
+              Filter.make((error) =>
+                HttpServerRespondable.isRespondable(error)
+                  ? Result.fail(error)
+                  : Result.succeed(error),
+              ),
+              Effect.die,
             ),
           ),
         ),
@@ -117,10 +121,13 @@ export const baseReplicacheGroupLayer = HttpApiBuilder.group(
               ClientStateNotFoundError: (e) => Effect.succeed(e.response),
               VersionNotSupportedError: (e) => Effect.succeed(e.response),
             }),
-            Effect.mapError((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? error
-                : new HttpApiError.InternalServerError(),
+            Effect.catchFilter(
+              Filter.make((error) =>
+                HttpServerRespondable.isRespondable(error)
+                  ? Result.fail(error)
+                  : Result.succeed(error),
+              ),
+              Effect.die,
             ),
           ),
         ),

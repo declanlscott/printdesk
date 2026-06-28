@@ -16,8 +16,10 @@ import { layer as tenantsProvisionerLayer } from "@printdesk/core/tenants/provis
 import * as TenantsRepository from "@printdesk/core/tenants/repository/layer";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
+import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
+import * as Result from "effect/Result";
 import * as Struct from "effect/Struct";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import * as HttpEffect from "effect/unstable/http/HttpEffect";
@@ -25,7 +27,6 @@ import * as HttpServerError from "effect/unstable/http/HttpServerError";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
 import { openauthLayer } from "../lib/auth";
 import { databaseLayer, dynamoLayer } from "../lib/database";
@@ -72,11 +73,13 @@ export const baseTenantRegistrationGroupLayer = HttpApiBuilder.group(
             ),
           ),
           Effect.map(Struct.pick(["deploymentId"])),
-          Effect.tapError(Effect.logError),
-          Effect.mapError((error) =>
-            HttpServerRespondable.isRespondable(error)
-              ? error
-              : new HttpApiError.InternalServerError(),
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
           ),
         ),
       ),
@@ -111,10 +114,13 @@ export const baseTenantSetupGroupLayer = HttpApiBuilder.group(
       "setup",
       Effect.fn("Api.TenantSetup.setup")(({ payload }) =>
         setup(payload).pipe(
-          Effect.mapError((error) =>
-            HttpServerRespondable.isRespondable(error)
-              ? error
-              : new HttpApiError.InternalServerError(),
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
           ),
         ),
       ),

@@ -1,11 +1,12 @@
+import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
-import * as Predicate from "effect/Predicate";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
+import * as SqlError from "effect/unstable/sql/SqlError";
 
 import { Constants } from "../utils/constants";
 import { Drizzle } from "./drizzle";
@@ -22,44 +23,39 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
   make: Effect.gen(function* () {
     const db = yield* Drizzle;
 
-    const withTransaction = Effect.fn("Database.TransactionManager.withTransaction")(function* <
-      TSuccess,
-      TError,
-      TServices,
-    >(
-      execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
-      { retry = false }: { retry?: boolean } = {},
-    ) {
-      const transaction = db.transaction(execute);
+    const withTransaction = Effect.fn("Database.TransactionManager.withTransaction")(
+      <TSuccess, TError, TServices>(
+        execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
+        { disableRetries = false }: { disableRetries?: boolean } = {},
+      ) =>
+        db.transaction(execute).pipe(
+          Effect.retry(($) =>
+            $(Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES)).pipe(
+              Schedule.both(Schedule.exponential(Duration.millis(10))),
+              Schedule.jittered,
+              Schedule.while(
+                Effect.fn(function* (metadata) {
+                  const shouldRetry =
+                    !disableRetries &&
+                    SqlError.isSqlError(metadata.input) &&
+                    metadata.input.isRetryable;
 
-      if (!retry) return yield* transaction;
+                  yield* Effect.log(
+                    `[Database]: Transaction attempt #${metadata.attempt} failed, ${
+                      shouldRetry
+                        ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
+                        : "not retrying"
+                    }:`,
+                    Cause.fail(metadata.input),
+                  );
 
-      return yield* transaction.pipe(
-        Effect.retry(($) =>
-          $(Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES)).pipe(
-            Schedule.both(Schedule.exponential(Duration.millis(10))),
-            Schedule.jittered,
-            Schedule.while(
-              Effect.fn(function* (metadata) {
-                const isRetryable =
-                  Predicate.isTagged(metadata.input, "SqlError") && metadata.input.isRetryable;
-
-                yield* Effect.log(
-                  `[Database]: Transaction attempt #${metadata.attempt} failed, ${
-                    isRetryable
-                      ? `retrying again in ${metadata.duration.pipe(Duration.format)} ...`
-                      : "not retryable."
-                  }`,
-                  metadata.input,
-                );
-
-                return isRetryable;
-              }),
+                  return shouldRetry;
+                }),
+              ),
             ),
           ),
         ),
-      );
-    });
+    );
 
     const useTransaction = Effect.fn("Database.TransactionManager.useTransaction")(
       <TSuccess, TError, TServices>(

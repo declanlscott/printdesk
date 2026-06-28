@@ -164,7 +164,6 @@ export const makeService = Effect.gen(function* () {
             clientView: { previous: previousClientView, next: nextClientView },
           });
         }),
-        { retry: true },
       );
     },
     (effect, cookie) =>

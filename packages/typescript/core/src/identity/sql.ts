@@ -9,10 +9,13 @@ import type { InferSelectModel } from "drizzle-orm";
 export const identityProviders = new Tables.NonSync(
   "identity_providers",
   {
-    kind: Columns.union(IdentityProvidersContract.kinds).notNull(),
-    externalTenantId: text().notNull(),
+    kind: Columns.union(IdentityProvidersContract.Kind.literals).notNull(),
+    externalTenantId: text().$type<IdentityProvidersContract.ExternalTenantId>().notNull(),
   },
-  (table) => [uniqueIndex().on(table.kind, table.externalTenantId)],
+  (table) => [
+    uniqueIndex().on(table.kind, table.tenantId),
+    uniqueIndex().on(table.externalTenantId, table.tenantId),
+  ],
 );
 export const identityProvidersTable = identityProviders.table;
 export type IdentityProvidersTable = typeof identityProvidersTable;

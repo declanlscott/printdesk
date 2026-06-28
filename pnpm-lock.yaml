@@ -284,7 +284,7 @@ importers:
         version: 8.20.0
       drizzle-kit:
         specifier: rc
-        version: 1.0.0-rc.3
+        version: 1.0.0-rc.4-ca0f029
 
   packages/typescript/functions/api:
     dependencies:
@@ -362,6 +362,9 @@ importers:
       '@effect-aws/lambda':
         specifier: 'catalog:'
         version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.83(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+      '@effect/platform-node':
+        specifier: 'catalog:'
+        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
       '@openauthjs/openauth':
         specifier: 'catalog:'
         version: 0.4.3(arctic@2.3.4)(hono@4.12.25)
@@ -3034,8 +3037,8 @@ packages:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
 
-  drizzle-kit@1.0.0-rc.3:
-    resolution: {integrity: sha512-lwGIi6GTlEYzrtac1Szecns+zrAxjaOoNysfBCKRQOXQE7nMJ8IU2I2S6ek3FHEm1N30dQb5YrTdqV7zNH6n7A==}
+  drizzle-kit@1.0.0-rc.4-ca0f029:
+    resolution: {integrity: sha512-hM1K72ptIPOpJDScHo7cAF+K8A8Tr3q2yHvBJvOZWvLn2lN+G4RDUvG3rT3ohlSE2O3BN/s7g3e3JiQLStt8iQ==}
     hasBin: true
 
   drizzle-orm@1.0.0-rc.3:
@@ -6546,7 +6549,7 @@ snapshots:
 
   diff@8.0.4: {}
 
-  drizzle-kit@1.0.0-rc.3:
+  drizzle-kit@1.0.0-rc.4-ca0f029:
     dependencies:
       '@drizzle-team/brocli': 0.11.0
       '@js-temporal/polyfill': 0.5.1

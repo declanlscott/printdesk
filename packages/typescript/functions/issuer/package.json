@@ -6,6 +6,7 @@
   "dependencies": {
     "@effect-aws/dynamodb": "catalog:",
     "@effect-aws/lambda": "catalog:",
+    "@effect/platform-node": "catalog:",
     "@openauthjs/openauth": "catalog:",
     "@printdesk/core": "workspace:^",
     "drizzle-orm": "catalog:",

@@ -1,3 +1,4 @@
+import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as ClientsRepository from "@printdesk/core/clients/repository/layer";
 import * as Crypto from "@printdesk/core/crypto/layer";
 import { Database } from "@printdesk/core/database";
@@ -15,7 +16,7 @@ export const layer = Oauth.layer.pipe(
   Layer.provide(SyncQueryBuilder.layer),
   Layer.provideMerge(IdentityProvidersRepository.layer),
   Layer.provideMerge([Crypto.layer, Database.layer]),
-  Layer.provide(Drizzle.layerWithDrizzleServices),
+  Layer.provide([Drizzle.layerWithDrizzleServices, NodeCrypto.layer]),
   Layer.provide(PgClient.layer),
   Layer.provideMerge(SstResource.layer),
 );

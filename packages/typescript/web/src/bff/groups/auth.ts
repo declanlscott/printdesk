@@ -135,7 +135,14 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
               ]),
             ),
           ),
-          Effect.catchTag("CookieError", () => new HttpApiError.InternalServerError()),
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
         ),
       );
   }),

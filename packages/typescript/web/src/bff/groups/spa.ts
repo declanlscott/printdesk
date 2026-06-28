@@ -5,7 +5,6 @@ import * as Struct from "effect/Struct";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
 import { Bff } from "../contract";
 import { ViteResource } from "../lib/sst";
@@ -22,7 +21,7 @@ export const baseSpaGroupLayer = HttpApiBuilder.group(
       HttpServerRequest.toWeb(request).pipe(
         Effect.flatMap((request) => Effect.tryPromise(() => assets.fetch(request))),
         Effect.map(HttpServerResponse.fromWeb),
-        Effect.mapError(() => new HttpApiError.InternalServerError()),
+        Effect.orDie,
       ),
     );
   }),

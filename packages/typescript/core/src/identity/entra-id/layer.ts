@@ -14,7 +14,7 @@ import type { IdentityProvidersContract } from "../contract";
 export type ServiceShape = Effect.Success<ReturnType<typeof makeService>>;
 
 export const makeService = Effect.fn(function* (
-  externalTenantId: (typeof IdentityProvidersContract.Table.Model.Type)["externalTenantId"],
+  externalTenantId: IdentityProvidersContract.ExternalTenantId,
 ) {
   const { clientId, clientSecret } = yield* SstResource.useSync((resource) =>
     resource.IdentityProviders.pipe(Redacted.value, Struct.get(Constants.ENTRA_ID)),

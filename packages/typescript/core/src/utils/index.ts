@@ -125,11 +125,11 @@ export type EndsWith<
   TValue extends string,
 > = TValue extends `${string}${TSuffix}` ? TValue : never;
 
-export type Discriminate<TEntity, TKey extends keyof TEntity, TValue extends TEntity[TKey]> = Omit<
+export type Discriminate<
   TEntity,
-  TKey
-> &
-  Record<TKey, TValue>;
+  TKey extends keyof TEntity,
+  TValue extends TEntity[TKey],
+> = Prettify<Omit<TEntity, TKey> & Record<TKey, TValue>>;
 
 export interface SchemaAndValue<TSchema extends Schema.Top> {
   schema: TSchema;

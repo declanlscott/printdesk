@@ -3,16 +3,20 @@
 import { readMigrationFiles } from "drizzle-orm/migrator";
 import { sql } from "drizzle-orm/sql";
 import * as Array from "effect/Array";
+import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Crypto from "effect/Crypto";
-import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
+import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
+import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
+import * as SqlError from "effect/unstable/sql/SqlError";
 
 import { Drizzle } from "./drizzle";
 
@@ -56,7 +60,7 @@ export const DsqlStatement = Schema.Trim.pipe(
   }),
 );
 
-export class Migrator extends Context.Service<Migrator>()("@printdesk/core/database/migrator", {
+export class Migrator extends Context.Service<Migrator>()("@printdesk/core/database/Migrator", {
   make: Effect.gen(function* () {
     const db = yield* Drizzle;
     const config = yield* MigratorConfig;
@@ -116,8 +120,13 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
               if (Option.isSome(storedHash)) {
                 if (storedHash.value !== hash)
                   yield* Effect.log(
-                    `Warning: Migration statement ${index} in migration ${DateTime.makeUnsafe(migration.folderMillis).pipe(DateTime.formatUtc)} has been modified since it was applied.` +
-                      `The stored hash (${storedHash.value.slice(0, 8)}) differs from the current hash (${hash.slice(0, 8)}).` +
+                    `Warning: Migration statement ${index} in migration ${
+                      migration.folderMillis
+                    } has been modified since it was applied.` +
+                      `The stored hash (${storedHash.value.slice(
+                        0,
+                        8,
+                      )}) differs from the current hash (${hash.slice(0, 8)}).` +
                       `This statement will be skipped, but the change may indicate a problem.\n` +
                       `Action: If this change is intentional, create a new migration. If not, investigate why this migration file changed.`,
                   );
@@ -126,7 +135,40 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
               }
 
               const dsqlStatement = yield* Schema.decodeEffect(DsqlStatement)(statement);
-              if (dsqlStatement) yield* db.execute(sql.raw(dsqlStatement));
+              if (dsqlStatement)
+                yield* db.execute(sql.raw(dsqlStatement)).pipe(
+                  Effect.retry(($) =>
+                    $(Schedule.recurs(3)).pipe(
+                      Schedule.both(Schedule.exponential(Duration.seconds(1))),
+                      Schedule.jittered,
+                      Schedule.while(
+                        Effect.fn(function* (metadata) {
+                          const isRetryable =
+                            Cause.isCause(metadata.input.cause) &&
+                            metadata.input.cause.pipe(
+                              Cause.findErrorOption,
+                              Option.filter(SqlError.isSqlError),
+                              Option.map(Struct.get("isRetryable")),
+                              Option.getOrElse(() => false),
+                            );
+
+                          yield* Effect.log(
+                            `[Migrator]: Migration statement ${index} in migration ${
+                              migration.folderMillis
+                            } attempt #${metadata.attempt} failed, ${
+                              isRetryable
+                                ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
+                                : "not retryable"
+                            }:`,
+                            metadata.input.pipe(Cause.fail),
+                          );
+
+                          return isRetryable;
+                        }),
+                      ),
+                    ),
+                  ),
+                );
 
               yield* db.execute(sql`INSERT INTO ${schema}.${table}
   (${columns.migrationHash}, ${columns.migrationFolderMillis}, ${columns.statementIndex}, ${columns.statementHash})

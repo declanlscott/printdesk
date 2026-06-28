@@ -129,7 +129,7 @@ export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2,
 
             if (accessToken.audience !== entraId.clientID)
               return yield* new OauthContract.InvalidAudienceError({
-                expected: entraId.clientID,
+                expected: IdentityProvidersContract.Audience.make(entraId.clientID),
                 received: accessToken.audience,
               });
 

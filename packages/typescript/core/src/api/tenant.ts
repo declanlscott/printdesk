@@ -1,5 +1,4 @@
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
@@ -23,7 +22,6 @@ export namespace TenantApi {
           TenantsContract.TenantSlugConflictError,
           OauthContract.ClientCredentialsError,
           InfraContract.InputError,
-          HttpApiError.InternalServerError,
         ],
       }),
     )
@@ -40,7 +38,6 @@ export namespace TenantApi {
           InfraContract.OutputError,
           InfraContract.NotDeployedError,
           TenantsContract.UnexpectedPapercutApiAuthTokenPayloadError,
-          HttpApiError.InternalServerError,
         ],
       }),
     )

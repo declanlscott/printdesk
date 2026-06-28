@@ -1,5 +1,4 @@
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
@@ -11,11 +10,7 @@ export namespace ReplicacheApi {
     headers: ReplicachePullerContract.Headers,
     payload: ReplicachePullerContract.Payload,
     success: ReplicachePullerContract.Success,
-    error: [
-      AccessControl.AccessDeniedError,
-      ActorsContract.ForbiddenActorError,
-      HttpApiError.InternalServerError,
-    ],
+    error: [AccessControl.AccessDeniedError, ActorsContract.ForbiddenActorError],
   });
 
   export const push = HttpApiEndpoint.post("push", "/push", {
@@ -26,7 +21,6 @@ export namespace ReplicacheApi {
       AccessControl.AccessDeniedError,
       ActorsContract.ForbiddenActorError,
       ReplicachePusherContract.FutureMutationError,
-      HttpApiError.InternalServerError,
     ],
   });
 

@@ -20,6 +20,7 @@ import type {
   ActiveCustomerGroup,
   ActiveMembershipCustomerGroup,
   CustomerGroup,
+  CustomerGroupByOrigin,
   CustomerGroupsTable,
 } from "../../sql";
 
@@ -375,6 +376,21 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
+  const findByOrigin = Effect.fn("Groups.CustomersRepository.findByOrigin")(
+    <TCustomerGroupOrigin extends CustomerGroup["origin"]>(
+      origin: TCustomerGroupOrigin,
+      tenantId: CustomerGroup["tenantId"],
+    ) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select()
+            .from(table)
+            .where(and(eq(table.origin, origin), eq(table.tenantId, tenantId))),
+        )
+        .pipe(Effect.map((groups) => groups as Array<CustomerGroupByOrigin<TCustomerGroupOrigin>>)),
+  );
+
   return {
     upsertMany,
     findCreates,
@@ -390,6 +406,7 @@ export const makeService = Effect.gen(function* () {
     findActiveFastForward,
     findActiveMembershipFastForward,
     findActiveMemberIds,
+    findByOrigin,
   } as const;
 });
 

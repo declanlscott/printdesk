@@ -2,18 +2,13 @@ import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Number from "effect/Number";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
-import * as SqlError from "effect/unstable/sql/SqlError";
 
-import { DataConflictError, DsqlError, SchemaConflictError } from "../aws/dsql";
 import { Constants } from "../utils/constants";
 import { Drizzle } from "./drizzle";
-import { pgCodeFromCause } from "./postgres";
 import { Transaction } from "./transaction";
 
 import type { AnyPgSelectQueryBuilder, PgSelectDynamic } from "drizzle-orm/pg-core";
@@ -35,60 +30,34 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
       execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
       { retry = false }: { retry?: boolean } = {},
     ) {
-      const transaction = db.transaction(execute).pipe(
-        Effect.mapError((error) => {
-          if (
-            Predicate.isTagged(error, "SqlError") &&
-            Predicate.isTagged(error.reason, "UnknownError")
-          ) {
-            const code = pgCodeFromCause(error.reason.cause);
-            const message = Predicate.isError(error.reason.cause)
-              ? error.reason.cause.message
-              : undefined;
-
-            if (code === DataConflictError.code || message?.includes(DataConflictError.code))
-              return new DsqlError({
-                reason: new DataConflictError(
-                  error.reason.pipe(
-                    Struct.pick(Struct.keys(Struct.omit(SqlError.UnknownError.fields, ["_tag"]))),
-                  ),
-                ),
-              });
-
-            if (code === SchemaConflictError.code || message?.includes(SchemaConflictError.code))
-              return new DsqlError({
-                reason: new SchemaConflictError(
-                  error.reason.pipe(
-                    Struct.pick(Struct.keys(Struct.omit(SqlError.UnknownError.fields, ["_tag"]))),
-                  ),
-                ),
-              });
-          }
-
-          return error;
-        }),
-      );
+      const transaction = db.transaction(execute);
 
       if (!retry) return yield* transaction;
 
-      const schedule = Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES).pipe(
-        Schedule.both(Schedule.exponential(Duration.millis(10))),
-        Schedule.jittered,
-        Schedule.reduce(() => 0, Number.increment), // repetitions
-        Schedule.modifyDelay((attempt, delay) =>
-          Effect.logInfo(
-            `[Database]: Transaction attempt #${attempt + 1} failed, retrying again in ${delay.pipe(Duration.format)} ...`,
-          ).pipe(Effect.as(delay)),
-        ),
-      );
-
       return yield* transaction.pipe(
-        Effect.retry({
-          while: (error) =>
-            (Predicate.isTagged(error, "SqlError") || Predicate.isTagged(error, "DsqlError")) &&
-            error.pipe(Struct.get("isRetryable")),
-          schedule,
-        }),
+        Effect.retry(($) =>
+          $(Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES)).pipe(
+            Schedule.both(Schedule.exponential(Duration.millis(10))),
+            Schedule.jittered,
+            Schedule.while(
+              Effect.fn(function* (metadata) {
+                const isRetryable =
+                  Predicate.isTagged(metadata.input, "SqlError") && metadata.input.isRetryable;
+
+                yield* Effect.log(
+                  `[Database]: Transaction attempt #${metadata.attempt} failed, ${
+                    isRetryable
+                      ? `retrying again in ${metadata.duration.pipe(Duration.format)} ...`
+                      : "not retryable."
+                  }`,
+                  metadata.input,
+                );
+
+                return isRetryable;
+              }),
+            ),
+          ),
+        ),
       );
     });
 

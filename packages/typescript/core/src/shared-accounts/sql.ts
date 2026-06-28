@@ -1,12 +1,22 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
-import { bigint, index, numeric, snakeCase, text, uniqueIndex } from "drizzle-orm/pg-core";
+import { and, eq, getViewSelectedFields, isNotNull, isNull, or } from "drizzle-orm";
+import {
+  bigint,
+  check,
+  index,
+  numeric,
+  snakeCase,
+  text,
+  uniqueIndex,
+  unique,
+} from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { activeCustomerGroupMembershipsView } from "../groups/sql";
 import { Tables } from "../tables";
+import { SharedAccountsContract } from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
-import type { Discriminate } from "../utils";
+import type { Discriminate, Prettify } from "../utils";
 
 export const sharedAccountCustomerAccess = new Tables.Sync(
   `shared_account_customer_access`,
@@ -99,19 +109,39 @@ export type ActiveCustomerAuthorizedSharedAccountManagerAccess =
 export const sharedAccounts = new Tables.Sync(
   "shared_accounts",
   {
-    origin: Columns.union(["papercut", "internal"]).default("internal").notNull(),
-    name: text().notNull(),
+    origin: Columns.union(SharedAccountsContract.Origin.literals).default("internal").notNull(),
+    name: text().$type<SharedAccountsContract.Name>().notNull(),
     reviewThreshold: numeric(),
-    // NOTE: Set to -1 if the shared account is not a papercut shared account
-    papercutAccountId: bigint({ mode: "number" }).notNull().default(-1),
+    papercutId: bigint({ mode: "number" }).$type<SharedAccountsContract.PapercutId>(),
   },
-  (table) => [uniqueIndex().on(table.origin, table.name, table.papercutAccountId, table.tenantId)],
+  (table) => [
+    unique().on(table.name, table.papercutId, table.tenantId),
+    check(
+      "origin_papercut_id",
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      or(
+        and(
+          eq(table.origin, "papercut" satisfies SharedAccountsContract.Origin),
+          isNotNull(table.papercutId),
+        ),
+        and(
+          eq(table.origin, "internal" satisfies SharedAccountsContract.Origin),
+          isNull(table.papercutId),
+        ),
+      )!,
+    ),
+    index().on(table.origin, table.tenantId),
+  ],
 );
 export const sharedAccountsTable = sharedAccounts.table;
 export type SharedAccountsTable = typeof sharedAccountsTable;
 export type SharedAccount = InferSelectModel<SharedAccountsTable>;
-export type SharedAccountByOrigin<TSharedAccountOrigin extends SharedAccount["origin"]> =
-  Discriminate<SharedAccount, "origin", TSharedAccountOrigin>;
+export type SharedAccountByOrigin<TSharedAccountOrigin extends SharedAccount["origin"]> = Prettify<
+  Omit<Discriminate<SharedAccount, "origin", TSharedAccountOrigin>, "papercutId"> &
+    (TSharedAccountOrigin extends "papercut"
+      ? { papercutId: NonNullable<SharedAccount["papercutId"]> }
+      : { papercutId: null })
+>;
 
 export const activeSharedAccountsView = snakeCase
   .view(`active_${sharedAccounts.name}`)

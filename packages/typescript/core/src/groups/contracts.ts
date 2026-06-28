@@ -14,11 +14,21 @@ import type {
 } from "./sql";
 
 export namespace CustomerGroupsContract {
+  export const Origin = Schema.Literals(["papercut", "internal"]);
+  export type Origin = typeof Origin.Type;
+
+  export const Name = Schema.String.pipe(Schema.brand("CustomerGroupName"));
+  export type Name = typeof Name.Type;
+
+  export const ExternalId = Schema.String.pipe(Schema.brand("CustomerGroupExternalId"));
+  export type ExternalId = typeof ExternalId.Type;
+
   export class Table extends TablesContract.Table<CustomerGroupsTable>("customer_groups")(
     {
       ...TablesContract.BaseSyncModel.fields,
-      name: Schema.String,
-      externalId: Schema.String,
+      origin: Origin,
+      name: Name,
+      externalId: ExternalId,
       identityProviderId: EntityId,
     },
     ["create", "read", "update", "delete"],

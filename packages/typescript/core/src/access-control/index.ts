@@ -36,6 +36,7 @@ export namespace AccessControl {
           "comments:read",
           "comments:update",
           "comments:delete",
+          "config:update",
           "customer_groups:read",
           "customer_group_memberships:read",
           "delivery_options:create",

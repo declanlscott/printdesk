@@ -1,74 +1,24 @@
 import { ActorsContract } from "@printdesk/core/actors/contract";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import { Openauth } from "@printdesk/core/oauth/openauth";
-import { TenantsContract } from "@printdesk/core/tenants/contract";
 import { TenantSlug } from "@printdesk/core/tenants/slug";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
+import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
-import * as Schema from "effect/Schema";
-import * as SchemaGetter from "effect/SchemaGetter";
+import * as Result from "effect/Result";
 import * as Struct from "effect/Struct";
-import * as Tuple from "effect/Tuple";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
-import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
 import { Bff } from "../contract";
-import { AuthApi } from "../contract/groups/auth";
 import { ViteResource } from "../lib/sst";
-
-export const tenantSlugValidatorLayer = Effect.gen(function* () {
-  const resource = yield* ViteResource;
-
-  const FromHostname = Schema.TemplateLiteralParser([
-    TenantsContract.Slug,
-    ".",
-    resource.ApexDomain.pipe(Redacted.value).value,
-  ]).pipe(
-    Schema.decodeTo(TenantsContract.Slug, {
-      decode: SchemaGetter.transform(Tuple.get(0)),
-      encode: SchemaGetter.forbidden(() => "Not implemented"),
-    }),
-  );
-
-  const FromQuery = Schema.Struct({ slug: TenantsContract.Slug }).pipe(
-    Schema.encodeKeys({ slug: Constants.URL_PARAM_NAMES.TENANT_SLUG }),
-    Schema.decodeTo(TenantsContract.Slug, {
-      decode: SchemaGetter.transform(Struct.get("slug")),
-      encode: SchemaGetter.forbidden(() => "Not implemented"),
-    }),
-  );
-
-  return AuthApi.TenantSlugValidator.of(
-    Effect.fn(
-      function* (httpEffect) {
-        if (resource.Environment.pipe(Redacted.value, (env) => !env.isDevMode && env.isProdStage))
-          return yield* httpEffect.pipe(
-            Effect.provideServiceEffect(
-              TenantSlug,
-              HttpServerRequest.HttpServerRequest.pipe(
-                Effect.map((request) => new URL(request.originalUrl).hostname),
-                Effect.flatMap(Schema.decodeUnknownEffect(FromHostname)),
-              ),
-            ),
-          );
-
-        return yield* httpEffect.pipe(
-          Effect.provideServiceEffect(
-            TenantSlug,
-            FromQuery.pipe(HttpServerRequest.schemaSearchParams),
-          ),
-        );
-      },
-      (effect) => effect.pipe(Effect.catchTag("SchemaError", () => new HttpApiError.BadRequest())),
-    ),
-  );
-}).pipe(Layer.effect(AuthApi.TenantSlugValidator));
+import { tenantSlugValidatorLayer } from "../middleware/tenant-slug-validator";
 
 const redirectUri = (request: HttpServerRequest.HttpServerRequest) =>
   HttpServerRequest.toClientRequest(request).pipe(

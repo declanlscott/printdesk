@@ -45,6 +45,16 @@ export class UserAndGroupSyncFailure extends Schema.TaggedErrorClass<UserAndGrou
   {},
 ) {}
 
+export class IncompleteTaskStatusError
+  extends Schema.TaggedErrorClass<IncompleteTaskStatusError>()("IncompleteTaskStatusError", {
+    message: Schema.String,
+  })
+  implements HttpServerRespondable.Respondable
+{
+  public [HttpServerRespondable.symbol] = () =>
+    HttpServerResponse.schemaJson(IncompleteTaskStatusError)(this, { status: 503 });
+}
+
 export class PapercutApiRequest extends Request.Class<
   HttpClientRequest,
   HttpClientResponse,

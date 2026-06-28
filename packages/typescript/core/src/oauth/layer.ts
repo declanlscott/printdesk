@@ -33,7 +33,7 @@ export const makeService = Effect.gen(function* () {
     idpUser: IdentityProvidersContract.User,
   ) {
     const { identityProvider, tenant, user } = yield* identityProvidersRepository
-      .findWithTenantAndUserByExternalIds(idpKind, idpTenantId, idpUser.id)
+      .findWithTenantAndUserByExternalIds(idpKind, idpTenantId, idpUser.externalId)
       .pipe(
         Effect.catchTag(
           "NoSuchElementError",
@@ -56,17 +56,17 @@ export const makeService = Effect.gen(function* () {
       if (tenant.status === "active")
         return yield* new OauthContract.AccessDeniedError({
           reason: new UsersContract.NotFoundError({
-            id: { _tag: "external", value: idpUser.id },
+            id: { _tag: "external", value: idpUser.externalId },
           }),
         });
 
       const admin = yield* usersRepository.create({
         origin: "internal",
         username: idpUser.username,
-        externalId: idpUser.id,
+        externalId: idpUser.externalId,
         identityProviderId: identityProvider.id,
         role: "administrator",
-        name: idpUser.name,
+        displayName: idpUser.displayName,
         email: idpUser.email,
         tenantId: identityProvider.tenantId,
       });
@@ -75,16 +75,16 @@ export const makeService = Effect.gen(function* () {
     }
 
     if (
-      idpUser.username !== user.username ||
-      idpUser.name !== user.name ||
-      idpUser.email !== user.email
+      idpUser.displayName !== user.displayName ||
+      idpUser.email !== user.email ||
+      idpUser.username !== user.username
     )
       yield* usersRepository
         .updateById(
           user.id,
           {
             username: idpUser.username,
-            name: idpUser.name,
+            displayName: idpUser.displayName,
             email: idpUser.email,
           },
           user.tenantId,

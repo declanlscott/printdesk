@@ -77,6 +77,7 @@ CREATE TABLE "customer_groups" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
+	"origin" varchar(50) NOT NULL,
 	"name" text NOT NULL,
 	"external_id" text NOT NULL,
 	"identity_provider_id" char(11) NOT NULL,
@@ -299,8 +300,25 @@ CREATE TABLE "shared_accounts" (
 	"origin" varchar(50) DEFAULT 'internal' NOT NULL,
 	"name" text NOT NULL,
 	"review_threshold" numeric,
-	"papercut_account_id" bigint DEFAULT -1 NOT NULL,
-	CONSTRAINT "shared_accounts_pkey" PRIMARY KEY("id", "tenant_id")
+	"papercut_id" bigint,
+	CONSTRAINT "shared_accounts_pkey" PRIMARY KEY("id", "tenant_id"),
+	CONSTRAINT "shared_accounts_name_papercut_id_tenant_id_unique" UNIQUE("name", "papercut_id", "tenant_id"),
+	CONSTRAINT "origin_papercut_id" CHECK (
+		(
+			(
+				(
+					("origin" = 'papercut')
+					and (("papercut_id" is not null))
+				)
+			)
+			or (
+				(
+					("origin" = 'internal')
+					and (("papercut_id" is null))
+				)
+			)
+		)
+	)
 );
 
 --> statement-breakpoint
@@ -333,9 +351,10 @@ CREATE TABLE "users" (
 	"external_id" text NOT NULL,
 	"identity_provider_id" char(11) NOT NULL,
 	"role" varchar(50) DEFAULT 'customer' NOT NULL,
-	"name" text NOT NULL,
+	"display_name" text NOT NULL,
 	"email" text NOT NULL,
 	CONSTRAINT "users_pkey" PRIMARY KEY("id", "tenant_id"),
+	CONSTRAINT "users_username_tenant_id_unique" UNIQUE("username", "tenant_id"),
 	CONSTRAINT "users_external_id_tenant_id_unique" UNIQUE("external_id", "tenant_id"),
 	CONSTRAINT "users_email_tenant_id_unique" UNIQUE("email", "tenant_id")
 );
@@ -394,7 +413,13 @@ CREATE UNIQUE INDEX "clients_id_index" ON "clients" ("id");
 CREATE INDEX "comments_order_id_index" ON "comments" ("order_id");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "identity_providers_kind_external_tenant_id_index" ON "identity_providers" ("kind", "external_tenant_id");
+CREATE INDEX "customer_groups_origin_tenant_id_index" ON "customer_groups" ("origin", "tenant_id");
+
+--> statement-breakpoint
+CREATE UNIQUE INDEX "identity_providers_kind_tenant_id_index" ON "identity_providers" ("kind", "tenant_id");
+
+--> statement-breakpoint
+CREATE UNIQUE INDEX "identity_providers_external_tenant_id_tenant_id_index" ON "identity_providers" ("external_tenant_id", "tenant_id");
 
 --> statement-breakpoint
 CREATE INDEX "invoices_order_id_index" ON "invoices" ("order_id");
@@ -462,12 +487,7 @@ CREATE UNIQUE INDEX "shared_account_manager_access_shared_account_id_manager_id_
 CREATE INDEX "shared_account_manager_access_manager_id_index" ON "shared_account_manager_access" ("manager_id");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "shared_accounts_origin_name_papercut_account_id_tenant_id_index" ON "shared_accounts" (
-	"origin",
-	"name",
-	"papercut_account_id",
-	"tenant_id"
-);
+CREATE INDEX "shared_accounts_origin_tenant_id_index" ON "shared_accounts" ("origin", "tenant_id");
 
 --> statement-breakpoint
 CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" ("slug");
@@ -476,7 +496,7 @@ CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" ("slug");
 CREATE UNIQUE INDEX "tenants_license_key_index" ON "tenants" ("license_key");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "users_origin_username_tenant_id_index" ON "users" ("origin", "username", "tenant_id");
+CREATE INDEX "users_origin_tenant_id_index" ON "users" ("origin", "tenant_id");
 
 --> statement-breakpoint
 CREATE INDEX "users_external_id_index" ON "users" ("external_id");
@@ -602,6 +622,7 @@ CREATE VIEW "active_customer_groups" AS (
 		"updated_at",
 		"deleted_at",
 		"version",
+		"origin",
 		"name",
 		"external_id",
 		"identity_provider_id"
@@ -620,6 +641,7 @@ CREATE VIEW "active_membership_customer_groups" AS (
 		"active_customer_groups"."updated_at",
 		"active_customer_groups"."deleted_at",
 		"active_customer_groups"."version",
+		"active_customer_groups"."origin",
 		"active_customer_groups"."name",
 		"active_customer_groups"."external_id",
 		"active_customer_groups"."identity_provider_id",
@@ -710,7 +732,7 @@ CREATE VIEW "active_shared_accounts" AS (
 		"origin",
 		"name",
 		"review_threshold",
-		"papercut_account_id"
+		"papercut_id"
 	from
 		"shared_accounts"
 	where
@@ -729,7 +751,7 @@ CREATE VIEW "active_customer_authorized_shared_accounts" AS (
 		"active_shared_accounts"."origin",
 		"active_shared_accounts"."name",
 		"active_shared_accounts"."review_threshold",
-		"active_shared_accounts"."papercut_account_id",
+		"active_shared_accounts"."papercut_id",
 		"active_shared_account_customer_access"."customer_id"
 	from
 		"active_shared_accounts"
@@ -755,7 +777,7 @@ CREATE VIEW "active_manager_authorized_shared_accounts" AS (
 		"active_shared_accounts"."origin",
 		"active_shared_accounts"."name",
 		"active_shared_accounts"."review_threshold",
-		"active_shared_accounts"."papercut_account_id",
+		"active_shared_accounts"."papercut_id",
 		"active_shared_account_manager_access"."manager_id"
 	from
 		"active_shared_accounts"
@@ -1135,7 +1157,7 @@ CREATE VIEW "active_users" AS (
 		"external_id",
 		"identity_provider_id",
 		"role",
-		"name",
+		"display_name",
 		"email"
 	from
 		"users"

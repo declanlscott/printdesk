@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "019ddcd6-165f-4ff2-9f53-71ac462c6baa",
+  "id": "e8211d20-4822-4d22-8a7d-44ef297740e9",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -847,6 +847,19 @@
       "generated": null,
       "identity": null,
       "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "customer_groups"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "origin",
       "entityType": "columns",
       "schema": "public",
       "table": "customer_groups"
@@ -2440,12 +2453,12 @@
     {
       "type": "bigint",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
-      "default": "-1",
+      "default": null,
       "generated": null,
       "identity": null,
-      "name": "papercut_account_id",
+      "name": "papercut_id",
       "entityType": "columns",
       "schema": "public",
       "table": "shared_accounts"
@@ -2744,7 +2757,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "name",
+      "name": "display_name",
       "entityType": "columns",
       "schema": "public",
       "table": "users"
@@ -3159,6 +3172,34 @@
       "nameExplicit": false,
       "columns": [
         {
+          "value": "origin",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "customer_groups_origin_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "customer_groups"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
           "value": "kind",
           "isExpression": false,
           "asc": true,
@@ -3166,7 +3207,7 @@
           "opclass": null
         },
         {
-          "value": "external_tenant_id",
+          "value": "tenant_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3178,7 +3219,35 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "identity_providers_kind_external_tenant_id_index",
+      "name": "identity_providers_kind_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "identity_providers"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "external_tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "identity_providers_external_tenant_id_tenant_id_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "identity_providers"
@@ -3649,20 +3718,6 @@
           "opclass": null
         },
         {
-          "value": "name",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "papercut_account_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
           "value": "tenant_id",
           "isExpression": false,
           "asc": true,
@@ -3670,12 +3725,12 @@
           "opclass": null
         }
       ],
-      "isUnique": true,
+      "isUnique": false,
       "where": null,
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "shared_accounts_origin_name_papercut_account_id_tenant_id_index",
+      "name": "shared_accounts_origin_tenant_id_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "shared_accounts"
@@ -3733,13 +3788,6 @@
           "opclass": null
         },
         {
-          "value": "username",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
           "value": "tenant_id",
           "isExpression": false,
           "asc": true,
@@ -3747,12 +3795,12 @@
           "opclass": null
         }
       ],
-      "isUnique": true,
+      "isUnique": false,
       "where": null,
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "users_origin_username_tenant_id_index",
+      "name": "users_origin_tenant_id_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "users"
@@ -4223,6 +4271,31 @@
     {
       "nameExplicit": false,
       "columns": [
+        "name",
+        "papercut_id",
+        "tenant_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "shared_accounts_name_papercut_id_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "shared_accounts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "username",
+        "tenant_id"
+      ],
+      "nullsNotDistinct": false,
+      "name": "users_username_tenant_id_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "users"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "external_id",
         "tenant_id"
       ],
@@ -4281,6 +4354,13 @@
       "entityType": "checks",
       "schema": "public",
       "table": "orders"
+    },
+    {
+      "value": "((((\"origin\" = 'papercut') and ((\"papercut_id\" is not null)))) or (((\"origin\" = 'internal') and ((\"papercut_id\" is null)))))",
+      "name": "origin_papercut_id",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "shared_accounts"
     },
     {
       "value": "\"id\" = \"tenant_id\"",
@@ -4385,7 +4465,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"name\", \"external_id\", \"identity_provider_id\" from \"customer_groups\" where (\"customer_groups\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"name\", \"external_id\", \"identity_provider_id\" from \"customer_groups\" where (\"customer_groups\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4396,7 +4476,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_customer_groups\".\"id\", \"active_customer_groups\".\"tenant_id\", \"active_customer_groups\".\"created_at\", \"active_customer_groups\".\"updated_at\", \"active_customer_groups\".\"deleted_at\", \"active_customer_groups\".\"version\", \"active_customer_groups\".\"name\", \"active_customer_groups\".\"external_id\", \"active_customer_groups\".\"identity_provider_id\", \"active_customer_group_memberships\".\"member_id\" from \"active_customer_groups\" inner join \"active_customer_group_memberships\" on ((\"active_customer_groups\".\"id\" = \"active_customer_group_memberships\".\"customer_group_id\") and (\"active_customer_groups\".\"tenant_id\" = \"active_customer_group_memberships\".\"tenant_id\"))",
+      "definition": "select \"active_customer_groups\".\"id\", \"active_customer_groups\".\"tenant_id\", \"active_customer_groups\".\"created_at\", \"active_customer_groups\".\"updated_at\", \"active_customer_groups\".\"deleted_at\", \"active_customer_groups\".\"version\", \"active_customer_groups\".\"origin\", \"active_customer_groups\".\"name\", \"active_customer_groups\".\"external_id\", \"active_customer_groups\".\"identity_provider_id\", \"active_customer_group_memberships\".\"member_id\" from \"active_customer_groups\" inner join \"active_customer_group_memberships\" on ((\"active_customer_groups\".\"id\" = \"active_customer_group_memberships\".\"customer_group_id\") and (\"active_customer_groups\".\"tenant_id\" = \"active_customer_group_memberships\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4528,7 +4608,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_account_id\", \"active_shared_account_customer_access\".\"customer_id\" from \"active_shared_accounts\" inner join \"active_shared_account_customer_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_customer_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_customer_access\".\"tenant_id\"))",
+      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_id\", \"active_shared_account_customer_access\".\"customer_id\" from \"active_shared_accounts\" inner join \"active_shared_account_customer_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_customer_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_customer_access\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4539,7 +4619,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_account_id\", \"active_shared_account_manager_access\".\"manager_id\" from \"active_shared_accounts\" inner join \"active_shared_account_manager_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_manager_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_manager_access\".\"tenant_id\"))",
+      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_id\", \"active_shared_account_manager_access\".\"manager_id\" from \"active_shared_accounts\" inner join \"active_shared_account_manager_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_manager_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_manager_access\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4583,7 +4663,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"name\", \"review_threshold\", \"papercut_account_id\" from \"shared_accounts\" where (\"shared_accounts\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"name\", \"review_threshold\", \"papercut_id\" from \"shared_accounts\" where (\"shared_accounts\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4594,7 +4674,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"username\", \"external_id\", \"identity_provider_id\", \"role\", \"name\", \"email\" from \"users\" where (\"users\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"username\", \"external_id\", \"identity_provider_id\", \"role\", \"display_name\", \"email\" from \"users\" where (\"users\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,

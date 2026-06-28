@@ -115,8 +115,8 @@ export namespace OauthContract {
 
   export class InvalidAudienceError
     extends Schema.TaggedErrorClass<InvalidAudienceError>()("InvalidAudienceError", {
-      expected: Schema.NonEmptyString,
-      received: Schema.NonEmptyString,
+      expected: IdentityProvidersContract.Audience,
+      received: IdentityProvidersContract.Audience,
     })
     implements HttpServerRespondable.Respondable
   {

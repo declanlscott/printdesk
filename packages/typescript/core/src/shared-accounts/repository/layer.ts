@@ -22,6 +22,7 @@ import type {
   ActiveManagerAuthorizedSharedAccount,
   ActiveSharedAccount,
   SharedAccount,
+  SharedAccountByOrigin,
   SharedAccountsTable,
 } from "../sql";
 
@@ -38,23 +39,17 @@ export const makeService = Effect.gen(function* () {
   const entriesTable = replicacheClientViewEntries.table;
 
   const upsertMany = Effect.fn("SharedAccounts.Repository.upsertMany")(
-    (values: Array<InferInsertModel<SharedAccountsTable>>) =>
-      db
-        .useTransaction((tx) =>
-          tx
-            .insert(table)
-            .values(values)
-            .onConflictDoUpdate({
-              target: [table.name, table.papercutAccountId, table.tenantId],
-              set: sharedAccounts.conflictSet,
-            })
-            .returning(),
-        )
-        .pipe(
-          Effect.map(Array.head),
-          Effect.flatMap(Effect.fromOption),
-          Effect.catchTag("NoSuchElementError", Effect.die),
-        ),
+    (values: Array.NonEmptyArray<InferInsertModel<SharedAccountsTable>>) =>
+      db.useTransaction((tx) =>
+        tx
+          .insert(table)
+          .values(values)
+          .onConflictDoUpdate({
+            target: [table.name, table.papercutId, table.tenantId],
+            set: sharedAccounts.conflictSet,
+          })
+          .returning(),
+      ),
   );
 
   const findCreates = Effect.fn("SharedAccounts.Repository.findCreates")(
@@ -560,15 +555,11 @@ export const makeService = Effect.gen(function* () {
           tx
             .select()
             .from(table)
-            .where(
-              and(
-                eq(table.origin, origin),
-                origin === "papercut" ? not(eq(table.papercutAccountId, -1)) : undefined,
-                eq(table.tenantId, tenantId),
-              ),
-            ),
+            .where(and(eq(table.origin, origin), eq(table.tenantId, tenantId))),
         )
-        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+        .pipe(
+          Effect.map((accounts) => accounts as Array<SharedAccountByOrigin<TSharedAccountOrigin>>),
+        ),
   );
 
   const findActiveAuthorizedCustomerIds = Effect.fn(
@@ -605,9 +596,7 @@ export const makeService = Effect.gen(function* () {
       db
         .useTransaction((tx) =>
           tx
-            .select({
-              managerId: activeManagerAuthorizedView.managerId,
-            })
+            .select({ managerId: activeManagerAuthorizedView.managerId })
             .from(activeManagerAuthorizedView)
             .where(
               and(

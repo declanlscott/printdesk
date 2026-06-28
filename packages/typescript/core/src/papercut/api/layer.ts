@@ -6,6 +6,8 @@ import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as RequestResolver from "effect/RequestResolver";
+import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
@@ -21,7 +23,10 @@ import {
 } from ".";
 import { Actor } from "../../actors";
 import { Config } from "../../config";
+import { CustomerGroupsContract } from "../../groups/contracts";
+import { SharedAccountsContract } from "../../shared-accounts/contracts";
 import { SstResource } from "../../sst/resource";
+import { UsersContract } from "../../users/contract";
 import { TenantId, tenantTemplate } from "../../utils";
 import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
@@ -109,7 +114,16 @@ export const makeService = Effect.gen(function* () {
         ),
         Effect.flatMap(batchRequest),
         Effect.flatMap(
-          xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
+          xmlRpc.response(
+            XmlRpcContract.arrayResponse(
+              XmlRpcContract.Value.fields.value.pipe(
+                Schema.decodeTo(UsersContract.Username, {
+                  decode: SchemaGetter.passthrough(),
+                  encode: SchemaGetter.passthrough(),
+                }),
+              ),
+            ),
+          ),
         ),
       ),
   );
@@ -191,7 +205,16 @@ export const makeService = Effect.gen(function* () {
         ),
         Effect.flatMap(batchRequest),
         Effect.flatMap(
-          xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
+          xmlRpc.response(
+            XmlRpcContract.arrayResponse(
+              XmlRpcContract.Value.fields.value.pipe(
+                Schema.decodeTo(SharedAccountsContract.Name, {
+                  decode: SchemaGetter.passthrough(),
+                  encode: SchemaGetter.passthrough(),
+                }),
+              ),
+            ),
+          ),
         ),
       ),
   );
@@ -221,7 +244,16 @@ export const makeService = Effect.gen(function* () {
         ),
         Effect.flatMap(batchRequest),
         Effect.flatMap(
-          xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
+          xmlRpc.response(
+            XmlRpcContract.arrayResponse(
+              XmlRpcContract.Value.fields.value.pipe(
+                Schema.decodeTo(UsersContract.Username, {
+                  decode: SchemaGetter.passthrough(),
+                  encode: SchemaGetter.passthrough(),
+                }),
+              ),
+            ),
+          ),
         ),
       ),
   );
@@ -250,7 +282,16 @@ export const makeService = Effect.gen(function* () {
       ),
       Effect.flatMap(batchRequest),
       Effect.flatMap(
-        xmlRpc.response(XmlRpcContract.arrayResponse(XmlRpcContract.Value.fields.value)),
+        xmlRpc.response(
+          XmlRpcContract.arrayResponse(
+            XmlRpcContract.Value.fields.value.pipe(
+              Schema.decodeTo(CustomerGroupsContract.Name, {
+                decode: SchemaGetter.passthrough(),
+                encode: SchemaGetter.passthrough(),
+              }),
+            ),
+          ),
+        ),
       ),
     ),
   );

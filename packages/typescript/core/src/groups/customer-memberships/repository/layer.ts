@@ -1,4 +1,4 @@
-import { and, eq, getViewName, inArray, not, notInArray } from "drizzle-orm";
+import { and, eq, getTableColumns, getViewName, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -7,11 +7,21 @@ import { CustomerGroupMembershipsRepository } from ".";
 import { Database } from "../../../database";
 import { replicacheClientViewEntries } from "../../../replicache/sql";
 import { SyncQueryBuilder } from "../../../sync/query-builder";
-import { activeCustomerGroupMembershipsView, customerGroupMemberships } from "../../sql";
+import { users } from "../../../users/sql";
+import {
+  activeCustomerGroupMembershipsView,
+  customerGroupMemberships,
+  customerGroups,
+} from "../../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { ReplicacheClientView } from "../../../replicache/sql";
-import type { ActiveCustomerGroup, CustomerGroup, CustomerGroupMembershipsTable } from "../../sql";
+import type {
+  ActiveCustomerGroupMembership,
+  CustomerGroup,
+  CustomerGroupMembership,
+  CustomerGroupMembershipsTable,
+} from "../../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -187,7 +197,7 @@ export const makeService = Effect.gen(function* () {
 
   const findActiveFastForward = Effect.fn(
     "Groups.CustomerMembershipsRepository.findActiveFastForward",
-  )((clientView: ReplicacheClientView, excludeIds: Array<ActiveCustomerGroup["id"]>) =>
+  )((clientView: ReplicacheClientView, excludeIds: Array<ActiveCustomerGroupMembership["id"]>) =>
     entriesQueryBuilder.fastForward(customerGroupMemberships.name, clientView).pipe(
       Effect.flatMap((qb) =>
         db.useTransaction((tx) => {
@@ -211,6 +221,32 @@ export const makeService = Effect.gen(function* () {
     ),
   );
 
+  const findWithMemberAndCustomerGroupByTenantId = Effect.fn(
+    "Groups.CustomerMembershipsRepository.findWithMemberAndCustomerGroupByTenantId",
+  )((tenantId: CustomerGroupMembership["tenantId"]) =>
+    db.useTransaction((tx) =>
+      tx
+        .select({
+          customerGroup: getTableColumns(customerGroups.table),
+          member: getTableColumns(users.table),
+          membership: getTableColumns(table),
+        })
+        .from(table)
+        .innerJoin(
+          customerGroups.table,
+          and(
+            eq(customerGroups.table.id, table.customerGroupId),
+            eq(customerGroups.table.tenantId, table.tenantId),
+          ),
+        )
+        .innerJoin(
+          users.table,
+          and(eq(users.table.id, table.memberId), eq(users.table.tenantId, table.tenantId)),
+        )
+        .where(eq(table.tenantId, tenantId)),
+    ),
+  );
+
   return {
     upsertMany,
     findCreates,
@@ -221,6 +257,7 @@ export const makeService = Effect.gen(function* () {
     findActiveDeletes,
     findFastForward,
     findActiveFastForward,
+    findWithMemberAndCustomerGroupByTenantId,
   } as const;
 });
 

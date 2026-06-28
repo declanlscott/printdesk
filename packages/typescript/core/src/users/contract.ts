@@ -9,24 +9,34 @@ import { EntityId } from "../utils";
 import type { ActiveUsersView, UsersTable } from "./sql";
 
 export namespace UsersContract {
-  export const origins = ["papercut", "internal"] as const;
-  export type Origin = (typeof origins)[number];
+  export const Origin = Schema.Literals(["papercut", "internal"]);
+  export type Origin = typeof Origin.Type;
 
-  export const roles = ["administrator", "operator", "manager", "customer"] as const;
-
-  export const Role = Schema.Literals(roles);
+  export const Role = Schema.Literals(["administrator", "operator", "manager", "customer"]);
   export type Role = (typeof Role)["Type"];
+
+  export const Username = Schema.String.pipe(Schema.brand("UserUsername"));
+  export type Username = typeof Username.Type;
+
+  export const ExternalId = Schema.String.pipe(Schema.brand("UserExternalId"));
+  export type ExternalId = typeof ExternalId.Type;
+
+  export const DisplayName = Schema.String.pipe(Schema.brand("UserDisplayName"));
+  export type DisplayName = typeof DisplayName.Type;
+
+  export const Email = Schema.String.pipe(Schema.brand("UserEmail"));
+  export type Email = typeof Email.Type;
 
   export class Table extends TablesContract.Table<UsersTable>("users")(
     {
       ...TablesContract.BaseSyncModel.fields,
-      origin: Schema.Literals(origins),
-      username: Schema.String,
-      externalId: Schema.String,
+      origin: Origin,
+      username: Username,
+      externalId: ExternalId,
       identityProviderId: EntityId,
       role: Role.pipe(Schema.withDecodingDefaultType(Effect.succeed("customer"))),
-      name: Schema.String,
-      email: Schema.String,
+      displayName: DisplayName,
+      email: Email,
     },
     ["read", "update", "delete"],
   ) {}
@@ -76,7 +86,7 @@ export namespace UsersContract {
         "username",
         "externalId",
         "identityProviderId",
-        "name",
+        "displayName",
         "email",
         "role",
       ]),

@@ -14,7 +14,7 @@ export const invoices = new Tables.Sync(
   "invoices",
   {
     lineItems: Columns.jsonb(InvoicesContract.LineItem.pipe(Schema.Array)).notNull(),
-    status: Columns.union(InvoicesContract.statuses).default("processing").notNull(),
+    status: Columns.union(InvoicesContract.Status.literals).default("processing").notNull(),
     chargedAt: Columns.dateTime(),
     orderId: Columns.entityId().notNull(),
   },

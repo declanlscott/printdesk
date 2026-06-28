@@ -16,8 +16,8 @@ import type {
 } from "./sql";
 
 export namespace InvoicesContract {
-  export const statuses = ["processing", "charged", "error"] as const;
-  export type Status = (typeof statuses)[number];
+  export const Status = Schema.Literals(["processing", "charged", "error"]);
+  export type Status = typeof Status.Type;
 
   export class LineItemV1 extends Schema.TaggedClass<LineItemV1>()("InvoiceLineItemV1", {
     name: Schema.String,
@@ -31,9 +31,9 @@ export namespace InvoicesContract {
     {
       ...TablesContract.BaseSyncModel.fields,
       lineItems: LineItem.pipe(Schema.Array),
-      status: Schema.Literals(statuses).pipe(
-        Schema.withDecodingDefaultType(Effect.succeed(statuses[0])),
-        Schema.withConstructorDefault(Effect.succeed(statuses[0])),
+      status: Status.pipe(
+        Schema.withDecodingDefaultType(Effect.succeed("processing" as const)),
+        Schema.withConstructorDefault(Effect.succeed("processing" as const)),
       ),
       chargedAt: ColumnsContract.NullableTimestamp,
       orderId: EntityId,

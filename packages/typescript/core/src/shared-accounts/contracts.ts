@@ -25,13 +25,20 @@ import type {
 } from "./sql";
 
 export namespace SharedAccountsContract {
+  export const Origin = Schema.Literals(["papercut", "internal"]);
+  export type Origin = typeof Origin.Type;
+
+  export const Name = Schema.String.pipe(Schema.brand("SharedAccountName"));
+  export type Name = typeof Name.Type;
+
+  export const PapercutId = Schema.Int.pipe(Schema.brand("SharedAccountPapercutId"));
+  export type PapercutId = typeof PapercutId.Type;
+
   export class Table extends TablesContract.Table<SharedAccountsTable>("shared_accounts")(
-    {
+    Schema.Struct({
       ...TablesContract.BaseSyncModel.fields,
-      origin: Schema.Literals(["papercut", "internal"]).pipe(
-        Schema.withDecodingDefaultType(Effect.succeed("internal")),
-      ),
-      name: Schema.String,
+      origin: Origin.pipe(Schema.withDecodingDefaultType(Effect.succeed("internal"))),
+      name: Name,
       reviewThreshold: Cost.pipe(
         Schema.decodeTo(Schema.String, {
           decode: SchemaGetter.transform(String),
@@ -39,12 +46,24 @@ export namespace SharedAccountsContract {
         }),
         Schema.NullOr,
       ),
-      papercutAccountId: Schema.Union([
-        Schema.Literal(-1),
-        Schema.Int.pipe(Schema.check(Schema.isGreaterThanOrEqualTo(0))),
-      ]).pipe(Schema.withDecodingDefaultType(Effect.succeed(-1))),
-    },
-    ["read", "update", "delete"],
+      papercutId: PapercutId.pipe(
+        Schema.NullOr,
+        Schema.withDecodingDefaultType(Effect.succeed(null)),
+      ),
+    }).pipe(
+      Schema.check(
+        Schema.makeFilter((sharedAccount) => {
+          if (sharedAccount.origin === "papercut" && sharedAccount.papercutId === null)
+            return ["papercutId must be non-null."];
+
+          if (sharedAccount.origin === "internal" && sharedAccount.papercutId !== null)
+            return ["papercutId must be null."];
+
+          return [];
+        }),
+      ),
+    ).fields,
+    ["create", "read", "update", "delete"],
   ) {}
 
   export class ActiveView extends TablesContract.View<ActiveSharedAccountsView>(
@@ -110,7 +129,7 @@ export namespace SharedAccountsContract {
         ...Struct.keys(TablesContract.BaseModel.fields),
         "name",
         "origin",
-        "papercutAccountId",
+        "papercutId",
       ]),
     )
       .mapFields(Struct.map(Schema.optional))

@@ -7,8 +7,8 @@ import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Redacted from "effect/Redacted";
 
 import { AwsCredentialIdentity } from "./src/aws/credential-identity";
-import { DsqlSigner } from "./src/aws/dsql/signer";
-import { layer as dsqlSignerLayer } from "./src/aws/dsql/signer/layer";
+import { DsqlSigner } from "./src/aws/dsql-signer";
+import { layer as dsqlSignerLayer } from "./src/aws/dsql-signer/layer";
 import { SstResource } from "./src/sst/resource";
 
 const configRuntime = dsqlSignerLayer({ expiresIn: Duration.hours(12) }).pipe(

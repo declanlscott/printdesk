@@ -5,8 +5,8 @@ import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 
 import { DsqlSigner } from ".";
-import { SstResource } from "../../../sst/resource";
-import { AwsCredentialIdentity } from "../../credential-identity";
+import { SstResource } from "../../sst/resource";
+import { AwsCredentialIdentity } from "../credential-identity";
 
 export const layer = Effect.fn(function* ({ expiresIn }: { expiresIn?: Duration.Duration }) {
   const credentials = yield* AwsCredentialIdentity.values;

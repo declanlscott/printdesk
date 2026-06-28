@@ -9,8 +9,8 @@ import * as SqlError from "effect/unstable/sql/SqlError";
 import { Pool } from "pg";
 
 import { AwsCredentialIdentity } from "../aws/credential-identity";
-import { DsqlSigner } from "../aws/dsql/signer";
-import { layer as dsqlSignerLayer } from "../aws/dsql/signer/layer";
+import { DsqlSigner } from "../aws/dsql-signer";
+import { layer as dsqlSignerLayer } from "../aws/dsql-signer/layer";
 import { SstResource } from "../sst/resource";
 
 export const pgCodeFromCause = (cause: unknown): string | undefined => {

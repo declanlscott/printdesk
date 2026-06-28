@@ -4,7 +4,9 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
+import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
+import * as String from "effect/String";
 import * as SqlError from "effect/unstable/sql/SqlError";
 import { Pool } from "pg";
 
@@ -32,22 +34,24 @@ export const pgConstraintFromCause = (cause: unknown): string => {
 
 export const classifyError = (cause: unknown, message: string, operation: string) => {
   const props = { cause, message, operation };
-  const code = pgCodeFromCause(cause);
 
-  if (code !== undefined) {
-    if (code.startsWith("08")) return new SqlError.ConnectionError(props);
-    if (code.startsWith("28")) return new SqlError.AuthenticationError(props);
-    if (code === "42501") return new SqlError.AuthorizationError(props);
-    if (code.startsWith("42")) return new SqlError.SqlSyntaxError(props);
-    if (code === "23505")
-      return new SqlError.UniqueViolation({ ...props, constraint: pgConstraintFromCause(cause) });
-    if (code.startsWith("23")) return new SqlError.ConstraintError(props);
-    if (code === "40P01") return new SqlError.DeadlockError(props);
-    if (code === "40001") return new SqlError.SerializationError(props);
-    if (code === "55P03") return new SqlError.LockTimeoutError(props);
-    if (code === "57014") return new SqlError.StatementTimeoutError(props);
-  }
-  return new SqlError.UnknownError(props);
+  return Match.value(pgCodeFromCause(cause)).pipe(
+    Match.when(Match.undefined, () => new SqlError.UnknownError(props)),
+    Match.when(String.startsWith("08"), () => new SqlError.ConnectionError(props)),
+    Match.when(String.startsWith("28"), () => new SqlError.AuthenticationError(props)),
+    Match.when(Match.is("42501"), () => new SqlError.AuthorizationError(props)),
+    Match.when(String.startsWith("42"), () => new SqlError.SqlSyntaxError(props)),
+    Match.when(
+      Match.is("23505"),
+      () => new SqlError.UniqueViolation({ ...props, constraint: pgConstraintFromCause(cause) }),
+    ),
+    Match.when(String.startsWith("23"), () => new SqlError.ConstraintError(props)),
+    Match.when(Match.is("40P01"), () => new SqlError.DeadlockError(props)),
+    Match.when(Match.is("40001"), () => new SqlError.SerializationError(props)),
+    Match.when(Match.is("55P03"), () => new SqlError.LockTimeoutError(props)),
+    Match.when(Match.is("57014"), () => new SqlError.StatementTimeoutError(props)),
+    Match.orElse(() => new SqlError.UnknownError(props)),
+  );
 };
 
 const passwordRuntime = dsqlSignerLayer({ expiresIn: Duration.minutes(15) }).pipe(

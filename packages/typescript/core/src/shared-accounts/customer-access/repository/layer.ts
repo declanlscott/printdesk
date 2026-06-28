@@ -1,13 +1,12 @@
-import { and, eq, getViewName, inArray, not, notInArray } from "drizzle-orm";
-import * as Array from "effect/Array";
+import { and, eq, getTableColumns, getViewName, inArray, not, notInArray } from "drizzle-orm";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Struct from "effect/Struct";
 
 import { SharedAccountCustomerAccessRepository } from ".";
 import { Database } from "../../../database";
 import { replicacheClientViewEntries } from "../../../replicache/sql";
 import { SyncQueryBuilder } from "../../../sync/query-builder";
+import { users } from "../../../users/sql";
 import { SharedAccountCustomerAccessContract } from "../../contracts";
 import {
   activeSharedAccountCustomerAccessView,
@@ -16,10 +15,12 @@ import {
 } from "../../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type * as Array from "effect/Array";
 import type { ReplicacheClientView } from "../../../replicache/sql";
 import type {
   ActiveAuthorizedSharedAccountCustomerAccess,
   SharedAccount,
+  SharedAccountByOrigin,
   SharedAccountCustomerAccess,
   SharedAccountCustomerAccessTable,
 } from "../../sql";
@@ -36,7 +37,7 @@ export const makeService = Effect.gen(function* () {
   const entriesTable = replicacheClientViewEntries.table;
 
   const upsertMany = Effect.fn("SharedAccounts.CustomerAccessRepository.upsertMany")(
-    (values: Array<InferInsertModel<SharedAccountCustomerAccessTable>>) =>
+    (values: Array.NonEmptyArray<InferInsertModel<SharedAccountCustomerAccessTable>>) =>
       db.useTransaction((tx) =>
         tx
           .insert(table)
@@ -359,7 +360,9 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
-  const findByOrigin = Effect.fn("SharedAccounts.CustomerAccessRepository.findByOrigin")(
+  const findWithCustomerAndSharedAccountByOrigin = Effect.fn(
+    "SharedAccounts.CustomerAccessRepository.findWithCustomerAndSharedAccountByOrigin",
+  )(
     <TSharedAccountOrigin extends SharedAccount["origin"]>(
       origin: TSharedAccountOrigin,
       tenantId: SharedAccountCustomerAccess["tenantId"],
@@ -367,7 +370,11 @@ export const makeService = Effect.gen(function* () {
       db
         .useTransaction((tx) =>
           tx
-            .select({ customerAccess: table })
+            .select({
+              access: getTableColumns(table),
+              customer: getTableColumns(users.table),
+              sharedAccount: getTableColumns(sharedAccounts.table),
+            })
             .from(table)
             .innerJoin(
               sharedAccounts.table,
@@ -376,17 +383,22 @@ export const makeService = Effect.gen(function* () {
                 eq(sharedAccounts.table.tenantId, table.tenantId),
               ),
             )
-            .where(
-              and(
-                eq(sharedAccounts.table.origin, origin),
-                origin === "papercut"
-                  ? not(eq(sharedAccounts.table.papercutAccountId, -1))
-                  : undefined,
-                eq(table.tenantId, tenantId),
-              ),
-            ),
+            .innerJoin(
+              users.table,
+              and(eq(users.table.id, table.customerId), eq(users.table.tenantId, table.tenantId)),
+            )
+            .where(and(eq(sharedAccounts.table.origin, origin), eq(table.tenantId, tenantId))),
         )
-        .pipe(Effect.map(Array.map(Struct.get("customerAccess")))),
+        .pipe(
+          Effect.map(
+            (data) =>
+              data as Array<{
+                access: (typeof data)[number]["access"];
+                customer: (typeof data)[number]["customer"];
+                sharedAccount: SharedAccountByOrigin<TSharedAccountOrigin>;
+              }>,
+          ),
+        ),
   );
 
   return {
@@ -403,7 +415,7 @@ export const makeService = Effect.gen(function* () {
     findFastForward,
     findActiveFastForward,
     findActiveAuthorizedFastForward,
-    findByOrigin,
+    findWithCustomerAndSharedAccountByOrigin,
   } as const;
 });
 

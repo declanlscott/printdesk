@@ -5,6 +5,7 @@ import * as Layer from "effect/Layer";
 
 import { IdentityProvidersRepository } from ".";
 import { Database } from "../../database";
+import { customerGroupsTable } from "../../groups/sql";
 import { tenantsTable } from "../../tenants/sql";
 import { usersTable } from "../../users/sql";
 import { identityProviders } from "../sql";
@@ -42,6 +43,11 @@ export const makeService = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
+  const findByTenantId = Effect.fn("IdentityProviders.Repository.findByTenantId")(
+    (tenantId: IdentityProvider["tenantId"]) =>
+      db.useTransaction((tx) => tx.select().from(table).where(eq(table.tenantId, tenantId))),
+  );
+
   const findByTenantSlug = Effect.fn("IdentityProviders.Repository.findByTenantSlug")(
     (slug: Tenant["slug"]) =>
       db.useTransaction((tx) =>
@@ -51,6 +57,27 @@ export const makeService = Effect.gen(function* () {
           .innerJoin(table, eq(tenantsTable.id, table.tenantId))
           .where(eq(tenantsTable.slug, slug)),
       ),
+  );
+
+  const findWithCustomerGroupsByTenantId = Effect.fn(
+    "IdentityProviders.Repository.findWithCustomerGroupByTenantId",
+  )((tenantId: IdentityProvider["tenantId"]) =>
+    db.useTransaction((tx) =>
+      tx
+        .select({
+          identityProvider: getTableColumns(table),
+          customerGroup: getTableColumns(customerGroupsTable),
+        })
+        .from(table)
+        .leftJoin(
+          customerGroupsTable,
+          and(
+            eq(table.id, customerGroupsTable.identityProviderId),
+            eq(table.tenantId, customerGroupsTable.tenantId),
+          ),
+        )
+        .where(eq(table.tenantId, tenantId)),
+    ),
   );
 
   const findWithTenantAndUserByExternalIds = Effect.fn(
@@ -95,7 +122,9 @@ export const makeService = Effect.gen(function* () {
     createMany,
     findAll,
     findById,
+    findByTenantId,
     findByTenantSlug,
+    findWithCustomerGroupsByTenantId,
     findWithTenantAndUserByExternalIds,
     deleteByTenantId,
   } as const;

@@ -1,5 +1,5 @@
 import { isNull } from "drizzle-orm";
-import { index, snakeCase, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, snakeCase, text, unique } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
@@ -11,18 +11,19 @@ import type { Discriminate } from "../utils";
 export const users = new Tables.Sync(
   "users",
   {
-    origin: Columns.union(UsersContract.origins).notNull(),
-    username: text().notNull(),
-    externalId: text().notNull(),
+    origin: Columns.union(UsersContract.Origin.literals).notNull(),
+    username: text().$type<UsersContract.Username>().notNull(),
+    externalId: text().$type<UsersContract.ExternalId>().notNull(),
     identityProviderId: Columns.entityId().notNull(),
-    role: Columns.union(UsersContract.roles).notNull().default("customer"),
-    name: text().notNull(),
-    email: text().notNull(),
+    role: Columns.union(UsersContract.Role.literals).notNull().default("customer"),
+    displayName: text().$type<UsersContract.DisplayName>().notNull(),
+    email: text().$type<UsersContract.Email>().notNull(),
   },
   (table) => [
-    uniqueIndex().on(table.origin, table.username, table.tenantId),
+    unique().on(table.username, table.tenantId),
     unique().on(table.externalId, table.tenantId),
     unique().on(table.email, table.tenantId),
+    index().on(table.origin, table.tenantId),
     index().on(table.externalId),
     index().on(table.identityProviderId),
   ],

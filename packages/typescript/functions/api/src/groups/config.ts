@@ -30,7 +30,7 @@ export const basePapercutConfigGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.privateActorPermissionPolicy("config:update")),
+          AccessControl.enforce(AccessControl.permissionPolicy("config:update")),
         ),
       ),
     );

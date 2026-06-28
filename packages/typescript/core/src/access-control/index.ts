@@ -396,7 +396,7 @@ export namespace AccessControl {
       ),
     );
 
-  export const privateActorPermissionPolicy = (permission: Permissions.Permission) =>
+  export const permissionPolicy = (permission: Permissions.Permission) =>
     Effect.succeed(permission).pipe(
       Effect.flatMap(Schema.decodeEffect(Permissions.Permission)),
       Effect.orDie,

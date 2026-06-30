@@ -18,8 +18,7 @@ import { Constants } from "../utils/constants";
 import type { TenantsTable } from "./sql";
 
 export namespace TenantsContract {
-  export const statuses = ["setup", "active", "suspended"] as const;
-  export const Status = Schema.Literals(statuses);
+  export const Status = Schema.Literals(["setup", "active", "suspended"]);
   export type Status = typeof Status.Type;
 
   export const Slug = Schema.String.pipe(

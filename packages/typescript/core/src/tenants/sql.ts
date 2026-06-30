@@ -12,7 +12,7 @@ export const tenants = new Tables.Sync(
   {
     slug: Columns.varchar().$type<TenantsContract.Slug>().notNull(),
     name: Columns.varchar().notNull(),
-    status: Columns.union(TenantsContract.statuses).notNull().default("setup"),
+    status: Columns.union(TenantsContract.Status.literals).notNull().default("setup"),
     lastPapercutSyncAt: Columns.dateTime(),
     licenseKey: Columns.redactedUuid().notNull(),
   },

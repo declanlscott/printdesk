@@ -176,9 +176,7 @@ export const makeService = Effect.gen(function* () {
 
   const setup = Effect.fn("Tenants.Provisioner.setup")(
     function* (payload: TenantsContract.SetupPayload) {
-      const tenantId = yield* Actor.use(Struct.get("assertPrivate")).pipe(
-        Effect.map(Struct.get("tenantId")),
-      );
+      const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
       const output = yield* InfraContract.OutputSecondaryKey.makeEffect({
         [Constants.DYNAMO_KEYS.GSI1_PK]: { tenantId, deploymentId: payload.deploymentId },
@@ -210,23 +208,72 @@ export const makeService = Effect.gen(function* () {
         }),
       );
 
-      const apiClientSecret = yield* crypto.generateToken();
-      const apiClientSecretHash = yield* apiClientSecret.pipe(crypto.hashSecret);
+      const [apiClientSecret, invoicesProcessorClientSecret, papercutSyncClientSecret] =
+        yield* Effect.all(
+          [crypto.generateToken(), crypto.generateToken(), crypto.generateToken()],
+          { concurrency: "unbounded" },
+        );
+      const [apiClientSecretHash, invoicesProcessorClientSecretHash, papercutSyncClientSecretHash] =
+        yield* Effect.all(
+          [
+            apiClientSecret.pipe(crypto.hashSecret),
+            invoicesProcessorClientSecret.pipe(crypto.hashSecret),
+            papercutSyncClientSecret.pipe(crypto.hashSecret),
+          ],
+          { concurrency: "unbounded" },
+        );
 
       yield* db.withTransaction(() =>
-        clientsRepository
-          .create({
-            name: "API Client",
-            secretHash: apiClientSecretHash,
-            role: "api",
-            scopes: ["api"],
-            tenantId,
-          })
-          .pipe(
-            Effect.andThen(({ id }) =>
-              config.setApiClientCredentials({ id, secret: apiClientSecret }),
-            ),
-          ),
+        Effect.all(
+          [
+            clientsRepository
+              .create({
+                name: "API Client",
+                secretHash: apiClientSecretHash,
+                role: "api",
+                scopes: ["api"],
+                tenantId,
+              })
+              .pipe(
+                Effect.andThen(({ id }) =>
+                  config.setApiClientCredentials({ id, secret: apiClientSecret }, "fast"),
+                ),
+              ),
+            clientsRepository
+              .create({
+                name: "Invoices Processor Client",
+                secretHash: invoicesProcessorClientSecretHash,
+                role: "invoicesProcessor",
+                scopes: ["invoices-processor"],
+                tenantId,
+              })
+              .pipe(
+                Effect.andThen(({ id }) =>
+                  config.setInvoicesProcessorClientCredentials(
+                    { id, secret: invoicesProcessorClientSecret },
+                    "fast",
+                  ),
+                ),
+              ),
+            clientsRepository
+              .create({
+                name: "Papercut Sync Client",
+                secretHash: papercutSyncClientSecretHash,
+                role: "papercutSync",
+                scopes: ["papercut-sync"],
+                tenantId,
+              })
+              .pipe(
+                Effect.andThen(({ id }) =>
+                  config.setPapercutSyncClientCredentials(
+                    { id, secret: papercutSyncClientSecret },
+                    "fast",
+                  ),
+                ),
+              ),
+          ],
+          { concurrency: "unbounded", discard: true },
+        ),
       );
 
       if (Option.isSome(payload.papercutApiAuthToken))

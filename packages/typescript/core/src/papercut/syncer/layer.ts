@@ -17,7 +17,7 @@ import * as Tuple from "effect/Tuple";
 
 import { PapercutSyncer } from ".";
 import { Actor } from "../../actors";
-import { Graph } from "../../graph";
+import { Graph, GraphLayerMap } from "../../graph";
 import { CustomerGroupMembershipsRepository } from "../../groups/customer-memberships/repository";
 import { CustomerGroupsRepository } from "../../groups/customers/repository";
 import { IdentityProvidersContract } from "../../identity/contract";
@@ -80,10 +80,8 @@ export const makeService = Effect.gen(function* () {
     yield* SharedAccountCustomerGroupAccessRepository;
   const usersRepository = yield* UsersRepository;
 
-  const graph = yield* Graph;
-
   const syncCustomerGroups = Effect.gen(function* () {
-    const { tenantId } = yield* Actor.use(Struct.get("assertPrivate"));
+    const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
     yield* papercutApi.getTaskStatus.pipe(
       Effect.filterOrFail(
@@ -113,8 +111,9 @@ export const makeService = Effect.gen(function* () {
               );
 
               return yield* Match.value(identityProvider).pipe(
-                Match.when({ kind: Match.is(Constants.ENTRA_ID) }, () =>
-                  graph.groups.pipe(
+                Match.when({ kind: Match.is(Constants.ENTRA_ID) }, (entraId) =>
+                  Graph.use(Struct.get("groups")).pipe(
+                    Effect.provide(GraphLayerMap.get(entraId.externalTenantId)),
                     Stream.fromArrayEffect,
                     Stream.filterMapEffect((group) =>
                       Match.value(group).pipe(
@@ -219,7 +218,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutSyncer.syncCustomerGroups"));
 
   const syncCustomerGroupMemberships = Effect.gen(function* () {
-    const { tenantId } = yield* Actor.use(Struct.get("assertPrivate"));
+    const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
     yield* papercutApi.getTaskStatus.pipe(
       Effect.filterOrFail(
@@ -336,7 +335,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutSyncer.syncCustomerGroupMemberships"));
 
   const syncSharedAccounts = Effect.gen(function* () {
-    const { tenantId } = yield* Actor.use(Struct.get("assertPrivate"));
+    const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
     const [prev, next] = yield* Effect.all(
       [
@@ -417,7 +416,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutSyncer.syncSharedAccounts"));
 
   const syncSharedAccountCustomerAccess = Effect.gen(function* () {
-    const { tenantId } = yield* Actor.use(Struct.get("assertPrivate"));
+    const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
     const lookup = yield* Effect.all(
       {
@@ -532,7 +531,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutSyncer.syncSharedAccountCustomerAccess"));
 
   const syncSharedAccountCustomerGroupAccess = Effect.gen(function* () {
-    const { tenantId } = yield* Actor.use(Struct.get("assertPrivate"));
+    const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
     const lookup = yield* Effect.all(
       {
@@ -653,7 +652,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutSyncer.syncSharedAccountCustomerGroupAccess"));
 
   const syncUsers = Effect.gen(function* () {
-    const { tenantId } = yield* Actor.use(Struct.get("assertPrivate"));
+    const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
     yield* papercutApi.getTaskStatus.pipe(
       Effect.filterOrFail(
@@ -703,14 +702,20 @@ export const makeService = Effect.gen(function* () {
 
               return yield* identityProvider.pipe(
                 Match.value,
-                Match.when({ kind: Match.is(Constants.ENTRA_ID) }, () =>
+                Match.when({ kind: Match.is(Constants.ENTRA_ID) }, (entraId) =>
                   (hasGroups
                     ? Stream.fromArray(customerGroups).pipe(
                         Stream.flatMap((customerGroup) =>
-                          graph.groupMembers(customerGroup.externalId).pipe(Stream.fromArrayEffect),
+                          Graph.use((graph) => graph.groupMembers(customerGroup.externalId)).pipe(
+                            Effect.provide(GraphLayerMap.get(entraId.externalTenantId)),
+                            Stream.fromArrayEffect,
+                          ),
                         ),
                       )
-                    : graph.users.pipe(Stream.fromArrayEffect)
+                    : Graph.use(Struct.get("users")).pipe(
+                        Effect.provide(GraphLayerMap.get(entraId.externalTenantId)),
+                        Stream.fromArrayEffect,
+                      )
                   ).pipe(
                     Stream.filterMapEffect((user) =>
                       Match.value(user).pipe(
@@ -831,7 +836,20 @@ export const makeService = Effect.gen(function* () {
     return [];
   }).pipe(Effect.withSpan("PapercutSyncer.syncUsers"));
 
+  const syncAll = Effect.all(
+    [
+      syncUsers,
+      syncCustomerGroups,
+      syncCustomerGroupMemberships,
+      syncSharedAccounts,
+      syncSharedAccountCustomerAccess,
+      syncSharedAccountCustomerGroupAccess,
+    ],
+    { discard: true },
+  ).pipe(Effect.withSpan("PapercutSyncer.syncAll"));
+
   return {
+    syncAll,
     syncCustomerGroups,
     syncCustomerGroupMemberships,
     syncSharedAccounts,

@@ -1,6 +1,7 @@
 import * as Array from "effect/Array";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
+import * as Function from "effect/Function";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
@@ -86,8 +87,12 @@ export const ChunkFromArray = <TValue extends Schema.Top>(value: TValue) =>
     }),
   );
 
-export const tenantTemplate = (template: string, tenantId: TenantId) =>
-  template.replace(new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"), tenantId);
+export const tenantTemplate = Function.dual<
+  (template: string) => (tenantId: TenantId) => string,
+  (tenantId: TenantId, template: string) => string
+>(2, (tenantId, template) =>
+  template.replace(new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"), tenantId),
+);
 
 export const getUserInitials = Effect.fn(function* (name: string) {
   if (!name) return "";

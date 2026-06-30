@@ -13,8 +13,9 @@ import { separatedString, StringFromUnknown } from "../../utils";
 import type { HttpClientError } from "effect/unstable/http/HttpClientError";
 import type { HttpClientRequest } from "effect/unstable/http/HttpClientRequest";
 import type { HttpClientResponse } from "effect/unstable/http/HttpClientResponse";
+import type { Actor } from "../../actors";
+import type { ActorsContract } from "../../actors/contract";
 import type { Oauth } from "../../oauth";
-import type { OauthContract } from "../../oauth/contract";
 import type { ServiceShape } from "./layer";
 
 const CommaSeparatedString = separatedString(",");
@@ -72,11 +73,8 @@ export class IncompleteTaskStatusError
 export class PapercutApiRequest extends Request.Class<
   HttpClientRequest,
   HttpClientResponse,
-  | OauthContract.InvalidAccessTokenError
-  | OauthContract.InvalidRefreshTokenError
-  | OauthContract.VerifyError
-  | HttpClientError,
-  Oauth.AccessToken
+  ActorsContract.ForbiddenActorError | HttpClientError | Schema.SchemaError,
+  Actor | Oauth.AccessToken
 > {}
 
 export class PapercutApi extends Context.Service<PapercutApi, ServiceShape>()(

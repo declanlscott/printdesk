@@ -34,11 +34,11 @@ export class IssuerError extends Schema.TaggedErrorClass<IssuerError>()("IssuerE
   cause: Schema.Defect(),
 }) {}
 
-export const issuerHandler = Effect.fn(function* (event: APIGatewayProxyEventV2, context: Context) {
+export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, context: Context) {
   const db = yield* Database;
 
   const { decodeJwt } = yield* Crypto;
-  const { handleUser, verifyClient } = yield* Oauth;
+  const { handleUser, verifyClient } = yield* Oauth.Oauth;
   const identityProvidersRepository = yield* IdentityProvidersRepository;
 
   const app = issuer({

@@ -1,6 +1,6 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 
-import { issuerHandler } from "./handler";
+import { handler } from "./handler";
 import { layer } from "./handler/layer";
 
-export const handler = LambdaHandler.make({ layer, handler: issuerHandler });
+export default LambdaHandler.make({ layer, handler });

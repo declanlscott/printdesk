@@ -70,6 +70,7 @@ class Papercut(pulumi.ComponentResource):
                 target=aws.scheduler.ScheduleTargetArgs(
                     arn=Resource.PapercutSync.arn,
                     role_arn=self._sync_schedule_role.arn,
+                    input=pulumi.Output.json_dumps({"tenantId": args.tenant_id}),
                 ),
             ),
             opts=pulumi.ResourceOptions(parent=self),

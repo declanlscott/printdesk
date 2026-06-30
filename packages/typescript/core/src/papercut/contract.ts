@@ -3,7 +3,6 @@ import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 
 import { AwsCron } from "../aws/cron";
-import { Handler } from "../handlers";
 import { Ipv4, Timezone } from "../utils";
 import { Constants } from "../utils/constants";
 
@@ -57,15 +56,4 @@ export namespace PapercutContract {
     Schema.Redacted,
   );
   export type ApiAuthToken = typeof ApiAuthToken.Type;
-
-  export class SyncResult extends Schema.TaggedClass<SyncResult>()("SyncResult", {
-    success: Schema.Boolean,
-    dispatchId: Schema.String,
-  }) {}
-
-  export const syncResult = new Handler.Handler({
-    name: "/papercut/sync",
-    Input: SyncResult,
-    Output: Schema.Void,
-  });
 }

@@ -153,4 +153,4 @@ export const makeService = Effect.gen(function* () {
   return { handleUser, verifyClient } as const;
 });
 
-export const layer = makeService.pipe(Layer.effect(Oauth));
+export const layer = makeService.pipe(Layer.effect(Oauth.Oauth));

@@ -7,6 +7,7 @@ import * as HttpServer from "effect/unstable/http/HttpServer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { papercutConfigGroupLayer } from "./groups/config";
+import { papercutGroupLayer } from "./groups/papercut";
 import { realtimeGroupLayer } from "./groups/realtime";
 import { replicacheGroupLayer } from "./groups/replicache";
 import { tenantRegistrationGroupLayer, tenantSetupGroupLayer } from "./groups/tenant";
@@ -16,6 +17,7 @@ export default Api.pipe(
   Layer.provide([
     HttpServer.layerServices,
     papercutConfigGroupLayer,
+    papercutGroupLayer,
     realtimeGroupLayer,
     replicacheGroupLayer,
     tenantRegistrationGroupLayer,

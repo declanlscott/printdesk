@@ -64,6 +64,7 @@ declare module "sst" {
       "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
     }
     "AppconfigRoleTemplate": {
+      "arn": string
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
@@ -182,6 +183,7 @@ declare module "sst" {
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }
     "InvoicesProcessorQueueSenderRoleTemplate": {
+      "arn": string
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
@@ -247,10 +249,12 @@ declare module "sst" {
       "type": "aws.appsync/api.Api"
     }
     "RealtimeChannelNamespacePublisherRoleTemplate": {
+      "arn": string
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
     "RealtimeChannelNamespaceSubscriberRoleTemplate": {
+      "arn": string
       "name": string
       "type": "pd.templates.AwsIamRole"
     }

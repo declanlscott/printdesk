@@ -11,12 +11,14 @@ export class Role extends $util.ComponentResource implements Link.Linkable {
 
   public readonly identifier: $util.Output<string>;
   public readonly name: $util.Output<string>;
+  public readonly arn: $util.Output<string>;
 
   public constructor(name: string, args: RoleArgs, opts?: $util.ComponentResourceOptions) {
     super(Role.__pulumiType, name, {}, opts);
 
     this.identifier = $output(args.identifier);
     this.name = this.identifier.apply(buildTemplate);
+    this.arn = $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/${this.identifier}`;
   }
 
   public getSSTLink() {
@@ -25,7 +27,7 @@ export class Role extends $util.ComponentResource implements Link.Linkable {
     ];
 
     return {
-      properties: { name: this.name },
+      properties: { name: this.name, arn: this.arn },
       include: [
         sst.aws.permission({
           actions: ["sts:TagSession"],

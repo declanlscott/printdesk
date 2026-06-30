@@ -53,6 +53,7 @@ class Resource:
         id: str
         type: str
     class AppconfigRoleTemplate:
+        arn: str
         name: str
         type: str
     class AssetsBucket:
@@ -147,6 +148,7 @@ class Resource:
         name: str
         type: str
     class InvoicesProcessorQueueSenderRoleTemplate:
+        arn: str
         name: str
         type: str
     class Issuer:
@@ -200,9 +202,11 @@ class Resource:
         id: str
         type: str
     class RealtimeChannelNamespacePublisherRoleTemplate:
+        arn: str
         name: str
         type: str
     class RealtimeChannelNamespaceSubscriberRoleTemplate:
+        arn: str
         name: str
         type: str
     class SnsTopicEmail:

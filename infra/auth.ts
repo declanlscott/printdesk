@@ -88,7 +88,7 @@ export const identityProviders = new sst.Linkable("IdentityProviders", {
 });
 
 export const issuer = new lib.aws.lambda.Function("Issuer", {
-  handler: "packages/typescript/functions/issuer/src/index.handler",
+  handler: "packages/typescript/functions/issuer/src/index.default",
   url: { authorization: "iam" },
   link: [aws_, dsql, dynamo, identityProviders],
   environment: {

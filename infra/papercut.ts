@@ -82,7 +82,7 @@ export const invoicesProcessorClientCredentialsConfigurationProfileTemplate =
   );
 
 export const invoicesProcessor = new lib.aws.lambda.Function("InvoicesProcessor", {
-  handler: "packages/typescript/functions/invoices-processor/src/index.handler",
+  handler: "packages/typescript/functions/invoices-processor/src/index.default",
   link: [
     appconfigAgent,
     dsql,

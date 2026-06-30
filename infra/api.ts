@@ -32,7 +32,7 @@ export const apiClientCredentialsConfigurationProfileTemplate =
 export const api = new lib.aws.lambda.Function(
   "Api",
   {
-    handler: "packages/typescript/functions/api/src/index.handler",
+    handler: "packages/typescript/functions/api/src/index.default",
     url: { authorization: "iam" },
     link: [
       apiClientCredentialsConfigurationProfileTemplate,

@@ -19,7 +19,7 @@ export const dsql = new sst.aws.Dsql(name.logical, {
 const migrationsPath = "packages/typescript/core/migrations";
 
 export const migrator = new sst.aws.Function("Migrator", {
-  handler: "packages/typescript/functions/migrator/src/index.handler",
+  handler: "packages/typescript/functions/migrator/src/index.default",
   link: [aws_, dsql],
   copyFiles: [{ from: migrationsPath, to: "migrations" }],
 });

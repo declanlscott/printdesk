@@ -16,6 +16,7 @@ import * as SharedAccountCustomerGroupAccessRepository from "@printdesk/core/sha
 import * as SharedAccountsRepository from "@printdesk/core/shared-accounts/repository/layer";
 import { SstResource } from "@printdesk/core/sst/resource";
 import * as SyncQueryBuilder from "@printdesk/core/sync/query-builder/layer";
+import * as TenantsRepository from "@printdesk/core/tenants/repository/layer";
 import * as UsersRepository from "@printdesk/core/users/repository/layer";
 import { Xml } from "@printdesk/core/xml";
 import { XmlRpc } from "@printdesk/core/xml/rpc";
@@ -25,7 +26,12 @@ import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import { openauthLayer } from "../lib/auth";
 
 export const layer = PapercutSyncer.layer.pipe(
-  Layer.merge([ClientsRepository.layer, GraphLayerMap.layer, openauthLayer]),
+  Layer.merge([
+    ClientsRepository.layer,
+    GraphLayerMap.layer,
+    openauthLayer,
+    TenantsRepository.layer,
+  ]),
   Layer.provide([
     CustomerGroupMembershipsRepository.layer,
     CustomerGroupsRepository.layer,

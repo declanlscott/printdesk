@@ -1,3 +1,4 @@
+import { AccessControl } from "@printdesk/core/access-control";
 import { Actor } from "@printdesk/core/actors";
 import { ActorsContract } from "@printdesk/core/actors/contract";
 import { ClientsRepository } from "@printdesk/core/clients/repository";
@@ -44,7 +45,10 @@ export const handler = Effect.fn(
       ),
     );
 
-    yield* PapercutSyncer.use(Struct.get("syncAll")).pipe(Effect.provideContext(context));
+    yield* PapercutSyncer.use(Struct.get("syncAll")).pipe(
+      AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+      Effect.provideContext(context),
+    );
   },
   (effect) => effect.pipe(Effect.scoped),
 );

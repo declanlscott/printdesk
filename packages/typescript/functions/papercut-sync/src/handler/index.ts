@@ -6,7 +6,9 @@ import { Config } from "@printdesk/core/config";
 import { Oauth } from "@printdesk/core/oauth";
 import { Openauth } from "@printdesk/core/oauth/openauth";
 import { PapercutSyncer } from "@printdesk/core/papercut/syncer";
+import { TenantsRepository } from "@printdesk/core/tenants/repository";
 import { TenantId } from "@printdesk/core/utils";
+import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
@@ -24,6 +26,7 @@ export const handler = Effect.fn(
   function* (event: typeof SystemActorFromEvent.Encoded) {
     const systemActor = yield* Schema.decodeEffect(SystemActorFromEvent)(event);
 
+    const tenantsRepository = yield* TenantsRepository;
 
     const context = yield* Config.use(Struct.get("getPapercutSyncClientCredentials")).pipe(
       Effect.provideService(Actor, systemActor.wrap),
@@ -48,6 +51,12 @@ export const handler = Effect.fn(
     yield* PapercutSyncer.use(Struct.get("syncAll")).pipe(
       AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
       Effect.provideContext(context),
+    );
+
+    yield* DateTime.now.pipe(
+      Effect.andThen((lastPapercutSyncAt) =>
+        tenantsRepository.updateById(systemActor.tenantId, { lastPapercutSyncAt }),
+      ),
     );
   },
   (effect) => effect.pipe(Effect.scoped),

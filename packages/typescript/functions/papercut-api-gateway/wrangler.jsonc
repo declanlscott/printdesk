@@ -11,6 +11,7 @@
     "PROTOCOL": "PLACEHOLDER",
     "SST_RESOURCE_Aws": "PLACEHOLDER",
     "SST_RESOURCE_Issuer": "PLACEHOLDER",
+    "TENANT_ID": "PLACEHOLDER",
   },
   "vpc_services": [
     {

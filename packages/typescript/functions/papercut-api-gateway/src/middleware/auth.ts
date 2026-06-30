@@ -3,8 +3,10 @@ import { ActorLayerMap } from "@printdesk/core/actors";
 import { Openauth } from "@printdesk/core/oauth/openauth";
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
+import * as Equal from "effect/Equal";
 import * as Exit from "effect/Exit";
 import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
@@ -14,6 +16,7 @@ import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 
 import { AuthHeaders, authRuntime } from "../lib/auth";
+import { resource } from "../lib/sst";
 
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 
@@ -29,9 +32,15 @@ export const auth = createMiddleware((c, next) =>
       Openauth.Openauth.use((openauth) => openauth.verify(accessToken)),
     ),
     Effect.flatMap(({ subject }) =>
-      AccessControl.clientPermissionPolicy("papercut_api_gateway:read").pipe(
-        Effect.provide(ActorLayerMap.get(subject.properties.actor.wrap)),
-      ),
+      AccessControl.every(
+        AccessControl.privateActorPolicy(
+          ({ tenantId }) =>
+            resource.TENANT_ID.pipe(Redacted.value, Equal.equals(tenantId), Effect.succeed),
+          "papercut_api_gateway",
+          "read",
+        ),
+        AccessControl.permissionPolicy("papercut_api_gateway:read"),
+      ).pipe(Effect.provide(ActorLayerMap.get(subject.properties.actor.wrap))),
     ),
     authRuntime.runPromiseExit,
   ).then(

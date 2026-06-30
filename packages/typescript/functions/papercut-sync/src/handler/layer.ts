@@ -22,8 +22,10 @@ import { XmlRpc } from "@printdesk/core/xml/rpc";
 import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 
+import { openauthLayer } from "../lib/auth";
+
 export const layer = PapercutSyncer.layer.pipe(
-  Layer.merge([ClientsRepository.layer, GraphLayerMap.layer]),
+  Layer.merge([ClientsRepository.layer, GraphLayerMap.layer, openauthLayer]),
   Layer.provide([
     CustomerGroupMembershipsRepository.layer,
     CustomerGroupsRepository.layer,

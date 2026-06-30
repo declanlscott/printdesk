@@ -56,4 +56,8 @@ export namespace PapercutContract {
     Schema.Redacted,
   );
   export type ApiAuthToken = typeof ApiAuthToken.Type;
+
+  export class HealthSuccess extends Schema.Class<HealthSuccess>("HealthSuccess")({
+    healthy: Schema.Boolean,
+  }) {}
 }

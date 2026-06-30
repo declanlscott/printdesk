@@ -1,3 +1,4 @@
+import { Constants } from "@printdesk/core/utils/constants";
 import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
@@ -17,7 +18,7 @@ const url =
   resource.HOSTNAME.pipe(Redacted.value) +
   ":" +
   resource.PORT.pipe(Redacted.value) +
-  "/rpc/api/xmlrpc";
+  Constants.PAPERCUT_API_PATH;
 
 const customFetch = resource.PAPERCUT_API.pipe(Redacted.value).fetch;
 

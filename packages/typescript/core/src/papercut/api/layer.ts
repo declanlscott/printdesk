@@ -9,7 +9,6 @@ import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as Stream from "effect/Stream";
-import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
@@ -21,9 +20,10 @@ import {
   sharedAccountPropertySchemas,
   UserAndGroupSyncFailure,
 } from ".";
-import { Actor } from "../../actors";
 import { Config } from "../../config";
 import { CustomerGroupsContract } from "../../groups/contracts";
+import { Oauth } from "../../oauth";
+import { Openauth } from "../../oauth/openauth";
 import { SharedAccountsContract } from "../../shared-accounts/contracts";
 import { SstResource } from "../../sst/resource";
 import { UsersContract } from "../../users/contract";
@@ -32,6 +32,7 @@ import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
 
+import type { OauthContract } from "../../oauth/contract";
 import type { SharedAccountPropertySchemas } from ".";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
@@ -40,22 +41,29 @@ export const makeService = Effect.gen(function* () {
   const config = yield* Config;
   const resource = yield* SstResource;
   const xmlRpc = yield* XmlRpc.XmlRpc;
+  const openauth = yield* Openauth.Openauth;
 
   const textEncoder = new TextEncoder();
+  const baseHttpClient = yield* HttpClient.HttpClient;
   const httpClientCache = yield* Cache.make({
     capacity: 10,
-    lookup: Effect.fn(function* (tenantId: TenantId) {
-      const httpClient = yield* HttpClient.HttpClient;
-
-      const url = tenantTemplate(
-        resource.Hostnames.pipe(Redacted.value).papercutApiTemplate,
-        TenantId.make(encodeBase32LowerCaseNoPadding(textEncoder.encode(tenantId)), {
-          disableChecks: true,
-        }),
+    lookup: Effect.fn(function* (accessToken: OauthContract.Tokens["access"]) {
+      const url = yield* openauth.verify(accessToken).pipe(
+        Effect.map((result) => result.subject.properties.tenantId),
+        Effect.map((tenantId) => textEncoder.encode(tenantId)),
+        Effect.map(encodeBase32LowerCaseNoPadding),
+        Effect.map((base32) => TenantId.make(base32, { disableChecks: true })),
+        Effect.map(tenantTemplate(resource.Hostnames.pipe(Redacted.value).papercutApiTemplate)),
       );
 
-      return httpClient.pipe(
+      return baseHttpClient.pipe(
         HttpClient.mapRequest(HttpClientRequest.prependUrl(url)),
+        HttpClient.mapRequest(
+          HttpClientRequest.setHeader(
+            "Proxy-Authorization",
+            `Bearer ${accessToken.pipe(Redacted.value)}`,
+          ),
+        ),
         HttpClient.filterStatusOk,
       );
     }),
@@ -63,9 +71,8 @@ export const makeService = Effect.gen(function* () {
 
   const resolver = RequestResolver.make<PapercutApiRequest>(
     Effect.forEach((entry) =>
-      Actor.use(Struct.get("assertPrivate")).pipe(
+      Oauth.AccessToken.use((accessToken) => httpClientCache.pipe(Cache.get(accessToken))).pipe(
         Effect.provideContext(entry.context),
-        Effect.flatMap(({ tenantId }) => httpClientCache.pipe(Cache.get(tenantId))),
         Effect.flatMap((client) => client.execute(entry.request)),
         Effect.exit,
         Effect.map(entry.completeUnsafe),

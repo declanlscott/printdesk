@@ -18,6 +18,7 @@ export default $config({
       removal: input?.stage === "prod" ? "retain" : "remove",
       protect: ["prod"].includes(input?.stage),
       home: "aws",
+      state: { compress: true, retention: 30, purge: !["prod"].includes(input?.stage) },
       providers: {
         aws: {
           profile: input?.stage === "prod" ? "prod" : "dev",

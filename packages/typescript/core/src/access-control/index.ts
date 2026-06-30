@@ -57,8 +57,6 @@ export namespace AccessControl {
           "orders:delete",
           "papercut_api_gateway:read",
           "papercut_sync:create",
-          "papercut_sync:read",
-          "papercut_sync:update",
           "products:create",
           "products:read",
           "products:update",
@@ -190,6 +188,7 @@ export namespace AccessControl {
         ),
         papercutSync: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "papercut_api_gateway:read",
+          "papercut_sync:create",
         ),
         setup: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "clients:create",

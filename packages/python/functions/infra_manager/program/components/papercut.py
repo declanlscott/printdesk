@@ -301,6 +301,11 @@ class Papercut(pulumi.ComponentResource):
                         name="SST_RESOURCE_Issuer",
                         text=pulumi.Output.secret(json.dumps(vars(Resource.Issuer))),
                     ),
+                    cloudflare.WorkersScriptBindingArgs(
+                        type="plain_text",
+                        name="TENANT_ID",
+                        text=args.tenant_id,
+                    ),
                 ],
                 keep_bindings=["vpc_service"],
             ),

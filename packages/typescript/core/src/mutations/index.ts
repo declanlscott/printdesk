@@ -179,7 +179,7 @@ export namespace Mutation {
         ).pipe(Effect.fromOption, Effect.orDie);
 
         const safeArgs = yield* Schema.decodeEffect(
-          Args.pipe(Schema.toType) as Schema.Decoder<
+          Args.pipe(Schema.toType) as Schema.ConstraintDecoder<
             Schema.Schema.Type<THandlerRecord[TName]["Input"]>
           >,
         )(args);
@@ -190,7 +190,7 @@ export namespace Mutation {
             AccessControl.enforce(mutation.makePolicy(safeArgs)),
             Effect.flatMap(
               Schema.decodeEffect(
-                Returns.pipe(Schema.toType) as Schema.Decoder<
+                Returns.pipe(Schema.toType) as Schema.ConstraintDecoder<
                   Schema.Schema.Type<THandlerRecord[TName]["Output"]>
                 >,
               ),

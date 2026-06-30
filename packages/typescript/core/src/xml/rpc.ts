@@ -54,10 +54,10 @@ export namespace XmlRpc {
       const request = Effect.fn("XmlRpc.request")(function* <
         TMethodName extends string,
         // oxlint-disable-next-line typescript/no-explicit-any
-        TSchemas extends Array<Schema.Encoder<any>>,
+        TCodecs extends Array<Schema.Codec<any>>,
       >(
         methodName: TMethodName,
-        schemas: { [TKey in keyof TSchemas]: SchemaAndValue<TSchemas[TKey]> },
+        schemas: { [TKey in keyof TCodecs]: SchemaAndValue<TCodecs[TKey]> },
         parseOptions?: ParseOptions,
       ) {
         const encode = Schema.String.pipe(

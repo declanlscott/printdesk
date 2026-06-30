@@ -31,7 +31,9 @@ export class WriteTransactionManager extends Context.Service<WriteTransactionMan
         value: TTable["Dto"]["Type"],
       ) =>
         Effect.succeed(value).pipe(
-          Effect.flatMap(Schema.encodeEffect<Schema.Encoder<TTable["Dto"]["Encoded"]>>(table.Dto)),
+          Effect.flatMap(
+            Schema.encodeEffect<Schema.ConstraintEncoder<TTable["Dto"]["Encoded"]>>(table.Dto),
+          ),
           Effect.tap((encoded) =>
             WriteTransaction.pipe(
               Effect.flatMap((tx) =>

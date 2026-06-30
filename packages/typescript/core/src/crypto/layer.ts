@@ -102,11 +102,11 @@ export const makeService = Effect.gen(function* () {
 
   const decodeJwt = Effect.fn("Crypto.decodeJwt")(function* <TType, TServices>(
     jwt: string,
-    decoder: Schema.Decoder<TType, TServices>,
+    Decoder: Schema.ConstraintDecoder<TType, TServices>,
     parseOptions?: ParseOptions,
   ) {
     const decode = Schema.NonEmptyString.pipe(
-      Schema.decodeTo(decoder, {
+      Schema.decodeTo(Decoder, {
         decode: SchemaGetter.transformOrFail((jwt) =>
           Effect.try({
             try: () => decodeJWT(jwt),

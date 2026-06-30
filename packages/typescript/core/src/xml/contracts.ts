@@ -105,42 +105,44 @@ export namespace XmlRpcContract {
   );
 
   // oxlint-disable-next-line typescript/no-explicit-any
-  export const tupleResponse = <TValues extends Array<Schema.Decoder<any>>>(...Values: TValues) =>
+  export const tupleResponse = <TCodecs extends Array<Schema.ConstraintDecoder<any>>>(
+    ...Codecs: TCodecs
+  ) =>
     methodResponse({
       params: Schema.Struct({
         param: Schema.Struct({
           value: Schema.Struct({
             array: Schema.Struct({
               data: Schema.Struct({
-                value: Schema.Tuple(Values).pipe(Schema.toEncoded),
+                value: Schema.Tuple(Codecs).pipe(Schema.toEncoded),
               }),
             }),
           }),
         }),
       }),
     }).pipe(
-      Schema.decodeTo(Schema.Tuple(Values), {
+      Schema.decodeTo(Schema.Tuple(Codecs), {
         decode: SchemaGetter.transform((response) => response.params.param.value.array.data.value),
         encode: SchemaGetter.forbidden(() => "Not implemented"),
       }),
     );
 
   // oxlint-disable-next-line typescript/no-explicit-any
-  export const arrayResponse = <TValue extends Schema.Decoder<any>>(Value: TValue) =>
+  export const arrayResponse = <TCodec extends Schema.Codec<any>>(Codec: TCodec) =>
     methodResponse({
       params: Schema.Struct({
         param: Schema.Struct({
           value: Schema.Struct({
             array: Schema.Struct({
               data: Schema.Struct({
-                value: Schema.Array(Value.pipe(Schema.toEncoded)),
+                value: Schema.Array(Codec.pipe(Schema.toEncoded)),
               }),
             }),
           }),
         }),
       }),
     }).pipe(
-      Schema.decodeTo(Value.pipe(Schema.Array), {
+      Schema.decodeTo(Codec.pipe(Schema.Array), {
         decode: SchemaGetter.transform((response) => response.params.param.value.array.data.value),
         encode: SchemaGetter.forbidden(() => "Not implemented"),
       }),
@@ -148,16 +150,16 @@ export namespace XmlRpcContract {
 
   export const structResponse = <
     // oxlint-disable-next-line typescript/no-explicit-any
-    TMembers extends Array<ReturnType<typeof member<any, any>>>,
+    TCodecs extends Array<ReturnType<typeof member<any, any>>>,
   >(
-    ...Members: TMembers
+    ...Codecs: TCodecs
   ) =>
     methodResponse({
       params: Schema.Struct({
-        param: struct(...Members).pipe(Schema.toEncoded),
+        param: struct(...Codecs).pipe(Schema.toEncoded),
       }),
     }).pipe(
-      Schema.decodeTo(Schema.Tuple(Members), {
+      Schema.decodeTo(Schema.Tuple(Codecs), {
         decode: SchemaGetter.transform((response) => response.params.param.value.struct.member),
         encode: SchemaGetter.forbidden(() => "Not implemented"),
       }),

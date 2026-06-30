@@ -86,7 +86,7 @@ export namespace Policy {
         ).pipe(Effect.fromOption, Effect.orDie);
 
         const safeArgs = yield* Schema.decodeEffect(
-          Args.pipe(Schema.toType) as Schema.Decoder<
+          Args.pipe(Schema.toType) as Schema.ConstraintDecoder<
             Schema.Schema.Type<THandlerRecord[TName]["Input"]>
           >,
         )(args);

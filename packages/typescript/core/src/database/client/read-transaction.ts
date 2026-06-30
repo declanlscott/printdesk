@@ -31,9 +31,9 @@ export class ReadTransactionManager extends Context.Service<ReadTransactionManag
             }),
           ),
           Effect.flatMap(
-            Schema.decodeUnknownEffect<Schema.Decoder<ReadonlyArray<TTable["Dto"]["Type"]>>>(
-              table.Dto.pipe(Schema.Array),
-            ),
+            Schema.decodeUnknownEffect<
+              Schema.ConstraintDecoder<ReadonlyArray<TTable["Dto"]["Type"]>>
+            >(table.Dto.pipe(Schema.Array)),
           ),
         );
 
@@ -50,7 +50,7 @@ export class ReadTransactionManager extends Context.Service<ReadTransactionManag
           ),
           Effect.filterOrFail(Predicate.isNotUndefined, () => new Cause.NoSuchElementError()),
           Effect.flatMap(
-            Schema.decodeUnknownEffect<Schema.Decoder<TTable["Dto"]["Type"]>>(table.Dto),
+            Schema.decodeUnknownEffect<Schema.ConstraintDecoder<TTable["Dto"]["Type"]>>(table.Dto),
           ),
         );
 

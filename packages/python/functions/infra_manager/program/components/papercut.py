@@ -285,7 +285,7 @@ class Papercut(pulumi.ComponentResource):
                     ),
                     cloudflare.WorkersScriptBindingArgs(
                         type="secret_text",
-                        name="Aws",
+                        name="SST_RESOURCE_Aws",
                         text=pulumi.Output.secret(
                             json.dumps(
                                 {
@@ -298,7 +298,7 @@ class Papercut(pulumi.ComponentResource):
                     ),
                     cloudflare.WorkersScriptBindingArgs(
                         type="secret_text",
-                        name="Issuer",
+                        name="SST_RESOURCE_Issuer",
                         text=pulumi.Output.secret(json.dumps(vars(Resource.Issuer))),
                     ),
                 ],

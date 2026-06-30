@@ -10,10 +10,6 @@ export namespace CryptoContract {
     {},
   ) {}
 
-  export class JwtDecodeError extends Schema.TaggedErrorClass<JwtDecodeError>()("JwtDecodeError", {
-    cause: Schema.Defect(),
-  }) {}
-
   export class Hash extends Schema.Class<Hash>("Hash")({
     salt: Base64.pipe(Schema.RedactedFromValue),
     derivedKey: Base64.pipe(Schema.RedactedFromValue),

@@ -3,6 +3,7 @@ import { scrypt, timingSafeEqual } from "node:crypto";
 import { decodeJWT } from "@oslojs/jwt";
 import * as EffectCrypto from "effect/Crypto";
 import * as Effect from "effect/Effect";
+import * as Encoding from "effect/Encoding";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as PlatformError from "effect/PlatformError";
@@ -110,10 +111,17 @@ export const makeService = Effect.gen(function* () {
         decode: SchemaGetter.transformOrFail((jwt) =>
           Effect.try({
             try: () => decodeJWT(jwt),
-            catch: (cause) => new CryptoContract.JwtDecodeError({ cause }),
+            catch: (error) =>
+              new Encoding.EncodingError({
+                input: jwt,
+                kind: "Decode",
+                module: "Crypto",
+                message:
+                  error instanceof globalThis.Error ? error.message : "Unknown error decoding JWT",
+              }),
           }).pipe(
             Effect.mapError(
-              (e) => new SchemaIssue.InvalidValue(Option.some(jwt), { message: e.message }),
+              (e) => new SchemaIssue.InvalidValue(Option.some(e.input), { message: e.message }),
             ),
           ),
         ),

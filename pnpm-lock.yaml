@@ -284,7 +284,7 @@ importers:
         version: 8.20.0
       drizzle-kit:
         specifier: rc
-        version: 1.0.0-rc.4-ca0f029
+        version: 1.0.0-rc.4
 
   packages/typescript/functions/api:
     dependencies:
@@ -434,12 +434,18 @@ importers:
 
   packages/typescript/functions/papercut-sync:
     dependencies:
+      '@aws-sdk/credential-providers':
+        specifier: 'catalog:'
+        version: 3.1068.0
       '@effect-aws/lambda':
         specifier: 'catalog:'
         version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.83(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
+      aws4fetch:
+        specifier: 'catalog:'
+        version: 1.0.20
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.83
@@ -1006,8 +1012,8 @@ packages:
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
 
-  '@drizzle-team/brocli@0.11.0':
-    resolution: {integrity: sha512-hD3pekGiPg0WPCCGAZmusBBJsDqGUR66Y452YgQsZOnkdQ7ViEPKuyP4huUGEZQefp8g34RRodXYmJ2TbCH+tg==}
+  '@drizzle-team/brocli@0.12.0':
+    resolution: {integrity: sha512-mlUE+rZ8CatQekLhnaiN91Iemdd+e2gFKooGlnRB3oPTL3VghLfX24dx7HrzMNeC1JrIB/0kpsfyty3f5HNfxQ==}
 
   '@effect-aws/client-dynamodb@2.0.0-beta.4':
     resolution: {integrity: sha512-2hfDC0K0RPvHGd4xUIbbPwhPSiqfPz4/jTQ2BRWodndd9PejysmZ9AiDXf+jJXgfVqYsziaT3DKTxgAukYFsIA==}
@@ -3037,8 +3043,8 @@ packages:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
 
-  drizzle-kit@1.0.0-rc.4-ca0f029:
-    resolution: {integrity: sha512-hM1K72ptIPOpJDScHo7cAF+K8A8Tr3q2yHvBJvOZWvLn2lN+G4RDUvG3rT3ohlSE2O3BN/s7g3e3JiQLStt8iQ==}
+  drizzle-kit@1.0.0-rc.4:
+    resolution: {integrity: sha512-KZCpjRyu+oYHLj/UJogfFlOkWhHVkaEI2EOT1U3NDVXUzLoTyPjqwFxwOrlQxsY6jzRyxcz4EacqboGfhEeYrA==}
     hasBin: true
 
   drizzle-orm@1.0.0-rc.3:
@@ -4979,7 +4985,7 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
-  '@drizzle-team/brocli@0.11.0': {}
+  '@drizzle-team/brocli@0.12.0': {}
 
   '@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83)':
     dependencies:
@@ -6549,9 +6555,9 @@ snapshots:
 
   diff@8.0.4: {}
 
-  drizzle-kit@1.0.0-rc.4-ca0f029:
+  drizzle-kit@1.0.0-rc.4:
     dependencies:
-      '@drizzle-team/brocli': 0.11.0
+      '@drizzle-team/brocli': 0.12.0
       '@js-temporal/polyfill': 0.5.1
       esbuild: 0.25.12
       get-tsconfig: 4.14.0

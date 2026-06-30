@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@aws-sdk/credential-providers": "catalog:",
     "@effect-aws/lambda": "catalog:",
     "@printdesk/core": "workspace:*",
+    "aws4fetch": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

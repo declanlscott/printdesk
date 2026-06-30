@@ -1,6 +1,11 @@
+import { decodeBase32IgnorePadding, encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
+import * as Encoding from "effect/Encoding";
+import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaIssue from "effect/SchemaIssue";
 import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
@@ -12,12 +17,57 @@ import { IdentityProvidersContract } from "../identity/contract";
 import { LicensesContract } from "../licenses/contract";
 import { PapercutContract } from "../papercut/contract";
 import { TablesContract } from "../tables/contract";
-import { EntityId } from "../utils";
+import { EntityId, TenantId, UnpaddedBase32 } from "../utils";
 import { Constants } from "../utils/constants";
 
 import type { TenantsTable } from "./sql";
 
 export namespace TenantsContract {
+  const textEncoder = new TextEncoder();
+  const textDecoder = new TextDecoder();
+
+  export const IdFromUnpaddedBase32String = UnpaddedBase32.pipe(
+    Schema.decodeTo(TenantId, {
+      decode: SchemaGetter.transformOrFail((base32) =>
+        Effect.try({
+          try: () => decodeBase32IgnorePadding(base32),
+          catch: (error) =>
+            new Encoding.EncodingError({
+              input: base32,
+              kind: "Decode",
+              module: "TenantsContract",
+              message:
+                error instanceof globalThis.Error
+                  ? error.message
+                  : "Unknown error decoding tenant id",
+            }),
+        }).pipe(
+          Effect.flatMap((bytes) =>
+            Effect.try({
+              try: () => textDecoder.decode(bytes),
+              catch: (error) =>
+                new Encoding.EncodingError({
+                  input: bytes,
+                  kind: "Decode",
+                  module: "TenantsContract",
+                  message:
+                    error instanceof globalThis.Error
+                      ? error.message
+                      : "Unknown error decoding tenant id",
+                }),
+            }),
+          ),
+          Effect.mapError(
+            (e) => new SchemaIssue.InvalidValue(Option.some(e.input), { message: e.message }),
+          ),
+        ),
+      ),
+      encode: SchemaGetter.transform((tenantId) =>
+        encodeBase32LowerCaseNoPadding(textEncoder.encode(tenantId)),
+      ),
+    }),
+  );
+
   export const Status = Schema.Literals(["setup", "active", "suspended"]);
   export type Status = typeof Status.Type;
 

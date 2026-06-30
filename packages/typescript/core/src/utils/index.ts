@@ -37,7 +37,10 @@ export const Version = Schema.Int.pipe(
 );
 export type Version = typeof Version.Type;
 
-export const Base64 = Schema.String.pipe(Schema.check(Schema.isPattern(Constants.BASE64_REGEX)));
+export const Base64 = Schema.NonEmptyString.pipe(Schema.check(Schema.isBase64()));
+export const UnpaddedBase32 = Schema.NonEmptyString.pipe(
+  Schema.check(Schema.isPattern(Constants.UNPADDED_BASE32_REGEX)),
+);
 
 export const Separator = Schema.Literal(Constants.SEPARATOR);
 

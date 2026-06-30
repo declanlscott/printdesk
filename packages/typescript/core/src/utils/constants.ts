@@ -126,7 +126,9 @@ export namespace Constants {
   );
   export const ISO_DATE_REGEX = new RegExp(/^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])$/u);
   export const HEX_COLOR_REGEX = new RegExp(/^#(?:[\da-fA-F]{3,4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/u);
-  export const BASE64_REGEX = new RegExp(/^(?:[\da-z+/]{4})*(?:[\da-z+/]{2}==|[\da-z+/]{3}=)?$/iu);
+  export const UNPADDED_BASE32_REGEX = new RegExp(
+    /^(?:[A-Z2-7]{8})*(?:[A-Z2-7]{2}|[A-Z2-7]{4}|[A-Z2-7]{5}|[A-Z2-7]{7})?$/i,
+  );
   export const IPV4_REGEX = new RegExp(
     /^(?:(?:[1-9]|1\d|2[0-4])?\d|25[0-5])(?:\.(?:(?:[1-9]|1\d|2[0-4])?\d|25[0-5])){3}$/u,
   );

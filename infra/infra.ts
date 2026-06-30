@@ -2,14 +2,16 @@ import Path from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
 
-import {
-  api,
-  apiClientCredentialsConfigurationProfileTemplate,
-  apiClientCredentialsDeploymentStrategy,
-} from "./api";
+import { api, apiClientCredentialsConfigurationProfileTemplate } from "./api";
 import { assetsBucket, assetsBucketAccessPointTemplate, assetsRouter } from "./assets";
 import { issuer } from "./auth";
-import { appconfigApplication, appconfigEnvironment, appconfigRoleTemplate } from "./config";
+import {
+  appconfigAllAtOnceDeploymentStrategy,
+  appconfigApplication,
+  appconfigEnvironment,
+  appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
+  appconfigRoleTemplate,
+} from "./config";
 import { dynamo } from "./db";
 import { hostnames, zone } from "./dns";
 import * as lib from "./lib";
@@ -20,7 +22,8 @@ import {
   papercutApiGatewayScriptObject,
   papercutSync,
   invoicesProcessor,
-  papercutApiAuthTokenDeploymentStrategy,
+  papercutSyncClientCredentialsConfigurationProfileTemplate,
+  invoicesProcessorClientCredentialsConfigurationProfileTemplate,
 } from "./papercut";
 import {
   realtimeApi,
@@ -65,9 +68,10 @@ export const infraManager = dynamo.subscribe(
     link: [
       api,
       apiClientCredentialsConfigurationProfileTemplate,
-      apiClientCredentialsDeploymentStrategy,
+      appconfigAllAtOnceDeploymentStrategy,
       appconfigApplication,
       appconfigEnvironment,
+      appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
       appconfigRoleTemplate,
       assetsBucket,
       assetsBucketAccessPointTemplate,
@@ -78,14 +82,15 @@ export const infraManager = dynamo.subscribe(
       hostnames,
       infraManagerFailureTopic,
       invoicesProcessor,
+      invoicesProcessorClientCredentialsConfigurationProfileTemplate,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,
       nanoId,
       papercutApiAuthTokenConfigurationProfileTemplate,
-      papercutApiAuthTokenDeploymentStrategy,
       papercutApiGatewayAwsAccessKey,
       papercutApiGatewayScriptObject,
       papercutSync,
+      papercutSyncClientCredentialsConfigurationProfileTemplate,
       pulumiBucket,
       pulumiRole,
       realtimeApi,

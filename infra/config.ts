@@ -76,3 +76,23 @@ if ($dev) {
 export const appconfigRoleTemplate = new lib.templates.aws.iam.Role("AppconfigRoleTemplate", {
   identifier: "AppconfigRole",
 });
+
+export const appconfigAllAtOnceDeploymentStrategy = new aws.appconfig.DeploymentStrategy(
+  "AppconfigAllAtOnceDeploymentStrategy",
+  {
+    growthType: "LINEAR",
+    deploymentDurationInMinutes: 0,
+    growthFactor: 100,
+    finalBakeTimeInMinutes: 10,
+    replicateTo: "NONE",
+  },
+);
+
+export const appconfigLinear20PercentEvery6MinutesDeploymentStrategy =
+  new aws.appconfig.DeploymentStrategy("AppconfigLinear20PercentEvery6MinutesDeploymentStrategy", {
+    growthType: "LINEAR",
+    deploymentDurationInMinutes: 30,
+    growthFactor: 20,
+    finalBakeTimeInMinutes: 30,
+    replicateTo: "NONE",
+  });

@@ -21,17 +21,6 @@ export const papercutApiAuthTokenConfigurationProfileTemplate =
     { identifier: "PapercutApiAuthToken" },
   );
 
-export const papercutApiAuthTokenDeploymentStrategy = new aws.appconfig.DeploymentStrategy(
-  "PapercutApiAuthTokenDeploymentStrategy",
-  {
-    growthType: "LINEAR",
-    deploymentDurationInMinutes: 0,
-    growthFactor: 100,
-    finalBakeTimeInMinutes: 0,
-    replicateTo: "NONE",
-  },
-);
-
 const papercutApiGatewayPackagePath = Path.resolve(
   Path.join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
 );
@@ -69,12 +58,36 @@ export const papercutApiGatewayAwsAccessKey = new lib.aws.iam.AccessKey(
   { permissions: [invokeIssuerFunctionUrl] },
 );
 
+export const papercutSyncClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "PapercutSyncClientCredentialsConfigurationProfileTemplate",
+    { identifier: "PapercutSyncClientCredentials" },
+  );
+
 export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
-  handler: "packages/typescript/functions/papercut-sync/src/index.handler",
-  link: [appconfigAgent, dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
+  handler: "packages/typescript/functions/papercut-sync/src/index.default",
+  link: [
+    appconfigAgent,
+    dsql,
+    hostnames,
+    papercutApiAuthTokenConfigurationProfileTemplate,
+    papercutSyncClientCredentialsConfigurationProfileTemplate,
+  ],
 });
+
+export const invoicesProcessorClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "InvoicesProcessorClientCredentialsConfigurationProfileTemplate",
+    { identifier: "InvoicesProcessorClientCredentials" },
+  );
 
 export const invoicesProcessor = new lib.aws.lambda.Function("InvoicesProcessor", {
   handler: "packages/typescript/functions/invoices-processor/src/index.handler",
-  link: [appconfigAgent, dsql, hostnames, papercutApiAuthTokenConfigurationProfileTemplate],
+  link: [
+    appconfigAgent,
+    dsql,
+    hostnames,
+    papercutApiAuthTokenConfigurationProfileTemplate,
+    invoicesProcessorClientCredentialsConfigurationProfileTemplate,
+  ],
 });

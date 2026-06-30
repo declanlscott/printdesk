@@ -16,10 +16,6 @@ class Resource:
     class ApiClientCredentialsConfigurationProfileTemplate:
         name: str
         type: str
-    class ApiClientCredentialsDeploymentStrategy:
-        arn: str
-        id: str
-        type: str
     class ApiGateway:
         type: str
         class urls:
@@ -38,6 +34,10 @@ class Resource:
         externalId: str
         name: str
         type: str
+    class AppconfigAllAtOnceDeploymentStrategy:
+        arn: str
+        id: str
+        type: str
     class AppconfigApplication:
         arn: str
         id: str
@@ -47,6 +47,10 @@ class Resource:
         arn: str
         id: str
         name: str
+        type: str
+    class AppconfigLinear20PercentEvery6MinutesDeploymentStrategy:
+        arn: str
+        id: str
         type: str
     class AppconfigRoleTemplate:
         name: str
@@ -139,6 +143,9 @@ class Resource:
         name: str
         roleArn: str
         type: str
+    class InvoicesProcessorClientCredentialsConfigurationProfileTemplate:
+        name: str
+        type: str
     class InvoicesProcessorQueueSenderRoleTemplate:
         name: str
         type: str
@@ -159,10 +166,6 @@ class Resource:
     class PapercutApiAuthTokenConfigurationProfileTemplate:
         name: str
         type: str
-    class PapercutApiAuthTokenDeploymentStrategy:
-        arn: str
-        id: str
-        type: str
     class PapercutApiGatewayAwsAccessKey:
         id: str
         secret: str
@@ -175,6 +178,9 @@ class Resource:
         arn: str
         name: str
         roleArn: str
+        type: str
+    class PapercutSyncClientCredentialsConfigurationProfileTemplate:
+        name: str
         type: str
     class PulumiBucket:
         name: str

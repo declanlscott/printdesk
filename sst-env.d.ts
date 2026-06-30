@@ -21,11 +21,6 @@ declare module "sst" {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }
-    "ApiClientCredentialsDeploymentStrategy": {
-      "arn": string
-      "id": string
-      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
-    }
     "ApiGateway": {
       "type": "pd.cloudflare.Worker"
       "urls": {
@@ -46,6 +41,11 @@ declare module "sst" {
       "name": string
       "type": "pd.aws.IamExternalRole"
     }
+    "AppconfigAllAtOnceDeploymentStrategy": {
+      "arn": string
+      "id": string
+      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
+    }
     "AppconfigApplication": {
       "arn": string
       "id": string
@@ -57,6 +57,11 @@ declare module "sst" {
       "id": string
       "name": string
       "type": "aws.appconfig/environment.Environment"
+    }
+    "AppconfigLinear20PercentEvery6MinutesDeploymentStrategy": {
+      "arn": string
+      "id": string
+      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
     }
     "AppconfigRoleTemplate": {
       "name": string
@@ -172,6 +177,10 @@ declare module "sst" {
       "roleArn": string
       "type": "sst.aws.Function"
     }
+    "InvoicesProcessorClientCredentialsConfigurationProfileTemplate": {
+      "name": string
+      "type": "pd.templates.AwsAppConfigConfigurationProfile"
+    }
     "InvoicesProcessorQueueSenderRoleTemplate": {
       "name": string
       "type": "pd.templates.AwsIamRole"
@@ -197,11 +206,6 @@ declare module "sst" {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }
-    "PapercutApiAuthTokenDeploymentStrategy": {
-      "arn": string
-      "id": string
-      "type": "aws.appconfig/deploymentStrategy.DeploymentStrategy"
-    }
     "PapercutApiGatewayAwsAccessKey": {
       "id": string
       "secret": string
@@ -217,6 +221,10 @@ declare module "sst" {
       "name": string
       "roleArn": string
       "type": "sst.aws.Function"
+    }
+    "PapercutSyncClientCredentialsConfigurationProfileTemplate": {
+      "name": string
+      "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }
     "PulumiBucket": {
       "name": string

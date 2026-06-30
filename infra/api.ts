@@ -1,13 +1,18 @@
 import { assetsPrivateKey, assetsPublicKey, assetsRouter } from "./assets";
 import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
-import { appconfigAgent, appconfigAgentDevContainer, appconfigRoleTemplate } from "./config";
+import {
+  appconfigAgent,
+  appconfigAgentDevContainer,
+  appconfigAllAtOnceDeploymentStrategy,
+  appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
+  appconfigRoleTemplate,
+} from "./config";
 import { dsql, dynamo } from "./db";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
 import {
   invoicesProcessorQueueSenderRoleTemplate,
   papercutApiAuthTokenConfigurationProfileTemplate,
-  papercutApiAuthTokenDeploymentStrategy,
 } from "./papercut";
 import {
   realtimeApi,
@@ -24,17 +29,6 @@ export const apiClientCredentialsConfigurationProfileTemplate =
     { identifier: "ApiClientCredentials" },
   );
 
-export const apiClientCredentialsDeploymentStrategy = new aws.appconfig.DeploymentStrategy(
-  "ApiClientCredentialsDeploymentStrategy",
-  {
-    growthType: "LINEAR",
-    deploymentDurationInMinutes: 30,
-    growthFactor: 20,
-    finalBakeTimeInMinutes: 30,
-    replicateTo: "NONE",
-  },
-);
-
 export const api = new lib.aws.lambda.Function(
   "Api",
   {
@@ -42,8 +36,9 @@ export const api = new lib.aws.lambda.Function(
     url: { authorization: "iam" },
     link: [
       apiClientCredentialsConfigurationProfileTemplate,
-      apiClientCredentialsDeploymentStrategy,
       appconfigAgent,
+      appconfigAllAtOnceDeploymentStrategy,
+      appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
       appconfigRoleTemplate,
       assetsPublicKey,
       assetsPrivateKey,
@@ -54,7 +49,6 @@ export const api = new lib.aws.lambda.Function(
       dynamo,
       hostnames,
       papercutApiAuthTokenConfigurationProfileTemplate,
-      papercutApiAuthTokenDeploymentStrategy,
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,

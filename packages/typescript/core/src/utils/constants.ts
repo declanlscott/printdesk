@@ -38,7 +38,9 @@ export namespace Constants {
   export const OPENAUTH_CLIENT_IDS = {
     API: "api",
     API_GATEWAY: "api-gateway",
+    INVOICES_PROCESSOR: "invoices-processor",
     PAPERCUT_API_GATEWAY: "papercut-api-gateway",
+    PAPERCUT_SYNC: "papercut-sync",
     WEB: "web",
   } as const;
 
@@ -81,6 +83,7 @@ export namespace Constants {
 
   export const VARCHAR_LENGTH = 50;
 
+  export const PAPERCUT_API_PATH = "/rpc/api/xmlrpc";
   export const PAPERCUT_API_PAGINATION_LIMIT = 1_000;
   export const PAPERCUT_API_REQUEST_BATCH_SIZE = 50;
   export const PAPERCUT_API_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
@@ -100,7 +103,6 @@ export namespace Constants {
     oauthCallback: "/oauth/callback",
   } as const;
 
-  export const DEFAULT_PAPERCUT_API_PATH = "/rpc/api/xmlrpc";
   export const DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION = "55 1 * * ? *";
   export const DEFAULT_DOCUMENTS_MIME_TYPES = ["application/pdf"] as const;
   export const DEFAULT_DOCUMENTS_SIZE_LIMIT = 1024 * 1024 * 10; // 10MB

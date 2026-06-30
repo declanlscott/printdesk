@@ -52,8 +52,8 @@ export const makeService = Effect.gen(function* () {
             ),
             resolver,
           ).pipe(
-            Effect.catchTag("ReplicacheNotifyError", (error) =>
-              Effect.logError("[ReplicacheNotifier]: Replicache notification failed.", error.cause),
+            Effect.catchCause((cause) =>
+              Effect.logError("[ReplicacheNotifier]: Replicache notification failed:", cause),
             ),
             Effect.provideContext(context.pipe(Context.pick(Actor, AwsCredentialIdentity))),
             db.afterTransaction,

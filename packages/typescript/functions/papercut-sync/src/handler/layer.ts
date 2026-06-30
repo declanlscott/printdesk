@@ -22,8 +22,6 @@ import { XmlRpc } from "@printdesk/core/xml/rpc";
 import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 
-import { openauthLayer } from "../lib/auth";
-
 export const layer = PapercutSyncer.layer.pipe(
   Layer.merge([ClientsRepository.layer, GraphLayerMap.layer]),
   Layer.provide([
@@ -36,7 +34,7 @@ export const layer = PapercutSyncer.layer.pipe(
     SharedAccountsRepository.layer,
     UsersRepository.layer,
   ]),
-  Layer.provideMerge([Config.layer, openauthLayer]),
+  Layer.provideMerge([Config.layer]),
   Layer.provide([SyncQueryBuilder.layer, XmlRpc.XmlRpc.layer("/")]),
   Layer.provide([
     Appconfig.layer,

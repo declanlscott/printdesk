@@ -23,21 +23,22 @@ export const handler = Effect.fn(
   function* (event: typeof SystemActorFromEvent.Encoded) {
     const systemActor = yield* Schema.decodeEffect(SystemActorFromEvent)(event);
 
-    const credentials = yield* Config.use(Struct.get("getPapercutSyncClientCredentials")).pipe(
-      Effect.provideService(Actor, systemActor.wrap),
-    );
 
-    const context = yield* Effect.all(
-      [
-        ClientsRepository.use((repository) =>
-          repository.findById(credentials.id, systemActor.tenantId),
-        ).pipe(Effect.map((client) => new ActorsContract.ClientActor(client).wrap)),
-        Openauth.Openauth.use((openauth) => openauth.clientCredentials(credentials)).pipe(
-          Effect.map((result) => result.tokens.access),
+    const context = yield* Config.use(Struct.get("getPapercutSyncClientCredentials")).pipe(
+      Effect.provideService(Actor, systemActor.wrap),
+      Effect.flatMap((credentials) =>
+        Effect.all(
+          [
+            ClientsRepository.use((repository) =>
+              repository.findById(credentials.id, systemActor.tenantId),
+            ).pipe(Effect.map((client) => new ActorsContract.ClientActor(client).wrap)),
+            Openauth.Openauth.use((openauth) => openauth.clientCredentials(credentials)).pipe(
+              Effect.map((result) => result.tokens.access),
+            ),
+          ],
+          { concurrency: "unbounded" },
         ),
-      ],
-      { concurrency: "unbounded" },
-    ).pipe(
+      ),
       Effect.flatMap(([actor, accessToken]) =>
         Actor.layer(actor).pipe(Layer.merge(Oauth.AccessToken.layer(accessToken)), Layer.build),
       ),

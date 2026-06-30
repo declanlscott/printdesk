@@ -22,6 +22,38 @@ class Config:
             opts=opts,
         )
 
+        self._api_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="ConfigApiClientCredentialsConfigurationProfile",
+            args=aws.appconfig.ConfigurationProfileArgs(
+                application_id=Resource.AppconfigApplication.id,
+                type="AWS.Freeform",
+                location_uri="hosted",
+                name=pulumi.Output.from_input(args.tenant_id).apply(
+                    lambda tenant_id: naming.template(
+                        name_template=Resource.ApiClientCredentialsConfigurationProfileTemplate.name,
+                        tenant_id=tenant_id,
+                    )
+                ),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
+        self._invoices_processor_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="ConfigInvoicesProcessorClientCredentialsConfigurationProfile",
+            args=aws.appconfig.ConfigurationProfileArgs(
+                application_id=Resource.AppconfigApplication.id,
+                type="AWS.Freeform",
+                location_uri="hosted",
+                name=pulumi.Output.from_input(args.tenant_id).apply(
+                    lambda tenant_id: naming.template(
+                        name_template=Resource.InvoicesProcessorClientCredentialsConfigurationProfileTemplate.name,
+                        tenant_id=tenant_id,
+                    )
+                ),
+            ),
+            opts=pulumi.ResourceOptions(parent=self),
+        )
+
         self._papercut_api_auth_token_configuration_profile = aws.appconfig.ConfigurationProfile(
             resource_name="ConfigPapercutApiAuthTokenConfigurationProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
@@ -38,15 +70,15 @@ class Config:
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self._api_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="ConfigApiClientCredentialsConfigurationProfile",
+        self._papercut_sync_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="ConfigPapercutSyncClientCredentialsConfigurationProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
                 application_id=Resource.AppconfigApplication.id,
                 type="AWS.Freeform",
                 location_uri="hosted",
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.ApiClientCredentialsConfigurationProfileTemplate.name,
+                        name_template=Resource.PapercutSyncClientCredentialsConfigurationProfileTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -79,8 +111,10 @@ class Config:
                     aws.iam.RoleInlinePolicyArgs(
                         policy=aws.iam.get_policy_document_output(
                             statements=pulumi.Output.all(
-                                papercut_api_auth_token_configuration_profile=self._papercut_api_auth_token_configuration_profile.arn,
                                 api_client_credentials_configuration_profile=self._api_client_credentials_configuration_profile.arn,
+                                invoices_processor_client_credentials_configuration_profile=self._invoices_processor_client_credentials_configuration_profile.arn,
+                                papercut_api_auth_token_configuration_profile=self._papercut_api_auth_token_configuration_profile.arn,
+                                papercut_sync_client_credentials_configuration_profile=self._papercut_sync_client_credentials_configuration_profile.arn,
                             ).apply(
                                 lambda arns: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
@@ -90,26 +124,38 @@ class Config:
                                         resources=[
                                             Resource.AppconfigApplication.arn,
                                             arns[
+                                                "api_client_credentials_configuration_profile"
+                                            ],
+                                            arns[
+                                                "invoices_processor_client_credentials_configuration_profile"
+                                            ],
+                                            arns[
                                                 "papercut_api_auth_token_configuration_profile"
                                             ],
                                             arns[
-                                                "api_client_credentials_configuration_profile"
+                                                "papercut_sync_client_credentials_configuration_profile"
                                             ],
                                         ],
                                     ),
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appconfig:StartDeployment"],
                                         resources=[
+                                            Resource.AppconfigAllAtOnceDeploymentStrategy.arn,
                                             Resource.AppconfigApplication.arn,
                                             Resource.AppconfigEnvironment.arn,
+                                            Resource.AppconfigLinear20PercentEvery6MinutesDeploymentStrategy.arn,
+                                            arns[
+                                                "api_client_credentials_configuration_profile"
+                                            ],
+                                            arns[
+                                                "invoices_processor_client_credentials_configuration_profile"
+                                            ],
                                             arns[
                                                 "papercut_api_auth_token_configuration_profile"
                                             ],
                                             arns[
-                                                "api_client_credentials_configuration_profile"
+                                                "papercut_sync_client_credentials_configuration_profile"
                                             ],
-                                            Resource.PapercutApiAuthTokenDeploymentStrategy.arn,
-                                            Resource.ApiClientCredentialsDeploymentStrategy.arn,
                                         ],
                                     ),
                                 ]

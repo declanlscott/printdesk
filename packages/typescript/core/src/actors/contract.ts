@@ -1,6 +1,8 @@
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
+import * as Match from "effect/Match";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
@@ -51,8 +53,17 @@ export namespace ActorsContract {
     }
   }
 
+  export class SystemActor
+    extends Schema.TaggedClass<SystemActor>()("SystemActor", { tenantId: TenantId })
+    implements Wrapper
+  {
+    public get wrap() {
+      return new Actor({ properties: new SystemActor(this) });
+    }
+  }
+
   export class Actor extends Schema.TaggedClass<Actor>()("Actor", {
-    properties: Schema.Union([PublicActor, ClientActor, UserActor]),
+    properties: Schema.Union([PublicActor, ClientActor, UserActor, SystemActor]),
   }) {
     #assert = <TActorTag extends Actor["properties"]["_tag"]>(actorTag: TActorTag) =>
       Effect.suspend(() => {
@@ -65,16 +76,17 @@ export namespace ActorsContract {
     public assertPublic = this.#assert("PublicActor");
     public assertClient = this.#assert("ClientActor");
     public assertUser = this.#assert("UserActor");
+    public assertSystem = this.#assert("SystemActor");
 
-    public assertPrivate = Effect.suspend(() => {
-      if (this.properties._tag === "PublicActor")
-        return Effect.fail(new ForbiddenActorError({ actor: this.properties._tag }));
+    public assertPrivate = Match.value(this.properties).pipe(
+      Match.tag("PublicActor", (actor) =>
+        Effect.fail(new ForbiddenActorError({ actor: actor._tag })),
+      ),
+      Match.orElse((actor) => Effect.succeed(actor)),
+    );
 
-      return Effect.succeed(this.properties);
-    });
+    public tenantId = this.assertPrivate.pipe(Effect.map(Struct.get("tenantId")));
   }
-
-  export type PrivateActor = Effect.Success<typeof Actor.Type.assertPrivate>;
 
   export class ForbiddenActorError
     extends Schema.TaggedErrorClass<ForbiddenActorError>()(

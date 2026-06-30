@@ -253,6 +253,8 @@ export namespace AccessControl {
           `Public actor is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
         UserActor: (user) =>
           `User actor (${user.id}) is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
+        SystemActor: () =>
+          `System actor is not authorized to ${matchAction(this.action)} resource ${matchResource(this.resource)}.`,
       });
 
       return matchActor(this.actor);
@@ -407,6 +409,7 @@ export namespace AccessControl {
             Match.valueTags(privateActor, {
               ClientActor: (client) => clientRoleAcls.pipe(Effect.map(Struct.get(client.role))),
               UserActor: (user) => userRoleAcls.pipe(Effect.map(Struct.get(user.role))),
+              SystemActor: () => Effect.sync(HashSet.empty),
             }).pipe(Effect.map(HashSet.has(permission))),
           action,
         ),

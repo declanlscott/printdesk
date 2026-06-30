@@ -11,7 +11,7 @@ import { realtimeGroupLayer } from "./groups/realtime";
 import { replicacheGroupLayer } from "./groups/replicache";
 import { tenantRegistrationGroupLayer, tenantSetupGroupLayer } from "./groups/tenant";
 
-export const handler = Api.pipe(
+export default Api.pipe(
   HttpApiBuilder.layer,
   Layer.provide([
     HttpServer.layerServices,

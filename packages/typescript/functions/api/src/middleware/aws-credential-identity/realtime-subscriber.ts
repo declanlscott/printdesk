@@ -23,16 +23,14 @@ export class RealtimeSubscriberAwsCredentialIdentityLayerMap extends LayerMap.Se
     dependencies: [SstResource.layer],
     lookup: Effect.fn(
       function* (actor: typeof Actor.Service) {
-        const template = yield* SstResource.useSync(
+        const roleArnTemplate = yield* SstResource.useSync(
           (resource) =>
-            resource.RealtimeChannelNamespaceSubscriberRoleTemplate.pipe(Redacted.value).name,
+            resource.RealtimeChannelNamespaceSubscriberRoleTemplate.pipe(Redacted.value).arn,
         );
 
-        return yield* actor.assertPrivate.pipe(
-          Effect.map(({ tenantId }) => ({
-            RoleArn: tenantTemplate(template, tenantId),
-            RoleSessionName: "RealtimeSubscriber",
-          })),
+        return yield* actor.tenantId.pipe(
+          Effect.map(tenantTemplate(roleArnTemplate)),
+          Effect.map((RoleArn) => ({ RoleArn, RoleSessionName: "RealtimeSubscriber" })),
           Effect.satisfiesSuccessType<FromTemporaryCredentialsOptions["params"]>(),
           Effect.map((params) =>
             AwsCredentialIdentity.providerLayer(() => fromTemporaryCredentials({ params })),

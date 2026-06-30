@@ -23,15 +23,13 @@ export class AppconfigCredentialIdentityLayerMap extends LayerMap.Service<Appcon
     dependencies: [SstResource.layer],
     lookup: Effect.fn(
       function* (actor: typeof Actor.Service) {
-        const template = yield* SstResource.useSync(
-          (resource) => resource.AppconfigRoleTemplate.pipe(Redacted.value).name,
+        const roleArnTemplate = yield* SstResource.useSync(
+          (resource) => resource.AppconfigRoleTemplate.pipe(Redacted.value).arn,
         );
 
-        return yield* actor.assertPrivate.pipe(
-          Effect.map(({ tenantId }) => ({
-            RoleArn: tenantTemplate(template, tenantId),
-            RoleSessionName: "Appconfig",
-          })),
+        return yield* actor.tenantId.pipe(
+          Effect.map(tenantTemplate(roleArnTemplate)),
+          Effect.map((RoleArn) => ({ RoleArn, RoleSessionName: "Appconfig" })),
           Effect.satisfiesSuccessType<FromTemporaryCredentialsOptions["params"]>(),
           Effect.map((params) =>
             AwsCredentialIdentity.providerLayer(() => fromTemporaryCredentials({ params })),

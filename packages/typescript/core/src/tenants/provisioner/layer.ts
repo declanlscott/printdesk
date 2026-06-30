@@ -105,7 +105,6 @@ export const makeService = Effect.gen(function* () {
               AccessControl.enforce(
                 AccessControl.every(
                   AccessControl.privateActorPolicy(
-                    { name: "tenants", id: tenant.id },
                     (actor) =>
                       Effect.succeed(
                         actor.tenantId === tenant.tenantId && tenant.status === "setup",
@@ -118,6 +117,7 @@ export const makeService = Effect.gen(function* () {
                             }),
                         ),
                       ),
+                    { name: "tenants", id: tenant.id },
                     "delete",
                   ),
                   AccessControl.permissionPolicy("clients:delete"),

@@ -15,28 +15,11 @@ export const makeService = Effect.gen(function* () {
 
   const isCustomerAuthorized = Policy.make(SharedAccountWorkflowsContract.isCustomerAuthorized, {
     make: Effect.fn("SharedAccountWorkflows.Policies.isCustomerAuthorized")(({ id, customerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountWorkflowsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveCustomerAuthorized(
-            customerId.pipe(Option.getOrElse(() => user.id)),
-            id,
-            user.tenantId,
-          )
-          .pipe(
-            Effect.map(() => true),
-            Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
-          ),
-      ),
-    ),
-  });
-
-  const isManagerAuthorized = Policy.make(SharedAccountWorkflowsContract.isManagerAuthorized, {
-    make: Effect.fn("SharedAccountWorkflows.Policies.isManagerAuthorized.make")(
-      ({ id, managerId }) =>
-        AccessControl.userPolicy({ name: SharedAccountWorkflowsContract.Table.name, id }, (user) =>
+      AccessControl.userPolicy(
+        (user) =>
           repository
-            .findActiveManagerAuthorized(
-              managerId.pipe(Option.getOrElse(() => user.id)),
+            .findActiveCustomerAuthorized(
+              customerId.pipe(Option.getOrElse(() => user.id)),
               id,
               user.tenantId,
             )
@@ -44,6 +27,27 @@ export const makeService = Effect.gen(function* () {
               Effect.map(() => true),
               Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
             ),
+        { name: SharedAccountWorkflowsContract.Table.name, id },
+      ),
+    ),
+  });
+
+  const isManagerAuthorized = Policy.make(SharedAccountWorkflowsContract.isManagerAuthorized, {
+    make: Effect.fn("SharedAccountWorkflows.Policies.isManagerAuthorized.make")(
+      ({ id, managerId }) =>
+        AccessControl.userPolicy(
+          (user) =>
+            repository
+              .findActiveManagerAuthorized(
+                managerId.pipe(Option.getOrElse(() => user.id)),
+                id,
+                user.tenantId,
+              )
+              .pipe(
+                Effect.map(() => true),
+                Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
+              ),
+          { name: SharedAccountWorkflowsContract.Table.name, id },
         ),
     ),
   });

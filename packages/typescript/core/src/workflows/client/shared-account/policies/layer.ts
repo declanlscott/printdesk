@@ -15,25 +15,29 @@ export const makeService = Effect.gen(function* () {
 
   const isCustomerAuthorized = Policy.make(SharedAccountWorkflowsContract.isCustomerAuthorized, {
     make: ({ id, customerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountWorkflowsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveCustomerAuthorized(customerId.pipe(Option.getOrElse(() => user.id)), id)
-          .pipe(
-            Effect.map(() => true),
-            Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveCustomerAuthorized(customerId.pipe(Option.getOrElse(() => user.id)), id)
+            .pipe(
+              Effect.map(() => true),
+              Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
+            ),
+        { name: SharedAccountWorkflowsContract.Table.name, id },
       ),
   });
 
   const isManagerAuthorized = Policy.make(SharedAccountWorkflowsContract.isManagerAuthorized, {
     make: ({ id, managerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountWorkflowsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveManagerAuthorized(managerId.pipe(Option.getOrElse(() => user.id)), id)
-          .pipe(
-            Effect.map(() => true),
-            Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveManagerAuthorized(managerId.pipe(Option.getOrElse(() => user.id)), id)
+            .pipe(
+              Effect.map(() => true),
+              Effect.catchTag("NoSuchElementError", () => Effect.succeed(false)),
+            ),
+        { name: SharedAccountWorkflowsContract.Table.name, id },
       ),
   });
 

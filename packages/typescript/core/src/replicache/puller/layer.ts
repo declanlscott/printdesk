@@ -94,8 +94,8 @@ export const makeService = Effect.gen(function* () {
 
           // 5: Verify requesting client group owns requested client
           yield* AccessControl.userPolicy(
-            { name: ReplicacheClientGroupsModel.Table.name, id: clientGroupId },
             (user) => Effect.succeed(user.id === clientGroup.userId),
+            { name: ReplicacheClientGroupsModel.Table.name, id: clientGroupId },
           );
 
           // 13: Increment client view version

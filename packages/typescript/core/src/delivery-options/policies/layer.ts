@@ -16,10 +16,12 @@ export const makeService = Effect.gen(function* () {
 
   const canEdit = Policy.make(DeliveryOptionsContract.canEdit, {
     make: Effect.fn("DeliveryOptions.Policies.canEdit.make")(({ id }) =>
-      AccessControl.userPolicy({ name: DeliveryOptionsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+        { name: DeliveryOptionsContract.Table.name, id },
       ),
     ),
   });
@@ -30,10 +32,12 @@ export const makeService = Effect.gen(function* () {
 
   const canRestore = Policy.make(DeliveryOptionsContract.canRestore, {
     make: Effect.fn("DeliveryOptions.Policies.canRestore.make")(({ id }) =>
-      AccessControl.userPolicy({ name: DeliveryOptionsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: DeliveryOptionsContract.Table.name, id },
       ),
     ),
   });

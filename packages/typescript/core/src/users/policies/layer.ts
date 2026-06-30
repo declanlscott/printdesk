@@ -16,18 +16,21 @@ export const makeService = Effect.gen(function* () {
 
   const isSelf = Policy.make(UsersContract.isSelf, {
     make: Effect.fn("Users.Policies.isSelf.make")(({ id }) =>
-      AccessControl.userPolicy({ name: UsersContract.Table.name, id }, (user) =>
-        Effect.succeed(id === user.id),
-      ),
+      AccessControl.userPolicy((user) => Effect.succeed(id === user.id), {
+        name: UsersContract.Table.name,
+        id,
+      }),
     ),
   });
 
   const canEdit = Policy.make(UsersContract.canEdit, {
     make: Effect.fn("Users.Policies.canEdit.make")(({ id }) =>
-      AccessControl.userPolicy({ name: UsersContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+        { name: UsersContract.Table.name, id },
       ),
     ),
   });
@@ -38,10 +41,12 @@ export const makeService = Effect.gen(function* () {
 
   const canRestore = Policy.make(UsersContract.canRestore, {
     make: Effect.fn("Users.Policies.canRestore.make")(({ id }) =>
-      AccessControl.userPolicy({ name: UsersContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: UsersContract.Table.name, id },
       ),
     ),
   });

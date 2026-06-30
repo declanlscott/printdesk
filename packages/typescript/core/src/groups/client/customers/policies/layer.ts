@@ -17,12 +17,14 @@ export const makeService = Effect.gen(function* () {
 
   const isMemberOf = Policy.make(CustomerGroupsContract.isMemberOf, {
     make: ({ id, memberId }) =>
-      AccessControl.userPolicy({ name: CustomerGroupsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveMemberIds(id)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(memberId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveMemberIds(id)
+            .pipe(
+              Effect.map(Array.some(Equal.equals(memberId.pipe(Option.getOrElse(() => user.id))))),
+            ),
+        { name: CustomerGroupsContract.Table.name, id },
       ),
   });
 

@@ -65,10 +65,10 @@ export const makeService = Effect.gen(function* () {
       });
 
       // 4: Verify requesting user owns specified client group
-      yield* AccessControl.userPolicy(
-        { name: ReplicacheClientGroupsModel.Table.name, id: clientGroupId },
-        (user) => Effect.succeed(user.id === clientGroup.userId),
-      );
+      yield* AccessControl.userPolicy((user) => Effect.succeed(user.id === clientGroup.userId), {
+        name: ReplicacheClientGroupsModel.Table.name,
+        id: clientGroupId,
+      });
 
       // 6: Verify requesting client group owns requested client
       yield* Effect.succeed(client.clientGroupId === clientGroup.id).pipe(

@@ -18,23 +18,27 @@ export const makeService = Effect.gen(function* () {
 
   const isAuthor = Policy.make(CommentsContract.isAuthor, {
     make: Effect.fn("Comments.Policies.isAuthor.make")(({ id, authorId }) =>
-      AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, (user) =>
-        repository
-          .findById(id, user.tenantId)
-          .pipe(
-            Effect.map(Struct.get("authorId")),
-            Effect.map(Equal.equals(authorId.pipe(Option.getOrElse(() => user.id)))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id, user.tenantId)
+            .pipe(
+              Effect.map(Struct.get("authorId")),
+              Effect.map(Equal.equals(authorId.pipe(Option.getOrElse(() => user.id)))),
+            ),
+        { name: CommentsContract.Table.name, id },
       ),
     ),
   });
 
   const canEdit = Policy.make(CommentsContract.canEdit, {
     make: Effect.fn("Comments.Policies.canEdit.make")(({ id }) =>
-      AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+        { name: CommentsContract.Table.name, id },
       ),
     ),
   });
@@ -45,10 +49,12 @@ export const makeService = Effect.gen(function* () {
 
   const canRestore = Policy.make(CommentsContract.canRestore, {
     make: Effect.fn("Comments.Policies.canRestore.make")(({ id }) =>
-      AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: CommentsContract.Table.name, id },
       ),
     ),
   });

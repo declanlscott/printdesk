@@ -18,13 +18,15 @@ export const makeService = Effect.gen(function* () {
 
   const isAuthor = Policy.make(CommentsContract.isAuthor, {
     make: ({ id, authorId }) =>
-      AccessControl.userPolicy({ name: CommentsContract.Table.name, id }, (user) =>
-        repository
-          .findById(id)
-          .pipe(
-            Effect.map(Struct.get("authorId")),
-            Effect.map(Equal.equals(authorId.pipe(Option.getOrElse(() => user.id)))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id)
+            .pipe(
+              Effect.map(Struct.get("authorId")),
+              Effect.map(Equal.equals(authorId.pipe(Option.getOrElse(() => user.id)))),
+            ),
+        { name: CommentsContract.Table.name, id },
       ),
   });
 

@@ -17,11 +17,11 @@ export const makeService = Effect.gen(function* () {
   const canDelete = Policy.make(SharedAccountManagerAccessContract.canDelete, {
     make: Effect.fn("SharedAccounts.ManagerAccessPolicies.canDelete.make")(({ id }) =>
       AccessControl.userPolicy(
-        { name: SharedAccountManagerAccessContract.Table.name, id },
         ({ tenantId }) =>
           repository
             .findById(id, tenantId)
             .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+        { name: SharedAccountManagerAccessContract.Table.name, id },
       ),
     ),
   });
@@ -29,11 +29,11 @@ export const makeService = Effect.gen(function* () {
   const canRestore = Policy.make(SharedAccountManagerAccessContract.canRestore, {
     make: Effect.fn("SharedAccounts.ManagerAccessPolicies.canRestore.make")(({ id }) =>
       AccessControl.userPolicy(
-        { name: SharedAccountManagerAccessContract.Table.name, id },
         ({ tenantId }) =>
           repository
             .findById(id, tenantId)
             .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: SharedAccountManagerAccessContract.Table.name, id },
       ),
     ),
   });

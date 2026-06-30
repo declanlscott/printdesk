@@ -309,8 +309,8 @@ export namespace AccessControl {
       );
 
   export const clientPolicy = <TError, TServices>(
-    resource: Resource,
     predicate: (client: ActorsContract.ClientActor) => Effect.Effect<boolean, TError, TServices>,
+    resource: Resource,
     action?: Permissions.Action,
   ): Policy<TError, TServices> =>
     Actor.pipe(
@@ -327,8 +327,8 @@ export namespace AccessControl {
     );
 
   export const userPolicy = <TError, TServices>(
-    resource: Resource,
     predicate: (user: ActorsContract.UserActor) => Effect.Effect<boolean, TError, TServices>,
+    resource: Resource,
     action?: Permissions.Action,
   ): Policy<TError, TServices> =>
     Actor.pipe(
@@ -345,10 +345,10 @@ export namespace AccessControl {
     );
 
   export const privateActorPolicy = <TError, TServices>(
-    resource: Resource,
     predicate: (
       privateActor: Exclude<ActorsContract.Actor["properties"], { _tag: "PublicActor" }>,
     ) => Effect.Effect<boolean, TError, TServices>,
+    resource: Resource,
     action?: Permissions.Action,
   ): Policy<TError, TServices> =>
     Actor.pipe(
@@ -370,12 +370,12 @@ export namespace AccessControl {
       Effect.orDie,
       Effect.flatMap(({ resource, action }) =>
         userPolicy(
-          resource,
           (user) =>
             userRoleAcls.pipe(
               Effect.map(Struct.get(user.role)),
               Effect.map(HashSet.has(permission)),
             ),
+          resource,
           action,
         ),
       ),
@@ -387,12 +387,12 @@ export namespace AccessControl {
       Effect.orDie,
       Effect.flatMap(({ resource, action }) =>
         clientPolicy(
-          resource,
           (client) =>
             clientRoleAcls.pipe(
               Effect.map(Struct.get(client.role)),
               Effect.map(HashSet.has(permission)),
             ),
+          resource,
           action,
         ),
       ),
@@ -404,13 +404,13 @@ export namespace AccessControl {
       Effect.orDie,
       Effect.flatMap(({ resource, action }) =>
         privateActorPolicy(
-          resource,
           (privateActor) =>
             Match.valueTags(privateActor, {
               ClientActor: (client) => clientRoleAcls.pipe(Effect.map(Struct.get(client.role))),
               UserActor: (user) => userRoleAcls.pipe(Effect.map(Struct.get(user.role))),
               SystemActor: () => Effect.sync(HashSet.empty),
             }).pipe(Effect.map(HashSet.has(permission))),
+          resource,
           action,
         ),
       ),

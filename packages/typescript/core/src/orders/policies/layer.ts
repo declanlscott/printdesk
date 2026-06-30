@@ -23,117 +23,132 @@ export const makeService = Effect.gen(function* () {
 
   const isCustomer = Policy.make(OrdersContract.isCustomer, {
     make: Effect.fn("Orders.Policies.isCustomer.make")(({ id, customerId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findById(id, user.tenantId)
-          .pipe(
-            Effect.map(Struct.get("customerId")),
-            Effect.map(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id)))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id, user.tenantId)
+            .pipe(
+              Effect.map(Struct.get("customerId")),
+              Effect.map(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id)))),
+            ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
 
   const isManager = Policy.make(OrdersContract.isManager, {
     make: Effect.fn("Orders.Policies.isManager.make")(({ id, managerId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findById(id, user.tenantId)
-          .pipe(
-            Effect.map(Struct.get("managerId")),
-            Effect.map(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id)))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id, user.tenantId)
+            .pipe(
+              Effect.map(Struct.get("managerId")),
+              Effect.map(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id)))),
+            ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
 
   const isCustomerOrManager = Policy.make(OrdersContract.isCustomerOrManager, {
     make: Effect.fn("Orders.Policies.isCustomerOrManager")(({ id, userId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findById(id, user.tenantId)
-          .pipe(
-            Effect.map(
-              (order) =>
-                order.customerId === userId.pipe(Option.getOrElse(() => userId)) ||
-                order.managerId === userId.pipe(Option.getOrElse(() => userId)),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id, user.tenantId)
+            .pipe(
+              Effect.map(
+                (order) =>
+                  order.customerId === userId.pipe(Option.getOrElse(() => userId)) ||
+                  order.managerId === userId.pipe(Option.getOrElse(() => userId)),
+              ),
             ),
-          ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
 
   const isManagerAuthorized = Policy.make(OrdersContract.isManagerAuthorized, {
     make: Effect.fn("Orders.Policies.isManagerAuthorized")(({ id, managerId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findActiveManagerIds(id, user.tenantId)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveManagerIds(id, user.tenantId)
+            .pipe(
+              Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
+            ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
 
   const canEdit = Policy.make(OrdersContract.canEdit, {
     make: Effect.fn("Orders.Policies.canEdit.make")(({ id }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
-        repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
-          Effect.flatMap(({ order, workflowStatus }) =>
-            decode(order).pipe(Effect.map((order) => ({ order, workflowStatus }))),
-          ),
-          Effect.map(({ order, workflowStatus }) =>
-            Match.value(order).pipe(
-              Match.when({ deletedAt: Match.null }, (o) =>
-                Match.value(o).pipe(
-                  Match.when(
-                    { sharedAccountWorkflowStatusId: Match.null },
-                    () =>
-                      !order.approvedAt &&
-                      !(
-                        workflowStatus.type === "InProgress" || workflowStatus.type === "Completed"
-                      ),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
+            Effect.flatMap(({ order, workflowStatus }) =>
+              decode(order).pipe(Effect.map((order) => ({ order, workflowStatus }))),
+            ),
+            Effect.map(({ order, workflowStatus }) =>
+              Match.value(order).pipe(
+                Match.when({ deletedAt: Match.null }, (o) =>
+                  Match.value(o).pipe(
+                    Match.when(
+                      { sharedAccountWorkflowStatusId: Match.null },
+                      () =>
+                        !order.approvedAt &&
+                        !(
+                          workflowStatus.type === "InProgress" ||
+                          workflowStatus.type === "Completed"
+                        ),
+                    ),
+                    Match.orElse(() => true),
                   ),
-                  Match.orElse(() => true),
                 ),
+                Match.orElse(() => false),
               ),
-              Match.orElse(() => false),
             ),
           ),
-        ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
 
   const canApprove = Policy.make(OrdersContract.canApprove, {
     make: Effect.fn("Orders.Policies.canApprove.make")(({ id }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
-        repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
-          Effect.map(({ order }) =>
-            Match.value(order).pipe(
-              Match.when(
-                { deletedAt: Match.null },
-                (o) => o.sharedAccountWorkflowStatusId !== null,
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
+            Effect.map(({ order }) =>
+              Match.value(order).pipe(
+                Match.when(
+                  { deletedAt: Match.null },
+                  (o) => o.sharedAccountWorkflowStatusId !== null,
+                ),
+                Match.orElse(() => false),
               ),
-              Match.orElse(() => false),
             ),
           ),
-        ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
 
   const canTransition = Policy.make(OrdersContract.canTransition, {
     make: Effect.fn("Orders.Policies.canTransition.make")(({ id }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
-        repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
-          Effect.map(({ order, workflowStatus }) =>
-            Match.value(order).pipe(
-              Match.when({ deletedAt: Match.null }, () => workflowStatus.type !== "Completed"),
-              Match.orElse(() => false),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
+            Effect.map(({ order, workflowStatus }) =>
+              Match.value(order).pipe(
+                Match.when({ deletedAt: Match.null }, () => workflowStatus.type !== "Completed"),
+                Match.orElse(() => false),
+              ),
             ),
           ),
-        ),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });
@@ -144,10 +159,12 @@ export const makeService = Effect.gen(function* () {
 
   const canRestore = Policy.make(OrdersContract.canRestore, {
     make: Effect.fn("Orders.Policies.canRestore.make")(({ id }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: OrdersContract.Table.name, id },
       ),
     ),
   });

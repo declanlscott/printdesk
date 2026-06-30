@@ -19,34 +19,42 @@ export const makeService = Effect.gen(function* () {
 
   const isCustomerAuthorized = Policy.make(SharedAccountsContract.isCustomerAuthorized, {
     make: Effect.fn("SharedAccounts.Policies.isCustomerAuthorized.make")(({ id, customerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveAuthorizedCustomerIds(id, user.tenantId)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveAuthorizedCustomerIds(id, user.tenantId)
+            .pipe(
+              Effect.map(
+                Array.some(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id)))),
+              ),
+            ),
+        { name: SharedAccountsContract.Table.name, id },
       ),
     ),
   });
 
   const isManagerAuthorized = Policy.make(SharedAccountsContract.isManagerAuthorized, {
     make: Effect.fn("SharedAccounts.Policies.isManagerAuthorized.make")(({ id, managerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveAuthorizedManagerIds(id, user.tenantId)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveAuthorizedManagerIds(id, user.tenantId)
+            .pipe(
+              Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
+            ),
+        { name: SharedAccountsContract.Table.name, id },
       ),
     ),
   });
 
   const canEdit = Policy.make(SharedAccountsContract.canEdit, {
     make: Effect.fn("SharedAccounts.Policies.canEdit.make")(({ id }) =>
-      AccessControl.userPolicy({ name: SharedAccountsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+        { name: SharedAccountsContract.Table.name, id },
       ),
     ),
   });
@@ -57,10 +65,12 @@ export const makeService = Effect.gen(function* () {
 
   const canRestore = Policy.make(SharedAccountsContract.canRestore, {
     make: Effect.fn("SharedAccounts.Policies.canRestore.make")(({ id }) =>
-      AccessControl.userPolicy({ name: SharedAccountsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: SharedAccountsContract.Table.name, id },
       ),
     ),
   });

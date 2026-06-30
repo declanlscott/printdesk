@@ -16,9 +16,10 @@ export const makeService = Effect.gen(function* () {
 
   const isSelf = Policy.make(UsersContract.isSelf, {
     make: ({ id }) =>
-      AccessControl.userPolicy({ name: UsersContract.Table.name, id }, (user) =>
-        Effect.succeed(id === user.id),
-      ),
+      AccessControl.userPolicy((user) => Effect.succeed(id === user.id), {
+        name: UsersContract.Table.name,
+        id,
+      }),
   });
 
   const canEdit = Policy.make(UsersContract.canEdit, {

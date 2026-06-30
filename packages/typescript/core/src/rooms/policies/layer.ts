@@ -16,10 +16,12 @@ export const makeService = Effect.gen(function* () {
 
   const canEdit = Policy.make(RoomsContract.canEdit, {
     make: Effect.fn("Rooms.Policies.canEdit.make")(({ id }) =>
-      AccessControl.userPolicy({ name: RoomsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNull)),
+        { name: RoomsContract.Table.name, id },
       ),
     ),
   });
@@ -30,10 +32,12 @@ export const makeService = Effect.gen(function* () {
 
   const canRestore = Policy.make(RoomsContract.canRestore, {
     make: Effect.fn("Rooms.Policies.canRestore.make")(({ id }) =>
-      AccessControl.userPolicy({ name: RoomsContract.Table.name, id }, ({ tenantId }) =>
-        repository
-          .findById(id, tenantId)
-          .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+      AccessControl.userPolicy(
+        ({ tenantId }) =>
+          repository
+            .findById(id, tenantId)
+            .pipe(Effect.map(Struct.get("deletedAt")), Effect.map(Predicate.isNotNull)),
+        { name: RoomsContract.Table.name, id },
       ),
     ),
   });

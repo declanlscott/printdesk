@@ -20,51 +20,59 @@ export const makeService = Effect.gen(function* () {
 
   const isCustomer = Policy.make(OrdersContract.isCustomer, {
     make: ({ id, customerId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findById(id)
-          .pipe(
-            Effect.map(Struct.get("customerId")),
-            Effect.map(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id)))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id)
+            .pipe(
+              Effect.map(Struct.get("customerId")),
+              Effect.map(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id)))),
+            ),
+        { name: OrdersContract.Table.name, id },
       ),
   });
 
   const isManager = Policy.make(OrdersContract.isManager, {
     make: ({ id, managerId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findById(id)
-          .pipe(
-            Effect.map(Struct.get("managerId")),
-            Effect.map(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id)))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id)
+            .pipe(
+              Effect.map(Struct.get("managerId")),
+              Effect.map(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id)))),
+            ),
+        { name: OrdersContract.Table.name, id },
       ),
   });
 
   const isCustomerOrManager = Policy.make(OrdersContract.isCustomerOrManager, {
     make: ({ id, userId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findById(id)
-          .pipe(
-            Effect.map(
-              (order) =>
-                order.customerId === userId.pipe(Option.getOrElse(() => user.id)) ||
-                order.managerId === userId.pipe(Option.getOrElse(() => user.id)),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findById(id)
+            .pipe(
+              Effect.map(
+                (order) =>
+                  order.customerId === userId.pipe(Option.getOrElse(() => user.id)) ||
+                  order.managerId === userId.pipe(Option.getOrElse(() => user.id)),
+              ),
             ),
-          ),
+        { name: OrdersContract.Table.name, id },
       ),
   });
 
   const isManagerAuthorized = Policy.make(OrdersContract.isManagerAuthorized, {
     make: ({ id, managerId }) =>
-      AccessControl.userPolicy({ name: OrdersContract.Table.name, id }, (user) =>
-        repository
-          .findActiveManagerIds(id)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveManagerIds(id)
+            .pipe(
+              Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
+            ),
+        { name: OrdersContract.Table.name, id },
       ),
   });
 

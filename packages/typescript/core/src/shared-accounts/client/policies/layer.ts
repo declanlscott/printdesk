@@ -19,23 +19,29 @@ export const makeService = Effect.gen(function* () {
 
   const isCustomerAuthorized = Policy.make(SharedAccountsContract.isCustomerAuthorized, {
     make: ({ id, customerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveAuthorizedCustomerIds(id)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveAuthorizedCustomerIds(id)
+            .pipe(
+              Effect.map(
+                Array.some(Equal.equals(customerId.pipe(Option.getOrElse(() => user.id)))),
+              ),
+            ),
+        { name: SharedAccountsContract.Table.name, id },
       ),
   });
 
   const isManagerAuthorized = Policy.make(SharedAccountsContract.isManagerAuthorized, {
     make: ({ id, managerId }) =>
-      AccessControl.userPolicy({ name: SharedAccountsContract.Table.name, id }, (user) =>
-        repository
-          .findActiveAuthorizedManagerIds(id)
-          .pipe(
-            Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
-          ),
+      AccessControl.userPolicy(
+        (user) =>
+          repository
+            .findActiveAuthorizedManagerIds(id)
+            .pipe(
+              Effect.map(Array.some(Equal.equals(managerId.pipe(Option.getOrElse(() => user.id))))),
+            ),
+        { name: SharedAccountsContract.Table.name, id },
       ),
   });
 

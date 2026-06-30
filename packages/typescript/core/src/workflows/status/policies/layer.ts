@@ -49,11 +49,11 @@ export const makeService = Effect.gen(function* () {
     make: Effect.fn("WorkflowStatuses.Policies.canDelete.make")(({ id }) =>
       AccessControl.every(
         AccessControl.userPolicy(
-          { name: WorkflowStatusesContract.Table.name, id },
           ({ tenantId }) =>
             ordersRepository
               .findByWorkflowStatusId(id, tenantId)
               .pipe(Effect.map(Array.isArrayEmpty)),
+          { name: WorkflowStatusesContract.Table.name, id },
         ),
         canEdit.make({ id }),
       ),

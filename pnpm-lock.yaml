@@ -25,20 +25,20 @@ catalogs:
       specifier: 2.0.0-beta.5
       version: 2.0.0-beta.5
     '@effect/atom-react':
-      specifier: 4.0.0-beta.83
-      version: 4.0.0-beta.83
+      specifier: 4.0.0-beta.85
+      version: 4.0.0-beta.85
     '@effect/language-service':
       specifier: ^0.86.2
       version: 0.86.2
     '@effect/platform-browser':
-      specifier: 4.0.0-beta.78
-      version: 4.0.0-beta.78
+      specifier: 4.0.0-beta.85
+      version: 4.0.0-beta.85
     '@effect/platform-node':
-      specifier: 4.0.0-beta.83
-      version: 4.0.0-beta.83
+      specifier: 4.0.0-beta.92
+      version: 4.0.0-beta.92
     '@effect/sql-pg':
-      specifier: 4.0.0-beta.83
-      version: 4.0.0-beta.83
+      specifier: 4.0.0-beta.91
+      version: 4.0.0-beta.91
     '@openauthjs/openauth':
       specifier: ^0.4.3
       version: 0.4.3
@@ -88,11 +88,11 @@ catalogs:
       specifier: ^1.0.0
       version: 1.0.0
     drizzle-orm:
-      specifier: 1.0.0-rc.3
-      version: 1.0.0-rc.3
+      specifier: 1.0.0-rc.4
+      version: 1.0.0-rc.4
     effect:
-      specifier: 4.0.0-beta.83
-      version: 4.0.0-beta.83
+      specifier: 4.0.0-beta.91
+      version: 4.0.0-beta.91
     hono:
       specifier: ^4.12.27
       version: 4.12.27
@@ -205,16 +205,16 @@ importers:
         version: 5.3.0
       '@effect-aws/cloudfront':
         specifier: beta
-        version: 1.0.0-beta.0(effect@4.0.0-beta.83)
+        version: 1.0.0-beta.0(effect@4.0.0-beta.91)
       '@effect-aws/dsql':
         specifier: beta
-        version: 1.0.0-beta.4(effect@4.0.0-beta.83)
+        version: 1.0.0-beta.4(effect@4.0.0-beta.91)
       '@effect-aws/dynamodb':
         specifier: 'catalog:'
-        version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@effect/sql-pg':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)
+        version: 4.0.0-beta.91(effect@4.0.0-beta.91)
       '@microsoft/microsoft-graph-client':
         specifier: ^3.0.7
         version: 3.0.7
@@ -241,10 +241,10 @@ importers:
         version: 6.5.0
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.3(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83))(@types/pg@8.20.0)(effect@4.0.0-beta.83)(pg@8.22.0)(zod@4.4.3)
+        version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91))(@types/pg@8.20.0)(effect@4.0.0-beta.91)(pg@8.22.0)(zod@4.4.3)
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
       fast-xml-builder:
         specifier: ^1.2.0
         version: 1.2.0
@@ -293,13 +293,13 @@ importers:
         version: 3.1075.0
       '@effect-aws/dynamodb':
         specifier: 'catalog:'
-        version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@effect-aws/lambda':
         specifier: 'catalog:'
-        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
+        version: 4.0.0-beta.92(effect@4.0.0-beta.91)(ioredis@5.10.1)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
@@ -308,10 +308,10 @@ importers:
         version: 1.0.20
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.3(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83))(@types/pg@8.20.0)(effect@4.0.0-beta.83)(pg@8.22.0)(zod@4.4.3)
+        version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91))(@types/pg@8.20.0)(effect@4.0.0-beta.91)(pg@8.22.0)(zod@4.4.3)
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
@@ -330,7 +330,7 @@ importers:
         version: 1.0.20
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
       hono:
         specifier: 'catalog:'
         version: 4.12.27
@@ -346,25 +346,25 @@ importers:
     dependencies:
       '@effect-aws/lambda':
         specifier: 'catalog:'
-        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
 
   packages/typescript/functions/issuer:
     dependencies:
       '@effect-aws/dynamodb':
         specifier: 'catalog:'
-        version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@effect-aws/lambda':
         specifier: 'catalog:'
-        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
+        version: 4.0.0-beta.92(effect@4.0.0-beta.91)(ioredis@5.10.1)
       '@openauthjs/openauth':
         specifier: 'catalog:'
         version: 0.4.3(arctic@2.3.4)(hono@4.12.27)
@@ -373,10 +373,10 @@ importers:
         version: link:../../core
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.3(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83))(@types/pg@8.20.0)(effect@4.0.0-beta.83)(pg@8.22.0)(zod@4.4.3)
+        version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91))(@types/pg@8.20.0)(effect@4.0.0-beta.91)(pg@8.22.0)(zod@4.4.3)
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
       hono:
         specifier: 'catalog:'
         version: 4.12.27
@@ -392,19 +392,19 @@ importers:
     dependencies:
       '@effect-aws/lambda':
         specifier: 'catalog:'
-        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
+        version: 4.0.0-beta.92(effect@4.0.0-beta.91)(ioredis@5.10.1)
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.3(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83))(@types/pg@8.20.0)(effect@4.0.0-beta.83)(pg@8.22.0)(zod@4.4.3)
+        version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91))(@types/pg@8.20.0)(effect@4.0.0-beta.91)(pg@8.22.0)(zod@4.4.3)
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
@@ -420,7 +420,7 @@ importers:
         version: 1.0.20
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
       hono:
         specifier: 'catalog:'
         version: 4.12.27
@@ -439,7 +439,7 @@ importers:
         version: 3.1075.0
       '@effect-aws/lambda':
         specifier: 'catalog:'
-        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)
+        version: 2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
@@ -448,7 +448,7 @@ importers:
         version: 1.0.20
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
@@ -474,10 +474,10 @@ importers:
         version: link:../core
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.3(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83))(@types/pg@8.20.0)(effect@4.0.0-beta.83)(pg@8.22.0)(zod@4.4.3)
+        version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91))(@types/pg@8.20.0)(effect@4.0.0-beta.91)(pg@8.22.0)(zod@4.4.3)
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
     devDependencies:
       '@effect/language-service':
         specifier: 'catalog:'
@@ -524,13 +524,13 @@ importers:
     dependencies:
       '@effect/atom-react':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(react@19.2.7)(scheduler@0.27.0)
+        version: 4.0.0-beta.85(effect@4.0.0-beta.91)(react@19.2.7)(scheduler@0.27.0)
       '@effect/platform-browser':
         specifier: 'catalog:'
-        version: 4.0.0-beta.78(effect@4.0.0-beta.83)
+        version: 4.0.0-beta.85(effect@4.0.0-beta.91)
       '@effect/platform-node':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)
+        version: 4.0.0-beta.92(effect@4.0.0-beta.91)(ioredis@5.10.1)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../core
@@ -551,7 +551,7 @@ importers:
         version: 1.168.26(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(vite@8.1.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
       react:
         specifier: 'catalog:'
         version: 19.2.7
@@ -603,7 +603,7 @@ importers:
     dependencies:
       '@effect/atom-react':
         specifier: 'catalog:'
-        version: 4.0.0-beta.83(effect@4.0.0-beta.83)(react@19.2.7)(scheduler@0.27.0)
+        version: 4.0.0-beta.85(effect@4.0.0-beta.91)(react@19.2.7)(scheduler@0.27.0)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../core
@@ -624,7 +624,7 @@ importers:
         version: 1.168.26(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(vite@8.1.0(@types/node@24.13.2)(esbuild@0.28.1)(jiti@2.7.0)(tsx@4.22.4)(yaml@2.9.0))
       effect:
         specifier: 'catalog:'
-        version: 4.0.0-beta.83
+        version: 4.0.0-beta.91
       react:
         specifier: 'catalog:'
         version: 19.2.7
@@ -991,10 +991,10 @@ packages:
       '@effect/platform-node-shared': '>=4.0.0 <5.0.0'
       effect: '>=4.0.0 <5.0.0'
 
-  '@effect/atom-react@4.0.0-beta.83':
-    resolution: {integrity: sha512-Vpk90KP32fKxTgDbQPwgI9o4DzPUwxRVVf1wzlHHq7p4GgxGKEKJNGkKcinH9Br2MJB2JItaIs6cluFnlszxBw==}
+  '@effect/atom-react@4.0.0-beta.85':
+    resolution: {integrity: sha512-DsBau/iXF8GN6lpbObhwTsP0HcqzoaSJWzbewIUHp/SY2YeQV2bvo0IfPa0dhfwACZHZmhgzdPUaD7SpFyukmg==}
     peerDependencies:
-      effect: ^4.0.0-beta.83
+      effect: ^4.0.0-beta.85
       react: ^19.2.4
       scheduler: '*'
 
@@ -1002,28 +1002,28 @@ packages:
     resolution: {integrity: sha512-SaPln+8srOqDJDUwNTDmP5e+IYpEDr9+1epGznnsLqu8xvo6VnxyWARdeLpqvZJlb0Pgy9ca7ppqvvdWbHPXAg==}
     hasBin: true
 
-  '@effect/platform-browser@4.0.0-beta.78':
-    resolution: {integrity: sha512-8r9MVuZ8xJRyVyi+C8SKSYLbMsHr7qOiUgLV6lKMECuAWyMhlbK/7Ka9SQGr0ZPqOe5ShLEvV7DevnGkG+owAQ==}
+  '@effect/platform-browser@4.0.0-beta.85':
+    resolution: {integrity: sha512-gZYoesdxhJ3Qabor5yKSKIij2Hq3PuKyrzDRXuybipS/hXX0Jb0NjfSxZ+pVZyLJMV6M/WyHk5CWlXdoMp5+Sg==}
     peerDependencies:
-      effect: ^4.0.0-beta.78
+      effect: ^4.0.0-beta.85
 
-  '@effect/platform-node-shared@4.0.0-beta.91':
-    resolution: {integrity: sha512-JX++yhomaOEpQmnTYuhn+pKAgKg5MQvycAf1rXGtyVKi202Nc5nK37xbywDcugfwrc1FrPxrxa3BY3lbSc74cw==}
+  '@effect/platform-node-shared@4.0.0-beta.92':
+    resolution: {integrity: sha512-156ADSfmWcqz0mC8VxlHN9IHyT97AbYsBc3wJxyz2ceiWyGJOWkIRd6H/n5Be4hd6dQ4IegSt6J3HinBIJ9S/A==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: ^4.0.0-beta.91
+      effect: ^4.0.0-beta.92
 
-  '@effect/platform-node@4.0.0-beta.83':
-    resolution: {integrity: sha512-RmpVGu/+X/Bif3/g1Rzj8oFzTOknoVB3yHCa0b179vytPpKe+Kj9ZwKNcAnKWqHUDkbSPBq1Ca60mvOHr2/+LQ==}
+  '@effect/platform-node@4.0.0-beta.92':
+    resolution: {integrity: sha512-ZNcwKqBb99yw+cj+KQBMgw0xoQl3GDbUtQjnN3cLsIRpfYS/AVcSp4wfURMczvX5PzoR131yOWkqds5Vmm5tLg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      effect: ^4.0.0-beta.83
+      effect: ^4.0.0-beta.92
       ioredis: ^5.7.0
 
-  '@effect/sql-pg@4.0.0-beta.83':
-    resolution: {integrity: sha512-IfcShHsnYLVQpXv9k/TFBJIKTJU6aNv5NnHZsG3qs/D3M3oxc4ntLyPyKyY+45IQNS5lI5pB1qsEAXPi0CC6WQ==}
+  '@effect/sql-pg@4.0.0-beta.91':
+    resolution: {integrity: sha512-5jSf4NAyTXcNQFpODuYmA1n94a1b+5z84oQ6lvAO8rMpqLujHLOOQ6IRhAOqMuYqFopXTmtSF+YSd2yC60nO3g==}
     peerDependencies:
-      effect: ^4.0.0-beta.83
+      effect: ^4.0.0-beta.91
 
   '@emnapi/core@1.11.1':
     resolution: {integrity: sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==}
@@ -2848,12 +2848,20 @@ packages:
     resolution: {integrity: sha512-KZCpjRyu+oYHLj/UJogfFlOkWhHVkaEI2EOT1U3NDVXUzLoTyPjqwFxwOrlQxsY6jzRyxcz4EacqboGfhEeYrA==}
     hasBin: true
 
-  drizzle-orm@1.0.0-rc.3:
-    resolution: {integrity: sha512-akZOa5UxapFbdBG8IDkfBRpSZJpMHaOJtGgp7oi1oHaiU8S3KN92waHo2l5aRuv1D9tMGYpv3BQFOsiGcNjLTQ==}
+  drizzle-orm@1.0.0-rc.4:
+    resolution: {integrity: sha512-BT+pf+qoiYHqltoA88Jmf6ilGMXPlpfE0hEJKc2adRtMCAl25Swk/t5gXcWxZNAwdtf3F5gCd2FpeOyP/pT0Hw==}
     peerDependencies:
       '@aws-sdk/client-rds-data': '>=3'
       '@cloudflare/workers-types': '>=4'
-      '@effect/sql-pg': '>=4.0.0-beta.58 || >=4.0.0'
+      '@effect/sql-d1': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-libsql': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-mysql2': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-pg': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-pglite': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-sqlite-bun': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-sqlite-do': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-sqlite-node': '>=4.0.0-beta.83 || >=4.0.0'
+      '@effect/sql-sqlite-wasm': '>=4.0.0-beta.83 || >=4.0.0'
       '@electric-sql/pglite': '>=0.2.0'
       '@libsql/client': '>=0.10.0'
       '@libsql/client-wasm': '>=0.10.0'
@@ -2864,9 +2872,11 @@ packages:
       '@sinclair/typebox': '>=0.34.8'
       '@sqlitecloud/drivers': '>=1.0.653'
       '@tidbcloud/serverless': '*'
-      '@tursodatabase/database': '>=0.2.1'
-      '@tursodatabase/database-common': '>=0.2.1'
-      '@tursodatabase/database-wasm': '>=0.2.1'
+      '@tursodatabase/database': '>=0.6.0-pre.28 || >=0.6.0'
+      '@tursodatabase/database-common': '>=0.6.0-pre.28 || >=0.6.0'
+      '@tursodatabase/database-wasm': '>=0.6.0-pre.28 || >=0.6.0'
+      '@tursodatabase/serverless': '>=1.1.3'
+      '@tursodatabase/sync': '>=0.6.0-pre.28 || >=0.6.0'
       '@types/better-sqlite3': '*'
       '@types/mssql': ^9.1.4
       '@types/pg': '*'
@@ -2877,7 +2887,7 @@ packages:
       arktype: '>=2.0.0'
       better-sqlite3: '>=9.3.0'
       bun-types: '*'
-      effect: '>=4.0.0-beta.58 || >=4.0.0'
+      effect: '>=4.0.0-beta.83 || >=4.0.0'
       expo-sqlite: '>=14.0.0'
       mssql: ^11.0.1
       mysql2: '>=2'
@@ -2893,7 +2903,23 @@ packages:
         optional: true
       '@cloudflare/workers-types':
         optional: true
+      '@effect/sql-d1':
+        optional: true
+      '@effect/sql-libsql':
+        optional: true
+      '@effect/sql-mysql2':
+        optional: true
       '@effect/sql-pg':
+        optional: true
+      '@effect/sql-pglite':
+        optional: true
+      '@effect/sql-sqlite-bun':
+        optional: true
+      '@effect/sql-sqlite-do':
+        optional: true
+      '@effect/sql-sqlite-node':
+        optional: true
+      '@effect/sql-sqlite-wasm':
         optional: true
       '@electric-sql/pglite':
         optional: true
@@ -2920,6 +2946,10 @@ packages:
       '@tursodatabase/database-common':
         optional: true
       '@tursodatabase/database-wasm':
+        optional: true
+      '@tursodatabase/serverless':
+        optional: true
+      '@tursodatabase/sync':
         optional: true
       '@types/better-sqlite3':
         optional: true
@@ -2971,8 +3001,8 @@ packages:
   ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
 
-  effect@4.0.0-beta.83:
-    resolution: {integrity: sha512-0wsak8RtgGAr9UWSbVDgJHZcUqMSvicHcvaZv1MbMM7MCGgW4Rn/137J1MHQbwYPcwYGxT/IqehFd+UbYuj78w==}
+  effect@4.0.0-beta.91:
+    resolution: {integrity: sha512-FFlkWiy1QK4xuHd/nui9LKD/5qkpSHJdMcbsEY7jl9V27+txye6W+RAIlmWjuA2vvtUyZmzGKarVtdU0l1pdBQ==}
 
   electron-to-chromium@1.5.380:
     resolution: {integrity: sha512-W6d5AbuEoRayO447cqrg6lKJIlscgRnnxOZl/08kfV71BQDoEBC7Wwis68z87LjyK6f4kWyTaubuDbhHKrZkbA==}
@@ -4660,68 +4690,68 @@ snapshots:
 
   '@drizzle-team/brocli@0.12.0': {}
 
-  '@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83)':
+  '@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.91)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1075.0
-      '@effect-aws/commons': 1.0.0-beta.4(effect@4.0.0-beta.83)
-      effect: 4.0.0-beta.83
+      '@effect-aws/commons': 1.0.0-beta.4(effect@4.0.0-beta.91)
+      effect: 4.0.0-beta.91
 
-  '@effect-aws/cloudfront@1.0.0-beta.0(effect@4.0.0-beta.83)':
+  '@effect-aws/cloudfront@1.0.0-beta.0(effect@4.0.0-beta.91)':
     dependencies:
       '@aws-sdk/cloudfront-signer': 3.1074.0
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
 
-  '@effect-aws/commons@1.0.0-beta.4(effect@4.0.0-beta.83)':
+  '@effect-aws/commons@1.0.0-beta.4(effect@4.0.0-beta.91)':
     dependencies:
       '@smithy/protocol-http': 5.5.2
       '@smithy/smithy-client': 4.14.2
       '@smithy/types': 4.15.0
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
 
-  '@effect-aws/dsql@1.0.0-beta.4(effect@4.0.0-beta.83)':
+  '@effect-aws/dsql@1.0.0-beta.4(effect@4.0.0-beta.91)':
     dependencies:
       '@aws-sdk/dsql-signer': 3.1075.0
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
 
-  '@effect-aws/dynamodb@2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)':
+  '@effect-aws/dynamodb@2.0.0-beta.4(patch_hash=40e22bc87f38949ad0d33a503e8a0a61850b0d4bd65b1c37aa0e527682c59a22)(@effect-aws/client-dynamodb@2.0.0-beta.4(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)':
     dependencies:
       '@aws-sdk/client-dynamodb': 3.1075.0
       '@aws-sdk/lib-dynamodb': 3.1075.0(@aws-sdk/client-dynamodb@3.1075.0)
-      '@effect-aws/client-dynamodb': 2.0.0-beta.4(effect@4.0.0-beta.83)
-      '@effect-aws/commons': 1.0.0-beta.4(effect@4.0.0-beta.83)
-      effect: 4.0.0-beta.83
+      '@effect-aws/client-dynamodb': 2.0.0-beta.4(effect@4.0.0-beta.91)
+      '@effect-aws/commons': 1.0.0-beta.4(effect@4.0.0-beta.91)
+      effect: 4.0.0-beta.91
 
-  '@effect-aws/lambda@2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83))(effect@4.0.0-beta.83)':
+  '@effect-aws/lambda@2.0.0-beta.5(@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91))(effect@4.0.0-beta.91)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-beta.91(effect@4.0.0-beta.83)
-      effect: 4.0.0-beta.83
+      '@effect/platform-node-shared': 4.0.0-beta.92(effect@4.0.0-beta.91)
+      effect: 4.0.0-beta.91
 
-  '@effect/atom-react@4.0.0-beta.83(effect@4.0.0-beta.83)(react@19.2.7)(scheduler@0.27.0)':
+  '@effect/atom-react@4.0.0-beta.85(effect@4.0.0-beta.91)(react@19.2.7)(scheduler@0.27.0)':
     dependencies:
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
       react: 19.2.7
       scheduler: 0.27.0
 
   '@effect/language-service@0.86.2': {}
 
-  '@effect/platform-browser@4.0.0-beta.78(effect@4.0.0-beta.83)':
+  '@effect/platform-browser@4.0.0-beta.85(effect@4.0.0-beta.91)':
     dependencies:
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
       multipasta: 0.2.7
 
-  '@effect/platform-node-shared@4.0.0-beta.91(effect@4.0.0-beta.83)':
+  '@effect/platform-node-shared@4.0.0-beta.92(effect@4.0.0-beta.91)':
     dependencies:
       '@types/ws': 8.18.1
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
       ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
 
-  '@effect/platform-node@4.0.0-beta.83(effect@4.0.0-beta.83)(ioredis@5.10.1)':
+  '@effect/platform-node@4.0.0-beta.92(effect@4.0.0-beta.91)(ioredis@5.10.1)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.0-beta.91(effect@4.0.0-beta.83)
-      effect: 4.0.0-beta.83
+      '@effect/platform-node-shared': 4.0.0-beta.92(effect@4.0.0-beta.91)
+      effect: 4.0.0-beta.91
       ioredis: 5.10.1
       mime: 4.1.0
       undici: 8.5.0
@@ -4729,9 +4759,9 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83)':
+  '@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91)':
     dependencies:
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
       pg: 8.22.0
       pg-connection-string: 2.12.0
       pg-cursor: 2.21.0(pg@8.22.0)
@@ -6194,12 +6224,12 @@ snapshots:
       get-tsconfig: 4.14.0
       jiti: 2.7.0
 
-  drizzle-orm@1.0.0-rc.3(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.83(effect@4.0.0-beta.83))(@types/pg@8.20.0)(effect@4.0.0-beta.83)(pg@8.22.0)(zod@4.4.3):
+  drizzle-orm@1.0.0-rc.4(@cloudflare/workers-types@4.20260629.1)(@effect/sql-pg@4.0.0-beta.91(effect@4.0.0-beta.91))(@types/pg@8.20.0)(effect@4.0.0-beta.91)(pg@8.22.0)(zod@4.4.3):
     optionalDependencies:
       '@cloudflare/workers-types': 4.20260629.1
-      '@effect/sql-pg': 4.0.0-beta.83(effect@4.0.0-beta.83)
+      '@effect/sql-pg': 4.0.0-beta.91(effect@4.0.0-beta.91)
       '@types/pg': 8.20.0
-      effect: 4.0.0-beta.83
+      effect: 4.0.0-beta.91
       pg: 8.22.0
       zod: 4.4.3
 
@@ -6213,7 +6243,7 @@ snapshots:
     dependencies:
       safe-buffer: 5.2.1
 
-  effect@4.0.0-beta.83:
+  effect@4.0.0-beta.91:
     dependencies:
       '@standard-schema/spec': 1.1.0
       fast-check: 4.8.0

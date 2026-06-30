@@ -1,16 +1,24 @@
 import { Client, ResponseType } from "@microsoft/microsoft-graph-client";
 import * as Context from "effect/Context";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as LayerMap from "effect/LayerMap";
+import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 
+import { EntraId } from "../identity/entra-id";
+import { EntraIdLayerMap } from "../identity/entra-id/layer-map";
+import { SstResource } from "../sst/resource";
 import { Constants } from "../utils/constants";
 
 import type { ClientOptions, GraphRequest } from "@microsoft/microsoft-graph-client";
 import type { Group, User } from "@microsoft/microsoft-graph-types";
 import type { CustomerGroupsContract } from "../groups/contracts";
+import type { IdentityProvidersContract } from "../identity/contract";
 import type { UsersContract } from "../users/contract";
 
 export class GraphGetRequest<TSuccess = unknown> extends Request.Class<
@@ -94,3 +102,25 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
     return this.make(...args).pipe(Layer.effect(this));
   }
 }
+
+const accessTokenRuntime = EntraIdLayerMap.layer.pipe(
+  Layer.provide(SstResource.layer),
+  ManagedRuntime.make,
+);
+
+export class GraphLayerMap extends LayerMap.Service<GraphLayerMap>()(
+  "@printdesk/core/graph/GraphLayerMap",
+  {
+    idleTimeToLive: Duration.minutes(15),
+    lookup: (externalTenantId: IdentityProvidersContract.ExternalTenantId) =>
+      Graph.layer({
+        authProvider: {
+          getAccessToken: () =>
+            EntraId.use(Struct.get("accessToken")).pipe(
+              Effect.provide(EntraIdLayerMap.get(externalTenantId)),
+              accessTokenRuntime.runPromise,
+            ),
+        },
+      }),
+  },
+) {}

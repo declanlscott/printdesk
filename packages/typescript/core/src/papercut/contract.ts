@@ -1,6 +1,8 @@
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { AwsCron } from "../aws/cron";
 import { Ipv4, Timezone } from "../utils";
@@ -56,6 +58,26 @@ export namespace PapercutContract {
     Schema.Redacted,
   );
   export type ApiAuthToken = typeof ApiAuthToken.Type;
+
+  export class SharedAccountBalanceAdjustmentFailure extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(
+    "SharedAccountBalanceAdjustmentFailure",
+    {},
+  ) {}
+
+  export class UserAndGroupSyncFailure extends Schema.TaggedErrorClass<UserAndGroupSyncFailure>()(
+    "UserAndGroupSyncFailure",
+    {},
+  ) {}
+
+  export class IncompleteTaskStatusError
+    extends Schema.TaggedErrorClass<IncompleteTaskStatusError>()("IncompleteTaskStatusError", {
+      message: Schema.String,
+    })
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(IncompleteTaskStatusError)(this, { status: 503 });
+  }
 
   export class HealthSuccess extends Schema.Class<HealthSuccess>("HealthSuccess")({
     healthy: Schema.Boolean,

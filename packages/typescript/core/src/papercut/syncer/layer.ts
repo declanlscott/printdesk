@@ -27,7 +27,8 @@ import { SharedAccountCustomerGroupAccessRepository } from "../../shared-account
 import { SharedAccountsRepository } from "../../shared-accounts/repository";
 import { UsersRepository } from "../../users/repository";
 import { Constants } from "../../utils/constants";
-import { IncompleteTaskStatusError, PapercutApi } from "../api";
+import { PapercutApi } from "../api";
+import { PapercutContract } from "../contract";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type {
@@ -86,7 +87,8 @@ export const makeService = Effect.gen(function* () {
     yield* papercutApi.getTaskStatus.pipe(
       Effect.filterOrFail(
         (taskStatus) => taskStatus[0].value.boolean,
-        (taskStatus) => new IncompleteTaskStatusError({ message: taskStatus[1].value }),
+        (taskStatus) =>
+          new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
       ),
     );
 
@@ -223,7 +225,8 @@ export const makeService = Effect.gen(function* () {
     yield* papercutApi.getTaskStatus.pipe(
       Effect.filterOrFail(
         (taskStatus) => taskStatus[0].value.boolean,
-        (taskStatus) => new IncompleteTaskStatusError({ message: taskStatus[1].value }),
+        (taskStatus) =>
+          new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
       ),
     );
 
@@ -657,7 +660,8 @@ export const makeService = Effect.gen(function* () {
     yield* papercutApi.getTaskStatus.pipe(
       Effect.filterOrFail(
         (taskStatus) => taskStatus[0].value.boolean,
-        (taskStatus) => new IncompleteTaskStatusError({ message: taskStatus[1].value }),
+        (taskStatus) =>
+          new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
       ),
     );
 

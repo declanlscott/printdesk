@@ -2,8 +2,6 @@ import * as Context from "effect/Context";
 import * as Request from "effect/Request";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
-import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
-import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { CustomerGroupsContract } from "../../groups/contracts";
 import { SharedAccountsContract } from "../../shared-accounts/contracts";
@@ -49,26 +47,6 @@ export const sharedAccountPropertySchemas = {
   restricted: Schema.Boolean,
 } as const;
 export type SharedAccountPropertySchemas = typeof sharedAccountPropertySchemas;
-
-export class SharedAccountBalanceAdjustmentFailure extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(
-  "SharedAccountBalanceAdjustmentFailure",
-  {},
-) {}
-
-export class UserAndGroupSyncFailure extends Schema.TaggedErrorClass<UserAndGroupSyncFailure>()(
-  "UserAndGroupSyncFailure",
-  {},
-) {}
-
-export class IncompleteTaskStatusError
-  extends Schema.TaggedErrorClass<IncompleteTaskStatusError>()("IncompleteTaskStatusError", {
-    message: Schema.String,
-  })
-  implements HttpServerRespondable.Respondable
-{
-  public [HttpServerRespondable.symbol] = () =>
-    HttpServerResponse.schemaJson(IncompleteTaskStatusError)(this, { status: 503 });
-}
 
 export class PapercutApiRequest extends Request.Class<
   HttpClientRequest,

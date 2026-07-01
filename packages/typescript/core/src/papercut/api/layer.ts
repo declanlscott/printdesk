@@ -14,13 +14,7 @@ import * as Tuple from "effect/Tuple";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
-import {
-  PapercutApi,
-  PapercutApiRequest,
-  SharedAccountBalanceAdjustmentFailure,
-  sharedAccountPropertySchemas,
-  UserAndGroupSyncFailure,
-} from ".";
+import { PapercutApi, PapercutApiRequest, sharedAccountPropertySchemas } from ".";
 import { Actor } from "../../actors";
 import { Config } from "../../config";
 import { CustomerGroupsContract } from "../../groups/contracts";
@@ -33,6 +27,7 @@ import { TenantId, tenantTemplate } from "../../utils";
 import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
+import { PapercutContract } from "../contract";
 
 import type { ActorsContract } from "../../actors/contract";
 import type { OauthContract } from "../../oauth/contract";
@@ -112,7 +107,10 @@ export const makeService = Effect.gen(function* () {
       ),
       Effect.flatMap(batchRequest),
       Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
-      Effect.filterOrFail(Predicate.isTruthy, () => new SharedAccountBalanceAdjustmentFailure()),
+      Effect.filterOrFail(
+        Predicate.isTruthy,
+        () => new PapercutContract.SharedAccountBalanceAdjustmentFailure(),
+      ),
       Effect.asVoid,
     ),
   );
@@ -333,7 +331,7 @@ export const makeService = Effect.gen(function* () {
     ),
     Effect.flatMap(batchRequest),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
-    Effect.filterOrFail(Predicate.isTruthy, () => new UserAndGroupSyncFailure()),
+    Effect.filterOrFail(Predicate.isTruthy, () => new PapercutContract.UserAndGroupSyncFailure()),
     Effect.asVoid,
     Effect.withSpan("Papercut.Api.performUserAndGroupSync"),
   );

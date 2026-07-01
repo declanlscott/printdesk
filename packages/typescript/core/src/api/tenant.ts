@@ -5,7 +5,6 @@ import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
 import { InfraContract } from "../infra/contract";
 import { LicensesContract } from "../licenses/contract";
-import { OauthContract } from "../oauth/contract";
 import { TenantsContract } from "../tenants/contract";
 
 export namespace TenantApi {
@@ -20,8 +19,6 @@ export namespace TenantApi {
           LicensesContract.NoSuchLicenseError,
           LicensesContract.LicenseKeyConflictError,
           TenantsContract.TenantSlugConflictError,
-          OauthContract.ClientCredentialsError,
-          InfraContract.InputError,
         ],
       }),
     )
@@ -35,7 +32,6 @@ export namespace TenantApi {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
-          InfraContract.OutputError,
           InfraContract.NotDeployedError,
           TenantsContract.UnexpectedPapercutApiAuthTokenPayloadError,
         ],

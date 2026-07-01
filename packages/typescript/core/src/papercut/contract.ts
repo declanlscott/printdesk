@@ -98,4 +98,9 @@ export namespace PapercutContract {
   export class HealthSuccess extends Schema.Class<HealthSuccess>("HealthSuccess")({
     healthy: Schema.Boolean,
   }) {}
+
+  export class TaskStatusSuccess extends Schema.Class<TaskStatusSuccess>("TaskStatusSuccess")({
+    completed: Schema.Boolean,
+    message: Schema.String,
+  }) {}
 }

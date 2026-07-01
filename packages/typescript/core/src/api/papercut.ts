@@ -13,6 +13,12 @@ export namespace PapercutApi {
         error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
       }),
     )
+    .add(
+      HttpApiEndpoint.get("taskStatus", "/task-status", {
+        success: PapercutContract.TaskStatusSuccess,
+        error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
+      }),
+    )
     .prefix("/papercut") {}
 
   export class SyncGroup extends HttpApiGroup.make("PapercutSync")

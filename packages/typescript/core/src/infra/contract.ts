@@ -24,17 +24,9 @@ export namespace InfraContract {
     Struct.pick([Constants.DYNAMO_KEYS.PK, Constants.DYNAMO_KEYS.SK]),
   );
 
-  export class InputError
-    extends Schema.TaggedErrorClass<InputError>()(
-      "InfraInputError",
-      { cause: Schema.Defect() },
-      { httpApiStatus: 500 },
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(InputError)(this, { status: 500 });
-  }
+  export class InputError extends Schema.TaggedErrorClass<InputError>()("InfraInputError", {
+    cause: Schema.Defect(),
+  }) {}
 
   export class OutputItem extends Schema.Class<OutputItem>("OutputItem")({
     [Constants.DYNAMO_KEYS.PK]: AttributesContract.TenantIdFromString,
@@ -53,17 +45,9 @@ export namespace InfraContract {
     Struct.pick([Constants.DYNAMO_KEYS.GSI1_PK, Constants.DYNAMO_KEYS.GSI1_SK]),
   );
 
-  export class OutputError
-    extends Schema.TaggedErrorClass<OutputError>()(
-      "InfraOutputError",
-      { cause: Schema.Defect() },
-      { httpApiStatus: 500 },
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(OutputError)(this, { status: 500 });
-  }
+  export class OutputError extends Schema.TaggedErrorClass<OutputError>()("InfraOutputError", {
+    cause: Schema.Defect(),
+  }) {}
 
   export class NotDeployedError
     extends Schema.TaggedErrorClass<NotDeployedError>()("InfraNotDeployedError", {

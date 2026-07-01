@@ -256,17 +256,10 @@ export namespace OauthContract {
     secret: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
   }) {}
 
-  export class ClientCredentialsError
-    extends Schema.TaggedErrorClass<ClientCredentialsError>()(
-      "ClientCredentialsError",
-      { cause: Schema.Defect() },
-      { httpApiStatus: 500 },
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(ClientCredentialsError)(this, { status: 500 });
-  }
+  export class ClientCredentialsError extends Schema.TaggedErrorClass<ClientCredentialsError>()(
+    "ClientCredentialsError",
+    { cause: Schema.Defect() },
+  ) {}
 
   export const VerifySuccess = Schema.Struct({
     tokens: Tokens.pipe(Schema.OptionFromOptional),

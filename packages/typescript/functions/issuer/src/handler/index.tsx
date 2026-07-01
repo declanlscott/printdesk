@@ -1,7 +1,6 @@
 import { issuer } from "@openauthjs/openauth";
 import { Layout } from "@openauthjs/openauth/ui/base";
 import { Crypto } from "@printdesk/core/crypto";
-import { Database } from "@printdesk/core/database";
 import { Graph } from "@printdesk/core/graph";
 import { IdentityProvidersContract } from "@printdesk/core/identity/contract";
 import { IdentityProvidersRepository } from "@printdesk/core/identity/providers-repository";
@@ -35,8 +34,6 @@ export class IssuerError extends Schema.TaggedErrorClass<IssuerError>()("IssuerE
 }) {}
 
 export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, context: Context) {
-  const db = yield* Database;
-
   const { decodeJwt } = yield* Crypto;
   const { handleUser, verifyClient } = yield* Oauth.Oauth;
   const identityProvidersRepository = yield* IdentityProvidersRepository;
@@ -140,9 +137,7 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
                 }),
               ),
               Effect.flatMap(Schema.decodeUnknownEffect(IdentityProvidersContract.EntraIdUser)),
-              Effect.flatMap((user) =>
-                db.withTransaction(() => handleUser(entraId.provider, accessToken.tenantId, user)),
-              ),
+              Effect.flatMap((user) => handleUser(entraId.provider, accessToken.tenantId, user)),
             );
 
             return yield* subject(user);

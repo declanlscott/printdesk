@@ -8,14 +8,12 @@ import * as IdentityProvidersRepository from "@printdesk/core/identity/providers
 import * as Oauth from "@printdesk/core/oauth/layer";
 import { SstResource } from "@printdesk/core/sst/resource";
 import * as SyncQueryBuilder from "@printdesk/core/sync/query-builder/layer";
-import * as UsersRepository from "@printdesk/core/users/repository/layer";
 import * as Layer from "effect/Layer";
 
 export const layer = Oauth.layer.pipe(
-  Layer.provide([ClientsRepository.layer, UsersRepository.layer]),
-  Layer.provide(SyncQueryBuilder.layer),
-  Layer.provideMerge(IdentityProvidersRepository.layer),
-  Layer.provideMerge([Crypto.layer, Database.layer]),
+  Layer.provide([ClientsRepository.layer, SyncQueryBuilder.layer]),
+  Layer.provideMerge([Crypto.layer, IdentityProvidersRepository.layer]),
+  Layer.provide(Database.layer),
   Layer.provide([Drizzle.layerWithDrizzleServices, NodeCrypto.layer]),
   Layer.provide(PgClient.layer),
   Layer.provideMerge(SstResource.layer),

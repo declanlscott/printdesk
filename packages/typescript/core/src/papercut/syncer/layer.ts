@@ -852,8 +852,8 @@ export const makeService = Effect.gen(function* () {
 
   const syncAll = Effect.all(
     [
-      syncUsers,
       syncCustomerGroups,
+      syncUsers,
       syncCustomerGroupMemberships,
       syncSharedAccounts,
       syncSharedAccountCustomerAccess,

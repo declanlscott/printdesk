@@ -45,7 +45,7 @@ export const makeService = Effect.gen(function* () {
         ),
       );
 
-    if (tenant.status === "suspended")
+    if (tenant.status !== "active")
       return yield* new OauthContract.AccessDeniedError({
         reason: new TenantsContract.InactiveTenantError({ status: tenant.status }),
       });

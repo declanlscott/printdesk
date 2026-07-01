@@ -9,6 +9,7 @@ import { TenantApi } from "./tenant";
 export class Api extends HttpApi.make("Api")
   .add(ConfigApi.PapercutGroup)
   .add(PapercutApi.Group)
+  .add(PapercutApi.SyncGroup)
   .add(RealtimeApi.Group)
   .add(ReplicacheApi.Group)
   .add(TenantApi.RegistrationGroup)

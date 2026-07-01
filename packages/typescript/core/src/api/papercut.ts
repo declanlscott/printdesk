@@ -14,4 +14,62 @@ export namespace PapercutApi {
       }),
     )
     .prefix("/papercut") {}
+
+  export class SyncGroup extends HttpApiGroup.make("PapercutSync")
+    .add(
+      HttpApiEndpoint.post("all", "/", {
+        error: [
+          ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
+          PapercutContract.IncompleteTaskStatusError,
+        ],
+      }),
+    )
+    .add(
+      HttpApiEndpoint.post("customerGroups", "/customer-groups", {
+        error: [
+          ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
+          PapercutContract.IncompleteTaskStatusError,
+        ],
+      }),
+    )
+    .add(
+      HttpApiEndpoint.post("customerGroupMemberships", "/customer-group-memberships", {
+        error: [
+          ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
+          PapercutContract.IncompleteTaskStatusError,
+        ],
+      }),
+    )
+    .add(
+      HttpApiEndpoint.post("sharedAccounts", "/shared-accounts", {
+        error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
+      }),
+    )
+    .add(
+      HttpApiEndpoint.post("sharedAccountCustomerAccess", "/shared-account-customer-access", {
+        error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
+      }),
+    )
+    .add(
+      HttpApiEndpoint.post(
+        "sharedAccountCustomerGroupAccess",
+        "/shared-account-customer-group-access",
+        {
+          error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
+        },
+      ),
+    )
+    .add(
+      HttpApiEndpoint.post("users", "/users", {
+        error: [
+          ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
+          PapercutContract.IncompleteTaskStatusError,
+        ],
+      }),
+    )
+    .prefix("/papercut/sync") {}
 }

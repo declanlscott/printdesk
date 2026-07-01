@@ -17,6 +17,16 @@ export namespace PapercutApi {
 
   export class SyncGroup extends HttpApiGroup.make("PapercutSync")
     .add(
+      HttpApiEndpoint.post("source", "/source", {
+        error: [
+          ActorsContract.ForbiddenActorError,
+          AccessControl.AccessDeniedError,
+          PapercutContract.IncompleteTaskStatusError,
+          PapercutContract.UserAndGroupSyncFailure,
+        ],
+      }),
+    )
+    .add(
       HttpApiEndpoint.post("all", "/", {
         error: [
           ActorsContract.ForbiddenActorError,

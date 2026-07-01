@@ -1,8 +1,10 @@
 import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
+import { GraphLayerMap } from "@printdesk/core/graph";
 import { Oauth } from "@printdesk/core/oauth";
 import { PapercutApi } from "@printdesk/core/papercut/api";
+import { PapercutSyncer } from "@printdesk/core/papercut/syncer";
 import * as Effect from "effect/Effect";
 import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
@@ -11,7 +13,7 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
-import { papercutApiLayer } from "../lib/papercut";
+import { papercutApiLayer, papercutSyncerLayer } from "../lib/papercut";
 import { authMiddleware } from "../middleware/auth";
 
 export const basePapercutGroupLayer = HttpApiBuilder.group(
@@ -47,5 +49,123 @@ export const basePapercutGroupLayer = HttpApiBuilder.group(
 
 export const papercutGroupLayer = basePapercutGroupLayer.pipe(
   Layer.provide([authMiddleware.layer, papercutApiLayer]),
+  Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
+);
+
+export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
+  Api,
+  "PapercutSync",
+  Effect.fn(function* (handlers) {
+    const syncer = yield* PapercutSyncer;
+
+    return handlers
+      .handle("all", () =>
+        syncer.syncAll.pipe(
+          Effect.provide(GraphLayerMap.layer),
+          Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
+      .handle("customerGroups", () =>
+        syncer.syncCustomerGroups.pipe(
+          Effect.asVoid,
+          Effect.provide(GraphLayerMap.layer),
+          Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
+      .handle("customerGroupMemberships", () =>
+        syncer.syncCustomerGroupMemberships.pipe(
+          Effect.asVoid,
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
+      .handle("sharedAccounts", () =>
+        syncer.syncSharedAccounts.pipe(
+          Effect.asVoid,
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
+      .handle("sharedAccountCustomerAccess", () =>
+        syncer.syncSharedAccountCustomerAccess.pipe(
+          Effect.asVoid,
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
+      .handle("sharedAccountCustomerGroupAccess", () =>
+        syncer.syncSharedAccountCustomerGroupAccess.pipe(
+          Effect.asVoid,
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
+      .handle("users", () =>
+        syncer.syncUsers.pipe(
+          Effect.asVoid,
+          Effect.provide(GraphLayerMap.layer),
+          Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      );
+  }),
+);
+
+export const papercutSyncGroupLayer = basePapercutSyncGroupLayer.pipe(
+  Layer.provide([authMiddleware.layer, papercutSyncerLayer]),
   Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
 );

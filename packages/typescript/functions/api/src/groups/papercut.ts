@@ -59,6 +59,19 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
     const syncer = yield* PapercutSyncer;
 
     return handlers
+      .handle("source", () =>
+        syncer.syncSource.pipe(
+          Effect.catchFilter(
+            Filter.make((error) =>
+              HttpServerRespondable.isRespondable(error)
+                ? Result.fail(error)
+                : Result.succeed(error),
+            ),
+            Effect.die,
+          ),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+        ),
+      )
       .handle("all", () =>
         syncer.syncAll.pipe(
           Effect.provide(GraphLayerMap.layer),

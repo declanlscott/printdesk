@@ -81,6 +81,16 @@ export const makeService = Effect.gen(function* () {
     yield* SharedAccountCustomerGroupAccessRepository;
   const usersRepository = yield* UsersRepository;
 
+  const syncSource = papercutApi.getTaskStatus.pipe(
+    Effect.filterOrFail(
+      (taskStatus) => taskStatus[0].value.boolean,
+      (taskStatus) =>
+        new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
+    ),
+    Effect.andThen(papercutApi.performUserAndGroupSync),
+    Effect.withSpan("PapercutSyncer.syncSource"),
+  );
+
   const syncCustomerGroups = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
@@ -853,6 +863,7 @@ export const makeService = Effect.gen(function* () {
   ).pipe(Effect.withSpan("PapercutSyncer.syncAll"));
 
   return {
+    syncSource,
     syncAll,
     syncCustomerGroups,
     syncCustomerGroupMemberships,

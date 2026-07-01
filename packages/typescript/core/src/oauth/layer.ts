@@ -11,7 +11,6 @@ import { IdentityProvidersContract } from "../identity/contract";
 import { IdentityProvidersRepository } from "../identity/providers-repository";
 import { TenantsContract } from "../tenants/contract";
 import { UsersContract } from "../users/contract";
-import { UsersRepository } from "../users/repository";
 import { OauthContract } from "./contract";
 
 import type {
@@ -25,14 +24,13 @@ export const makeService = Effect.gen(function* () {
   const clientsRepository = yield* ClientsRepository;
   const crypto = yield* Crypto;
   const identityProvidersRepository = yield* IdentityProvidersRepository;
-  const usersRepository = yield* UsersRepository;
 
   const handleUser = Effect.fn("Oauth.handleUser")(function* (
     idpKind: IdentityProvidersContract.Kind,
     idpTenantId: IdentityProvidersContract.AccessToken["tenantId"],
     idpUser: IdentityProvidersContract.User,
   ) {
-    const { identityProvider, tenant, user } = yield* identityProvidersRepository
+    const { tenant, user } = yield* identityProvidersRepository
       .findWithTenantAndUserByExternalIds(idpKind, idpTenantId, idpUser.externalId)
       .pipe(
         Effect.catchTag(
@@ -52,54 +50,12 @@ export const makeService = Effect.gen(function* () {
         reason: new TenantsContract.InactiveTenantError({ status: tenant.status }),
       });
 
-    if (!user) {
-      if (tenant.status === "active")
-        return yield* new OauthContract.AccessDeniedError({
-          reason: new UsersContract.NotFoundError({
-            id: { _tag: "external", value: idpUser.externalId },
-          }),
-        });
-
-      const admin = yield* usersRepository.create({
-        origin: "internal",
-        username: idpUser.username,
-        externalId: idpUser.externalId,
-        identityProviderId: identityProvider.id,
-        role: "administrator",
-        displayName: idpUser.displayName,
-        email: idpUser.email,
-        tenantId: identityProvider.tenantId,
+    if (!user)
+      return yield* new OauthContract.AccessDeniedError({
+        reason: new UsersContract.NotFoundError({
+          id: { _tag: "external", value: idpUser.externalId },
+        }),
       });
-
-      return new OauthContract.UserSubject(Struct.pick(admin, ["id", "tenantId", "role"]));
-    }
-
-    if (
-      idpUser.displayName !== user.displayName ||
-      idpUser.email !== user.email ||
-      idpUser.username !== user.username
-    )
-      yield* usersRepository
-        .updateById(
-          user.id,
-          {
-            username: idpUser.username,
-            displayName: idpUser.displayName,
-            email: idpUser.email,
-          },
-          user.tenantId,
-        )
-        .pipe(
-          Effect.catchTag(
-            "NoSuchElementError",
-            () =>
-              new OauthContract.AccessDeniedError({
-                reason: new UsersContract.NotFoundError({
-                  id: { _tag: "internal", value: user.id },
-                }),
-              }),
-          ),
-        );
 
     return new OauthContract.UserSubject(Struct.pick(user, ["id", "tenantId", "role"]));
   });

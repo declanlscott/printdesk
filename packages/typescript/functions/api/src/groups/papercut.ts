@@ -22,28 +22,49 @@ export const basePapercutGroupLayer = HttpApiBuilder.group(
   Effect.fn(function* (handlers) {
     const papercutApi = yield* PapercutApi;
 
-    return handlers.handle(
-      "health",
-      Effect.fn("Api.Papercut.health")(() =>
-        papercutApi.getTotalUsers.pipe(
-          Effect.map(() => true),
-          Effect.catchTags({
-            HttpClientError: () => Effect.succeed(false),
-            FaultError: () => Effect.succeed(false),
-          }),
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
+    return handlers
+      .handle(
+        "health",
+        Effect.fn("Api.Papercut.health")(() =>
+          papercutApi.getTotalUsers.pipe(
+            Effect.map(() => true),
+            Effect.catchTags({
+              HttpClientError: () => Effect.succeed(false),
+              FaultError: () => Effect.succeed(false),
+            }),
+            Effect.catchFilter(
+              Filter.make((error) =>
+                HttpServerRespondable.isRespondable(error)
+                  ? Result.fail(error)
+                  : Result.succeed(error),
+              ),
+              Effect.die,
             ),
-            Effect.die,
+            Effect.map((healthy) => ({ healthy })),
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_api_gateway:read")),
           ),
-          Effect.map((healthy) => ({ healthy })),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_api_gateway:read")),
         ),
-      ),
-    );
+      )
+      .handle(
+        "taskStatus",
+        Effect.fn("Api.Papercut.taskStatus")(() =>
+          papercutApi.getTaskStatus.pipe(
+            Effect.map((taskStatus) => ({
+              completed: taskStatus[0].value.boolean,
+              message: taskStatus[1].value,
+            })),
+            Effect.catchFilter(
+              Filter.make((error) =>
+                HttpServerRespondable.isRespondable(error)
+                  ? Result.fail(error)
+                  : Result.succeed(error),
+              ),
+              Effect.die,
+            ),
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_api_gateway:read")),
+          ),
+        ),
+      );
   }),
 );
 

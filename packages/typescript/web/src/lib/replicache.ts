@@ -68,11 +68,13 @@ export const makeQueryAtom = <
     ),
   );
 
-export const makeMutationAtom = <TName extends keyof MutationHandlers.Record>(name: TName) =>
-  Atom.fn(
-    (args: MutationHandlers.Record[TName]["Input"]["Type"], get) =>
-      get
-        .result(replicacheAtom)
-        .pipe(Effect.flatMap((replicache) => replicache.mutate(name, args))),
-    { concurrent: true },
-  );
+export const makeMutationAtom = Atom.family(
+  <TName extends keyof MutationHandlers.Record>(name: TName) =>
+    Atom.fn(
+      (args: MutationHandlers.Record[TName]["Input"]["Type"], get) =>
+        get
+          .result(replicacheAtom)
+          .pipe(Effect.flatMap((replicache) => replicache.mutate(name, args))),
+      { concurrent: true },
+    ),
+);

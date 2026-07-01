@@ -59,20 +59,36 @@ export namespace PapercutContract {
   );
   export type ApiAuthToken = typeof ApiAuthToken.Type;
 
-  export class SharedAccountBalanceAdjustmentFailure extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(
-    "SharedAccountBalanceAdjustmentFailure",
-    {},
-  ) {}
+  export class SharedAccountBalanceAdjustmentFailure
+    extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(
+      "SharedAccountBalanceAdjustmentFailure",
+      {},
+      { httpApiStatus: 502 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(SharedAccountBalanceAdjustmentFailure)(this, { status: 502 });
+  }
 
-  export class UserAndGroupSyncFailure extends Schema.TaggedErrorClass<UserAndGroupSyncFailure>()(
-    "UserAndGroupSyncFailure",
-    {},
-  ) {}
+  export class UserAndGroupSyncFailure
+    extends Schema.TaggedErrorClass<UserAndGroupSyncFailure>()(
+      "UserAndGroupSyncFailure",
+      {},
+      { httpApiStatus: 502 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(UserAndGroupSyncFailure)(this, { status: 502 });
+  }
 
   export class IncompleteTaskStatusError
-    extends Schema.TaggedErrorClass<IncompleteTaskStatusError>()("IncompleteTaskStatusError", {
-      message: Schema.String,
-    })
+    extends Schema.TaggedErrorClass<IncompleteTaskStatusError>()(
+      "IncompleteTaskStatusError",
+      { message: Schema.String },
+      { httpApiStatus: 503 },
+    )
     implements HttpServerRespondable.Respondable
   {
     public [HttpServerRespondable.symbol] = () =>

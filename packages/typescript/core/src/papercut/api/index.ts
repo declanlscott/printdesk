@@ -1,7 +1,7 @@
 import * as Context from "effect/Context";
 import * as Request from "effect/Request";
 import * as Schema from "effect/Schema";
-import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 
 import { CustomerGroupsContract } from "../../groups/contracts";
 import { SharedAccountsContract } from "../../shared-accounts/contracts";
@@ -20,16 +20,13 @@ const CommaSeparatedString = separatedString(",");
 
 export const sharedAccountPropertySchemas = {
   "access-groups": CommaSeparatedString.pipe(
-    Schema.decodeTo(CustomerGroupsContract.Name.pipe(Schema.Array), {
-      decode: SchemaGetter.passthrough(),
-      encode: SchemaGetter.passthrough(),
-    }),
+    Schema.decodeTo(
+      CustomerGroupsContract.Name.pipe(Schema.Array),
+      SchemaTransformation.passthrough(),
+    ),
   ),
   "access-users": CommaSeparatedString.pipe(
-    Schema.decodeTo(UsersContract.Username.pipe(Schema.Array), {
-      decode: SchemaGetter.passthrough(),
-      encode: SchemaGetter.passthrough(),
-    }),
+    Schema.decodeTo(UsersContract.Username.pipe(Schema.Array), SchemaTransformation.passthrough()),
   ),
   "account-id": SharedAccountsContract.PapercutId,
   balance: Schema.Number,

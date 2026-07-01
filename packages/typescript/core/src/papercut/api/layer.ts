@@ -8,7 +8,7 @@ import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
-import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Stream from "effect/Stream";
 import * as Tuple from "effect/Tuple";
 import * as HttpClient from "effect/unstable/http/HttpClient";
@@ -131,10 +131,7 @@ export const makeService = Effect.gen(function* () {
           xmlRpc.response(
             XmlRpcContract.arrayResponse(
               XmlRpcContract.Value.fields.value.pipe(
-                Schema.decodeTo(UsersContract.Username, {
-                  decode: SchemaGetter.passthrough(),
-                  encode: SchemaGetter.passthrough(),
-                }),
+                Schema.decodeTo(UsersContract.Username, SchemaTransformation.passthrough()),
               ),
             ),
           ),
@@ -222,10 +219,7 @@ export const makeService = Effect.gen(function* () {
           xmlRpc.response(
             XmlRpcContract.arrayResponse(
               XmlRpcContract.Value.fields.value.pipe(
-                Schema.decodeTo(SharedAccountsContract.Name, {
-                  decode: SchemaGetter.passthrough(),
-                  encode: SchemaGetter.passthrough(),
-                }),
+                Schema.decodeTo(SharedAccountsContract.Name, SchemaTransformation.passthrough()),
               ),
             ),
           ),
@@ -261,10 +255,7 @@ export const makeService = Effect.gen(function* () {
           xmlRpc.response(
             XmlRpcContract.arrayResponse(
               XmlRpcContract.Value.fields.value.pipe(
-                Schema.decodeTo(UsersContract.Username, {
-                  decode: SchemaGetter.passthrough(),
-                  encode: SchemaGetter.passthrough(),
-                }),
+                Schema.decodeTo(UsersContract.Username, SchemaTransformation.passthrough()),
               ),
             ),
           ),
@@ -299,10 +290,7 @@ export const makeService = Effect.gen(function* () {
         xmlRpc.response(
           XmlRpcContract.arrayResponse(
             XmlRpcContract.Value.fields.value.pipe(
-              Schema.decodeTo(CustomerGroupsContract.Name, {
-                decode: SchemaGetter.passthrough(),
-                encode: SchemaGetter.passthrough(),
-              }),
+              Schema.decodeTo(CustomerGroupsContract.Name, SchemaTransformation.passthrough()),
             ),
           ),
         ),

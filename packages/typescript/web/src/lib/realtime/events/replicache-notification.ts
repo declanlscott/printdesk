@@ -6,6 +6,7 @@ import { Realtime } from "@printdesk/core/realtime/client";
 import { Replicache } from "@printdesk/core/replicache/client";
 import { ReplicacheContract } from "@printdesk/core/replicache/contracts";
 import * as Effect from "effect/Effect";
+import * as Equal from "effect/Equal";
 import * as Iterable from "effect/Iterable";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
@@ -39,7 +40,8 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom(ReplicacheContr
   handler: Effect.fn(function* (get, notification) {
     const replicache = yield* get.result(replicacheAtom);
 
-    if ((yield* replicache.clientGroupId) === notification.clientGroupId) return;
+    if (yield* replicache.clientGroupId.pipe(Effect.map(Equal.equals(notification.clientGroupId))))
+      return;
 
     const policyDispatcher = yield* PolicyDispatcher;
 

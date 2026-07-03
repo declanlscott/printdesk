@@ -46,8 +46,13 @@ export namespace XmlRpc {
     }),
   });
 
+  export const XmlRpcRequestPath = Context.Reference<string>(
+    "@printdesk/core/xml/rpc/XmlRpcRequestPath",
+    { defaultValue: () => "/" },
+  );
+
   export class XmlRpc extends Context.Service<XmlRpc>()("@printdesk/core/xml/rpc/XmlRpc", {
-    make: Effect.fn(function* (path: string) {
+    make: Effect.gen(function* () {
       const { build } = yield* Xml.Builder;
       const { parse } = yield* Xml.Parser;
 
@@ -60,6 +65,8 @@ export namespace XmlRpc {
         schemas: { [TKey in keyof TCodecs]: SchemaAndValue<TCodecs[TKey]> },
         parseOptions?: ParseOptions,
       ) {
+        const path = yield* XmlRpcRequestPath;
+
         const encode = Schema.String.pipe(
           Schema.decodeTo(
             Schema.Struct({
@@ -124,8 +131,6 @@ export namespace XmlRpc {
       return { request, response } as const;
     }),
   }) {
-    public static layer(...args: Parameters<typeof XmlRpc.make>) {
-      return this.make(...args).pipe(Layer.effect(this));
-    }
+    public static layer = this.make.pipe(Layer.effect(this));
   }
 }

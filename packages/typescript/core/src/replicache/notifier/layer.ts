@@ -1,12 +1,8 @@
-import * as Chunk from "effect/Chunk";
-import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Request from "effect/Request";
-import * as RequestResolver from "effect/RequestResolver";
 import * as Struct from "effect/Struct";
 
-import { ReplicacheNotifier, ReplicacheNotifyError, ReplicacheNotifyRequest } from ".";
+import { ReplicacheNotifier } from ".";
 import { Actor } from "../../actors";
 import { AwsCredentialIdentity } from "../../aws/credential-identity";
 import { Database } from "../../database";
@@ -20,42 +16,20 @@ export const makeService = Effect.gen(function* () {
   const realtime = yield* Realtime;
   const db = yield* Database;
 
-  const resolver = Effect.context<Actor | AwsCredentialIdentity>().pipe(
-    Effect.map((context) =>
-      RequestResolver.make<ReplicacheNotifyRequest>((entries) =>
-        realtime
-          .publish(
-            "/replicache",
-            Chunk.fromIterable(entries).pipe(Chunk.map(Struct.get("request"))),
-          )
-          .pipe(
-            Effect.provideContext(context),
-            Effect.andThen((success) => Effect.forEach(entries, Request.succeed(success))),
-            Effect.catchCause((cause) =>
-              Effect.forEach(entries, Request.fail(new ReplicacheNotifyError({ cause }))),
-            ),
-          ),
-      ).pipe(RequestResolver.withSpan("ReplicacheNotifier.resolver")),
-    ),
-  );
-
   const notify = Effect.fn("ReplicacheNotifier.notify")(
     (data: ReplicacheContract.Notification["data"]) =>
-      Effect.context<ReplicacheClientGroupId | Actor | AwsCredentialIdentity>().pipe(
+      Effect.context<Actor | AwsCredentialIdentity | ReplicacheClientGroupId>().pipe(
         Effect.flatMap((context) =>
-          Effect.request(
-            new ReplicacheNotifyRequest(
-              new ReplicacheContract.Notification({
-                clientGroupId: context.pipe(Context.get(ReplicacheClientGroupId)),
-                data,
-              }),
-            ),
-            resolver,
+          ReplicacheClientGroupId.useSync(
+            (clientGroupId) => new ReplicacheContract.Notification({ clientGroupId, data }),
           ).pipe(
+            Effect.map(ReplicacheContract.notification.make),
+            Effect.map(Struct.renameKeys({ name: "subchannel", input: "data" })),
+            Effect.flatMap(realtime.publish),
             Effect.catchCause((cause) =>
               Effect.logError("[ReplicacheNotifier]: Replicache notification failed:", cause),
             ),
-            Effect.provideContext(context.pipe(Context.pick(Actor, AwsCredentialIdentity))),
+            Effect.provideContext(context),
             db.afterTransaction,
           ),
         ),

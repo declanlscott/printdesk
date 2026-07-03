@@ -11,13 +11,13 @@ import { UsersContract } from "../users/contract";
 import { EntityId, TenantId } from "../utils";
 
 export namespace ActorsContract {
-  export interface Wrapper {
+  export interface Wrappable {
     get wrap(): Actor;
   }
 
   export class PublicActor
     extends Schema.TaggedClass<PublicActor>()("PublicActor", {})
-    implements Wrapper
+    implements Wrappable
   {
     public static readonly singleton = new this();
 
@@ -33,7 +33,7 @@ export namespace ActorsContract {
       tenantId: TenantId,
       role: ClientsContract.Role,
     })
-    implements Wrapper
+    implements Wrappable
   {
     public get wrap() {
       return new Actor({ properties: new ClientActor(this) });
@@ -46,7 +46,7 @@ export namespace ActorsContract {
       tenantId: TenantId,
       role: UsersContract.Role,
     })
-    implements Wrapper
+    implements Wrappable
   {
     public get wrap() {
       return new Actor({ properties: new UserActor(this) });
@@ -55,7 +55,7 @@ export namespace ActorsContract {
 
   export class SystemActor
     extends Schema.TaggedClass<SystemActor>()("SystemActor", { tenantId: TenantId })
-    implements Wrapper
+    implements Wrappable
   {
     public get wrap() {
       return new Actor({ properties: new SystemActor(this) });

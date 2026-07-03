@@ -97,7 +97,7 @@ export const makeService = Effect.gen(function* () {
 
   const setPapercutApiAuthToken = Effect.fn("Config.setPapercutApiAuthToken")(
     (value: PapercutContract.ApiAuthToken) =>
-      apiClientCredentialsProfileIdEffect.pipe(
+      papercutApiAuthTokenProfileIdEffect.pipe(
         Effect.andThen((profileId) =>
           appconfig.publish({
             profileId,

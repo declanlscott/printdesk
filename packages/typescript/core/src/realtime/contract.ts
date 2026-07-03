@@ -1,6 +1,7 @@
 import * as Array from "effect/Array";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as String from "effect/String";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
@@ -100,26 +101,33 @@ export namespace RealtimeContract {
   export const AuthorizationSuccess = Authorization.pipe(HttpApiSchema.status(200));
 
   const headerPrefix = "header-";
-  const Base64Url = Schema.NonEmptyString.pipe(Schema.check(Schema.isBase64Url()));
   export const WebSocketAuthorizationProtocol = Authorization.pipe(
     Schema.fromJsonString,
-    Schema.encodeTo(Base64Url, {
-      encode: SchemaGetter.encodeBase64Url(),
-      decode: SchemaGetter.decodeBase64UrlString(),
-    }),
-    Schema.encodeTo(Schema.TemplateLiteral([Schema.Literal(headerPrefix), Base64Url]), {
-      encode: SchemaGetter.transform((base64Url) => `${headerPrefix}${base64Url}` as const),
-      decode: SchemaGetter.transform(String.replace(headerPrefix, "")),
-    }),
+    Schema.encode(SchemaTransformation.stringFromBase64UrlString),
+    Schema.encodeTo(
+      Schema.TemplateLiteral([Schema.Literal(headerPrefix), Schema.StringFromBase64Url]),
+      {
+        encode: SchemaGetter.transform((base64Url) => `${headerPrefix}${base64Url}` as const),
+        decode: SchemaGetter.transform(String.replace(headerPrefix, "")),
+      },
+    ),
   );
 
   export const Event = RealtimeEventHandlers.registry.Schema.mapMembers(
-    Array.map((member) => member.fields.input),
+    Array.map(
+      (member) =>
+        Schema.Struct({ subchannel: member.fields.name, data: member.fields.input }) as {
+          [TSubchannel in keyof RealtimeEventHandlers.Record]: Schema.Struct<{
+            subchannel: Schema.tag<TSubchannel>;
+            data: RealtimeEventHandlers.Record[TSubchannel]["Input"];
+          }>;
+        }[keyof RealtimeEventHandlers.Record],
+    ),
   );
   export type Event = typeof Event.Type;
 
   export class PublishPayload extends Schema.Class<PublishPayload>("PublishPayload")({
     channel: Channel,
-    events: Event.pipe(Schema.Array),
+    events: Event.mapMembers(Array.map((member) => member.fields.data)).pipe(Schema.Array),
   }) {}
 }

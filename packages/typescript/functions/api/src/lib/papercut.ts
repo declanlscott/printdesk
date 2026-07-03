@@ -20,7 +20,7 @@ import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 import { databaseLayer } from "./database";
 
 export const papercutApiLayer = PapercutApi.layer.pipe(
-  Layer.provide([Config.layer, XmlRpc.XmlRpc.layer("/")]),
+  Layer.provide([Config.layer, XmlRpc.XmlRpc.layer]),
   Layer.provide([Appconfig.layer, AppconfigAgent.layer, Xml.Builder.layer, Xml.Parser.layer]),
   Layer.provide([FetchHttpClient.layer, SstResource.layer]),
 );

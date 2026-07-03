@@ -43,7 +43,7 @@ export const layer = PapercutSyncer.layer.pipe(
     UsersRepository.layer,
   ]),
   Layer.provideMerge([Config.layer]),
-  Layer.provide([SyncQueryBuilder.layer, XmlRpc.XmlRpc.layer("/")]),
+  Layer.provide([SyncQueryBuilder.layer, XmlRpc.XmlRpc.layer]),
   Layer.provide([
     Appconfig.layer,
     AppconfigAgent.layer,

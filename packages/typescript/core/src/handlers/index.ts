@@ -1,5 +1,6 @@
 import * as Array from "effect/Array";
 import * as Data from "effect/Data";
+import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
 import * as Iterable from "effect/Iterable";
 import * as Record from "effect/Record";
@@ -44,6 +45,16 @@ export namespace Handler {
       this.#isFinal = true;
 
       return this as Registry<TRecord, true>;
+    }
+
+    public resolve<TName extends keyof TRecord & string>(name: TName) {
+      return this.#map.pipe(
+        HashMap.get(name),
+        Effect.fromOption,
+        Effect.map(
+          (handler) => handler as Handler<TName, TRecord[TName]["Input"], TRecord[TName]["Output"]>,
+        ),
+      );
     }
 
     public get record() {

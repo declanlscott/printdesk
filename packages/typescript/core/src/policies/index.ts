@@ -80,18 +80,12 @@ export namespace Policy {
           TRecord[TName]["Context"]
         >;
 
-        const { Input: Args } = yield* Record.get(
-          this.handlerRegistry.record,
-          policymaker.name,
-        ).pipe(Effect.fromOption, Effect.orDie);
+        const { Input: Args } = yield* this.handlerRegistry.resolve(policymaker.name);
 
-        const safeArgs = yield* Schema.decodeEffect(
-          Args.pipe(Schema.toType) as Schema.ConstraintDecoder<
-            Schema.Schema.Type<THandlerRecord[TName]["Input"]>
-          >,
-        )(args);
-
-        const policy = policymaker.make(safeArgs);
+        const policy = yield* Effect.succeed(args).pipe(
+          Schema.decodeEffect(Args),
+          Effect.map(policymaker.make),
+        );
 
         yield* policy;
       });

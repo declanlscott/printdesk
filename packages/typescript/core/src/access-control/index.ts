@@ -270,7 +270,7 @@ export namespace AccessControl {
   >;
 
   export type MakePolicy<TArgs extends Schema.Top, TError, TServices> = (
-    args: Schema.Schema.Type<TArgs>,
+    args: TArgs["Type"],
   ) => Policy<
     Exclude<TError, AccessDeniedError | ActorsContract.ForbiddenActorError>,
     Exclude<TServices, Actor>

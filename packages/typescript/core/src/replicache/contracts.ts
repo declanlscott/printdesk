@@ -69,6 +69,12 @@ export namespace ReplicacheContract {
     Input: Notification,
     Output: Schema.Void,
   });
+
+  export const poke = new Handler.Handler({
+    name: "/replicache/poke",
+    Input: Schema.Undefined,
+    Output: Schema.Void,
+  });
 }
 
 export namespace ReplicachePullerContract {

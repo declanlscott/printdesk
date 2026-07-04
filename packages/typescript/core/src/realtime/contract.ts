@@ -6,8 +6,19 @@ import * as String from "effect/String";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
 import { RealtimeEventHandlers } from "../handlers/realtime-events";
+import { TenantId } from "../utils";
 
 export namespace RealtimeContract {
+  export const EventHandler = RealtimeEventHandlers.registry.Schema;
+  export type EventHandler = typeof EventHandler.Type;
+
+  export const Channel = EventHandler.mapMembers(
+    Array.map((member) =>
+      Schema.TemplateLiteral([Schema.Literal("/"), TenantId, member.fields.name]),
+    ),
+  );
+  export type Channel = typeof Channel.Type;
+
   export const Authorization = Schema.Record(Schema.String, Schema.String);
   export type Authorization = typeof Authorization.Type;
 
@@ -42,9 +53,6 @@ export namespace RealtimeContract {
     connectionTimeout: Schema.DurationFromMillis,
   }).pipe(Schema.encodeKeys({ connectionTimeout: "connectionTimeoutMs" }));
   export type ConnectionAck = typeof ConnectionAck.Type;
-
-  export const Channel = Schema.TemplateLiteral([Schema.Literal("/"), Schema.NonEmptyString]);
-  export type Channel = typeof Channel.Type;
 
   export class Subscribe extends Schema.Class<Subscribe>("Subscribe")({
     type: Schema.tag("subscribe"),
@@ -113,21 +121,8 @@ export namespace RealtimeContract {
     ),
   );
 
-  export const Event = RealtimeEventHandlers.registry.Schema.mapMembers(
-    Array.map(
-      (member) =>
-        Schema.Struct({ subchannel: member.fields.name, data: member.fields.input }) as {
-          [TSubchannel in keyof RealtimeEventHandlers.Record]: Schema.Struct<{
-            subchannel: Schema.tag<TSubchannel>;
-            data: RealtimeEventHandlers.Record[TSubchannel]["Input"];
-          }>;
-        }[keyof RealtimeEventHandlers.Record],
-    ),
-  );
-  export type Event = typeof Event.Type;
-
   export class PublishPayload extends Schema.Class<PublishPayload>("PublishPayload")({
     channel: Channel,
-    events: Event.mapMembers(Array.map((member) => member.fields.data)).pipe(Schema.Array),
+    events: EventHandler.mapMembers(Array.map((member) => member.fields.input)).pipe(Schema.Array),
   }) {}
 }

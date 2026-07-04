@@ -53,7 +53,7 @@ export const makeService = Effect.gen(function* () {
           ReplicacheContract.PullPermission.make({ permission: "active_room_workflows:read" }),
         ),
       ),
-      notifier.notify,
+      notifier.notifyAfterTransaction,
     );
 
   const notifyEdit = (room: typeof RoomsContract.Table.Model.Type) =>
@@ -71,11 +71,11 @@ export const makeService = Effect.gen(function* () {
           ReplicacheContract.PullPermission.make({ permission: "active_rooms:read" }),
         ),
       ),
-      notifier.notify,
+      notifier.notifyAfterTransaction,
     );
 
   const notifyPublish = () =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({ permission: "rooms:read" }),
         ReplicacheContract.PullPermission.make({ permission: "active_rooms:read" }),
@@ -95,7 +95,7 @@ export const makeService = Effect.gen(function* () {
   const notifyDraft = notifyPublish;
 
   const notifyDelete = () =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({ permission: "rooms:read" }),
         ReplicacheContract.PullPermission.make({ permission: "active_rooms:read" }),
@@ -122,7 +122,7 @@ export const makeService = Effect.gen(function* () {
     );
 
   const notifyRestore = () =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({ permission: "rooms:read" }),
         ReplicacheContract.PullPermission.make({ permission: "active_rooms:read" }),

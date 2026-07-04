@@ -77,7 +77,7 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-      Effect.flatMap(notifier.notify),
+      Effect.flatMap(notifier.notifyAfterTransaction),
       Effect.catch(() => Effect.void),
     );
 

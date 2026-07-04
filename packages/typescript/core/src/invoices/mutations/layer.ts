@@ -20,7 +20,7 @@ export const makeService = Effect.gen(function* () {
   const notifier = yield* ReplicacheNotifier;
 
   const notify = (invoice: typeof InvoicesContract.Table.Model.Type) =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({ permission: "invoices:read" }),
         ReplicacheContract.PullPermission.make({ permission: "active_invoices:read" }),

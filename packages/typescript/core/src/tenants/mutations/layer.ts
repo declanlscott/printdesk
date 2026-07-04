@@ -20,7 +20,7 @@ export const makeService = Effect.gen(function* () {
   const notifier = yield* ReplicacheNotifier;
 
   const notify = () =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(ReplicacheContract.PullPermission.make({ permission: "tenants:read" })),
     );
 

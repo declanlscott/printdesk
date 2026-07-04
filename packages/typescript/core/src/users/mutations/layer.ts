@@ -32,11 +32,11 @@ export const makeService = Effect.gen(function* () {
       Match.orElse(() =>
         Array.make(ReplicacheContract.PullPermission.make({ permission: "users:read" })),
       ),
-      notifier.notify,
+      notifier.notifyAfterTransaction,
     );
 
   const notifyDelete = () =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({ permission: "users:read" }),
         ReplicacheContract.PullPermission.make({ permission: "active_users:read" }),

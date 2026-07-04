@@ -22,7 +22,7 @@ export const makeService = Effect.gen(function* () {
   const notifier = yield* ReplicacheNotifier;
 
   const notify = (access: typeof SharedAccountManagerAccessContract.Table.Model.Type) =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({
           permission: "shared_account_manager_access:read",

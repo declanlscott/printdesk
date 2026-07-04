@@ -56,7 +56,7 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-      Effect.flatMap(notifier.notify),
+      Effect.flatMap(notifier.notifyAfterTransaction),
       Effect.catch(() => Effect.void),
     );
   const notifyEdit = notifyCreate;
@@ -82,7 +82,7 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-      Effect.flatMap(notifier.notify),
+      Effect.flatMap(notifier.notifyAfterTransaction),
       Effect.catch(() => Effect.void),
     );
   const notifyDraft = notifyPublish;

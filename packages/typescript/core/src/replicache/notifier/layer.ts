@@ -2,8 +2,6 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { ReplicacheNotifier } from ".";
-import { Actor } from "../../actors";
-import { AwsCredentialIdentity } from "../../aws/credential-identity";
 import { Database } from "../../database";
 import { RealtimeEventHandlers } from "../../handlers/realtime-events";
 import { Realtime } from "../../realtime";
@@ -18,28 +16,57 @@ export const makeService = Effect.gen(function* () {
 
   const notify = Effect.fn("ReplicacheNotifier.notify")(
     (data: ReplicacheContract.Notification["data"]) =>
-      Effect.context<Actor | AwsCredentialIdentity | ReplicacheClientGroupId>().pipe(
+      ReplicacheClientGroupId.useSync(
+        (clientGroupId) => new ReplicacheContract.Notification({ clientGroupId, data }),
+      ).pipe(
+        Effect.flatMap((notification) =>
+          RealtimeEventHandlers.registry
+            .resolve("/replicache/notification")
+            .pipe(Effect.map((handler) => handler.make(notification))),
+        ),
+        Effect.flatMap(realtime.publish),
+      ),
+  );
+
+  const notifyAfterTransaction = Effect.fn("ReplicacheNotifier.notifyAfterTransaction")(
+    (...args: Parameters<typeof notify>) =>
+      Effect.context<Effect.Services<ReturnType<typeof notify>>>().pipe(
         Effect.flatMap((context) =>
-          ReplicacheClientGroupId.useSync(
-            (clientGroupId) => new ReplicacheContract.Notification({ clientGroupId, data }),
-          ).pipe(
-            Effect.flatMap((notification) =>
-              RealtimeEventHandlers.registry
-                .resolve("/replicache/notification")
-                .pipe(Effect.map((handler) => handler.make(notification))),
-            ),
-            Effect.flatMap(realtime.publish),
+          notify(...args).pipe(
+            Effect.provideContext(context),
             Effect.catchCause((cause) =>
               Effect.logError("[ReplicacheNotifier]: Replicache notification failed:", cause),
             ),
-            Effect.provideContext(context),
             db.afterTransaction,
           ),
         ),
       ),
   );
 
-  return { notify } as const;
+  const poke = RealtimeEventHandlers.registry.resolve("/replicache/poke").pipe(
+    Effect.map((handler) => handler.make(undefined)),
+    Effect.flatMap(realtime.publish),
+    Effect.withSpan("ReplicacheNotifier.poke"),
+  );
+
+  const pokeAfterTransaction = Effect.context<Effect.Services<typeof poke>>().pipe(
+    Effect.flatMap((context) =>
+      poke.pipe(
+        Effect.provideContext(context),
+        Effect.catchCause((cause) =>
+          Effect.logError("[ReplicacheNotifier]: Replicache poke failed:", cause),
+        ),
+        db.afterTransaction,
+      ),
+    ),
+  );
+
+  return {
+    notify,
+    notifyAfterTransaction,
+    poke,
+    pokeAfterTransaction,
+  } as const;
 });
 
 export const layer = makeService.pipe(Layer.effect(ReplicacheNotifier));

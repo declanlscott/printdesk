@@ -27,7 +27,7 @@ export const makeService = Effect.gen(function* () {
   const notifier = yield* ReplicacheNotifier;
 
   const notify = (order: typeof OrdersContract.Table.Model.Type) =>
-    notifier.notify(
+    notifier.notifyAfterTransaction(
       Array.make(
         ReplicacheContract.PullPermission.make({ permission: "orders:read" }),
         ReplicacheContract.PullPermission.make({ permission: "active_orders:read" }),

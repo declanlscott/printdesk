@@ -119,7 +119,27 @@ export const getUserInitials = Effect.fn(function* (name: string) {
   return `${firstInitial}${lastInitial}`;
 });
 
-export type Prettify<TObject> = {
+export const prefix = Function.dual<
+  <TPrefix extends string, TSuffix extends string>(
+    prefix: TPrefix,
+  ) => (suffix: TSuffix) => `${TPrefix}${TSuffix}`,
+  <TPrefix extends string, TSuffix extends string>(
+    prefix: TPrefix,
+    suffix: TSuffix,
+  ) => `${TPrefix}${TSuffix}`
+>(2, (prefix, suffix) => `${prefix}${suffix}`);
+
+export const suffix = Function.dual<
+  <TPrefix extends string, TSuffix extends string>(
+    suffix: TSuffix,
+  ) => (prefix: TPrefix) => `${TPrefix}${TSuffix}`,
+  <TPrefix extends string, TSuffix extends string>(
+    prefix: TPrefix,
+    suffix: TSuffix,
+  ) => `${TPrefix}${TSuffix}`
+>(2, (prefix, suffix) => `${prefix}${suffix}`);
+
+export type Prettify<TObject extends object> = {
   [TKey in keyof TObject]: TObject[TKey];
 } & {};
 

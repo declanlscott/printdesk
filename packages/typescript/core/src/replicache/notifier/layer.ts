@@ -1,11 +1,11 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Struct from "effect/Struct";
 
 import { ReplicacheNotifier } from ".";
 import { Actor } from "../../actors";
 import { AwsCredentialIdentity } from "../../aws/credential-identity";
 import { Database } from "../../database";
+import { RealtimeEventHandlers } from "../../handlers/realtime-events";
 import { Realtime } from "../../realtime";
 import { ReplicacheClientGroupId } from "../client-group-id";
 import { ReplicacheContract } from "../contracts";
@@ -23,8 +23,11 @@ export const makeService = Effect.gen(function* () {
           ReplicacheClientGroupId.useSync(
             (clientGroupId) => new ReplicacheContract.Notification({ clientGroupId, data }),
           ).pipe(
-            Effect.map(ReplicacheContract.notification.make),
-            Effect.map(Struct.renameKeys({ name: "subchannel", input: "data" })),
+            Effect.flatMap((notification) =>
+              RealtimeEventHandlers.registry
+                .resolve("/replicache/notification")
+                .pipe(Effect.map((handler) => handler.make(notification))),
+            ),
             Effect.flatMap(realtime.publish),
             Effect.catchCause((cause) =>
               Effect.logError("[ReplicacheNotifier]: Replicache notification failed:", cause),

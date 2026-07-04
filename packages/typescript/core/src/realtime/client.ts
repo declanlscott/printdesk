@@ -24,10 +24,12 @@ import * as AtomRegistry from "effect/unstable/reactivity/AtomRegistry";
 import * as Socket from "effect/unstable/socket/Socket";
 
 import { Api } from "../api";
+import { RealtimeEventHandlers } from "../handlers/realtime-events";
 import { NetworkMonitor } from "../network/client/monitor";
+import { prefix, suffix } from "../utils";
 import { RealtimeContract } from "./contract";
 
-import type { Handler } from "../handlers";
+import type { ActorsContract } from "../actors/contract";
 
 export namespace Realtime {
   const timeoutDuration = Duration.seconds(5);
@@ -76,7 +78,7 @@ export namespace Realtime {
               Schema.encodeEffect(RealtimeContract.ConnectionInit.pipe(Schema.fromJsonString)),
             ),
             Effect.flatMap(write),
-            Effect.catch(Effect.log),
+            Effect.catchCause(Effect.log),
           ),
         },
       );
@@ -134,58 +136,56 @@ export namespace Realtime {
   export type Realtime = Effect.Success<ReturnType<typeof make>>;
 
   export interface EventAtomOptions<
-    THandler extends Handler.Handler,
+    TName extends RealtimeContract.EventHandler["name"],
     TRuntimeError,
+    TActorError,
     TRealtimeError,
     TNetworkMonitorError,
-    TChannel extends RealtimeContract.Channel,
-    TChannelError,
-    TChannelServices,
     THandlerError,
     THandlerServices,
   > {
     readonly runtime: Atom.AtomRuntime<
-      THandler["Input"]["DecodingServices"] | TChannelServices | THandlerServices | Crypto.Crypto,
+      | RealtimeEventHandlers.Record[TName]["Input"]["DecodingServices"]
+      | RealtimeEventHandlers.Record[TName]["Output"]["DecodingServices"]
+      | THandlerServices
+      | Crypto.Crypto,
       TRuntimeError
     >;
     readonly atoms: {
+      readonly actor: Atom.Atom<AsyncResult.AsyncResult<ActorsContract.Actor, TActorError>>;
       readonly realtime: Atom.Atom<AsyncResult.AsyncResult<Realtime.Realtime, TRealtimeError>>;
       readonly networkMonitor: Atom.Atom<
         AsyncResult.AsyncResult<NetworkMonitor.NetworkMonitor, TNetworkMonitorError>
       >;
     };
-    readonly getChannel: (
-      get: Atom.AtomContext,
-      name: THandler["name"],
-    ) => Effect.Effect<TChannel, TChannelError, TChannelServices>;
     readonly handler: (
       get: Atom.AtomContext,
-      event: THandler["Input"]["Type"],
-    ) => Effect.Effect<void, THandlerError, THandlerServices>;
+      input: RealtimeEventHandlers.Record[TName]["Input"]["Type"],
+    ) => Effect.Effect<
+      RealtimeEventHandlers.Record[TName]["Output"]["Type"],
+      THandlerError,
+      THandlerServices
+    >;
     // oxlint-disable-next-line typescript/no-explicit-any
     readonly retrySchedule?: Schedule.Schedule<any>;
   }
 
   export const makeEventAtom = <
-    THandler extends Handler.Handler,
+    TName extends RealtimeContract.EventHandler["name"],
     TRuntimeError,
+    TActorError,
     TRealtimeError,
     TNetworkMonitorError,
-    TChannel extends RealtimeContract.Channel,
-    TChannelError,
-    TChannelServices,
     THandlerError,
     THandlerServices,
   >(
-    handler: THandler,
+    name: TName,
     opts: EventAtomOptions<
-      THandler,
+      TName,
       TRuntimeError,
+      TActorError,
       TRealtimeError,
       TNetworkMonitorError,
-      TChannel,
-      TChannelError,
-      TChannelServices,
       THandlerError,
       THandlerServices
     >,
@@ -202,7 +202,16 @@ export namespace Realtime {
           Effect.flatMap(RealtimeContract.SubscriptionId.makeEffect),
         );
 
-        const channel = yield* opts.getChannel(get, handler.name);
+        const handler = yield* RealtimeEventHandlers.registry.resolve(name);
+
+        const channel = yield* get
+          .resultOnce(opts.atoms.actor)
+          .pipe(
+            Effect.flatMap(Struct.get("tenantId")),
+            Effect.map(prefix("/")),
+            Effect.map(suffix(name)),
+            Effect.flatMap(Schema.decodeEffect(RealtimeContract.Channel)),
+          );
 
         const authorization = yield* realtime.api.getAuthorization({ payload: { channel } });
 
@@ -242,7 +251,7 @@ export namespace Realtime {
                 Stream.runDrain,
               ),
             ),
-            Effect.catch(Effect.log),
+            Effect.catchCause(Effect.log),
           ),
         );
 
@@ -250,12 +259,17 @@ export namespace Realtime {
           Stream.filterMapEffect((message) =>
             message.type === "data" && message.id === id
               ? Effect.succeed(message.event).pipe(
-                  Effect.flatMap(Schema.decodeUnknownEffect<THandler["Input"]>(handler.Input)),
+                  Effect.flatMap(
+                    Schema.decodeUnknownEffect<RealtimeEventHandlers.Record[TName]["Input"]>(
+                      handler.Input,
+                    ),
+                  ),
                   Effect.map(Result.succeed),
                 )
               : Result.failVoid.pipe(Effect.succeed),
           ),
-          Stream.tap((event) => opts.handler(get, event)),
+          Stream.mapEffect((input) => opts.handler(get, input)),
+          Stream.mapEffect((output) => Schema.decodeEffect(handler.Output)(output)),
         );
       }).pipe((effect) =>
         get
@@ -310,13 +324,10 @@ export namespace Realtime {
                       AsyncResult.failWithPrevious(new Cause.NoSuchElementError(), {
                         previous: getSelf(),
                       }).pipe(get.setSelf),
-                    onSome: (event) => get.setSelf(AsyncResult.success(event)),
+                    onSome: (output) => get.setSelf(AsyncResult.success(output)),
                   }),
                 )
-              : AsyncResult.failureWithPrevious(
-                  cause as Cause.Cause<Stream.Error<Effect.Success<typeof streamEffect>>>,
-                  { previous: getSelf() },
-                ).pipe(get.setSelf),
+              : AsyncResult.failureWithPrevious(cause, { previous: getSelf() }).pipe(get.setSelf),
           ),
         ),
         runFork,

@@ -14,7 +14,7 @@ import type { Handler } from "../handlers";
 
 export namespace Mutation {
   export type Mutator<TArgs extends Schema.Top, TSuccess, TError, TServices> = (
-    args: Schema.Schema.Type<TArgs>,
+    args: TArgs["Type"],
     user: ActorsContract.UserActor,
   ) => Effect.Effect<TSuccess, TError, TServices>;
 
@@ -173,28 +173,15 @@ export namespace Mutation {
           TRecord[TName]["PolicyServices"]
         >;
 
-        const { Input: Args, Output: Returns } = yield* Record.get(
-          this.handlerRegistry.record,
-          mutation.name,
-        ).pipe(Effect.fromOption, Effect.orDie);
+        const { Input: Args, Output: Returns } = yield* this.handlerRegistry.resolve(mutation.name);
 
-        const safeArgs = yield* Schema.decodeEffect(
-          Args.pipe(Schema.toType) as Schema.ConstraintDecoder<
-            Schema.Schema.Type<THandlerRecord[TName]["Input"]>
-          >,
-        )(args);
+        const safeArgs = yield* Effect.succeed(args).pipe(Schema.decodeEffect(Args));
 
         return yield* mutation
           .mutator(safeArgs, user)
           .pipe(
+            Effect.flatMap(Schema.decodeEffect(Returns)),
             AccessControl.enforce(mutation.makePolicy(safeArgs)),
-            Effect.flatMap(
-              Schema.decodeEffect(
-                Returns.pipe(Schema.toType) as Schema.ConstraintDecoder<
-                  Schema.Schema.Type<THandlerRecord[TName]["Output"]>
-                >,
-              ),
-            ),
           );
       });
     }

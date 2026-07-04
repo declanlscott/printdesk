@@ -1,8 +1,8 @@
 import * as Array from "effect/Array";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
+import * as Function from "effect/Function";
 import * as Layer from "effect/Layer";
-import * as Path from "effect/Path";
 import * as Redacted from "effect/Redacted";
 import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
@@ -14,14 +14,14 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import { Actor } from "../actors";
 import { AppsyncSigner } from "../aws/sigv4-signers/appsync";
 import { SstResource } from "../sst/resource";
+import { prefix, suffix, type TenantId } from "../utils";
 import { RealtimeContract } from "./contract";
 
 import type * as Duration from "effect/Duration";
 import type { AwsCredentialIdentity } from "../aws/credential-identity";
-import type { TenantId } from "../utils";
 
 export class PublishRequest extends Request.Class<
-  { event: RealtimeContract.Event; tenantId: TenantId },
+  { eventHandler: RealtimeContract.EventHandler; tenantId: TenantId },
   void,
   PublishError,
   AwsCredentialIdentity
@@ -42,7 +42,6 @@ export class Realtime extends Context.Service<Realtime>()("@printdesk/core/realt
     );
     const signer = yield* AppsyncSigner;
     const httpClient = yield* HttpClient.HttpClient;
-    const path = yield* Path.Path;
 
     const getAuthorization = Effect.fn("Realtime.getAuthorization")(
       (payload: RealtimeContract.AuthorizationPayload, expiresIn?: Duration.Duration) =>
@@ -64,13 +63,17 @@ export class Realtime extends Context.Service<Realtime>()("@printdesk/core/realt
       Effect.map((context) =>
         RequestResolver.makeGrouped<PublishRequest, RealtimeContract.Channel>({
           key: (entry) =>
-            `/${path.join(entry.request.tenantId, entry.request.event.subchannel)}` as const,
+            Function.pipe(
+              entry.request.tenantId,
+              prefix("/"),
+              suffix(entry.request.eventHandler.name),
+            ),
           resolver: (entries, channel) =>
             HttpClientRequest.post(baseUrl).pipe(
               HttpClientRequest.appendUrl("/event"),
               HttpClientRequest.schemaBodyJson(RealtimeContract.PublishPayload)({
                 channel,
-                events: Array.map(entries, (entry) => entry.request.event.data),
+                events: Array.map(entries, (entry) => entry.request.eventHandler.input),
               }),
               Effect.flatMap(signer.signRequest),
               Effect.flatMap(httpClient.execute),
@@ -87,10 +90,10 @@ export class Realtime extends Context.Service<Realtime>()("@printdesk/core/realt
       Effect.map(RequestResolver.withSpan("Realtime.publishResolver")),
     );
 
-    const publish = Effect.fn("Realtime.publish")((event: RealtimeContract.Event) =>
+    const publish = Effect.fn("Realtime.publish")((eventHandler: RealtimeContract.EventHandler) =>
       Actor.use(Struct.get("tenantId")).pipe(
         Effect.flatMap((tenantId) =>
-          Effect.request(new PublishRequest({ event, tenantId }), publishResolver),
+          Effect.request(new PublishRequest({ eventHandler, tenantId }), publishResolver),
         ),
       ),
     );

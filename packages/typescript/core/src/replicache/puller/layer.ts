@@ -219,7 +219,7 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap((requestV1) =>
         process(requestV1.cookie).pipe(
           Effect.catchTag("ExceededCapacityError", () =>
-            Effect.log(
+            Effect.logInfo(
               "[ReplicachePuller]: Sync limit exceeded, retrying with client view reset ...",
             ).pipe(Effect.andThen(process(null))),
           ),
@@ -229,12 +229,12 @@ export const makeService = Effect.gen(function* () {
       ),
       Effect.timed,
       Effect.flatMap(([duration, response]) =>
-        Effect.log(
+        Effect.logInfo(
           `[ReplicachePuller]: Processed pull request in ${duration.pipe(Duration.toMillis)}ms`,
         ).pipe(Effect.as(response)),
       ),
       Effect.tapCause((cause) =>
-        Effect.log("[ReplicachePuller]: Encountered error during pull", cause),
+        Effect.logError("[ReplicachePuller]: Encountered error during pull:", cause),
       ),
     ),
   );

@@ -108,7 +108,7 @@ export const makeService = Effect.gen(function* () {
         // 10(ii)(a,b): Log and abort
         Effect.tapCause((cause) =>
           Effect.logError(
-            `[ReplicachePusher]: Encountered error performing mutation "${mutation.id}"`,
+            `[ReplicachePusher]: Encountered error performing mutation "${mutation.id}":`,
             cause,
           ),
         ),
@@ -139,8 +139,8 @@ export const makeService = Effect.gen(function* () {
         ]),
         Effect.flatMap((effects) => Effect.all(effects, { concurrency: "unbounded" })),
         Effect.tapCause((cause) =>
-          Effect.log(
-            `[ReplicachePusher]: Encountered error postprocessing mutation "${args.mutationId}"`,
+          Effect.logError(
+            `[ReplicachePusher]: Encountered error postprocessing mutation "${args.mutationId}":`,
             cause,
           ),
         ),
@@ -193,7 +193,7 @@ export const makeService = Effect.gen(function* () {
       ),
       Effect.as(undefined),
       Effect.tapCause((cause) =>
-        Effect.log("[ReplicachePusher]: Encountered error during push", cause),
+        Effect.logError("[ReplicachePusher]: Encountered error during push:", cause),
       ),
     ),
   );

@@ -27,7 +27,7 @@ class Realtime(pulumi.ComponentResource):
         self._channel_namespace = aws.appsync.ChannelNamespace(
             resource_name="RealtimeChannelNamespace",
             args=aws.appsync.ChannelNamespaceArgs(
-                api_id=Resource.RealtimeApi.id,
+                api_id=Resource.AppsyncApi.id,
                 name=args.tenant_id,
             ),
             opts=pulumi.ResourceOptions(parent=self),
@@ -38,7 +38,7 @@ class Realtime(pulumi.ComponentResource):
             args=aws.iam.RoleArgs(
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.RealtimeChannelNamespacePublisherRoleTemplate.name,
+                        name_template=Resource.AppsyncChannelNamespacePublisherRoleTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -78,7 +78,7 @@ class Realtime(pulumi.ComponentResource):
             args=aws.iam.RoleArgs(
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.RealtimeChannelNamespaceSubscriberRoleTemplate.name,
+                        name_template=Resource.AppsyncChannelNamespaceSubscriberRoleTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -102,7 +102,7 @@ class Realtime(pulumi.ComponentResource):
                                 lambda channel_namespace_arn: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventConnect"],
-                                        resources=[Resource.RealtimeApi.arn],
+                                        resources=[Resource.AppsyncApi.arn],
                                     ),
                                     aws.iam.GetPolicyDocumentStatementArgs(
                                         actions=["appsync:EventSubscribe"],

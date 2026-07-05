@@ -68,6 +68,25 @@ declare module "sst" {
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
+    "AppsyncApi": {
+      "arn": string
+      "dns": {
+        "http": string
+        "realtime": string
+      }
+      "id": string
+      "type": "aws.appsync/api.Api"
+    }
+    "AppsyncChannelNamespacePublisherRoleTemplate": {
+      "arn": string
+      "name": string
+      "type": "pd.templates.AwsIamRole"
+    }
+    "AppsyncChannelNamespaceSubscriberRoleTemplate": {
+      "arn": string
+      "name": string
+      "type": "pd.templates.AwsIamRole"
+    }
     "AssetsBucket": {
       "name": string
       "type": "sst.aws.Bucket"
@@ -239,25 +258,6 @@ declare module "sst" {
       "type": "pd.aws.IamExternalRole"
     }
     "RateLimit": import("@cloudflare/workers-types").RateLimit
-    "RealtimeApi": {
-      "arn": string
-      "dns": {
-        "http": string
-        "realtime": string
-      }
-      "id": string
-      "type": "aws.appsync/api.Api"
-    }
-    "RealtimeChannelNamespacePublisherRoleTemplate": {
-      "arn": string
-      "name": string
-      "type": "pd.templates.AwsIamRole"
-    }
-    "RealtimeChannelNamespaceSubscriberRoleTemplate": {
-      "arn": string
-      "name": string
-      "type": "pd.templates.AwsIamRole"
-    }
     "SnsTopicEmail": {
       "type": "sst.sst.Secret"
       "value": string

@@ -56,6 +56,21 @@ class Resource:
         arn: str
         name: str
         type: str
+    class AppsyncApi:
+        arn: str
+        class dns:
+            http: str
+            realtime: str
+        id: str
+        type: str
+    class AppsyncChannelNamespacePublisherRoleTemplate:
+        arn: str
+        name: str
+        type: str
+    class AppsyncChannelNamespaceSubscriberRoleTemplate:
+        arn: str
+        name: str
+        type: str
     class AssetsBucket:
         name: str
         type: str
@@ -193,21 +208,6 @@ class Resource:
         name: str
         type: str
     class RateLimit:
-        type: str
-    class RealtimeApi:
-        arn: str
-        class dns:
-            http: str
-            realtime: str
-        id: str
-        type: str
-    class RealtimeChannelNamespacePublisherRoleTemplate:
-        arn: str
-        name: str
-        type: str
-    class RealtimeChannelNamespaceSubscriberRoleTemplate:
-        arn: str
-        name: str
         type: str
     class SnsTopicEmail:
         type: str

@@ -3,7 +3,7 @@ import * as lib from "./lib";
 
 import { useProvider } from "~/sst/aws/helpers/provider";
 
-export const realtimeApi = new aws.appsync.Api("RealtimeApi", {
+export const appsyncApi = new aws.appsync.Api("AppsyncApi", {
   eventConfig: {
     authProviders: [{ authType: "AWS_IAM" }],
     connectionAuthModes: [{ authType: "AWS_IAM" }],
@@ -12,8 +12,8 @@ export const realtimeApi = new aws.appsync.Api("RealtimeApi", {
   },
 });
 
-export const certificate = new sst.aws.DnsValidatedCertificate(
-  "RealtimeCertificate",
+export const appsyncCertificate = new sst.aws.DnsValidatedCertificate(
+  "AppsyncCertificate",
   {
     domainName: hostnames.properties.realtime,
     dns: sst.cloudflare.dns(),
@@ -21,35 +21,35 @@ export const certificate = new sst.aws.DnsValidatedCertificate(
   { provider: useProvider("us-east-1") },
 );
 
-export const domainName = new aws.appsync.DomainName("RealtimeDomainName", {
+export const appsyncDomainName = new aws.appsync.DomainName("AppsyncDomainName", {
   domainName: hostnames.properties.realtime,
-  certificateArn: certificate.arn,
+  certificateArn: appsyncCertificate.arn,
 });
 
-export const domainNameApiAssociation = new aws.appsync.DomainNameApiAssociation(
-  "RealtimeDomainNameApiAssociation",
+export const appsyncDomainNameApiAssociation = new aws.appsync.DomainNameApiAssociation(
+  "AppsyncDomainNameApiAssociation",
   {
-    apiId: realtimeApi.apiId,
-    domainName: domainName.domainName,
+    apiId: appsyncApi.apiId,
+    domainName: appsyncDomainName.domainName,
   },
 );
 
-export const alias = sst.cloudflare.dns({ proxy: true }).createAlias(
-  "Realtime",
+export const appsyncAlias = sst.cloudflare.dns({ proxy: true }).createAlias(
+  "AppsyncAlias",
   {
-    name: domainName.domainName,
-    aliasName: domainName.appsyncDomainName,
-    aliasZone: domainName.hostedZoneId,
+    name: appsyncDomainName.domainName,
+    aliasName: appsyncDomainName.appsyncDomainName,
+    aliasZone: appsyncDomainName.hostedZoneId,
   },
   {},
 );
 
-export const realtimeChannelNamespacePublisherRoleTemplate = new lib.templates.aws.iam.Role(
-  "RealtimeChannelNamespacePublisherRoleTemplate",
-  { identifier: "RealtimePublisherRole" },
+export const appsyncChannelNamespacePublisherRoleTemplate = new lib.templates.aws.iam.Role(
+  "AppsyncChannelNamespacePublisherRoleTemplate",
+  { identifier: "AppsyncPublisherRole" },
 );
 
-export const realtimeChannelNamespaceSubscriberRoleTemplate = new lib.templates.aws.iam.Role(
-  "RealtimeChannelNamespaceSubscriberRoleTemplate",
-  { identifier: "RealtimeSubscriberRole" },
+export const appsyncChannelNamespaceSubscriberRoleTemplate = new lib.templates.aws.iam.Role(
+  "AppsyncChannelNamespaceSubscriberRoleTemplate",
+  { identifier: "AppsyncSubscriberRole" },
 );

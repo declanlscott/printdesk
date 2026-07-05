@@ -26,9 +26,9 @@ import {
   invoicesProcessorClientCredentialsConfigurationProfileTemplate,
 } from "./papercut";
 import {
-  realtimeApi,
-  realtimeChannelNamespacePublisherRoleTemplate,
-  realtimeChannelNamespaceSubscriberRoleTemplate,
+  appsyncApi,
+  appsyncChannelNamespacePublisherRoleTemplate,
+  appsyncChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, nanoId, snsTopicEmail } from "./utils";
 
@@ -73,6 +73,9 @@ export const infraManager = dynamo.subscribe(
       appconfigEnvironment,
       appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
       appconfigRoleTemplate,
+      appsyncApi,
+      appsyncChannelNamespacePublisherRoleTemplate,
+      appsyncChannelNamespaceSubscriberRoleTemplate,
       assetsBucket,
       assetsBucketAccessPointTemplate,
       assetsRouter,
@@ -93,9 +96,6 @@ export const infraManager = dynamo.subscribe(
       papercutSyncClientCredentialsConfigurationProfileTemplate,
       pulumiBucket,
       pulumiRole,
-      realtimeApi,
-      realtimeChannelNamespacePublisherRoleTemplate,
-      realtimeChannelNamespaceSubscriberRoleTemplate,
       zone,
     ],
   },

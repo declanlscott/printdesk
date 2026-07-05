@@ -15,9 +15,9 @@ import {
   papercutApiAuthTokenConfigurationProfileTemplate,
 } from "./papercut";
 import {
-  realtimeApi,
-  realtimeChannelNamespacePublisherRoleTemplate,
-  realtimeChannelNamespaceSubscriberRoleTemplate,
+  appsyncApi,
+  appsyncChannelNamespacePublisherRoleTemplate,
+  appsyncChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, isProdStage } from "./utils";
 
@@ -40,6 +40,9 @@ export const api = new lib.aws.lambda.Function(
       appconfigAllAtOnceDeploymentStrategy,
       appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
       appconfigRoleTemplate,
+      appsyncApi,
+      appsyncChannelNamespacePublisherRoleTemplate,
+      appsyncChannelNamespaceSubscriberRoleTemplate,
       assetsPublicKey,
       assetsPrivateKey,
       assetsRouter,
@@ -52,9 +55,6 @@ export const api = new lib.aws.lambda.Function(
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,
-      realtimeApi,
-      realtimeChannelNamespacePublisherRoleTemplate,
-      realtimeChannelNamespaceSubscriberRoleTemplate,
     ],
     permissions: [invokeIssuerFunctionUrl],
     environment: {

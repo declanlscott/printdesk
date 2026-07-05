@@ -16,7 +16,7 @@ export namespace Oauth {
     "@printdesk/core/oauth/AccessToken",
   ) {
     public static readonly layer = (token: typeof AccessToken.Service) =>
-      Layer.succeed(this, this.of(token));
+      Layer.succeed(this, this.of(token)).pipe(Layer.fresh);
   }
 
   export class AccessTokenLayerMap extends LayerMap.Service<AccessTokenLayerMap>()(

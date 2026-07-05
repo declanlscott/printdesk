@@ -850,17 +850,14 @@ export const makeService = Effect.gen(function* () {
     return [];
   }).pipe(Effect.withSpan("PapercutSyncer.syncUsers"));
 
-  const syncAll = Effect.all(
-    [
-      syncCustomerGroups,
-      syncUsers,
-      syncCustomerGroupMemberships,
-      syncSharedAccounts,
-      syncSharedAccountCustomerAccess,
-      syncSharedAccountCustomerGroupAccess,
-    ],
-    { discard: true },
-  ).pipe(Effect.withSpan("PapercutSyncer.syncAll"));
+  const syncAll = Effect.all([
+    syncCustomerGroups,
+    syncUsers,
+    syncCustomerGroupMemberships,
+    syncSharedAccounts,
+    syncSharedAccountCustomerAccess,
+    syncSharedAccountCustomerGroupAccess,
+  ]).pipe(Effect.withSpan("PapercutSyncer.syncAll"));
 
   return {
     syncSource,

@@ -68,9 +68,14 @@ class Papercut(pulumi.ComponentResource):
                 schedule_expression=f"cron({args.config.sync.cron_expression})",
                 schedule_expression_timezone=args.config.sync.timezone,
                 target=aws.scheduler.ScheduleTargetArgs(
-                    arn=Resource.PapercutSync.arn,
+                    arn="arn:aws:scheduler:::aws-sdk:lambda:invoke",
                     role_arn=self._sync_schedule_role.arn,
-                    input=pulumi.Output.json_dumps({"tenantId": args.tenant_id}),
+                    input=pulumi.Output.json_dumps(
+                        {
+                            "FunctionName": Resource.PapercutSync.arn,
+                            "InvocationType": "Event",
+                        }
+                    ),
                 ),
             ),
             opts=pulumi.ResourceOptions(parent=self),

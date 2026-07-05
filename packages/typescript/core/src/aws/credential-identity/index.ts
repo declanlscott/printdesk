@@ -67,11 +67,11 @@ export class AwsCredentialIdentity extends Context.Service<AwsCredentialIdentity
   }
 
   public static layer(identity: SmithyAwsCredentialIdentity) {
-    return this.make(identity).pipe(Layer.effect(this));
+    return this.make(identity).pipe(Layer.effect(this), Layer.fresh);
   }
 
   public static providerLayer(provider: () => AwsCredentialIdentityProvider) {
-    return this.fromProvider(provider).pipe(Layer.effect(this));
+    return this.fromProvider(provider).pipe(Layer.effect(this), Layer.fresh);
   }
 
   public static get values(): Effect.Effect<

@@ -59,6 +59,7 @@ export const makeService = Effect.gen(function* () {
         db.afterTransaction,
       ),
     ),
+    Effect.withSpan("ReplicacheNotifier.pokeAfterTransaction"),
   );
 
   return {

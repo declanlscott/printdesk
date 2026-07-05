@@ -81,9 +81,9 @@ import * as Schema from "effect/Schema";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
+import { appsyncPublisherCredentialIdentityMiddlewareLayer } from "../lib/aws-credential-identity";
 import { databaseLayer, dynamoLayer } from "../lib/database";
 import { realtimeLayer } from "../lib/realtime";
-import { realtimePublisherAwsCredentialIdentityLayer } from "../middleware/aws-credential-identity/realtime-publisher";
 
 export const baseReplicacheGroupLayer = HttpApiBuilder.group(
   Api,
@@ -212,6 +212,6 @@ export const replicacheGroupLayer = baseReplicacheGroupLayer.pipe(
     ReplicacheClientViewEntriesRepository.layer,
   ]),
   Layer.provide(SyncQueryBuilder.layer),
-  Layer.provide([databaseLayer, dynamoLayer, realtimePublisherAwsCredentialIdentityLayer]),
+  Layer.provide([appsyncPublisherCredentialIdentityMiddlewareLayer, databaseLayer, dynamoLayer]),
   Layer.provide(SstResource.layer),
 );

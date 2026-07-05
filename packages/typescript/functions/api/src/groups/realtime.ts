@@ -4,8 +4,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
+import { appsyncSubscriberCredentialIdentityMiddlewareLayer } from "../lib/aws-credential-identity";
 import { realtimeLayer } from "../lib/realtime";
-import { realtimeSubscriberAwsCredentialIdentityLayer } from "../middleware/aws-credential-identity/realtime-subscriber";
 
 export const baseRealtimeGroupLayer = HttpApiBuilder.group(
   Api,
@@ -23,5 +23,5 @@ export const baseRealtimeGroupLayer = HttpApiBuilder.group(
 );
 
 export const realtimeGroupLayer = baseRealtimeGroupLayer.pipe(
-  Layer.provide([realtimeSubscriberAwsCredentialIdentityLayer, realtimeLayer]),
+  Layer.provide([appsyncSubscriberCredentialIdentityMiddlewareLayer, realtimeLayer]),
 );

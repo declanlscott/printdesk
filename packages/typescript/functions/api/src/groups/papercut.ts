@@ -2,9 +2,13 @@ import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
 import { GraphLayerMap } from "@printdesk/core/graph";
+import { authMiddleware } from "@printdesk/core/middleware/auth";
 import { Oauth } from "@printdesk/core/oauth";
 import { PapercutApi } from "@printdesk/core/papercut/api";
 import { PapercutSyncer } from "@printdesk/core/papercut/syncer";
+import { ReplicacheNotifier } from "@printdesk/core/replicache/notifier";
+import { layer as replicacheNotifierLayer } from "@printdesk/core/replicache/notifier/layer";
+import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
@@ -13,8 +17,10 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
+import { appsyncPublisherCredentialIdentityMiddlewareLayer } from "../lib/aws-credential-identity";
+import { databaseLayer } from "../lib/database";
 import { papercutApiLayer, papercutSyncerLayer } from "../lib/papercut";
-import { authMiddleware } from "../middleware/auth";
+import { realtimeLayer } from "../lib/realtime";
 
 export const basePapercutGroupLayer = HttpApiBuilder.group(
   Api,
@@ -78,6 +84,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
   "PapercutSync",
   Effect.fn(function* (handlers) {
     const syncer = yield* PapercutSyncer;
+    const replicacheNotifier = yield* ReplicacheNotifier;
 
     return handlers
       .handle("source", () =>
@@ -95,6 +102,9 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("all", () =>
         syncer.syncAll.pipe(
+          Effect.map(Array.flatten),
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
+          Effect.asVoid,
           Effect.provide(GraphLayerMap.layer),
           Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
           Effect.catchFilter(
@@ -110,6 +120,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("customerGroups", () =>
         syncer.syncCustomerGroups.pipe(
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
           Effect.provide(GraphLayerMap.layer),
           Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
@@ -126,6 +137,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("customerGroupMemberships", () =>
         syncer.syncCustomerGroupMemberships.pipe(
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
           Effect.catchFilter(
             Filter.make((error) =>
@@ -140,6 +152,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("sharedAccounts", () =>
         syncer.syncSharedAccounts.pipe(
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
           Effect.catchFilter(
             Filter.make((error) =>
@@ -154,6 +167,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("sharedAccountCustomerAccess", () =>
         syncer.syncSharedAccountCustomerAccess.pipe(
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
           Effect.catchFilter(
             Filter.make((error) =>
@@ -168,6 +182,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("sharedAccountCustomerGroupAccess", () =>
         syncer.syncSharedAccountCustomerGroupAccess.pipe(
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
           Effect.catchFilter(
             Filter.make((error) =>
@@ -182,6 +197,7 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
       )
       .handle("users", () =>
         syncer.syncUsers.pipe(
+          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
           Effect.provide(GraphLayerMap.layer),
           Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
@@ -200,6 +216,13 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
 );
 
 export const papercutSyncGroupLayer = basePapercutSyncGroupLayer.pipe(
-  Layer.provide([authMiddleware.layer, papercutSyncerLayer]),
-  Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
+  Layer.provide([authMiddleware.layer, papercutSyncerLayer, replicacheNotifierLayer]),
+  Layer.provide([
+    ActorLayerMap.layer,
+    databaseLayer,
+    Oauth.AccessTokenLayerMap.layer,
+    openauthLayer,
+    realtimeLayer,
+    appsyncPublisherCredentialIdentityMiddlewareLayer,
+  ]),
 );

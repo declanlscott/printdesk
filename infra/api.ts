@@ -4,6 +4,8 @@ import {
   appconfigAgent,
   appconfigAgentDevContainer,
   appconfigAllAtOnceDeploymentStrategy,
+  appconfigApplication,
+  appconfigEnvironment,
   appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
   appconfigRoleTemplate,
 } from "./config";
@@ -38,6 +40,8 @@ export const api = new lib.aws.lambda.Function(
       apiClientCredentialsConfigurationProfileTemplate,
       appconfigAgent,
       appconfigAllAtOnceDeploymentStrategy,
+      appconfigApplication,
+      appconfigEnvironment,
       appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
       appconfigRoleTemplate,
       appsyncApi,

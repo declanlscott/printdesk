@@ -9,7 +9,6 @@
     "@effect-aws/lambda": "catalog:",
     "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",
-    "aws4fetch": "catalog:",
     "drizzle-orm": "catalog:",
     "effect": "catalog:"
   },

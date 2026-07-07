@@ -17,7 +17,7 @@ export const subject = createMiddleware((c, next) =>
     ),
     Effect.flatMap((cookies) =>
       "accessToken" in cookies
-        ? Openauth.Openauth.use((openauth) => openauth.verify(cookies.accessToken)).pipe(
+        ? Openauth.use((openauth) => openauth.verify(cookies.accessToken)).pipe(
             Effect.map(Option.some),
           )
         : Effect.succeedNone,

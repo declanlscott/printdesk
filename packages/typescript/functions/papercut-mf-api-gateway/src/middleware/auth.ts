@@ -28,9 +28,7 @@ export const auth = createMiddleware((c, next) =>
       HttpServerRequest.HttpServerRequest,
       HttpServerRequest.fromWeb(c.req.raw),
     ),
-    Effect.flatMap(({ accessToken }) =>
-      Openauth.Openauth.use((openauth) => openauth.verify(accessToken)),
-    ),
+    Effect.flatMap(({ accessToken }) => Openauth.use((openauth) => openauth.verify(accessToken))),
     Effect.flatMap(({ subject }) =>
       AccessControl.every(
         AccessControl.privateActorPolicy(
@@ -39,7 +37,7 @@ export const auth = createMiddleware((c, next) =>
           "papercut_api_gateway",
           "read",
         ),
-        AccessControl.permissionPolicy("papercut_api_gateway:read"),
+        AccessControl.permissionPolicy("papercut_mf_api_gateway:read"),
       ).pipe(Effect.provide(ActorLayerMap.get(subject.properties.actor.wrap))),
     ),
     authRuntime.runPromiseExit,

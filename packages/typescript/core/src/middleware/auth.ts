@@ -22,7 +22,7 @@ export const authMiddleware = HttpRouter.middleware<{ provides: Actor | Oauth.Ac
   Effect.gen(function* () {
     const actorLayerMap = yield* ActorLayerMap;
     const accessTokenLayerMap = yield* Oauth.AccessTokenLayerMap;
-    const openauth = yield* Openauth.Openauth;
+    const openauth = yield* Openauth;
 
     return Effect.fn(function* (httpEffect) {
       const cookies = yield* OauthContract.AuthCookies.pipe(

@@ -34,7 +34,7 @@ export const handler = Effect.fn(
     const actorLayerMap = yield* ActorLayerMap;
 
     const config = yield* Config;
-    const openauth = yield* Openauth.Openauth;
+    const openauth = yield* Openauth;
 
     const clientsRepository = yield* ClientsRepository;
     const papercutMfSyncer = yield* PapercutMfSyncer;

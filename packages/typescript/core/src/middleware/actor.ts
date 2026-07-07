@@ -20,7 +20,7 @@ import type { Actor } from "../actors";
 export const actorMiddleware = HttpRouter.middleware<{ provides: Actor }>()(
   Effect.gen(function* () {
     const layerMap = yield* ActorLayerMap;
-    const openauth = yield* Openauth.Openauth;
+    const openauth = yield* Openauth;
 
     return Effect.fn(function* (httpEffect) {
       const cookies = yield* OauthContract.Cookies.pipe(

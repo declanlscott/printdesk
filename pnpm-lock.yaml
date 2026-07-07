@@ -257,6 +257,9 @@ importers:
       aws-cron-parser:
         specifier: ^1.1.12
         version: 1.1.12
+      aws4fetch:
+        specifier: 'catalog:'
+        version: 1.0.20
       cloudflare:
         specifier: ^6.5.0
         version: 6.5.0
@@ -324,9 +327,6 @@ importers:
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
-      aws4fetch:
-        specifier: 'catalog:'
-        version: 1.0.20
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-beta.93(effect@4.0.0-beta.93))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.93)(pg@8.22.0)(zod@4.4.3)
@@ -464,9 +464,6 @@ importers:
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
-      aws4fetch:
-        specifier: 'catalog:'
-        version: 1.0.20
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.93

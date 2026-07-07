@@ -1,35 +1,11 @@
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 import { AwsCredentialIdentityProvider } from "@printdesk/core/aws/credential-identity";
-import { Openauth } from "@printdesk/core/oauth/openauth";
+import * as Openauth from "@printdesk/core/oauth/openauth/issuer";
 import { SstResource } from "@printdesk/core/sst/resource";
 import { Constants } from "@printdesk/core/utils/constants";
-import { AwsClient } from "aws4fetch";
-import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Redacted from "effect/Redacted";
-import * as Struct from "effect/Struct";
 
-export const openauthLayer = Effect.gen(function* () {
-  const { accessKeyId, secretAccessKey, sessionToken } =
-    yield* AwsCredentialIdentityProvider.useSync(Struct.get("credentials"));
-  const { Aws, Issuer } = yield* SstResource;
-
-  const lambda = new AwsClient({
-    accessKeyId: accessKeyId.pipe(Redacted.value),
-    secretAccessKey: secretAccessKey.pipe(Redacted.value),
-    sessionToken: sessionToken?.pipe(Redacted.value),
-    region: Aws.pipe(Redacted.value).region,
-    service: "lambda",
-    retries: 0,
-  });
-
-  return Openauth.Openauth.layer({
-    clientID: Constants.OPENAUTH_CLIENT_IDS.API,
-    fetch: (input) => lambda.fetch(input),
-    issuer: Issuer.pipe(Redacted.value).url,
-  });
-}).pipe(
-  Layer.unwrap,
+export const openauthLayer = Openauth.issuerLayer(Constants.OPENAUTH_CLIENT_IDS.API).pipe(
   Layer.provide([
     AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain),
     SstResource.layer,

@@ -17,6 +17,7 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { Bff } from "../contract";
+import { openauthLayer } from "../lib/auth";
 import { ViteResource } from "../lib/sst";
 import { tenantSlugValidatorLayer } from "../middleware/tenant-slug-validator";
 
@@ -38,7 +39,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
   Bff,
   "auth",
   Effect.fn(function* (handlers) {
-    const openauth = yield* Openauth.Openauth;
+    const openauth = yield* Openauth;
 
     return handlers
       .handle("me", () =>
@@ -99,14 +100,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
 );
 
 export const authGroupLayer = baseAuthGroupLayer.pipe(
-  Layer.provide(
-    ViteResource.useSync((resource) => resource.ApiGateway.pipe(Redacted.value).urls.auth).pipe(
-      Effect.map((issuer) =>
-        Openauth.Openauth.layer({ clientID: Constants.OPENAUTH_CLIENT_IDS.WEB, issuer }),
-      ),
-      Layer.unwrap,
-    ),
-  ),
+  Layer.provide(openauthLayer),
   Layer.provide(tenantSlugValidatorLayer),
   Layer.provide(ViteResource.layer),
 );

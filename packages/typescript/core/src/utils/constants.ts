@@ -43,6 +43,7 @@ export namespace Constants {
     PAPERCUT_MF_SYNC: "papercut-mf-sync",
     WEB: "web",
   } as const;
+  export type OpenauthClientId = (typeof OPENAUTH_CLIENT_IDS)[keyof typeof OPENAUTH_CLIENT_IDS];
 
   export const ENTRA_ID = "entra_id";
   export const GOOGLE = "google";

@@ -8,7 +8,7 @@ import * as Result from "effect/Result";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { appconfigCredentialIdentityMiddlewareLayer } from "../lib/aws-credential-identity";
+import { appconfigCredentialIdentityProviderMiddlewareLayer } from "../lib/aws";
 import { configLayer } from "../lib/config";
 
 export const basePapercutConfigGroupLayer = HttpApiBuilder.group(
@@ -38,5 +38,5 @@ export const basePapercutConfigGroupLayer = HttpApiBuilder.group(
 );
 
 export const papercutConfigGroupLayer = basePapercutConfigGroupLayer.pipe(
-  Layer.provide([appconfigCredentialIdentityMiddlewareLayer, configLayer]),
+  Layer.provide([appconfigCredentialIdentityProviderMiddlewareLayer, configLayer]),
 );

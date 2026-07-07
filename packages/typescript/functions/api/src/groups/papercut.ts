@@ -1,7 +1,8 @@
 import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
-import { GraphLayerMap } from "@printdesk/core/graph";
+import { Graph } from "@printdesk/core/graph";
+import { EntraId } from "@printdesk/core/identity/entra-id";
 import { authMiddleware } from "@printdesk/core/middleware/auth";
 import { Oauth } from "@printdesk/core/oauth";
 import { PapercutApi } from "@printdesk/core/papercut/api";
@@ -105,7 +106,6 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
           Effect.map(Array.flatten),
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.provide(GraphLayerMap.layer),
           Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
           Effect.catchFilter(
             Filter.make((error) =>
@@ -122,7 +122,6 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
         syncer.syncCustomerGroups.pipe(
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.provide(GraphLayerMap.layer),
           Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
           Effect.catchFilter(
             Filter.make((error) =>
@@ -220,9 +219,11 @@ export const papercutSyncGroupLayer = basePapercutSyncGroupLayer.pipe(
   Layer.provide([
     ActorLayerMap.layer,
     databaseLayer,
+    EntraId.AuthProviderLayerMap.layer,
+    Graph.layer,
     Oauth.AccessTokenLayerMap.layer,
     openauthLayer,
     realtimeLayer,
-    appsyncPublisherCredentialIdentityMiddlewareLayer,
+    appsyncPublisherCredentialIdentityProviderMiddlewareLayer,
   ]),
 );

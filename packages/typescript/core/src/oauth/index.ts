@@ -1,5 +1,4 @@
 import * as Context from "effect/Context";
-import * as Duration from "effect/Duration";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 
@@ -21,9 +20,6 @@ export namespace Oauth {
 
   export class AccessTokenLayerMap extends LayerMap.Service<AccessTokenLayerMap>()(
     "@printdesk/core/oauth/AccessTokenLayerMap",
-    {
-      idleTimeToLive: Duration.minutes(15),
-      lookup: AccessToken.layer,
-    },
+    { lookup: AccessToken.layer },
   ) {}
 }

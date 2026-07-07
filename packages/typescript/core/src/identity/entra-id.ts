@@ -1,7 +1,6 @@
 import { ClientSecretCredential } from "@azure/identity";
 import { AzureIdentityAuthenticationProvider } from "@microsoft/kiota-authentication-azure";
 import * as Context from "effect/Context";
-import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
@@ -55,7 +54,6 @@ export namespace EntraId {
   export class AuthProviderLayerMap extends LayerMap.Service<AuthProviderLayerMap>()(
     "@printdesk/core/identity/entra-id/AuthProviderLayerMap",
     {
-      idleTimeToLive: Duration.minutes(15),
       dependencies: [SstResource.layer],
       lookup: AuthProvider.layer,
     },

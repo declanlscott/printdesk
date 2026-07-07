@@ -1,5 +1,4 @@
 import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
-import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
@@ -31,7 +30,6 @@ export const appconfigCredentialIdentityProviderLayer = Effect.gen(function* () 
 export class AppconfigCredentialIdentityProviderLayerMap extends LayerMap.Service<AppconfigCredentialIdentityProviderLayerMap>()(
   "@printdesk/core/aws/credential-identity/AppconfigProviderLayerMap",
   {
-    idleTimeToLive: Duration.minutes(15),
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
       appconfigCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),

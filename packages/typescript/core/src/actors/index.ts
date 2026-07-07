@@ -1,5 +1,4 @@
 import * as Context from "effect/Context";
-import * as Duration from "effect/Duration";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 
@@ -16,7 +15,6 @@ export class Actor extends Context.Service<Actor, ActorsContract.Actor>()(
 export class ActorLayerMap extends LayerMap.Service<ActorLayerMap>()(
   "@printdesk/core/actors/ActorLayerMap",
   {
-    idleTimeToLive: Duration.minutes(15),
     preloadKeys: [ActorsContract.PublicActor.singleton.wrap],
     lookup: Actor.layer,
   },

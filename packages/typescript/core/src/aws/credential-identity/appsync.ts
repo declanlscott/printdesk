@@ -1,5 +1,4 @@
 import { fromTemporaryCredentials } from "@aws-sdk/credential-providers";
-import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
@@ -31,7 +30,6 @@ export const appsyncPublisherCredentialIdentityProviderLayer = Effect.gen(functi
 export class AppsyncPublisherCredentialIdentityProviderLayerMap extends LayerMap.Service<AppsyncPublisherCredentialIdentityProviderLayerMap>()(
   "@printdesk/core/aws/credential-identity/AppsyncPublisherProviderLayerMap",
   {
-    idleTimeToLive: Duration.minutes(15),
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
       appsyncPublisherCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
@@ -56,7 +54,6 @@ export const appsyncSubscriberCredentialIdentityProviderLayer = Effect.gen(funct
 export class AppsyncSubscriberCredentialIdentityProviderLayerMap extends LayerMap.Service<AppsyncSubscriberCredentialIdentityProviderLayerMap>()(
   "@printdesk/core/aws/credential-identity/AppsyncSubscriberProviderLayerMap",
   {
-    idleTimeToLive: Duration.minutes(15),
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
       appsyncSubscriberCredentialIdentityProviderLayer.pipe(

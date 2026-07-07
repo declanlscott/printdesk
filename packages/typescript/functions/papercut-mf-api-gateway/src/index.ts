@@ -1,13 +1,13 @@
 import { Hono } from "hono";
 import { logger } from "hono/logger";
 
+import { api } from "./middleware/api";
 import { auth } from "./middleware/auth";
-import { papercutApi } from "./middleware/papercut-api";
 
 export default new Hono()
   .use(logger())
   .use(auth)
-  .use(papercutApi)
+  .use(api)
   .onError((e, c) => {
     if ("getResponse" in e) return e.getResponse();
 

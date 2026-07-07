@@ -1,20 +1,21 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
-import { AppsyncPublisherCredentialIdentityLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
+import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
 import { AppsyncSigner } from "@printdesk/core/aws/sigv4-signers/appsync";
 import * as ClientsRepository from "@printdesk/core/clients/repository/layer";
 import * as Config from "@printdesk/core/config/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
 import * as PgClient from "@printdesk/core/database/postgres";
-import { GraphLayerMap } from "@printdesk/core/graph";
+import { Graph } from "@printdesk/core/graph";
 import * as CustomerGroupMembershipsRepository from "@printdesk/core/groups/customer-memberships/repository/layer";
 import * as CustomerGroupsRepository from "@printdesk/core/groups/customers/repository/layer";
+import { EntraId } from "@printdesk/core/identity/entra-id";
 import * as IdentityProvidersRepository from "@printdesk/core/identity/providers-repository/layer";
 import { Oauth } from "@printdesk/core/oauth";
-import * as PapercutApi from "@printdesk/core/papercut/api/layer";
-import * as PapercutSyncer from "@printdesk/core/papercut/syncer/layer";
+import * as PapercutMfApi from "@printdesk/core/papercut-mf/api/layer";
+import * as PapercutMfSyncer from "@printdesk/core/papercut-mf/syncer/layer";
 import { Realtime } from "@printdesk/core/realtime";
 import * as ReplicacheNotifier from "@printdesk/core/replicache/notifier/layer";
 import * as SharedAccountCustomerAccessRepository from "@printdesk/core/shared-accounts/customer-access/repository/layer";
@@ -33,27 +34,27 @@ import { openauthLayer } from "../lib/auth";
 
 export const layer = Layer.mergeAll(
   Oauth.AccessTokenLayerMap.layer,
-  AppsyncPublisherCredentialIdentityLayerMap.layer,
+  AppsyncPublisherCredentialIdentityProviderLayerMap.layer,
   ActorLayerMap.layer,
   ClientsRepository.layer,
-  GraphLayerMap.layer,
   openauthLayer,
-  PapercutSyncer.layer,
-  TenantsRepository.layer,
+  PapercutMfSyncer.layer,
   ReplicacheNotifier.layer,
+  TenantsRepository.layer,
 ).pipe(
   Layer.provide([
     CustomerGroupMembershipsRepository.layer,
     CustomerGroupsRepository.layer,
+    Graph.layer,
     IdentityProvidersRepository.layer,
-    PapercutApi.layer,
+    PapercutMfApi.layer,
     Realtime.layer,
     SharedAccountCustomerAccessRepository.layer,
     SharedAccountCustomerGroupAccessRepository.layer,
     SharedAccountsRepository.layer,
     UsersRepository.layer,
   ]),
-  Layer.provideMerge([Config.layer]),
+  Layer.provideMerge([Config.layer, EntraId.AuthProviderLayerMap.layer]),
   Layer.provide([
     Appconfig.layer,
     AppconfigAgent.layer,

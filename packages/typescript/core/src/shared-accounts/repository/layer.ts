@@ -45,7 +45,7 @@ export const makeService = Effect.gen(function* () {
           .insert(table)
           .values(values)
           .onConflictDoUpdate({
-            target: [table.name, table.papercutId, table.tenantId],
+            target: [table.name, table.papercutMfId, table.tenantId],
             set: sharedAccounts.conflictSet,
           })
           .returning(),

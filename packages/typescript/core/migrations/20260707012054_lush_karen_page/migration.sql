@@ -22,6 +22,7 @@ CREATE TABLE "clients" (
 	"secret_hash" varchar(113) NOT NULL,
 	"role" varchar(50) NOT NULL,
 	"scopes" text NOT NULL,
+	"callback_id" text,
 	CONSTRAINT "clients_pkey" PRIMARY KEY("id", "tenant_id")
 );
 
@@ -300,21 +301,21 @@ CREATE TABLE "shared_accounts" (
 	"origin" varchar(50) DEFAULT 'internal' NOT NULL,
 	"name" text NOT NULL,
 	"review_threshold" numeric,
-	"papercut_id" bigint,
+	"papercut_mf_id" bigint,
 	CONSTRAINT "shared_accounts_pkey" PRIMARY KEY("id", "tenant_id"),
-	CONSTRAINT "shared_accounts_name_papercut_id_tenant_id_unique" UNIQUE("name", "papercut_id", "tenant_id"),
-	CONSTRAINT "origin_papercut_id" CHECK (
+	CONSTRAINT "shared_accounts_name_papercut_mf_id_tenant_id_unique" UNIQUE("name", "papercut_mf_id", "tenant_id"),
+	CONSTRAINT "origin_papercut_mf_id" CHECK (
 		(
 			(
 				(
 					("origin" = 'papercut')
-					and (("papercut_id" is not null))
+					and (("papercut_mf_id" is not null))
 				)
 			)
 			or (
 				(
 					("origin" = 'internal')
-					and (("papercut_id" is null))
+					and (("papercut_mf_id" is null))
 				)
 			)
 		)
@@ -732,7 +733,7 @@ CREATE VIEW "active_shared_accounts" AS (
 		"origin",
 		"name",
 		"review_threshold",
-		"papercut_id"
+		"papercut_mf_id"
 	from
 		"shared_accounts"
 	where
@@ -751,7 +752,7 @@ CREATE VIEW "active_customer_authorized_shared_accounts" AS (
 		"active_shared_accounts"."origin",
 		"active_shared_accounts"."name",
 		"active_shared_accounts"."review_threshold",
-		"active_shared_accounts"."papercut_id",
+		"active_shared_accounts"."papercut_mf_id",
 		"active_shared_account_customer_access"."customer_id"
 	from
 		"active_shared_accounts"
@@ -777,7 +778,7 @@ CREATE VIEW "active_manager_authorized_shared_accounts" AS (
 		"active_shared_accounts"."origin",
 		"active_shared_accounts"."name",
 		"active_shared_accounts"."review_threshold",
-		"active_shared_accounts"."papercut_id",
+		"active_shared_accounts"."papercut_mf_id",
 		"active_shared_account_manager_access"."manager_id"
 	from
 		"active_shared_accounts"

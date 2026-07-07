@@ -54,15 +54,15 @@ class Config:
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self._papercut_api_auth_token_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="ConfigPapercutApiAuthTokenConfigurationProfile",
+        self._papercut_mf_api_auth_token_configuration_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="ConfigPapercutMfApiAuthTokenConfigurationProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
                 application_id=Resource.AppconfigApplication.id,
                 type="AWS.Freeform",
                 location_uri="hosted",
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.PapercutApiAuthTokenConfigurationProfileTemplate.name,
+                        name_template=Resource.PapercutMfApiAuthTokenConfigurationProfileTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -70,15 +70,15 @@ class Config:
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self._papercut_sync_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="ConfigPapercutSyncClientCredentialsConfigurationProfile",
+        self._papercut_mf_sync_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
+            resource_name="ConfigPapercutMfSyncClientCredentialsConfigurationProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
                 application_id=Resource.AppconfigApplication.id,
                 type="AWS.Freeform",
                 location_uri="hosted",
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
-                        name_template=Resource.PapercutSyncClientCredentialsConfigurationProfileTemplate.name,
+                        name_template=Resource.PapercutMfSyncClientCredentialsConfigurationProfileTemplate.name,
                         tenant_id=tenant_id,
                     )
                 ),
@@ -113,8 +113,8 @@ class Config:
                             statements=pulumi.Output.all(
                                 api_client_credentials_configuration_profile=self._api_client_credentials_configuration_profile.arn,
                                 invoices_processor_client_credentials_configuration_profile=self._invoices_processor_client_credentials_configuration_profile.arn,
-                                papercut_api_auth_token_configuration_profile=self._papercut_api_auth_token_configuration_profile.arn,
-                                papercut_sync_client_credentials_configuration_profile=self._papercut_sync_client_credentials_configuration_profile.arn,
+                                papercut_mf_api_auth_token_configuration_profile=self._papercut_mf_api_auth_token_configuration_profile.arn,
+                                papercut_mf_sync_client_credentials_configuration_profile=self._papercut_mf_sync_client_credentials_configuration_profile.arn,
                             ).apply(
                                 lambda arns: [
                                     aws.iam.GetPolicyDocumentStatementArgs(
@@ -130,10 +130,10 @@ class Config:
                                                 "invoices_processor_client_credentials_configuration_profile"
                                             ],
                                             arns[
-                                                "papercut_api_auth_token_configuration_profile"
+                                                "papercut_mf_api_auth_token_configuration_profile"
                                             ],
                                             arns[
-                                                "papercut_sync_client_credentials_configuration_profile"
+                                                "papercut_mf_sync_client_credentials_configuration_profile"
                                             ],
                                         ],
                                     ),
@@ -151,10 +151,10 @@ class Config:
                                                 "invoices_processor_client_credentials_configuration_profile"
                                             ],
                                             arns[
-                                                "papercut_api_auth_token_configuration_profile"
+                                                "papercut_mf_api_auth_token_configuration_profile"
                                             ],
                                             arns[
-                                                "papercut_sync_client_credentials_configuration_profile"
+                                                "papercut_mf_sync_client_credentials_configuration_profile"
                                             ],
                                         ],
                                     ),

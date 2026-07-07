@@ -1,10 +1,11 @@
-import { uniqueIndex } from "drizzle-orm/pg-core";
+import { text, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
 import { ClientsContract } from "./contract";
 
 import type { InferSelectModel } from "drizzle-orm";
+import type { CallbackId } from "../utils";
 
 export const clients = new Tables.NonSync(
   "clients",
@@ -13,6 +14,7 @@ export const clients = new Tables.NonSync(
     secretHash: Columns.hash().notNull(),
     role: Columns.union(ClientsContract.roles).notNull(),
     scopes: Columns.stringArray().notNull(),
+    callbackId: text().$type<CallbackId>(),
   },
   (table) => [uniqueIndex().on(table.id)],
 );

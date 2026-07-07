@@ -9,29 +9,31 @@ from utils import ipv4_pattern
 ipv4 = Annotated[str, Field(pattern=ipv4_pattern)]
 
 
-class PapercutApiHostNameConfig(BaseModel):
-    _tag: Literal["PapercutApiHostNameConfig"]
+class PapercutMfApiHostNameConfig(BaseModel):
+    _tag: Literal["PapercutMfApiHostNameConfig"]
     name: str
     resolver_ips: Annotated[
         Optional[Sequence[ipv4]], Field(alias="resolverIps", default=None)
     ]
 
 
-class PapercutApiHostIpv4Config(BaseModel):
-    _tag: Literal["PapercutApiHostIpv4Config"]
+class PapercutMfApiHostIpv4Config(BaseModel):
+    _tag: Literal["PapercutMfApiHostIpv4Config"]
     ipv4: ipv4
 
 
-PapercutApiHostConfig = Union[PapercutApiHostNameConfig, PapercutApiHostIpv4Config]
+PapercutMfApiHostConfig = Union[
+    PapercutMfApiHostNameConfig, PapercutMfApiHostIpv4Config
+]
 
 
-class PapercutApiConfig(BaseModel):
+class PapercutMfApiConfig(BaseModel):
     protocol: Literal["http", "https"]
-    host: Annotated[PapercutApiHostConfig, Field(discriminator="_tag")]
+    host: Annotated[PapercutMfApiHostConfig, Field(discriminator="_tag")]
     port: Annotated[int, Field(gt=0, lt=2**16)]
 
 
-class PapercutSyncConfig(BaseModel):
+class PapercutMfSyncConfig(BaseModel):
     cron_expression: Annotated[str, Field(alias="cronExpression")]
     timezone: str
 
@@ -46,14 +48,14 @@ class PapercutSyncConfig(BaseModel):
         return timezone
 
 
-class PapercutEnabledConfig(BaseModel):
+class PapercutMfEnabledConfig(BaseModel):
     enabled: Literal[True] = True
-    api: PapercutApiConfig
-    sync: PapercutSyncConfig
+    api: PapercutMfApiConfig
+    sync: PapercutMfSyncConfig
 
 
-class PapercutDisabledConfig(BaseModel):
+class PapercutMfDisabledConfig(BaseModel):
     enabled: Literal[False] = False
 
 
-PapercutConfig = Union[PapercutEnabledConfig, PapercutDisabledConfig]
+PapercutMfConfig = Union[PapercutMfEnabledConfig, PapercutMfDisabledConfig]

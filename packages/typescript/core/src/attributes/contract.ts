@@ -6,15 +6,17 @@ import { EntityId, Separator, ShortId, TenantId } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace AttributesContract {
+  export const Callback = Schema.Literal(Constants.KEY_LITERALS.CALLBACK);
   export const Client = Schema.Literal(Constants.KEY_LITERALS.CLIENT);
   export const Deployment = Schema.Literal(Constants.KEY_LITERALS.DEPLOYMENT);
   export const Infra = Schema.Literal(Constants.KEY_LITERALS.INFRA);
   export const Input = Schema.Literal(Constants.KEY_LITERALS.INPUT);
   export const Ip = Schema.Literal(Constants.KEY_LITERALS.IP);
-  export const Tenant = Schema.Literal(Constants.KEY_LITERALS.TENANT);
   export const Order = Schema.Literal(Constants.KEY_LITERALS.ORDER);
   export const Output = Schema.Literal(Constants.KEY_LITERALS.OUTPUT);
+  export const PapercutMfApi = Schema.Literal(Constants.KEY_LITERALS.PAPERCUT_MF_API);
   export const Room = Schema.Literal(Constants.KEY_LITERALS.ROOM);
+  export const Tenant = Schema.Literal(Constants.KEY_LITERALS.TENANT);
   export const User = Schema.Literal(Constants.KEY_LITERALS.USER);
 
   export const InfraInput = Schema.TemplateLiteralParser([Infra, Separator, Input]).pipe(
@@ -48,6 +50,16 @@ export namespace AttributesContract {
         ShortId.make(shortId),
       ]),
     }),
+  );
+
+  export const PapercutMfApiCallback = Schema.TemplateLiteralParser([
+    PapercutMfApi,
+    Separator,
+    Callback,
+  ]).pipe(
+    Schema.withConstructorDefault(
+      Effect.succeed([PapercutMfApi.literal, Separator.literal, Callback.literal]),
+    ),
   );
 
   export const TenantIdFromString = Schema.TemplateLiteralParser([

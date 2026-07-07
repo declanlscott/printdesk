@@ -1,5 +1,5 @@
 {
-  "name": "@printdesk/papercut-api-gateway",
+  "name": "@printdesk/papercut-mf-api-gateway",
   "private": true,
   "type": "module",
   "scripts": {

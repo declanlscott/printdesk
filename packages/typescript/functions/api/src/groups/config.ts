@@ -11,16 +11,16 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { appconfigCredentialIdentityProviderMiddlewareLayer } from "../lib/aws";
 import { configLayer } from "../lib/config";
 
-export const basePapercutConfigGroupLayer = HttpApiBuilder.group(
+export const basePapercutMfConfigGroupLayer = HttpApiBuilder.group(
   Api,
-  "PapercutConfig",
+  "PapercutMfConfig",
   Effect.fn(function* (handlers) {
     const config = yield* Config;
 
     return handlers.handle(
       "setApiAuthToken",
-      Effect.fn("Api.PapercutConfig.setApiAuthToken")(({ payload }) =>
-        config.setPapercutApiAuthToken(payload.token).pipe(
+      Effect.fn("Api.PapercutMfConfig.setApiAuthToken")(({ payload }) =>
+        config.setPapercutMfApiAuthToken(payload.token).pipe(
           Effect.asVoid,
           Effect.catchFilter(
             Filter.make((error) =>
@@ -37,6 +37,6 @@ export const basePapercutConfigGroupLayer = HttpApiBuilder.group(
   }),
 );
 
-export const papercutConfigGroupLayer = basePapercutConfigGroupLayer.pipe(
+export const papercutMfConfigGroupLayer = basePapercutMfConfigGroupLayer.pipe(
   Layer.provide([appconfigCredentialIdentityProviderMiddlewareLayer, configLayer]),
 );

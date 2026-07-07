@@ -4,13 +4,16 @@ import * as Schema from "effect/Schema";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
+import { AttributesContract } from "../attributes/contract";
 import { AwsCron } from "../aws/cron";
-import { Ipv4, Timezone } from "../utils";
+import { CloudflareContract } from "../cloudflare/contract";
+import { Handler } from "../handlers";
+import { CallbackId, Ipv4, Timezone } from "../utils";
 import { Constants } from "../utils/constants";
 
-export namespace PapercutContract {
+export namespace PapercutMfContract {
   export class ApiHostNameConfig extends Schema.TaggedClass<ApiHostNameConfig>()(
-    "PapercutApiHostNameConfig",
+    "PapercutMfApiHostNameConfig",
     {
       name: Schema.NonEmptyString,
       resolverIps: Ipv4.pipe(
@@ -21,7 +24,7 @@ export namespace PapercutContract {
   ) {}
 
   export class ApiHostIpv4Config extends Schema.TaggedClass<ApiHostIpv4Config>()(
-    "PapercutApiHostIpv4Config",
+    "PapercutMfApiHostIpv4Config",
     { ipv4: Ipv4 },
   ) {}
 
@@ -34,7 +37,7 @@ export namespace PapercutContract {
   export class SyncConfig extends Schema.Class<SyncConfig>("SyncConfig")({
     cronExpression: AwsCron.Expression.pipe(
       Schema.withConstructorDefault(
-        Effect.succeed(Constants.DEFAULT_PAPERCUT_SYNC_CRON_EXPRESSION),
+        Effect.succeed(Constants.DEFAULT_PAPERCUT_MF_SYNC_CRON_EXPRESSION),
       ),
     ),
     timezone: Timezone,
@@ -54,10 +57,22 @@ export namespace PapercutContract {
   export type Config = typeof Config.Type;
 
   export const ApiAuthToken = Schema.NonEmptyString.pipe(
-    Schema.brand("PapercutApiAuthToken"),
+    Schema.brand("PapercutMfApiAuthToken"),
     Schema.Redacted,
   );
   export type ApiAuthToken = typeof ApiAuthToken.Type;
+
+  export class ApiCallback extends Schema.Class<ApiCallback>("ApiCallback")({
+    [Constants.DYNAMO_KEYS.PK]: AttributesContract.TenantIdFromString,
+    [Constants.DYNAMO_KEYS.SK]: AttributesContract.PapercutMfApiCallback,
+    id: CallbackId,
+  }) {}
+
+  export const apiTunnel = new Handler.Handler({
+    name: "/papercut/mf/api-tunnel",
+    Input: Schema.Struct({ id: CloudflareContract.TunnelId }),
+    Output: Schema.Void,
+  });
 
   export class SharedAccountBalanceAdjustmentFailure
     extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(

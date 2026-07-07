@@ -18,11 +18,11 @@ const url =
   resource.HOSTNAME.pipe(Redacted.value) +
   ":" +
   resource.PORT.pipe(Redacted.value) +
-  Constants.PAPERCUT_API_PATH;
+  Constants.PAPERCUT_MF_API_PATH;
 
 const customFetch = resource.PAPERCUT_API.pipe(Redacted.value).fetch;
 
-export const papercutApi = createMiddleware((c) =>
+export const api = createMiddleware((c) =>
   Effect.tryPromise((signal) => proxy(url, { raw: c.req.raw, signal, customFetch }))
     .pipe(Effect.timeout(Duration.seconds(10)), Effect.runPromiseExit)
     .then(

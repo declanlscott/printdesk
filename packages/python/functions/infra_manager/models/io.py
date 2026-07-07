@@ -11,7 +11,7 @@ from utils import (
     infra_input_key_pattern,
     infra_output_key_pattern,
 )
-from models.config import PapercutConfig
+from models.config import PapercutMfConfig
 
 
 class InputKeys(BaseModel):
@@ -48,7 +48,8 @@ class InputKeys(BaseModel):
 
 
 class Input(InputKeys):
-    papercut_config: Annotated[PapercutConfig, Field(alias="papercutConfig")]
+    papercut_mf_config: Annotated[PapercutMfConfig, Field(alias="papercutMfConfig")]
+    callback_id: Annotated[Optional[str], Field(alias="callbackId", default=None)]
     created_at: Annotated[datetime, Field(alias="createdAt")]
 
 
@@ -73,7 +74,7 @@ class Output(BaseModel):
             pattern=infra_output_key_pattern,
         ),
     ]
-    papercut_api_tunnel_id: Annotated[
-        Optional[str], Field(alias="papercutApiTunnelId", default=None)
+    papercut_mf_api_tunnel_id: Annotated[
+        Optional[str], Field(alias="papercutMfApiTunnelId", default=None)
     ]
     deployed_at: Annotated[datetime, Field(alias="deployedAt")]

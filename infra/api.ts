@@ -15,7 +15,7 @@ import { hostnames } from "./dns";
 import * as lib from "./lib";
 import {
   invoicesProcessorQueueSenderRoleTemplate,
-  papercutApiAuthTokenConfigurationProfileTemplate,
+  papercutMfApiAuthTokenConfigurationProfileTemplate,
 } from "./papercut";
 import {
   appsyncApi,
@@ -54,7 +54,7 @@ export const api = new lib.aws.lambda.Function(
       dsql,
       dynamo,
       hostnames,
-      papercutApiAuthTokenConfigurationProfileTemplate,
+      papercutMfApiAuthTokenConfigurationProfileTemplate,
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,

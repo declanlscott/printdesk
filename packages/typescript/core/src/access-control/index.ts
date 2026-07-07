@@ -55,8 +55,8 @@ export namespace AccessControl {
           "orders:read",
           "orders:update",
           "orders:delete",
-          "papercut_api_gateway:read",
-          "papercut_sync:create",
+          "papercut_mf_api_gateway:read",
+          "papercut_mf_sync:create",
           "products:create",
           "products:read",
           "products:update",
@@ -182,13 +182,13 @@ export namespace AccessControl {
   export const clientRoleAcls = Effect.sync(
     () =>
       ({
-        api: HashSet.make<ReadonlyArray<Permissions.Permission>>("papercut_api_gateway:read"),
+        api: HashSet.make<ReadonlyArray<Permissions.Permission>>("papercut_mf_api_gateway:read"),
         invoicesProcessor: HashSet.make<ReadonlyArray<Permissions.Permission>>(
-          "papercut_api_gateway:read",
+          "papercut_mf_api_gateway:read",
         ),
-        papercutSync: HashSet.make<ReadonlyArray<Permissions.Permission>>(
-          "papercut_api_gateway:read",
-          "papercut_sync:create",
+        papercutMfSync: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+          "papercut_mf_api_gateway:read",
+          "papercut_mf_sync:create",
         ),
         setup: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "clients:create",
@@ -198,7 +198,7 @@ export namespace AccessControl {
           "identity_providers:delete",
           "infra_input:delete",
           "infra_output:read",
-          "papercut_api_gateway:read",
+          "papercut_mf_api_gateway:read",
           "tenants:delete",
         ),
       }) satisfies ClientRoleAcl,

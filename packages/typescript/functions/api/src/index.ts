@@ -6,23 +6,20 @@ import * as Layer from "effect/Layer";
 import * as HttpServer from "effect/unstable/http/HttpServer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { papercutConfigGroupLayer } from "./groups/config";
-import { papercutGroupLayer, papercutSyncGroupLayer } from "./groups/papercut";
+import { papercutMfConfigGroupLayer } from "./groups/config";
+import { papercutMfGroupLayer, papercutMfSyncGroupLayer } from "./groups/papercut";
 import { realtimeGroupLayer } from "./groups/realtime";
 import { replicacheGroupLayer } from "./groups/replicache";
-import { tenantRegistrationGroupLayer, tenantSetupGroupLayer } from "./groups/tenant";
 
 export default Api.pipe(
   HttpApiBuilder.layer,
   Layer.provide([
     HttpServer.layerServices,
-    papercutConfigGroupLayer,
-    papercutGroupLayer,
-    papercutSyncGroupLayer,
+    papercutMfConfigGroupLayer,
+    papercutMfGroupLayer,
+    papercutMfSyncGroupLayer,
     realtimeGroupLayer,
     replicacheGroupLayer,
-    tenantRegistrationGroupLayer,
-    tenantSetupGroupLayer,
   ]),
   Layer.provide(errorMiddleware.layer),
   Layer.provide(NodeCrypto.layer),

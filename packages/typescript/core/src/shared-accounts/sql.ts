@@ -112,21 +112,21 @@ export const sharedAccounts = new Tables.Sync(
     origin: Columns.union(SharedAccountsContract.Origin.literals).default("internal").notNull(),
     name: text().$type<SharedAccountsContract.Name>().notNull(),
     reviewThreshold: numeric(),
-    papercutId: bigint({ mode: "number" }).$type<SharedAccountsContract.PapercutId>(),
+    papercutMfId: bigint({ mode: "number" }).$type<SharedAccountsContract.PapercutMfId>(),
   },
   (table) => [
-    unique().on(table.name, table.papercutId, table.tenantId),
+    unique().on(table.name, table.papercutMfId, table.tenantId),
     check(
-      "origin_papercut_id",
+      "origin_papercut_mf_id",
       // oxlint-disable-next-line typescript/no-non-null-assertion
       or(
         and(
           eq(table.origin, "papercut" satisfies SharedAccountsContract.Origin),
-          isNotNull(table.papercutId),
+          isNotNull(table.papercutMfId),
         ),
         and(
           eq(table.origin, "internal" satisfies SharedAccountsContract.Origin),
-          isNull(table.papercutId),
+          isNull(table.papercutMfId),
         ),
       )!,
     ),
@@ -137,10 +137,10 @@ export const sharedAccountsTable = sharedAccounts.table;
 export type SharedAccountsTable = typeof sharedAccountsTable;
 export type SharedAccount = InferSelectModel<SharedAccountsTable>;
 export type SharedAccountByOrigin<TSharedAccountOrigin extends SharedAccount["origin"]> = Prettify<
-  Omit<Discriminate<SharedAccount, "origin", TSharedAccountOrigin>, "papercutId"> &
+  Omit<Discriminate<SharedAccount, "origin", TSharedAccountOrigin>, "papercutMfId"> &
     (TSharedAccountOrigin extends "papercut"
-      ? { papercutId: NonNullable<SharedAccount["papercutId"]> }
-      : { papercutId: null })
+      ? { papercutMfId: NonNullable<SharedAccount["papercutMfId"]> }
+      : { papercutMfId: null })
 >;
 
 export const activeSharedAccountsView = snakeCase

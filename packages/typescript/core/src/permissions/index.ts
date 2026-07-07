@@ -43,8 +43,8 @@ export namespace Permissions {
     document_constraints: ["read", "update"],
     infra_input: ["delete"],
     infra_output: ["read"],
-    papercut_api_gateway: ["read"],
-    papercut_sync: ["create"],
+    papercut_mf_api_gateway: ["read"],
+    papercut_mf_sync: ["create"],
   });
 
   export const syncPermissions = Array.flatten([syncTablePermissions, syncViewPermissions]);

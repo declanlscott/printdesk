@@ -4,8 +4,8 @@ import * as Config from "@printdesk/core/config/layer";
 import * as CustomerGroupMembershipsRepository from "@printdesk/core/groups/customer-memberships/repository/layer";
 import * as CustomerGroupsRepository from "@printdesk/core/groups/customers/repository/layer";
 import * as IdentityProvidersRepository from "@printdesk/core/identity/providers-repository/layer";
-import * as PapercutApi from "@printdesk/core/papercut/api/layer";
-import * as PapercutSyncer from "@printdesk/core/papercut/syncer/layer";
+import * as PapercutMfApi from "@printdesk/core/papercut-mf/api/layer";
+import * as PapercutMfSyncer from "@printdesk/core/papercut-mf/syncer/layer";
 import * as SharedAccountCustomerAccessRepository from "@printdesk/core/shared-accounts/customer-access/repository/layer";
 import * as SharedAccountCustomerGroupAccessRepository from "@printdesk/core/shared-accounts/customer-group-access/repository/layer";
 import * as SharedAccountsRepository from "@printdesk/core/shared-accounts/repository/layer";
@@ -19,18 +19,18 @@ import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 
 import { databaseLayer } from "./database";
 
-export const papercutApiLayer = PapercutApi.layer.pipe(
+export const papercutMfApiLayer = PapercutMfApi.layer.pipe(
   Layer.provide([Config.layer, XmlRpc.XmlRpc.layer]),
   Layer.provide([Appconfig.layer, AppconfigAgent.layer, Xml.Builder.layer, Xml.Parser.layer]),
   Layer.provide([FetchHttpClient.layer, SstResource.layer]),
 );
 
-export const papercutSyncerLayer = PapercutSyncer.layer.pipe(
+export const papercutMfSyncerLayer = PapercutMfSyncer.layer.pipe(
   Layer.provide([
     CustomerGroupMembershipsRepository.layer,
     CustomerGroupsRepository.layer,
     IdentityProvidersRepository.layer,
-    papercutApiLayer,
+    papercutMfApiLayer,
     SharedAccountCustomerAccessRepository.layer,
     SharedAccountCustomerGroupAccessRepository.layer,
     SharedAccountsRepository.layer,

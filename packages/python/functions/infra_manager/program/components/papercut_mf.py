@@ -12,26 +12,26 @@ from program.components.vpc_service_binding import (
     VpcServiceBinding,
     VpcServiceBindingArgs,
 )
-from models import PapercutEnabledConfig
+from models import PapercutMfEnabledConfig
 from utils import naming, is_prod_stage
 
 
 @dataclass
-class PapercutArgs:
+class PapercutMfArgs:
     tenant_id: pulumi.Input[str]
-    config: PapercutEnabledConfig
+    config: PapercutMfEnabledConfig
 
 
-class Papercut(pulumi.ComponentResource):
+class PapercutMf(pulumi.ComponentResource):
     def __init__(
-        self, args: PapercutArgs, opts: Optional[pulumi.ResourceOptions] = None
+        self, args: PapercutMfArgs, opts: Optional[pulumi.ResourceOptions] = None
     ):
         super().__init__(
-            t="pd:awscf:Papercut", name="Papercut", props=vars(args), opts=opts
+            t="pd:awscf:PapercutMf", name="PapercutMf", props=vars(args), opts=opts
         )
 
         self._sync_schedule_role = aws.iam.Role(
-            resource_name="PapercutSyncScheduleRole",
+            resource_name="PapercutMfSyncScheduleRole",
             args=aws.iam.RoleArgs(
                 assume_role_policy=aws.iam.get_policy_document_output(
                     statements=[
@@ -60,7 +60,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._sync_schedule = aws.scheduler.Schedule(
-            resource_name="PapercutSyncSchedule",
+            resource_name="PapercutMfSyncSchedule",
             args=aws.scheduler.ScheduleArgs(
                 flexible_time_window=aws.scheduler.ScheduleFlexibleTimeWindowArgs(
                     mode="OFF",
@@ -72,7 +72,7 @@ class Papercut(pulumi.ComponentResource):
                     role_arn=self._sync_schedule_role.arn,
                     input=pulumi.Output.json_dumps(
                         {
-                            "FunctionName": Resource.PapercutSync.arn,
+                            "FunctionName": Resource.PapercutMfSync.arn,
                             "InvocationType": "Event",
                         }
                     ),
@@ -82,7 +82,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._invoices_processor_dead_letter_queue = aws.sqs.Queue(
-            resource_name="PapercutInvoicesProcessorDeadLetterQueue",
+            resource_name="PapercutMfInvoicesProcessorDeadLetterQueue",
             args=aws.sqs.QueueArgs(
                 fifo_queue=True,
                 content_based_deduplication=True,
@@ -94,7 +94,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._invoices_processor_queue = aws.sqs.Queue(
-            resource_name="PapercutInvoicesProcessorQueue",
+            resource_name="PapercutMfInvoicesProcessorQueue",
             args=aws.sqs.QueueArgs(
                 fifo_queue=True,
                 content_based_deduplication=True,
@@ -113,7 +113,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._invoices_processor_queue_policy = aws.sqs.QueuePolicy(
-            resource_name="PapercutInvoicesProcessorQueuePolicy",
+            resource_name="PapercutMfInvoicesProcessorQueuePolicy",
             args=aws.sqs.QueuePolicyArgs(
                 queue_url=self._invoices_processor_queue.url,
                 policy=aws.iam.get_policy_document_output(
@@ -145,7 +145,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._invoices_processor_event_source_mapping = aws.lambda_.EventSourceMapping(
-            resource_name="PapercutInvoicesProcessorEventSourceMapping",
+            resource_name="PapercutMfInvoicesProcessorEventSourceMapping",
             args=aws.lambda_.EventSourceMappingArgs(
                 function_response_types=["ReportBatchItemFailures"],
                 batch_size=10,
@@ -157,7 +157,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._invoices_processor_queue_sender_role = aws.iam.Role(
-            resource_name="PapercutInvoicesProcessorQueueSenderRole",
+            resource_name="PapercutMfInvoicesProcessorQueueSenderRole",
             args=aws.iam.RoleArgs(
                 name=pulumi.Output.from_input(args.tenant_id).apply(
                     lambda tenant_id: naming.template(
@@ -195,7 +195,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._api_tunnel = cloudflare.ZeroTrustTunnelCloudflared(
-            resource_name="PapercutApiTunnel",
+            resource_name="PapercutMfApiTunnel",
             args=cloudflare.ZeroTrustTunnelCloudflaredArgs(
                 account_id=Resource.Cloudflare.account.id,
                 config_src="cloudflare",
@@ -205,7 +205,7 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._api_vpc_service = cloudflare.ConnectivityDirectoryService(
-            resource_name="PapercutApiVpcService",
+            resource_name="PapercutMfApiVpcService",
             args=cloudflare.ConnectivityDirectoryServiceArgs(
                 account_id=Resource.Cloudflare.account.id,
                 type="http",
@@ -218,7 +218,7 @@ class Papercut(pulumi.ComponentResource):
                                 tunnel_id=self._api_tunnel.id,
                             ),
                         }
-                        if args.config.api.host._tag == "PapercutApiHostIpv4Config"
+                        if args.config.api.host._tag == "PapercutMfApiHostIpv4Config"
                         else {
                             "hostname": args.config.api.host.name,
                             **(
@@ -248,34 +248,34 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._api_gateway_script = cloudflare.WorkersScript(
-            resource_name="PapercutApiGatewayScript",
+            resource_name="PapercutMfApiGatewayScript",
             args=cloudflare.WorkersScriptArgs(
-                script_name="PapercutApiGatewayScript",
+                script_name="PapercutMfApiGatewayScript",
                 account_id=Resource.Cloudflare.account.id,
                 compatibility_date="2026-05-05",
                 content=aws.s3.get_object_output(
-                    bucket=Resource.PapercutApiGatewayScriptObject.bucket,
-                    key=Resource.PapercutApiGatewayScriptObject.key,
+                    bucket=Resource.PapercutMfApiGatewayScriptObject.bucket,
+                    key=Resource.PapercutMfApiGatewayScriptObject.key,
                     download_body=True,
                 ).body,
                 bindings=[
                     cloudflare.WorkersScriptBindingArgs(
                         type="plain_text",
                         name="AWS_ACCESS_KEY_ID",
-                        text=Resource.PapercutApiGatewayAwsAccessKey.id,
+                        text=Resource.PapercutMfApiGatewayAwsAccessKey.id,
                     ),
                     cloudflare.WorkersScriptBindingArgs(
                         type="secret_text",
                         name="AWS_SECRET_ACCESS_KEY",
                         text=pulumi.Output.secret(
-                            Resource.PapercutApiGatewayAwsAccessKey.secret
+                            Resource.PapercutMfApiGatewayAwsAccessKey.secret
                         ),
                     ),
                     cloudflare.WorkersScriptBindingArgs(
                         type="plain_text",
                         name="HOSTNAME",
                         text=args.config.api.host.ipv4
-                        if args.config.api.host._tag == "PapercutApiHostIpv4Config"
+                        if args.config.api.host._tag == "PapercutMfApiHostIpv4Config"
                         else args.config.api.host.name,
                     ),
                     cloudflare.WorkersScriptBindingArgs(
@@ -318,17 +318,17 @@ class Papercut(pulumi.ComponentResource):
         )
 
         self._api_gateway_vpc_service_binding = VpcServiceBinding(
-            resource_name="PapercutApiGatewayVpcServiceBinding",
+            resource_name="PapercutMfApiGatewayVpcServiceBinding",
             args=VpcServiceBindingArgs(
                 script_name=self._api_gateway_script.script_name,
-                name="PAPERCUT_API",
+                name="PAPERCUT_MF_API",
                 service_id=self._api_vpc_service.id,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )
 
         self._api_domain = cloudflare.WorkersCustomDomain(
-            resource_name="PapercutApiDomain",
+            resource_name="PapercutMfApiDomain",
             args=cloudflare.WorkersCustomDomainArgs(
                 account_id=Resource.Cloudflare.account.id,
                 zone_id=Resource.Zone.id,

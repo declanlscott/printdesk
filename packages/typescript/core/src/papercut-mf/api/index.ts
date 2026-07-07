@@ -28,7 +28,7 @@ export const sharedAccountPropertySchemas = {
   "access-users": CommaSeparatedString.pipe(
     Schema.decodeTo(UsersContract.Username.pipe(Schema.Array), SchemaTransformation.passthrough()),
   ),
-  "account-id": SharedAccountsContract.PapercutId,
+  "account-id": SharedAccountsContract.PapercutMfId,
   balance: Schema.Number,
   "comment-option": Schema.Literals(["NO_COMMENT", "COMMENT_REQUIRED", "COMMENT_OPTIONAL"]),
   disabled: Schema.Boolean,
@@ -45,13 +45,13 @@ export const sharedAccountPropertySchemas = {
 } as const;
 export type SharedAccountPropertySchemas = typeof sharedAccountPropertySchemas;
 
-export class PapercutApiRequest extends Request.Class<
+export class PapercutMfApiRequest extends Request.Class<
   HttpClientRequest,
   HttpClientResponse,
   ActorsContract.ForbiddenActorError | HttpClientError | Schema.SchemaError,
   Actor | Oauth.AccessToken
 > {}
 
-export class PapercutApi extends Context.Service<PapercutApi, ServiceShape>()(
-  "@printdesk/core/papercut/Api",
+export class PapercutMfApi extends Context.Service<PapercutMfApi, ServiceShape>()(
+  "@printdesk/core/papercut-mf/Api",
 ) {}

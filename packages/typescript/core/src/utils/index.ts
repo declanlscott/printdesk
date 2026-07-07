@@ -90,6 +90,9 @@ export const ChunkFromArray = <TValue extends Schema.Top>(value: TValue) =>
     }),
   );
 
+export const CallbackId = Schema.String.pipe(Schema.brand("CallbackId"));
+export type CallbackId = typeof CallbackId.Type;
+
 export const tenantTemplate = Function.dual<
   (template: string) => (tenantId: TenantId) => string,
   (tenantId: TenantId, template: string) => string

@@ -6,12 +6,12 @@ import { ActorsContract } from "../actors/contract";
 import { ConfigContract } from "../config/contract";
 
 export namespace ConfigApi {
-  export class PapercutGroup extends HttpApiGroup.make("PapercutConfig")
+  export class PapercutMfGroup extends HttpApiGroup.make("PapercutMfConfig")
     .add(
       HttpApiEndpoint.post("setApiAuthToken", "/api-auth-token", {
-        payload: ConfigContract.SetPapercutApiAuthTokenPayload,
+        payload: ConfigContract.SetPapercutMfApiAuthTokenPayload,
         error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
       }),
     )
-    .prefix("/config/papercut") {}
+    .prefix("/config/papercut/mf") {}
 }

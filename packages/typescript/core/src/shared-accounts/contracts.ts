@@ -31,8 +31,8 @@ export namespace SharedAccountsContract {
   export const Name = Schema.String.pipe(Schema.brand("SharedAccountName"));
   export type Name = typeof Name.Type;
 
-  export const PapercutId = Schema.Int.pipe(Schema.brand("SharedAccountPapercutId"));
-  export type PapercutId = typeof PapercutId.Type;
+  export const PapercutMfId = Schema.Int.pipe(Schema.brand("SharedAccountPapercutMfId"));
+  export type PapercutMfId = typeof PapercutMfId.Type;
 
   export class Table extends TablesContract.Table<SharedAccountsTable>("shared_accounts")(
     Schema.Struct({
@@ -46,18 +46,18 @@ export namespace SharedAccountsContract {
         }),
         Schema.NullOr,
       ),
-      papercutId: PapercutId.pipe(
+      papercutMfId: PapercutMfId.pipe(
         Schema.NullOr,
         Schema.withDecodingDefaultType(Effect.succeed(null)),
       ),
     }).pipe(
       Schema.check(
         Schema.makeFilter((sharedAccount) => {
-          if (sharedAccount.origin === "papercut" && sharedAccount.papercutId === null)
-            return ["papercutId must be non-null."];
+          if (sharedAccount.origin === "papercut" && sharedAccount.papercutMfId === null)
+            return ["papercutMfId must be non-null."];
 
-          if (sharedAccount.origin === "internal" && sharedAccount.papercutId !== null)
-            return ["papercutId must be null."];
+          if (sharedAccount.origin === "internal" && sharedAccount.papercutMfId !== null)
+            return ["papercutMfId must be null."];
 
           return [];
         }),
@@ -129,7 +129,7 @@ export namespace SharedAccountsContract {
         ...Struct.keys(TablesContract.BaseModel.fields),
         "name",
         "origin",
-        "papercutId",
+        "papercutMfId",
       ]),
     )
       .mapFields(Struct.map(Schema.optional))

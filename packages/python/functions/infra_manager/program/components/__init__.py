@@ -1,6 +1,6 @@
 from program.components.assets import Assets, AssetsArgs
 from program.components.config import Config, ConfigArgs
-from program.components.papercut import Papercut, PapercutArgs
+from program.components.papercut_mf import PapercutMf, PapercutMfArgs
 from program.components.realtime import Realtime, RealtimeArgs
 
 __all__ = [
@@ -8,8 +8,8 @@ __all__ = [
     "AssetsArgs",
     "Config",
     "ConfigArgs",
-    "Papercut",
-    "PapercutArgs",
+    "PapercutMf",
+    "PapercutMfArgs",
     "Realtime",
     "RealtimeArgs",
 ]

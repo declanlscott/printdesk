@@ -10,12 +10,11 @@ import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
-import { CloudflareContract } from "../cloudflare/contract";
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
 import { IdentityProvidersContract } from "../identity/contract";
 import { LicensesContract } from "../licenses/contract";
-import { PapercutContract } from "../papercut/contract";
+import { PapercutMfContract } from "../papercut-mf/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId, TenantId, UnpaddedBase32 } from "../utils";
 import { Constants } from "../utils/constants";
@@ -130,52 +129,27 @@ export namespace TenantsContract {
     Output: Table.Dto,
   });
 
-  export class RegistrationPayload extends Schema.Class<RegistrationPayload>("RegistrationPayload")(
-    {
-      tenant: Table.Model.mapFields(Struct.pick(["name", "slug", "licenseKey"])),
-      identityProviders: IdentityProvidersContract.Table.Model.mapFields(
-        Struct.pick(["kind", "externalTenantId"]),
-      ).pipe(
-        Schema.NonEmptyArray,
-        Schema.check(
-          Schema.makeFilter((providers) =>
-            Array.length(Array.dedupeWith(providers, (a, b) => a.kind === b.kind)) !==
-            Array.length(providers)
-              ? ["Identity provider kind must be unique"]
-              : [],
-          ),
+  export class ProvisionPayload extends Schema.Class<ProvisionPayload>("ProvisionPayload")({
+    tenant: Table.Model.mapFields(
+      Struct.pick(["name", "slug", "licenseKey", "tenantId"]),
+    ).mapFields(Struct.renameKeys({ tenantId: "id" })),
+    identityProviders: IdentityProvidersContract.Table.Model.mapFields(
+      Struct.pick(["kind", "externalTenantId"]),
+    ).pipe(
+      Schema.NonEmptyArray,
+      Schema.check(
+        Schema.makeFilter((providers) =>
+          Array.length(Array.dedupeWith(providers, (a, b) => a.kind === b.kind)) !==
+          Array.length(providers)
+            ? ["Identity provider kind must be unique"]
+            : [],
         ),
       ),
-      papercutConfig: PapercutContract.EnabledConfig.mapFields(Struct.omit(["enabled"])).pipe(
-        Schema.OptionFromOptional,
-      ),
-    },
-  ) {}
-
-  export class RegistrationSuccess extends Schema.Class<RegistrationSuccess>("RegistrationSuccess")(
-    { deploymentId: EntityId },
-    { httpApiStatus: 200 },
-  ) {}
-
-  export class SetupPayload extends Schema.Class<SetupPayload>("SetupPayload")({
-    deploymentId: EntityId,
-    papercutApiAuthToken: PapercutContract.ApiAuthToken.pipe(Schema.OptionFromOptional),
-  }) {}
-
-  export class UnexpectedPapercutApiAuthTokenPayloadError
-    extends Schema.TaggedErrorClass<UnexpectedPapercutApiAuthTokenPayloadError>()(
-      "UnexpectedPapercutApiAuthTokenPayloadError",
-      {},
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(UnexpectedPapercutApiAuthTokenPayloadError)(this, {
-        status: 400,
-      });
-  }
-
-  export class SetupSuccess extends Schema.Class<SetupSuccess>("SetupSuccess")({
-    papercutApiTunnelToken: CloudflareContract.TunnelToken.pipe(Schema.OptionFromNullOr),
+    ),
+    papercut: Schema.Struct({
+      apiAuthToken: PapercutMfContract.ApiAuthToken,
+      config: PapercutMfContract.EnabledConfig.mapFields(Struct.omit(["enabled"])),
+    }).pipe(Schema.OptionFromOptional),
+    clientId: EntityId,
   }) {}
 }

@@ -29,7 +29,7 @@ export const hostnames = new sst.Linkable("Hostnames", {
     api: buildHostname("api"),
     auth: buildHostname("auth"),
     assets: buildHostname("assets"),
-    papercutApiTemplate: buildHostname(`pcapi-${Constants.TENANT_ID_PLACEHOLDER}`), // base32 encoded id
+    papercutMfApiTemplate: buildHostname(`pcmfapi-${Constants.TENANT_ID_PLACEHOLDER}`), // base32 encoded id
     realtime: buildHostname("realtime"),
     web: buildHostname(isProdStage ? "*" : undefined),
     www: buildHostname(isProdStage ? undefined : "www"),

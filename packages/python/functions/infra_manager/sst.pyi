@@ -117,6 +117,7 @@ class Resource:
                 rangeKey: str
         hashKey: str
         class keyLiterals:
+            CALLBACK: str
             CLIENT: str
             DEPLOYMENT: str
             INFRA: str
@@ -124,6 +125,7 @@ class Resource:
             IP: str
             ORDER: str
             OUTPUT: str
+            PAPERCUT_MF_API: str
             ROOM: str
             TENANT: str
             USER: str
@@ -138,7 +140,7 @@ class Resource:
         api: str
         assets: str
         auth: str
-        papercutApiTemplate: str
+        papercutMfApiTemplate: str
         realtime: str
         type: str
         web: str
@@ -180,23 +182,23 @@ class Resource:
         length: float
         pattern: str
         type: str
-    class PapercutApiAuthTokenConfigurationProfileTemplate:
+    class PapercutMfApiAuthTokenConfigurationProfileTemplate:
         name: str
         type: str
-    class PapercutApiGatewayAwsAccessKey:
+    class PapercutMfApiGatewayAwsAccessKey:
         id: str
         secret: str
         type: str
-    class PapercutApiGatewayScriptObject:
+    class PapercutMfApiGatewayScriptObject:
         bucket: str
         key: str
         type: str
-    class PapercutSync:
+    class PapercutMfSync:
         arn: str
         name: str
         roleArn: str
         type: str
-    class PapercutSyncClientCredentialsConfigurationProfileTemplate:
+    class PapercutMfSyncClientCredentialsConfigurationProfileTemplate:
         name: str
         type: str
     class PulumiBucket:

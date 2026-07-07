@@ -5,8 +5,8 @@ import { Graph } from "@printdesk/core/graph";
 import { EntraId } from "@printdesk/core/identity/entra-id";
 import { authMiddleware } from "@printdesk/core/middleware/auth";
 import { Oauth } from "@printdesk/core/oauth";
-import { PapercutApi } from "@printdesk/core/papercut/api";
-import { PapercutSyncer } from "@printdesk/core/papercut/syncer";
+import { PapercutMfApi } from "@printdesk/core/papercut-mf/api";
+import { PapercutMfSyncer } from "@printdesk/core/papercut-mf/syncer";
 import { ReplicacheNotifier } from "@printdesk/core/replicache/notifier";
 import { layer as replicacheNotifierLayer } from "@printdesk/core/replicache/notifier/layer";
 import * as Array from "effect/Array";
@@ -18,22 +18,22 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
-import { appsyncPublisherCredentialIdentityMiddlewareLayer } from "../lib/aws-credential-identity";
+import { appsyncPublisherCredentialIdentityProviderMiddlewareLayer } from "../lib/aws";
 import { databaseLayer } from "../lib/database";
-import { papercutApiLayer, papercutSyncerLayer } from "../lib/papercut";
+import { papercutMfApiLayer, papercutMfSyncerLayer } from "../lib/papercut";
 import { realtimeLayer } from "../lib/realtime";
 
-export const basePapercutGroupLayer = HttpApiBuilder.group(
+export const basePapercutMfGroupLayer = HttpApiBuilder.group(
   Api,
-  "Papercut",
+  "PapercutMf",
   Effect.fn(function* (handlers) {
-    const papercutApi = yield* PapercutApi;
+    const api = yield* PapercutMfApi;
 
     return handlers
       .handle(
         "health",
-        Effect.fn("Api.Papercut.health")(() =>
-          papercutApi.getTotalUsers.pipe(
+        Effect.fn("Api.PapercutMf.health")(() =>
+          api.getTotalUsers.pipe(
             Effect.map(() => true),
             Effect.catchTags({
               HttpClientError: () => Effect.succeed(false),
@@ -48,14 +48,14 @@ export const basePapercutGroupLayer = HttpApiBuilder.group(
               Effect.die,
             ),
             Effect.map((healthy) => ({ healthy })),
-            AccessControl.enforce(AccessControl.permissionPolicy("papercut_api_gateway:read")),
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_api_gateway:read")),
           ),
         ),
       )
       .handle(
         "taskStatus",
-        Effect.fn("Api.Papercut.taskStatus")(() =>
-          papercutApi.getTaskStatus.pipe(
+        Effect.fn("Api.PapercutMf.taskStatus")(() =>
+          api.getTaskStatus.pipe(
             Effect.map((taskStatus) => ({
               completed: taskStatus[0].value.boolean,
               message: taskStatus[1].value,
@@ -68,23 +68,23 @@ export const basePapercutGroupLayer = HttpApiBuilder.group(
               ),
               Effect.die,
             ),
-            AccessControl.enforce(AccessControl.permissionPolicy("papercut_api_gateway:read")),
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_api_gateway:read")),
           ),
         ),
       );
   }),
 );
 
-export const papercutGroupLayer = basePapercutGroupLayer.pipe(
-  Layer.provide([authMiddleware.layer, papercutApiLayer]),
+export const papercutMfGroupLayer = basePapercutMfGroupLayer.pipe(
+  Layer.provide([authMiddleware.layer, papercutMfApiLayer]),
   Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
 );
 
-export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
+export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
   Api,
-  "PapercutSync",
+  "PapercutMfSync",
   Effect.fn(function* (handlers) {
-    const syncer = yield* PapercutSyncer;
+    const syncer = yield* PapercutMfSyncer;
     const replicacheNotifier = yield* ReplicacheNotifier;
 
     return handlers
@@ -98,7 +98,8 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.source"),
         ),
       )
       .handle("all", () =>
@@ -115,7 +116,8 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.all"),
         ),
       )
       .handle("customerGroups", () =>
@@ -131,7 +133,8 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.customerGroups"),
         ),
       )
       .handle("customerGroupMemberships", () =>
@@ -146,7 +149,8 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.customerGroupMemberships"),
         ),
       )
       .handle("sharedAccounts", () =>
@@ -161,7 +165,8 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.sharedAccounts"),
         ),
       )
       .handle("sharedAccountCustomerAccess", () =>
@@ -176,7 +181,8 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerAccess"),
         ),
       )
       .handle("sharedAccountCustomerGroupAccess", () =>
@@ -191,14 +197,14 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerGroupAccess"),
         ),
       )
       .handle("users", () =>
         syncer.syncUsers.pipe(
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.provide(GraphLayerMap.layer),
           Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
           Effect.catchFilter(
             Filter.make((error) =>
@@ -208,14 +214,15 @@ export const basePapercutSyncGroupLayer = HttpApiBuilder.group(
             ),
             Effect.die,
           ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_sync:create")),
+          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+          Effect.withSpan("Api.PapercutMfSync.users"),
         ),
       );
   }),
 );
 
-export const papercutSyncGroupLayer = basePapercutSyncGroupLayer.pipe(
-  Layer.provide([authMiddleware.layer, papercutSyncerLayer, replicacheNotifierLayer]),
+export const papercutMfSyncGroupLayer = basePapercutMfSyncGroupLayer.pipe(
+  Layer.provide([authMiddleware.layer, papercutMfSyncerLayer, replicacheNotifierLayer]),
   Layer.provide([
     ActorLayerMap.layer,
     databaseLayer,

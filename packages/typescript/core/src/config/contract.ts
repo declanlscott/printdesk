@@ -1,9 +1,9 @@
 import * as Schema from "effect/Schema";
 
-import { PapercutContract } from "../papercut/contract";
+import { PapercutMfContract } from "../papercut-mf/contract";
 
 export namespace ConfigContract {
-  export class SetPapercutApiAuthTokenPayload extends Schema.Class<SetPapercutApiAuthTokenPayload>(
-    "SetPapercutApiAuthTokenPayload",
-  )({ token: PapercutContract.ApiAuthToken }) {}
+  export class SetPapercutMfApiAuthTokenPayload extends Schema.Class<SetPapercutMfApiAuthTokenPayload>(
+    "SetPapercutMfApiAuthTokenPayload",
+  )({ token: PapercutMfContract.ApiAuthToken }) {}
 }

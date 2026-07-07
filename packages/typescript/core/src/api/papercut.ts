@@ -3,32 +3,32 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
-import { PapercutContract } from "../papercut/contract";
+import { PapercutMfContract } from "../papercut-mf/contract";
 
 export namespace PapercutApi {
-  export class Group extends HttpApiGroup.make("Papercut")
+  export class MfGroup extends HttpApiGroup.make("PapercutMf")
     .add(
       HttpApiEndpoint.get("health", "/health", {
-        success: PapercutContract.HealthSuccess,
+        success: PapercutMfContract.HealthSuccess,
         error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
       }),
     )
     .add(
       HttpApiEndpoint.get("taskStatus", "/task-status", {
-        success: PapercutContract.TaskStatusSuccess,
+        success: PapercutMfContract.TaskStatusSuccess,
         error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
       }),
     )
-    .prefix("/papercut") {}
+    .prefix("/papercut/mf") {}
 
-  export class SyncGroup extends HttpApiGroup.make("PapercutSync")
+  export class MfSyncGroup extends HttpApiGroup.make("PapercutMfSync")
     .add(
       HttpApiEndpoint.post("source", "/source", {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
-          PapercutContract.IncompleteTaskStatusError,
-          PapercutContract.UserAndGroupSyncFailure,
+          PapercutMfContract.IncompleteTaskStatusError,
+          PapercutMfContract.UserAndGroupSyncFailure,
         ],
       }),
     )
@@ -37,7 +37,7 @@ export namespace PapercutApi {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
-          PapercutContract.IncompleteTaskStatusError,
+          PapercutMfContract.IncompleteTaskStatusError,
         ],
       }),
     )
@@ -46,7 +46,7 @@ export namespace PapercutApi {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
-          PapercutContract.IncompleteTaskStatusError,
+          PapercutMfContract.IncompleteTaskStatusError,
         ],
       }),
     )
@@ -55,7 +55,7 @@ export namespace PapercutApi {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
-          PapercutContract.IncompleteTaskStatusError,
+          PapercutMfContract.IncompleteTaskStatusError,
         ],
       }),
     )
@@ -83,9 +83,9 @@ export namespace PapercutApi {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
-          PapercutContract.IncompleteTaskStatusError,
+          PapercutMfContract.IncompleteTaskStatusError,
         ],
       }),
     )
-    .prefix("/papercut/sync") {}
+    .prefix("/papercut/mf/sync") {}
 }

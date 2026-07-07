@@ -1,6 +1,5 @@
 import * as Cache from "effect/Cache";
 import * as Context from "effect/Context";
-import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
@@ -14,7 +13,7 @@ import * as Tuple from "effect/Tuple";
 import * as HttpClient from "effect/unstable/http/HttpClient";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
-import { PapercutApi, PapercutApiRequest, sharedAccountPropertySchemas } from ".";
+import { PapercutMfApi, PapercutMfApiRequest, sharedAccountPropertySchemas } from ".";
 import { Actor } from "../../actors";
 import { Config } from "../../config";
 import { CustomerGroupsContract } from "../../groups/contracts";
@@ -27,18 +26,13 @@ import { TenantId, tenantTemplate } from "../../utils";
 import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
-import { PapercutContract } from "../contract";
+import { PapercutMfContract } from "../contract";
 
 import type { ActorsContract } from "../../actors/contract";
 import type { OauthContract } from "../../oauth/contract";
 import type { SharedAccountPropertySchemas } from ".";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
-
-export class HttpClientCacheLookupKey extends Data.Class<{
-  actor: ActorsContract.Actor;
-  accessToken: OauthContract.Tokens["access"];
-}> {}
 
 export const makeService = Effect.gen(function* () {
   const config = yield* Config;
@@ -48,11 +42,14 @@ export const makeService = Effect.gen(function* () {
   const baseHttpClient = yield* HttpClient.HttpClient;
   const httpClientCache = yield* Cache.make({
     capacity: 10,
-    lookup: Effect.fn(function* (key: HttpClientCacheLookupKey) {
+    lookup: Effect.fn(function* (key: {
+      actor: ActorsContract.Actor;
+      accessToken: OauthContract.Tokens["access"];
+    }) {
       const hostname = yield* key.actor.tenantId.pipe(
         Effect.flatMap(Schema.encodeEffect(TenantsContract.IdFromUnpaddedBase32String)),
         Effect.map((base32) => TenantId.make(base32, { disableChecks: true })),
-        Effect.map(tenantTemplate(resource.Hostnames.pipe(Redacted.value).papercutApiTemplate)),
+        Effect.map(tenantTemplate(resource.Hostnames.pipe(Redacted.value).papercutMfApiTemplate)),
       );
 
       return baseHttpClient.pipe(
@@ -68,15 +65,13 @@ export const makeService = Effect.gen(function* () {
     }),
   });
 
-  const resolver = RequestResolver.make<PapercutApiRequest>(
+  const resolver = RequestResolver.make<PapercutMfApiRequest>(
     Effect.forEach((entry) =>
       httpClientCache.pipe(
-        Cache.get(
-          new HttpClientCacheLookupKey({
-            actor: entry.context.pipe(Context.get(Actor)),
-            accessToken: entry.context.pipe(Context.get(Oauth.AccessToken)),
-          }),
-        ),
+        Cache.get({
+          actor: entry.context.pipe(Context.get(Actor)),
+          accessToken: entry.context.pipe(Context.get(Oauth.AccessToken)),
+        }),
         Effect.flatMap((client) => client.execute(entry.request)),
         Effect.exit,
         Effect.map(entry.completeUnsafe),
@@ -85,18 +80,18 @@ export const makeService = Effect.gen(function* () {
   ).pipe(
     RequestResolver.setDelay(Constants.PAPERCUT_API_REQUEST_BATCH_DELAY),
     RequestResolver.batchN(Constants.PAPERCUT_API_REQUEST_BATCH_SIZE),
-    RequestResolver.withSpan("Papercut.Api.resolver"),
+    RequestResolver.withSpan("PapercutMf.Api.resolver"),
   );
 
-  const batchRequest = Effect.fn("Papercut.Api.batchRequest")(
+  const batchRequest = Effect.fn("PapercutMf.Api.batchRequest")(
     (request: HttpClientRequest.HttpClientRequest) =>
-      Effect.request(new PapercutApiRequest(request), resolver),
+      Effect.request(new PapercutMfApiRequest(request), resolver),
   );
 
   const adjustSharedAccountAccountBalance = Effect.fn(
-    "Papercut.Api.adjustSharedAccountAccountBalance",
+    "PapercutMf.Api.adjustSharedAccountAccountBalance",
   )((sharedAccountName: string, amount: number, comment: string) =>
-    config.getPapercutApiAuthToken.pipe(
+    config.getPapercutMfApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
         xmlRpc.request("api.adjustSharedAccountAccountBalance", [
           XmlRpc.string(authToken.pipe(Redacted.value)),
@@ -109,15 +104,15 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
       Effect.filterOrFail(
         Predicate.isTruthy,
-        () => new PapercutContract.SharedAccountBalanceAdjustmentFailure(),
+        () => new PapercutMfContract.SharedAccountBalanceAdjustmentFailure(),
       ),
       Effect.asVoid,
     ),
   );
 
-  const getGroupMembers = Effect.fn("Papercut.Api.getGroupMembers")(
+  const getGroupMembers = Effect.fn("PapercutMf.Api.getGroupMembers")(
     (groupName: string, offset: number, limit: number) =>
-      config.getPapercutApiAuthToken.pipe(
+      config.getPapercutMfApiAuthToken.pipe(
         Effect.flatMap((authToken) =>
           xmlRpc.request("api.getGroupMembers", [
             XmlRpc.string(authToken.pipe(Redacted.value)),
@@ -151,7 +146,7 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-    ).pipe(Stream.withSpan("Papercut.Api.getGroupMembersStream"));
+    ).pipe(Stream.withSpan("PapercutMf.Api.getGroupMembersStream"));
 
   const getSharedAccountProperties = <
     const TPropertyKeys extends Array<keyof SharedAccountPropertySchemas>,
@@ -159,7 +154,7 @@ export const makeService = Effect.gen(function* () {
     sharedAccountName: string,
     ...propertyKeys: TPropertyKeys
   ) =>
-    config.getPapercutApiAuthToken.pipe(
+    config.getPapercutMfApiAuthToken.pipe(
       Effect.flatMap((authToken) =>
         xmlRpc.request("api.getSharedAccountProperties", [
           XmlRpc.string(authToken.pipe(Redacted.value)),
@@ -177,7 +172,7 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-      Effect.withSpan("Papercut.Api.getSharedAccountProperties"),
+      Effect.withSpan("PapercutMf.Api.getSharedAccountProperties"),
     );
 
   const getTaskStatus = xmlRpc
@@ -192,21 +187,21 @@ export const makeService = Effect.gen(function* () {
           ),
         ),
       ),
-      Effect.withSpan("Papercut.Api.getTaskStatus"),
+      Effect.withSpan("PapercutMf.Api.getTaskStatus"),
     );
 
-  const getTotalUsers = config.getPapercutApiAuthToken.pipe(
+  const getTotalUsers = config.getPapercutMfApiAuthToken.pipe(
     Effect.flatMap((authToken) =>
       xmlRpc.request("api.getTotalUsers", [XmlRpc.string(authToken.pipe(Redacted.value))]),
     ),
     Effect.flatMap(batchRequest),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.IntResponse)),
-    Effect.withSpan("Papercut.Api.getTotalUsers"),
+    Effect.withSpan("PapercutMf.Api.getTotalUsers"),
   );
 
-  const listSharedAccounts = Effect.fn("Papercut.Api.listSharedAccounts")(
+  const listSharedAccounts = Effect.fn("PapercutMf.Api.listSharedAccounts")(
     (offset: number, limit: number) =>
-      config.getPapercutApiAuthToken.pipe(
+      config.getPapercutMfApiAuthToken.pipe(
         Effect.flatMap((authToken) =>
           xmlRpc.request("api.listSharedAccounts", [
             XmlRpc.string(authToken.pipe(Redacted.value)),
@@ -238,11 +233,11 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-  ).pipe(Stream.withSpan("Papercut.Api.listSharedAccountsStream"));
+  ).pipe(Stream.withSpan("PapercutMf.Api.listSharedAccountsStream"));
 
-  const listUserAccounts = Effect.fn("Papercut.Api.listUserAccounts")(
+  const listUserAccounts = Effect.fn("PapercutMf.Api.listUserAccounts")(
     (offset: number, limit: number) =>
-      config.getPapercutApiAuthToken.pipe(
+      config.getPapercutMfApiAuthToken.pipe(
         Effect.flatMap((authToken) =>
           xmlRpc.request("api.listUserAccounts", [
             XmlRpc.string(authToken.pipe(Redacted.value)),
@@ -274,28 +269,29 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-  ).pipe(Stream.withSpan("Papercut.Api.listUserAccountsStream"));
+  ).pipe(Stream.withSpan("PapercutMf.Api.listUserAccountsStream"));
 
-  const listUserGroups = Effect.fn("Papercut.Api.listUserGroups")((offset: number, limit: number) =>
-    config.getPapercutApiAuthToken.pipe(
-      Effect.flatMap((authToken) =>
-        xmlRpc.request("api.listUserGroups", [
-          XmlRpc.string(authToken.pipe(Redacted.value)),
-          XmlRpc.int(offset),
-          XmlRpc.int(limit),
-        ]),
-      ),
-      Effect.flatMap(batchRequest),
-      Effect.flatMap(
-        xmlRpc.response(
-          XmlRpcContract.arrayResponse(
-            XmlRpcContract.Value.fields.value.pipe(
-              Schema.decodeTo(CustomerGroupsContract.Name, SchemaTransformation.passthrough()),
+  const listUserGroups = Effect.fn("PapercutMf.Api.listUserGroups")(
+    (offset: number, limit: number) =>
+      config.getPapercutMfApiAuthToken.pipe(
+        Effect.flatMap((authToken) =>
+          xmlRpc.request("api.listUserGroups", [
+            XmlRpc.string(authToken.pipe(Redacted.value)),
+            XmlRpc.int(offset),
+            XmlRpc.int(limit),
+          ]),
+        ),
+        Effect.flatMap(batchRequest),
+        Effect.flatMap(
+          xmlRpc.response(
+            XmlRpcContract.arrayResponse(
+              XmlRpcContract.Value.fields.value.pipe(
+                Schema.decodeTo(CustomerGroupsContract.Name, SchemaTransformation.passthrough()),
+              ),
             ),
           ),
         ),
       ),
-    ),
   );
 
   const listUserGroupsStream = Stream.paginate(0, (offset) =>
@@ -309,9 +305,9 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-  ).pipe(Stream.withSpan("Papercut.Api.listUserGroupsStream"));
+  ).pipe(Stream.withSpan("PapercutMf.Api.listUserGroupsStream"));
 
-  const performUserAndGroupSync = config.getPapercutApiAuthToken.pipe(
+  const performUserAndGroupSync = config.getPapercutMfApiAuthToken.pipe(
     Effect.flatMap((authToken) =>
       xmlRpc.request("api.performUserAndGroupSync", [
         XmlRpc.string(authToken.pipe(Redacted.value)),
@@ -319,9 +315,9 @@ export const makeService = Effect.gen(function* () {
     ),
     Effect.flatMap(batchRequest),
     Effect.flatMap(xmlRpc.response(XmlRpcContract.BooleanResponse)),
-    Effect.filterOrFail(Predicate.isTruthy, () => new PapercutContract.UserAndGroupSyncFailure()),
+    Effect.filterOrFail(Predicate.isTruthy, () => new PapercutMfContract.UserAndGroupSyncFailure()),
     Effect.asVoid,
-    Effect.withSpan("Papercut.Api.performUserAndGroupSync"),
+    Effect.withSpan("PapercutMf.Api.performUserAndGroupSync"),
   );
 
   return {
@@ -341,4 +337,4 @@ export const makeService = Effect.gen(function* () {
   } as const;
 });
 
-export const layer = makeService.pipe(Layer.effect(PapercutApi));
+export const layer = makeService.pipe(Layer.effect(PapercutMfApi));

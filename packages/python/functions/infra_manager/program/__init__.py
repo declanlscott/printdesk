@@ -12,8 +12,8 @@ from program.components import (
     AssetsArgs,
     Config,
     ConfigArgs,
-    Papercut,
-    PapercutArgs,
+    PapercutMf,
+    PapercutMfArgs,
     Realtime,
     RealtimeArgs,
 )
@@ -27,16 +27,16 @@ def inline(tenant_id: str, _input: Input):
         Realtime(args=RealtimeArgs(tenant_id=tenant_id)),
     ]
 
-    papercut: Optional[Papercut] = None
-    if _input.papercut_config.enabled:
-        papercut = Papercut(
-            args=PapercutArgs(
+    papercut_mf: Optional[PapercutMf] = None
+    if _input.papercut_mf_config.enabled:
+        papercut_mf = PapercutMf(
+            args=PapercutMfArgs(
                 tenant_id=tenant_id,
-                config=_input.papercut_config,
+                config=_input.papercut_mf_config,
             )
         )
 
-        resources.append(papercut)
+        resources.append(papercut_mf)
 
     output_pk = SEPARATOR.join([Resource.Dynamo.keyLiterals.TENANT, tenant_id])
     output_sk = SEPARATOR.join(
@@ -64,8 +64,8 @@ def inline(tenant_id: str, _input: Input):
             hash_key=output_pk,
             range_key=output_sk,
             item=pulumi.Output.all(
-                papercut_api_tunnel_id=getattr(
-                    papercut,
+                papercut_mf_api_tunnel_id=getattr(
+                    papercut_mf,
                     "api_tunnel_id",
                     pulumi.Output.from_input(None),
                 ),
@@ -76,7 +76,7 @@ def inline(tenant_id: str, _input: Input):
                     sk=output_sk,
                     gsi1_pk=output_gsi1_pk,
                     gsi1_sk=output_gsi1_sk,
-                    papercut_api_tunnel_id=data["papercut_api_tunnel_id"],
+                    papercut_mf_api_tunnel_id=data["papercut_mf_api_tunnel_id"],
                     deployed_at=data["deployed_at"],
                 ).model_dump_json()
             ),

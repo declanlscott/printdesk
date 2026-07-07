@@ -15,63 +15,63 @@ export const invoicesProcessorQueueSenderRoleTemplate = new lib.templates.aws.ia
   { identifier: "InvoicesSenderRole" },
 );
 
-export const papercutApiAuthTokenConfigurationProfileTemplate =
+export const papercutMfApiAuthTokenConfigurationProfileTemplate =
   new lib.templates.aws.appconfig.ConfigurationProfile(
-    "PapercutApiAuthTokenConfigurationProfileTemplate",
-    { identifier: "PapercutApiAuthToken" },
+    "PapercutMfApiAuthTokenConfigurationProfileTemplate",
+    { identifier: "PapercutMfApiAuthToken" },
   );
 
-const papercutApiGatewayPackagePath = Path.resolve(
-  Path.join($cli.paths.root, "packages/typescript/functions/papercut-api-gateway"),
+const papercutMfApiGatewayPackagePath = Path.resolve(
+  Path.join($cli.paths.root, "packages/typescript/functions/papercut-mf-api-gateway"),
 );
-const papercutApiGatewayScriptOutDir = "dist";
-const papercutApiGatewayScriptAssetPath = `${papercutApiGatewayScriptOutDir}/index.js`;
-export const papercutApiGatewayScriptBuilder = siteBuilder("PapercutApiGatewayScriptBuilder", {
-  create: `vpx wrangler deploy --dry-run --outdir ${papercutApiGatewayScriptOutDir} --minify`,
-  dir: papercutApiGatewayPackagePath,
+const papercutMfApiGatewayScriptOutDir = "dist";
+const papercutMfApiGatewayScriptAssetPath = `${papercutMfApiGatewayScriptOutDir}/index.js`;
+export const papercutMfApiGatewayScriptBuilder = siteBuilder("PapercutMfApiGatewayScriptBuilder", {
+  create: `vpx wrangler deploy --dry-run --outdir ${papercutMfApiGatewayScriptOutDir} --minify`,
+  dir: papercutMfApiGatewayPackagePath,
   triggers: [Date.now()],
-  assetPaths: [papercutApiGatewayScriptAssetPath],
+  assetPaths: [papercutMfApiGatewayScriptAssetPath],
 });
 
-export const papercutApiGatewayScriptSource = papercutApiGatewayScriptBuilder.assets.apply(
+export const papercutMfApiGatewayScriptSource = papercutMfApiGatewayScriptBuilder.assets.apply(
   (assets) => {
-    const asset = assets?.[papercutApiGatewayScriptAssetPath];
+    const asset = assets?.[papercutMfApiGatewayScriptAssetPath];
     if (!asset || asset instanceof $util.asset.Archive)
-      throw new VisibleError(`Missing asset at ${papercutApiGatewayScriptAssetPath}`);
+      throw new VisibleError(`Missing asset at ${papercutMfApiGatewayScriptAssetPath}`);
 
     return asset;
   },
 );
 
-export const papercutApiGatewayScriptObject = new aws.s3.BucketObjectv2(
-  "PapercutApiGatewayScriptObject",
+export const papercutMfApiGatewayScriptObject = new aws.s3.BucketObjectv2(
+  "PapercutMfApiGatewayScriptObject",
   {
     bucket: assetsBucket.name,
-    key: "code/papercut-api-gateway.js",
-    source: papercutApiGatewayScriptSource,
+    key: "code/papercut-mf-api-gateway.js",
+    source: papercutMfApiGatewayScriptSource,
     contentType: "text/javascript",
   },
 );
 
-export const papercutApiGatewayAwsAccessKey = new lib.aws.iam.AccessKey(
-  "PapercutApiGatewayAwsAccessKey",
+export const papercutMfApiGatewayAwsAccessKey = new lib.aws.iam.AccessKey(
+  "PapercutMfApiGatewayAwsAccessKey",
   { permissions: [invokeIssuerFunctionUrl] },
 );
 
-export const papercutSyncClientCredentialsConfigurationProfileTemplate =
+export const papercutMfSyncClientCredentialsConfigurationProfileTemplate =
   new lib.templates.aws.appconfig.ConfigurationProfile(
-    "PapercutSyncClientCredentialsConfigurationProfileTemplate",
-    { identifier: "PapercutSyncClientCredentials" },
+    "PapercutMfSyncClientCredentialsConfigurationProfileTemplate",
+    { identifier: "PapercutMfSyncClientCredentials" },
   );
 
-export const papercutSync = new lib.aws.lambda.Function("PapercutSync", {
-  handler: "packages/typescript/functions/papercut-sync/src/index.default",
+export const papercutMfSync = new lib.aws.lambda.Function("PapercutMfSync", {
+  handler: "packages/typescript/functions/papercut-mf-sync/src/index.default",
   link: [
     appconfigAgent,
     dsql,
     hostnames,
-    papercutApiAuthTokenConfigurationProfileTemplate,
-    papercutSyncClientCredentialsConfigurationProfileTemplate,
+    papercutMfApiAuthTokenConfigurationProfileTemplate,
+    papercutMfSyncClientCredentialsConfigurationProfileTemplate,
   ],
 });
 
@@ -87,7 +87,7 @@ export const invoicesProcessor = new lib.aws.lambda.Function("InvoicesProcessor"
     appconfigAgent,
     dsql,
     hostnames,
-    papercutApiAuthTokenConfigurationProfileTemplate,
+    papercutMfApiAuthTokenConfigurationProfileTemplate,
     invoicesProcessorClientCredentialsConfigurationProfileTemplate,
   ],
 });

@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "e8211d20-4822-4d22-8a7d-44ef297740e9",
+  "id": "b2806e43-cf0c-4e9a-b627-f7181e1e6bb7",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -392,6 +392,19 @@
       "generated": null,
       "identity": null,
       "name": "scopes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "clients"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "callback_id",
       "entityType": "columns",
       "schema": "public",
       "table": "clients"
@@ -2458,7 +2471,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "papercut_id",
+      "name": "papercut_mf_id",
       "entityType": "columns",
       "schema": "public",
       "table": "shared_accounts"
@@ -4272,11 +4285,11 @@
       "nameExplicit": false,
       "columns": [
         "name",
-        "papercut_id",
+        "papercut_mf_id",
         "tenant_id"
       ],
       "nullsNotDistinct": false,
-      "name": "shared_accounts_name_papercut_id_tenant_id_unique",
+      "name": "shared_accounts_name_papercut_mf_id_tenant_id_unique",
       "entityType": "uniques",
       "schema": "public",
       "table": "shared_accounts"
@@ -4356,8 +4369,8 @@
       "table": "orders"
     },
     {
-      "value": "((((\"origin\" = 'papercut') and ((\"papercut_id\" is not null)))) or (((\"origin\" = 'internal') and ((\"papercut_id\" is null)))))",
-      "name": "origin_papercut_id",
+      "value": "((((\"origin\" = 'papercut') and ((\"papercut_mf_id\" is not null)))) or (((\"origin\" = 'internal') and ((\"papercut_mf_id\" is null)))))",
+      "name": "origin_papercut_mf_id",
       "entityType": "checks",
       "schema": "public",
       "table": "shared_accounts"
@@ -4608,7 +4621,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_id\", \"active_shared_account_customer_access\".\"customer_id\" from \"active_shared_accounts\" inner join \"active_shared_account_customer_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_customer_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_customer_access\".\"tenant_id\"))",
+      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_mf_id\", \"active_shared_account_customer_access\".\"customer_id\" from \"active_shared_accounts\" inner join \"active_shared_account_customer_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_customer_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_customer_access\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4619,7 +4632,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_id\", \"active_shared_account_manager_access\".\"manager_id\" from \"active_shared_accounts\" inner join \"active_shared_account_manager_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_manager_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_manager_access\".\"tenant_id\"))",
+      "definition": "select \"active_shared_accounts\".\"id\", \"active_shared_accounts\".\"tenant_id\", \"active_shared_accounts\".\"created_at\", \"active_shared_accounts\".\"updated_at\", \"active_shared_accounts\".\"deleted_at\", \"active_shared_accounts\".\"version\", \"active_shared_accounts\".\"origin\", \"active_shared_accounts\".\"name\", \"active_shared_accounts\".\"review_threshold\", \"active_shared_accounts\".\"papercut_mf_id\", \"active_shared_account_manager_access\".\"manager_id\" from \"active_shared_accounts\" inner join \"active_shared_account_manager_access\" on ((\"active_shared_accounts\".\"id\" = \"active_shared_account_manager_access\".\"shared_account_id\") and (\"active_shared_accounts\".\"tenant_id\" = \"active_shared_account_manager_access\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4663,7 +4676,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"name\", \"review_threshold\", \"papercut_id\" from \"shared_accounts\" where (\"shared_accounts\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"name\", \"review_threshold\", \"papercut_mf_id\" from \"shared_accounts\" where (\"shared_accounts\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,

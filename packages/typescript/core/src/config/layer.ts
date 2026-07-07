@@ -9,7 +9,7 @@ import { Actor } from "../actors";
 import { Appconfig } from "../aws/appconfig";
 import { AppconfigAgent } from "../aws/appconfig/agent";
 import { OauthContract } from "../oauth/contract";
-import { PapercutContract } from "../papercut/contract";
+import { PapercutMfContract } from "../papercut-mf/contract";
 import { SstResource } from "../sst/resource";
 import { tenantTemplate } from "../utils";
 
@@ -43,18 +43,18 @@ export const makeService = Effect.gen(function* () {
     ),
   );
 
-  const papercutApiAuthTokenProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
+  const papercutMfApiAuthTokenProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
     Effect.map(
       tenantTemplate(
-        resource.PapercutApiAuthTokenConfigurationProfileTemplate.pipe(Redacted.value).name,
+        resource.PapercutMfApiAuthTokenConfigurationProfileTemplate.pipe(Redacted.value).name,
       ),
     ),
   );
 
-  const papercutSyncClientCredentialsProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
+  const papercutMfSyncClientCredentialsProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
     Effect.map(
       tenantTemplate(
-        resource.PapercutSyncClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)
+        resource.PapercutMfSyncClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)
           .name,
       ),
     ),
@@ -90,18 +90,20 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
-  const getPapercutApiAuthToken = papercutApiAuthTokenProfileIdEffect.pipe(
-    Effect.andThen((profileId) => agent.getConfiguration(profileId, PapercutContract.ApiAuthToken)),
-    Effect.withSpan("Config.getPapercutApiAuthToken"),
+  const getPapercutMfApiAuthToken = papercutMfApiAuthTokenProfileIdEffect.pipe(
+    Effect.andThen((profileId) =>
+      agent.getConfiguration(profileId, PapercutMfContract.ApiAuthToken),
+    ),
+    Effect.withSpan("Config.getPapercutMfApiAuthToken"),
   );
 
-  const setPapercutApiAuthToken = Effect.fn("Config.setPapercutApiAuthToken")(
-    (value: PapercutContract.ApiAuthToken) =>
-      papercutApiAuthTokenProfileIdEffect.pipe(
+  const setPapercutMfApiAuthToken = Effect.fn("Config.setPapercutMfApiAuthToken")(
+    (value: PapercutMfContract.ApiAuthToken) =>
+      papercutMfApiAuthTokenProfileIdEffect.pipe(
         Effect.andThen((profileId) =>
           appconfig.publish({
             profileId,
-            Codec: PapercutContract.ApiAuthToken,
+            Codec: PapercutMfContract.ApiAuthToken,
             deploymentStrategyId: resource.AppconfigAllAtOnceDeploymentStrategy.pipe(Redacted.value)
               .id,
             value,
@@ -110,16 +112,16 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
-  const getPapercutSyncClientCredentials = papercutSyncClientCredentialsProfileIdEffect.pipe(
+  const getPapercutMfSyncClientCredentials = papercutMfSyncClientCredentialsProfileIdEffect.pipe(
     Effect.andThen((profileId) =>
       agent.getConfiguration(profileId, OauthContract.ClientCredentials),
     ),
-    Effect.withSpan("Config.getPapercutSyncClientCredentials"),
+    Effect.withSpan("Config.getPapercutMfSyncClientCredentials"),
   );
 
-  const setPapercutSyncClientCredentials = Effect.fn("Config.setPapercutSyncClientCredentials")(
+  const setPapercutMfSyncClientCredentials = Effect.fn("Config.setPapercutMfSyncClientCredentials")(
     (value: OauthContract.ClientCredentials, deploymentStrategy: DeploymentStrategy = "slow") =>
-      papercutSyncClientCredentialsProfileIdEffect.pipe(
+      papercutMfSyncClientCredentialsProfileIdEffect.pipe(
         Effect.andThen((profileId) =>
           appconfig.publish({
             profileId,
@@ -157,10 +159,10 @@ export const makeService = Effect.gen(function* () {
   return {
     getApiClientCredentials,
     setApiClientCredentials,
-    getPapercutApiAuthToken,
-    setPapercutApiAuthToken,
-    getPapercutSyncClientCredentials,
-    setPapercutSyncClientCredentials,
+    getPapercutMfApiAuthToken,
+    setPapercutMfApiAuthToken,
+    getPapercutMfSyncClientCredentials,
+    setPapercutMfSyncClientCredentials,
     getInvoicesProcessorClientCredentials,
     setInvoicesProcessorClientCredentials,
   } as const;

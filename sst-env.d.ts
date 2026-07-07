@@ -146,6 +146,7 @@ declare module "sst" {
       }
       "hashKey": string
       "keyLiterals": {
+        "CALLBACK": string
         "CLIENT": string
         "DEPLOYMENT": string
         "INFRA": string
@@ -153,6 +154,7 @@ declare module "sst" {
         "IP": string
         "ORDER": string
         "OUTPUT": string
+        "PAPERCUT_MF_API": string
         "ROOM": string
         "TENANT": string
         "USER": string
@@ -170,7 +172,7 @@ declare module "sst" {
       "api": string
       "assets": string
       "auth": string
-      "papercutApiTemplate": string
+      "papercutMfApiTemplate": string
       "realtime": string
       "type": "sst.sst.Linkable"
       "web": string
@@ -223,27 +225,27 @@ declare module "sst" {
       "pattern": string
       "type": "sst.sst.Linkable"
     }
-    "PapercutApiAuthTokenConfigurationProfileTemplate": {
+    "PapercutMfApiAuthTokenConfigurationProfileTemplate": {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }
-    "PapercutApiGatewayAwsAccessKey": {
+    "PapercutMfApiGatewayAwsAccessKey": {
       "id": string
       "secret": string
       "type": "pd.aws.IamAccessKey"
     }
-    "PapercutApiGatewayScriptObject": {
+    "PapercutMfApiGatewayScriptObject": {
       "bucket": string
       "key": string
       "type": "aws.s3/bucketObjectv2.BucketObjectv2"
     }
-    "PapercutSync": {
+    "PapercutMfSync": {
       "arn": string
       "name": string
       "roleArn": string
       "type": "sst.aws.Function"
     }
-    "PapercutSyncClientCredentialsConfigurationProfileTemplate": {
+    "PapercutMfSyncClientCredentialsConfigurationProfileTemplate": {
       "name": string
       "type": "pd.templates.AwsAppConfigConfigurationProfile"
     }

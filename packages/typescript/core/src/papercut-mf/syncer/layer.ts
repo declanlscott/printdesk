@@ -15,20 +15,21 @@ import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 
-import { PapercutSyncer } from ".";
+import { PapercutMfSyncer } from ".";
 import { Actor } from "../../actors";
-import { Graph, GraphLayerMap } from "../../graph";
+import { Graph } from "../../graph";
 import { CustomerGroupMembershipsRepository } from "../../groups/customer-memberships/repository";
 import { CustomerGroupsRepository } from "../../groups/customers/repository";
 import { IdentityProvidersContract } from "../../identity/contract";
+import { EntraId } from "../../identity/entra-id";
 import { IdentityProvidersRepository } from "../../identity/providers-repository";
 import { SharedAccountCustomerAccessRepository } from "../../shared-accounts/customer-access/repository";
 import { SharedAccountCustomerGroupAccessRepository } from "../../shared-accounts/customer-group-access/repository";
 import { SharedAccountsRepository } from "../../shared-accounts/repository";
 import { UsersRepository } from "../../users/repository";
 import { Constants } from "../../utils/constants";
-import { PapercutApi } from "../api";
-import { PapercutContract } from "../contract";
+import { PapercutMfApi } from "../api";
+import { PapercutMfContract } from "../contract";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type {
@@ -60,17 +61,18 @@ export class CustomerGroupMembershipKey extends Data.Class<{
 export class IdentityProviderKey extends Data.Class<IdentityProvider> {}
 
 export class SharedAccountCustomerAccessKey extends Data.Class<{
-  sharedAccountPapercutId: NonNullable<SharedAccount["papercutId"]>;
+  sharedAccountPapercutMfId: NonNullable<SharedAccount["papercutMfId"]>;
   username: User["username"];
 }> {}
 
 export class SharedAccountCustomerGroupAccessKey extends Data.Class<{
   customerGroupName: CustomerGroup["name"];
-  sharedAccountPapercutId: NonNullable<SharedAccount["papercutId"]>;
+  sharedAccountPapercutMfId: NonNullable<SharedAccount["papercutMfId"]>;
 }> {}
 
 export const makeService = Effect.gen(function* () {
-  const papercutApi = yield* PapercutApi;
+  const papercutMfApi = yield* PapercutMfApi;
+  const graph = yield* Graph;
 
   const customerGroupsRepository = yield* CustomerGroupsRepository;
   const customerGroupMembershipsRepository = yield* CustomerGroupMembershipsRepository;
@@ -81,24 +83,26 @@ export const makeService = Effect.gen(function* () {
     yield* SharedAccountCustomerGroupAccessRepository;
   const usersRepository = yield* UsersRepository;
 
-  const syncSource = papercutApi.getTaskStatus.pipe(
+  const authProviderLayerMap = yield* EntraId.AuthProviderLayerMap;
+
+  const syncSource = papercutMfApi.getTaskStatus.pipe(
     Effect.filterOrFail(
       (taskStatus) => taskStatus[0].value.boolean,
       (taskStatus) =>
-        new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
+        new PapercutMfContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
     ),
-    Effect.andThen(papercutApi.performUserAndGroupSync),
-    Effect.withSpan("PapercutSyncer.syncSource"),
+    Effect.andThen(papercutMfApi.performUserAndGroupSync),
+    Effect.withSpan("PapercutMfSyncer.syncSource"),
   );
 
   const syncCustomerGroups = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
-    yield* papercutApi.getTaskStatus.pipe(
+    yield* papercutMfApi.getTaskStatus.pipe(
       Effect.filterOrFail(
         (taskStatus) => taskStatus[0].value.boolean,
         (taskStatus) =>
-          new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
+          new PapercutMfContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
       ),
     );
 
@@ -116,7 +120,7 @@ export const makeService = Effect.gen(function* () {
           Stream.fromArrayEffect,
           Stream.mapEffect(
             Effect.fn(function* (identityProvider) {
-              const names = yield* papercutApi.listUserGroupsStream.pipe(
+              const names = yield* papercutMfApi.listUserGroupsStream.pipe(
                 Stream.runFold(HashSet.empty<CustomerGroup["name"]>, (set, name) =>
                   set.pipe(HashSet.add(name)),
                 ),
@@ -124,8 +128,8 @@ export const makeService = Effect.gen(function* () {
 
               return yield* Match.value(identityProvider).pipe(
                 Match.when({ kind: Match.is(Constants.ENTRA_ID) }, (entraId) =>
-                  Graph.use(Struct.get("groups")).pipe(
-                    Effect.provide(GraphLayerMap.get(entraId.externalTenantId)),
+                  graph.groups.pipe(
+                    Effect.provide(authProviderLayerMap.get(entraId.externalTenantId)),
                     Stream.fromArrayEffect,
                     Stream.filterMapEffect((group) =>
                       Match.value(group).pipe(
@@ -227,16 +231,16 @@ export const makeService = Effect.gen(function* () {
       return yield* upserts.pipe(Chunk.toArray, customerGroupsRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutSyncer.syncCustomerGroups"));
+  }).pipe(Effect.withSpan("PapercutMfSyncer.syncCustomerGroups"));
 
   const syncCustomerGroupMemberships = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
-    yield* papercutApi.getTaskStatus.pipe(
+    yield* papercutMfApi.getTaskStatus.pipe(
       Effect.filterOrFail(
         (taskStatus) => taskStatus[0].value.boolean,
         (taskStatus) =>
-          new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
+          new PapercutMfContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
       ),
     );
 
@@ -278,9 +282,9 @@ export const makeService = Effect.gen(function* () {
             (map, entry) => map.pipe(HashMap.set(...entry)),
           ),
         ),
-        papercutApi.listUserGroupsStream.pipe(
+        papercutMfApi.listUserGroupsStream.pipe(
           Stream.flatMap((customerGroupName) =>
-            papercutApi
+            papercutMfApi
               .getGroupMembersStream(customerGroupName)
               .pipe(
                 Stream.map(
@@ -345,7 +349,7 @@ export const makeService = Effect.gen(function* () {
       return yield* upserts.pipe(Chunk.toArray, customerGroupMembershipsRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutSyncer.syncCustomerGroupMemberships"));
+  }).pipe(Effect.withSpan("PapercutMfSyncer.syncCustomerGroupMemberships"));
 
   const syncSharedAccounts = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
@@ -354,23 +358,23 @@ export const makeService = Effect.gen(function* () {
       [
         sharedAccountsRepository.findByOrigin("papercut", tenantId).pipe(
           Stream.fromArrayEffect,
-          Stream.map((sharedAccount) => Tuple.make(sharedAccount.papercutId, sharedAccount)),
+          Stream.map((sharedAccount) => Tuple.make(sharedAccount.papercutMfId, sharedAccount)),
           Stream.runFold(
             HashMap.empty<
-              NonNullable<SharedAccount["papercutId"]>,
+              NonNullable<SharedAccount["papercutMfId"]>,
               SharedAccountByOrigin<"papercut">
             >,
             (map, entry) => map.pipe(HashMap.set(...entry)),
           ),
         ),
-        papercutApi.listSharedAccountsStream.pipe(
+        papercutMfApi.listSharedAccountsStream.pipe(
           Stream.mapEffect((name) =>
-            papercutApi
+            papercutMfApi
               .getSharedAccountProperties(name, "account-id")
               .pipe(Effect.map(([accountId]) => Tuple.make(accountId, name))),
           ),
           Stream.runFold(
-            HashMap.empty<NonNullable<SharedAccount["papercutId"]>, SharedAccount["name"]>,
+            HashMap.empty<NonNullable<SharedAccount["papercutMfId"]>, SharedAccount["name"]>,
             (map, entry) => map.pipe(HashMap.set(...entry)),
           ),
         ),
@@ -383,50 +387,53 @@ export const makeService = Effect.gen(function* () {
       HashMap.keys,
       HashSet.fromIterable,
       HashSet.union(next.pipe(HashMap.keys, HashSet.fromIterable)),
-      HashSet.reduce(Chunk.empty<InferInsertModel<SharedAccountsTable>>(), (chunk, papercutId) => {
-        const sharedAccount = prev.pipe(HashMap.get(papercutId));
-        const name = next.pipe(HashMap.get(papercutId));
+      HashSet.reduce(
+        Chunk.empty<InferInsertModel<SharedAccountsTable>>(),
+        (chunk, papercutMfId) => {
+          const sharedAccount = prev.pipe(HashMap.get(papercutMfId));
+          const name = next.pipe(HashMap.get(papercutMfId));
 
-        const base = {
-          origin: "papercut",
-          papercutId,
-          tenantId,
-        } as const;
+          const base = {
+            origin: "papercut",
+            papercutMfId,
+            tenantId,
+          } as const;
 
-        // create
-        if (Option.isNone(sharedAccount) && Option.isSome(name))
-          return chunk.pipe(Chunk.append({ ...base, name: name.value }));
+          // create
+          if (Option.isNone(sharedAccount) && Option.isSome(name))
+            return chunk.pipe(Chunk.append({ ...base, name: name.value }));
 
-        // update
-        if (
-          Option.isSome(sharedAccount) &&
-          Option.isSome(name) &&
-          sharedAccount.value.name !== name.value
-        )
-          return chunk.pipe(
-            Chunk.append({ ...base, id: sharedAccount.value.id, name: name.value }),
-          );
+          // update
+          if (
+            Option.isSome(sharedAccount) &&
+            Option.isSome(name) &&
+            sharedAccount.value.name !== name.value
+          )
+            return chunk.pipe(
+              Chunk.append({ ...base, id: sharedAccount.value.id, name: name.value }),
+            );
 
-        // delete
-        if (Option.isSome(sharedAccount) && Option.isNone(name))
-          return chunk.pipe(
-            Chunk.append({
-              ...base,
-              ...Struct.pick(sharedAccount.value, ["id", "name"]),
-              deletedAt: now,
-            }),
-          );
+          // delete
+          if (Option.isSome(sharedAccount) && Option.isNone(name))
+            return chunk.pipe(
+              Chunk.append({
+                ...base,
+                ...Struct.pick(sharedAccount.value, ["id", "name"]),
+                deletedAt: now,
+              }),
+            );
 
-        // no change
-        return chunk;
-      }),
+          // no change
+          return chunk;
+        },
+      ),
     );
 
     if (Chunk.isNonEmpty(upserts))
       return yield* upserts.pipe(Chunk.toArray, sharedAccountsRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutSyncer.syncSharedAccounts"));
+  }).pipe(Effect.withSpan("PapercutMfSyncer.syncSharedAccounts"));
 
   const syncSharedAccountCustomerAccess = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
@@ -442,9 +449,9 @@ export const makeService = Effect.gen(function* () {
         ),
         sharedAccounts: sharedAccountsRepository.findByOrigin("papercut", tenantId).pipe(
           Stream.fromArrayEffect,
-          Stream.map((sharedAccount) => Tuple.make(sharedAccount.papercutId, sharedAccount.id)),
+          Stream.map((sharedAccount) => Tuple.make(sharedAccount.papercutMfId, sharedAccount.id)),
           Stream.runFold(
-            HashMap.empty<NonNullable<SharedAccount["papercutId"]>, SharedAccount["id"]>,
+            HashMap.empty<NonNullable<SharedAccount["papercutMfId"]>, SharedAccount["id"]>,
             (map, entry) => map.pipe(HashMap.set(...entry)),
           ),
         ),
@@ -461,7 +468,7 @@ export const makeService = Effect.gen(function* () {
             Stream.map(({ access, customer, sharedAccount }) =>
               Tuple.make(
                 new SharedAccountCustomerAccessKey({
-                  sharedAccountPapercutId: sharedAccount.papercutId,
+                  sharedAccountPapercutMfId: sharedAccount.papercutMfId,
                   username: customer.username,
                 }),
                 access,
@@ -472,22 +479,25 @@ export const makeService = Effect.gen(function* () {
               (map, entry) => map.pipe(HashMap.set(...entry)),
             ),
           ),
-        papercutApi.listSharedAccountsStream.pipe(
+        papercutMfApi.listSharedAccountsStream.pipe(
           Stream.mapEffect((name) =>
-            papercutApi.getSharedAccountProperties(name, "account-id", "access-users"),
+            papercutMfApi.getSharedAccountProperties(name, "account-id", "access-users"),
           ),
-          Stream.flatMap(([sharedAccountPapercutId, usernames]) =>
+          Stream.flatMap(([sharedAccountPapercutMfId, usernames]) =>
             Stream.fromArray(usernames).pipe(
               Stream.map(
                 (username) =>
-                  new SharedAccountCustomerAccessKey({ sharedAccountPapercutId, username }),
+                  new SharedAccountCustomerAccessKey({
+                    sharedAccountPapercutMfId,
+                    username,
+                  }),
               ),
             ),
           ),
           Stream.filterMap((key) =>
             Option.product(
               lookup.customers.pipe(HashMap.get(key.username)),
-              lookup.sharedAccounts.pipe(HashMap.get(key.sharedAccountPapercutId)),
+              lookup.sharedAccounts.pipe(HashMap.get(key.sharedAccountPapercutMfId)),
             ).pipe(
               Option.map(([customerId, sharedAccountId]) =>
                 Tuple.make(key, { customerId, sharedAccountId }),
@@ -541,7 +551,7 @@ export const makeService = Effect.gen(function* () {
       return yield* upserts.pipe(Chunk.toArray, sharedAccountCustomerAccessRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutSyncer.syncSharedAccountCustomerAccess"));
+  }).pipe(Effect.withSpan("PapercutMfSyncer.syncSharedAccountCustomerAccess"));
 
   const syncSharedAccountCustomerGroupAccess = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
@@ -557,9 +567,9 @@ export const makeService = Effect.gen(function* () {
         ),
         sharedAccounts: sharedAccountsRepository.findByOrigin("papercut", tenantId).pipe(
           Stream.fromArrayEffect,
-          Stream.map((sharedAccount) => Tuple.make(sharedAccount.papercutId, sharedAccount.id)),
+          Stream.map((sharedAccount) => Tuple.make(sharedAccount.papercutMfId, sharedAccount.id)),
           Stream.runFold(
-            HashMap.empty<NonNullable<SharedAccount["papercutId"]>, SharedAccount["id"]>,
+            HashMap.empty<NonNullable<SharedAccount["papercutMfId"]>, SharedAccount["id"]>,
             (map, entry) => map.pipe(HashMap.set(...entry)),
           ),
         ),
@@ -577,7 +587,7 @@ export const makeService = Effect.gen(function* () {
               Tuple.make(
                 new SharedAccountCustomerGroupAccessKey({
                   customerGroupName: customerGroup.name,
-                  sharedAccountPapercutId: sharedAccount.papercutId,
+                  sharedAccountPapercutMfId: sharedAccount.papercutMfId,
                 }),
                 access,
               ),
@@ -587,16 +597,16 @@ export const makeService = Effect.gen(function* () {
               (map, entry) => map.pipe(HashMap.set(...entry)),
             ),
           ),
-        papercutApi.listSharedAccountsStream.pipe(
+        papercutMfApi.listSharedAccountsStream.pipe(
           Stream.mapEffect((name) =>
-            papercutApi.getSharedAccountProperties(name, "account-id", "access-groups"),
+            papercutMfApi.getSharedAccountProperties(name, "account-id", "access-groups"),
           ),
-          Stream.flatMap(([sharedAccountPapercutId, customerGroupNames]) =>
+          Stream.flatMap(([sharedAccountPapercutMfId, customerGroupNames]) =>
             Stream.fromArray(customerGroupNames).pipe(
               Stream.map(
                 (customerGroupName) =>
                   new SharedAccountCustomerGroupAccessKey({
-                    sharedAccountPapercutId,
+                    sharedAccountPapercutMfId,
                     customerGroupName,
                   }),
               ),
@@ -605,7 +615,7 @@ export const makeService = Effect.gen(function* () {
           Stream.filterMap((key) =>
             Option.product(
               lookup.customerGroups.pipe(HashMap.get(key.customerGroupName)),
-              lookup.sharedAccounts.pipe(HashMap.get(key.sharedAccountPapercutId)),
+              lookup.sharedAccounts.pipe(HashMap.get(key.sharedAccountPapercutMfId)),
             ).pipe(
               Option.map(([customerGroupId, sharedAccountId]) =>
                 Tuple.make(key, { customerGroupId, sharedAccountId }),
@@ -662,16 +672,16 @@ export const makeService = Effect.gen(function* () {
       );
 
     return [];
-  }).pipe(Effect.withSpan("PapercutSyncer.syncSharedAccountCustomerGroupAccess"));
+  }).pipe(Effect.withSpan("PapercutMfSyncer.syncSharedAccountCustomerGroupAccess"));
 
   const syncUsers = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
 
-    yield* papercutApi.getTaskStatus.pipe(
+    yield* papercutMfApi.getTaskStatus.pipe(
       Effect.filterOrFail(
         (taskStatus) => taskStatus[0].value.boolean,
         (taskStatus) =>
-          new PapercutContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
+          new PapercutMfContract.IncompleteTaskStatusError({ message: taskStatus[1].value }),
       ),
     );
 
@@ -704,10 +714,10 @@ export const makeService = Effect.gen(function* () {
                 hasGroups
                   ? Stream.fromArray(customerGroups).pipe(
                       Stream.flatMap((customerGroup) =>
-                        papercutApi.getGroupMembersStream(customerGroup.name),
+                        papercutMfApi.getGroupMembersStream(customerGroup.name),
                       ),
                     )
-                  : papercutApi.listUserAccountsStream
+                  : papercutMfApi.listUserAccountsStream
               ).pipe(
                 Stream.runFold(HashSet.empty<User["username"]>, (set, username) =>
                   set.pipe(HashSet.add(username)),
@@ -720,17 +730,12 @@ export const makeService = Effect.gen(function* () {
                   (hasGroups
                     ? Stream.fromArray(customerGroups).pipe(
                         Stream.flatMap((customerGroup) =>
-                          Graph.use((graph) => graph.groupMembers(customerGroup.externalId)).pipe(
-                            Effect.provide(GraphLayerMap.get(entraId.externalTenantId)),
-                            Stream.fromArrayEffect,
-                          ),
+                          graph.groupMembers(customerGroup.externalId).pipe(Stream.fromArrayEffect),
                         ),
                       )
-                    : Graph.use(Struct.get("users")).pipe(
-                        Effect.provide(GraphLayerMap.get(entraId.externalTenantId)),
-                        Stream.fromArrayEffect,
-                      )
+                    : graph.users.pipe(Stream.fromArrayEffect)
                   ).pipe(
+                    Stream.provide(authProviderLayerMap.get(entraId.externalTenantId)),
                     Stream.filterMapEffect((user) =>
                       Match.value(user).pipe(
                         Match.when(
@@ -848,7 +853,7 @@ export const makeService = Effect.gen(function* () {
       return yield* upserts.pipe(Chunk.toArray, usersRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutSyncer.syncUsers"));
+  }).pipe(Effect.withSpan("PapercutMfSyncer.syncUsers"));
 
   const syncAll = Effect.all([
     syncCustomerGroups,
@@ -857,7 +862,7 @@ export const makeService = Effect.gen(function* () {
     syncSharedAccounts,
     syncSharedAccountCustomerAccess,
     syncSharedAccountCustomerGroupAccess,
-  ]).pipe(Effect.withSpan("PapercutSyncer.syncAll"));
+  ]).pipe(Effect.withSpan("PapercutMfSyncer.syncAll"));
 
   return {
     syncSource,
@@ -871,4 +876,4 @@ export const makeService = Effect.gen(function* () {
   } as const;
 });
 
-export const layer = makeService.pipe(Layer.effect(PapercutSyncer));
+export const layer = makeService.pipe(Layer.effect(PapercutMfSyncer));

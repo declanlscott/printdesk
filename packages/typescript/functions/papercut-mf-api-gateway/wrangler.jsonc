@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "papercut-api-gateway",
+  "name": "papercut-mf-api-gateway",
   "main": "src/index.ts",
   "compatibility_date": "2026-05-05",
   "vars": {
@@ -15,7 +15,7 @@
   },
   "vpc_services": [
     {
-      "binding": "PAPERCUT_API",
+      "binding": "PAPERCUT_MF_API",
       "service_id": "PLACEHOLDER",
     },
   ],

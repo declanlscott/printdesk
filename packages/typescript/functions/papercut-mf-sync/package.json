@@ -1,5 +1,5 @@
 {
-  "name": "@printdesk/papercut-sync",
+  "name": "@printdesk/papercut-mf-sync",
   "private": true,
   "type": "module",
   "dependencies": {

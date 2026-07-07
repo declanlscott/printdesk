@@ -1,91 +1,169 @@
-import { Client, ResponseType } from "@microsoft/microsoft-graph-client";
+import {
+  createGraphServiceClient,
+  GraphRequestAdapter,
+  type GraphServiceClient,
+} from "@microsoft/msgraph-sdk";
+import { createGraphClientFactory, getDefaultMiddlewares } from "@microsoft/msgraph-sdk-core";
+import "@microsoft/msgraph-sdk-users";
+import "@microsoft/msgraph-sdk-groups";
+import { version } from "@microsoft/msgraph-sdk/version";
+import * as Array from "effect/Array";
+import * as Cache from "effect/Cache";
+import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
-import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as LayerMap from "effect/LayerMap";
-import * as ManagedRuntime from "effect/ManagedRuntime";
+import * as Option from "effect/Option";
+import * as Predicate from "effect/Predicate";
 import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { EntraId } from "../identity/entra-id";
-import { EntraIdLayerMap } from "../identity/entra-id/layer-map";
-import { SstResource } from "../sst/resource";
 import { Constants } from "../utils/constants";
 
-import type { ClientOptions, GraphRequest } from "@microsoft/microsoft-graph-client";
-import type { Group, User } from "@microsoft/microsoft-graph-types";
+import type { RequestOption, RequestConfiguration } from "@microsoft/kiota-abstractions";
+import type { Middleware } from "@microsoft/kiota-http-fetchlibrary";
 import type { CustomerGroupsContract } from "../groups/contracts";
-import type { IdentityProvidersContract } from "../identity/contract";
 import type { UsersContract } from "../users/contract";
-
-export class GraphGetRequest<TSuccess = unknown> extends Request.Class<
-  GraphRequest,
-  TSuccess,
-  GraphError
-> {}
 
 export class GraphError extends Schema.TaggedErrorClass<GraphError>()("GraphError", {
   cause: Schema.Defect(),
 }) {}
 
+// oxlint-disable-next-line typescript/no-explicit-any
+export type AnyMethod = (...args: Array<any>) => Promise<any>;
+
+export class GraphRequest<TMethod extends AnyMethod = AnyMethod> extends Request.Class<
+  { method: TMethod; args: Parameters<TMethod> },
+  NonNullable<Awaited<ReturnType<TMethod>>>,
+  GraphError | Cause.NoSuchElementError
+> {}
+
+export class AbortSignalOption implements RequestOption {
+  public static readonly key = "AbortSignalOption";
+  public constructor(public signal: AbortSignal) {}
+  // oxlint-disable-next-line class-methods-use-this
+  public getKey = () => AbortSignalOption.key;
+}
+
+export class AbortSignalMiddleware implements Middleware {
+  public next: Middleware | undefined;
+
+  public async execute(
+    url: string,
+    requestInit: RequestInit,
+    requestOptions?: Record<string, RequestOption>,
+  ) {
+    const option = requestOptions?.[AbortSignalOption.key] as AbortSignalOption | undefined;
+    if (option) requestInit.signal = option.signal;
+
+    return (
+      (await this.next?.execute(url, requestInit, requestOptions)) ??
+      Promise.reject(new Error("Next middleware not set"))
+    );
+  }
+}
+
 export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph", {
-  make: Effect.fn(function* (opts: ClientOptions) {
-    const client = yield* Effect.try({
-      try: () => Client.initWithMiddleware(opts),
-      catch: (cause) => new GraphError({ cause }),
+  make: Effect.gen(function* () {
+    const clientCache = yield* Cache.make({
+      capacity: 10,
+      lookup: (service: typeof EntraId.AuthProvider.Service) =>
+        Effect.try({
+          try: () =>
+            new GraphRequestAdapter(
+              service.provider,
+              undefined,
+              undefined,
+              createGraphClientFactory(
+                { graphServiceLibraryClientVersion: version },
+                undefined,
+                undefined,
+                [...getDefaultMiddlewares(), new AbortSignalMiddleware()],
+              ),
+            ),
+          catch: (cause) => new GraphError({ cause }),
+        }).pipe(
+          Effect.andThen((requestAdapter) =>
+            Effect.try({
+              try: () => createGraphServiceClient(requestAdapter),
+              catch: (cause) => new GraphError({ cause }),
+            }),
+          ),
+        ),
     });
 
-    const getResolver = RequestResolver.make<GraphGetRequest>(
+    const resolver = RequestResolver.make<GraphRequest>(
       Effect.forEach((entry) =>
         Effect.tryPromise({
-          try: (signal) => entry.request.option("signal", signal).get(),
+          try: (signal) =>
+            entry.request.method(
+              ...Array.dropRight(entry.request.args, 1),
+              Array.last(entry.request.args).pipe(
+                Option.match({
+                  // oxlint-disable-next-line typescript/no-explicit-any
+                  onSome: (config: RequestConfiguration<any>) => ({
+                    options: [...(config.options ?? []), new AbortSignalOption(signal)],
+                    ...config,
+                  }),
+                  onNone: () => ({ options: [new AbortSignalOption(signal)] }),
+                }),
+              ),
+            ),
           catch: (cause) => new GraphError({ cause }),
-        }).pipe(Effect.exit, Effect.map(entry.completeUnsafe)),
+        }).pipe(
+          Effect.filterOrFail(Predicate.isNotUndefined),
+          Effect.exit,
+          Effect.map(entry.completeUnsafe),
+        ),
       ),
     ).pipe(
       RequestResolver.setDelay(Constants.GRAPH_REQUEST_BATCH_DELAY),
       RequestResolver.batchN(Constants.GRAPH_REQUEST_BATCH_SIZE),
-      RequestResolver.withSpan("Graph.getResolver"),
+      RequestResolver.withSpan("Graph.resolver"),
     );
 
-    const batchGetRequest = Effect.fn("Graph.batchGetRequest")(<TSuccess>(request: GraphRequest) =>
-      Effect.request(new GraphGetRequest<TSuccess>(request), getResolver),
-    );
-
-    const me = batchGetRequest<User>(client.api("/me").responseType(ResponseType.JSON)).pipe(
-      Effect.withSpan("Graph.me"),
-    );
-
-    const groups = batchGetRequest<Array<Group>>(
-      client.api("/groups").responseType(ResponseType.JSON),
-    ).pipe(Effect.withSpan("Graph.groups"));
-
-    const groupMembers = Effect.fn("Graph.groupMembers")(
-      (groupId: CustomerGroupsContract.ExternalId, transitive: boolean = true) =>
-        batchGetRequest<Array<User>>(
-          client
-            .api(
-              `/groups/${groupId}/${transitive ? "transitiveMembers" : "members"}/microsoft.graph.user`,
-            )
-            .responseType(ResponseType.JSON),
+    const batchRequest = Effect.fn("Graph.batchRequest")(
+      <TMethod extends AnyMethod>(
+        callback: (client: GraphServiceClient) => TMethod,
+        ...args: Parameters<TMethod>
+      ) =>
+        EntraId.AuthProvider.use((service) => clientCache.pipe(Cache.get(service))).pipe(
+          Effect.map(callback),
+          Effect.flatMap((method) => Effect.request(new GraphRequest({ method, args }), resolver)),
         ),
     );
 
-    const users = batchGetRequest<Array<User>>(
-      client.api("/users").responseType(ResponseType.JSON),
-    ).pipe(Effect.withSpan("Graph.users"));
+    const me = batchRequest((client) => client.me.get).pipe(Effect.withSpan("Graph.me"));
 
-    const user = Effect.fn("Graph.user")((id: UsersContract.ExternalId) =>
-      batchGetRequest<User>(client.api(`/users/${id}`).responseType(ResponseType.JSON)),
+    const groups = batchRequest((client) => client.groups.get).pipe(
+      Effect.map(Struct.get("value")),
+      Effect.filterOrFail(Predicate.isNotNullish),
+      Effect.withSpan("Graph.groups"),
     );
 
-    const userPhotoBlob = Effect.fn("Graph.userPhotoBlob")((id: UsersContract.ExternalId) =>
-      batchGetRequest<Blob>(
-        client.api(`/users/${id}/photo/$value`).responseType(ResponseType.BLOB),
-      ),
+    const groupMembers = Effect.fn("Graph.groupMembers")(
+      (id: CustomerGroupsContract.ExternalId, transitive: boolean = true) =>
+        batchRequest(
+          (client) =>
+            client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"].graphUser.get,
+        ).pipe(Effect.map(Struct.get("value")), Effect.filterOrFail(Predicate.isNotNullish)),
+    );
+
+    const users = batchRequest((client) => client.users.get).pipe(
+      Effect.map(Struct.get("value")),
+      Effect.filterOrFail(Predicate.isNotNullish),
+      Effect.withSpan("Graph.users"),
+    );
+
+    const user = Effect.fn("Graph.user")((id: UsersContract.ExternalId) =>
+      batchRequest((client) => client.users.byUserId(id).get),
+    );
+
+    const userPhoto = Effect.fn("Graph.userPhoto")((id: UsersContract.ExternalId) =>
+      batchRequest((client) => client.users.byUserId(id).photo.content.get),
     );
 
     return {
@@ -94,33 +172,9 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       groupMembers,
       users,
       user,
-      userPhotoBlob,
+      userPhoto,
     } as const;
   }),
 }) {
-  public static layer(...args: Parameters<typeof Graph.make>) {
-    return this.make(...args).pipe(Layer.effect(this));
-  }
+  public static readonly layer = this.make.pipe(Layer.effect(this));
 }
-
-const accessTokenRuntime = EntraIdLayerMap.layer.pipe(
-  Layer.provide(SstResource.layer),
-  ManagedRuntime.make,
-);
-
-export class GraphLayerMap extends LayerMap.Service<GraphLayerMap>()(
-  "@printdesk/core/graph/GraphLayerMap",
-  {
-    idleTimeToLive: Duration.minutes(15),
-    lookup: (externalTenantId: IdentityProvidersContract.ExternalTenantId) =>
-      Graph.layer({
-        authProvider: {
-          getAccessToken: () =>
-            EntraId.use(Struct.get("accessToken")).pipe(
-              Effect.provide(EntraIdLayerMap.get(externalTenantId)),
-              accessTokenRuntime.runPromise,
-            ),
-        },
-      }),
-  },
-) {}

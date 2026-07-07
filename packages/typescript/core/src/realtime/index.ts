@@ -18,13 +18,13 @@ import { prefix, suffix, type TenantId } from "../utils";
 import { RealtimeContract } from "./contract";
 
 import type * as Duration from "effect/Duration";
-import type { AwsCredentialIdentity } from "../aws/credential-identity";
+import type { AwsCredentialIdentityProvider } from "../aws/credential-identity";
 
 export class PublishRequest extends Request.Class<
   { eventHandler: RealtimeContract.EventHandler; tenantId: TenantId },
   void,
   PublishError,
-  AwsCredentialIdentity
+  AwsCredentialIdentityProvider
 > {}
 
 export class PublishError extends Schema.TaggedErrorClass<PublishError>()("PublishError", {
@@ -59,7 +59,7 @@ export class Realtime extends Context.Service<Realtime>()("@printdesk/core/realt
         ),
     );
 
-    const publishResolver = Effect.context<AwsCredentialIdentity>().pipe(
+    const publishResolver = Effect.context<AwsCredentialIdentityProvider>().pipe(
       Effect.map((context) =>
         RequestResolver.makeGrouped<PublishRequest, RealtimeContract.Channel>({
           key: (entry) =>

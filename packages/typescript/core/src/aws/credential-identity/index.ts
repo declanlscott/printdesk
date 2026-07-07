@@ -1,15 +1,13 @@
 import * as Context from "effect/Context";
-import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import type {
   AwsCredentialIdentity as SmithyAwsCredentialIdentity,
-  AwsCredentialIdentityProvider,
+  AwsCredentialIdentityProvider as SmithyAwsCredentialIdentityProvider,
 } from "@smithy/types";
 
 export class AwsCredentialIdentityProviderError
@@ -25,7 +23,7 @@ export class AwsCredentialIdentityProviderError
     HttpServerResponse.empty({ status: 500 }).pipe(Effect.succeed);
 }
 
-export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdentitySchema>(
+export class AwsCredentialIdentity extends Schema.Class<AwsCredentialIdentity>(
   "AwsCredentialIdentity",
 )({
   accessKeyId: Schema.String.pipe(Schema.RedactedFromValue),
@@ -34,32 +32,30 @@ export class AwsCredentialIdentitySchema extends Schema.Class<AwsCredentialIdent
   credentialScope: Schema.String.pipe(Schema.RedactedFromValue, Schema.optional),
   accountId: Schema.String.pipe(Schema.RedactedFromValue, Schema.optional),
   expiration: Schema.DateTimeUtcFromDate.pipe(Schema.RedactedFromValue, Schema.optional),
-}) {}
-
-export class InvalidAwsCredentialIdentityError
-  extends Schema.TaggedErrorClass<InvalidAwsCredentialIdentityError>()(
-    "InvalidAwsCredentialIdentityError",
-    { cause: Schema.instanceOf(Schema.SchemaError) },
-  )
-  implements HttpServerRespondable.Respondable
-{
-  // oxlint-disable-next-line class-methods-use-this
-  public [HttpServerRespondable.symbol] = () =>
-    HttpServerResponse.empty({ status: 500 }).pipe(Effect.succeed);
+}) {
+  public get encode() {
+    return Effect.succeed(this).pipe(
+      Effect.flatMap(Schema.encodeEffect(AwsCredentialIdentity)),
+      Effect.orDie,
+    );
+  }
 }
 
 // @effect-leakable-service
-export class AwsCredentialIdentity extends Context.Service<AwsCredentialIdentity>()(
-  "@printdesk/core/aws/CredentialIdentity",
+export class AwsCredentialIdentityProvider extends Context.Service<AwsCredentialIdentityProvider>()(
+  "@printdesk/core/aws/CredentialIdentityProvider",
   {
-    make: (identity: SmithyAwsCredentialIdentity) =>
-      Effect.succeed(identity).pipe(
-        Effect.flatMap(Schema.decodeEffect(AwsCredentialIdentitySchema)),
-        Effect.mapError((error) => new InvalidAwsCredentialIdentityError({ cause: error })),
-      ),
+    make: Effect.fn(function* (smithy: SmithyAwsCredentialIdentity) {
+      const credentials = yield* Effect.succeed(smithy).pipe(
+        Effect.flatMap(Schema.decodeEffect(AwsCredentialIdentity)),
+        Effect.mapError((cause) => new AwsCredentialIdentityProviderError({ cause })),
+      );
+
+      return { credentials } as const;
+    }),
   },
 ) {
-  public static fromProvider(provider: () => AwsCredentialIdentityProvider) {
+  public static fromProvider(provider: () => SmithyAwsCredentialIdentityProvider) {
     return Effect.tryPromise({
       try: () => provider()(),
       catch: (cause) => new AwsCredentialIdentityProviderError({ cause }),
@@ -70,24 +66,7 @@ export class AwsCredentialIdentity extends Context.Service<AwsCredentialIdentity
     return this.make(identity).pipe(Layer.effect(this), Layer.fresh);
   }
 
-  public static providerLayer(provider: () => AwsCredentialIdentityProvider) {
+  public static providerLayer(provider: () => SmithyAwsCredentialIdentityProvider) {
     return this.fromProvider(provider).pipe(Layer.effect(this), Layer.fresh);
-  }
-
-  public static get values(): Effect.Effect<
-    SmithyAwsCredentialIdentity,
-    never,
-    AwsCredentialIdentity
-  > {
-    return AwsCredentialIdentity.pipe(
-      Effect.map((identity) => ({
-        accessKeyId: identity.accessKeyId.pipe(Redacted.value),
-        secretAccessKey: identity.secretAccessKey.pipe(Redacted.value),
-        sessionToken: identity.sessionToken?.pipe(Redacted.value),
-        credentialScope: identity.credentialScope?.pipe(Redacted.value),
-        accountId: identity.accountId?.pipe(Redacted.value),
-        expiration: identity.expiration?.pipe(Redacted.value, DateTime.toDate),
-      })),
-    );
   }
 }

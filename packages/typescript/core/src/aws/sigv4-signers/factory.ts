@@ -1,18 +1,20 @@
 import { Sha256 } from "@aws-crypto/sha256-js";
 import { HttpRequest } from "@smithy/protocol-http";
 import { SignatureV4 } from "@smithy/signature-v4";
+import * as Cache from "effect/Cache";
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
+import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
 import { SstResource } from "../../sst/resource";
-import { AwsCredentialIdentity } from "../credential-identity";
+import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
 import type {
   RequestPresigningArguments as SmithyRequestPresigningArguments,
@@ -52,25 +54,22 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
     resource.Aws.pipe(Redacted.value, Struct.get("region")),
   );
 
-  const make = AwsCredentialIdentity.values.pipe(
-    Effect.flatMap((credentials) =>
-      Effect.try({
-        try: () => new SignatureV4({ credentials, sha256: Sha256, region, service }),
-        catch: (cause) => new SignatureV4Error({ cause }),
-      }),
-    ),
-  );
-
-  const matchBody = Match.typeTags<HttpBody.HttpBody>()({
-    Empty: () => undefined,
-    Raw: (body) => body.body,
-    Uint8Array: (body) => body.body,
-    FormData: (body) => body.formData,
-    Stream: (body) => body.stream,
+  const sigv4Cache = yield* Cache.make({
+    capacity: 10,
+    lookup: (credentials: AwsCredentialIdentity) =>
+      credentials.encode.pipe(
+        Effect.flatMap((credentials) =>
+          Effect.try({
+            try: () => new SignatureV4({ credentials, sha256: Sha256, region, service }),
+            catch: (cause) => new SignatureV4Error({ cause }),
+          }),
+        ),
+      ),
   });
 
   const presign = (...args: Parameters<SignatureV4["presign"]>) =>
-    make.pipe(
+    AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
+      Effect.flatMap((credentials) => sigv4Cache.pipe(Cache.get(credentials))),
       Effect.flatMap((sigv4) =>
         Effect.tryPromise({
           try: () => sigv4.presign(...args),
@@ -80,7 +79,8 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
     );
 
   const sign = (...args: Parameters<SignatureV4["sign"]>) =>
-    make.pipe(
+    AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
+      Effect.flatMap((credentials) => sigv4Cache.pipe(Cache.get(credentials))),
       Effect.flatMap((sigv4) =>
         Effect.tryPromise({
           try: () => sigv4.sign(...args),
@@ -89,7 +89,15 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
       ),
     );
 
-  const presignRequest = Effect.fn(`${service}.presignRequest`)(function* (
+  const matchBody = Match.typeTags<HttpBody.HttpBody>()({
+    Empty: () => undefined,
+    Raw: (body) => body.body,
+    Uint8Array: (body) => body.body,
+    FormData: (body) => body.formData,
+    Stream: (body) => body.stream,
+  });
+
+  const presignRequest = Effect.fn(`${String.capitalize(service)}.presignRequest`)(function* (
     request: HttpClientRequest.HttpClientRequest,
     { host, ...args }: RequestPresigningArguments = {},
   ) {
@@ -117,7 +125,7 @@ export const makeSigV4Signer = Effect.fn(function* (service: string) {
     );
   });
 
-  const signRequest = Effect.fn(`${service}.signRequest`)(function* (
+  const signRequest = Effect.fn(`${String.capitalize(service)}.signRequest`)(function* (
     request: HttpClientRequest.HttpClientRequest,
     { host, ...args }: RequestSigningArguments = {},
   ) {

@@ -5,16 +5,10 @@ import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 
 import type { ActorsContract } from "../../actors/contract";
-import type {
-  AwsCredentialIdentityProviderError,
-  InvalidAwsCredentialIdentityError,
-} from "../../aws/credential-identity";
+import type { AwsCredentialIdentityProviderError } from "../../aws/credential-identity";
 
-export const awsCredentialIdentityErrorMiddleware = HttpRouter.middleware<{
-  handles:
-    | ActorsContract.ForbiddenActorError
-    | AwsCredentialIdentityProviderError
-    | InvalidAwsCredentialIdentityError;
+export const awsCredentialIdentityProviderErrorMiddleware = HttpRouter.middleware<{
+  handles: ActorsContract.ForbiddenActorError | AwsCredentialIdentityProviderError;
 }>()((httpEffect) =>
   httpEffect.pipe(
     Effect.catchFilter(

@@ -7,13 +7,13 @@ import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
 import { Actor, ActorLayerMap } from "../../actors";
-import { AwsCredentialIdentity } from "../../aws/credential-identity";
+import { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
 import { SstResource } from "../../sst/resource";
 import { tenantTemplate } from "../../utils";
 
 import type { FromTemporaryCredentialsOptions } from "@aws-sdk/credential-providers";
 
-export const appconfigCredentialIdentityLayer = Effect.gen(function* () {
+export const appconfigCredentialIdentityProviderLayer = Effect.gen(function* () {
   const roleArnTemplate = yield* SstResource.useSync(
     (resource) => resource.AppconfigRoleTemplate.pipe(Redacted.value).arn,
   );
@@ -23,17 +23,17 @@ export const appconfigCredentialIdentityLayer = Effect.gen(function* () {
     Effect.map((RoleArn) => ({ RoleArn, RoleSessionName: "Appconfig" })),
     Effect.satisfiesSuccessType<FromTemporaryCredentialsOptions["params"]>(),
     Effect.map((params) =>
-      AwsCredentialIdentity.providerLayer(() => fromTemporaryCredentials({ params })),
+      AwsCredentialIdentityProvider.providerLayer(() => fromTemporaryCredentials({ params })),
     ),
   );
 }).pipe(Layer.unwrap);
 
-export class AppconfigCredentialIdentityLayerMap extends LayerMap.Service<AppconfigCredentialIdentityLayerMap>()(
-  "@printdesk/core/aws/credential-identity/AppconfigLayerMap",
+export class AppconfigCredentialIdentityProviderLayerMap extends LayerMap.Service<AppconfigCredentialIdentityProviderLayerMap>()(
+  "@printdesk/core/aws/credential-identity/AppconfigProviderLayerMap",
   {
     idleTimeToLive: Duration.minutes(15),
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
-      appconfigCredentialIdentityLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
+      appconfigCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
   },
 ) {}

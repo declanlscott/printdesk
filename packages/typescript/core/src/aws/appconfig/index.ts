@@ -3,6 +3,7 @@ import {
   CreateHostedConfigurationVersionCommand,
   StartDeploymentCommand,
 } from "@aws-sdk/client-appconfig";
+import * as Cache from "effect/Cache";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -12,7 +13,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { SstResource } from "../../sst/resource";
-import { AwsCredentialIdentity } from "../credential-identity";
+import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
 export class AppconfigError extends Schema.TaggedErrorClass<AppconfigError>()("AppconfigError", {
   cause: Schema.Defect(),
@@ -30,14 +31,12 @@ export interface VersionArgs<TType extends object, TEncoded, TServices> {
   profileId: string;
   Codec: Schema.Codec<TType, TEncoded, never, TServices>;
   value: TType;
-  client?: AppConfigClient;
 }
 
 export interface DeployArgs {
   profileId: string;
   version: number;
   deploymentStrategyId: string;
-  client?: AppConfigClient;
 }
 
 export interface PublishArgs<TType extends object, TEncoded, TServices> {
@@ -54,28 +53,34 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
     const application = resource.AppconfigApplication.pipe(Redacted.value);
     const environment = resource.AppconfigEnvironment.pipe(Redacted.value);
 
-    const make = AwsCredentialIdentity.values.pipe(
-      Effect.flatMap((credentials) =>
-        Effect.acquireRelease(
-          Effect.try({
-            try: () =>
-              new AppConfigClient({
-                credentials,
-                region: resource.Aws.pipe(Redacted.value).region,
+    const clientCache = yield* Cache.make({
+      capacity: 10,
+      lookup: (credentials: AwsCredentialIdentity) =>
+        credentials.encode.pipe(
+          Effect.flatMap((credentials) =>
+            Effect.acquireRelease(
+              Effect.try({
+                try: () =>
+                  new AppConfigClient({
+                    credentials,
+                    region: resource.Aws.pipe(Redacted.value).region,
+                  }),
+                catch: (cause) => new AppconfigError({ cause }),
               }),
-            catch: (cause) => new AppconfigError({ cause }),
-          }),
-          (client) => Effect.sync(() => client.destroy()),
+              (client) => Effect.sync(() => client.destroy()),
+            ),
+          ),
         ),
-      ),
-    );
+    });
 
     const version = Effect.fn("Appconfig.version")(function* <
       TType extends object,
       TEncoded,
       TServices,
     >(args: VersionArgs<TType, TEncoded, TServices>) {
-      const client = args.client ?? (yield* make);
+      const client = yield* AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
+        Effect.flatMap((credentials) => clientCache.pipe(Cache.get(credentials))),
+      );
 
       const encode = args.Codec.pipe(Schema.fromJsonString, Schema.encodeEffect);
       const Content = yield* encode(args.value);
@@ -102,8 +107,8 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
     });
 
     const deploy = Effect.fn("Appconfig.deploy")((args: DeployArgs) =>
-      Effect.succeed(args.client).pipe(
-        Effect.filterOrElse(Predicate.isNotUndefined, () => make),
+      AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
+        Effect.flatMap((credentials) => clientCache.pipe(Cache.get(credentials))),
         Effect.flatMap((client) =>
           Effect.tryPromise({
             try: (abortSignal) =>
@@ -125,25 +130,14 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
 
     const publish = Effect.fn("Appconfig.publish")(
       <TType extends object, TEncoded, TServices>(args: PublishArgs<TType, TEncoded, TServices>) =>
-        make.pipe(
-          Effect.flatMap((client) =>
-            version({
+        version({ profileId: args.profileId, Codec: args.Codec, value: args.value }).pipe(
+          Effect.andThen((version) =>
+            deploy({
               profileId: args.profileId,
-              Codec: args.Codec,
-              value: args.value,
-              client,
-            }).pipe(
-              Effect.andThen((version) =>
-                deploy({
-                  profileId: args.profileId,
-                  version,
-                  deploymentStrategyId: args.deploymentStrategyId,
-                  client,
-                }),
-              ),
-            ),
+              version,
+              deploymentStrategyId: args.deploymentStrategyId,
+            }),
           ),
-          Effect.scoped,
         ),
     );
 

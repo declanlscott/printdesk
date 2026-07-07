@@ -7,13 +7,13 @@ import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
 import { Actor, ActorLayerMap } from "../../actors";
-import { AwsCredentialIdentity } from "../../aws/credential-identity";
+import { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
 import { SstResource } from "../../sst/resource";
 import { tenantTemplate } from "../../utils";
 
 import type { FromTemporaryCredentialsOptions } from "@aws-sdk/credential-providers";
 
-export const appsyncPublisherCredentialIdentityLayer = Effect.gen(function* () {
+export const appsyncPublisherCredentialIdentityProviderLayer = Effect.gen(function* () {
   const roleArnTemplate = yield* SstResource.useSync(
     (resource) => resource.AppsyncChannelNamespacePublisherRoleTemplate.pipe(Redacted.value).arn,
   );
@@ -23,22 +23,22 @@ export const appsyncPublisherCredentialIdentityLayer = Effect.gen(function* () {
     Effect.map((RoleArn) => ({ RoleArn, RoleSessionName: "AppsyncPublisher" })),
     Effect.satisfiesSuccessType<FromTemporaryCredentialsOptions["params"]>(),
     Effect.map((params) =>
-      AwsCredentialIdentity.providerLayer(() => fromTemporaryCredentials({ params })),
+      AwsCredentialIdentityProvider.providerLayer(() => fromTemporaryCredentials({ params })),
     ),
   );
 }).pipe(Layer.unwrap);
 
-export class AppsyncPublisherCredentialIdentityLayerMap extends LayerMap.Service<AppsyncPublisherCredentialIdentityLayerMap>()(
-  "@printdesk/core/aws/credential-identity/AppsyncPublisherLayerMap",
+export class AppsyncPublisherCredentialIdentityProviderLayerMap extends LayerMap.Service<AppsyncPublisherCredentialIdentityProviderLayerMap>()(
+  "@printdesk/core/aws/credential-identity/AppsyncPublisherProviderLayerMap",
   {
     idleTimeToLive: Duration.minutes(15),
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
-      appsyncPublisherCredentialIdentityLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
+      appsyncPublisherCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
   },
 ) {}
 
-export const appsyncSubscriberCredentialIdentityLayer = Effect.gen(function* () {
+export const appsyncSubscriberCredentialIdentityProviderLayer = Effect.gen(function* () {
   const roleArnTemplate = yield* SstResource.useSync(
     (resource) => resource.AppsyncChannelNamespaceSubscriberRoleTemplate.pipe(Redacted.value).arn,
   );
@@ -48,17 +48,19 @@ export const appsyncSubscriberCredentialIdentityLayer = Effect.gen(function* () 
     Effect.map((RoleArn) => ({ RoleArn, RoleSessionName: "AppsyncSubscriber" })),
     Effect.satisfiesSuccessType<FromTemporaryCredentialsOptions["params"]>(),
     Effect.map((params) =>
-      AwsCredentialIdentity.providerLayer(() => fromTemporaryCredentials({ params })),
+      AwsCredentialIdentityProvider.providerLayer(() => fromTemporaryCredentials({ params })),
     ),
   );
 }).pipe(Layer.unwrap);
 
-export class AppsyncSubscriberCredentialIdentityLayerMap extends LayerMap.Service<AppsyncSubscriberCredentialIdentityLayerMap>()(
-  "@printdesk/core/aws/credential-identity/AppsyncSubscriberLayerMap",
+export class AppsyncSubscriberCredentialIdentityProviderLayerMap extends LayerMap.Service<AppsyncSubscriberCredentialIdentityProviderLayerMap>()(
+  "@printdesk/core/aws/credential-identity/AppsyncSubscriberProviderLayerMap",
   {
     idleTimeToLive: Duration.minutes(15),
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
-      appsyncSubscriberCredentialIdentityLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
+      appsyncSubscriberCredentialIdentityProviderLayer.pipe(
+        Layer.provide(ActorLayerMap.get(actor)),
+      ),
   },
 ) {}

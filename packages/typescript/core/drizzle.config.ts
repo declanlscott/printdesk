@@ -6,13 +6,13 @@ import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Redacted from "effect/Redacted";
 
-import { AwsCredentialIdentity } from "./src/aws/credential-identity";
+import { AwsCredentialIdentityProvider } from "./src/aws/credential-identity";
 import { DsqlSigner } from "./src/aws/dsql-signer";
 import { layer as dsqlSignerLayer } from "./src/aws/dsql-signer/layer";
 import { SstResource } from "./src/sst/resource";
 
 const configRuntime = dsqlSignerLayer({ expiresIn: Duration.hours(12) }).pipe(
-  Layer.provide(AwsCredentialIdentity.providerLayer(fromNodeProviderChain)),
+  Layer.provide(AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain)),
   Layer.provideMerge(SstResource.layer),
   ManagedRuntime.make,
 );

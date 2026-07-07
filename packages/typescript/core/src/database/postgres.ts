@@ -10,7 +10,7 @@ import * as String from "effect/String";
 import * as SqlError from "effect/unstable/sql/SqlError";
 import { Pool } from "pg";
 
-import { AwsCredentialIdentity } from "../aws/credential-identity";
+import { AwsCredentialIdentityProvider } from "../aws/credential-identity";
 import { DsqlSigner } from "../aws/dsql-signer";
 import { layer as dsqlSignerLayer } from "../aws/dsql-signer/layer";
 import { SstResource } from "../sst/resource";
@@ -55,7 +55,7 @@ export const classifyError = (cause: unknown, message: string, operation: string
 };
 
 const passwordRuntime = dsqlSignerLayer({ expiresIn: Duration.minutes(15) }).pipe(
-  Layer.provide(AwsCredentialIdentity.providerLayer(fromNodeProviderChain)),
+  Layer.provide(AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain)),
   Layer.provide(SstResource.layer),
   ManagedRuntime.make,
 );

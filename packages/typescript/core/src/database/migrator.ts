@@ -1,11 +1,14 @@
 // Non-effect reference implementation: https://github.com/Benjscho/drizzle-orm/blob/f1f5a604a4678ea277f741a6ed6ffc8e218d6c94/drizzle-orm/src/aws-dsql/migrator.ts#L108
 
+import { getTableName } from "drizzle-orm";
 import { readMigrationFiles } from "drizzle-orm/migrator";
+import { snakeCase, bigint, text, integer, timestamp, unique } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm/sql";
 import * as Array from "effect/Array";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Crypto from "effect/Crypto";
+import * as Data from "effect/Data";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
@@ -14,6 +17,7 @@ import * as Option from "effect/Option";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
+import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 import * as SqlError from "effect/unstable/sql/SqlError";
@@ -25,24 +29,23 @@ import type { MigrationConfig } from "drizzle-orm/migrator";
 const defaultSchema = "drizzle";
 const defaultTable = "__drizzle_migrations";
 
-export const columns = {
-  id: sql.identifier("id"),
-  migrationHash: sql.identifier("migration_hash"),
-  migrationFolderMillis: sql.identifier("migration_folder_millis"),
-  statementIndex: sql.identifier("statement_index"),
-  statementHash: sql.identifier("statement_hash"),
-  createdAt: sql.identifier("created_at"),
-};
-
 export const MigratorConfig = Context.Reference<MigrationConfig>(
   "@printdesk/core/database/MigratorConfig",
-  { defaultValue: () => ({ migrationsFolder: "migrations" }) },
+  {
+    defaultValue: () => ({
+      migrationsFolder: "migrations",
+      migrationsSchema: defaultSchema,
+      migrationsTable: defaultTable,
+    }),
+  },
 );
 
 export class ReadMigrationsError extends Schema.TaggedErrorClass<ReadMigrationsError>()(
   "ReadMigrationsError",
   { cause: Schema.Defect() },
 ) {}
+
+export class MigrationKey extends Data.Class<{ migrationHash: string; statementIndex: number }> {}
 
 export const DsqlStatement = Schema.Trim.pipe(
   Schema.decodeTo(Schema.String, {
@@ -66,8 +69,31 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
     const config = yield* MigratorConfig;
     const crypto = yield* Crypto.Crypto;
 
-    const schema = sql.identifier(config.migrationsSchema ?? defaultSchema);
-    const table = sql.identifier(config.migrationsTable ?? defaultTable);
+    const schema = snakeCase.schema(config.migrationsSchema ?? defaultSchema);
+    const schemaDdl = sql`CREATE SCHEMA IF NOT EXISTS ${schema};`;
+
+    const table = schema.table(
+      config.migrationsTable ?? defaultTable,
+      {
+        id: bigint({ mode: "number" }).generatedAlwaysAsIdentity({ cache: 1 }).primaryKey(),
+        migrationHash: text().notNull(),
+        migrationFolderMillis: bigint({ mode: "number" }).notNull(),
+        statementIndex: integer().notNull(),
+        statementHash: text().notNull(),
+        createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+      },
+      (table) => [unique().on(table.migrationHash, table.statementIndex)],
+    );
+    const tableDdl =
+      sql.raw(`CREATE TABLE IF NOT EXISTS "${schema.schemaName}"."${getTableName(table)}" (
+  "${table.id.name}" BIGINT GENERATED ALWAYS AS IDENTITY (CACHE 1) PRIMARY KEY,
+  "${table.migrationHash.name}" TEXT NOT NULL,
+  "${table.migrationFolderMillis.name}" BIGINT NOT NULL,
+  "${table.statementIndex.name}" INTEGER NOT NULL,
+  "${table.statementHash.name}" TEXT NOT NULL,
+  "${table.createdAt.name}" TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE ("${table.migrationHash.name}", "${table.statementIndex.name}")
+)`);
 
     const migrate = Effect.gen(function* () {
       const migrations = yield* Effect.try({
@@ -75,30 +101,23 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
         catch: (cause) => new ReadMigrationsError({ cause }),
       });
 
-      yield* db.execute(sql`CREATE SCHEMA IF NOT EXISTS ${schema}`);
-
-      yield* db.execute(sql`CREATE TABLE IF NOT EXISTS ${schema}.${table} (
-  ${columns.id} BIGINT GENERATED ALWAYS AS IDENTITY (CACHE 1) PRIMARY KEY,
-  ${columns.migrationHash} TEXT NOT NULL,
-  ${columns.migrationFolderMillis} BIGINT NOT NULL,
-  ${columns.statementIndex} INTEGER NOT NULL,
-  ${columns.statementHash} TEXT NOT NULL,
-  ${columns.createdAt} TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE (${columns.migrationHash}, ${columns.statementIndex})
-)`);
+      yield* db.execute(schemaDdl);
+      yield* db.execute(tableDdl);
 
       const statements = yield* db
-        .execute<{ migration_hash: string; statement_index: number; statement_hash: string }>(
-          sql`SELECT ${columns.migrationHash}, ${columns.statementIndex}, ${columns.statementHash}
-  FROM ${schema}.${table}
-  ORDER BY ${columns.migrationFolderMillis}, ${columns.statementIndex}`,
-        )
+        .select({
+          migrationHash: table.migrationHash,
+          statementIndex: table.statementIndex,
+          statementHash: table.statementHash,
+        })
+        .from(table)
+        .orderBy(table.migrationFolderMillis, table.statementIndex)
         .pipe(
           Effect.map(
             Array.map((migration) =>
               Tuple.make(
-                `${migration.migration_hash}:${migration.statement_index}` as const,
-                migration.statement_hash,
+                new MigrationKey(Struct.pick(migration, ["migrationHash", "statementIndex"])),
+                migration.statementHash,
               ),
             ),
           ),
@@ -115,7 +134,11 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
                 .digest("SHA-256", Buffer.from(statement.trim()))
                 .pipe(Effect.map((bytes) => Buffer.from(bytes).toString("hex")));
 
-              const storedHash = statements.pipe(HashMap.get(`${migration.hash}:${index}`));
+              const storedHash = statements.pipe(
+                HashMap.get(
+                  new MigrationKey({ migrationHash: migration.hash, statementIndex: index }),
+                ),
+              );
 
               if (Option.isSome(storedHash)) {
                 if (storedHash.value !== hash)
@@ -134,45 +157,52 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
                 return;
               }
 
-              const dsqlStatement = yield* Schema.decodeEffect(DsqlStatement)(statement);
-              if (dsqlStatement)
-                yield* db.execute(sql.raw(dsqlStatement)).pipe(
-                  Effect.retry(($) =>
-                    $(Schedule.recurs(3)).pipe(
-                      Schedule.both(Schedule.exponential(Duration.seconds(1))),
-                      Schedule.jittered,
-                      Schedule.while(
-                        Effect.fn(function* (metadata) {
-                          const isRetryable =
-                            Cause.isCause(metadata.input.cause) &&
-                            metadata.input.cause.pipe(
-                              Cause.findErrorOption,
-                              Option.filter(SqlError.isSqlError),
-                              Option.map(Struct.get("isRetryable")),
-                              Option.getOrElse(() => false),
+              yield* Effect.succeed(statement).pipe(
+                Effect.flatMap(Schema.decodeEffect(DsqlStatement)),
+                Effect.filterOrElse(String.isEmpty, (dsqlStatement) =>
+                  db.execute(sql.raw(dsqlStatement)).pipe(
+                    Effect.retry(($) =>
+                      $(Schedule.recurs(3)).pipe(
+                        Schedule.both(Schedule.exponential(Duration.seconds(1))),
+                        Schedule.jittered,
+                        Schedule.while(
+                          Effect.fn(function* (metadata) {
+                            const isRetryable =
+                              Cause.isCause(metadata.input.cause) &&
+                              metadata.input.cause.pipe(
+                                Cause.findErrorOption,
+                                Option.filter(SqlError.isSqlError),
+                                Option.map(Struct.get("isRetryable")),
+                                Option.getOrElse(() => false),
+                              );
+
+                            yield* Effect.log(
+                              `[Migrator]: Migration statement ${index} in migration ${
+                                migration.folderMillis
+                              } attempt #${metadata.attempt} failed, ${
+                                isRetryable
+                                  ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
+                                  : "not retryable"
+                              }:`,
+                              metadata.input.pipe(Cause.fail),
                             );
 
-                          yield* Effect.log(
-                            `[Migrator]: Migration statement ${index} in migration ${
-                              migration.folderMillis
-                            } attempt #${metadata.attempt} failed, ${
-                              isRetryable
-                                ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
-                                : "not retryable"
-                            }:`,
-                            metadata.input.pipe(Cause.fail),
-                          );
-
-                          return isRetryable;
-                        }),
+                            return isRetryable;
+                          }),
+                        ),
                       ),
                     ),
                   ),
-                );
+                ),
+                Effect.asVoid,
+              );
 
-              yield* db.execute(sql`INSERT INTO ${schema}.${table}
-  (${columns.migrationHash}, ${columns.migrationFolderMillis}, ${columns.statementIndex}, ${columns.statementHash})
-  VALUES (${migration.hash}, ${migration.folderMillis}, ${index}, ${hash})`);
+              yield* db.insert(table).values({
+                migrationHash: migration.hash,
+                migrationFolderMillis: migration.folderMillis,
+                statementIndex: index,
+                statementHash: hash,
+              });
             }),
             { discard: true },
           ),
@@ -180,7 +210,11 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
       );
     });
 
-    return { migrate } as const;
+    return {
+      schema,
+      table,
+      migrate,
+    } as const;
   }),
 }) {
   public static readonly layer = this.make.pipe(Layer.effect(this));

@@ -51,7 +51,7 @@ export class AbortSignalOption implements RequestOption {
 export class AbortSignalMiddleware implements Middleware {
   public next: Middleware | undefined;
 
-  public async execute(
+  public execute(
     url: string,
     requestInit: RequestInit,
     requestOptions?: Record<string, RequestOption>,
@@ -60,7 +60,7 @@ export class AbortSignalMiddleware implements Middleware {
     if (option) requestInit.signal = option.signal;
 
     return (
-      (await this.next?.execute(url, requestInit, requestOptions)) ??
+      this.next?.execute(url, requestInit, requestOptions) ??
       Promise.reject(new Error("Next middleware not set"))
     );
   }

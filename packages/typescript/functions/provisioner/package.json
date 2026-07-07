@@ -1,0 +1,17 @@
+{
+  "name": "@printdesk/provisioner",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/credential-providers": "catalog:",
+    "@aws/durable-execution-sdk-js": "^2.0.0",
+    "@effect-aws/dynamodb": "catalog:",
+    "@effect/platform-node": "catalog:",
+    "@printdesk/core": "workspace:*",
+    "aws4fetch": "catalog:",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:"
+  }
+}

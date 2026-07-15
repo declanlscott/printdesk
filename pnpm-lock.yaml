@@ -143,7 +143,7 @@ catalogs:
       version: 4.110.0
 
 patchedDependencies:
-  '@openauthjs/openauth': edcab4d0bf395d8e6a90e3e15a45ad601a93188b0da276cc9dc4715a9043194c
+  '@openauthjs/openauth': 8e88c5f9628c0f38560ca147f05521718f53ff94e52ff8367b78d75c6a3e911f
 
 importers:
 
@@ -157,7 +157,7 @@ importers:
         version: 4.20260702.1
       '@openauthjs/openauth':
         specifier: 'catalog:'
-        version: 0.4.3(patch_hash=edcab4d0bf395d8e6a90e3e15a45ad601a93188b0da276cc9dc4715a9043194c)(arctic@2.3.4)(hono@4.12.30)
+        version: 0.4.3(patch_hash=8e88c5f9628c0f38560ca147f05521718f53ff94e52ff8367b78d75c6a3e911f)(arctic@2.3.4)(hono@4.12.30)
       '@printdesk/core':
         specifier: workspace:*
         version: link:packages/typescript/core
@@ -247,7 +247,7 @@ importers:
         version: 1.0.0-preview.83
       '@openauthjs/openauth':
         specifier: 'catalog:'
-        version: 0.4.3(patch_hash=edcab4d0bf395d8e6a90e3e15a45ad601a93188b0da276cc9dc4715a9043194c)(arctic@2.3.4)(hono@4.12.30)
+        version: 0.4.3(patch_hash=8e88c5f9628c0f38560ca147f05521718f53ff94e52ff8367b78d75c6a3e911f)(arctic@2.3.4)(hono@4.12.30)
       '@oslojs/encoding':
         specifier: ^1.1.0
         version: 1.1.0
@@ -351,7 +351,7 @@ importers:
     dependencies:
       '@openauthjs/openauth':
         specifier: 'catalog:'
-        version: 0.4.3(patch_hash=edcab4d0bf395d8e6a90e3e15a45ad601a93188b0da276cc9dc4715a9043194c)(arctic@2.3.4)(hono@4.12.30)
+        version: 0.4.3(patch_hash=8e88c5f9628c0f38560ca147f05521718f53ff94e52ff8367b78d75c6a3e911f)(arctic@2.3.4)(hono@4.12.30)
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
@@ -394,7 +394,7 @@ importers:
         version: 4.0.0-beta.98(effect@4.0.0-beta.98)(ioredis@5.11.1)
       '@openauthjs/openauth':
         specifier: 'catalog:'
-        version: 0.4.3(patch_hash=edcab4d0bf395d8e6a90e3e15a45ad601a93188b0da276cc9dc4715a9043194c)(arctic@2.3.4)(hono@4.12.30)
+        version: 0.4.3(patch_hash=8e88c5f9628c0f38560ca147f05521718f53ff94e52ff8367b78d75c6a3e911f)(arctic@2.3.4)(hono@4.12.30)
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
@@ -417,15 +417,15 @@ importers:
 
   packages/typescript/functions/migrator:
     dependencies:
+      '@effect-aws/lambda':
+        specifier: workspace:@printdesk/effect-aws-lambda@*
+        version: link:../../vendor/@effect-aws/lambda
       '@effect/platform-node':
         specifier: 'catalog:'
         version: 4.0.0-beta.98(effect@4.0.0-beta.98)(ioredis@5.11.1)
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
-      '@printdesk/effect-aws-lambda':
-        specifier: workspace:^
-        version: link:../../vendor/@effect-aws/lambda
       drizzle-orm:
         specifier: 'catalog:'
         version: 1.0.0-rc.4(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-beta.98(effect@4.0.0-beta.98))(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(effect@4.0.0-beta.98)(pg@8.22.0)(zod@4.4.3)
@@ -464,12 +464,12 @@ importers:
       '@aws-sdk/credential-providers':
         specifier: 'catalog:'
         version: 3.1087.0
+      '@effect-aws/lambda':
+        specifier: workspace:@printdesk/effect-aws-lambda@*
+        version: link:../../vendor/@effect-aws/lambda
       '@printdesk/core':
         specifier: workspace:*
         version: link:../../core
-      '@printdesk/effect-aws-lambda':
-        specifier: workspace:^
-        version: link:../../vendor/@effect-aws/lambda
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.98
@@ -5614,7 +5614,7 @@ snapshots:
 
   '@oozcitak/util@10.0.0': {}
 
-  '@openauthjs/openauth@0.4.3(patch_hash=edcab4d0bf395d8e6a90e3e15a45ad601a93188b0da276cc9dc4715a9043194c)(arctic@2.3.4)(hono@4.12.30)':
+  '@openauthjs/openauth@0.4.3(patch_hash=8e88c5f9628c0f38560ca147f05521718f53ff94e52ff8367b78d75c6a3e911f)(arctic@2.3.4)(hono@4.12.30)':
     dependencies:
       '@standard-schema/spec': 1.0.0-beta.3
       arctic: 2.3.4

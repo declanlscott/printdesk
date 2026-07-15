@@ -1,5 +1,5 @@
 diff --git a/dist/esm/issuer.js b/dist/esm/issuer.js
-index 1b18009bfeaa09f2222e9df760dde0e4eb1d4326..89b18cab8b7e1d28cd980a3b2c72b1cdf60a1063 100644
+index 1b18009bfeaa09f2222e9df760dde0e4eb1d4326..b9b8a2044cdb01cd873ecfa94ca049d640868c37 100644
 --- a/dist/esm/issuer.js
 +++ b/dist/esm/issuer.js
 @@ -232,12 +232,18 @@ function issuer(input) {
@@ -8,8 +8,8 @@ index 1b18009bfeaa09f2222e9df760dde0e4eb1d4326..89b18cab8b7e1d28cd980a3b2c72b1cd
      const iss = issuer2(c);
 +
 +    const grant_types_supported = ["authorization_code", "refresh_token"];
-+      if (Object.values(input.providers).some((provider) => provider.client !== undefined))
-+        grant_types_supported.push("client_credentials");
++    if (Object.values(input.providers).some((provider) => provider.client !== undefined))
++      grant_types_supported.push("client_credentials");
 +
      return c.json({
        issuer: iss,

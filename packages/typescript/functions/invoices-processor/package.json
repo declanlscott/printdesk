@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@effect-aws/lambda": "catalog:",
     "@printdesk/core": "workspace:^",
+    "@printdesk/effect-aws-lambda": "workspace:^",
     "effect": "catalog:"
   }
 }

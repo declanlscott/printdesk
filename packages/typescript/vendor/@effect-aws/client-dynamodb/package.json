@@ -1,0 +1,13 @@
+{
+  "name": "@printdesk/effect-aws-client-dynamodb",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "catalog:",
+    "@effect-aws/commons": "workspace:@printdesk/effect-aws-commons@*",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:"
+  }
+}

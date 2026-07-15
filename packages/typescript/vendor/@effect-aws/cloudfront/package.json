@@ -1,0 +1,12 @@
+{
+  "name": "@printdesk/effect-aws-cloudfront",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@aws-sdk/cloudfront-signer": "^3.1087.0",
+    "effect": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/language-service": "catalog:"
+  }
+}

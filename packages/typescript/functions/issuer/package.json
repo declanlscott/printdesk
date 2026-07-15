@@ -4,8 +4,7 @@
   "type": "module",
   "scripts": {},
   "dependencies": {
-    "@effect-aws/dynamodb": "catalog:",
-    "@effect-aws/lambda": "catalog:",
+    "@effect-aws/lambda": "workspace:@printdesk/effect-aws-lambda@*",
     "@effect/platform-node": "catalog:",
     "@openauthjs/openauth": "catalog:",
     "@printdesk/core": "workspace:^",

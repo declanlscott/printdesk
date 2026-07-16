@@ -2,6 +2,10 @@
   "name": "@printdesk/effect-aws-dynamodb",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "catalog:",
     "@aws-sdk/lib-dynamodb": "^3.1087.0",

@@ -2,6 +2,10 @@
   "name": "@printdesk/effect-aws-lambda",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
     "@effect/platform-node-shared": "catalog:",
     "effect": "catalog:"

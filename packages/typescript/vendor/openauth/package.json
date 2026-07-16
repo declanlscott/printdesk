@@ -2,6 +2,10 @@
   "name": "@printdesk/openauth",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
     "@standard-schema/spec": "^1.1.0",
     "aws4fetch": "catalog:",

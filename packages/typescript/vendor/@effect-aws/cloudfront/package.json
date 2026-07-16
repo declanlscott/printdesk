@@ -2,6 +2,10 @@
   "name": "@printdesk/effect-aws-cloudfront",
   "private": true,
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
   "dependencies": {
     "@aws-sdk/cloudfront-signer": "^3.1087.0",
     "effect": "catalog:"

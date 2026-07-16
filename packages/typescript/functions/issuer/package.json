@@ -6,7 +6,7 @@
   "dependencies": {
     "@effect-aws/lambda": "workspace:@printdesk/effect-aws-lambda@*",
     "@effect/platform-node": "catalog:",
-    "@openauthjs/openauth": "catalog:",
+    "@openauthjs/openauth": "workspace:@printdesk/openauth@*",
     "@printdesk/core": "workspace:^",
     "drizzle-orm": "catalog:",
     "effect": "catalog:",

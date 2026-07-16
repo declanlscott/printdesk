@@ -28,6 +28,7 @@
 
     "paths": {
       "~/sst/*": ["./.sst/platform/src/components/*"],
+      "@openauthjs/openauth/*": ["./packages/typescript/vendor/openauth/src/*"],
       "@printdesk/core/*": ["./packages/typescript/core/src/*"]
     },
 

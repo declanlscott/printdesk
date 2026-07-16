@@ -1,0 +1,14 @@
+{
+  "name": "@printdesk/openauth",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@standard-schema/spec": "^1.1.0",
+    "aws4fetch": "catalog:",
+    "hono": "catalog:",
+    "jose": "^6.2.3"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}

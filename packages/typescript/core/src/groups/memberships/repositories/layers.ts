@@ -304,4 +304,4 @@ export const syncRepositoryLayer = makeSyncRepository.pipe(
   Layer.effect(GroupMembershipsSyncRepository),
 );
 
-export const layer = Layer.mergeAll(repositoryLayer, syncRepositoryLayer);
+export const layer = Layer.merge(repositoryLayer, syncRepositoryLayer);

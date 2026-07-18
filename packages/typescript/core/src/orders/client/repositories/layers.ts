@@ -7,8 +7,8 @@ import {
   readRepositoryFactory,
   writeRepositoryFactory,
 } from "../../../database/client/repositories";
-import { SharedAccountManagerAccessReadRepository } from "../../../shared-accounts/client/manager-access/read-repository";
-import { WorkflowStatusesReadRepository } from "../../../workflows/client/status/read-repository";
+import { SharedAccountManagerAccessReadRepository } from "../../../shared-accounts/client/manager-access/repositories";
+import { WorkflowStatusesReadRepository } from "../../../workflows/client/status/repositories";
 import { OrdersContract } from "../../contract";
 
 import type { EntityId } from "../../../utils";

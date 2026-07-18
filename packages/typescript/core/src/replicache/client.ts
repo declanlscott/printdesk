@@ -15,63 +15,54 @@ import { Replicache as ReplicacheClient } from "replicache";
 import { Actor } from "../actors";
 import * as AnnouncementsMutations from "../announcements/client/mutations/layer";
 import * as AnnouncementsPolicies from "../announcements/client/policies/layer";
-import * as AnnouncementsReadRepository from "../announcements/client/read-repository/layer";
-import * as AnnouncementsWriteRepository from "../announcements/client/write-repository/layer";
+import * as AnnouncementsRepositories from "../announcements/client/repositories/layers";
 import { Api } from "../api";
 import * as CommentsMutations from "../comments/client/mutations/layer";
 import * as CommentsPolicies from "../comments/client/policies/layer";
-import * as CommentsReadRepository from "../comments/client/read-repository/layer";
-import * as CommentsWriteRepository from "../comments/client/write-repository/layer";
-import { ReadTransaction, ReadTransactionManager } from "../database/client/read-transaction";
-import { WriteTransaction, WriteTransactionManager } from "../database/client/write-transaction";
+import * as CommentsRepositories from "../comments/client/repositories/layers";
+import {
+  ReadTransaction,
+  ReadTransactionManager,
+  WriteTransaction,
+  WriteTransactionManager,
+} from "../database/client/transactions";
 import * as DeliveryOptionsMutations from "../delivery-options/client/mutations/layer";
 import * as DeliveryOptionsPolicies from "../delivery-options/client/policies/layer";
-import * as DeliveryOptionsReadRepository from "../delivery-options/client/read-repository/layer";
-import * as DeliveryOptionsWriteRepository from "../delivery-options/client/write-repository/layer";
+import * as DeliveryOptionsRepositories from "../delivery-options/client/repositories/layers";
 import { MutationHandlers } from "../handlers/mutations";
 import * as InvoicesMutations from "../invoices/client/mutations/layer";
-import * as InvoicesReadRepository from "../invoices/client/read-repository/layer";
-import * as InvoicesWriteRepository from "../invoices/client/write-repository/layer";
+import * as InvoicesRepositories from "../invoices/client/repositories/layers";
 import { MutationDispatcher } from "../mutations/client/dispatcher";
 import { layer as baseMutationDispatcherLayer } from "../mutations/client/dispatcher/layer";
 import * as OrdersMutations from "../orders/client/mutations/layer";
 import * as OrdersPolicies from "../orders/client/policies/layer";
-import * as OrdersReadRepository from "../orders/client/read-repository/layer";
-import * as OrdersWriteRepository from "../orders/client/write-repository/layer";
+import * as OrdersRepositories from "../orders/client/repositories/layers";
 import * as ProductsMutations from "../products/client/mutations/layer";
 import * as ProductsPolicies from "../products/client/policies/layer";
-import * as ProductsReadRepository from "../products/client/read-repository/layer";
-import * as ProductsWriteRepository from "../products/client/write-repository/layer";
+import * as ProductsRepositories from "../products/client/repositories/layers";
 import * as RoomsMutations from "../rooms/client/mutations/layer";
 import * as RoomsPolicies from "../rooms/client/policies/layer";
-import * as RoomsReadRepository from "../rooms/client/read-repository/layer";
-import * as RoomsWriteRepository from "../rooms/client/write-repository/layer";
-import * as SharedAccountCustomerAccessReadRepository from "../shared-accounts/client/customer-access/read-repository/layer";
-import * as SharedAccountCustomerGroupAccessReadRepository from "../shared-accounts/client/group-customer-access/read-repository/layer";
+import * as RoomsRepositories from "../rooms/client/repositories/layers";
+import * as SharedAccountCustomerAccessRepositories from "../shared-accounts/client/customer-access/repositories/layers";
+import * as SharedAccountCustomerGroupAccessRepositories from "../shared-accounts/client/group-customer-access/repositories/layers";
 import * as SharedAccountManagerAccessMutations from "../shared-accounts/client/manager-access/mutations/layer";
 import * as SharedAccountManagerAccessPolicies from "../shared-accounts/client/manager-access/policies/layer";
-import * as SharedAccountManagerAccessReadRepository from "../shared-accounts/client/manager-access/read-repository/layer";
-import * as SharedAccountManagerAccessWriteRepository from "../shared-accounts/client/manager-access/write-repository/layer";
+import * as SharedAccountManagerAccessRepositories from "../shared-accounts/client/manager-access/repositories/layers";
 import * as SharedAccountsMutations from "../shared-accounts/client/mutations/layer";
 import * as SharedAccountsPolicies from "../shared-accounts/client/policies/layer";
-import * as SharedAccountsReadRepository from "../shared-accounts/client/read-repository/layer";
-import * as SharedAccountsWriteRepository from "../shared-accounts/client/write-repository/layer";
+import * as SharedAccountsRepositories from "../shared-accounts/client/repositories/layers";
 import * as TenantsMutations from "../tenants/client/mutations/layer";
-import * as TenantsReadRepository from "../tenants/client/read-repository/layer";
-import * as TenantsWriteRepository from "../tenants/client/write-repository/layer";
+import * as TenantsRepositories from "../tenants/client/repositories/layers";
 import * as UsersMutations from "../users/client/mutations/layer";
 import * as UsersPolicies from "../users/client/policies/layer";
-import * as UsersReadRepository from "../users/client/read-repository/layer";
-import * as UsersWriteRepository from "../users/client/write-repository/layer";
+import * as UsersRepositories from "../users/client/repositories/layers";
 import { separatedString } from "../utils";
-import * as RoomWorkflowsReadRepository from "../workflows/client/room/read-repository/layer";
-import * as RoomWorkflowsWriteRepository from "../workflows/client/room/write-repository/layer";
+import * as RoomWorkflowsRepositories from "../workflows/client/room/repositories/layers";
 import * as SharedAccountWorkflowsPolicies from "../workflows/client/shared-account/policies/layer";
-import * as SharedAccountWorkflowsReadRepository from "../workflows/client/shared-account/read-repository/layer";
+import * as SharedAccountWorkflowsRepositories from "../workflows/client/shared-account/repositories/layers";
 import * as WorkflowStatusesMutations from "../workflows/client/status/mutations/layer";
 import * as WorkflowStatusesPolicies from "../workflows/client/status/policies/layer";
-import * as WorkflowStatusesReadRepository from "../workflows/client/status/read-repository/layer";
-import * as WorkflowStatusesWriteRepository from "../workflows/client/status/write-repository/layer";
+import * as WorkflowStatusesRepositories from "../workflows/client/status/repositories/layers";
 import {
   ReplicacheContract,
   ReplicachePullerContract,
@@ -151,25 +142,25 @@ export namespace Replicache {
   }) {}
 
   export const queryLayer = Layer.mergeAll(
-    AnnouncementsReadRepository.layer,
-    CommentsReadRepository.layer,
-    DeliveryOptionsReadRepository.layer,
-    InvoicesReadRepository.layer,
-    OrdersReadRepository.layer,
-    ProductsReadRepository.layer,
-    RoomsReadRepository.layer,
-    SharedAccountsReadRepository.layer,
-    TenantsReadRepository.layer,
-    UsersReadRepository.layer,
-    RoomWorkflowsReadRepository.layer,
-    SharedAccountWorkflowsReadRepository.layer,
+    AnnouncementsRepositories.readRepositoryLayer,
+    CommentsRepositories.readRepositoryLayer,
+    DeliveryOptionsRepositories.readRepositoryLayer,
+    InvoicesRepositories.readRepositoryLayer,
+    OrdersRepositories.readRepositoryLayer,
+    ProductsRepositories.readRepositoryLayer,
+    RoomsRepositories.readRepositoryLayer,
+    SharedAccountsRepositories.readRepositoryLayer,
+    TenantsRepositories.readRepositoryLayer,
+    UsersRepositories.readRepositoryLayer,
+    RoomWorkflowsRepositories.readRepositoryLayer,
+    SharedAccountWorkflowsRepositories.readRepositoryLayer,
   ).pipe(
     Layer.provideMerge([
-      WorkflowStatusesReadRepository.layer,
-      SharedAccountManagerAccessReadRepository.layer,
-      SharedAccountCustomerAccessReadRepository.layer,
-      SharedAccountManagerAccessReadRepository.layer,
-      SharedAccountCustomerGroupAccessReadRepository.layer,
+      WorkflowStatusesRepositories.readRepositoryLayer,
+      SharedAccountManagerAccessRepositories.readRepositoryLayer,
+      SharedAccountCustomerAccessRepositories.readRepositoryLayer,
+      SharedAccountManagerAccessRepositories.readRepositoryLayer,
+      SharedAccountCustomerGroupAccessRepositories.readRepositoryLayer,
     ]),
     Layer.provide(ReadTransactionManager.layer),
   );
@@ -204,19 +195,19 @@ export namespace Replicache {
     ]),
     Layer.provide(policiesLayer),
     Layer.provide([
-      AnnouncementsWriteRepository.layer,
-      CommentsWriteRepository.layer,
-      DeliveryOptionsWriteRepository.layer,
-      InvoicesWriteRepository.layer,
-      OrdersWriteRepository.layer,
-      ProductsWriteRepository.layer,
-      RoomsWriteRepository.layer,
-      SharedAccountsWriteRepository.layer,
-      SharedAccountManagerAccessWriteRepository.layer,
-      TenantsWriteRepository.layer,
-      UsersWriteRepository.layer,
-      RoomWorkflowsWriteRepository.layer,
-      WorkflowStatusesWriteRepository.layer,
+      AnnouncementsRepositories.writeRepositoryLayer,
+      CommentsRepositories.writeRepositoryLayer,
+      DeliveryOptionsRepositories.writeRepositoryLayer,
+      InvoicesRepositories.writeRepositoryLayer,
+      OrdersRepositories.writeRepositoryLayer,
+      ProductsRepositories.writeRepositoryLayer,
+      RoomsRepositories.writeRepositoryLayer,
+      SharedAccountsRepositories.writeRepositoryLayer,
+      SharedAccountManagerAccessRepositories.writeRepositoryLayer,
+      TenantsRepositories.writeRepositoryLayer,
+      UsersRepositories.writeRepositoryLayer,
+      RoomWorkflowsRepositories.writeRepositoryLayer,
+      WorkflowStatusesRepositories.writeRepositoryLayer,
     ]),
     Layer.provide(queryLayer),
     Layer.provide(WriteTransactionManager.layer),

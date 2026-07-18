@@ -1,6 +1,6 @@
 import * as Context from "effect/Context";
 
-import type { ReadRepository, WriteRepository } from "./layer";
+import type { ReadRepository, WriteRepository } from "./layers";
 
 export class InvoicesReadRepository extends Context.Service<
   InvoicesReadRepository,

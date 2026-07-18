@@ -383,4 +383,4 @@ export const makeSyncRepository = Effect.gen(function* () {
 });
 export const syncRepositoryLayer = makeSyncRepository.pipe(Layer.effect(GroupsSyncRepository));
 
-export const layer = Layer.mergeAll(repositoryLayer, syncRepositoryLayer);
+export const layer = Layer.merge(repositoryLayer, syncRepositoryLayer);

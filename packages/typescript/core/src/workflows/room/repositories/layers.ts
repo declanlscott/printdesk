@@ -397,4 +397,4 @@ export const syncRepositoryLayer = makeSyncRepository.pipe(
   Layer.effect(RoomWorkflowsSyncRepository),
 );
 
-export const layer = Layer.mergeAll(repositoryLayer, syncRepositoryLayer);
+export const layer = Layer.merge(repositoryLayer, syncRepositoryLayer);

@@ -1,9 +1,7 @@
 import { issuer } from "@openauthjs/openauth";
 import { Layout } from "@openauthjs/openauth/ui/base";
-import { Crypto } from "@printdesk/core/crypto";
-import { Graph } from "@printdesk/core/graph";
 import { IdentityProvidersContract } from "@printdesk/core/identity/contract";
-import { IdentityProvidersRepository } from "@printdesk/core/identity/providers-repository";
+import { IdentityProvidersRepository } from "@printdesk/core/identity/repository";
 import { Oauth } from "@printdesk/core/oauth";
 import { ClientCredentialsProvider } from "@printdesk/core/oauth/client-credentials";
 import { OauthContract } from "@printdesk/core/oauth/contract";
@@ -15,6 +13,7 @@ import { Constants } from "@printdesk/core/utils/constants";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
+import * as Predicate from "effect/Predicate";
 import * as Record from "effect/Record";
 import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
@@ -34,7 +33,6 @@ export class IssuerError extends Schema.TaggedErrorClass<IssuerError>()("IssuerE
 }) {}
 
 export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, context: Context) {
-  const { decodeJwt } = yield* Crypto;
   const { handleUser, verifyClient } = yield* Oauth.Oauth;
   const identityProvidersRepository = yield* IdentityProvidersRepository;
 
@@ -61,10 +59,10 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
       );
       if (Result.isFailure(tenantSlug))
         throw new HTTPException(400, {
-          message: `Invalid tenant_slug: ${tenantSlug.failure.message}`,
+          message: `invalid tenant_slug: ${tenantSlug.failure.message}`,
         });
 
-      const tenantProviders = await identityProvidersRepository
+      const kinds = await identityProvidersRepository
         .findByTenantSlug(tenantSlug.success)
         .pipe(
           Effect.map(
@@ -77,22 +75,22 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
           runPromise(Effect.runPromiseExit),
         );
 
-      if (tenantProviders.length === 0) throw new HTTPException(404);
-      if (tenantProviders.length === 1)
+      if (kinds.length === 0) throw new HTTPException(404);
+      if (kinds.length === 1)
         return new Response(null, {
           status: 302,
           // oxlint-disable-next-line typescript/no-non-null-assertion
-          headers: { Location: `/${tenantProviders[0]!}/authorize` },
+          headers: { Location: `/${kinds[0]!}/authorize` },
         });
 
       const jsx = (
         <Layout>
           <div data-component="form">
-            {Array.map(tenantProviders, (provider) => {
-              const { name, icon } = providerMetadata[provider];
+            {Array.map(kinds, (kind) => {
+              const { name, icon } = providerMetadata[kind];
 
               return (
-                <a href={`/${provider}/authorize`} data-component="button" data-color="ghost">
+                <a href={`/${kind}/authorize`} data-component="button" data-color="ghost">
                   <i data-slot="icon">{icon}</i>
                   Continue with {name}
                 </a>
@@ -118,30 +116,14 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
           subject(new OauthContract.ClientSubject(client)),
         ),
         Match.when({ provider: Match.is(Constants.ENTRA_ID) }, (entraId) =>
-          Effect.gen(function* () {
-            const accessToken = yield* decodeJwt(
-              entraId.tokenset.access,
-              IdentityProvidersContract.EntraIdAccessToken,
-            );
-
-            if (accessToken.audience !== entraId.clientID)
-              return yield* new OauthContract.InvalidAudienceError({
-                expected: IdentityProvidersContract.Audience.make(entraId.clientID),
-                received: accessToken.audience,
-              });
-
-            const user = yield* Graph.use(Struct.get("me")).pipe(
-              Effect.provide(
-                Graph.layer({
-                  authProvider: { getAccessToken: async () => entraId.tokenset.access },
-                }),
-              ),
-              Effect.flatMap(Schema.decodeUnknownEffect(IdentityProvidersContract.EntraIdUser)),
-              Effect.flatMap((user) => handleUser(entraId.provider, accessToken.tenantId, user)),
-            );
-
-            return yield* subject(user);
-          }),
+          Effect.succeed(entraId.tokenset.id).pipe(
+            Effect.filterOrElse(Predicate.isNotUndefined, () =>
+              Effect.die(new globalThis.Error("missing id_token")),
+            ),
+            Effect.flatMap(Schema.decodeUnknownEffect(IdentityProvidersContract.EntraIdIdToken)),
+            Effect.flatMap(handleUser),
+            Effect.flatMap(subject),
+          ),
         ),
         Match.when({ provider: Match.is(Constants.GOOGLE) }, (google) =>
           Effect.fail(new IdentityProvidersContract.NotImplementedError({ kind: google.provider })),

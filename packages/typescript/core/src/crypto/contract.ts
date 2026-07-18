@@ -5,14 +5,20 @@ import { Base64 } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace CryptoContract {
+  export const Secret = Schema.NonEmptyString.pipe(
+    Schema.RedactedFromValue,
+    Schema.brand("Secret"),
+  );
+  export type Secret = typeof Secret.Type;
+
   export class InvalidSecretError extends Schema.TaggedErrorClass<InvalidSecretError>()(
     "InvalidSecretError",
     {},
   ) {}
 
   export class Hash extends Schema.Class<Hash>("Hash")({
-    salt: Base64.pipe(Schema.RedactedFromValue),
-    derivedKey: Base64.pipe(Schema.RedactedFromValue),
+    salt: Base64.pipe(Schema.RedactedFromValue, Schema.decodeTo(Secret)),
+    derivedKey: Base64.pipe(Schema.RedactedFromValue, Schema.decodeTo(Secret)),
   }) {}
 
   export const HashFromString = Schema.TemplateLiteralParser([

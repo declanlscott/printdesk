@@ -1,22 +1,14 @@
 import { scrypt, timingSafeEqual } from "node:crypto";
 
-import { decodeJWT } from "@oslojs/jwt";
 import * as EffectCrypto from "effect/Crypto";
 import * as Effect from "effect/Effect";
-import * as Encoding from "effect/Encoding";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 import * as PlatformError from "effect/PlatformError";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
-import * as Schema from "effect/Schema";
-import * as SchemaGetter from "effect/SchemaGetter";
-import * as SchemaIssue from "effect/SchemaIssue";
 
 import { Crypto } from ".";
 import { CryptoContract } from "./contract";
-
-import type { ParseOptions } from "effect/SchemaAST";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -27,20 +19,25 @@ export const makeService = Effect.gen(function* () {
     crypto.randomBytes(size).pipe(
       Effect.map((bytes) => Buffer.from(bytes).toString("base64")),
       Effect.map(Redacted.make),
+      Effect.map(CryptoContract.Secret.make),
     ),
   );
 
   const deriveKeyFromSecret = Effect.fn("Crypto.deriveKeyFromSecret")(
-    (secret: Redacted.Redacted<string>, salt: Redacted.Redacted<string>) =>
+    (secret: CryptoContract.Secret, salt: CryptoContract.Secret) =>
       Effect.tryPromise({
         try: () =>
-          new Promise<Redacted.Redacted<string>>((resolve, reject) =>
+          new Promise<CryptoContract.Secret>((resolve, reject) =>
             scrypt(
               secret.pipe(Redacted.value).normalize(),
               salt.pipe(Redacted.value),
               64,
               (error, derivedKey) =>
-                error ? reject(error) : resolve(Redacted.make(derivedKey.toString("base64"))),
+                error
+                  ? reject(error)
+                  : resolve(
+                      Redacted.make(derivedKey.toString("base64")).pipe(CryptoContract.Secret.make),
+                    ),
             ),
           ),
         catch: (cause) =>
@@ -54,7 +51,7 @@ export const makeService = Effect.gen(function* () {
       }),
   );
 
-  const hashSecret = Effect.fn("Crypto.hashSecret")(function* (secret: Redacted.Redacted<string>) {
+  const hashSecret = Effect.fn("Crypto.hashSecret")(function* (secret: CryptoContract.Secret) {
     const salt = yield* generateToken(16);
     const derivedKey = yield* deriveKeyFromSecret(secret, salt);
 
@@ -62,7 +59,7 @@ export const makeService = Effect.gen(function* () {
   });
 
   const verifySecret = Effect.fn("Crypto.verifySecret")(function* (
-    secret: Redacted.Redacted<string>,
+    secret: CryptoContract.Secret,
     { salt, derivedKey: storedKey }: CryptoContract.Hash,
   ) {
     const derivedKey = yield* deriveKeyFromSecret(secret, salt);
@@ -101,44 +98,11 @@ export const makeService = Effect.gen(function* () {
     }).pipe(Effect.filterOrFail(Predicate.isTruthy, () => new CryptoContract.InvalidSecretError()));
   });
 
-  const decodeJwt = Effect.fn("Crypto.decodeJwt")(function* <TType, TServices>(
-    jwt: string,
-    Decoder: Schema.ConstraintDecoder<TType, TServices>,
-    parseOptions?: ParseOptions,
-  ) {
-    const decode = Schema.NonEmptyString.pipe(
-      Schema.decodeTo(Decoder, {
-        decode: SchemaGetter.transformOrFail((jwt) =>
-          Effect.try({
-            try: () => decodeJWT(jwt),
-            catch: (error) =>
-              new Encoding.EncodingError({
-                input: jwt,
-                kind: "Decode",
-                module: "Crypto",
-                message:
-                  error instanceof globalThis.Error ? error.message : "Unknown error decoding JWT",
-              }),
-          }).pipe(
-            Effect.mapError(
-              (e) => new SchemaIssue.InvalidValue(Option.some(e.input), { message: e.message }),
-            ),
-          ),
-        ),
-        encode: SchemaGetter.forbidden(() => "Not implemented"),
-      }),
-      Schema.decodeEffect,
-    );
-
-    return yield* decode(jwt, parseOptions);
-  });
-
   return {
     generateToken,
     deriveKeyFromSecret,
     hashSecret,
     verifySecret,
-    decodeJwt,
   } as const;
 });
 

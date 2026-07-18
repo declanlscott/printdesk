@@ -8,13 +8,13 @@ import * as Option from "effect/Option";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 
-import { Syncer } from ".";
+import { Synchronizer } from ".";
 import { Sync } from "..";
 import { AnnouncementsSync } from "../../announcements/sync";
 import { CommentsSync } from "../../comments/sync";
 import { DeliveryOptionsSync } from "../../delivery-options/sync";
-import { CustomerGroupMembershipsSync } from "../../groups/customer-memberships/sync";
-import { CustomerGroupsSync } from "../../groups/customers/sync";
+import { GroupMembershipsSync } from "../../groups/memberships/sync";
+import { GroupsSync } from "../../groups/sync";
 import { InvoicesSync } from "../../invoices/sync";
 import { OrdersSync } from "../../orders/sync";
 import { ProductsSync } from "../../products/sync";
@@ -25,7 +25,7 @@ import {
 } from "../../replicache/models";
 import { RoomsSync } from "../../rooms/sync";
 import { SharedAccountCustomerAccessSync } from "../../shared-accounts/customer-access/sync";
-import { SharedAccountCustomerGroupAccessSync } from "../../shared-accounts/customer-group-access/sync";
+import { SharedAccountGroupCustomerAccessSync } from "../../shared-accounts/group-customer-access/sync";
 import { SharedAccountManagerAccessSync } from "../../shared-accounts/manager-access/sync";
 import { SharedAccountsSync } from "../../shared-accounts/sync";
 import { TenantsSync } from "../../tenants/sync";
@@ -43,23 +43,21 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const announcements = yield* AnnouncementsSync.useSync(Struct.get("streamer"));
   const comments = yield* CommentsSync.useSync(Struct.get("streamer"));
-  const customerGroups = yield* CustomerGroupsSync.useSync(Struct.get("streamer"));
-  const customerGroupMemberships = yield* CustomerGroupMembershipsSync.useSync(
-    Struct.get("streamer"),
-  );
   const deliveryOptions = yield* DeliveryOptionsSync.useSync(Struct.get("streamer"));
+  const groups = yield* GroupsSync.useSync(Struct.get("streamer"));
+  const groupMemberships = yield* GroupMembershipsSync.useSync(Struct.get("streamer"));
   const invoices = yield* InvoicesSync.useSync(Struct.get("streamer"));
   const orders = yield* OrdersSync.useSync(Struct.get("streamer"));
   const products = yield* ProductsSync.useSync(Struct.get("streamer"));
   const rooms = yield* RoomsSync.useSync(Struct.get("streamer"));
   const sharedAccounts = yield* SharedAccountsSync.useSync(Struct.get("streamer"));
-  const sharedAccountManagerAccess = yield* SharedAccountManagerAccessSync.useSync(
-    Struct.get("streamer"),
-  );
   const sharedAccountCustomerAccess = yield* SharedAccountCustomerAccessSync.useSync(
     Struct.get("streamer"),
   );
-  const sharedAccountCustomerGroupAccess = yield* SharedAccountCustomerGroupAccessSync.useSync(
+  const sharedAccountGroupCustomerAccess = yield* SharedAccountGroupCustomerAccessSync.useSync(
+    Struct.get("streamer"),
+  );
+  const sharedAccountManagerAccess = yield* SharedAccountManagerAccessSync.useSync(
     Struct.get("streamer"),
   );
   const tenants = yield* TenantsSync.useSync(Struct.get("streamer"));
@@ -71,16 +69,16 @@ export const makeService = Effect.gen(function* () {
   const streamer = new Sync.Streamer()
     .entity(announcements)
     .entity(comments)
-    .entity(customerGroups)
-    .entity(customerGroupMemberships)
     .entity(deliveryOptions)
+    .entity(groups)
+    .entity(groupMemberships)
     .entity(invoices)
     .entity(orders)
     .entity(products)
     .entity(rooms)
     .entity(sharedAccounts)
     .entity(sharedAccountCustomerAccess)
-    .entity(sharedAccountCustomerGroupAccess)
+    .entity(sharedAccountGroupCustomerAccess)
     .entity(sharedAccountManagerAccess)
     .entity(tenants)
     .entity(users)
@@ -244,4 +242,4 @@ export const makeService = Effect.gen(function* () {
   return { sync } as const;
 });
 
-export const layer = makeService.pipe(Layer.effect(Syncer));
+export const layer = makeService.pipe(Layer.effect(Synchronizer));

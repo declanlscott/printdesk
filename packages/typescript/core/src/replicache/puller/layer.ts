@@ -12,7 +12,7 @@ import { ReplicachePuller } from ".";
 import { AccessControl } from "../../access-control";
 import { Actor } from "../../actors";
 import { Database } from "../../database";
-import { Syncer } from "../../sync/syncer";
+import { Synchronizer } from "../../sync/synchronizer";
 import { Version } from "../../utils";
 import { ReplicacheClientGroupId } from "../client-group-id";
 import { ReplicacheContract, ReplicachePullerContract } from "../contracts";
@@ -35,7 +35,7 @@ export const makeService = Effect.gen(function* () {
   const clientViewsRepository = yield* ReplicacheClientViewsRepository;
   const clientViewEntriesRepository = yield* ReplicacheClientViewEntriesRepository;
 
-  const { sync } = yield* Syncer;
+  const { sync } = yield* Synchronizer;
 
   const process = Effect.fn("ReplicachePuller.process")(
     function* (cookie: ReplicachePullerContract.RequestV1["cookie"]) {

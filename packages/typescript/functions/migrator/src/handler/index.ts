@@ -6,7 +6,6 @@ export const handler = Effect.fn(() =>
   Migrator.use(Struct.get("migrate")).pipe(
     Effect.tap(() => Effect.logInfo("✅ Migration complete!")),
     Effect.tapCause((cause) => Effect.logError(`❌ Error during migration:`, cause)),
-    Effect.map(() => ({ success: true })),
-    Effect.orElseSucceed(() => ({ success: false })),
+    Effect.mapBoth({ onSuccess: () => ({ success: true }), onFailure: () => ({ success: false }) }),
   ),
 );

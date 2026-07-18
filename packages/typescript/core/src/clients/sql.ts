@@ -12,9 +12,10 @@ export const clients = new Tables.NonSync(
   {
     name: Columns.varchar().notNull(),
     secretHash: Columns.hash().notNull(),
-    role: Columns.union(ClientsContract.roles).notNull(),
+    role: Columns.union(ClientsContract.Role.literals).notNull(),
     scopes: Columns.stringArray().notNull(),
     callbackId: text().$type<CallbackId>(),
+    identityProviderId: Columns.entityId(),
   },
   (table) => [uniqueIndex().on(table.id)],
 );

@@ -3,15 +3,19 @@ import * as Schema from "effect/Schema";
 
 import { CryptoContract } from "../crypto/contract";
 import { TablesContract } from "../tables/contract";
-import { CallbackId } from "../utils";
+import { CallbackId, EntityId } from "../utils";
 
 import type { ClientsTable } from "./sql";
 
 export namespace ClientsContract {
-  export const roles = ["api", "invoicesProcessor", "papercutMfSync", "setup"] as const;
-
-  export const Role = Schema.Literals(roles);
-  export type Role = (typeof Role)["Type"];
+  export const Role = Schema.Literals([
+    "api",
+    "invoicesProcessor",
+    "papercutMfSync",
+    "setup",
+    "scim",
+  ]);
+  export type Role = typeof Role.Type;
 
   export class Table extends TablesContract.Table<ClientsTable>("clients")(
     {
@@ -25,8 +29,10 @@ export namespace ClientsContract {
         Schema.withDecodingDefaultType(Effect.succeed(null)),
         Schema.withConstructorDefault(Effect.succeed(null)),
       ),
+      identityProviderId: EntityId.pipe(Schema.NullOr),
     },
     ["create", "read", "delete"],
+    ["secretHash", "callbackId"],
   ) {}
 
   export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(

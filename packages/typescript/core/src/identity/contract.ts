@@ -4,7 +4,8 @@ import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
-import { CustomerGroupsContract } from "../groups/contracts";
+import { CryptoContract } from "../crypto/contract";
+import { GroupsContract } from "../groups/contracts";
 import { TablesContract } from "../tables/contract";
 import { UsersContract } from "../users/contract";
 import { Constants } from "../utils/constants";
@@ -21,27 +22,56 @@ export namespace IdentityProvidersContract {
   export const ExternalId = Schema.NonEmptyString.pipe(Schema.brand("IdentityProviderExternalId"));
   export type ExternalId = typeof ExternalId.Type;
 
-  export class AccessToken extends Schema.Class<AccessToken>("AccessToken")({
+  export class IdToken extends Schema.Class<IdToken>("IdentityProviderIdToken")({
+    kind: Kind,
     audience: Audience,
     externalId: ExternalId,
+    userExternalId: UsersContract.ExternalId,
   }) {}
 
-  export const EntraIdAccessToken = Schema.Struct({
-    aud: Schema.String,
-    tid: Schema.String,
+  export const EntraIdIdToken = Schema.Struct({
+    aud: Schema.NonEmptyString,
+    oid: Schema.NonEmptyString,
+    tid: Schema.NonEmptyString,
   }).pipe(
-    Schema.decodeTo(AccessToken, {
-      decode: SchemaGetter.transform(Struct.renameKeys({ aud: "audience", tid: "tenantId" })),
-      encode: SchemaGetter.transform(Struct.renameKeys({ audience: "aud", tenantId: "tid" })),
+    Schema.decodeTo(IdToken, {
+      decode: SchemaGetter.transform((payload) =>
+        Struct.renameKeys(Struct.assign(payload, { kind: Constants.ENTRA_ID } as const), {
+          aud: "audience",
+          oid: "userExternalId",
+          tid: "externalId",
+        }),
+      ),
+      encode: SchemaGetter.transform(
+        Struct.renameKeys({ audience: "aud", externalId: "tid", userExternalId: "oid" }),
+      ),
     }),
   );
 
-  export class User extends Schema.Class<User>("User")({
-    displayName: UsersContract.DisplayName,
-    email: UsersContract.Email,
-    externalId: UsersContract.ExternalId,
-    username: UsersContract.Username,
-  }) {}
+  export const GoogleIdToken = Schema.Struct({
+    aud: Schema.NonEmptyString,
+    sub: Schema.NonEmptyString,
+    hd: Schema.NonEmptyString,
+  }).pipe(
+    Schema.decodeTo(IdToken, {
+      decode: SchemaGetter.transform((payload) =>
+        Struct.renameKeys(Struct.assign(payload, { kind: Constants.GOOGLE } as const), {
+          aud: "audience",
+          sub: "userExternalId",
+          hd: "externalId",
+        }),
+      ),
+      encode: SchemaGetter.transform(
+        Struct.renameKeys({ audience: "aud", externalId: "hd", userExternalId: "sub" }),
+      ),
+    }),
+  );
+
+  export class User extends Schema.Opaque<User>()(
+    UsersContract.Table.Model.mapFields(
+      Struct.pick(["displayName", "email", "externalId", "username"]),
+    ),
+  ) {}
 
   export const EntraIdUser = Schema.Struct({
     id: Schema.String,
@@ -68,12 +98,10 @@ export namespace IdentityProvidersContract {
       ),
     }),
   );
-  export type EntraIdUser = typeof EntraIdUser.Type;
 
-  export class Group extends Schema.Class<Group>("Group")({
-    externalId: CustomerGroupsContract.ExternalId,
-    name: CustomerGroupsContract.Name,
-  }) {}
+  export class Group extends Schema.Opaque<Group>()(
+    GroupsContract.Table.Model.mapFields(Struct.pick(["externalId", "name"])),
+  ) {}
 
   export const EntraIdGroup = Schema.Struct({
     displayName: Schema.String,
@@ -84,13 +112,12 @@ export namespace IdentityProvidersContract {
       encode: SchemaGetter.transform(Struct.renameKeys({ externalId: "id", name: "displayName" })),
     }),
   );
-  export type EntraIdGroup = typeof EntraIdGroup.Type;
 
   export class Table extends TablesContract.Table<IdentityProvidersTable>("identity_providers")(
     {
       ...TablesContract.BaseModel.fields,
       kind: Kind,
-      externalTenantId: ExternalTenantId,
+      externalId: ExternalId,
     },
     ["create", "read", "delete"],
     [],

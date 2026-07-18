@@ -1,6 +1,7 @@
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
+import * as Predicate from "effect/Predicate";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
@@ -32,6 +33,7 @@ export namespace ActorsContract {
       id: EntityId,
       tenantId: TenantId,
       role: ClientsContract.Role,
+      identityProviderId: EntityId.pipe(Schema.NullOr),
     })
     implements Wrappable
   {
@@ -53,17 +55,17 @@ export namespace ActorsContract {
     }
   }
 
-  export class SystemActor
-    extends Schema.TaggedClass<SystemActor>()("SystemActor", { tenantId: TenantId })
+  export class TenantActor
+    extends Schema.TaggedClass<TenantActor>()("TenantActor", { id: TenantId })
     implements Wrappable
   {
     public get wrap() {
-      return new Actor({ properties: new SystemActor(this) });
+      return new Actor({ properties: new TenantActor(this) });
     }
   }
 
   export class Actor extends Schema.TaggedClass<Actor>()("Actor", {
-    properties: Schema.Union([PublicActor, ClientActor, UserActor, SystemActor]),
+    properties: Schema.Union([PublicActor, ClientActor, UserActor, TenantActor]),
   }) {
     #assert = <TActorTag extends Actor["properties"]["_tag"]>(actorTag: TActorTag) =>
       Effect.suspend(() => {
@@ -73,19 +75,42 @@ export namespace ActorsContract {
         return Effect.succeed(this.properties as Extract<Actor["properties"], { _tag: TActorTag }>);
       });
 
-    public assertPublic = this.#assert("PublicActor");
-    public assertClient = this.#assert("ClientActor");
-    public assertUser = this.#assert("UserActor");
-    public assertSystem = this.#assert("SystemActor");
+    public get assertPublic() {
+      return this.#assert("PublicActor");
+    }
+    public get assertClient() {
+      return this.#assert("ClientActor");
+    }
+    public get assertUser() {
+      return this.#assert("UserActor");
+    }
+    public get assertTenant() {
+      return this.#assert("TenantActor");
+    }
 
-    public assertPrivate = Match.value(this.properties).pipe(
-      Match.tag("PublicActor", (actor) =>
-        Effect.fail(new ForbiddenActorError({ actor: actor._tag })),
-      ),
-      Match.orElse((actor) => Effect.succeed(actor)),
-    );
+    public get assertPrivate() {
+      return Match.value(this.properties).pipe(
+        Match.tag("PublicActor", (actor) =>
+          Effect.fail(new ForbiddenActorError({ actor: actor._tag })),
+        ),
+        Match.orElse((actor) => Effect.succeed(actor)),
+      );
+    }
 
-    public tenantId = this.assertPrivate.pipe(Effect.map(Struct.get("tenantId")));
+    public get tenantId() {
+      return this.assertPrivate.pipe(
+        Effect.map(Match.value),
+        Effect.map(Match.tag("TenantActor", (tenant) => tenant.id)),
+        Effect.map(Match.orElse((actor) => actor.tenantId)),
+      );
+    }
+
+    public get identityProviderId() {
+      return this.assertClient.pipe(
+        Effect.map(Struct.get("identityProviderId")),
+        Effect.filterOrFail(Predicate.isNotNull),
+      );
+    }
   }
 
   export class ForbiddenActorError

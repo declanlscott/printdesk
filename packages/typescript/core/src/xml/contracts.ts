@@ -15,14 +15,7 @@ export namespace XmlContract {
 
 export namespace XmlRpcContract {
   export const Boolean = Schema.Struct({
-    value: Schema.Struct({
-      boolean: Schema.Literals([0, 1]).pipe(
-        Schema.decodeTo(Schema.Boolean, {
-          decode: SchemaGetter.transform((binary) => binary === 1),
-          encode: SchemaGetter.transform((boolean) => (boolean ? 1 : 0)),
-        }),
-      ),
-    }),
+    value: Schema.Struct({ boolean: Schema.BooleanFromBit }),
   });
 
   export const Double = Schema.Struct({ value: Schema.Struct({ double: Schema.Number }) });

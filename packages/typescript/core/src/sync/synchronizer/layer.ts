@@ -87,7 +87,7 @@ export const makeService = Effect.gen(function* () {
     .entity(workflowStatuses)
     .final();
 
-  const sync = Effect.fn("Syncer.sync")(function* (
+  const sync = Effect.fn("Synchronizer.sync")(function* (
     clientView: typeof ReplicacheClientViewsModel.Table.Model.Type,
     userId: ActorsContract.UserActor["id"],
     limitOffset: number,

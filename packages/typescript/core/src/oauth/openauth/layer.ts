@@ -16,12 +16,11 @@ import { Openauth } from ".";
 import { Constants } from "../../utils/constants";
 import { OauthContract } from "../contract";
 
-import type { ClientInput } from "@openauthjs/openauth/client";
-import type { OpenauthRefreshOptions, OpenauthVerifyOptions } from ".";
+import type { OpenauthClientInput, OpenauthRefreshOptions, OpenauthVerifyOptions } from ".";
 
 export type ServiceShape = Effect.Success<ReturnType<typeof makeService>>;
 
-export const makeService = Effect.fn(function* (input: ClientInput) {
+export const makeService = Effect.fn(function* (input: OpenauthClientInput) {
   const openauth = yield* Effect.try({
     try: () => createClient(input),
     catch: (cause) => new OauthContract.OpenauthError({ cause }),
@@ -148,6 +147,8 @@ export const makeService = Effect.fn(function* (input: ClientInput) {
   );
 
   return {
+    issuer: input.issuer,
+    clientId: input.clientID,
     authorize,
     exchange,
     refresh,

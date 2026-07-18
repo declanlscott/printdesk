@@ -5,7 +5,7 @@ import type { ClientInput, RefreshOptions, VerifyOptions } from "@openauthjs/ope
 import type { ServiceShape } from "./layer";
 
 export interface OpenauthClientInput extends Omit<ClientInput, "issuer"> {
-  issuer: string;
+  issuer: NonNullable<ClientInput["issuer"]>;
 }
 
 export interface OpenauthRefreshOptions extends Omit<RefreshOptions, "access"> {

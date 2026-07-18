@@ -16,7 +16,7 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import { PapercutMfApi, PapercutMfApiRequest, sharedAccountPropertySchemas } from ".";
 import { Actor } from "../../actors";
 import { Config } from "../../config";
-import { CustomerGroupsContract } from "../../groups/contracts";
+import { GroupsContract } from "../../groups/contracts";
 import { Oauth } from "../../oauth";
 import { SharedAccountsContract } from "../../shared-accounts/contracts";
 import { SstResource } from "../../sst/resource";
@@ -286,7 +286,7 @@ export const makeService = Effect.gen(function* () {
           xmlRpc.response(
             XmlRpcContract.arrayResponse(
               XmlRpcContract.Value.fields.value.pipe(
-                Schema.decodeTo(CustomerGroupsContract.Name, SchemaTransformation.passthrough()),
+                Schema.decodeTo(GroupsContract.Name, SchemaTransformation.passthrough()),
               ),
             ),
           ),

@@ -77,8 +77,6 @@ export const StringFromUnknown = Schema.Unknown.pipe(
   }),
 );
 
-export const Timezone = Schema.Literals(Intl.supportedValuesOf("timeZone"));
-
 export const Ipv4 = Schema.String.pipe(Schema.check(Schema.isPattern(Constants.IPV4_REGEX)));
 
 export const ChunkFromArray = <TValue extends Schema.Top>(value: TValue) =>

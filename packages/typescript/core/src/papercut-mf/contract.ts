@@ -8,7 +8,7 @@ import { AttributesContract } from "../attributes/contract";
 import { AwsCron } from "../aws/cron";
 import { CloudflareContract } from "../cloudflare/contract";
 import { Handler } from "../handlers";
-import { CallbackId, Ipv4, Timezone } from "../utils";
+import { CallbackId, Ipv4 } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace PapercutMfContract {
@@ -40,7 +40,7 @@ export namespace PapercutMfContract {
         Effect.succeed(Constants.DEFAULT_PAPERCUT_MF_SYNC_CRON_EXPRESSION),
       ),
     ),
-    timezone: Timezone,
+    timezone: Schema.TimeZoneNamedFromString,
   }) {}
 
   export class EnabledConfig extends Schema.Class<EnabledConfig>("EnabledConfig")({

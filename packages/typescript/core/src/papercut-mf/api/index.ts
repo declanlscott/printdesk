@@ -3,7 +3,7 @@ import * as Request from "effect/Request";
 import * as Schema from "effect/Schema";
 import * as SchemaTransformation from "effect/SchemaTransformation";
 
-import { CustomerGroupsContract } from "../../groups/contracts";
+import { GroupsContract } from "../../groups/contracts";
 import { SharedAccountsContract } from "../../shared-accounts/contracts";
 import { UsersContract } from "../../users/contract";
 import { separatedString, StringFromUnknown } from "../../utils";
@@ -20,10 +20,7 @@ const CommaSeparatedString = separatedString(",");
 
 export const sharedAccountPropertySchemas = {
   "access-groups": CommaSeparatedString.pipe(
-    Schema.decodeTo(
-      CustomerGroupsContract.Name.pipe(Schema.Array),
-      SchemaTransformation.passthrough(),
-    ),
+    Schema.decodeTo(GroupsContract.Name.pipe(Schema.Array), SchemaTransformation.passthrough()),
   ),
   "access-users": CommaSeparatedString.pipe(
     Schema.decodeTo(UsersContract.Username.pipe(Schema.Array), SchemaTransformation.passthrough()),

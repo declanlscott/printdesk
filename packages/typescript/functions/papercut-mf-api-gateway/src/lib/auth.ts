@@ -1,12 +1,11 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
+import { OauthContract } from "@printdesk/core/oauth/contract";
 import * as Openauth from "@printdesk/core/oauth/openauth/layer";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
-import * as SchemaGetter from "effect/SchemaGetter";
-import * as Tuple from "effect/Tuple";
 
 import { lambda } from "./aws";
 import { resource } from "./sst";
@@ -17,20 +16,6 @@ export const authRuntime = Openauth.layer({
   issuer: resource.Issuer.pipe(Redacted.value).url,
 }).pipe(Layer.merge(ActorLayerMap.layer), ManagedRuntime.make);
 
-const bearerPrefix = "Bearer " as const;
-
 export const AuthHeaders = Schema.Struct({
-  accessToken: Schema.NonEmptyString.pipe(
-    Schema.RedactedFromValue,
-    Schema.encodeTo(
-      Schema.TemplateLiteralParser([
-        bearerPrefix,
-        Schema.NonEmptyString.pipe(Schema.check(Schema.isBase64())),
-      ]),
-      {
-        encode: SchemaGetter.transform((accessToken) => Tuple.make(bearerPrefix, accessToken)),
-        decode: SchemaGetter.forbidden(() => "Not implemented"),
-      },
-    ),
-  ),
+  accessToken: OauthContract.CredentialFromBearerToken,
 }).pipe(Schema.encodeKeys({ accessToken: "Proxy-Authorization" }));

@@ -10,6 +10,5 @@ export default new Hono()
   .use(api)
   .onError((e, c) => {
     if ("getResponse" in e) return e.getResponse();
-
     return c.newResponse(e.message, 500);
   });

@@ -30,8 +30,12 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
       ) =>
         db.transaction(execute).pipe(
           Effect.retry(($) =>
-            $(Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES)).pipe(
-              Schedule.both(Schedule.exponential(Duration.millis(10))),
+            $(
+              Schedule.max([
+                Schedule.exponential(Duration.millis(10)),
+                Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES),
+              ]),
+            ).pipe(
               Schedule.jittered,
               Schedule.while(
                 Effect.fn(function* (metadata) {

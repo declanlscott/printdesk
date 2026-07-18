@@ -162,8 +162,12 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
                 Effect.filterOrElse(String.isEmpty, (dsqlStatement) =>
                   db.execute(sql.raw(dsqlStatement)).pipe(
                     Effect.retry(($) =>
-                      $(Schedule.recurs(3)).pipe(
-                        Schedule.both(Schedule.exponential(Duration.seconds(1))),
+                      $(
+                        Schedule.max([
+                          Schedule.exponential(Duration.seconds(1)),
+                          Schedule.recurs(3),
+                        ]),
+                      ).pipe(
                         Schedule.jittered,
                         Schedule.while(
                           Effect.fn(function* (metadata) {

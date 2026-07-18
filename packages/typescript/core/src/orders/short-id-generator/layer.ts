@@ -4,7 +4,6 @@ import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Number from "effect/Number";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as Ref from "effect/Ref";
@@ -23,17 +22,6 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const ddb = yield* DynamoDBDocument;
   const table = yield* SstResource.useSync((resource) => resource.Dynamo.pipe(Redacted.value));
-
-  const schedule = Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES).pipe(
-    Schedule.both(Schedule.exponential(Duration.millis(10))),
-    Schedule.jittered,
-    Schedule.reduce(() => 0, Number.increment), // repetitions
-    Schedule.modifyDelay((attempt, delay) =>
-      Effect.logInfo(
-        `[Orders.ShortIdGenerator]: Generation attempt #${attempt + 1} failed conditional check, retrying again in ${delay.pipe(Duration.format)} ...`,
-      ).pipe(Effect.as(delay)),
-    ),
-  );
 
   const generate = Effect.fn("Orders.ShortIdGenerator.generate")(
     (pk: typeof OrdersContract.Item.fields.pk.Type) =>
@@ -72,10 +60,31 @@ export const makeService = Effect.gen(function* () {
             Effect.filterOrFail(Predicate.isNotUndefined, () => new Cause.NoSuchElementError()),
             Effect.flatMap(Schema.decodeUnknownEffect(OrdersContract.Item)),
             Effect.map(Struct.get(Constants.DYNAMO_KEYS.SK)),
-            Effect.retry({
-              while: Predicate.isTagged("ConditionalCheckFailedException"),
-              schedule,
-            }),
+            Effect.mapError((e) => e),
+            Effect.retry(($) =>
+              $(
+                Schedule.max([
+                  Schedule.exponential(Duration.millis(10)),
+                  Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES),
+                ]),
+              ).pipe(
+                Schedule.jittered,
+                Schedule.while(
+                  Effect.fn(function* (metadata) {
+                    const isRetryable = Predicate.isTagged("ConditionalCheckFailedException")(
+                      metadata.input,
+                    );
+
+                    yield* Effect.log(
+                      `[Orders.ShortIdGenerator]: Generation attempt #${metadata.attempt} failed, ${isRetryable ? `retrying again in ${metadata.duration.pipe(Duration.format)}` : "not retryable"}:`,
+                      Cause.fail(metadata.input),
+                    );
+
+                    return isRetryable;
+                  }),
+                ),
+              ),
+            ),
           ),
         ),
       ),

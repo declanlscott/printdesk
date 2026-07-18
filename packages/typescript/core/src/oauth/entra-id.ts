@@ -15,5 +15,6 @@ export const EntraIdProvider = ({ tenant, ...config }: EntraIdProviderConfig) =>
     endpoint: {
       authorization: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`,
       token: `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`,
+      jwks: `https://login.microsoftonline.com/${tenant}/discovery/v2.0/keys`,
     },
   });

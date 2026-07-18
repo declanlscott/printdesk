@@ -9,6 +9,7 @@ import * as Record from "effect/Record";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
@@ -146,11 +147,7 @@ export namespace OauthContract {
     implements Actable<typeof ActorsContract.ClientActor.Type._tag>
   {
     public get actor() {
-      return new ActorsContract.ClientActor({
-        id: this.id,
-        tenantId: this.tenantId,
-        role: this.role,
-      });
+      return new ActorsContract.ClientActor(Struct.omit(this, ["_tag"]));
     }
   }
 
@@ -162,11 +159,7 @@ export namespace OauthContract {
     implements Actable<typeof ActorsContract.UserActor.Type._tag>
   {
     public get actor() {
-      return new ActorsContract.UserActor({
-        id: this.id,
-        tenantId: this.tenantId,
-        role: this.role,
-      });
+      return new ActorsContract.UserActor(Struct.omit(this, ["_tag"]));
     }
   }
 
@@ -253,7 +246,7 @@ export namespace OauthContract {
 
   export class ClientCredentials extends Schema.Class<ClientCredentials>("ClientCredentials")({
     id: EntityId,
-    secret: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
+    secret: CryptoContract.Secret,
   }) {}
 
   export class ClientCredentialsError extends Schema.TaggedErrorClass<ClientCredentialsError>()(
@@ -266,6 +259,17 @@ export namespace OauthContract {
     audience: Schema.NonEmptyString,
     subject: Subject,
   }).pipe(Schema.encodeKeys({ audience: "aud" }));
+
+  export const bearer = "Bearer " as const;
+  export const CredentialFromBearerToken = Schema.TemplateLiteralParser([
+    Schema.Literal(bearer),
+    Schema.NonEmptyString,
+  ]).pipe(
+    Schema.decodeTo(CryptoContract.Secret, {
+      decode: SchemaGetter.transform(([, credential]) => credential),
+      encode: SchemaGetter.transform((credential) => Tuple.make(bearer, credential)),
+    }),
+  );
 
   export const AuthCookies = Tokens.mapFields(Struct.pick(["access", "refresh"]))
     .mapFields(Struct.renameKeys({ access: "accessToken", refresh: "refreshToken" }))

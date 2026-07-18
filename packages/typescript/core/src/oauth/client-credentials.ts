@@ -1,5 +1,6 @@
 import * as Redacted from "effect/Redacted";
 
+import { CryptoContract } from "../crypto/contract";
 import { EntityId } from "../utils";
 import { Constants } from "../utils/constants";
 
@@ -9,7 +10,7 @@ import type { OauthContract } from "./contract";
 
 export type ClientCredentialsProviderVerifyResult = Pick<
   typeof ClientsContract.Table.Model.Type,
-  "role" | "scopes" | "tenantId"
+  "role" | "scopes" | "tenantId" | "identityProviderId"
 >;
 
 export type ClientCredentialsProviderProperties = ClientCredentialsProviderVerifyResult &
@@ -31,7 +32,7 @@ export const ClientCredentialsProvider = (
     const id = EntityId.make(input.clientID);
 
     const result = await config.verify(
-      { id, secret: Redacted.make(input.clientSecret) },
+      { id, secret: CryptoContract.Secret.make(Redacted.make(input.clientSecret)) },
       input.params.scope?.split(" ").filter(Boolean),
     );
 

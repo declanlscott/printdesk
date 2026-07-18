@@ -8,7 +8,7 @@ import { ClientsContract } from "../clients/contract";
 import { ClientsRepository } from "../clients/repository";
 import { Crypto } from "../crypto";
 import { IdentityProvidersContract } from "../identity/contract";
-import { IdentityProvidersRepository } from "../identity/providers-repository";
+import { IdentityProvidersRepository } from "../identity/repository";
 import { TenantsContract } from "../tenants/contract";
 import { UsersContract } from "../users/contract";
 import { OauthContract } from "./contract";
@@ -26,20 +26,18 @@ export const makeService = Effect.gen(function* () {
   const identityProvidersRepository = yield* IdentityProvidersRepository;
 
   const handleUser = Effect.fn("Oauth.handleUser")(function* (
-    idpKind: IdentityProvidersContract.Kind,
-    idpTenantId: IdentityProvidersContract.AccessToken["tenantId"],
-    idpUser: IdentityProvidersContract.User,
+    idToken: IdentityProvidersContract.IdToken,
   ) {
     const { tenant, user } = yield* identityProvidersRepository
-      .findWithTenantAndUserByExternalIds(idpKind, idpTenantId, idpUser.externalId)
+      .findWithTenantAndUserByExternalIds(idToken.kind, idToken.externalId, idToken.userExternalId)
       .pipe(
         Effect.catchTag(
           "NoSuchElementError",
           () =>
             new OauthContract.AccessDeniedError({
               reason: new IdentityProvidersContract.NotFoundError({
-                kind: idpKind,
-                externalTenantId: idpTenantId,
+                kind: idToken.kind,
+                externalId: idToken.externalId,
               }),
             }),
         ),
@@ -53,7 +51,7 @@ export const makeService = Effect.gen(function* () {
     if (!user)
       return yield* new OauthContract.AccessDeniedError({
         reason: new UsersContract.NotFoundError({
-          id: { _tag: "external", value: idpUser.externalId },
+          id: { _tag: "external", value: idToken.userExternalId },
         }),
       });
 
@@ -92,17 +90,16 @@ export const makeService = Effect.gen(function* () {
       if (invalidScopes.length > 0)
         return yield* new OauthContract.InvalidScopeError({ scopes: invalidScopes });
 
-      return {
-        role: client.role,
+      return Struct.assign(Struct.pick(client, ["role", "tenantId", "identityProviderId"]), {
         scopes: requestedScopes,
-        tenantId: client.tenantId,
-      } satisfies ClientCredentialsProviderVerifyResult;
+      }) satisfies ClientCredentialsProviderVerifyResult;
     }
 
     return Struct.pick(client, [
       "role",
       "scopes",
       "tenantId",
+      "identityProviderId",
     ]) satisfies ClientCredentialsProviderVerifyResult;
   });
 

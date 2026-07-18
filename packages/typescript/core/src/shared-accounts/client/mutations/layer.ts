@@ -6,7 +6,7 @@ import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { SharedAccountsContract } from "../../contracts";
 import { SharedAccountsPolicies } from "../policies";
-import { SharedAccountsWriteRepository } from "../write-repository";
+import { SharedAccountsWriteRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

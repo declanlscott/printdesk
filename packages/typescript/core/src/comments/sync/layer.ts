@@ -4,13 +4,13 @@ import * as Layer from "effect/Layer";
 import { CommentsSync } from ".";
 import { AccessControl } from "../../access-control";
 import { Sync } from "../../sync";
-import { CommentsRepository } from "../repository";
+import { CommentsSyncRepository } from "../repositories";
 import { comments } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* CommentsRepository;
+  const repository = yield* CommentsSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(comments.name)
     .source(AccessControl.userPermissionPolicy("comments:read"), {

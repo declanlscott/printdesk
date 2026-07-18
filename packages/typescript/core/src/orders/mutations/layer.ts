@@ -13,7 +13,7 @@ import { SharedAccountsPolicies } from "../../shared-accounts/policies";
 import { UsersPolicies } from "../../users/policies";
 import { OrdersContract } from "../contract";
 import { OrdersPolicies } from "../policies";
-import { OrdersRepository } from "../repository";
+import { OrdersRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

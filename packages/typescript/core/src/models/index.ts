@@ -4,7 +4,7 @@ import { AnnouncementsContract } from "../announcements/contract";
 import { ClientsContract } from "../clients/contract";
 import { CommentsContract } from "../comments/contract";
 import { DeliveryOptionsContract } from "../delivery-options/contract";
-import { CustomerGroupMembershipsContract, CustomerGroupsContract } from "../groups/contracts";
+import { GroupMembershipsContract, GroupsContract } from "../groups/contracts";
 import { IdentityProvidersContract } from "../identity/contract";
 import { InvoicesContract } from "../invoices/contract";
 import { LicensesContract } from "../licenses/contract";
@@ -13,7 +13,7 @@ import { ProductsContract } from "../products/contract";
 import { RoomsContract } from "../rooms/contract";
 import {
   SharedAccountCustomerAccessContract,
-  SharedAccountCustomerGroupAccessContract,
+  SharedAccountGroupCustomerAccessContract,
   SharedAccountManagerAccessContract,
   SharedAccountsContract,
 } from "../shared-accounts/contracts";
@@ -30,8 +30,8 @@ export namespace Models {
     AnnouncementsContract.Table,
     CommentsContract.Table,
     DeliveryOptionsContract.Table,
-    CustomerGroupsContract.Table,
-    CustomerGroupMembershipsContract.Table,
+    GroupsContract.Table,
+    GroupMembershipsContract.Table,
     InvoicesContract.Table,
     OrdersContract.Table,
     ProductsContract.Table,
@@ -39,7 +39,7 @@ export namespace Models {
     SharedAccountsContract.Table,
     SharedAccountCustomerAccessContract.Table,
     SharedAccountManagerAccessContract.Table,
-    SharedAccountCustomerGroupAccessContract.Table,
+    SharedAccountGroupCustomerAccessContract.Table,
     TenantsContract.Table,
     UsersContract.Table,
     RoomWorkflowsContract.Table,
@@ -70,9 +70,9 @@ export namespace Models {
     CommentsContract.ActiveCustomerPlacedOrderView,
     DeliveryOptionsContract.ActiveView,
     DeliveryOptionsContract.ActivePublishedRoomView,
-    CustomerGroupsContract.ActiveView,
-    CustomerGroupsContract.ActiveMembershipView,
-    CustomerGroupMembershipsContract.ActiveView,
+    GroupsContract.ActiveView,
+    GroupsContract.ActiveMembershipView,
+    GroupMembershipsContract.ActiveView,
     InvoicesContract.ActiveView,
     InvoicesContract.ActiveManagerAuthorizedSharedAccountOrderView,
     InvoicesContract.ActiveCustomerPlacedOrderView,
@@ -94,8 +94,8 @@ export namespace Models {
     SharedAccountManagerAccessContract.ActiveView,
     SharedAccountManagerAccessContract.ActiveAuthorizedView,
     SharedAccountManagerAccessContract.ActiveCustomerAuthorizedView,
-    SharedAccountCustomerGroupAccessContract.ActiveView,
-    SharedAccountCustomerGroupAccessContract.ActiveAuthorizedView,
+    SharedAccountGroupCustomerAccessContract.ActiveView,
+    SharedAccountGroupCustomerAccessContract.ActiveAuthorizedView,
     SharedAccountWorkflowsContract.ActiveView,
     SharedAccountWorkflowsContract.ActiveCustomerAuthorizedView,
     SharedAccountWorkflowsContract.ActiveManagerAuthorizedView,

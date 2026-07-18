@@ -12,7 +12,7 @@ import { OrdersPolicies } from ".";
 import { AccessControl } from "../../access-control";
 import { Policy } from "../../policies";
 import { OrdersContract } from "../contract";
-import { OrdersRepository } from "../repository";
+import { OrdersRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

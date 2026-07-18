@@ -134,7 +134,7 @@ export namespace TenantsContract {
       Struct.pick(["name", "slug", "licenseKey", "tenantId"]),
     ).mapFields(Struct.renameKeys({ tenantId: "id" })),
     identityProviders: IdentityProvidersContract.Table.Model.mapFields(
-      Struct.pick(["kind", "externalTenantId"]),
+      Struct.pick(["kind", "externalId"]),
     ).pipe(
       Schema.NonEmptyArray,
       Schema.check(

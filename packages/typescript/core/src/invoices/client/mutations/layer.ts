@@ -5,7 +5,7 @@ import { InvoicesMutations } from ".";
 import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { InvoicesContract } from "../../contract";
-import { InvoicesWriteRepository } from "../write-repository";
+import { InvoicesWriteRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

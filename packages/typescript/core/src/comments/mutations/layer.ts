@@ -12,7 +12,7 @@ import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { CommentsContract } from "../contract";
 import { CommentsPolicies } from "../policies";
-import { CommentsRepository } from "../repository";
+import { CommentsRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

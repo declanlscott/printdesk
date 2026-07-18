@@ -9,7 +9,7 @@ import { CommentsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { CommentsContract } from "../../contract";
-import { CommentsReadRepository } from "../read-repository";
+import { CommentsReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

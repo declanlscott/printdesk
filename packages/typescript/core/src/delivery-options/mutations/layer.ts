@@ -8,10 +8,10 @@ import { AccessControl } from "../../access-control";
 import { Mutation } from "../../mutations";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
-import { RoomsRepository } from "../../rooms/repository";
+import { RoomsRepository } from "../../rooms/repositories";
 import { DeliveryOptionsContract } from "../contract";
 import { DeliveryOptionsPolicies } from "../policies";
-import { DeliveryOptionsRepository } from "../repository";
+import { DeliveryOptionsRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

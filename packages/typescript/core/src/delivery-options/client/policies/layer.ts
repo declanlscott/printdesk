@@ -7,7 +7,7 @@ import { DeliveryOptionsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { DeliveryOptionsContract } from "../../contract";
-import { DeliveryOptionsReadRepository } from "../read-repository";
+import { DeliveryOptionsReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

@@ -1,76 +1,70 @@
 import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
-import { snakeCase, text, unique, index } from "drizzle-orm/pg-core";
+import { snakeCase, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
-import { CustomerGroupsContract } from "./contracts";
+import { GroupsContract } from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
-import type { Discriminate } from "../utils";
 
-export const customerGroupMemberships = new Tables.Sync("customer_group_memberships", {
-  customerGroupId: Columns.entityId().notNull(),
-  memberId: Columns.entityId().notNull(),
-});
-export const customerGroupMembershipsTable = customerGroupMemberships.table;
-export type CustomerGroupMembershipsTable = typeof customerGroupMembershipsTable;
-export type CustomerGroupMembership = InferSelectModel<CustomerGroupMembershipsTable>;
-
-export const activeCustomerGroupMembershipsView = snakeCase
-  .view(`active_${customerGroupMemberships.name}`)
-  .as((qb) =>
-    qb
-      .select()
-      .from(customerGroupMembershipsTable)
-      .where(isNull(customerGroupMembershipsTable.deletedAt)),
-  );
-export type ActiveCustomerGroupMembershipsView = typeof activeCustomerGroupMembershipsView;
-export type ActiveCustomerGroupMembership =
-  InferSelectViewModel<ActiveCustomerGroupMembershipsView>;
-
-export const customerGroups = new Tables.Sync(
-  "customer_groups",
+export const groupMemberships = new Tables.Sync(
+  "group_memberships",
   {
-    origin: Columns.union(CustomerGroupsContract.Origin.literals).notNull(),
-    name: text().$type<CustomerGroupsContract.Name>().notNull(),
-    externalId: text().$type<CustomerGroupsContract.ExternalId>().notNull(),
+    groupId: Columns.entityId().notNull(),
+    userId: Columns.entityId().notNull(),
+  },
+  (table) => [uniqueIndex().on(table.groupId, table.userId, table.tenantId)],
+);
+export const groupMembershipsTable = groupMemberships.table;
+export type GroupMembershipsTable = typeof groupMembershipsTable;
+export type GroupMembership = InferSelectModel<GroupMembershipsTable>;
+
+export const activeGroupMembershipsView = snakeCase
+  .view(`active_${groupMemberships.name}`)
+  .as((qb) =>
+    qb.select().from(groupMembershipsTable).where(isNull(groupMembershipsTable.deletedAt)),
+  );
+export type ActiveGroupMembershipsView = typeof activeGroupMembershipsView;
+export type ActiveGroupMembership = InferSelectViewModel<ActiveGroupMembershipsView>;
+
+export const groups = new Tables.Sync(
+  "groups",
+  {
+    name: text().$type<GroupsContract.Name>().notNull(),
+    externalId: text().$type<GroupsContract.ExternalId>().notNull(),
     identityProviderId: Columns.entityId().notNull(),
   },
   (table) => [
     unique().on(table.name, table.tenantId),
     unique().on(table.externalId, table.tenantId),
-    index().on(table.origin, table.tenantId),
   ],
 );
-export const customerGroupsTable = customerGroups.table;
-export type CustomerGroupsTable = typeof customerGroupsTable;
-export type CustomerGroup = InferSelectModel<CustomerGroupsTable>;
-export type CustomerGroupByOrigin<TCustomerGroupOrigin extends CustomerGroup["origin"]> =
-  Discriminate<CustomerGroup, "origin", TCustomerGroupOrigin>;
+export const groupsTable = groups.table;
+export type GroupsTable = typeof groupsTable;
+export type Group = InferSelectModel<GroupsTable>;
 
-export const activeCustomerGroupsView = snakeCase
-  .view(`active_${customerGroups.name}`)
-  .as((qb) => qb.select().from(customerGroupsTable).where(isNull(customerGroupsTable.deletedAt)));
-export type ActiveCustomerGroupsView = typeof activeCustomerGroupsView;
-export type ActiveCustomerGroup = InferSelectViewModel<ActiveCustomerGroupsView>;
+export const activeGroupsView = snakeCase
+  .view(`active_${groups.name}`)
+  .as((qb) => qb.select().from(groupsTable).where(isNull(groupsTable.deletedAt)));
+export type ActiveGroupsView = typeof activeGroupsView;
+export type ActiveGroup = InferSelectViewModel<ActiveGroupsView>;
 
-export const activeMembershipCustomerGroupsView = snakeCase
-  .view(`active_membership_${customerGroups.name}`)
+export const activeMembershipGroupsView = snakeCase
+  .view(`active_membership_${groups.name}`)
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeCustomerGroupsView),
-        memberId: activeCustomerGroupMembershipsView.memberId,
+        ...getViewSelectedFields(activeGroupsView),
+        userId: activeGroupMembershipsView.userId,
       })
-      .from(activeCustomerGroupsView)
+      .from(activeGroupsView)
       .innerJoin(
-        activeCustomerGroupMembershipsView,
+        activeGroupMembershipsView,
         and(
-          eq(activeCustomerGroupsView.id, activeCustomerGroupMembershipsView.customerGroupId),
-          eq(activeCustomerGroupsView.tenantId, activeCustomerGroupMembershipsView.tenantId),
+          eq(activeGroupsView.id, activeGroupMembershipsView.groupId),
+          eq(activeGroupsView.tenantId, activeGroupMembershipsView.tenantId),
         ),
       ),
   );
-export type ActiveMembershipCustomerGroupsView = typeof activeMembershipCustomerGroupsView;
-export type ActiveMembershipCustomerGroup =
-  InferSelectViewModel<ActiveMembershipCustomerGroupsView>;
+export type ActiveMembershipGroupsView = typeof activeMembershipGroupsView;
+export type ActiveMembershipGroup = InferSelectViewModel<ActiveMembershipGroupsView>;

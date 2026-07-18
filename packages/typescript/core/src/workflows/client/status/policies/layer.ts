@@ -6,11 +6,11 @@ import * as Option from "effect/Option";
 
 import { WorkflowStatusesPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
-import { OrdersReadRepository } from "../../../../orders/client/read-repository";
+import { OrdersReadRepository } from "../../../../orders/client/repositories";
 import { Policy } from "../../../../policies";
 import { WorkflowStatusesContract, SharedAccountWorkflowsContract } from "../../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
-import { WorkflowStatusesReadRepository } from "../read-repository";
+import { WorkflowStatusesReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

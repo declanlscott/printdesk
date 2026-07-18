@@ -7,7 +7,7 @@ import { SharedAccountManagerAccessPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
 import { Policy } from "../../../../policies";
 import { SharedAccountManagerAccessContract } from "../../../contracts";
-import { SharedAccountManagerAccessReadRepository } from "../read-repository";
+import { SharedAccountManagerAccessReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

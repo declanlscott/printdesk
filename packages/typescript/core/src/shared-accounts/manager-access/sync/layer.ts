@@ -5,12 +5,12 @@ import { SharedAccountManagerAccessSync } from ".";
 import { AccessControl } from "../../../access-control";
 import { Sync } from "../../../sync";
 import { sharedAccountManagerAccess } from "../../sql";
-import { SharedAccountManagerAccessRepository } from "../repository";
+import { SharedAccountManagerAccessSyncRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* SharedAccountManagerAccessRepository;
+  const repository = yield* SharedAccountManagerAccessSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(sharedAccountManagerAccess.name)
     .source(AccessControl.userPermissionPolicy("shared_account_manager_access:read"), {

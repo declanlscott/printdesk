@@ -47,7 +47,7 @@ import * as RoomsPolicies from "../rooms/client/policies/layer";
 import * as RoomsReadRepository from "../rooms/client/read-repository/layer";
 import * as RoomsWriteRepository from "../rooms/client/write-repository/layer";
 import * as SharedAccountCustomerAccessReadRepository from "../shared-accounts/client/customer-access/read-repository/layer";
-import * as SharedAccountCustomerGroupAccessReadRepository from "../shared-accounts/client/customer-group-access/read-repository/layer";
+import * as SharedAccountCustomerGroupAccessReadRepository from "../shared-accounts/client/group-customer-access/read-repository/layer";
 import * as SharedAccountManagerAccessMutations from "../shared-accounts/client/manager-access/mutations/layer";
 import * as SharedAccountManagerAccessPolicies from "../shared-accounts/client/manager-access/policies/layer";
 import * as SharedAccountManagerAccessReadRepository from "../shared-accounts/client/manager-access/read-repository/layer";

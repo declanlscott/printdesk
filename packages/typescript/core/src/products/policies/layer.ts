@@ -6,7 +6,7 @@ import * as Struct from "effect/Struct";
 import { ProductsPolicies } from ".";
 import { AccessControl } from "../../access-control";
 import { Policy } from "../../policies";
-import { RoomsRepository } from "../../rooms/repository";
+import { RoomsRepository } from "../../rooms/repositories";
 import { ProductsContract } from "../contract";
 
 export type ServiceShape = Effect.Success<typeof makeService>;

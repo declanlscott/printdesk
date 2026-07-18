@@ -4,13 +4,13 @@ import * as Layer from "effect/Layer";
 import { SharedAccountsSync } from ".";
 import { AccessControl } from "../../access-control";
 import { Sync } from "../../sync";
-import { SharedAccountsRepository } from "../repository";
+import { SharedAccountsSyncRepository } from "../repositories";
 import { sharedAccounts } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* SharedAccountsRepository;
+  const repository = yield* SharedAccountsSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(sharedAccounts.name)
     .source(AccessControl.userPermissionPolicy("shared_accounts:read"), {

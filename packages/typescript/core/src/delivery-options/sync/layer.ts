@@ -4,13 +4,13 @@ import * as Layer from "effect/Layer";
 import { DeliveryOptionsSync } from ".";
 import { AccessControl } from "../../access-control";
 import { Sync } from "../../sync";
-import { DeliveryOptionsRepository } from "../repository";
+import { DeliveryOptionsSyncRepository } from "../repositories";
 import { deliveryOptions } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* DeliveryOptionsRepository;
+  const repository = yield* DeliveryOptionsSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(deliveryOptions.name)
     .source(AccessControl.userPermissionPolicy("delivery_options:read"), {

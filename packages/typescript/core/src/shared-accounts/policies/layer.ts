@@ -10,7 +10,7 @@ import { SharedAccountsPolicies } from ".";
 import { AccessControl } from "../../access-control";
 import { Policy } from "../../policies";
 import { SharedAccountsContract } from "../contracts";
-import { SharedAccountsRepository } from "../repository";
+import { SharedAccountsRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

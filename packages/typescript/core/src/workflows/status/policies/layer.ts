@@ -8,11 +8,11 @@ import * as Struct from "effect/Struct";
 import { WorkflowStatusesPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Actor } from "../../../actors";
-import { OrdersRepository } from "../../../orders/repository";
+import { OrdersRepository } from "../../../orders/repositories";
 import { Policy } from "../../../policies";
 import { WorkflowStatusesContract } from "../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
-import { WorkflowStatusesRepository } from "../repository";
+import { WorkflowStatusesRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

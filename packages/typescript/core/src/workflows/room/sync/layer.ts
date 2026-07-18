@@ -5,12 +5,12 @@ import { RoomWorkflowsSync } from ".";
 import { AccessControl } from "../../../access-control";
 import { Sync } from "../../../sync";
 import { roomWorkflows } from "../../sql";
-import { RoomWorkflowsRepository } from "../repository";
+import { RoomWorkflowsSyncRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* RoomWorkflowsRepository;
+  const repository = yield* RoomWorkflowsSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(roomWorkflows.name)
     .source(AccessControl.userPermissionPolicy("room_workflows:read"), {

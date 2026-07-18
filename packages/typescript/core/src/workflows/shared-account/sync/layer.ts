@@ -5,12 +5,12 @@ import { SharedAccountWorkflowsSync } from ".";
 import { AccessControl } from "../../../access-control";
 import { Sync } from "../../../sync";
 import { sharedAccountWorkflows } from "../../sql";
-import { SharedAccountWorkflowsRepository } from "../repository";
+import { SharedAccountWorkflowsSyncRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* SharedAccountWorkflowsRepository;
+  const repository = yield* SharedAccountWorkflowsSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(sharedAccountWorkflows.name)
     .source(AccessControl.userPermissionPolicy("shared_account_workflows:read"), {

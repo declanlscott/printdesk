@@ -9,8 +9,8 @@ import { EntityId } from "../utils";
 import type { ActiveUsersView, UsersTable } from "./sql";
 
 export namespace UsersContract {
-  export const Origin = Schema.Literals(["papercut", "internal"]);
-  export type Origin = typeof Origin.Type;
+  export const Status = Schema.Literals(["active", "suspended"]);
+  export type Status = typeof Status.Type;
 
   export const Role = Schema.Literals(["administrator", "operator", "manager", "customer"]);
   export type Role = (typeof Role)["Type"];
@@ -30,15 +30,15 @@ export namespace UsersContract {
   export class Table extends TablesContract.Table<UsersTable>("users")(
     {
       ...TablesContract.BaseSyncModel.fields,
-      origin: Origin,
       username: Username,
       externalId: ExternalId,
-      identityProviderId: EntityId,
-      role: Role.pipe(Schema.withDecodingDefaultType(Effect.succeed("customer"))),
       displayName: DisplayName,
       email: Email,
+      identityProviderId: EntityId,
+      status: Status.pipe(Schema.withDecodingDefaultType(Effect.succeed("active"))),
+      role: Role.pipe(Schema.withDecodingDefaultType(Effect.succeed("customer"))),
     },
-    ["read", "update", "delete"],
+    ["create", "read", "update", "delete"],
   ) {}
 
   export class ActiveView extends TablesContract.View<ActiveUsersView>(`active_${Table.name}`)(
@@ -82,7 +82,6 @@ export namespace UsersContract {
     Input: Table.Dto.mapFields(
       Struct.omit([
         ...Struct.keys(TablesContract.BaseModel.fields),
-        "origin",
         "username",
         "externalId",
         "identityProviderId",

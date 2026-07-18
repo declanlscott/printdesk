@@ -10,7 +10,7 @@ import { ReplicacheContract } from "../../../replicache/contracts";
 import { ReplicacheNotifier } from "../../../replicache/notifier";
 import { SharedAccountManagerAccessContract, SharedAccountsContract } from "../../contracts";
 import { SharedAccountManagerAccessPolicies } from "../policies";
-import { SharedAccountManagerAccessRepository } from "../repository";
+import { SharedAccountManagerAccessRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

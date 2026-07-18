@@ -9,17 +9,17 @@ import { Cost, EntityId } from "../utils";
 
 import type {
   ActiveAuthorizedSharedAccountCustomerAccessView,
-  ActiveAuthorizedSharedAccountCustomerGroupAccessView,
+  ActiveAuthorizedSharedAccountGroupCustomerAccessView,
   ActiveAuthorizedSharedAccountManagerAccessView,
   ActiveCustomerAuthorizedSharedAccountManagerAccessView,
   ActiveCustomerAuthorizedSharedAccountsView,
   ActiveManagerAuthorizedSharedAccountsView,
   ActiveSharedAccountCustomerAccessView,
-  ActiveSharedAccountCustomerGroupAccessView,
+  ActiveSharedAccountGroupCustomerAccessView,
   ActiveSharedAccountManagerAccessView,
   ActiveSharedAccountsView,
   SharedAccountCustomerAccessTable,
-  SharedAccountCustomerGroupAccessTable,
+  SharedAccountGroupCustomerAccessTable,
   SharedAccountManagerAccessTable,
   SharedAccountsTable,
 } from "./sql";
@@ -252,19 +252,19 @@ export namespace SharedAccountManagerAccessContract {
   });
 }
 
-export namespace SharedAccountCustomerGroupAccessContract {
-  export class Table extends TablesContract.Table<SharedAccountCustomerGroupAccessTable>(
-    "shared_account_customer_group_access",
+export namespace SharedAccountGroupCustomerAccessContract {
+  export class Table extends TablesContract.Table<SharedAccountGroupCustomerAccessTable>(
+    "shared_account_group_customer_access",
   )(
     {
       ...TablesContract.BaseSyncModel.fields,
-      customerGroupId: EntityId,
+      groupId: EntityId,
       sharedAccountId: EntityId,
     },
     ["read"],
   ) {}
 
-  export class ActiveView extends TablesContract.View<ActiveSharedAccountCustomerGroupAccessView>(
+  export class ActiveView extends TablesContract.View<ActiveSharedAccountGroupCustomerAccessView>(
     `active_${Table.name}`,
   )(
     Struct.evolve(Table.Model.fields, {
@@ -272,7 +272,7 @@ export namespace SharedAccountCustomerGroupAccessContract {
     }),
   ) {}
 
-  export class ActiveAuthorizedView extends TablesContract.View<ActiveAuthorizedSharedAccountCustomerGroupAccessView>(
+  export class ActiveAuthorizedView extends TablesContract.View<ActiveAuthorizedSharedAccountGroupCustomerAccessView>(
     `active_authorized_${Table.name}`,
   )({ ...ActiveView.Model.fields, memberId: EntityId }) {}
 }

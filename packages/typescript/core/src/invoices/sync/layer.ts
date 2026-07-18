@@ -4,13 +4,13 @@ import * as Layer from "effect/Layer";
 import { InvoicesSync } from ".";
 import { AccessControl } from "../../access-control";
 import { Sync } from "../../sync";
-import { InvoicesRepository } from "../repository";
+import { InvoicesSyncRepository } from "../repositories";
 import { invoices } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* InvoicesRepository;
+  const repository = yield* InvoicesSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(invoices.name)
     .source(AccessControl.userPermissionPolicy("invoices:read"), {

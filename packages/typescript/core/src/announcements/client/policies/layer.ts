@@ -7,7 +7,7 @@ import { AnnouncementsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { AnnouncementsContract } from "../../contract";
-import { AnnouncementsReadRepository } from "../read-repository";
+import { AnnouncementsReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

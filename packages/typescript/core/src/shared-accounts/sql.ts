@@ -11,7 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
-import { activeCustomerGroupMembershipsView } from "../groups/sql";
+import { activeGroupMembershipsView } from "../groups/sql";
 import { Tables } from "../tables";
 import { SharedAccountsContract } from "./contracts";
 
@@ -193,59 +193,59 @@ export type ActiveManagerAuthorizedSharedAccountsView =
 export type ActiveManagerAuthorizedSharedAccount =
   InferSelectViewModel<ActiveManagerAuthorizedSharedAccountsView>;
 
-export const sharedAccountCustomerGroupAccess = new Tables.Sync(
-  `shared_account_customer_group_access`,
+export const sharedAccountGroupCustomerAccess = new Tables.Sync(
+  `shared_account_group_customer_access`,
   {
-    customerGroupId: Columns.entityId().notNull(),
+    groupId: Columns.entityId().notNull(),
     sharedAccountId: Columns.entityId().notNull(),
   },
   (table) => [
-    uniqueIndex().on(table.customerGroupId, table.sharedAccountId, table.tenantId),
-    index().on(table.customerGroupId),
+    uniqueIndex().on(table.groupId, table.sharedAccountId, table.tenantId),
+    index().on(table.groupId),
   ],
 );
-export const sharedAccountCustomerGroupAccessTable = sharedAccountCustomerGroupAccess.table;
-export type SharedAccountCustomerGroupAccessTable = typeof sharedAccountCustomerGroupAccessTable;
-export type SharedAccountCustomerGroupAccess =
-  InferSelectModel<SharedAccountCustomerGroupAccessTable>;
+export const sharedAccountGroupCustomerAccessTable = sharedAccountGroupCustomerAccess.table;
+export type SharedAccountGroupCustomerAccessTable = typeof sharedAccountGroupCustomerAccessTable;
+export type SharedAccountGroupCustomerAccess =
+  InferSelectModel<SharedAccountGroupCustomerAccessTable>;
 
-export const activeSharedAccountCustomerGroupAccessView = snakeCase
-  .view(`active_${sharedAccountCustomerGroupAccess.name}`)
+export const activeSharedAccountGroupCustomerAccessView = snakeCase
+  .view(`active_${sharedAccountGroupCustomerAccess.name}`)
   .as((qb) =>
     qb
       .select()
-      .from(sharedAccountCustomerGroupAccessTable)
-      .where(isNull(sharedAccountCustomerGroupAccessTable.deletedAt)),
+      .from(sharedAccountGroupCustomerAccessTable)
+      .where(isNull(sharedAccountGroupCustomerAccessTable.deletedAt)),
   );
-export type ActiveSharedAccountCustomerGroupAccessView =
-  typeof activeSharedAccountCustomerGroupAccessView;
-export type ActiveSharedAccountCustomerGroupAccess =
-  InferSelectViewModel<ActiveSharedAccountCustomerGroupAccessView>;
+export type ActiveSharedAccountGroupCustomerAccessView =
+  typeof activeSharedAccountGroupCustomerAccessView;
+export type ActiveSharedAccountGroupCustomerAccess =
+  InferSelectViewModel<ActiveSharedAccountGroupCustomerAccessView>;
 
-export const activeAuthorizedSharedAccountCustomerGroupAccessView = snakeCase
-  .view(`active_authorized_${sharedAccountCustomerGroupAccess.name}`)
+export const activeAuthorizedSharedAccountGroupCustomerAccessView = snakeCase
+  .view(`active_authorized_${sharedAccountGroupCustomerAccess.name}`)
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountCustomerGroupAccessView),
-        memberId: activeCustomerGroupMembershipsView.memberId,
+        ...getViewSelectedFields(activeSharedAccountGroupCustomerAccessView),
+        memberId: activeGroupMembershipsView.userId,
       })
-      .from(activeSharedAccountCustomerGroupAccessView)
+      .from(activeSharedAccountGroupCustomerAccessView)
       .innerJoin(
-        activeCustomerGroupMembershipsView,
+        activeGroupMembershipsView,
         and(
           eq(
-            activeSharedAccountCustomerGroupAccessView.customerGroupId,
-            activeCustomerGroupMembershipsView.customerGroupId,
+            activeSharedAccountGroupCustomerAccessView.groupId,
+            activeGroupMembershipsView.groupId,
           ),
           eq(
-            activeSharedAccountCustomerGroupAccessView.tenantId,
-            activeCustomerGroupMembershipsView.tenantId,
+            activeSharedAccountGroupCustomerAccessView.tenantId,
+            activeGroupMembershipsView.tenantId,
           ),
         ),
       ),
   );
-export type ActiveAuthorizedSharedAccountCustomerGroupAccessView =
-  typeof activeAuthorizedSharedAccountCustomerGroupAccessView;
-export type ActiveAuthorizedSharedAccountCustomerGroupAccess =
-  InferSelectViewModel<ActiveAuthorizedSharedAccountCustomerGroupAccessView>;
+export type ActiveAuthorizedSharedAccountGroupCustomerAccessView =
+  typeof activeAuthorizedSharedAccountGroupCustomerAccessView;
+export type ActiveAuthorizedSharedAccountGroupCustomerAccess =
+  InferSelectViewModel<ActiveAuthorizedSharedAccountGroupCustomerAccessView>;

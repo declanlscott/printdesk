@@ -15,8 +15,7 @@ import { Mutation } from "../../../../mutations";
 import { WorkflowStatusesContract } from "../../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
 import { WorkflowStatusesPolicies } from "../policies";
-import { WorkflowStatusesReadRepository } from "../read-repository";
-import { WorkflowStatusesWriteRepository } from "../write-repository";
+import { WorkflowStatusesReadRepository, WorkflowStatusesWriteRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

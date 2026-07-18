@@ -14,10 +14,10 @@ import { Mutation } from "../../../mutations";
 import { ReplicacheContract } from "../../../replicache/contracts";
 import { ReplicacheNotifier } from "../../../replicache/notifier";
 import { WorkflowStatusesContract, SharedAccountWorkflowsContract } from "../../contracts";
-import { RoomWorkflowsRepository } from "../../room/repository";
+import { RoomWorkflowsRepository } from "../../room/repositories";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
 import { WorkflowStatusesPolicies } from "../policies";
-import { WorkflowStatusesRepository } from "../repository";
+import { WorkflowStatusesRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

@@ -6,7 +6,7 @@ import { SharedAccountWorkflowsPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
 import { Policy } from "../../../../policies";
 import { SharedAccountWorkflowsContract } from "../../../contracts";
-import { SharedAccountWorkflowsReadRepository } from "../read-repository";
+import { SharedAccountWorkflowsReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

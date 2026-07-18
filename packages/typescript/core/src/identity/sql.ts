@@ -10,11 +10,11 @@ export const identityProviders = new Tables.NonSync(
   "identity_providers",
   {
     kind: Columns.union(IdentityProvidersContract.Kind.literals).notNull(),
-    externalTenantId: text().$type<IdentityProvidersContract.ExternalTenantId>().notNull(),
+    externalId: text().$type<IdentityProvidersContract.ExternalId>().notNull(),
   },
   (table) => [
     uniqueIndex().on(table.kind, table.tenantId),
-    uniqueIndex().on(table.externalTenantId, table.tenantId),
+    uniqueIndex().on(table.externalId, table.tenantId),
   ],
 );
 export const identityProvidersTable = identityProviders.table;

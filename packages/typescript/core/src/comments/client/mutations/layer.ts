@@ -8,7 +8,7 @@ import { Mutation } from "../../../mutations";
 import { OrdersPolicies } from "../../../orders/client/policies";
 import { CommentsContract } from "../../contract";
 import { CommentsPolicies } from "../policies";
-import { CommentsWriteRepository } from "../write-repository";
+import { CommentsWriteRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

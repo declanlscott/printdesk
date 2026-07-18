@@ -6,7 +6,7 @@ import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { AnnouncementsContract } from "../../contract";
 import { AnnouncementsPolicies } from "../policies";
-import { AnnouncementsWriteRepository } from "../write-repository";
+import { AnnouncementsWriteRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

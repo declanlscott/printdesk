@@ -7,16 +7,16 @@ import * as Tuple from "effect/Tuple";
 
 import { RoomsMutations } from ".";
 import { AccessControl } from "../../access-control";
-import { AnnouncementsRepository } from "../../announcements/repository";
-import { DeliveryOptionsRepository } from "../../delivery-options/repository";
+import { AnnouncementsRepository } from "../../announcements/repositories";
+import { DeliveryOptionsRepository } from "../../delivery-options/repositories";
 import { Mutation } from "../../mutations";
-import { ProductsRepository } from "../../products/repository";
+import { ProductsRepository } from "../../products/repositories";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
-import { RoomWorkflowsRepository } from "../../workflows/room/repository";
+import { RoomWorkflowsRepository } from "../../workflows/room/repositories";
 import { RoomsContract } from "../contract";
 import { RoomsPolicies } from "../policies";
-import { RoomsRepository } from "../repository";
+import { RoomsRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

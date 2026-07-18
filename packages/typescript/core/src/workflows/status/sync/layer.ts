@@ -5,12 +5,12 @@ import { WorkflowStatusesSync } from ".";
 import { AccessControl } from "../../../access-control";
 import { Sync } from "../../../sync";
 import { workflowStatuses } from "../../sql";
-import { WorkflowStatusesRepository } from "../repository";
+import { WorkflowStatusesSyncRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* WorkflowStatusesRepository;
+  const repository = yield* WorkflowStatusesSyncRepository;
 
   const streamer = new Sync.EntityStreamerBuilder(workflowStatuses.name)
     .source(AccessControl.userPermissionPolicy("workflow_statuses:read"), {

@@ -18,14 +18,12 @@ export namespace IdentityProvidersContract {
   export const Audience = Schema.NonEmptyString.pipe(Schema.brand("IdentityProviderAudience"));
   export type Audience = typeof Audience.Type;
 
-  export const ExternalTenantId = Schema.NonEmptyString.pipe(
-    Schema.brand("IdentityProviderExternalTenantId"),
-  );
-  export type ExternalTenantId = typeof ExternalTenantId.Type;
+  export const ExternalId = Schema.NonEmptyString.pipe(Schema.brand("IdentityProviderExternalId"));
+  export type ExternalId = typeof ExternalId.Type;
 
   export class AccessToken extends Schema.Class<AccessToken>("AccessToken")({
     audience: Audience,
-    tenantId: ExternalTenantId,
+    externalId: ExternalId,
   }) {}
 
   export const EntraIdAccessToken = Schema.Struct({
@@ -100,7 +98,7 @@ export namespace IdentityProvidersContract {
 
   export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
     "IdentityProviderNotFoundError",
-    Table.Dto.mapFields(Struct.pick(["kind", "externalTenantId"])),
+    Table.Dto.mapFields(Struct.pick(["kind", "externalId"])),
   ) {}
 
   export class NotImplementedError

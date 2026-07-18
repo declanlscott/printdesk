@@ -10,7 +10,7 @@ import { OrdersContract } from "../../orders/contract";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { InvoicesContract } from "../contract";
-import { InvoicesRepository } from "../repository";
+import { InvoicesRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

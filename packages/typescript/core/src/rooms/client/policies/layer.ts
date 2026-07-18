@@ -7,7 +7,7 @@ import { RoomsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { RoomsContract } from "../../contract";
-import { RoomsReadRepository } from "../read-repository";
+import { RoomsReadRepository } from "../repositories";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

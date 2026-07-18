@@ -9,7 +9,7 @@ import { Mutation } from "../../mutations";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { TenantsContract } from "../contract";
-import { TenantsRepository } from "../repository";
+import { TenantsRepository } from "../repositories";
 import { tenantsTable } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;

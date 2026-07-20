@@ -7,12 +7,12 @@ import { AnnouncementsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { AnnouncementsContract } from "../../contract";
-import { AnnouncementsReadRepository } from "../repositories";
+import { AnnouncementsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* AnnouncementsReadRepository;
+  const repository = yield* AnnouncementsRepository;
 
   const canEdit = Policy.make(AnnouncementsContract.canEdit, {
     make: ({ id }) =>

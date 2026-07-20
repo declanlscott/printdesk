@@ -6,12 +6,12 @@ import { AccessControl } from "../../../../access-control";
 import { Mutation } from "../../../../mutations";
 import { SharedAccountManagerAccessContract } from "../../../contracts";
 import { SharedAccountManagerAccessPolicies } from "../policies";
-import { SharedAccountManagerAccessWriteRepository } from "../repositories";
+import { SharedAccountManagerAccessRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* SharedAccountManagerAccessWriteRepository;
+  const repository = yield* SharedAccountManagerAccessRepository;
 
   const policies = yield* SharedAccountManagerAccessPolicies;
 

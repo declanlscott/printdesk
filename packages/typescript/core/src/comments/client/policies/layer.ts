@@ -9,12 +9,12 @@ import { CommentsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { CommentsContract } from "../../contract";
-import { CommentsReadRepository } from "../repositories";
+import { CommentsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* CommentsReadRepository;
+  const repository = yield* CommentsRepository;
 
   const isAuthor = Policy.make(CommentsContract.isAuthor, {
     make: ({ id, authorId }) =>

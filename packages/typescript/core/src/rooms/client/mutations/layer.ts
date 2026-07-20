@@ -4,24 +4,24 @@ import * as Tuple from "effect/Tuple";
 
 import { RoomsMutations } from ".";
 import { AccessControl } from "../../../access-control";
-import { AnnouncementsWriteRepository } from "../../../announcements/client/repositories";
-import { DeliveryOptionsWriteRepository } from "../../../delivery-options/client/repositories";
+import { AnnouncementsRepository } from "../../../announcements/client/repository";
+import { DeliveryOptionsRepository } from "../../../delivery-options/client/repository";
 import { Mutation } from "../../../mutations";
-import { ProductsWriteRepository } from "../../../products/client/repositories";
-import { RoomWorkflowsWriteRepository } from "../../../workflows/client/room/repositories";
+import { ProductsRepository } from "../../../products/client/repository";
+import { RoomWorkflowsRepository } from "../../../workflows/client/room/repository";
 import { RoomWorkflowsContract } from "../../../workflows/contracts";
 import { RoomsContract } from "../../contract";
 import { RoomsPolicies } from "../policies";
-import { RoomsWriteRepository } from "../repositories";
+import { RoomsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* RoomsWriteRepository;
-  const announcementsRepository = yield* AnnouncementsWriteRepository;
-  const deliveryOptionsRepository = yield* DeliveryOptionsWriteRepository;
-  const workflowsRepository = yield* RoomWorkflowsWriteRepository;
-  const productsRepository = yield* ProductsWriteRepository;
+  const repository = yield* RoomsRepository;
+  const announcementsRepository = yield* AnnouncementsRepository;
+  const deliveryOptionsRepository = yield* DeliveryOptionsRepository;
+  const workflowsRepository = yield* RoomWorkflowsRepository;
+  const productsRepository = yield* ProductsRepository;
 
   const policies = yield* RoomsPolicies;
 

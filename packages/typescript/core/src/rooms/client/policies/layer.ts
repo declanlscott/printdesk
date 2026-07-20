@@ -7,12 +7,12 @@ import { RoomsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { RoomsContract } from "../../contract";
-import { RoomsReadRepository } from "../repositories";
+import { RoomsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* RoomsReadRepository;
+  const repository = yield* RoomsRepository;
 
   const canEdit = Policy.make(RoomsContract.canEdit, {
     make: ({ id }) =>

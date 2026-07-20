@@ -8,12 +8,12 @@ import { Mutation } from "../../../mutations";
 import { OrdersPolicies } from "../../../orders/client/policies";
 import { CommentsContract } from "../../contract";
 import { CommentsPolicies } from "../policies";
-import { CommentsWriteRepository } from "../repositories";
+import { CommentsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* CommentsWriteRepository;
+  const repository = yield* CommentsRepository;
 
   const orderPolicies = yield* OrdersPolicies;
   const policies = yield* CommentsPolicies;

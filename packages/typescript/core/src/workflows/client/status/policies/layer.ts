@@ -6,17 +6,17 @@ import * as Option from "effect/Option";
 
 import { WorkflowStatusesPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
-import { OrdersReadRepository } from "../../../../orders/client/repositories";
+import { OrdersRepository } from "../../../../orders/client/repository";
 import { Policy } from "../../../../policies";
 import { WorkflowStatusesContract, SharedAccountWorkflowsContract } from "../../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
-import { WorkflowStatusesReadRepository } from "../repositories";
+import { WorkflowStatusesRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* WorkflowStatusesReadRepository;
-  const ordersRepository = yield* OrdersReadRepository;
+  const repository = yield* WorkflowStatusesRepository;
+  const ordersRepository = yield* OrdersRepository;
 
   const sharedAccountWorkflowPolicies = yield* SharedAccountWorkflowsPolicies;
 

@@ -11,12 +11,12 @@ import { OrdersPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { OrdersContract } from "../../contract";
-import { OrdersReadRepository } from "../repositories";
+import { OrdersRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* OrdersReadRepository;
+  const repository = yield* OrdersRepository;
 
   const isCustomer = Policy.make(OrdersContract.isCustomer, {
     make: ({ id, customerId }) =>

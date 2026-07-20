@@ -7,12 +7,12 @@ import { SharedAccountManagerAccessPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
 import { Policy } from "../../../../policies";
 import { SharedAccountManagerAccessContract } from "../../../contracts";
-import { SharedAccountManagerAccessReadRepository } from "../repositories";
+import { SharedAccountManagerAccessRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* SharedAccountManagerAccessReadRepository;
+  const repository = yield* SharedAccountManagerAccessRepository;
 
   const canDelete = Policy.make(SharedAccountManagerAccessContract.canDelete, {
     make: ({ id }) =>

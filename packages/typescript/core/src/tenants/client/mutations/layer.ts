@@ -5,12 +5,12 @@ import { TenantsMutations } from ".";
 import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { TenantsContract } from "../../contract";
-import { TenantsWriteRepository } from "../repositories";
+import { TenantsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* TenantsWriteRepository;
+  const repository = yield* TenantsRepository;
 
   const edit = Mutation.make(TenantsContract.edit, {
     makePolicy: () => AccessControl.userPermissionPolicy("tenants:update"),

@@ -5,12 +5,12 @@ import { InvoicesMutations } from ".";
 import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { InvoicesContract } from "../../contract";
-import { InvoicesWriteRepository } from "../repositories";
+import { InvoicesRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* InvoicesWriteRepository;
+  const repository = yield* InvoicesRepository;
 
   const create = Mutation.make(InvoicesContract.create, {
     makePolicy: () => AccessControl.userPermissionPolicy("invoices:create"),

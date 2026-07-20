@@ -6,12 +6,12 @@ import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { UsersContract } from "../../contract";
 import { UsersPolicies } from "../policies";
-import { UsersWriteRepository } from "../repositories";
+import { UsersRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* UsersWriteRepository;
+  const repository = yield* UsersRepository;
 
   const policies = yield* UsersPolicies;
 

@@ -10,12 +10,12 @@ import { SharedAccountsPolicies } from "../../../shared-accounts/client/policies
 import { UsersPolicies } from "../../../users/client/policies";
 import { OrdersContract } from "../../contract";
 import { OrdersPolicies } from "../policies";
-import { OrdersWriteRepository } from "../repositories";
+import { OrdersRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* OrdersWriteRepository;
+  const repository = yield* OrdersRepository;
 
   const userPolicies = yield* UsersPolicies;
   const sharedAccountPolicies = yield* SharedAccountsPolicies;

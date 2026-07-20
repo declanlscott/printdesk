@@ -7,12 +7,12 @@ import { UsersPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { UsersContract } from "../../contract";
-import { UsersReadRepository } from "../repositories";
+import { UsersRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* UsersReadRepository;
+  const repository = yield* UsersRepository;
 
   const isSelf = Policy.make(UsersContract.isSelf, {
     make: ({ id }) =>

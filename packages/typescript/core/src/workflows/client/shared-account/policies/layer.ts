@@ -6,12 +6,12 @@ import { SharedAccountWorkflowsPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
 import { Policy } from "../../../../policies";
 import { SharedAccountWorkflowsContract } from "../../../contracts";
-import { SharedAccountWorkflowsReadRepository } from "../repositories";
+import { SharedAccountWorkflowsRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* SharedAccountWorkflowsReadRepository;
+  const repository = yield* SharedAccountWorkflowsRepository;
 
   const isCustomerAuthorized = Policy.make(SharedAccountWorkflowsContract.isCustomerAuthorized, {
     make: ({ id, customerId }) =>

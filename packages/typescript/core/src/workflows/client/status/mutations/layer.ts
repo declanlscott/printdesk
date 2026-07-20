@@ -15,13 +15,12 @@ import { Mutation } from "../../../../mutations";
 import { WorkflowStatusesContract } from "../../../contracts";
 import { SharedAccountWorkflowsPolicies } from "../../shared-account/policies";
 import { WorkflowStatusesPolicies } from "../policies";
-import { WorkflowStatusesReadRepository, WorkflowStatusesWriteRepository } from "../repositories";
+import { WorkflowStatusesRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const readRepository = yield* WorkflowStatusesReadRepository;
-  const writeRepository = yield* WorkflowStatusesWriteRepository;
+  const repository = yield* WorkflowStatusesRepository;
 
   const sharedAccountWorkflowPolicies = yield* SharedAccountWorkflowsPolicies;
   const policies = yield* WorkflowStatusesPolicies;
@@ -41,7 +40,7 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     mutator: (workflowStatus, { tenantId }) =>
-      readRepository
+      repository
         .findLastByWorkflowId(
           workflowStatus.roomWorkflowId ?? workflowStatus.sharedAccountWorkflowId,
         )
@@ -56,7 +55,7 @@ export const makeService = Effect.gen(function* () {
               tenantId,
             }),
           ),
-          Effect.flatMap(writeRepository.create),
+          Effect.flatMap(repository.create),
         ),
   });
 
@@ -67,7 +66,7 @@ export const makeService = Effect.gen(function* () {
         policies.canEdit.make({ id }),
       ),
     mutator: ({ id, ...workflowStatus }) =>
-      writeRepository.updateById(id, () => Effect.succeed(workflowStatus)),
+      repository.updateById(id, () => Effect.succeed(workflowStatus)),
   });
 
   const reorder = Mutation.make(WorkflowStatusesContract.reorder, {
@@ -77,7 +76,7 @@ export const makeService = Effect.gen(function* () {
         policies.canEdit.make({ id }),
       ),
     mutator: Effect.fn(function* ({ id, index, updatedAt }) {
-      const slice = yield* readRepository.findSlice(id, index).pipe(
+      const slice = yield* repository.findSlice(id, index).pipe(
         Effect.flatMap((slice) =>
           Array.last(slice).pipe(
             Effect.fromOption,
@@ -107,7 +106,7 @@ export const makeService = Effect.gen(function* () {
 
       return yield* Effect.all(
         Array.map(slice, (status, i) =>
-          writeRepository.updateById(status.id, () =>
+          repository.updateById(status.id, () =>
             Effect.succeed({
               index: status.index + (i === 0 ? delta : shift),
               updatedAt,
@@ -126,9 +125,9 @@ export const makeService = Effect.gen(function* () {
         policies.canDelete.make({ id }),
       ),
     mutator: Effect.fn(function* ({ id, deletedAt }) {
-      const slice = yield* readRepository.findTailSliceById(id);
+      const slice = yield* repository.findTailSliceById(id);
 
-      const deleted = yield* writeRepository
+      const deleted = yield* repository
         .deleteById(id)
         .pipe(Effect.map((value) => ({ ...value, deletedAt })));
 
@@ -137,7 +136,7 @@ export const makeService = Effect.gen(function* () {
           i === 0
             ? Result.failVoid
             : Result.succeed(
-                writeRepository.updateById(status.id, () =>
+                repository.updateById(status.id, () =>
                   Effect.succeed({
                     index: status.index - 1,
                     updatedAt: deletedAt,

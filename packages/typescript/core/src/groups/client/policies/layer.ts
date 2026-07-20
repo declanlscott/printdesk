@@ -6,12 +6,12 @@ import { GroupsPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
 import { GroupsContract } from "../../contracts";
-import { GroupMembershipsReadRepository } from "../memberships/repository";
+import { GroupMembershipsRepository } from "../memberships/repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const membershipsRepository = yield* GroupMembershipsReadRepository;
+  const membershipsRepository = yield* GroupMembershipsRepository;
 
   const isMemberOf = Policy.make(GroupsContract.isMemberOf, {
     make: ({ id, userId }) =>

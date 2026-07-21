@@ -34,10 +34,10 @@ import type { ActorsContract } from "../actors/contract";
 export namespace Realtime {
   const timeoutDuration = Duration.seconds(5);
 
-  export const defaultRetrySchedule = Schedule.exponential(Duration.millis(300), 1.1).pipe(
-    Schedule.jittered,
-    Schedule.map(Duration.min(Duration.seconds(5))),
-  );
+  export const defaultRetrySchedule = Schedule.min([
+    Schedule.exponential(Duration.millis(300), 1.1),
+    Schedule.fixed(Duration.seconds(5)),
+  ]).pipe(Schedule.jittered);
 
   export interface Options {
     readonly baseUrls: { readonly api: URL; readonly realtime: URL };

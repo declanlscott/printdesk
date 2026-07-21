@@ -37,7 +37,7 @@ export const makeService = Effect.gen(function* () {
           }),
         ),
         Effect.map(Struct.get("Items")),
-        Effect.filterOrFail(Predicate.isNotUndefined, () => new Cause.NoSuchElementError()),
+        Effect.filterOrFail(Predicate.isNotUndefined),
         Effect.map(Array.head),
         Effect.flatMap(Effect.fromOption),
         Effect.flatMap(Schema.decodeUnknownEffect(OrdersContract.Item)),
@@ -57,10 +57,9 @@ export const makeService = Effect.gen(function* () {
               }),
             ),
             Effect.map(Struct.get("Attributes")),
-            Effect.filterOrFail(Predicate.isNotUndefined, () => new Cause.NoSuchElementError()),
+            Effect.filterOrFail(Predicate.isNotUndefined),
             Effect.flatMap(Schema.decodeUnknownEffect(OrdersContract.Item)),
             Effect.map(Struct.get(Constants.DYNAMO_KEYS.SK)),
-            Effect.mapError((e) => e),
             Effect.retry(($) =>
               $(
                 Schedule.max([

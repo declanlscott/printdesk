@@ -1,4 +1,3 @@
-import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -62,7 +61,7 @@ export class Database extends Context.Service<Database>()(
               catch: (cause) => new ReadTransactionError({ cause }),
             }),
           ),
-          Effect.filterOrFail(Predicate.isNotUndefined, () => new Cause.NoSuchElementError()),
+          Effect.filterOrFail(Predicate.isNotUndefined),
           Effect.flatMap(
             Schema.decodeUnknownEffect<Schema.ConstraintDecoder<TTable["Dto"]["Type"]>>(table.Dto),
           ),

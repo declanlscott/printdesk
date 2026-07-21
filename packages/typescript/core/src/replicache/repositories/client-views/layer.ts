@@ -1,6 +1,5 @@
 import { and, eq, inArray, max, sql } from "drizzle-orm";
 import * as Array from "effect/Array";
-import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Predicate from "effect/Predicate";
@@ -80,7 +79,7 @@ export const makeService = Effect.gen(function* () {
           Effect.map(Array.head),
           Effect.flatMap(Effect.fromOption),
           Effect.map(Struct.get("version")),
-          Effect.filterOrFail(Predicate.isNotNull, () => new Cause.NoSuchElementError()),
+          Effect.filterOrFail(Predicate.isNotNull),
         ),
   );
 

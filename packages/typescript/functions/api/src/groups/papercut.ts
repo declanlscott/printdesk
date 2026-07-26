@@ -1,26 +1,23 @@
 import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
-import { Graph } from "@printdesk/core/graph";
-import { EntraId } from "@printdesk/core/identity/entra-id";
-import { authMiddleware } from "@printdesk/core/middleware/auth";
+import { AuthMiddleware } from "@printdesk/core/api/middleware/auth";
+import { AwsCredentialIdentityProviderMiddleware } from "@printdesk/core/api/middleware/aws";
+import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
 import { Oauth } from "@printdesk/core/oauth";
 import { PapercutMfApi } from "@printdesk/core/papercut-mf/api";
-import { PapercutMfSyncer } from "@printdesk/core/papercut-mf/syncer";
+import { PapercutMfSynchronizer } from "@printdesk/core/papercut-mf/synchronizer";
 import { ReplicacheNotifier } from "@printdesk/core/replicache/notifier";
 import { layer as replicacheNotifierLayer } from "@printdesk/core/replicache/notifier/layer";
+import { orDieWhenUnrespondable } from "@printdesk/core/utils";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
-import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
-import * as Result from "effect/Result";
-import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
-import { appsyncPublisherCredentialIdentityProviderMiddlewareLayer } from "../lib/aws";
 import { databaseLayer } from "../lib/database";
-import { papercutMfApiLayer, papercutMfSyncerLayer } from "../lib/papercut";
+import { papercutMfApiLayer, papercutMfSynchronizerLayer } from "../lib/papercut";
 import { realtimeLayer } from "../lib/realtime";
 
 export const basePapercutMfGroupLayer = HttpApiBuilder.group(
@@ -39,14 +36,7 @@ export const basePapercutMfGroupLayer = HttpApiBuilder.group(
               HttpClientError: () => Effect.succeed(false),
               FaultError: () => Effect.succeed(false),
             }),
-            Effect.catchFilter(
-              Filter.make((error) =>
-                HttpServerRespondable.isRespondable(error)
-                  ? Result.fail(error)
-                  : Result.succeed(error),
-              ),
-              Effect.die,
-            ),
+            orDieWhenUnrespondable,
             Effect.map((healthy) => ({ healthy })),
             AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_api_gateway:read")),
           ),
@@ -60,14 +50,7 @@ export const basePapercutMfGroupLayer = HttpApiBuilder.group(
               completed: taskStatus[0].value.boolean,
               message: taskStatus[1].value,
             })),
-            Effect.catchFilter(
-              Filter.make((error) =>
-                HttpServerRespondable.isRespondable(error)
-                  ? Result.fail(error)
-                  : Result.succeed(error),
-              ),
-              Effect.die,
-            ),
+            orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_api_gateway:read")),
           ),
         ),
@@ -76,7 +59,7 @@ export const basePapercutMfGroupLayer = HttpApiBuilder.group(
 );
 
 export const papercutMfGroupLayer = basePapercutMfGroupLayer.pipe(
-  Layer.provide([authMiddleware.layer, papercutMfApiLayer]),
+  Layer.provide([AuthMiddleware.layer, papercutMfApiLayer]),
   Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
 );
 
@@ -84,87 +67,25 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
   Api,
   "PapercutMfSync",
   Effect.fn(function* (handlers) {
-    const syncer = yield* PapercutMfSyncer;
+    const syncer = yield* PapercutMfSynchronizer;
     const replicacheNotifier = yield* ReplicacheNotifier;
 
     return handlers
-      .handle("source", () =>
-        syncer.syncSource.pipe(
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.source"),
-        ),
-      )
       .handle("all", () =>
         syncer.syncAll.pipe(
           Effect.map(Array.flatten),
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
+          orDieWhenUnrespondable,
           AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
           Effect.withSpan("Api.PapercutMfSync.all"),
-        ),
-      )
-      .handle("customerGroups", () =>
-        syncer.syncCustomerGroups.pipe(
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.customerGroups"),
-        ),
-      )
-      .handle("customerGroupMemberships", () =>
-        syncer.syncCustomerGroupMemberships.pipe(
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.customerGroupMemberships"),
         ),
       )
       .handle("sharedAccounts", () =>
         syncer.syncSharedAccounts.pipe(
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
+          orDieWhenUnrespondable,
           AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
           Effect.withSpan("Api.PapercutMfSync.sharedAccounts"),
         ),
@@ -173,64 +94,38 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
         syncer.syncSharedAccountCustomerAccess.pipe(
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
+          orDieWhenUnrespondable,
           AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
           Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerAccess"),
         ),
       )
-      .handle("sharedAccountCustomerGroupAccess", () =>
+      .handle("sharedAccountGroupCustomerAccess", () =>
         syncer.syncSharedAccountCustomerGroupAccess.pipe(
           Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
           Effect.asVoid,
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
+          orDieWhenUnrespondable,
           AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
           Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerGroupAccess"),
-        ),
-      )
-      .handle("users", () =>
-        syncer.syncUsers.pipe(
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          Effect.catchTag("IdentityProviderNotImplementedError", Effect.die),
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.users"),
         ),
       );
   }),
 );
 
 export const papercutMfSyncGroupLayer = basePapercutMfSyncGroupLayer.pipe(
-  Layer.provide([authMiddleware.layer, papercutMfSyncerLayer, replicacheNotifierLayer]),
+  Layer.provide([
+    AuthMiddleware.layer,
+    AwsCredentialIdentityProviderMiddleware.appsyncPublisherLayer,
+    papercutMfSynchronizerLayer,
+    replicacheNotifierLayer,
+  ]),
   Layer.provide([
     ActorLayerMap.layer,
+    AppsyncPublisherCredentialIdentityProviderLayerMap.layer,
     databaseLayer,
-    EntraId.AuthProviderLayerMap.layer,
-    Graph.layer,
     Oauth.AccessTokenLayerMap.layer,
     openauthLayer,
     realtimeLayer,
-    appsyncPublisherCredentialIdentityProviderMiddlewareLayer,
   ]),
 );
+
+export const papercutMfGroupsLayer = Layer.mergeAll(papercutMfGroupLayer, papercutMfSyncGroupLayer);

@@ -1,17 +1,17 @@
 import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
 import * as Config from "@printdesk/core/config/layer";
-import * as CustomerGroupMembershipsRepository from "@printdesk/core/groups/customer-memberships/repository/layer";
-import * as CustomerGroupsRepository from "@printdesk/core/groups/customers/repository/layer";
-import * as IdentityProvidersRepository from "@printdesk/core/identity/providers-repository/layer";
+import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
+import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
+import * as IdentityRepository from "@printdesk/core/identity/repository/layer";
 import * as PapercutMfApi from "@printdesk/core/papercut-mf/api/layer";
-import * as PapercutMfSyncer from "@printdesk/core/papercut-mf/syncer/layer";
-import * as SharedAccountCustomerAccessRepository from "@printdesk/core/shared-accounts/customer-access/repository/layer";
-import * as SharedAccountCustomerGroupAccessRepository from "@printdesk/core/shared-accounts/customer-group-access/repository/layer";
-import * as SharedAccountsRepository from "@printdesk/core/shared-accounts/repository/layer";
+import * as PapercutMfSynchronizer from "@printdesk/core/papercut-mf/synchronizer/layer";
+import * as SharedAccountCustomerAccessRepositories from "@printdesk/core/shared-accounts/customer-access/repositories/layers";
+import * as SharedAccountCustomerGroupAccessRepositories from "@printdesk/core/shared-accounts/group-customer-access/repositories/layers";
+import * as SharedAccountsRepositories from "@printdesk/core/shared-accounts/repositories/layers";
 import { SstResource } from "@printdesk/core/sst/resource";
 import * as SyncQueryBuilder from "@printdesk/core/sync/query-builder/layer";
-import * as UsersRepository from "@printdesk/core/users/repository/layer";
+import * as UsersRepositories from "@printdesk/core/users/repositories/layers";
 import { Xml } from "@printdesk/core/xml";
 import { XmlRpc } from "@printdesk/core/xml/rpc";
 import * as Layer from "effect/Layer";
@@ -25,16 +25,16 @@ export const papercutMfApiLayer = PapercutMfApi.layer.pipe(
   Layer.provide([FetchHttpClient.layer, SstResource.layer]),
 );
 
-export const papercutMfSyncerLayer = PapercutMfSyncer.layer.pipe(
+export const papercutMfSynchronizerLayer = PapercutMfSynchronizer.layer.pipe(
   Layer.provide([
-    CustomerGroupMembershipsRepository.layer,
-    CustomerGroupsRepository.layer,
-    IdentityProvidersRepository.layer,
+    GroupMembershipsRepositories.repositoryLayer,
+    GroupsRepositories.repositoryLayer,
+    IdentityRepository.providersRepositoryLayer,
+    SharedAccountCustomerAccessRepositories.repositoryLayer,
+    SharedAccountCustomerGroupAccessRepositories.repositoryLayer,
+    SharedAccountsRepositories.repositoryLayer,
+    UsersRepositories.repositoryLayer,
     papercutMfApiLayer,
-    SharedAccountCustomerAccessRepository.layer,
-    SharedAccountCustomerGroupAccessRepository.layer,
-    SharedAccountsRepository.layer,
-    UsersRepository.layer,
   ]),
   Layer.provide(SyncQueryBuilder.layer),
   Layer.provide(databaseLayer),

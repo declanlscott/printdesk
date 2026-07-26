@@ -1,5 +1,5 @@
 import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
-import { snakeCase, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, snakeCase, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
@@ -13,7 +13,10 @@ export const groupMemberships = new Tables.Sync(
     groupId: Columns.entityId().notNull(),
     userId: Columns.entityId().notNull(),
   },
-  (table) => [uniqueIndex().on(table.groupId, table.userId, table.tenantId)],
+  (table) => [
+    uniqueIndex().on(table.groupId, table.userId, table.tenantId),
+    index().on(table.groupId, table.tenantId),
+  ],
 );
 export const groupMembershipsTable = groupMemberships.table;
 export type GroupMembershipsTable = typeof groupMembershipsTable;
@@ -36,7 +39,7 @@ export const groups = new Tables.Sync(
   },
   (table) => [
     unique().on(table.name, table.tenantId),
-    unique().on(table.externalId, table.tenantId),
+    uniqueIndex().on(table.externalId, table.tenantId),
   ],
 );
 export const groupsTable = groups.table;

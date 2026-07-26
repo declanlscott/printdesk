@@ -261,18 +261,19 @@ export namespace OauthContract {
   }).pipe(Schema.encodeKeys({ audience: "aud" }));
 
   export const bearer = "Bearer " as const;
-  export const CredentialFromBearerToken = Schema.TemplateLiteralParser([
+  export const BearerToken = Schema.TemplateLiteralParser([
     Schema.Literal(bearer),
     Schema.NonEmptyString,
   ]).pipe(
-    Schema.decodeTo(CryptoContract.Secret, {
-      decode: SchemaGetter.transform(([, credential]) => credential),
-      encode: SchemaGetter.transform((credential) => Tuple.make(bearer, credential)),
+    Schema.decodeTo(Tokens.fields.access, {
+      decode: SchemaGetter.transform(([, token]) => token),
+      encode: SchemaGetter.transform((token) => Tuple.make(bearer, token)),
     }),
   );
 
   export const AuthCookies = Tokens.mapFields(Struct.pick(["access", "refresh"]))
     .mapFields(Struct.renameKeys({ access: "accessToken", refresh: "refreshToken" }))
+    .mapFields(Struct.assign({ _tag: Schema.tagDefaultOmit("AuthCookies") }))
     .pipe(
       Schema.encodeKeys({
         accessToken: Constants.COOKIE_NAMES.ACCESS_TOKEN,
@@ -281,6 +282,11 @@ export namespace OauthContract {
     );
 
   export const Cookies = Schema.Union([Schema.Struct({}), AuthCookies]);
+
+  export const AuthHeaders = Schema.Struct({
+    _tag: Schema.tagDefaultOmit("AuthHeaders"),
+    accessToken: BearerToken,
+  }).pipe(Schema.encodeKeys({ accessToken: "authorization" }));
 
   export class InvalidCookiesError
     extends Schema.TaggedErrorClass<InvalidCookiesError>()("InvalidCookiesError", {

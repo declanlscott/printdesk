@@ -137,7 +137,7 @@ export const makeService = Effect.gen(function* () {
       return yield* upserts.pipe(Chunk.toArray, sharedAccountsRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutMfSyncer.syncSharedAccounts"));
+  }).pipe(Effect.withSpan("PapercutMfSynchronizer.syncSharedAccounts"));
 
   const syncSharedAccountCustomerAccess = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
@@ -252,7 +252,7 @@ export const makeService = Effect.gen(function* () {
       return yield* upserts.pipe(Chunk.toArray, sharedAccountCustomerAccessRepository.upsertMany);
 
     return [];
-  }).pipe(Effect.withSpan("PapercutMfSyncer.syncSharedAccountCustomerAccess"));
+  }).pipe(Effect.withSpan("PapercutMfSynchronizer.syncSharedAccountCustomerAccess"));
 
   const syncSharedAccountCustomerGroupAccess = Effect.gen(function* () {
     const tenantId = yield* Actor.use(Struct.get("tenantId"));
@@ -370,13 +370,13 @@ export const makeService = Effect.gen(function* () {
       );
 
     return [];
-  }).pipe(Effect.withSpan("PapercutMfSyncer.syncSharedAccountCustomerGroupAccess"));
+  }).pipe(Effect.withSpan("PapercutMfSynchronizer.syncSharedAccountCustomerGroupAccess"));
 
   const syncAll = Effect.all([
     syncSharedAccounts,
     syncSharedAccountCustomerAccess,
     syncSharedAccountCustomerGroupAccess,
-  ]).pipe(Effect.withSpan("PapercutMfSyncer.syncAll"));
+  ]).pipe(Effect.withSpan("PapercutMfSynchronizer.syncAll"));
 
   return {
     syncAll,

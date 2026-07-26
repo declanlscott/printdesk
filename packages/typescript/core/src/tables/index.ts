@@ -96,8 +96,16 @@ export namespace Tables {
             name,
             sql.raw(
               Match.value(name).pipe(
-                Match.when("updated_at", (name) => `COALESCE(EXCLUDED."${name}", NOW())`),
-                Match.when("version", (name) => `"${this.name}"."${name}" + 1`),
+                Match.whenOr(
+                  this.table.id.name,
+                  this.table.tenantId.name,
+                  (name) => `"${this.name}"."${name}"`,
+                ),
+                Match.when(
+                  this.table.updatedAt.name,
+                  (name) => `COALESCE(EXCLUDED."${name}", NOW())`,
+                ),
+                Match.when(this.table.version.name, (name) => `"${this.name}"."${name}" + 1`),
                 Match.orElse((name) => `COALESCE(EXCLUDED."${name}", "${this.name}"."${name}")`),
               ),
             ),
@@ -143,7 +151,15 @@ export namespace Tables {
         (set, { name }) => {
           set[name] = sql.raw(
             Match.value(name).pipe(
-              Match.when("updated_at", (name) => `COALESCE(EXCLUDED."${name}", NOW())`),
+              Match.whenOr(
+                this.table.id.name,
+                this.table.tenantId.name,
+                (name) => `"${this.name}"."${name}"`,
+              ),
+              Match.when(
+                this.table.updatedAt.name,
+                (name) => `COALESCE(EXCLUDED."${name}", NOW())`,
+              ),
               Match.orElse((name) => `COALESCE(EXCLUDED."${name}", "${this.name}"."${name}")`),
             ),
           );

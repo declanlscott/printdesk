@@ -4,7 +4,6 @@ import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
-import { CryptoContract } from "../crypto/contract";
 import { GroupsContract } from "../groups/contracts";
 import { TablesContract } from "../tables/contract";
 import { UsersContract } from "../users/contract";

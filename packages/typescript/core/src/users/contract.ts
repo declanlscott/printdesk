@@ -126,4 +126,17 @@ export namespace UsersContract {
       internal: { value: Table.Model.fields.id },
     }),
   }) {}
+
+  export const ProvisionalDto = UsersContract.Table.Dto.mapFields(
+    Struct.pick([
+      "username",
+      "externalId",
+      "displayName",
+      "email",
+      "status",
+      "identityProviderId",
+      "tenantId",
+    ]),
+  );
+  export type ProvisionalDto = typeof ProvisionalDto.Type;
 }

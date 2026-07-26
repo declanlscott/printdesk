@@ -201,6 +201,20 @@ export namespace AccessControl {
           "papercut_mf_api_gateway:read",
           "tenants:delete",
         ),
+        scim: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+          "groups:create",
+          "groups:read",
+          "groups:update",
+          "groups:delete",
+          "group_memberships:create",
+          "group_memberships:read",
+          "group_memberships:update",
+          "group_memberships:delete",
+          "users:create",
+          "users:read",
+          "users:update",
+          "users:delete",
+        ),
       }) satisfies ClientRoleAcl,
   );
 

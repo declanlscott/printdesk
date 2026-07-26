@@ -1,15 +1,20 @@
 import * as Array from "effect/Array";
 import * as Chunk from "effect/Chunk";
 import * as Effect from "effect/Effect";
+import * as Filter from "effect/Filter";
 import * as Function from "effect/Function";
 import * as Option from "effect/Option";
+import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as String from "effect/String";
 import * as Struct from "effect/Struct";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import { customAlphabet } from "nanoid";
 
 import { Constants } from "./constants";
+
+import type * as SchemaAST from "effect/SchemaAST";
 
 export const NanoId = Schema.String.pipe(Schema.check(Schema.isPattern(Constants.NANOID_REGEX)));
 
@@ -104,6 +109,26 @@ export const ChunkFromArray = <TValue extends Schema.Top>(value: TValue) =>
 export const CallbackId = Schema.String.pipe(Schema.brand("CallbackId"));
 export type CallbackId = typeof CallbackId.Type;
 
+export const IntFromString = Schema.FiniteFromString.pipe(Schema.check(Schema.isInt()));
+
+export const BulkId = Schema.TemplateLiteralParser([
+  Schema.Literal("bulkId:"),
+  NonEmptyString,
+]).pipe(
+  Schema.decodeTo(Schema.Struct({ bulkId: NonEmptyString }), {
+    decode: SchemaGetter.transform(([, bulkId]) => ({ bulkId })),
+    encode: SchemaGetter.transformOrFail(({ bulkId }) =>
+      Schema.decodeEffect(NonEmptyString)(bulkId).pipe(
+        Effect.mapBoth({
+          onSuccess: (bulkId) => ["bulkId:", bulkId],
+          onFailure: Struct.get("issue"),
+        }),
+      ),
+    ),
+  }),
+);
+export type BulkId = typeof BulkId.Type;
+
 export const tenantTemplate = Function.dual<
   (template: string) => (tenantId: TenantId) => string,
   (tenantId: TenantId, template: string) => string
@@ -153,6 +178,34 @@ export const suffix = Function.dual<
   ) => `${TPrefix}${TSuffix}`
 >(2, (prefix, suffix) => `${prefix}${suffix}`);
 
+export const pluck =
+  <TPropertyKey extends PropertyKey>(propertyKey: TPropertyKey) =>
+  <TSchema extends Schema.Top>(
+    schema: Schema.Struct<{ [TKey in TPropertyKey]: TSchema }>,
+  ): Schema.decodeTo<Schema.toType<TSchema>, Schema.Struct<{ [K in TPropertyKey]: TSchema }>> =>
+    schema.mapFields(Struct.pick([propertyKey])).pipe(
+      Schema.decodeTo(Schema.toType(schema.fields[propertyKey]), {
+        // oxlint-disable-next-line typescript/no-explicit-any
+        decode: SchemaGetter.transform((whole: any) => whole[propertyKey]),
+        // oxlint-disable-next-line typescript/no-explicit-any
+        encode: SchemaGetter.transform((value) => ({ [propertyKey]: value }) as any),
+      }),
+    );
+
+export const orDieWhenUnrespondable = <TSuccess, TError, TServices>(
+  self: Effect.Effect<TSuccess, TError, TServices>,
+) =>
+  self.pipe(
+    Effect.catchFilter(
+      Filter.make((error) =>
+        HttpServerRespondable.isRespondable(error)
+          ? Result.fail(error as TError extends HttpServerRespondable.Respondable ? TError : never)
+          : Result.succeed(error),
+      ),
+      Effect.die,
+    ),
+  );
+
 export type Prettify<TObject extends object> = {
   [TKey in keyof TObject]: TObject[TKey];
 } & {};
@@ -180,17 +233,3 @@ export interface SchemaAndValue<TSchema extends Schema.Top> {
 
 // oxlint-disable-next-line typescript/no-explicit-any
 export type DistributiveOmit<T, K extends PropertyKey> = T extends any ? Omit<T, K> : never;
-
-export const pluck =
-  <TPropertyKey extends PropertyKey>(propertyKey: TPropertyKey) =>
-  <TSchema extends Schema.Top>(
-    schema: Schema.Struct<{ [TKey in TPropertyKey]: TSchema }>,
-  ): Schema.decodeTo<Schema.toType<TSchema>, Schema.Struct<{ [K in TPropertyKey]: TSchema }>> =>
-    schema.mapFields(Struct.pick([propertyKey])).pipe(
-      Schema.decodeTo(Schema.toType(schema.fields[propertyKey]), {
-        // oxlint-disable-next-line typescript/no-explicit-any
-        decode: SchemaGetter.transform((whole: any) => whole[propertyKey]),
-        // oxlint-disable-next-line typescript/no-explicit-any
-        encode: SchemaGetter.transform((value) => ({ [propertyKey]: value }) as any),
-      }),
-    );

@@ -2,17 +2,15 @@ import { ActorsContract } from "@printdesk/core/actors/contract";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import { Openauth } from "@printdesk/core/oauth/openauth";
 import { TenantSlug } from "@printdesk/core/tenants/slug";
+import { orDieWhenUnrespondable } from "@printdesk/core/utils";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
-import * as Filter from "effect/Filter";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
-import * as Result from "effect/Result";
 import * as Struct from "effect/Struct";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
-import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
@@ -37,7 +35,7 @@ const redirectUri = (request: HttpServerRequest.HttpServerRequest) =>
 
 export const baseAuthGroupLayer = HttpApiBuilder.group(
   Bff,
-  "auth",
+  "Auth",
   Effect.fn(function* (handlers) {
     const openauth = yield* Openauth;
 
@@ -67,7 +65,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
           ),
         ),
       )
-      .handle("oauth-callback", ({ request, query }) =>
+      .handle("oauthCallback", ({ request, query }) =>
         redirectUri(request).pipe(
           Effect.flatMap((redirectUri) => openauth.exchange(query.code, redirectUri)),
           Effect.flatMap(({ tokens }) =>
@@ -86,14 +84,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
               ]),
             ),
           ),
-          Effect.catchFilter(
-            Filter.make((error) =>
-              HttpServerRespondable.isRespondable(error)
-                ? Result.fail(error)
-                : Result.succeed(error),
-            ),
-            Effect.die,
-          ),
+          orDieWhenUnrespondable,
         ),
       );
   }),

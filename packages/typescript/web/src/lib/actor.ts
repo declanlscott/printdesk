@@ -11,7 +11,7 @@ export const userActorAtomRuntime = FetchHttpClient.layer.pipe(Atom.runtime);
 
 export const userActorAtom = userActorAtomRuntime.atom(
   HttpClient.HttpClient.pipe(
-    Effect.flatMap((httpClient) => HttpApiClient.group(Bff, { httpClient, group: "auth" })),
+    Effect.flatMap((httpClient) => HttpApiClient.group(Bff, { httpClient, group: "Auth" })),
     Effect.flatMap((auth) => auth.me()),
   ),
 );

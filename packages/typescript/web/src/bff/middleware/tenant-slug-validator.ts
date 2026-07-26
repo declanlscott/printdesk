@@ -13,7 +13,7 @@ import * as Struct from "effect/Struct";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
-import { AuthApi } from "../contract/groups/auth";
+import { Auth } from "../contract/auth";
 import { ViteResource } from "../lib/sst";
 
 const FromHostname = Schema.TemplateLiteralParser([
@@ -56,7 +56,7 @@ export const tenantSlugValidatorLayer = Effect.gen(function* () {
     (env) => !env.isDevMode && env.isProdStage,
   );
 
-  return AuthApi.TenantSlugValidator.of(
+  return Auth.TenantSlugValidatorMiddleware.of(
     Effect.fn(
       function* (httpEffect) {
         if (fromHostname)
@@ -81,4 +81,4 @@ export const tenantSlugValidatorLayer = Effect.gen(function* () {
       (effect) => effect.pipe(Effect.catchTag("SchemaError", () => new HttpApiError.BadRequest())),
     ),
   );
-}).pipe(Layer.effect(AuthApi.TenantSlugValidator));
+}).pipe(Layer.effect(Auth.TenantSlugValidatorMiddleware));

@@ -11,7 +11,7 @@ import { ViteResource } from "../lib/sst";
 
 export const baseSpaGroupLayer = HttpApiBuilder.group(
   Bff,
-  "spa",
+  "Spa",
   Effect.fn(function* (handlers) {
     const assets = yield* ViteResource.useSync(Struct.get("ASSETS")).pipe(
       Effect.map(Redacted.value),

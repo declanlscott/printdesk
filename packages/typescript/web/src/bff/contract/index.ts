@@ -1,6 +1,10 @@
+import { ErrorMiddleware } from "@printdesk/core/api/middleware/error";
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 
-import { AuthApi } from "./groups/auth";
-import { SpaApi } from "./groups/spa";
+import { Auth } from "./auth";
+import { Spa } from "./spa";
 
-export class Bff extends HttpApi.make("bff").add(AuthApi.Group).add(SpaApi.Group) {}
+export class Bff extends HttpApi.make("bff")
+  .addHttpApi(Auth.Api)
+  .addHttpApi(Spa.Api)
+  .middleware(ErrorMiddleware) {}

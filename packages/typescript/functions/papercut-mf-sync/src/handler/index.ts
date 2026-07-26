@@ -6,9 +6,9 @@ import { ClientsRepository } from "@printdesk/core/clients/repository";
 import { Config } from "@printdesk/core/config";
 import { Oauth } from "@printdesk/core/oauth";
 import { Openauth } from "@printdesk/core/oauth/openauth";
-import { PapercutMfSyncer } from "@printdesk/core/papercut-mf/syncer";
+import { PapercutMfSynchronizer } from "@printdesk/core/papercut-mf/synchronizer";
 import { ReplicacheNotifier } from "@printdesk/core/replicache/notifier";
-import { TenantsRepository } from "@printdesk/core/tenants/repository";
+import { TenantsRepository } from "@printdesk/core/tenants/repositories";
 import { TenantId } from "@printdesk/core/utils";
 import * as Array from "effect/Array";
 import * as DateTime from "effect/DateTime";
@@ -19,15 +19,19 @@ import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
 
-export const SystemActorFromEvent = Schema.Struct({ tenantId: TenantId }).pipe(
-  Schema.decodeTo(ActorsContract.SystemActor, {
-    decode: SchemaGetter.transform(ActorsContract.SystemActor.make),
+export const TenantActorFromEvent = Schema.Struct({ tenantId: TenantId }).pipe(
+  Schema.decodeTo(ActorsContract.TenantActor, {
+    decode: SchemaGetter.transformOrFail(({ tenantId }) =>
+      ActorsContract.TenantActor.makeEffect({ id: tenantId }).pipe(
+        Effect.mapError(Struct.get("issue")),
+      ),
+    ),
     encode: SchemaGetter.forbidden(() => "Not implemented"),
   }),
 );
 
 export const handler = Effect.fn(
-  function* (event: typeof SystemActorFromEvent.Encoded) {
+  function* (event: typeof TenantActorFromEvent.Encoded) {
     const accessTokenLayerMap = yield* Oauth.AccessTokenLayerMap;
     const appsyncPublisherCredentialIdentityProviderLayerMap =
       yield* AppsyncPublisherCredentialIdentityProviderLayerMap;
@@ -37,7 +41,7 @@ export const handler = Effect.fn(
     const openauth = yield* Openauth;
 
     const clientsRepository = yield* ClientsRepository;
-    const papercutMfSyncer = yield* PapercutMfSyncer;
+    const papercutMfSyncer = yield* PapercutMfSynchronizer;
     const replicacheNotifier = yield* ReplicacheNotifier;
     const tenantsRepository = yield* TenantsRepository;
 
@@ -59,8 +63,8 @@ export const handler = Effect.fn(
       Effect.provide(
         Function.pipe(
           event,
-          Schema.decodeEffect(SystemActorFromEvent),
-          Effect.map((systemActor) => actorLayerMap.get(systemActor.wrap)),
+          Schema.decodeEffect(TenantActorFromEvent),
+          Effect.map((tenantActor) => actorLayerMap.get(tenantActor.wrap)),
           Layer.unwrap,
         ),
       ),

@@ -1,31 +1,36 @@
+import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
 import { ReplicachePullerContract, ReplicachePusherContract } from "../replicache/contracts";
+import { ActorMiddleware } from "./middleware/actor";
+import { AwsCredentialIdentityProviderMiddleware } from "./middleware/aws";
 
-export namespace ReplicacheApi {
-  export const pull = HttpApiEndpoint.post("pull", "/pull", {
-    headers: ReplicachePullerContract.Headers,
-    payload: ReplicachePullerContract.Payload,
-    success: ReplicachePullerContract.Success,
-    error: [AccessControl.AccessDeniedError, ActorsContract.ForbiddenActorError],
-  });
-
-  export const push = HttpApiEndpoint.post("push", "/push", {
-    headers: ReplicachePusherContract.Headers,
-    payload: ReplicachePusherContract.Payload,
-    success: ReplicachePusherContract.Success,
-    error: [
-      AccessControl.AccessDeniedError,
-      ActorsContract.ForbiddenActorError,
-      ReplicachePusherContract.FutureMutationError,
-    ],
-  });
-
+export namespace Replicache {
   export class Group extends HttpApiGroup.make("Replicache")
-    .add(pull)
-    .add(push)
-    .prefix("/replicache") {}
+    .add(
+      HttpApiEndpoint.post("pull", "/pull", {
+        headers: ReplicachePullerContract.Headers,
+        payload: ReplicachePullerContract.Payload,
+        success: ReplicachePullerContract.Success,
+        error: [AccessControl.AccessDeniedError, ActorsContract.ForbiddenActorError],
+      }),
+    )
+    .add(
+      HttpApiEndpoint.post("push", "/push", {
+        headers: ReplicachePusherContract.Headers,
+        payload: ReplicachePusherContract.Payload,
+        success: ReplicachePusherContract.Success,
+        error: [
+          AccessControl.AccessDeniedError,
+          ActorsContract.ForbiddenActorError,
+          ReplicachePusherContract.FutureMutationError,
+        ],
+      }).middleware(AwsCredentialIdentityProviderMiddleware),
+    )
+    .middleware(ActorMiddleware) {}
+
+  export class Api extends HttpApi.make("ReplicacheApi").add(Group).prefix("/replicache") {}
 }

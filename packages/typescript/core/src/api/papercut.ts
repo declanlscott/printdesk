@@ -1,12 +1,15 @@
+import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
 import { PapercutMfContract } from "../papercut-mf/contract";
+import { AuthMiddleware } from "./middleware/auth";
+import { AwsCredentialIdentityProviderMiddleware } from "./middleware/aws";
 
-export namespace PapercutApi {
-  export class MfGroup extends HttpApiGroup.make("PapercutMf")
+export namespace Papercut {
+  export class Mf extends HttpApiGroup.make("PapercutMf")
     .add(
       HttpApiEndpoint.get("health", "/health", {
         success: PapercutMfContract.HealthSuccess,
@@ -18,40 +21,11 @@ export namespace PapercutApi {
         success: PapercutMfContract.TaskStatusSuccess,
         error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
       }),
-    )
-    .prefix("/papercut/mf") {}
+    ) {}
 
-  export class MfSyncGroup extends HttpApiGroup.make("PapercutMfSync")
-    .add(
-      HttpApiEndpoint.post("source", "/source", {
-        error: [
-          ActorsContract.ForbiddenActorError,
-          AccessControl.AccessDeniedError,
-          PapercutMfContract.IncompleteTaskStatusError,
-          PapercutMfContract.UserAndGroupSyncFailure,
-        ],
-      }),
-    )
+  export class MfSync extends HttpApiGroup.make("PapercutMfSync")
     .add(
       HttpApiEndpoint.post("all", "/", {
-        error: [
-          ActorsContract.ForbiddenActorError,
-          AccessControl.AccessDeniedError,
-          PapercutMfContract.IncompleteTaskStatusError,
-        ],
-      }),
-    )
-    .add(
-      HttpApiEndpoint.post("customerGroups", "/customer-groups", {
-        error: [
-          ActorsContract.ForbiddenActorError,
-          AccessControl.AccessDeniedError,
-          PapercutMfContract.IncompleteTaskStatusError,
-        ],
-      }),
-    )
-    .add(
-      HttpApiEndpoint.post("customerGroupMemberships", "/customer-group-memberships", {
         error: [
           ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
@@ -71,21 +45,19 @@ export namespace PapercutApi {
     )
     .add(
       HttpApiEndpoint.post(
-        "sharedAccountCustomerGroupAccess",
-        "/shared-account-customer-group-access",
+        "sharedAccountGroupCustomerAccess",
+        "/shared-account-group-customer-access",
         {
           error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
         },
       ),
     )
-    .add(
-      HttpApiEndpoint.post("users", "/users", {
-        error: [
-          ActorsContract.ForbiddenActorError,
-          AccessControl.AccessDeniedError,
-          PapercutMfContract.IncompleteTaskStatusError,
-        ],
-      }),
-    )
-    .prefix("/papercut/mf/sync") {}
+    .middleware(AwsCredentialIdentityProviderMiddleware)
+    .prefix("/sync") {}
+
+  export class MfApi extends HttpApi.make("PapercutMfApi")
+    .add(Mf)
+    .add(MfSync)
+    .middleware(AuthMiddleware)
+    .prefix("/papercut/mf") {}
 }

@@ -1,13 +1,16 @@
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 
-import { ConfigApi } from "./config";
-import { PapercutApi } from "./papercut";
-import { RealtimeApi } from "./realtime";
-import { ReplicacheApi } from "./replicache";
+import { Config } from "./config";
+import { ErrorMiddleware } from "./middleware/error";
+import { Papercut } from "./papercut";
+import { Realtime } from "./realtime";
+import { Replicache } from "./replicache";
+import { Scim } from "./scim";
 
 export class Api extends HttpApi.make("Api")
-  .add(ConfigApi.PapercutMfGroup)
-  .add(PapercutApi.MfGroup)
-  .add(PapercutApi.MfSyncGroup)
-  .add(RealtimeApi.Group)
-  .add(ReplicacheApi.Group) {}
+  .addHttpApi(Config.Api)
+  .addHttpApi(Papercut.MfApi)
+  .addHttpApi(Realtime.Api)
+  .addHttpApi(Replicache.Api)
+  .middleware(ErrorMiddleware)
+  .addHttpApi(Scim.Api) {}

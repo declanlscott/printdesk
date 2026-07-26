@@ -25,14 +25,19 @@ export const makeRepository = Effect.gen(function* () {
   const table = groupMemberships.table;
   const activeView = activeGroupMembershipsView;
 
-  const upsertMany = Effect.fn("Groups.MembershipsRepository.upsertMany")(
+  const createMany = Effect.fn("Groups.MembershipsRepository.createMany")(
     (values: Array.NonEmptyArray<InferInsertModel<GroupMembershipsTable>>) =>
+      db.useTransaction((tx) => tx.insert(table).values(values).returning()),
+  );
+
+  const upsertManyByIndex = Effect.fn("Groups.MembershipsRepository.upsertManyByIndex")(
+    (values: Array.NonEmptyArray<Omit<InferInsertModel<GroupMembershipsTable>, "id">>) =>
       db.useTransaction((tx) =>
         tx
           .insert(table)
           .values(values)
           .onConflictDoUpdate({
-            target: [table.id, table.tenantId],
+            target: [table.groupId, table.userId, table.tenantId],
             set: groupMemberships.conflictSet,
           })
           .returning(),
@@ -45,7 +50,7 @@ export const makeRepository = Effect.gen(function* () {
     db.useTransaction((tx) =>
       tx
         .select({
-          Group: getTableColumns(groups.table),
+          group: getTableColumns(groups.table),
           member: getTableColumns(users.table),
           membership: getTableColumns(table),
         })
@@ -98,11 +103,28 @@ export const makeRepository = Effect.gen(function* () {
       ),
   );
 
+  const updateByGroupId = Effect.fn("Groups.MembershipsRepository.updateByGroupId")(
+    (
+      groupId: GroupMembership["groupId"],
+      value: Partial<Omit<GroupMembership, "id" | "userId" | "groupId" | "tenantId">>,
+      tenantId: GroupMembership["tenantId"],
+    ) =>
+      db.useTransaction((tx) =>
+        tx
+          .update(table)
+          .set(value)
+          .where(and(eq(table.groupId, groupId), eq(table.tenantId, tenantId)))
+          .returning(),
+      ),
+  );
+
   return {
-    upsertMany,
+    createMany,
+    upsertManyByIndex,
     findWithMemberAndGroupByTenantId,
     findByIds,
     findActiveByIds,
+    updateByGroupId,
   } as const;
 });
 export const repositoryLayer = makeRepository.pipe(Layer.effect(GroupMembershipsRepository));

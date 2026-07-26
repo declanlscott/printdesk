@@ -1,4 +1,13 @@
-import { and, eq, getViewName, getViewSelectedFields, inArray, not, notInArray } from "drizzle-orm";
+import {
+  and,
+  eq,
+  getTableColumns,
+  getViewName,
+  getViewSelectedFields,
+  inArray,
+  not,
+  notInArray,
+} from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -8,7 +17,7 @@ import { GroupsRepository, GroupsSyncRepository } from ".";
 import { Database } from "../../database";
 import { replicacheClientViewEntries } from "../../replicache/sql";
 import { SyncQueryBuilder } from "../../sync/query-builder";
-import { activeGroupsView, activeMembershipGroupsView, groups } from "../sql";
+import { activeGroupsView, activeMembershipGroupsView, groupMemberships, groups } from "../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
 import type { ReplicacheClientView } from "../../replicache/sql";
@@ -18,18 +27,20 @@ export type Repository = Effect.Success<typeof makeRepository>;
 export const makeRepository = Effect.gen(function* () {
   const db = yield* Database;
   const table = groups.table;
+  const membershipsTable = groupMemberships.table;
 
-  const upsertMany = Effect.fn("Groups.Repository.upsertMany")(
-    (values: Array.NonEmptyArray<InferInsertModel<GroupsTable>>) =>
-      db.useTransaction((tx) =>
-        tx
-          .insert(table)
-          .values(values)
-          .onConflictDoUpdate({
-            target: [table.id, table.tenantId],
-            set: groups.conflictSet,
-          })
-          .returning(),
+  const withMembershipSelection = {
+    group: getTableColumns(table),
+    groupMembership: getTableColumns(membershipsTable),
+  };
+
+  const create = Effect.fn("Groups.Repository.create")((value: InferInsertModel<GroupsTable>) =>
+    db
+      .useTransaction((tx) => tx.insert(table).values(value).returning())
+      .pipe(
+        Effect.map(Array.head),
+        Effect.flatMap(Effect.fromOption),
+        Effect.catchTag("NoSuchElementError", Effect.die),
       ),
   );
 
@@ -38,9 +49,111 @@ export const makeRepository = Effect.gen(function* () {
       db.useTransaction((tx) => tx.select().from(table).where(eq(table.tenantId, tenantId))),
   );
 
+  const findWithMembershipsById = Effect.fn("Groups.Repository.findWithMembershipsById")(
+    (id: Group["id"], tenantId: Group["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select(withMembershipSelection)
+            .from(table)
+            .leftJoin(
+              membershipsTable,
+              and(
+                eq(table.id, membershipsTable.groupId),
+                eq(table.tenantId, membershipsTable.tenantId),
+              ),
+            )
+            .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+        )
+        .pipe(Effect.filterOrFail(Array.isArrayNonEmpty)),
+  );
+
+  const findWithMembershipsByIdForUpdate = Effect.fn(
+    "Groups.Repository.findWithMembershipsByIdForUpdate",
+  )((id: Group["id"], tenantId: Group["tenantId"]) =>
+    db
+      .useTransaction((tx) =>
+        tx
+          .select(withMembershipSelection)
+          .from(table)
+          .leftJoin(
+            membershipsTable,
+            and(
+              eq(table.id, membershipsTable.groupId),
+              eq(table.tenantId, membershipsTable.tenantId),
+            ),
+          )
+          .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+          .for("update"),
+      )
+      .pipe(Effect.filterOrFail(Array.isArrayNonEmpty)),
+  );
+
+  const findWithMembershipsByExternalId = Effect.fn(
+    "Groups.Repository.findWithMembershipsByExternalId",
+  )((externalId: Group["externalId"], tenantId: Group["tenantId"]) =>
+    db
+      .useTransaction((tx) =>
+        tx
+          .select(withMembershipSelection)
+          .from(table)
+          .leftJoin(
+            membershipsTable,
+            and(
+              eq(table.id, membershipsTable.groupId),
+              eq(table.tenantId, membershipsTable.tenantId),
+            ),
+          )
+          .where(and(eq(table.externalId, externalId), eq(table.tenantId, tenantId))),
+      )
+      .pipe(Effect.filterOrFail(Array.isArrayNonEmpty)),
+  );
+
+  const findWithMembershipsByTenantId = Effect.fn(
+    "Groups.Repository.findWithMembershipsByTenantId",
+  )((tenantId: Group["tenantId"]) =>
+    db
+      .useTransaction((tx) =>
+        tx
+          .select(withMembershipSelection)
+          .from(table)
+          .leftJoin(
+            membershipsTable,
+            and(
+              eq(table.id, membershipsTable.groupId),
+              eq(table.tenantId, membershipsTable.tenantId),
+            ),
+          )
+          .where(eq(table.tenantId, tenantId)),
+      )
+      .pipe(Effect.filterOrFail(Array.isArrayNonEmpty)),
+  );
+
+  const updateById = Effect.fn("Groups.Repository.updateById")(
+    (
+      id: Group["id"],
+      group: Partial<Omit<Group, "id" | "tenantId">>,
+      tenantId: Group["tenantId"],
+    ) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .update(table)
+            .set(group)
+            .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+            .returning(),
+        )
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
   return {
-    upsertMany,
+    create,
     findByTenantId,
+    findWithMembershipsById,
+    findWithMembershipsByIdForUpdate,
+    findWithMembershipsByExternalId,
+    findWithMembershipsByTenantId,
+    updateById,
   } as const;
 });
 export const repositoryLayer = makeRepository.pipe(Layer.effect(GroupsRepository));

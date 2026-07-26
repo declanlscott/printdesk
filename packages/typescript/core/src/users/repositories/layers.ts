@@ -28,20 +28,6 @@ export const makeRepository = Effect.gen(function* () {
       ),
   );
 
-  const upsertMany = Effect.fn("Users.Repository.upsertMany")(
-    (values: Array.NonEmptyArray<InferInsertModel<UsersTable>>) =>
-      db.useTransaction((tx) =>
-        tx
-          .insert(table)
-          .values(values)
-          .onConflictDoUpdate({
-            target: [table.id, table.tenantId],
-            set: users.conflictSet,
-          })
-          .returning(),
-      ),
-  );
-
   const findById = Effect.fn("Users.Repository.findById")(
     (id: User["id"], tenantId: User["tenantId"]) =>
       db
@@ -50,6 +36,31 @@ export const makeRepository = Effect.gen(function* () {
             .select()
             .from(table)
             .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+        )
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
+  const findByIdForUpdate = Effect.fn("Users.Repository.findByIdForUpdate")(
+    (id: User["id"], tenantId: User["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select()
+            .from(table)
+            .where(and(eq(table.id, id), eq(table.tenantId, tenantId)))
+            .for("update"),
+        )
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
+  const findByExternalId = Effect.fn("Users.Repository.findByExternalId")(
+    (externalId: User["externalId"], tenantId: User["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select()
+            .from(table)
+            .where(and(eq(table.externalId, externalId), eq(table.tenantId, tenantId))),
         )
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
@@ -74,8 +85,9 @@ export const makeRepository = Effect.gen(function* () {
 
   return {
     create,
-    upsertMany,
     findById,
+    findByIdForUpdate,
+    findByExternalId,
     findByTenantId,
     updateById,
   } as const;
@@ -90,20 +102,6 @@ export const makeSyncRepository = Effect.gen(function* () {
 
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntriesTable;
-
-  const upsertMany = Effect.fn("Users.Repository.upsertMany")(
-    (values: Array.NonEmptyArray<InferInsertModel<UsersTable>>) =>
-      db.useTransaction((tx) =>
-        tx
-          .insert(table)
-          .values(values)
-          .onConflictDoUpdate({
-            target: [table.id, table.tenantId],
-            set: users.conflictSet,
-          })
-          .returning(),
-      ),
-  );
 
   const findCreates = Effect.fn("Users.Repository.findCreates")(
     (clientView: ReplicacheClientView) =>
@@ -278,7 +276,6 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   return {
-    upsertMany,
     findCreates,
     findActiveCreates,
     findUpdates,

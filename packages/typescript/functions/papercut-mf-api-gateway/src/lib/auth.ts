@@ -16,6 +16,6 @@ export const authRuntime = Openauth.layer({
   issuer: resource.Issuer.pipe(Redacted.value).url,
 }).pipe(Layer.merge(ActorLayerMap.layer), ManagedRuntime.make);
 
-export const AuthHeaders = Schema.Struct({
-  accessToken: OauthContract.CredentialFromBearerToken,
-}).pipe(Schema.encodeKeys({ accessToken: "Proxy-Authorization" }));
+export const AuthHeaders = OauthContract.AuthHeaders.to.pipe(
+  Schema.encodeKeys({ accessToken: "proxy-authorization" }),
+);

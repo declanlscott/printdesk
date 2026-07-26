@@ -1,12 +1,9 @@
-import {
-  createGraphServiceClient,
-  GraphRequestAdapter,
-  type GraphServiceClient,
-} from "@microsoft/msgraph-sdk";
+import { createGraphServiceClient, GraphRequestAdapter } from "@microsoft/msgraph-sdk";
 import { createGraphClientFactory, getDefaultMiddlewares } from "@microsoft/msgraph-sdk-core";
-import "@microsoft/msgraph-sdk-users";
-import "@microsoft/msgraph-sdk-groups";
 import { version } from "@microsoft/msgraph-sdk/version";
+import "@microsoft/msgraph-sdk-groups";
+import "@microsoft/msgraph-sdk-serviceprincipals";
+import "@microsoft/msgraph-sdk-users";
 import * as Array from "effect/Array";
 import * as Cache from "effect/Cache";
 import * as Cause from "effect/Cause";
@@ -15,17 +12,22 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
+import * as Redacted from "effect/Redacted";
 import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { EntraId } from "../identity/entra-id";
+import { ScimLocator } from "../scim/locator";
+import { SstResource } from "../sst/resource";
 import { Constants } from "../utils/constants";
 
 import type { RequestOption, RequestConfiguration } from "@microsoft/kiota-abstractions";
 import type { Middleware } from "@microsoft/kiota-http-fetchlibrary";
-import type { CustomerGroupsContract } from "../groups/contracts";
+import type { GraphServiceClient } from "@microsoft/msgraph-sdk";
+import type { GroupsContract } from "../groups/contracts";
+import type { OauthContract } from "../oauth/contract";
 import type { UsersContract } from "../users/contract";
 
 export class GraphError extends Schema.TaggedErrorClass<GraphError>()("GraphError", {
@@ -70,22 +72,25 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
   make: Effect.gen(function* () {
     const clientCache = yield* Cache.make({
       capacity: 10,
-      lookup: (service: typeof EntraId.AuthProvider.Service) =>
-        Effect.try({
-          try: () =>
-            new GraphRequestAdapter(
-              service.provider,
-              undefined,
-              undefined,
-              createGraphClientFactory(
-                { graphServiceLibraryClientVersion: version },
+      requireServicesAt: "lookup",
+      lookup: (_accessToken: Redacted.Redacted<string>) =>
+        EntraId.AuthProvider.use((authProvider) =>
+          Effect.try({
+            try: () =>
+              new GraphRequestAdapter(
+                authProvider,
                 undefined,
                 undefined,
-                [...getDefaultMiddlewares(), new AbortSignalMiddleware()],
+                createGraphClientFactory(
+                  { graphServiceLibraryClientVersion: version },
+                  undefined,
+                  undefined,
+                  [...getDefaultMiddlewares(), new AbortSignalMiddleware()],
+                ),
               ),
-            ),
-          catch: (cause) => new GraphError({ cause }),
-        }).pipe(
+            catch: (cause) => new GraphError({ cause }),
+          }),
+        ).pipe(
           Effect.andThen((requestAdapter) =>
             Effect.try({
               try: () => createGraphServiceClient(requestAdapter),
@@ -130,10 +135,23 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         callback: (client: GraphServiceClient) => TMethod,
         ...args: Parameters<TMethod>
       ) =>
-        EntraId.AuthProvider.use((service) => clientCache.pipe(Cache.get(service))).pipe(
+        EntraId.AuthProvider.use((authProvider) =>
+          Effect.tryPromise({
+            try: () => authProvider.accessTokenProvider.getAuthorizationToken().then(Redacted.make),
+            catch: (cause) => new EntraId.AuthProviderError({ cause }),
+          }),
+        ).pipe(
+          Effect.flatMap((accessToken) => clientCache.pipe(Cache.get(accessToken))),
           Effect.map(callback),
           Effect.flatMap((method) => Effect.request(new GraphRequest({ method, args }), resolver)),
         ),
+    );
+
+    const { href: baseScimUrl } = yield* ScimLocator.use(Struct.get("root"));
+
+    const oauth2TokenExchangeUri = yield* SstResource.useSync(Struct.get("Hostnames")).pipe(
+      Effect.map(Redacted.value),
+      Effect.map((hostnames) => `https://${hostnames.auth}/token`),
     );
 
     const me = batchRequest((client) => client.me.get).pipe(Effect.withSpan("Graph.me"));
@@ -145,7 +163,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
     );
 
     const groupMembers = Effect.fn("Graph.groupMembers")(
-      (id: CustomerGroupsContract.ExternalId, transitive: boolean = true) =>
+      (id: GroupsContract.ExternalId, transitive: boolean = true) =>
         batchRequest(
           (client) =>
             client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"].graphUser.get,
@@ -166,6 +184,25 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       batchRequest((client) => client.users.byUserId(id).photo.content.get),
     );
 
+    const validateProvisioningClientCredentials = Effect.fn(
+      "Graph.validateProvisioningClientCredentials",
+    )((servicePrincipalId: string, credentials: OauthContract.ClientCredentials) =>
+      batchRequest(
+        (client) =>
+          client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
+            .validateCredentials.post,
+        {
+          useSavedCredentials: false,
+          credentials: [
+            { key: "BaseAddress", value: baseScimUrl },
+            { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
+            { key: "Oauth2ClientId", value: credentials.id },
+            { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
+          ],
+        },
+      ),
+    );
+
     return {
       me,
       groups,
@@ -173,6 +210,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       users,
       user,
       userPhoto,
+      validateProvisioningClientCredentials,
     } as const;
   }),
 }) {

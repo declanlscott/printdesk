@@ -12,7 +12,12 @@ export namespace Constants {
     "User.ReadBasic.All",
   ] as const;
 
-  export const ENTRA_ID_APP_ROLES = ["User.ReadBasic.All", "GroupMember.Read.All"] as const;
+  export const ENTRA_ID_APP_ROLES = [
+    "User.ReadBasic.All",
+    "GroupMember.Read.All",
+    "CustomSecAttributeProvisioning.Read.All",
+    "Application.ReadWrite.OwnedBy",
+  ] as const;
 
   export const SST_RESOURCE_PREFIX = "SST_RESOURCE_";
   export const VITE_RESOURCE_PREFIX = "VITE_RESOURCE_";

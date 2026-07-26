@@ -1,5 +1,5 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
-import { ReadTransaction } from "@printdesk/core/database/client/read-transaction";
+import { ReadTransaction } from "@printdesk/core/database/client";
 import { Replicache } from "@printdesk/core/replicache/client";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -38,12 +38,12 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
   ),
 );
 
-export const queryAtomRuntime = Replicache.queryLayer.pipe(Atom.runtime);
+export const queryAtomRuntime = Replicache.repositoriesLayer.pipe(Atom.runtime);
 
 export const makeQueryAtom = <
   TSuccess,
   TError,
-  TServices extends Layer.Success<typeof Replicache.queryLayer>,
+  TServices extends Layer.Success<typeof Replicache.repositoriesLayer>,
 >(
   query: Effect.Effect<TSuccess, TError, TServices | ReadTransaction>,
   opts?: Omit<SubscribeOptions<TSuccess>, "isEqual">,

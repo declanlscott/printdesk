@@ -14,6 +14,7 @@ import * as HttpClientError from "effect/unstable/http/HttpClientError";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
 import { SstResource } from "../../sst/resource";
+import { NonEmptyString } from "../../utils";
 import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
 import type {
@@ -28,7 +29,7 @@ export class SignatureV4Error extends Schema.TaggedErrorClass<SignatureV4Error>(
 ) {}
 
 export class SigningError extends Schema.TaggedErrorClass<SigningError>()("SigningError", {
-  service: Schema.NonEmptyString,
+  service: NonEmptyString,
   cause: Schema.Defect(),
 }) {}
 
@@ -49,7 +50,7 @@ export interface RequestSigningArguments extends Omit<
   host?: string;
 }
 
-export const makeSigV4Signer = Effect.fn(function* (service: string) {
+export const makeSigV4Signer = Effect.fn(function* (service: NonEmptyString) {
   const region = yield* SstResource.useSync((resource) =>
     resource.Aws.pipe(Redacted.value, Struct.get("region")),
   );

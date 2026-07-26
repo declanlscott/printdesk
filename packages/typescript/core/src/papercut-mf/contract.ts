@@ -8,14 +8,14 @@ import { AttributesContract } from "../attributes/contract";
 import { AwsCron } from "../aws/cron";
 import { CloudflareContract } from "../cloudflare/contract";
 import { Handler } from "../handlers";
-import { CallbackId, Ipv4 } from "../utils";
+import { CallbackId, Ipv4, NonEmptyString } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace PapercutMfContract {
   export class ApiHostNameConfig extends Schema.TaggedClass<ApiHostNameConfig>()(
     "PapercutMfApiHostNameConfig",
     {
-      name: Schema.NonEmptyString,
+      name: NonEmptyString,
       resolverIps: Ipv4.pipe(
         Schema.Array,
         Schema.withDecodingDefaultType(Effect.sync(Array.empty<Schema.Schema.Type<typeof Ipv4>>)),
@@ -56,7 +56,7 @@ export namespace PapercutMfContract {
   export const Config = Schema.Union([EnabledConfig, DisabledConfig]);
   export type Config = typeof Config.Type;
 
-  export const ApiAuthToken = Schema.NonEmptyString.pipe(
+  export const ApiAuthToken = NonEmptyString.pipe(
     Schema.brand("PapercutMfApiAuthToken"),
     Schema.Redacted,
   );

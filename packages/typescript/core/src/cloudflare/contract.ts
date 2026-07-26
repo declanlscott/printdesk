@@ -1,10 +1,12 @@
 import * as Schema from "effect/Schema";
 
+import { NonEmptyString } from "../utils";
+
 export namespace CloudflareContract {
-  export const TunnelId = Schema.NonEmptyString.pipe(Schema.brand("CloudflareTunnelId"));
+  export const TunnelId = NonEmptyString.pipe(Schema.brand("CloudflareTunnelId"));
   export type TunnelId = typeof TunnelId.Type;
 
-  export const TunnelToken = Schema.NonEmptyString.pipe(
+  export const TunnelToken = NonEmptyString.pipe(
     Schema.brand("CloudflareTunnelToken"),
     Schema.RedactedFromValue,
   );

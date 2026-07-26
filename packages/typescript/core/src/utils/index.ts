@@ -37,6 +37,19 @@ export const Version = Schema.Int.pipe(
 );
 export type Version = typeof Version.Type;
 
+interface _NonEmptyString extends Schema.Bottom<
+  `${string & {}}${string}`,
+  string,
+  never,
+  never,
+  SchemaAST.String,
+  _NonEmptyString
+  // oxlint-disable-next-line typescript/no-empty-object-type
+> {}
+
+export const NonEmptyString = Schema.NonEmptyString as _NonEmptyString;
+export type NonEmptyString = typeof NonEmptyString.Type;
+
 export const Base64 = Schema.NonEmptyString.pipe(Schema.check(Schema.isBase64()));
 export const UnpaddedBase32 = Schema.NonEmptyString.pipe(
   Schema.check(Schema.isPattern(Constants.UNPADDED_BASE32_REGEX)),

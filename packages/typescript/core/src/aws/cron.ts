@@ -2,6 +2,8 @@ import { parse } from "aws-cron-parser";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 
+import { NonEmptyString } from "../utils";
+
 export namespace AwsCron {
   export class ParseExpressionError extends Schema.TaggedErrorClass<ParseExpressionError>()(
     "AwsCronParseExpressionError",
@@ -14,7 +16,7 @@ export namespace AwsCron {
       catch: (error) => new ParseExpressionError({ cause: error }),
     });
 
-  export const Expression = Schema.NonEmptyString.pipe(
+  export const Expression = NonEmptyString.pipe(
     Schema.check(
       Schema.makeFilter((expression) => {
         const result = parseExpression(expression);

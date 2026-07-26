@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "@aws-sdk/credential-providers": "catalog:",
-    "@aws/durable-execution-sdk-js": "^2.1.0",
+    "@aws/durable-execution-sdk-js": "^2.2.0",
     "@effect-aws/dynamodb": "workspace:@printdesk/effect-aws-dynamodb@*",
     "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",

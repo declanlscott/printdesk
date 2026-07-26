@@ -23,7 +23,7 @@
     "remeda": "^2.39.0",
     "sst": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "^0.2.4"
+    "vite-plus": "^0.2.6"
   },
-  "packageManager": "pnpm@11.13.0"
+  "packageManager": "pnpm@11.17.0"
 }

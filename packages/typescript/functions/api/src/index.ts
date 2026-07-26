@@ -10,6 +10,7 @@ import { configGroupsLayer } from "./groups/config";
 import { papercutMfGroupsLayer } from "./groups/papercut";
 import { realtimeGroupLayer } from "./groups/realtime";
 import { replicacheGroupLayer } from "./groups/replicache";
+import { scimGroupsLayer } from "./groups/scim";
 
 export default Api.pipe(
   HttpApiBuilder.layer,
@@ -19,6 +20,7 @@ export default Api.pipe(
     papercutMfGroupsLayer,
     realtimeGroupLayer,
     replicacheGroupLayer,
+    scimGroupsLayer,
   ]),
   Layer.provide(ErrorMiddleware.layer),
   Layer.provide(NodeCrypto.layer),

@@ -26,7 +26,7 @@ export const sharedAccountPropertySchemas = {
     Schema.decodeTo(UsersContract.Username.pipe(Schema.Array), SchemaTransformation.passthrough()),
   ),
   "account-id": SharedAccountsContract.PapercutMfId,
-  balance: Schema.Number,
+  balance: Schema.Finite,
   "comment-option": Schema.Literals(["NO_COMMENT", "COMMENT_REQUIRED", "COMMENT_OPTIONAL"]),
   disabled: Schema.Boolean,
   "invoice-option": Schema.Literals([
@@ -36,7 +36,7 @@ export const sharedAccountPropertySchemas = {
     "USER_CHOICE_OFF",
   ]),
   notes: Schema.String,
-  "overdraft-amount": Schema.Number,
+  "overdraft-amount": Schema.Finite,
   pin: StringFromUnknown,
   restricted: Schema.Boolean,
 } as const;

@@ -95,14 +95,14 @@ export namespace Handler {
               id: Schema.Int,
               name: Schema.tag(handler.name),
               args: handler.Input,
-              timestamp: Schema.Number,
+              timestamp: Schema.Finite,
             }) as {
               readonly [TName in keyof TRecord]: TName extends string
                 ? Schema.Struct<{
                     id: Schema.Int;
                     name: Schema.tag<TName>;
                     args: TRecord[TName]["Input"];
-                    timestamp: Schema.Number;
+                    timestamp: Schema.Finite;
                   }>
                 : never;
             }[keyof TRecord],
@@ -120,7 +120,7 @@ export namespace Handler {
               id: Schema.Int,
               name: Schema.tag(handler.name),
               args: handler.Input,
-              timestamp: Schema.Number,
+              timestamp: Schema.Finite,
               clientId: Schema.String.pipe(Schema.check(Schema.isUUID())),
             }).pipe(Schema.encodeKeys({ clientId: "clientID" })) as {
               readonly [TName in keyof TRecord]: TName extends string
@@ -129,7 +129,7 @@ export namespace Handler {
                       id: Schema.Int;
                       name: Schema.tag<TName>;
                       args: TRecord[TName]["Input"];
-                      timestamp: Schema.Number;
+                      timestamp: Schema.Finite;
                       clientId: Schema.String;
                     }>,
                     { clientId: "clientID" }

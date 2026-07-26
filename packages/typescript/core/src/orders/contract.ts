@@ -33,7 +33,7 @@ export namespace OrdersContract {
 
     // Copies
     copies: Schema.Struct({
-      quantity: Schema.Number,
+      quantity: Schema.Finite,
     }).pipe(Schema.optional),
 
     // Color mode
@@ -54,7 +54,7 @@ export namespace OrdersContract {
 
     // Paper stock
     paperStock: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       size: Schema.String,
       color: Schema.String,
       type: Schema.String,
@@ -67,13 +67,13 @@ export namespace OrdersContract {
 
     // Front Cover
     frontCover: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
     }).pipe(Schema.optional),
 
     // Binding
     binding: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
 
       // Binding option sub-attributes
@@ -82,7 +82,7 @@ export namespace OrdersContract {
 
         // Binding option sub-attribute options
         option: Schema.Struct({
-          cost: Schema.Number,
+          cost: Schema.Finite,
           name: Schema.String,
         }),
       }).pipe(Schema.Array),
@@ -90,49 +90,49 @@ export namespace OrdersContract {
 
     // Cutting
     cutting: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
     }).pipe(Schema.optional),
 
     // Hole punching
     holePunching: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
     }).pipe(Schema.optional),
 
     // Folding
     folding: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
     }).pipe(Schema.optional),
 
     // Packaging
     packaging: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
-      itemsPerSet: Schema.Number,
+      itemsPerSet: Schema.Finite,
     }).pipe(Schema.optional),
 
     // Laminating
     laminating: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
     }).pipe(Schema.optional),
 
     // Proof Required
     proofRequired: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
     }).pipe(Schema.optional),
 
     // Material
     material: Schema.Struct({
-      cost: Schema.Number,
+      cost: Schema.Finite,
       name: Schema.String,
 
       // Material color options
       color: Schema.Struct({
-        cost: Schema.Number,
+        cost: Schema.Finite,
         name: Schema.String,
         value: Schema.String,
       }),
@@ -146,7 +146,7 @@ export namespace OrdersContract {
 
         // Custom drop-down list options
         option: Schema.Struct({
-          cost: Schema.Number,
+          cost: Schema.Finite,
           name: Schema.String,
         }),
       }).pipe(Schema.Array),

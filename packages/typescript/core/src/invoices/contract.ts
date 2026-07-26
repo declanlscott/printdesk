@@ -22,7 +22,7 @@ export namespace InvoicesContract {
   export class LineItemV1 extends Schema.TaggedClass<LineItemV1>()("InvoiceLineItemV1", {
     name: Schema.String,
     description: Schema.String,
-    cost: Schema.Number,
+    cost: Schema.Finite,
     style: Schema.Literals(["OPTION_1", "OPTION_2"]),
   }) {}
   export const LineItem = Schema.Union([LineItemV1]);
@@ -62,7 +62,7 @@ export namespace InvoicesContract {
   });
 
   export class Estimate extends Schema.Class<Estimate>("Estimate")({
-    total: Schema.Number,
+    total: Schema.Finite,
     description: Schema.String.pipe(Schema.optional),
     items: LineItem.pipe(Schema.Array),
   }) {}

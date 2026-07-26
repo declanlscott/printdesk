@@ -185,7 +185,7 @@ export namespace OauthContract {
   export class Tokens extends Schema.Class<Tokens>("Tokens")({
     access: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
     refresh: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
-    expiresIn: Schema.Number.pipe(
+    expiresIn: Schema.Finite.pipe(
       Schema.decodeTo(Schema.Duration, {
         decode: SchemaGetter.transform(Duration.seconds),
         encode: SchemaGetter.transform(Duration.toSeconds),

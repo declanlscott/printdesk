@@ -58,7 +58,7 @@ export const separatedString = (separator = Constants.SEPARATOR) =>
     { separator },
   );
 
-export const Cost = Schema.Union([Schema.Number, Schema.NumberFromString]);
+export const Cost = Schema.Union([Schema.Finite, Schema.FiniteFromString]);
 
 export const IsoTimestamp = Schema.String.pipe(
   Schema.check(Schema.isPattern(Constants.ISO_TIMESTAMP_REGEX)),

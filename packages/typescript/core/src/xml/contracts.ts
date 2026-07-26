@@ -18,7 +18,7 @@ export namespace XmlRpcContract {
     value: Schema.Struct({ boolean: Schema.BooleanFromBit }),
   });
 
-  export const Double = Schema.Struct({ value: Schema.Struct({ double: Schema.Number }) });
+  export const Double = Schema.Struct({ value: Schema.Struct({ double: Schema.Finite }) });
 
   export const Int = Schema.Struct({ value: Schema.Struct({ int: Schema.Int }) });
 

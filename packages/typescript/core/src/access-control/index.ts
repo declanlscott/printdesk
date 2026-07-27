@@ -49,7 +49,6 @@ export namespace AccessControl {
           "invoices:read",
           "identity_providers:create",
           "identity_providers:read",
-          "identity_providers:update",
           "identity_providers:delete",
           "licenses:read",
           "orders:create",

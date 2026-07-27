@@ -608,8 +608,6 @@ importers:
         specifier: 'catalog:'
         version: 24.13.3
 
-  packages/typescript/vendor/@effect-aws/commons/src: {}
-
   packages/typescript/vendor/@effect-aws/dsql:
     dependencies:
       '@aws-sdk/dsql-signer':

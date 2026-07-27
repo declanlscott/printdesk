@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "b2806e43-cf0c-4e9a-b627-f7181e1e6bb7",
+  "id": "0b3f113f-f148-4a9e-b23b-65669ccccfac",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -32,13 +32,13 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "customer_group_memberships",
+      "name": "group_memberships",
       "entityType": "tables",
       "schema": "public"
     },
     {
       "isRlsEnabled": false,
-      "name": "customer_groups",
+      "name": "groups",
       "entityType": "tables",
       "schema": "public"
     },
@@ -116,7 +116,7 @@
     },
     {
       "isRlsEnabled": false,
-      "name": "shared_account_customer_group_access",
+      "name": "shared_account_group_customer_access",
       "entityType": "tables",
       "schema": "public"
     },
@@ -412,6 +412,19 @@
     {
       "type": "char(11)",
       "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "identity_provider_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "clients"
+    },
+    {
+      "type": "char(11)",
+      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -693,7 +706,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "char(11)",
@@ -706,7 +719,7 @@
       "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "timestamp",
@@ -719,7 +732,7 @@
       "name": "created_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "timestamp",
@@ -732,7 +745,7 @@
       "name": "updated_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "timestamp",
@@ -745,7 +758,7 @@
       "name": "deleted_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "integer",
@@ -758,7 +771,7 @@
       "name": "version",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "char(11)",
@@ -768,10 +781,10 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "customer_group_id",
+      "name": "group_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "char(11)",
@@ -781,10 +794,10 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "member_id",
+      "name": "user_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "type": "char(11)",
@@ -797,7 +810,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "char(11)",
@@ -810,7 +823,7 @@
       "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "timestamp",
@@ -823,7 +836,7 @@
       "name": "created_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "timestamp",
@@ -836,7 +849,7 @@
       "name": "updated_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "timestamp",
@@ -849,7 +862,7 @@
       "name": "deleted_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "integer",
@@ -862,20 +875,7 @@
       "name": "version",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
-    },
-    {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "origin",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "text",
@@ -888,7 +888,7 @@
       "name": "name",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "text",
@@ -901,7 +901,7 @@
       "name": "external_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "char(11)",
@@ -914,7 +914,7 @@
       "name": "identity_provider_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "type": "char(11)",
@@ -1002,7 +1002,7 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "external_tenant_id",
+      "name": "external_id",
       "entityType": "columns",
       "schema": "public",
       "table": "identity_providers"
@@ -2149,7 +2149,7 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "char(11)",
@@ -2162,7 +2162,7 @@
       "name": "tenant_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "timestamp",
@@ -2175,7 +2175,7 @@
       "name": "created_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "timestamp",
@@ -2188,7 +2188,7 @@
       "name": "updated_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "timestamp",
@@ -2201,7 +2201,7 @@
       "name": "deleted_at",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "integer",
@@ -2214,7 +2214,7 @@
       "name": "version",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "char(11)",
@@ -2224,10 +2224,10 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "customer_group_id",
+      "name": "group_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "char(11)",
@@ -2240,7 +2240,7 @@
       "name": "shared_account_id",
       "entityType": "columns",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "type": "char(11)",
@@ -2698,19 +2698,6 @@
       "table": "users"
     },
     {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "origin",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "users"
-    },
-    {
       "type": "text",
       "typeSchema": null,
       "notNull": true,
@@ -2737,32 +2724,6 @@
       "table": "users"
     },
     {
-      "type": "char(11)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "identity_provider_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "users"
-    },
-    {
-      "type": "varchar(50)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "'customer'",
-      "generated": null,
-      "identity": null,
-      "name": "role",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "users"
-    },
-    {
       "type": "text",
       "typeSchema": null,
       "notNull": true,
@@ -2784,6 +2745,45 @@
       "generated": null,
       "identity": null,
       "name": "email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "users"
+    },
+    {
+      "type": "char(11)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "identity_provider_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "users"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'active'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "users"
+    },
+    {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'customer'",
+      "generated": null,
+      "identity": null,
+      "name": "role",
       "entityType": "columns",
       "schema": "public",
       "table": "users"
@@ -3185,7 +3185,42 @@
       "nameExplicit": false,
       "columns": [
         {
-          "value": "origin",
+          "value": "group_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "group_memberships_group_id_user_id_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "group_memberships"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "group_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3204,10 +3239,38 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "customer_groups_origin_tenant_id_index",
+      "name": "group_memberships_group_id_tenant_id_index",
       "entityType": "indexes",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "group_memberships"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        {
+          "value": "external_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "tenant_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "groups_external_id_tenant_id_index",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "groups"
     },
     {
       "nameExplicit": false,
@@ -3241,7 +3304,7 @@
       "nameExplicit": false,
       "columns": [
         {
-          "value": "external_tenant_id",
+          "value": "external_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3260,7 +3323,7 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "identity_providers_external_tenant_id_tenant_id_index",
+      "name": "identity_providers_external_id_tenant_id_index",
       "entityType": "indexes",
       "schema": "public",
       "table": "identity_providers"
@@ -3612,7 +3675,7 @@
       "nameExplicit": false,
       "columns": [
         {
-          "value": "customer_group_id",
+          "value": "group_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3638,16 +3701,16 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "shared_account_customer_group_access_customer_group_id_shared_account_id_tenant_id_index",
+      "name": "shared_account_group_customer_access_group_id_shared_account_id_tenant_id_index",
       "entityType": "indexes",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "nameExplicit": false,
       "columns": [
         {
-          "value": "customer_group_id",
+          "value": "group_id",
           "isExpression": false,
           "asc": true,
           "nullsFirst": false,
@@ -3659,10 +3722,10 @@
       "with": "",
       "method": "btree",
       "concurrently": false,
-      "name": "shared_account_customer_group_access_customer_group_id_index",
+      "name": "shared_account_group_customer_access_group_id_index",
       "entityType": "indexes",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "nameExplicit": false,
@@ -3789,34 +3852,6 @@
       "entityType": "indexes",
       "schema": "public",
       "table": "tenants"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        {
-          "value": "origin",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        },
-        {
-          "value": "tenant_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "users_origin_tenant_id_index",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "users"
     },
     {
       "nameExplicit": false,
@@ -4008,10 +4043,10 @@
         "tenant_id"
       ],
       "nameExplicit": false,
-      "name": "customer_group_memberships_pkey",
+      "name": "group_memberships_pkey",
       "entityType": "pks",
       "schema": "public",
-      "table": "customer_group_memberships"
+      "table": "group_memberships"
     },
     {
       "columns": [
@@ -4019,10 +4054,10 @@
         "tenant_id"
       ],
       "nameExplicit": false,
-      "name": "customer_groups_pkey",
+      "name": "groups_pkey",
       "entityType": "pks",
       "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "columns": [
@@ -4153,10 +4188,10 @@
         "tenant_id"
       ],
       "nameExplicit": false,
-      "name": "shared_account_customer_group_access_pkey",
+      "name": "shared_account_group_customer_access_pkey",
       "entityType": "pks",
       "schema": "public",
-      "table": "shared_account_customer_group_access"
+      "table": "shared_account_group_customer_access"
     },
     {
       "columns": [
@@ -4252,22 +4287,10 @@
         "tenant_id"
       ],
       "nullsNotDistinct": false,
-      "name": "customer_groups_name_tenant_id_unique",
+      "name": "groups_name_tenant_id_unique",
       "entityType": "uniques",
       "schema": "public",
-      "table": "customer_groups"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
-        "external_id",
-        "tenant_id"
-      ],
-      "nullsNotDistinct": false,
-      "name": "customer_groups_external_id_tenant_id_unique",
-      "entityType": "uniques",
-      "schema": "public",
-      "table": "customer_groups"
+      "table": "groups"
     },
     {
       "nameExplicit": false,
@@ -4467,35 +4490,35 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"customer_group_id\", \"member_id\" from \"customer_group_memberships\" where (\"customer_group_memberships\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"group_id\", \"user_id\" from \"group_memberships\" where (\"group_memberships\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_customer_group_memberships",
+      "name": "active_group_memberships",
       "entityType": "views",
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"name\", \"external_id\", \"identity_provider_id\" from \"customer_groups\" where (\"customer_groups\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"name\", \"external_id\", \"identity_provider_id\" from \"groups\" where (\"groups\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_customer_groups",
+      "name": "active_groups",
       "entityType": "views",
       "schema": "public"
     },
     {
-      "definition": "select \"active_customer_groups\".\"id\", \"active_customer_groups\".\"tenant_id\", \"active_customer_groups\".\"created_at\", \"active_customer_groups\".\"updated_at\", \"active_customer_groups\".\"deleted_at\", \"active_customer_groups\".\"version\", \"active_customer_groups\".\"origin\", \"active_customer_groups\".\"name\", \"active_customer_groups\".\"external_id\", \"active_customer_groups\".\"identity_provider_id\", \"active_customer_group_memberships\".\"member_id\" from \"active_customer_groups\" inner join \"active_customer_group_memberships\" on ((\"active_customer_groups\".\"id\" = \"active_customer_group_memberships\".\"customer_group_id\") and (\"active_customer_groups\".\"tenant_id\" = \"active_customer_group_memberships\".\"tenant_id\"))",
+      "definition": "select \"active_groups\".\"id\", \"active_groups\".\"tenant_id\", \"active_groups\".\"created_at\", \"active_groups\".\"updated_at\", \"active_groups\".\"deleted_at\", \"active_groups\".\"version\", \"active_groups\".\"name\", \"active_groups\".\"external_id\", \"active_groups\".\"identity_provider_id\", \"active_group_memberships\".\"user_id\" from \"active_groups\" inner join \"active_group_memberships\" on ((\"active_groups\".\"id\" = \"active_group_memberships\".\"group_id\") and (\"active_groups\".\"tenant_id\" = \"active_group_memberships\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_membership_customer_groups",
+      "name": "active_membership_groups",
       "entityType": "views",
       "schema": "public"
     },
@@ -4599,13 +4622,13 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_shared_account_customer_group_access\".\"id\", \"active_shared_account_customer_group_access\".\"tenant_id\", \"active_shared_account_customer_group_access\".\"created_at\", \"active_shared_account_customer_group_access\".\"updated_at\", \"active_shared_account_customer_group_access\".\"deleted_at\", \"active_shared_account_customer_group_access\".\"version\", \"active_shared_account_customer_group_access\".\"customer_group_id\", \"active_shared_account_customer_group_access\".\"shared_account_id\", \"active_customer_group_memberships\".\"member_id\" from \"active_shared_account_customer_group_access\" inner join \"active_customer_group_memberships\" on ((\"active_shared_account_customer_group_access\".\"customer_group_id\" = \"active_customer_group_memberships\".\"customer_group_id\") and (\"active_shared_account_customer_group_access\".\"tenant_id\" = \"active_customer_group_memberships\".\"tenant_id\"))",
+      "definition": "select \"active_shared_account_group_customer_access\".\"id\", \"active_shared_account_group_customer_access\".\"tenant_id\", \"active_shared_account_group_customer_access\".\"created_at\", \"active_shared_account_group_customer_access\".\"updated_at\", \"active_shared_account_group_customer_access\".\"deleted_at\", \"active_shared_account_group_customer_access\".\"version\", \"active_shared_account_group_customer_access\".\"group_id\", \"active_shared_account_group_customer_access\".\"shared_account_id\", \"active_group_memberships\".\"user_id\" from \"active_shared_account_group_customer_access\" inner join \"active_group_memberships\" on ((\"active_shared_account_group_customer_access\".\"group_id\" = \"active_group_memberships\".\"group_id\") and (\"active_shared_account_group_customer_access\".\"tenant_id\" = \"active_group_memberships\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_authorized_shared_account_customer_group_access",
+      "name": "active_authorized_shared_account_group_customer_access",
       "entityType": "views",
       "schema": "public"
     },
@@ -4654,13 +4677,13 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"customer_group_id\", \"shared_account_id\" from \"shared_account_customer_group_access\" where (\"shared_account_customer_group_access\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"group_id\", \"shared_account_id\" from \"shared_account_group_customer_access\" where (\"shared_account_group_customer_access\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_shared_account_customer_group_access",
+      "name": "active_shared_account_group_customer_access",
       "entityType": "views",
       "schema": "public"
     },
@@ -4687,7 +4710,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"origin\", \"username\", \"external_id\", \"identity_provider_id\", \"role\", \"display_name\", \"email\" from \"users\" where (\"users\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"username\", \"external_id\", \"display_name\", \"email\", \"identity_provider_id\", \"status\", \"role\" from \"users\" where (\"users\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,

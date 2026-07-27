@@ -23,6 +23,7 @@ CREATE TABLE "clients" (
 	"role" varchar(50) NOT NULL,
 	"scopes" text NOT NULL,
 	"callback_id" text,
+	"identity_provider_id" char(11),
 	CONSTRAINT "clients_pkey" PRIMARY KEY("id", "tenant_id")
 );
 
@@ -58,33 +59,31 @@ CREATE TABLE "delivery_options" (
 );
 
 --> statement-breakpoint
-CREATE TABLE "customer_group_memberships" (
+CREATE TABLE "group_memberships" (
 	"id" char(11),
 	"tenant_id" char(11),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"customer_group_id" char(11) NOT NULL,
-	"member_id" char(11) NOT NULL,
-	CONSTRAINT "customer_group_memberships_pkey" PRIMARY KEY("id", "tenant_id")
+	"group_id" char(11) NOT NULL,
+	"user_id" char(11) NOT NULL,
+	CONSTRAINT "group_memberships_pkey" PRIMARY KEY("id", "tenant_id")
 );
 
 --> statement-breakpoint
-CREATE TABLE "customer_groups" (
+CREATE TABLE "groups" (
 	"id" char(11),
 	"tenant_id" char(11),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"origin" varchar(50) NOT NULL,
 	"name" text NOT NULL,
 	"external_id" text NOT NULL,
 	"identity_provider_id" char(11) NOT NULL,
-	CONSTRAINT "customer_groups_pkey" PRIMARY KEY("id", "tenant_id"),
-	CONSTRAINT "customer_groups_name_tenant_id_unique" UNIQUE("name", "tenant_id"),
-	CONSTRAINT "customer_groups_external_id_tenant_id_unique" UNIQUE("external_id", "tenant_id")
+	CONSTRAINT "groups_pkey" PRIMARY KEY("id", "tenant_id"),
+	CONSTRAINT "groups_name_tenant_id_unique" UNIQUE("name", "tenant_id")
 );
 
 --> statement-breakpoint
@@ -95,7 +94,7 @@ CREATE TABLE "identity_providers" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"kind" varchar(50) NOT NULL,
-	"external_tenant_id" text NOT NULL,
+	"external_id" text NOT NULL,
 	CONSTRAINT "identity_providers_pkey" PRIMARY KEY("id", "tenant_id")
 );
 
@@ -265,16 +264,16 @@ CREATE TABLE "shared_account_customer_access" (
 );
 
 --> statement-breakpoint
-CREATE TABLE "shared_account_customer_group_access" (
+CREATE TABLE "shared_account_group_customer_access" (
 	"id" char(11),
 	"tenant_id" char(11),
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"customer_group_id" char(11) NOT NULL,
+	"group_id" char(11) NOT NULL,
 	"shared_account_id" char(11) NOT NULL,
-	CONSTRAINT "shared_account_customer_group_access_pkey" PRIMARY KEY("id", "tenant_id")
+	CONSTRAINT "shared_account_group_customer_access_pkey" PRIMARY KEY("id", "tenant_id")
 );
 
 --> statement-breakpoint
@@ -347,13 +346,13 @@ CREATE TABLE "users" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
-	"origin" varchar(50) NOT NULL,
 	"username" text NOT NULL,
 	"external_id" text NOT NULL,
-	"identity_provider_id" char(11) NOT NULL,
-	"role" varchar(50) DEFAULT 'customer' NOT NULL,
 	"display_name" text NOT NULL,
 	"email" text NOT NULL,
+	"identity_provider_id" char(11) NOT NULL,
+	"status" varchar(50) DEFAULT 'active' NOT NULL,
+	"role" varchar(50) DEFAULT 'customer' NOT NULL,
 	CONSTRAINT "users_pkey" PRIMARY KEY("id", "tenant_id"),
 	CONSTRAINT "users_username_tenant_id_unique" UNIQUE("username", "tenant_id"),
 	CONSTRAINT "users_external_id_tenant_id_unique" UNIQUE("external_id", "tenant_id"),
@@ -414,13 +413,19 @@ CREATE UNIQUE INDEX "clients_id_index" ON "clients" ("id");
 CREATE INDEX "comments_order_id_index" ON "comments" ("order_id");
 
 --> statement-breakpoint
-CREATE INDEX "customer_groups_origin_tenant_id_index" ON "customer_groups" ("origin", "tenant_id");
+CREATE UNIQUE INDEX "group_memberships_group_id_user_id_tenant_id_index" ON "group_memberships" ("group_id", "user_id", "tenant_id");
+
+--> statement-breakpoint
+CREATE INDEX "group_memberships_group_id_tenant_id_index" ON "group_memberships" ("group_id", "tenant_id");
+
+--> statement-breakpoint
+CREATE UNIQUE INDEX "groups_external_id_tenant_id_index" ON "groups" ("external_id", "tenant_id");
 
 --> statement-breakpoint
 CREATE UNIQUE INDEX "identity_providers_kind_tenant_id_index" ON "identity_providers" ("kind", "tenant_id");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "identity_providers_external_tenant_id_tenant_id_index" ON "identity_providers" ("external_tenant_id", "tenant_id");
+CREATE UNIQUE INDEX "identity_providers_external_id_tenant_id_index" ON "identity_providers" ("external_id", "tenant_id");
 
 --> statement-breakpoint
 CREATE INDEX "invoices_order_id_index" ON "invoices" ("order_id");
@@ -472,14 +477,10 @@ CREATE UNIQUE INDEX "shared_account_customer_access_customer_id_shared_account_i
 CREATE INDEX "shared_account_customer_access_customer_id_index" ON "shared_account_customer_access" ("customer_id");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "shared_account_customer_group_access_customer_group_id_shared_account_id_tenant_id_index" ON "shared_account_customer_group_access" (
-	"customer_group_id",
-	"shared_account_id",
-	"tenant_id"
-);
+CREATE UNIQUE INDEX "shared_account_group_customer_access_group_id_shared_account_id_tenant_id_index" ON "shared_account_group_customer_access" ("group_id", "shared_account_id", "tenant_id");
 
 --> statement-breakpoint
-CREATE INDEX "shared_account_customer_group_access_customer_group_id_index" ON "shared_account_customer_group_access" ("customer_group_id");
+CREATE INDEX "shared_account_group_customer_access_group_id_index" ON "shared_account_group_customer_access" ("group_id");
 
 --> statement-breakpoint
 CREATE UNIQUE INDEX "shared_account_manager_access_shared_account_id_manager_id_tenant_id_index" ON "shared_account_manager_access" ("shared_account_id", "manager_id", "tenant_id");
@@ -495,9 +496,6 @@ CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" ("slug");
 
 --> statement-breakpoint
 CREATE UNIQUE INDEX "tenants_license_key_index" ON "tenants" ("license_key");
-
---> statement-breakpoint
-CREATE INDEX "users_origin_tenant_id_index" ON "users" ("origin", "tenant_id");
 
 --> statement-breakpoint
 CREATE INDEX "users_external_id_index" ON "users" ("external_id");
@@ -596,7 +594,7 @@ CREATE VIEW "active_published_room_announcements" AS (
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_customer_group_memberships" AS (
+CREATE VIEW "active_group_memberships" AS (
 	select
 		"id",
 		"tenant_id",
@@ -604,18 +602,16 @@ CREATE VIEW "active_customer_group_memberships" AS (
 		"updated_at",
 		"deleted_at",
 		"version",
-		"customer_group_id",
-		"member_id"
+		"group_id",
+		"user_id"
 	from
-		"customer_group_memberships"
+		"group_memberships"
 	where
-		(
-			"customer_group_memberships"."deleted_at" is null
-		)
+		("group_memberships"."deleted_at" is null)
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_customer_groups" AS (
+CREATE VIEW "active_groups" AS (
 	select
 		"id",
 		"tenant_id",
@@ -623,38 +619,36 @@ CREATE VIEW "active_customer_groups" AS (
 		"updated_at",
 		"deleted_at",
 		"version",
-		"origin",
 		"name",
 		"external_id",
 		"identity_provider_id"
 	from
-		"customer_groups"
+		"groups"
 	where
-		("customer_groups"."deleted_at" is null)
+		("groups"."deleted_at" is null)
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_membership_customer_groups" AS (
+CREATE VIEW "active_membership_groups" AS (
 	select
-		"active_customer_groups"."id",
-		"active_customer_groups"."tenant_id",
-		"active_customer_groups"."created_at",
-		"active_customer_groups"."updated_at",
-		"active_customer_groups"."deleted_at",
-		"active_customer_groups"."version",
-		"active_customer_groups"."origin",
-		"active_customer_groups"."name",
-		"active_customer_groups"."external_id",
-		"active_customer_groups"."identity_provider_id",
-		"active_customer_group_memberships"."member_id"
+		"active_groups"."id",
+		"active_groups"."tenant_id",
+		"active_groups"."created_at",
+		"active_groups"."updated_at",
+		"active_groups"."deleted_at",
+		"active_groups"."version",
+		"active_groups"."name",
+		"active_groups"."external_id",
+		"active_groups"."identity_provider_id",
+		"active_group_memberships"."user_id"
 	from
-		"active_customer_groups"
-		inner join "active_customer_group_memberships" on (
+		"active_groups"
+		inner join "active_group_memberships" on (
 			(
-				"active_customer_groups"."id" = "active_customer_group_memberships"."customer_group_id"
+				"active_groups"."id" = "active_group_memberships"."group_id"
 			)
 			and (
-				"active_customer_groups"."tenant_id" = "active_customer_group_memberships"."tenant_id"
+				"active_groups"."tenant_id" = "active_group_memberships"."tenant_id"
 			)
 		)
 );
@@ -793,7 +787,7 @@ CREATE VIEW "active_manager_authorized_shared_accounts" AS (
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_shared_account_customer_group_access" AS (
+CREATE VIEW "active_shared_account_group_customer_access" AS (
 	select
 		"id",
 		"tenant_id",
@@ -801,36 +795,36 @@ CREATE VIEW "active_shared_account_customer_group_access" AS (
 		"updated_at",
 		"deleted_at",
 		"version",
-		"customer_group_id",
+		"group_id",
 		"shared_account_id"
 	from
-		"shared_account_customer_group_access"
+		"shared_account_group_customer_access"
 	where
 		(
-			"shared_account_customer_group_access"."deleted_at" is null
+			"shared_account_group_customer_access"."deleted_at" is null
 		)
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_authorized_shared_account_customer_group_access" AS (
+CREATE VIEW "active_authorized_shared_account_group_customer_access" AS (
 	select
-		"active_shared_account_customer_group_access"."id",
-		"active_shared_account_customer_group_access"."tenant_id",
-		"active_shared_account_customer_group_access"."created_at",
-		"active_shared_account_customer_group_access"."updated_at",
-		"active_shared_account_customer_group_access"."deleted_at",
-		"active_shared_account_customer_group_access"."version",
-		"active_shared_account_customer_group_access"."customer_group_id",
-		"active_shared_account_customer_group_access"."shared_account_id",
-		"active_customer_group_memberships"."member_id"
+		"active_shared_account_group_customer_access"."id",
+		"active_shared_account_group_customer_access"."tenant_id",
+		"active_shared_account_group_customer_access"."created_at",
+		"active_shared_account_group_customer_access"."updated_at",
+		"active_shared_account_group_customer_access"."deleted_at",
+		"active_shared_account_group_customer_access"."version",
+		"active_shared_account_group_customer_access"."group_id",
+		"active_shared_account_group_customer_access"."shared_account_id",
+		"active_group_memberships"."user_id"
 	from
-		"active_shared_account_customer_group_access"
-		inner join "active_customer_group_memberships" on (
+		"active_shared_account_group_customer_access"
+		inner join "active_group_memberships" on (
 			(
-				"active_shared_account_customer_group_access"."customer_group_id" = "active_customer_group_memberships"."customer_group_id"
+				"active_shared_account_group_customer_access"."group_id" = "active_group_memberships"."group_id"
 			)
 			and (
-				"active_shared_account_customer_group_access"."tenant_id" = "active_customer_group_memberships"."tenant_id"
+				"active_shared_account_group_customer_access"."tenant_id" = "active_group_memberships"."tenant_id"
 			)
 		)
 );
@@ -1153,13 +1147,13 @@ CREATE VIEW "active_users" AS (
 		"updated_at",
 		"deleted_at",
 		"version",
-		"origin",
 		"username",
 		"external_id",
-		"identity_provider_id",
-		"role",
 		"display_name",
-		"email"
+		"email",
+		"identity_provider_id",
+		"status",
+		"role"
 	from
 		"users"
 	where

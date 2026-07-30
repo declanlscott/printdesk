@@ -3,6 +3,7 @@ import * as Boolean from "effect/Boolean";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
+import * as FileSystem from "effect/FileSystem";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Result from "effect/Result";
@@ -359,7 +360,28 @@ export namespace ScimContract {
       }).pipe(Schema.Array),
     },
     { httpApiStatus: 200 },
-  ) {}
+  ) {
+    /**
+     * An integer value specifying the maximum number of bulk operations.
+     */
+    public static get maxBulkOperations() {
+      return 1_000;
+    }
+
+    /**
+     * An integer value specifying the maximum bulk payload size in bytes.
+     */
+    public static get maxBulkPayloadSize() {
+      return FileSystem.MiB(1);
+    }
+
+    /**
+     * An integer value specifying the maximum number of filter resources returned in a response.
+     */
+    public static get maxFilterResults() {
+      return 1_000;
+    }
+  }
 
   export class V2Group extends CommonAttributes.extend<V2Group>("V2Group")(
     {

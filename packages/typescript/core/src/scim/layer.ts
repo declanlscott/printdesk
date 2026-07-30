@@ -132,8 +132,15 @@ export const makeService = Effect.gen(function* () {
 
     return yield* ScimContract.V2ServiceProviderConfig.makeEffect({
       patch: { supported: true },
-      bulk: { supported: true, maxOperations: 1_000, maxPayloadSize: 917_504 },
-      filter: { supported: true, maxResults: 1_000 },
+      bulk: {
+        supported: true,
+        maxOperations: ScimContract.V2ServiceProviderConfig.maxBulkOperations,
+        maxPayloadSize: globalThis.Number(ScimContract.V2ServiceProviderConfig.maxBulkPayloadSize),
+      },
+      filter: {
+        supported: true,
+        maxResults: ScimContract.V2ServiceProviderConfig.maxFilterResults,
+      },
       changePassword: { supported: false },
       sort: { supported: false },
       etag: { supported: false },

@@ -15,7 +15,10 @@ import { ScimContract } from "@printdesk/core/scim/contract";
 import { orDieWhenUnrespondable } from "@printdesk/core/utils";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Number from "effect/Number";
+import * as Option from "effect/Option";
 import * as Struct from "effect/Struct";
+import * as HttpIncomingMessage from "effect/unstable/http/HttpIncomingMessage";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
@@ -391,8 +394,25 @@ export const baseScimV2BulkGroupLayer = HttpApiBuilder.group(
 
     return handlers.handle(
       "create",
-      Effect.fn("Api.ScimV2Bulk.create")(({ payload }) =>
-        scim.bulkCreate(payload).pipe(
+      Effect.fn("Api.ScimV2Bulk.create")(function* ({ payload, request }) {
+        const maxPayloadSize = yield* HttpIncomingMessage.MaxBodySize.pipe(
+          Effect.map(Option.fromUndefinedOr),
+          Effect.map(Option.map(globalThis.Number)),
+        );
+        if (
+          Option.isSome(maxPayloadSize) &&
+          (yield* request.arrayBuffer.pipe(
+            Effect.orDie,
+            Effect.map(Struct.get("byteLength")),
+            Effect.map(Number.isGreaterThan(maxPayloadSize.value)),
+          ))
+        )
+          return yield* new ScimContract.V2Error({
+            status: 413,
+            detail: `The size of the bulk operation exceeds the maxPayloadSize (${maxPayloadSize.value}).`,
+          });
+
+        return yield* scim.bulkCreate(payload).pipe(
           orDieWhenUnrespondable,
           AccessControl.enforce(
             AccessControl.every(
@@ -406,13 +426,19 @@ export const baseScimV2BulkGroupLayer = HttpApiBuilder.group(
             AccessDeniedError: (error) =>
               new ScimContract.V2Error({ status: 403, detail: error.message }),
           }),
-        ),
-      ),
+        );
+      }),
     );
   }),
 );
 
 export const scimV2BulkGroupLayer = baseScimV2BulkGroupLayer.pipe(
+  Layer.provideMerge(
+    Layer.succeed(
+      HttpIncomingMessage.MaxBodySize,
+      ScimContract.V2ServiceProviderConfig.maxBulkPayloadSize,
+    ),
+  ),
   Layer.provide([
     ScimAuthMiddleware.layer,
     ScimBulkIdMapMiddleware.layer,

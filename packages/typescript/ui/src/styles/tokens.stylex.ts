@@ -1,0 +1,132 @@
+import * as stylex from "@stylexjs/stylex";
+
+export const colors = stylex.defineVars({
+  background: "light-dark(var(--background), var(--dark-background))",
+  foreground: "light-dark(var(--foreground), var(--dark-foreground))",
+  card: "light-dark(var(--card), var(--dark-card))",
+  cardForeground: "light-dark(var(--card-foreground), var(--dark-card-foreground))",
+  popover: "light-dark(var(--popover), var(--dark-popover))",
+  popoverForeground: "light-dark(var(--popover-foreground), var(--dark-popover-foreground))",
+  primary: "light-dark(var(--primary), var(--dark-primary))",
+  primaryForeground: "light-dark(var(--primary-foreground), var(--dark-primary-foreground))",
+  secondary: "light-dark(var(--secondary), var(--dark-secondary))",
+  secondaryForeground: "light-dark(var(--secondary-foreground), var(--dark-secondary-foreground))",
+  muted: "light-dark(var(--muted), var(--dark-muted))",
+  mutedForeground: "light-dark(var(--muted-foreground), var(--dark-muted-foreground))",
+  accent: "light-dark(var(--accent), var(--dark-accent))",
+  accentForeground: "light-dark(var(--accent-foreground), var(--dark-accent-foreground))",
+  destructive: "light-dark(var(--destructive), var(--dark-destructive))",
+  destructiveForeground:
+    "light-dark(var(--destructive-foreground), var(--dark-destructive-foreground))",
+  border: "light-dark(var(--border), var(--dark-border))",
+  input: "light-dark(var(--input), var(--dark-input))",
+  ring: "light-dark(var(--ring), var(--dark-ring))",
+  chart1: "light-dark(var(--chart-1), var(--dark-chart-1))",
+  chart2: "light-dark(var(--chart-2), var(--dark-chart-2))",
+  chart3: "light-dark(var(--chart-3), var(--dark-chart-3))",
+  chart4: "light-dark(var(--chart-4), var(--dark-chart-4))",
+  chart5: "light-dark(var(--chart-5), var(--dark-chart-5))",
+  sidebar: "light-dark(var(--sidebar), var(--dark-sidebar))",
+  sidebarForeground: "light-dark(var(--sidebar-foreground), var(--dark-sidebar-foreground))",
+  sidebarPrimary: "light-dark(var(--sidebar-primary), var(--dark-sidebar-primary))",
+  sidebarPrimaryForeground:
+    "light-dark(var(--sidebar-primary-foreground), var(--dark-sidebar-primary-foreground))",
+  sidebarAccent: "light-dark(var(--sidebar-accent), var(--dark-sidebar-accent))",
+  sidebarAccentForeground:
+    "light-dark(var(--sidebar-accent-foreground), var(--dark-sidebar-accent-foreground))",
+  sidebarBorder: "light-dark(var(--sidebar-border), var(--dark-sidebar-border))",
+  sidebarRing: "light-dark(var(--sidebar-ring), var(--dark-sidebar-ring))",
+} as const);
+
+export const radii = stylex.defineVars({
+  sm: "calc(var(--radius) * 0.6)",
+  md: "calc(var(--radius) * 0.8)",
+  lg: "var(--radius)",
+  xl: "calc(var(--radius) * 1.4)",
+  "2xl": "calc(var(--radius) * 1.8)",
+  "3xl": "calc(var(--radius) * 2.2)",
+  "4xl": "calc(var(--radius) * 2.6)",
+} as const);
+
+export const fontSizes = stylex.defineConsts({
+  xs: "0.75rem",
+  sm: "0.875rem",
+  base: "1rem",
+  lg: "1.125rem",
+  xl: "1.25rem",
+  "2xl": "1.5rem",
+  "3xl": "1.875rem",
+  "4xl": "2.25rem",
+  "5xl": "3rem",
+  "6xl": "3.75rem",
+  "7xl": "4.5rem",
+  "8xl": "6rem",
+  "9xl": "8rem",
+});
+
+export const lineHeights = stylex.defineConsts({
+  xs: "calc(1 / 0.75)",
+  sm: "calc(1.25 / 0.875)",
+  base: "calc(1.5 / 1)",
+  lg: "calc(1.75 / 1.125)",
+  "2xl": "calc(1.75 / 1.25)",
+  "3xl": "calc(2.25 / 1.875)",
+  "4xl": "calc(2.5 / 2.25)",
+});
+
+const space = <TMultiplier extends number>(multiplier: TMultiplier) =>
+  `calc(var(--spacing) * ${multiplier})` as const;
+export const spacing = stylex.defineConsts({
+  0: space(0),
+  0.5: space(0.5),
+  1: space(1),
+  1.5: space(1.5),
+  2: space(2),
+  2.5: space(2.5),
+  3: space(3),
+  3.5: space(3.5),
+  4: space(4),
+  5: space(5),
+  6: space(6),
+  7: space(7),
+  8: space(8),
+  9: space(9),
+  10: space(10),
+  11: space(11),
+  12: space(12),
+  14: space(14),
+  16: space(16),
+  20: space(20),
+  24: space(24),
+  28: space(28),
+  32: space(32),
+  36: space(36),
+  40: space(40),
+  44: space(44),
+  48: space(48),
+  52: space(52),
+  56: space(56),
+  60: space(60),
+  64: space(64),
+  72: space(72),
+  80: space(80),
+  96: space(96),
+} as const);
+
+export const timing = stylex.defineConsts({
+  0: "0ms",
+  75: "75ms",
+  100: "100ms",
+  150: "150ms",
+  200: "200ms",
+  300: "300ms",
+  500: "500ms",
+  700: "700ms",
+  1000: "1s",
+
+  linear: "linear",
+  easeIn: "cubic-bezier(0.4, 0, 1, 1)",
+  easeOut: "cubic-bezier(0, 0, 0.2, 1)",
+  easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+  easeInitial: "initial",
+} as const);

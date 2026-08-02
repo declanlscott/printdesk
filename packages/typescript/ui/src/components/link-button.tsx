@@ -1,16 +1,16 @@
 import * as stylex from "@stylexjs/stylex";
-import { Button as ButtonPrimitive } from "react-aria-components";
+import { Link } from "react-aria-components";
 
 import { buttonSizes, buttonStyles, buttonVariants } from "../styles/button";
 
-import type { ButtonProps as ButtonPrimitiveProps } from "react-aria-components";
+import type { LinkProps } from "react-aria-components";
 import type { ButtonStyleProps } from "../styles/button";
 
-export type ButtonProps = ButtonPrimitiveProps & ButtonStyleProps;
+export type LinkButtonProps = LinkProps & ButtonStyleProps;
 
-export function Button({ variant = "default", size = "default", ...props }: ButtonProps) {
+export function LinkButton({ variant = "default", size = "default", ...props }: LinkButtonProps) {
   return (
-    <ButtonPrimitive
+    <Link
       {...stylex.props(buttonStyles.base, buttonVariants[variant], buttonSizes[size])}
       data-slot="button"
       data-variant={variant}

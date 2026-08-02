@@ -25,5 +25,15 @@
     "typescript": "catalog:",
     "vite-plus": "^0.2.6"
   },
-  "packageManager": "pnpm@11.17.0"
+  "packageManager": "pnpm@11.18.0",
+  "browserslist": [
+    "chrome >= 123",
+    "edge >= 123",
+    "firefox >= 120",
+    "safari >= 17.5",
+    "ios_saf >= 17.5",
+    "and_chr >= 123",
+    "and_ff >= 120",
+    "android >= 123"
+  ]
 }

@@ -51,6 +51,9 @@ catalogs:
     '@smithy/types':
       specifier: ^4.16.1
       version: 4.16.1
+    '@stylexjs/atoms':
+      specifier: ^0.19.0
+      version: 0.19.0
     '@stylexjs/stylex':
       specifier: ^0.19.0
       version: 0.19.0
@@ -528,6 +531,9 @@ importers:
 
   packages/typescript/ui:
     dependencies:
+      '@stylexjs/atoms':
+        specifier: 'catalog:'
+        version: 0.19.0(@stylexjs/stylex@0.19.0)
       '@stylexjs/stylex':
         specifier: 'catalog:'
         version: 0.19.0
@@ -692,6 +698,9 @@ importers:
       '@printdesk/ui':
         specifier: workspace:*
         version: link:../ui
+      '@stylexjs/atoms':
+        specifier: 'catalog:'
+        version: 0.19.0(@stylexjs/stylex@0.19.0)
       '@stylexjs/stylex':
         specifier: 'catalog:'
         version: 0.19.0
@@ -783,6 +792,9 @@ importers:
       '@printdesk/ui':
         specifier: workspace:*
         version: link:../ui
+      '@stylexjs/atoms':
+        specifier: 'catalog:'
+        version: 0.19.0(@stylexjs/stylex@0.19.0)
       '@stylexjs/stylex':
         specifier: 'catalog:'
         version: 0.19.0
@@ -2474,6 +2486,11 @@ packages:
 
   '@std-uritemplate/std-uritemplate@2.0.12':
     resolution: {integrity: sha512-s/R828vYTrFPgAOFAUiHuP4i1eSZHCO9PKVfzVR+2DFERJ/G71BpZJVObM2yy3xeMjMW3wB61gvanb6/pV1lJw==}
+
+  '@stylexjs/atoms@0.19.0':
+    resolution: {integrity: sha512-zVwn00h2cnNvNPCfP8idE8Ey3xzIWxuj9dtItGq+2kgn2oYbO9pR2vEhrI6Wrud+TDL1XDLUFHlY2iuWZOYYZw==}
+    peerDependencies:
+      '@stylexjs/stylex': 0.19.0
 
   '@stylexjs/babel-plugin@0.19.0':
     resolution: {integrity: sha512-2SnVZIl047TtqKW0nRTn7Irz0kmoot1bxdGDE/HwfwfF7dJYHqwkIFg92s87v3hj7zxJobrHWwDx1p3qvQXW4g==}
@@ -6447,6 +6464,10 @@ snapshots:
   '@standard-schema/spec@1.1.0': {}
 
   '@std-uritemplate/std-uritemplate@2.0.12': {}
+
+  '@stylexjs/atoms@0.19.0(@stylexjs/stylex@0.19.0)':
+    dependencies:
+      '@stylexjs/stylex': 0.19.0
 
   '@stylexjs/babel-plugin@0.19.0(supports-color@10.2.2)':
     dependencies:

@@ -11,6 +11,7 @@
     "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",
     "@printdesk/ui": "workspace:*",
+    "@stylexjs/atoms": "catalog:",
     "@stylexjs/stylex": "catalog:",
     "@tanstack/devtools-vite": "catalog:",
     "@tanstack/react-devtools": "catalog:",

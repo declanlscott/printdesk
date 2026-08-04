@@ -8,6 +8,7 @@
     "./styles.css": "./src/styles/index.css"
   },
   "dependencies": {
+    "@stylexjs/atoms": "catalog:",
     "@stylexjs/stylex": "catalog:",
     "effect": "catalog:",
     "react": "catalog:",

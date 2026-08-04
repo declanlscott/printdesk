@@ -25,6 +25,7 @@ catalog:
   "@rolldown/plugin-babel": ^0.2.3
   "@smithy/types": ^4.16.1
   "@smithy/protocol-http": ^5.5.14
+  "@stylexjs/atoms": ^0.19.0
   "@stylexjs/stylex": ^0.19.0
   "@stylexjs/unplugin": ^0.19.0
   "@tailwindcss/vite": ^4.3.3

@@ -14,7 +14,7 @@ import { Transaction } from "./transaction";
 
 import type { AnyPgSelectQueryBuilder, PgSelectDynamic } from "drizzle-orm/pg-core";
 
-export class QueryBuilderError extends Schema.TaggedErrorClass<QueryBuilderError>()(
+export class QueryBuilderError extends Schema.TaggedError<QueryBuilderError>()(
   "QueryBuilderError",
   { cause: Schema.Defect() },
 ) {}

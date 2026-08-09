@@ -10,49 +10,49 @@ allowBuilds:
 
 catalog:
   "@aws-crypto/sha256-js": ^5.2.0
-  "@aws-sdk/client-dynamodb": ^3.1095.0
-  "@aws-sdk/credential-providers": ^3.1095.0
-  "@cloudflare/vite-plugin": ^1.47.0
+  "@aws-sdk/client-dynamodb": ^3.1106.0
+  "@aws-sdk/credential-providers": ^3.1106.0
+  "@cloudflare/vite-plugin": ^1.51.1
   "@cloudflare/workers-types": ^4.20260702.1
-  "@effect/atom-react": 4.0.0-beta.101
-  "@effect/language-service": ^0.86.6
-  "@effect/platform-browser": 4.0.0-beta.101
-  "@effect/platform-node": 4.0.0-beta.101
-  "@effect/platform-node-shared": 4.0.0-beta.101
-  "@effect/sql-pg": 4.0.0-beta.101
-  "@lucas-barake/effect-form-react": ^0.26.0
+  "@effect/atom-react": 4.0.0-beta.106
+  "@effect/language-service": ^0.87.1
+  "@effect/platform-browser": 4.0.0-beta.106
+  "@effect/platform-node": 4.0.0-beta.106
+  "@effect/platform-node-shared": 4.0.0-beta.106
+  "@effect/sql-pg": 4.0.0-beta.106
+  "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
   "@rolldown/plugin-babel": ^0.2.3
   "@smithy/types": ^4.16.1
-  "@smithy/protocol-http": ^5.5.14
+  "@smithy/protocol-http": ^5.5.16
   "@stylexjs/atoms": ^0.19.0
   "@stylexjs/stylex": ^0.19.0
   "@stylexjs/unplugin": ^0.19.0
   "@tailwindcss/vite": ^4.3.3
   "@tanstack/devtools-vite": ^0.6.1
   "@tanstack/react-devtools": ^0.10.9
-  "@tanstack/react-router": ^1.170.18
-  "@tanstack/react-router-devtools": ^1.167.0
-  "@tanstack/react-start": ^1.168.32
-  "@typeonce/effect-machine": ^0.1.0
+  "@tanstack/react-router": ^1.170.23
+  "@tanstack/react-router-devtools": ^1.167.1
+  "@tanstack/react-start": ^1.168.40
+  "@typeonce/effect-machine": ^0.3.0
   "@types/aws-lambda": ^8.10.162
   "@types/node": ^24.13.3
-  "@types/pg": ^8.20.0
-  "@types/react": ^19.2.17
-  "@types/react-dom": ^19.2.3
-  "@vitejs/plugin-react": ^6.0.4
+  "@types/pg": ^8.21.0
+  "@types/react": ^19.2.18
+  "@types/react-dom": ^19.2.4
+  "@vitejs/plugin-react": ^6.0.5
   aws4fetch: ^1.0.20
   babel-plugin-react-compiler: ^1.0.0
   drizzle-orm: 1.0.0-rc.4
-  effect: 4.0.0-beta.101
-  hono: ^4.12.32
-  pg: ^8.22.0
+  effect: 4.0.0-beta.106
+  hono: ^4.13.1
+  pg: ^8.23.0
   react: ^19.2.8
-  react-aria-components: ^1.19.0
+  react-aria-components: ^1.20.0
   react-dom: ^19.2.8
   replicache: ^15.3.0
   sst: ^4.17.1
   tailwindcss: ^4.3.3
   typescript: ^6.0.3
-  vite: ^8.1.5
-  wrangler: ^4.114.0
+  vite: ^8.2.1
+  wrangler: ^4.120.0

@@ -75,7 +75,7 @@ export namespace PapercutMfContract {
   });
 
   export class SharedAccountBalanceAdjustmentFailure
-    extends Schema.TaggedErrorClass<SharedAccountBalanceAdjustmentFailure>()(
+    extends Schema.TaggedError<SharedAccountBalanceAdjustmentFailure>()(
       "SharedAccountBalanceAdjustmentFailure",
       {},
       { httpApiStatus: 502 },
@@ -87,7 +87,7 @@ export namespace PapercutMfContract {
   }
 
   export class UserAndGroupSyncFailure
-    extends Schema.TaggedErrorClass<UserAndGroupSyncFailure>()(
+    extends Schema.TaggedError<UserAndGroupSyncFailure>()(
       "UserAndGroupSyncFailure",
       {},
       { httpApiStatus: 502 },
@@ -99,7 +99,7 @@ export namespace PapercutMfContract {
   }
 
   export class IncompleteTaskStatusError
-    extends Schema.TaggedErrorClass<IncompleteTaskStatusError>()(
+    extends Schema.TaggedError<IncompleteTaskStatusError>()(
       "IncompleteTaskStatusError",
       { message: Schema.String },
       { httpApiStatus: 503 },

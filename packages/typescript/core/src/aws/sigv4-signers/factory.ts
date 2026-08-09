@@ -23,12 +23,11 @@ import type {
 } from "@smithy/types";
 import type * as HttpBody from "effect/unstable/http/HttpBody";
 
-export class SignatureV4Error extends Schema.TaggedErrorClass<SignatureV4Error>()(
-  "SignatureV4Error",
-  { cause: Schema.Defect() },
-) {}
+export class SignatureV4Error extends Schema.TaggedError<SignatureV4Error>()("SignatureV4Error", {
+  cause: Schema.Defect(),
+}) {}
 
-export class SigningError extends Schema.TaggedErrorClass<SigningError>()("SigningError", {
+export class SigningError extends Schema.TaggedError<SigningError>()("SigningError", {
   service: NonEmptyString,
   cause: Schema.Defect(),
 }) {}

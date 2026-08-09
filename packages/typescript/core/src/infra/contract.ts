@@ -43,7 +43,7 @@ export namespace InfraContract {
   );
 
   export class NotDeployedError
-    extends Schema.TaggedErrorClass<NotDeployedError>()("InfraNotDeployedError", {
+    extends Schema.TaggedError<NotDeployedError>()("InfraNotDeployedError", {
       deploymentId: EntityId,
     })
     implements HttpServerRespondable.Respondable

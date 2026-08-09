@@ -15,15 +15,15 @@ import * as Struct from "effect/Struct";
 import { SstResource } from "../../sst/resource";
 import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
-export class AppconfigError extends Schema.TaggedErrorClass<AppconfigError>()("AppconfigError", {
+export class AppconfigError extends Schema.TaggedError<AppconfigError>()("AppconfigError", {
   cause: Schema.Defect(),
 }) {}
 
-export class VersionError extends Schema.TaggedErrorClass<VersionError>()("VersionError", {
+export class VersionError extends Schema.TaggedError<VersionError>()("VersionError", {
   cause: Schema.Defect(),
 }) {}
 
-export class DeployError extends Schema.TaggedErrorClass<DeployError>()("DeployError", {
+export class DeployError extends Schema.TaggedError<DeployError>()("DeployError", {
   cause: Schema.Defect(),
 }) {}
 

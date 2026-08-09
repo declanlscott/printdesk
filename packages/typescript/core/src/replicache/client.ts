@@ -111,28 +111,28 @@ export namespace Replicache {
     }
   }
 
-  export class ClientError extends Schema.TaggedErrorClass<ClientError>()("ReplicacheClientError", {
+  export class ClientError extends Schema.TaggedError<ClientError>()("ReplicacheClientError", {
     cause: Schema.Defect(),
   }) {}
 
-  export class QueryError extends Schema.TaggedErrorClass<QueryError>()("ReplicacheQueryError", {
+  export class QueryError extends Schema.TaggedError<QueryError>()("ReplicacheQueryError", {
     cause: Schema.Defect(),
   }) {}
 
-  export class SubscribeError extends Schema.TaggedErrorClass<SubscribeError>()(
+  export class SubscribeError extends Schema.TaggedError<SubscribeError>()(
     "ReplicacheSubscribeError",
     { cause: Schema.Defect() },
   ) {}
 
-  export class MutateError extends Schema.TaggedErrorClass<MutateError>()("ReplicacheMutateError", {
+  export class MutateError extends Schema.TaggedError<MutateError>()("ReplicacheMutateError", {
     cause: Schema.Defect(),
   }) {}
 
-  export class PullError extends Schema.TaggedErrorClass<PullError>()("ReplicachePullError", {
+  export class PullError extends Schema.TaggedError<PullError>()("ReplicachePullError", {
     cause: Schema.Defect(),
   }) {}
 
-  export class CloseError extends Schema.TaggedErrorClass<CloseError>()("ReplicacheCloseError", {
+  export class CloseError extends Schema.TaggedError<CloseError>()("ReplicacheCloseError", {
     cause: Schema.Defect(),
   }) {}
 

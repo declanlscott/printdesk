@@ -8,7 +8,7 @@ import * as Schema from "effect/Schema";
 import { SstResource } from "../sst/resource";
 import { CloudflareContract } from "./contract";
 
-export class CloudflareError extends Schema.TaggedErrorClass<CloudflareError>()("CloudflareError", {
+export class CloudflareError extends Schema.TaggedError<CloudflareError>()("CloudflareError", {
   cause: Schema.Defect(),
 }) {}
 

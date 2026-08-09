@@ -50,30 +50,30 @@ wheels = [
 
 [[package]]
 name = "boto3"
-version = "1.43.56"
+version = "1.43.67"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "botocore" },
     { name = "jmespath" },
     { name = "s3transfer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/53/05/23e1aa8c9e4b0399a61e7fd65c4f9cc0625121f24760e37471f776404abb/boto3-1.43.56.tar.gz", hash = "sha256:57c90df9fb026f2e6ae22530861198130203733c5c9ec4e5cca3a4037f5a8db4", size = 112673, upload-time = "2026-07-24T19:31:48.606Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ad/bf/ef5de9b55523bc2141d072fbe6614627088e3e6f97b47850216e99de6a1c/boto3-1.43.67.tar.gz", hash = "sha256:75fe983b70d39cfdc274dc51f9bb02b8a0a104bdad4fa073c1af85a35e707c91", size = 112665, upload-time = "2026-08-07T19:30:20.418Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/57/3a960c9f581c00f2a591901b46e035ff79ab3956d16607f12306b3b8d483/boto3-1.43.56-py3-none-any.whl", hash = "sha256:feb699d4ab241ef5c1b80bb58277be2aaad365cd4b672d7817e0bc59ee45131b", size = 140026, upload-time = "2026-07-24T19:31:47.155Z" },
+    { url = "https://files.pythonhosted.org/packages/77/0f/b41f8968452dc6bf3b83f15f5e9f76a27fd93e246906aeb2e0555f494375/boto3-1.43.67-py3-none-any.whl", hash = "sha256:082cf9df068168cb44028a1703822374c1eb7e48fa49470d7e8a76f0c977d0bc", size = 140025, upload-time = "2026-08-07T19:30:18.49Z" },
 ]
 
 [[package]]
 name = "botocore"
-version = "1.43.56"
+version = "1.43.67"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jmespath" },
     { name = "python-dateutil" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/cc/7f84a5d3071fe878380e9f610ab36ca87b8cbbc4aa81ba2727f90e1f3ea3/botocore-1.43.56.tar.gz", hash = "sha256:6c01f85f0ff9863076f4c761e74ee3aa96c5ccc1ad09fc1efd62ef8f2d22bf57", size = 15733117, upload-time = "2026-07-24T19:31:38.125Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/1c/3a75deae60e36bd0ee5c27d040384756b2ea1c90bd7c8c9658335a18b4f5/botocore-1.43.67.tar.gz", hash = "sha256:6fe5cfa0c8676ba809efe505b618ec00f30d1af2d014bf316a7aa4ee86accb20", size = 15889514, upload-time = "2026-08-07T19:30:15.638Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/cd/86fe9e659e9699f62f8dd5ecd8c6725474334b23cab8aa71d82b5f56f1a4/botocore-1.43.56-py3-none-any.whl", hash = "sha256:aafc741f1b10f6fd63253eaf6ea029680c1ff436d87e1b8969d62aefa0c76976", size = 15418773, upload-time = "2026-07-24T19:31:34.758Z" },
+    { url = "https://files.pythonhosted.org/packages/21/be/38af8e96f3d200c9d34eab8e9f69a4468388ed6030ea04ff012974e5af5a/botocore-1.43.67-py3-none-any.whl", hash = "sha256:48ab8e9fac26fbc2a700d57010251003e6a5f731cf74d8540fb796bc8f3fc0ef", size = 15575924, upload-time = "2026-08-07T19:30:12.116Z" },
 ]
 
 [[package]]
@@ -224,10 +224,10 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aws-lambda-powertools", specifier = ">=3.31.1" },
-    { name = "boto3", specifier = ">=1.43.56" },
-    { name = "pulumi", specifier = ">=3.254.0" },
-    { name = "pulumi-aws", specifier = ">=7.39.0" },
-    { name = "pulumi-cloudflare", specifier = ">=6.18.0" },
+    { name = "boto3", specifier = ">=1.43.67" },
+    { name = "pulumi", specifier = ">=3.256.0" },
+    { name = "pulumi-aws", specifier = ">=7.41.0" },
+    { name = "pulumi-cloudflare", specifier = ">=6.19.0" },
     { name = "pulumiverse-time", specifier = ">=0.1.1" },
     { name = "pyawscron", specifier = ">=1.0.7" },
     { name = "pydantic", specifier = ">=2.13.4" },
@@ -402,7 +402,7 @@ wheels = [
 
 [[package]]
 name = "pulumi"
-version = "3.254.0"
+version = "3.256.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "debugpy" },
@@ -418,35 +418,35 @@ dependencies = [
     { name = "semver" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/57/5d/7e2206f72fb8bd455ea57dc1eec649110dd33393e1adffb58e94f5072f8c/pulumi-3.254.0-py3-none-any.whl", hash = "sha256:c54dbc5bea1bbb5b7f2ebc01a4858bd7225e9b7435833f69b2150d74228d92ac", size = 414606, upload-time = "2026-07-23T15:11:53.149Z" },
+    { url = "https://files.pythonhosted.org/packages/22/26/21763ca2838569a6e40638dd9677fd34f36a15f89a8ab763cb2468205fb9/pulumi-3.256.0-py3-none-any.whl", hash = "sha256:ee6f018a628b9cc2b5e70b69e05a51965966a6c6d9e7429d698fc665525aaa58", size = 417217, upload-time = "2026-08-04T19:35:52.75Z" },
 ]
 
 [[package]]
 name = "pulumi-aws"
-version = "7.39.0"
+version = "7.41.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "parver" },
     { name = "pulumi" },
     { name = "semver" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/cc/50/9ac585c87ede44292b0a91becad43aaa96561448d2ac88639b6fc13fa63b/pulumi_aws-7.39.0.tar.gz", hash = "sha256:033b393844633f17ef642c3610211cfab76420c5b87d3299ed3126ad1d3d3212", size = 9293701, upload-time = "2026-07-23T14:05:55.247Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/cb/b8693bbc1c22574534616e3093bca84dbf7f4b4cf1fdc73ac222b65c4e4c/pulumi_aws-7.41.0.tar.gz", hash = "sha256:e42f6eea3aa0223baf6303ebc1619eaa0a828131fe4a482ef10df311dceb6d40", size = 9348010, upload-time = "2026-08-07T15:11:07.38Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ea/ea/9cffa113f2f8d1054626cc74c8f36943af2f4f38e3aee37af3bf7cb9b43f/pulumi_aws-7.39.0-py3-none-any.whl", hash = "sha256:9fcee75a73f08a6ada06e3eb9936fccc105ed75360826702cf259b91ffda7b20", size = 12476335, upload-time = "2026-07-23T14:05:52.812Z" },
+    { url = "https://files.pythonhosted.org/packages/12/fc/55745667dfa73e82106ba8b87e758b49f10a138ec014c7e8261151fc2566/pulumi_aws-7.41.0-py3-none-any.whl", hash = "sha256:3728180f344366c72f7f637cca73627dbf5d1fc0ff0711fcd9f1d9f67d13bcf2", size = 12542216, upload-time = "2026-08-07T15:11:03.207Z" },
 ]
 
 [[package]]
 name = "pulumi-cloudflare"
-version = "6.18.0"
+version = "6.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "parver" },
     { name = "pulumi" },
     { name = "semver" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/34/a3f4ef01354a4a10081bb9ee5de4365dfe3a7a09b4ce77ed54ef8dbfe599/pulumi_cloudflare-6.18.0.tar.gz", hash = "sha256:74754e8cad6df9947d0f6c94ce4a095bf3b414e9750e672d60148365b630239c", size = 1891725, upload-time = "2026-07-16T17:48:33.839Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/ca/e8e6064d4d9f16dd8652dfc64a97610ccc1cbddcad55dbeeb16fb02d1c19/pulumi_cloudflare-6.19.0.tar.gz", hash = "sha256:9b0f40b0047df38a019bcaf90161f5bae14a815eb160f1f4ae9ed0391369f9a5", size = 1912458, upload-time = "2026-08-06T08:06:44.007Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a6/54/363f8afa29f87c87fbd9be4643ed3b938b8726e6596f6ba060a73aa34df2/pulumi_cloudflare-6.18.0-py3-none-any.whl", hash = "sha256:e557d5a2550cb087ed83e66a1099fbdef58093d5d658f9739821f033c1f2e831", size = 2893259, upload-time = "2026-07-16T17:48:32.038Z" },
+    { url = "https://files.pythonhosted.org/packages/82/01/231b3daee229f5fae074e82879f9261d2c42a8cfd2f793d9081eec8fc355/pulumi_cloudflare-6.19.0-py3-none-any.whl", hash = "sha256:4c22d5fd60fb247b02a1eb9af75371a48e9d985a95fd96edaf9d1e7b38b10924", size = 2901901, upload-time = "2026-08-06T08:06:42.232Z" },
 ]
 
 [[package]]

@@ -21,7 +21,7 @@ export namespace LicensesContract {
   ) {}
 
   export class NoSuchLicenseError
-    extends Schema.TaggedErrorClass<NoSuchLicenseError>()(
+    extends Schema.TaggedError<NoSuchLicenseError>()(
       "NoSuchLicenseError",
       { key: Key },
       { httpApiStatus: 422 },
@@ -33,7 +33,7 @@ export namespace LicensesContract {
   }
 
   export class LicenseKeyConflictError
-    extends Schema.TaggedErrorClass<LicenseKeyConflictError>()(
+    extends Schema.TaggedError<LicenseKeyConflictError>()(
       "LicenseKeyConflictError",
       { key: Key },
       { httpApiStatus: 409 },
@@ -45,7 +45,7 @@ export namespace LicensesContract {
   }
 
   export class ExpiredLicenseError
-    extends Schema.TaggedErrorClass<ExpiredLicenseError>()(
+    extends Schema.TaggedError<ExpiredLicenseError>()(
       "ExpiredLicenseError",
       { expiredAt: Schema.DateTimeUtc },
       { httpApiStatus: 403 },

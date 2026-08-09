@@ -24,7 +24,7 @@ import { Constants } from "../utils/constants";
 
 export namespace OauthContract {
   export class OpenauthError
-    extends Schema.TaggedErrorClass<OpenauthError>()(
+    extends Schema.TaggedError<OpenauthError>()(
       "OpenauthError",
       { cause: Schema.Defect() },
       { httpApiStatus: 500 },
@@ -36,7 +36,7 @@ export namespace OauthContract {
   }
 
   export class AccessDeniedError
-    extends Schema.TaggedErrorClass<AccessDeniedError>()("OauthAccessDeniedError", {
+    extends Schema.TaggedError<AccessDeniedError>()("OauthAccessDeniedError", {
       reason: Schema.Union([
         IdentityProvidersContract.NotFoundError,
         UsersContract.NotFoundError,
@@ -51,7 +51,7 @@ export namespace OauthContract {
   }
 
   export class InvalidClientError
-    extends Schema.TaggedErrorClass<InvalidClientError>()("InvalidClientError", {
+    extends Schema.TaggedError<InvalidClientError>()("InvalidClientError", {
       id: ClientsContract.Table.Model.fields.id,
       reason: Schema.Union([CryptoContract.InvalidSecretError, ClientsContract.NotFoundError]).pipe(
         Schema.toTaggedUnion("_tag"),
@@ -65,7 +65,7 @@ export namespace OauthContract {
   }
 
   export class InvalidScopeError
-    extends Schema.TaggedErrorClass<InvalidScopeError>()("InvalidScopeError", {
+    extends Schema.TaggedError<InvalidScopeError>()("InvalidScopeError", {
       scopes: Schema.String.pipe(Schema.Array),
     })
     implements HttpServerRespondable.Respondable
@@ -81,7 +81,7 @@ export namespace OauthContract {
   }
 
   export class InvalidAuthorizationCodeError
-    extends Schema.TaggedErrorClass<InvalidAuthorizationCodeError>()(
+    extends Schema.TaggedError<InvalidAuthorizationCodeError>()(
       "InvalidAuthorizationCodeError",
       { cause: Schema.instanceOf(OpenauthInvalidAuthorizationCodeError) },
       { httpApiStatus: 400 },
@@ -93,7 +93,7 @@ export namespace OauthContract {
   }
 
   export class InvalidAccessTokenError
-    extends Schema.TaggedErrorClass<InvalidAccessTokenError>()(
+    extends Schema.TaggedError<InvalidAccessTokenError>()(
       "InvalidAccessTokenError",
       { cause: Schema.instanceOf(OpenauthInvalidAccessTokenError) },
       { httpApiStatus: 401 },
@@ -105,7 +105,7 @@ export namespace OauthContract {
   }
 
   export class InvalidRefreshTokenError
-    extends Schema.TaggedErrorClass<InvalidRefreshTokenError>()(
+    extends Schema.TaggedError<InvalidRefreshTokenError>()(
       "InvalidRefreshTokenError",
       { cause: Schema.instanceOf(OpenauthInvalidRefreshTokenError) },
       { httpApiStatus: 401 },
@@ -116,12 +116,12 @@ export namespace OauthContract {
       HttpServerResponse.schemaJson(InvalidRefreshTokenError)(this, { status: 401 });
   }
 
-  export class TokensError extends Schema.TaggedErrorClass<TokensError>()("TokensError", {
+  export class TokensError extends Schema.TaggedError<TokensError>()("TokensError", {
     cause: Schema.Defect(),
   }) {}
 
   export class InvalidAudienceError
-    extends Schema.TaggedErrorClass<InvalidAudienceError>()("InvalidAudienceError", {
+    extends Schema.TaggedError<InvalidAudienceError>()("InvalidAudienceError", {
       expected: IdentityProvidersContract.Audience,
       received: IdentityProvidersContract.Audience,
     })
@@ -194,7 +194,7 @@ export namespace OauthContract {
     ),
   }) {}
 
-  export class AuthorizeError extends Schema.TaggedErrorClass<AuthorizeError>()(
+  export class AuthorizeError extends Schema.TaggedError<AuthorizeError>()(
     "AuthorizeError",
     { cause: Schema.Defect() },
     { httpApiStatus: 500 },
@@ -209,7 +209,7 @@ export namespace OauthContract {
   }) {}
 
   export class ExchangeError
-    extends Schema.TaggedErrorClass<ExchangeError>()(
+    extends Schema.TaggedError<ExchangeError>()(
       "ExchangeError",
       { cause: Schema.Defect() },
       { httpApiStatus: 500 },
@@ -224,7 +224,7 @@ export namespace OauthContract {
     tokens: Tokens,
   }) {}
 
-  export class RefreshError extends Schema.TaggedErrorClass<RefreshError>()("RefreshError", {
+  export class RefreshError extends Schema.TaggedError<RefreshError>()("RefreshError", {
     cause: Schema.Defect(),
   }) {}
 
@@ -233,7 +233,7 @@ export namespace OauthContract {
   }) {}
 
   export class VerifyError
-    extends Schema.TaggedErrorClass<VerifyError>()(
+    extends Schema.TaggedError<VerifyError>()(
       "VerifyError",
       { cause: Schema.Defect() },
       { httpApiStatus: 500 },
@@ -249,7 +249,7 @@ export namespace OauthContract {
     secret: CryptoContract.Secret,
   }) {}
 
-  export class ClientCredentialsError extends Schema.TaggedErrorClass<ClientCredentialsError>()(
+  export class ClientCredentialsError extends Schema.TaggedError<ClientCredentialsError>()(
     "ClientCredentialsError",
     { cause: Schema.Defect() },
   ) {}
@@ -289,7 +289,7 @@ export namespace OauthContract {
   }).pipe(Schema.encodeKeys({ accessToken: "authorization" }));
 
   export class InvalidCookiesError
-    extends Schema.TaggedErrorClass<InvalidCookiesError>()("InvalidCookiesError", {
+    extends Schema.TaggedError<InvalidCookiesError>()("InvalidCookiesError", {
       cause: Schema.instanceOf(Schema.SchemaError),
     })
     implements HttpServerRespondable.Respondable

@@ -23,9 +23,8 @@
     "remeda": "^2.39.0",
     "sst": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "^0.2.6"
+    "vite-plus": "^0.2.8"
   },
-  "packageManager": "pnpm@11.19.0",
   "browserslist": [
     "chrome >= 123",
     "edge >= 123",
@@ -35,5 +34,6 @@
     "and_chr >= 123",
     "and_ff >= 120",
     "android >= 123"
-  ]
+  ],
+  "packageManager": "pnpm@11.20.0"
 }

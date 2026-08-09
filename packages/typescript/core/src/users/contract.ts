@@ -120,7 +120,7 @@ export namespace UsersContract {
     Output: Table.Dto,
   });
 
-  export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()("NotFoundError", {
+  export class NotFoundError extends Schema.TaggedError<NotFoundError>()("NotFoundError", {
     id: Schema.TaggedUnion({
       external: { value: Table.Model.fields.externalId },
       internal: { value: Table.Model.fields.id },

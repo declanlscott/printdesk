@@ -27,7 +27,7 @@ export class PublishRequest extends Request.Class<
   AwsCredentialIdentityProvider
 > {}
 
-export class PublishError extends Schema.TaggedErrorClass<PublishError>()("PublishError", {
+export class PublishError extends Schema.TaggedError<PublishError>()("PublishError", {
   cause: Schema.Defect(),
 }) {}
 

@@ -4,7 +4,7 @@ import * as Schema from "effect/Schema";
 
 import type { ServiceShape } from "./layer";
 
-export class PastMutationError extends Schema.TaggedErrorClass<PastMutationError>()(
+export class PastMutationError extends Schema.TaggedError<PastMutationError>()(
   "PastMutationError",
   { mutationId: Schema.Int },
 ) {

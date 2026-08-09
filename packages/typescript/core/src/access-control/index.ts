@@ -236,7 +236,7 @@ export namespace AccessControl {
   export type Resource = typeof Resource.Type;
 
   export class AccessDeniedError
-    extends Schema.TaggedErrorClass<AccessDeniedError>()(
+    extends Schema.TaggedError<AccessDeniedError>()(
       "AccessDeniedError",
       {
         actor: ActorsContract.Actor.fields.properties,

@@ -35,8 +35,7 @@ export namespace ClientsContract {
     ["secretHash", "callbackId"],
   ) {}
 
-  export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
-    "ClientNotFoundError",
-    { id: Table.Model.fields.id },
-  ) {}
+  export class NotFoundError extends Schema.TaggedError<NotFoundError>()("ClientNotFoundError", {
+    id: Table.Model.fields.id,
+  }) {}
 }

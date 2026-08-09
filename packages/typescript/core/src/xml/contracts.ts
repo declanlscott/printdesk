@@ -4,11 +4,11 @@ import * as SchemaGetter from "effect/SchemaGetter";
 import { pluck, StringFromUnknown } from "../utils";
 
 export namespace XmlContract {
-  export class BuilderError extends Schema.TaggedErrorClass<BuilderError>()("BuilderError", {
+  export class BuilderError extends Schema.TaggedError<BuilderError>()("BuilderError", {
     cause: Schema.Defect(),
   }) {}
 
-  export class ParserError extends Schema.TaggedErrorClass<ParserError>()("ParserError", {
+  export class ParserError extends Schema.TaggedError<ParserError>()("ParserError", {
     cause: Schema.Defect(),
   }) {}
 }
@@ -56,7 +56,7 @@ export namespace XmlRpcContract {
       pluck("methodResponse"),
     );
 
-  export class FaultError extends Schema.TaggedErrorClass<FaultError>()("FaultError", {
+  export class FaultError extends Schema.TaggedError<FaultError>()("FaultError", {
     string: Schema.String,
     code: Schema.Int,
   }) {}

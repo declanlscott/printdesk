@@ -40,7 +40,7 @@ export const MigratorConfig = Context.Reference<MigrationConfig>(
   },
 );
 
-export class ReadMigrationsError extends Schema.TaggedErrorClass<ReadMigrationsError>()(
+export class ReadMigrationsError extends Schema.TaggedError<ReadMigrationsError>()(
   "ReadMigrationsError",
   { cause: Schema.Defect() },
 ) {}

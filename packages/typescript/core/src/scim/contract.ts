@@ -4,7 +4,6 @@ import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
 import * as FileSystem from "effect/FileSystem";
-import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
@@ -457,7 +456,6 @@ export namespace ScimContract {
               const members = yield* Effect.all(
                 Array.map(groupMemberships, (membership) =>
                   EntityId.makeEffect(membership.userId).pipe(
-                    Effect.mapError(Struct.get("issue")),
                     Effect.flatMap(locator.user),
                     Effect.map(Struct.get("href")),
                     Effect.map(($ref) => ({ value: membership.userId, $ref })),
@@ -539,7 +537,6 @@ export namespace ScimContract {
               const members = yield* Effect.all(
                 Array.map(groupMemberships, (membership) =>
                   EntityId.makeEffect(membership.userId).pipe(
-                    Effect.mapError(Struct.get("issue")),
                     Effect.flatMap(locator.user),
                     Effect.map(Struct.get("href")),
                     Effect.map(($ref) => ({ value: membership.userId, $ref })),
@@ -600,9 +597,10 @@ export namespace ScimContract {
                   Effect.filterOrFail(
                     (userId): userId is EntityId => !("bulkId" in userId),
                     (userId) =>
-                      new SchemaIssue.InvalidValue(Option.some(userId), {
-                        message: "bulkId is not supported in non-provisional groups",
-                      }),
+                      new SchemaIssue.InvalidValue(
+                        { message: "bulkId is not supported in non-provisional groups" },
+                        userId,
+                      ),
                   ),
                   Effect.flatMap((userId) =>
                     locator.user(userId).pipe(
@@ -651,18 +649,10 @@ export namespace ScimContract {
                   () => new SchemaIssue.MissingKey({ messageMissingKey: "missing group id" }),
                 ),
                 Effect.flatMap(EntityId.makeEffect),
-                Effect.catchTag("SchemaError", (e) =>
-                  Effect.fail(
-                    new SchemaIssue.InvalidValue(Option.some(group.id), {
-                      message: e.message,
-                    }),
-                  ),
-                ),
               );
               const members = yield* Effect.all(
                 Array.map(groupMemberships, (membership) =>
                   EntityId.makeEffect(membership.userId).pipe(
-                    Effect.mapError(Struct.get("issue")),
                     Effect.flatMap(locator.user),
                     Effect.map(Struct.get("href")),
                     Effect.map(($ref) => ({ value: membership.userId, $ref })),
@@ -846,11 +836,6 @@ export namespace ScimContract {
                   () => new SchemaIssue.MissingKey({ messageMissingKey: "missing user id" }),
                 ),
                 Effect.flatMap(EntityId.makeEffect),
-                Effect.catchTag("SchemaError", (e) =>
-                  Effect.fail(
-                    new SchemaIssue.InvalidValue(Option.some(user.id), { message: e.message }),
-                  ),
-                ),
               );
               const role = yield* Effect.succeed(user.role).pipe(
                 Effect.filterOrFail(
@@ -976,7 +961,7 @@ export namespace ScimContract {
 
   export const v2ErrorUri = "urn:ietf:params:scim:api:messages:2.0:Error";
   export class V2Error
-    extends Schema.ErrorClass<V2Error>("V2Error")({
+    extends Schema.Error<V2Error>("V2Error")({
       _tag: Schema.tagDefaultOmit("ScimV2Error"),
       schemas: Schema.Tuple([Schema.Literal(v2ErrorUri)]).pipe(
         Schema.mutable,

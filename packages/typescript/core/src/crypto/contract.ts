@@ -11,7 +11,7 @@ export namespace CryptoContract {
   );
   export type Secret = typeof Secret.Type;
 
-  export class InvalidSecretError extends Schema.TaggedErrorClass<InvalidSecretError>()(
+  export class InvalidSecretError extends Schema.TaggedError<InvalidSecretError>()(
     "InvalidSecretError",
     {},
   ) {}

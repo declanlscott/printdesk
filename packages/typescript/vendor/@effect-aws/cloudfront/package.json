@@ -7,7 +7,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@aws-sdk/cloudfront-signer": "^3.1095.0",
+    "@aws-sdk/cloudfront-signer": "^3.1098.0",
     "effect": "catalog:"
   },
   "devDependencies": {

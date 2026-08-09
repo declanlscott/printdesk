@@ -14,7 +14,7 @@ import type { AccessToken } from "@azure/identity";
 import type { IdentityProvidersContract } from "./contract";
 
 export namespace EntraId {
-  export class AuthProviderError extends Schema.TaggedErrorClass<AuthProviderError>()(
+  export class AuthProviderError extends Schema.TaggedError<AuthProviderError>()(
     "EntraIdAuthProviderError",
     { cause: Schema.Defect() },
   ) {}

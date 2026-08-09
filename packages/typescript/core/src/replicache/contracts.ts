@@ -26,7 +26,7 @@ export namespace ReplicacheContract {
     "ClientStateNotFoundResponse",
   )({ error: Schema.tag("ClientStateNotFound") }) {}
 
-  export class ClientStateNotFoundError extends Schema.TaggedErrorClass<ClientStateNotFoundError>()(
+  export class ClientStateNotFoundError extends Schema.TaggedError<ClientStateNotFoundError>()(
     "ClientStateNotFoundError",
     {
       response: ClientStateNotFoundResponse.pipe(
@@ -42,7 +42,7 @@ export namespace ReplicacheContract {
     versionType: Schema.Literals(["push", "pull", "schema"]).pipe(Schema.optional),
   }) {}
 
-  export class VersionNotSupportedError extends Schema.TaggedErrorClass<VersionNotSupportedError>()(
+  export class VersionNotSupportedError extends Schema.TaggedError<VersionNotSupportedError>()(
     "VersionNotSupportedError",
     { response: VersionNotSupportedResponse },
   ) {
@@ -260,7 +260,7 @@ export namespace ReplicachePusherContract {
   export type Mutation = typeof Mutation.Type;
 
   export class FutureMutationError
-    extends Schema.TaggedErrorClass<FutureMutationError>()(
+    extends Schema.TaggedError<FutureMutationError>()(
       "FutureMutationError",
       { mutationId: Schema.Int },
       { httpApiStatus: 400 },

@@ -114,7 +114,7 @@ export namespace ActorsContract {
   }
 
   export class ForbiddenActorError
-    extends Schema.TaggedErrorClass<ForbiddenActorError>()(
+    extends Schema.TaggedError<ForbiddenActorError>()(
       "ForbiddenActorError",
       {
         actor: Schema.Literals(

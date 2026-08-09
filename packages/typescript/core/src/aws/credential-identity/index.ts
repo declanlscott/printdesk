@@ -11,7 +11,7 @@ import type {
 } from "@smithy/types";
 
 export class AwsCredentialIdentityProviderError
-  extends Schema.TaggedErrorClass<AwsCredentialIdentityProviderError>()(
+  extends Schema.TaggedError<AwsCredentialIdentityProviderError>()(
     "AwsCredentialIdentityProviderError",
     { cause: Schema.Defect() },
     { httpApiStatus: 500 },

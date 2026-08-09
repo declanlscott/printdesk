@@ -28,7 +28,7 @@ import { runPromise } from "../lib/runtime";
 import type { APIGatewayProxyEventV2 } from "@effect-aws/lambda";
 import type { Context } from "aws-lambda";
 
-export class IssuerError extends Schema.TaggedErrorClass<IssuerError>()("IssuerError", {
+export class IssuerError extends Schema.Error<IssuerError>("IssuerError")({
   cause: Schema.Defect(),
 }) {}
 

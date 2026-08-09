@@ -15,7 +15,7 @@ export class ReadTransaction extends Context.Service<ReadTransaction, Replicache
   "@printdesk/core/database/client/ReadTransaction",
 ) {}
 
-export class ReadTransactionError extends Schema.TaggedErrorClass<ReadTransactionError>()(
+export class ReadTransactionError extends Schema.TaggedError<ReadTransactionError>()(
   "ReadTransactionError",
   { cause: Schema.Defect() },
 ) {}
@@ -26,7 +26,7 @@ export class WriteTransaction extends Context.Service<
   ReplicacheWriteTransaction
 >()("@printdesk/core/database/client/WriteTransaction") {}
 
-export class WriteTransactionError extends Schema.TaggedErrorClass<WriteTransactionError>()(
+export class WriteTransactionError extends Schema.TaggedError<WriteTransactionError>()(
   "WriteTransactionError",
   { cause: Schema.Defect() },
 ) {}

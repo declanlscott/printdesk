@@ -90,7 +90,7 @@ export namespace TenantsContract {
   ) {}
 
   export class TenantSlugConflictError
-    extends Schema.TaggedErrorClass<TenantSlugConflictError>()(
+    extends Schema.TaggedError<TenantSlugConflictError>()(
       "TenantSlugConflictError",
       { slug: Slug },
       { httpApiStatus: 409 },
@@ -102,7 +102,7 @@ export namespace TenantsContract {
   }
 
   export class InactiveTenantError
-    extends Schema.TaggedErrorClass<InactiveTenantError>()(
+    extends Schema.TaggedError<InactiveTenantError>()(
       "InactiveTenantError",
       { status: Status },
       { httpApiStatus: 403 },

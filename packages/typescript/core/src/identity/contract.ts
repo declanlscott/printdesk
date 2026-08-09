@@ -122,13 +122,13 @@ export namespace IdentityProvidersContract {
     [],
   ) {}
 
-  export class NotFoundError extends Schema.TaggedErrorClass<NotFoundError>()(
+  export class NotFoundError extends Schema.TaggedError<NotFoundError>()(
     "IdentityProviderNotFoundError",
     Table.Dto.mapFields(Struct.pick(["kind", "externalId"])),
   ) {}
 
   export class NotImplementedError
-    extends Schema.TaggedErrorClass<NotImplementedError>()(
+    extends Schema.TaggedError<NotImplementedError>()(
       "IdentityProviderNotImplementedError",
       { kind: Kind },
       { httpApiStatus: 501 },

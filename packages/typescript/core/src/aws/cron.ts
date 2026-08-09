@@ -5,7 +5,7 @@ import * as Schema from "effect/Schema";
 import { NonEmptyString } from "../utils";
 
 export namespace AwsCron {
-  export class ParseExpressionError extends Schema.TaggedErrorClass<ParseExpressionError>()(
+  export class ParseExpressionError extends Schema.TaggedError<ParseExpressionError>()(
     "AwsCronParseExpressionError",
     { cause: Schema.Defect() },
   ) {}

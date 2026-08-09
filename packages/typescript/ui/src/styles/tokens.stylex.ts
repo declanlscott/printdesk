@@ -64,19 +64,10 @@ export const fontSizes = stylex.defineConsts({
   "9xl": "8rem",
 });
 
-export const lineHeights = stylex.defineConsts({
-  xs: "calc(1 / 0.75)",
-  sm: "calc(1.25 / 0.875)",
-  base: "calc(1.5 / 1)",
-  lg: "calc(1.75 / 1.125)",
-  "2xl": "calc(1.75 / 1.25)",
-  "3xl": "calc(2.25 / 1.875)",
-  "4xl": "calc(2.5 / 2.25)",
-});
-
 const space = <TMultiplier extends number>(multiplier: TMultiplier) =>
   `calc(var(--spacing) * ${multiplier})` as const;
 export const spacing = stylex.defineConsts({
+  px: "1px",
   0: space(0),
   0.5: space(0.5),
   1: space(1),
@@ -111,6 +102,25 @@ export const spacing = stylex.defineConsts({
   72: space(72),
   80: space(80),
   96: space(96),
+} as const);
+
+export const leading = stylex.defineConsts({
+  ...spacing,
+
+  none: 1,
+  tight: 1.25,
+  snug: 1.375,
+  normal: 1.5,
+  relaxed: 1.625,
+  loose: 2,
+
+  xs: "calc(1 / 0.75)",
+  sm: "calc(1.25 / 0.875)",
+  base: "calc(1.5 / 1)",
+  lg: "calc(1.75 / 1.125)",
+  "2xl": "calc(1.75 / 1.25)",
+  "3xl": "calc(2.25 / 1.875)",
+  "4xl": "calc(2.5 / 2.25)",
 } as const);
 
 export const timing = stylex.defineConsts({

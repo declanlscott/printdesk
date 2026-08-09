@@ -1,8 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 
-import { colors, fontSizes, lineHeights, radii, spacing, timing } from "./tokens.stylex";
+import { colors, fontSizes, leading, radii, spacing, timing } from "./tokens.stylex";
 
-import type { StyleXComponentProps } from "./utils";
+import type { StyleXComponentProps } from "./types";
 
 export const buttonStyles = stylex.create({
   base: {
@@ -24,7 +24,7 @@ export const buttonStyles = stylex.create({
     },
     backgroundClip: "padding-box",
     fontSize: fontSizes.sm,
-    lineHeight: lineHeights.sm,
+    lineHeight: leading.sm,
     fontWeight: "500",
     whiteSpace: "nowrap",
     transitionProperty: "all",
@@ -130,7 +130,7 @@ export const buttonSizes = stylex.create({
     },
     paddingInline: spacing[2],
     fontSize: fontSizes.xs,
-    lineHeight: lineHeights.xs,
+    lineHeight: leading.xs,
     paddingRight: {
       default: null,
       [stylex.when.descendant('[data-icon="inline-end"]')]: spacing[1.5],
@@ -212,6 +212,11 @@ export const buttonSizes = stylex.create({
 export type ButtonSize = keyof typeof buttonSizes;
 
 export interface ButtonStyleProps extends StyleXComponentProps<"button"> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+}
+
+export interface LinkButtonStyleProps extends StyleXComponentProps<"a"> {
   variant?: ButtonVariant;
   size?: ButtonSize;
 }

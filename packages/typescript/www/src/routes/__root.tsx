@@ -1,4 +1,4 @@
-import styles from "@printdesk/ui/styles.css?url";
+import styles from "@printdesk/ui/styles/index.css?url";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";

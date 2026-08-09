@@ -2,11 +2,6 @@
   "name": "@printdesk/ui",
   "private": true,
   "type": "module",
-  "exports": {
-    "./*": "./src/components/*.tsx",
-    "./styles/*": "./src/styles/*.ts",
-    "./styles.css": "./src/styles/index.css"
-  },
   "dependencies": {
     "@stylexjs/atoms": "catalog:",
     "@stylexjs/stylex": "catalog:",

@@ -8,7 +8,9 @@
     "strictNullChecks": true,
 
     "paths": {
-      "@printdesk/core/*": ["../core/src/*"]
+      "@printdesk/core/*": ["../core/src/*"],
+      "@printdesk/ui/*": ["../ui/src/components/*"],
+      "@printdesk/ui/styles/*": ["../ui/src/styles/*"]
     },
 
     "plugins": [{ "name": "@effect/language-service" }]

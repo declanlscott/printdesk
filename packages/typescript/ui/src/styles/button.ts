@@ -4,6 +4,11 @@ import { colors, fontSizes, leading, radii, spacing, timing } from "./tokens.sty
 
 import type { StyleXComponentProps } from "./types";
 
+const ARIA_EXPANDED = ':is([aria-expanded="true"])';
+const DISABLED = ":disabled";
+const FOCUS_VISIBLE = ":focus-visible";
+const HOVER = ":hover";
+
 export const buttonStyles = stylex.create({
   base: {
     display: "inline-flex",
@@ -15,12 +20,12 @@ export const buttonStyles = stylex.create({
     borderStyle: "solid",
     borderColor: {
       default: "transparent",
-      ":focus-visible": colors.ring,
-      ':is([aria-expanded="true"])': colors.destructive,
+      [FOCUS_VISIBLE]: colors.ring,
+      [ARIA_EXPANDED]: colors.destructive,
     },
     boxShadow: {
       default: null,
-      ":focus-visible": `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+      [FOCUS_VISIBLE]: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
     },
     backgroundClip: "padding-box",
     fontSize: fontSizes.sm,
@@ -34,7 +39,7 @@ export const buttonStyles = stylex.create({
     userSelect: "none",
     opacity: {
       default: null,
-      ":disabled": 0.5,
+      [DISABLED]: 0.5,
     },
     translate: {
       default: null,
@@ -42,11 +47,11 @@ export const buttonStyles = stylex.create({
     },
     pointerEvents: {
       default: null,
-      ":disabled": "none",
+      [DISABLED]: "none",
     },
     cursor: {
       default: "pointer",
-      ":disabled": "not-allowed",
+      [DISABLED]: "not-allowed",
     },
   },
 });
@@ -55,7 +60,7 @@ export const buttonVariants = stylex.create({
   default: {
     backgroundColor: {
       default: colors.primary,
-      ":hover": `color-mix(in oklab, ${colors.primary} 80%, transparent)`,
+      [HOVER]: `color-mix(in oklab, ${colors.primary} 80%, transparent)`,
     },
     color: colors.primaryForeground,
   },
@@ -63,50 +68,50 @@ export const buttonVariants = stylex.create({
     borderColor: `light-dark(${colors.border}, ${colors.input})`,
     backgroundColor: {
       default: `light-dark(${colors.background}, color-mix(in oklab, ${colors.input} 30%, transparent))`,
-      ":hover": `light-dark(${colors.muted}, color-mix(in oklab, ${colors.input} 50%, transparent))`,
-      ':is([aria-expanded="true"])': colors.muted,
+      [HOVER]: `light-dark(${colors.muted}, color-mix(in oklab, ${colors.input} 50%, transparent))`,
+      [ARIA_EXPANDED]: colors.muted,
     },
     color: {
       default: null,
-      ":hover": colors.foreground,
-      ':is([aria-expanded="true"])': colors.foreground,
+      [HOVER]: colors.foreground,
+      [ARIA_EXPANDED]: colors.foreground,
     },
   },
   secondary: {
     backgroundColor: {
       default: colors.secondary,
-      ":hover": `color-mix(in oklch, ${colors.secondary}, ${colors.foreground} 5%)`,
-      ':is([aria-expanded="true"])': colors.secondary,
+      [HOVER]: `color-mix(in oklch, ${colors.secondary}, ${colors.foreground} 5%)`,
+      [ARIA_EXPANDED]: colors.secondary,
     },
     color: {
       default: colors.secondaryForeground,
-      ':is([aria-expanded="true"])': colors.secondaryForeground,
+      [ARIA_EXPANDED]: colors.secondaryForeground,
     },
   },
   ghost: {
     backgroundColor: {
       default: null,
-      ":hover": `light-dark(${colors.muted}, color-mix(in oklab, ${colors.muted} 50%, transparent))`,
+      [HOVER]: `light-dark(${colors.muted}, color-mix(in oklab, ${colors.muted} 50%, transparent))`,
     },
     color: {
       default: null,
-      ":hover": colors.foreground,
-      ':is([aria-expanded="true"])': colors.foreground,
+      [HOVER]: colors.foreground,
+      [ARIA_EXPANDED]: colors.foreground,
     },
   },
   destructive: {
     backgroundColor: {
       default: `light-dark(color-mix(in oklab, ${colors.destructive} 10%, transparent), color-mix(in oklab, ${colors.destructive} 20%, transparent))`,
-      ":hover": `light-dark(color-mix(in oklab, ${colors.destructive} 20%, transparent), color-mix(in oklab, ${colors.destructive} 30%, transparent))`,
+      [HOVER]: `light-dark(color-mix(in oklab, ${colors.destructive} 20%, transparent), color-mix(in oklab, ${colors.destructive} 30%, transparent))`,
     },
     color: colors.destructive,
     borderColor: {
       default: null,
-      ":focus-visible": `color-mix(in oklab, ${colors.destructive} 40%, transparent)`,
+      [FOCUS_VISIBLE]: `color-mix(in oklab, ${colors.destructive} 40%, transparent)`,
     },
     boxShadow: {
       default: null,
-      ":focus-visible": `light-dark(0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent), 0 0 0 3px color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
+      [FOCUS_VISIBLE]: `light-dark(0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent), 0 0 0 3px color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
     },
   },
   link: {
@@ -114,7 +119,7 @@ export const buttonVariants = stylex.create({
     textUnderlineOffset: "4px",
     textDecorationLine: {
       default: "none",
-      ":hover": "underline",
+      [HOVER]: "underline",
     },
   },
 });

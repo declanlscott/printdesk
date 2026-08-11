@@ -4,7 +4,7 @@ import { colors, fontSizes, radii, spacing, timing } from "./tokens.stylex";
 
 import type { StyleXComponentProps } from "./types";
 
-const ARIA_INVALID = ':is([aria-invalid="true"])';
+const ARIA_INVALID = '[aria-invalid="true"]';
 const DISABLED = ":disabled";
 const FILE = "::file-selector-button";
 const FOCUS_VISIBLE = ":focus-visible";

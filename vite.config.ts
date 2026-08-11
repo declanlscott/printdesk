@@ -1,3 +1,4 @@
+import { recommended } from "@effect/tsgo/oxlint-presets";
 import { defineConfig } from "vite-plus";
 
 export default defineConfig({
@@ -28,6 +29,11 @@ export default defineConfig({
     ],
   },
   lint: {
+    extends: [recommended],
+    options: {
+      typeAware: true,
+      typeCheck: true,
+    },
     plugins: ["eslint", "unicorn", "typescript", "react", "react-perf"],
     jsPlugins: [
       "@tanstack/eslint-plugin-router",

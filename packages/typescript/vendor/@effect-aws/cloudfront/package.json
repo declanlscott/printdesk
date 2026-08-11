@@ -11,6 +11,6 @@
     "effect": "catalog:"
   },
   "devDependencies": {
-    "@effect/language-service": "catalog:"
+    "@effect/tsgo": "catalog:"
   }
 }

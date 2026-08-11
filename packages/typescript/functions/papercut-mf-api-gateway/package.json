@@ -13,7 +13,7 @@
     "hono": "catalog:"
   },
   "devDependencies": {
-    "@effect/language-service": "catalog:",
+    "@effect/tsgo": "catalog:",
     "wrangler": "catalog:"
   }
 }

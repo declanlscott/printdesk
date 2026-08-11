@@ -1,12 +1,4 @@
 {
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript", // Enable .ts
-    "typescriptreact" // Enable .tsx
-  ],
-  "tailwindCSS.experimental.classRegex": [["clsx\\(([^)]*)\\)", "(?:'|\"|`)([^']*)(?:'|\"|`)"]],
-  "typescript.tsdk": "node_modules/typescript/lib",
   "files.watcherExclude": {
     "**/routeTree.gen.ts": true
   },
@@ -16,5 +8,8 @@
   "files.readonlyInclude": {
     "**/routeTree.gen.ts": true
   },
-  "typescript.experimental.useTsgo": false
+  "js/ts.tsdk.additionalLocations": ["./node_modules/typescript/bin"],
+  "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+  "js/ts.tsdk.path": "./node_modules/typescript/bin",
+  "js/ts.experimental.useTsgo": true
 }

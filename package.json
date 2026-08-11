@@ -6,11 +6,13 @@
     "dev": "sst dev",
     "sso": "aws sso login --profile dev",
     "sso:prod": "aws sso login --profile prod",
-    "sst": "sst"
+    "sst": "sst",
+    "prepare": "effect-tsgo patch --typescript --oxlint"
   },
   "devDependencies": {
     "@aws-crypto/sha256-js": "catalog:",
     "@cloudflare/workers-types": "catalog:",
+    "@effect/tsgo": "catalog:",
     "@openauthjs/openauth": "workspace:@printdesk/openauth@*",
     "@printdesk/core": "workspace:*",
     "@tanstack/eslint-plugin-router": "^1.162.0",

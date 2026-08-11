@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext"],
@@ -34,6 +35,11 @@
       "@printdesk/core/*": ["../../core/src/*"]
     },
 
-    "plugins": [{ "name": "@effect/language-service" }]
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnostics": false
+      }
+    ]
   }
 }

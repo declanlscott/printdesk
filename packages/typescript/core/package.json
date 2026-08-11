@@ -42,7 +42,7 @@
     "sst": "catalog:"
   },
   "devDependencies": {
-    "@effect/language-service": "catalog:",
+    "@effect/tsgo": "catalog:",
     "@smithy/types": "catalog:",
     "@standard-schema/spec": "^1.1.0",
     "@types/node": "catalog:",

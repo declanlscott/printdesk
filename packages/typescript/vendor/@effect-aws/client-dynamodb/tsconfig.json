@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
   "compilerOptions": {
     // Environment setup & latest features
     "lib": ["ESNext"],
@@ -30,6 +31,11 @@
       "@effect-aws/commons/*": ["../commons/src/*"]
     },
 
-    "plugins": [{ "name": "@effect/language-service" }]
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnostics": false
+      }
+    ]
   }
 }

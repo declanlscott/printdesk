@@ -15,11 +15,11 @@ catalog:
   "@cloudflare/vite-plugin": ^1.51.1
   "@cloudflare/workers-types": ^4.20260702.1
   "@effect/atom-react": 4.0.0-beta.107
-  "@effect/language-service": ^0.87.2
   "@effect/platform-browser": 4.0.0-beta.107
   "@effect/platform-node": 4.0.0-beta.107
   "@effect/platform-node-shared": 4.0.0-beta.107
   "@effect/sql-pg": 4.0.0-beta.107
+  "@effect/tsgo": ^0.36.4
   "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
   "@rolldown/plugin-babel": ^0.2.3
@@ -53,9 +53,17 @@ catalog:
   replicache: ^15.3.0
   sst: ^4.17.1
   tailwindcss: ^4.3.3
-  typescript: ^6.0.3
+  typescript: ^7.0.2
   vite: ^8.2.1
   wrangler: ^4.120.0
 
 minimumReleaseAgeExclude:
   - "@typeonce/effect-machine@0.4.0"
+  - "@effect/tsgo-darwin-arm64@0.36.4"
+  - "@effect/tsgo-darwin-x64@0.36.4"
+  - "@effect/tsgo-linux-arm64@0.36.4"
+  - "@effect/tsgo-linux-arm@0.36.4"
+  - "@effect/tsgo-linux-x64@0.36.4"
+  - "@effect/tsgo-win32-arm64@0.36.4"
+  - "@effect/tsgo-win32-x64@0.36.4"
+  - "@effect/tsgo@0.36.4"

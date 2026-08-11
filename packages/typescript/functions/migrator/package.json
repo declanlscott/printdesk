@@ -10,6 +10,7 @@
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@effect/tsgo": "catalog:",
     "@types/node": "catalog:"
   }
 }

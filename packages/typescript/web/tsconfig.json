@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
   "compilerOptions": {
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",
@@ -13,6 +14,11 @@
       "@printdesk/ui/styles/*": ["../ui/src/styles/*"]
     },
 
-    "plugins": [{ "name": "@effect/language-service" }]
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnostics": false
+      }
+    ]
   }
 }

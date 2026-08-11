@@ -4,7 +4,8 @@ import { colors, fontSizes, leading, radii, spacing, timing } from "./tokens.sty
 
 import type { StyleXComponentProps } from "./types";
 
-const ARIA_EXPANDED = ':is([aria-expanded="true"])';
+const ARIA_EXPANDED = '[aria-expanded="true"]';
+const ARIA_INVALID = '[aria-invalid="true"]';
 const DISABLED = ":disabled";
 const FOCUS_VISIBLE = ":focus-visible";
 const HOVER = ":hover";
@@ -26,6 +27,7 @@ export const buttonStyles = stylex.create({
     boxShadow: {
       default: null,
       [FOCUS_VISIBLE]: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+      [ARIA_INVALID]: `0 0 0 3px light-dark(color-mix(in oklab, ${colors.destructive} 20%, transparent), color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
     },
     backgroundClip: "padding-box",
     fontSize: fontSizes.sm,
@@ -65,7 +67,11 @@ export const buttonVariants = stylex.create({
     color: colors.primaryForeground,
   },
   outline: {
-    borderColor: `light-dark(${colors.border}, ${colors.input})`,
+    borderColor: {
+      default: `light-dark(${colors.border}, ${colors.input})`,
+      [FOCUS_VISIBLE]: colors.ring,
+      [ARIA_EXPANDED]: colors.destructive,
+    },
     backgroundColor: {
       default: `light-dark(${colors.background}, color-mix(in oklab, ${colors.input} 30%, transparent))`,
       [HOVER]: `light-dark(${colors.muted}, color-mix(in oklab, ${colors.input} 50%, transparent))`,
@@ -106,12 +112,12 @@ export const buttonVariants = stylex.create({
     },
     color: colors.destructive,
     borderColor: {
-      default: null,
+      default: "transparent",
       [FOCUS_VISIBLE]: `color-mix(in oklab, ${colors.destructive} 40%, transparent)`,
     },
     boxShadow: {
       default: null,
-      [FOCUS_VISIBLE]: `light-dark(0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent), 0 0 0 3px color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
+      [FOCUS_VISIBLE]: `0 0 0 3px light-dark(color-mix(in oklab, ${colors.destructive} 20%, transparent), color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
     },
   },
   link: {

@@ -1,5 +1,18 @@
 import * as stylex from "@stylexjs/stylex";
 
+export const modes = stylex.defineConsts({
+  light: "@media (prefers-color-scheme: light)",
+  dark: "@media (prefers-color-scheme: dark)",
+} as const);
+
+export const breakpoints = stylex.defineConsts({
+  sm: "@media (min-width: 40rem)",
+  md: "@media (min-width: 48rem)",
+  lg: "@media (min-width: 64rem)",
+  xl: "@media (min-width: 80rem)",
+  "2xl": "@media (min-width: 96rem)",
+} as const);
+
 export const colors = stylex.defineVars({
   background: "light-dark(var(--background), var(--dark-background))",
   foreground: "light-dark(var(--foreground), var(--dark-foreground))",
@@ -46,6 +59,7 @@ export const radii = stylex.defineVars({
   "2xl": "calc(var(--radius) * 1.8)",
   "3xl": "calc(var(--radius) * 2.2)",
   "4xl": "calc(var(--radius) * 2.6)",
+  full: "calc(infinity * 1px)",
 } as const);
 
 export const fontSizes = stylex.defineConsts({
@@ -62,12 +76,47 @@ export const fontSizes = stylex.defineConsts({
   "7xl": "4.5rem",
   "8xl": "6rem",
   "9xl": "8rem",
-});
+} as const);
 
 const space = <TMultiplier extends number>(multiplier: TMultiplier) =>
   `calc(var(--spacing) * ${multiplier})` as const;
 export const spacing = stylex.defineConsts({
+  "-px": "-1px",
   px: "1px",
+
+  "-96": space(-96),
+  "-80": space(-80),
+  "-72": space(-72),
+  "-64": space(-64),
+  "-60": space(-60),
+  "-56": space(-56),
+  "-52": space(-52),
+  "-48": space(-48),
+  "-44": space(-44),
+  "-40": space(-40),
+  "-36": space(-36),
+  "-32": space(-32),
+  "-28": space(-28),
+  "-24": space(-24),
+  "-20": space(-20),
+  "-16": space(-16),
+  "-14": space(-14),
+  "-12": space(-12),
+  "-11": space(-11),
+  "-10": space(-10),
+  "-9": space(-9),
+  "-8": space(-8),
+  "-7": space(-7),
+  "-6": space(-6),
+  "-5": space(-5),
+  "-4": space(-4),
+  "-3.5": space(-3.5),
+  "-3": space(-3),
+  "-2.5": space(-2.5),
+  "-2": space(-2),
+  "-1.5": space(-1.5),
+  "-1": space(-1),
+  "-0.5": space(-0.5),
   0: space(0),
   0.5: space(0.5),
   1: space(1),

@@ -14,12 +14,12 @@ catalog:
   "@aws-sdk/credential-providers": ^3.1106.0
   "@cloudflare/vite-plugin": ^1.51.1
   "@cloudflare/workers-types": ^4.20260702.1
-  "@effect/atom-react": 4.0.0-beta.106
-  "@effect/language-service": ^0.87.1
-  "@effect/platform-browser": 4.0.0-beta.106
-  "@effect/platform-node": 4.0.0-beta.106
-  "@effect/platform-node-shared": 4.0.0-beta.106
-  "@effect/sql-pg": 4.0.0-beta.106
+  "@effect/atom-react": 4.0.0-beta.107
+  "@effect/language-service": ^0.87.2
+  "@effect/platform-browser": 4.0.0-beta.107
+  "@effect/platform-node": 4.0.0-beta.107
+  "@effect/platform-node-shared": 4.0.0-beta.107
+  "@effect/sql-pg": 4.0.0-beta.107
   "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
   "@rolldown/plugin-babel": ^0.2.3
@@ -31,10 +31,10 @@ catalog:
   "@tailwindcss/vite": ^4.3.3
   "@tanstack/devtools-vite": ^0.6.1
   "@tanstack/react-devtools": ^0.10.9
-  "@tanstack/react-router": ^1.170.23
+  "@tanstack/react-router": ^1.170.25
   "@tanstack/react-router-devtools": ^1.167.1
-  "@tanstack/react-start": ^1.168.40
-  "@typeonce/effect-machine": ^0.3.0
+  "@tanstack/react-start": ^1.168.42
+  "@typeonce/effect-machine": ^0.4.0
   "@types/aws-lambda": ^8.10.162
   "@types/node": ^24.13.3
   "@types/pg": ^8.21.0
@@ -56,3 +56,6 @@ catalog:
   typescript: ^6.0.3
   vite: ^8.2.1
   wrangler: ^4.120.0
+
+minimumReleaseAgeExclude:
+  - "@typeonce/effect-machine@0.4.0"

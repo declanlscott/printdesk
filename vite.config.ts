@@ -2,7 +2,6 @@ import { defineConfig } from "vite-plus";
 
 export default defineConfig({
   fmt: {
-    sortTailwindcss: {},
     sortImports: {
       newlinesBetween: false,
       groups: [
@@ -52,6 +51,9 @@ export default defineConfig({
       "eslint/no-use-before-define": "off",
       "react/forbid-component-props": "off",
       "react/jsx-filename-extension": "off",
+      "react/no-unknown-property": "off",
+      "react-perf/jsx-no-new-array-as-prop": "off",
+      "react-perf/jsx-no-new-function-as-prop": "off",
       "react/react-in-jsx-scope": "off",
       "typescript/no-namespace": "off",
       "typescript/explicit-function-return-type": "off",

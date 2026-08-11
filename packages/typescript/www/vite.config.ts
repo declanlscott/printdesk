@@ -16,7 +16,6 @@ export default defineConfig({
     stylex.vite({
       useCSSLayers: true,
       unstable_moduleResolution: { type: "commonJS" },
-      importSources: ["stylex", "@stylexjs/stylex", "@stylexjs/atoms"],
       devMode: "css-only",
     }),
     tailwindcss(),

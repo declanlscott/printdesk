@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@effect/atom-react": "catalog:",
+    "@lucas-barake/effect-form-react": "catalog:",
     "@printdesk/core": "workspace:*",
     "@printdesk/ui": "workspace:*",
     "@stylexjs/atoms": "catalog:",
@@ -16,6 +17,7 @@
     "@tanstack/react-router": "catalog:",
     "@tanstack/react-router-devtools": "catalog:",
     "@tanstack/react-start": "catalog:",
+    "@typeonce/effect-machine": "catalog:",
     "effect": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:"

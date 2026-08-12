@@ -7,7 +7,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@smithy/smithy-client": "^4.14.16",
+    "@smithy/smithy-client": "^4.15.0",
     "effect": "catalog:"
   },
   "devDependencies": {

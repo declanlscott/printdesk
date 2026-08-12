@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "catalog:",
-    "@aws-sdk/client-appconfig": "^3.1106.0",
+    "@aws-sdk/client-appconfig": "^3.1107.0",
     "@aws-sdk/credential-providers": "catalog:",
     "@azure/identity": "^4.13.1",
     "@effect-aws/cloudfront": "workspace:@printdesk/effect-aws-cloudfront@*",
@@ -26,7 +26,7 @@
     "@openauthjs/openauth": "workspace:@printdesk/openauth@*",
     "@oslojs/encoding": "^1.1.0",
     "@smithy/protocol-http": "catalog:",
-    "@smithy/signature-v4": "^5.6.12",
+    "@smithy/signature-v4": "^5.7.0",
     "aws-cron-parser": "^1.1.12",
     "aws4fetch": "catalog:",
     "cloudflare": "^6.5.0",
@@ -47,6 +47,6 @@
     "@standard-schema/spec": "^1.1.0",
     "@types/node": "catalog:",
     "@types/pg": "catalog:",
-    "drizzle-kit": "rc"
+    "drizzle-kit": "catalog:"
   }
 }

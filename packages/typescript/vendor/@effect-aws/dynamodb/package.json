@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "catalog:",
-    "@aws-sdk/lib-dynamodb": "^3.1106.0",
+    "@aws-sdk/lib-dynamodb": "^3.1107.0",
     "@effect-aws/client-dynamodb": "workspace:@printdesk/effect-aws-client-dynamodb@*",
     "@effect-aws/commons": "workspace:@printdesk/effect-aws-commons@*",
     "effect": "catalog:"

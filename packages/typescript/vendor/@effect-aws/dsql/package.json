@@ -7,7 +7,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@aws-sdk/dsql-signer": "^3.1106.0",
+    "@aws-sdk/dsql-signer": "^3.1107.0",
     "effect": "catalog:"
   },
   "devDependencies": {

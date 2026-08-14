@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
+import { avatarMarker } from "../markers.stylex";
 import { colors, fontSizes, leading, radii, spacing } from "../tokens.stylex";
-import { avatarMarker } from "./markers.stylex";
 
 import type { StyleXComponentProps } from "../types";
 

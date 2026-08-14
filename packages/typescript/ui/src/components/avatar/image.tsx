@@ -3,7 +3,7 @@ import * as Match from "effect/Match";
 import { useState } from "react";
 
 import { avatarImageStyles } from "../../styles/avatar/image";
-import { avatarImageMarker } from "../../styles/avatar/markers.stylex";
+import { avatarImageMarker } from "../../styles/markers.stylex";
 
 import type { AvatarImageState, AvatarImageStyleProps } from "../../styles/avatar/image";
 

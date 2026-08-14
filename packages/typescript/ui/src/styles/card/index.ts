@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
+import { cardFooterMarker } from "../markers.stylex";
 import { colors, fontSizes, radii, spacing } from "../tokens.stylex";
-import { cardFooterMarker } from "./markers.stylex";
 
 import type { StyleXComponentProps } from "../types";
 

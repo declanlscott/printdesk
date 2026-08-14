@@ -1,9 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
 import { Input as InputPrimitive } from "react-aria-components";
 
-import { inputStyles, type InputStyleProps } from "../styles/input";
+import { inputStyles } from "../styles/input";
 
 import type { InputProps as InputPrimitiveProps } from "react-aria-components";
+import type { InputStyleProps } from "../styles/input";
 
 export type InputProps = InputPrimitiveProps & InputStyleProps;
 

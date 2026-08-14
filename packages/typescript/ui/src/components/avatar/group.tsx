@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 import { avatarGroupStyles } from "../../styles/avatar/group";
-import { avatarGroupMarker } from "../../styles/avatar/markers.stylex";
+import { avatarGroupMarker } from "../../styles/markers.stylex";
 
 import type { AvatarGroupStyleProps } from "../../styles/avatar/group";
 

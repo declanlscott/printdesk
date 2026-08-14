@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
+import { cardActionMarker, cardDescriptionMarker } from "../markers.stylex";
 import { radii, spacing } from "../tokens.stylex";
-import { cardActionMarker, cardDescriptionMarker } from "./markers.stylex";
 
 import type { StyleXComponentProps } from "../types";
 

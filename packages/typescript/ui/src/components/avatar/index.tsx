@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 import { avatarSizes, avatarStyles } from "../../styles/avatar";
-import { avatarMarker } from "../../styles/avatar/markers.stylex";
+import { avatarMarker } from "../../styles/markers.stylex";
 
 import type { AvatarStyleProps } from "../../styles/avatar";
 export type AvatarProps = AvatarStyleProps;

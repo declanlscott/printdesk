@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 import { cardActionStyles } from "../../styles/card/action";
-import { cardActionMarker } from "../../styles/card/markers.stylex";
+import { cardActionMarker } from "../../styles/markers.stylex";
 
 import type { CardActionStyleProps } from "../../styles/card/action";
 

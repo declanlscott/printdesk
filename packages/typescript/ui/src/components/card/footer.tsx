@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 
 import { cardFooterStyles } from "../../styles/card/footer";
-import { cardFooterMarker } from "../../styles/card/markers.stylex";
+import { cardFooterMarker } from "../../styles/markers.stylex";
 
 import type { CardFooterStyleProps } from "../../styles/card/footer";
 

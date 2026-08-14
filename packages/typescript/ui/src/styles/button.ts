@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 
-import { colors, fontSizes, leading, radii, spacing, timing } from "./tokens.stylex";
+import { colors, fontSizes, fontWeights, leading, radii, spacing, timing } from "./tokens.stylex";
 
 import type { StyleXComponentProps } from "./types";
 
@@ -32,7 +32,7 @@ export const buttonStyles = stylex.create({
     backgroundClip: "padding-box",
     fontSize: fontSizes.sm,
     lineHeight: leading.sm,
-    fontWeight: "500",
+    fontWeight: fontWeights.medium,
     whiteSpace: "nowrap",
     transitionProperty: "all",
     transitionTimingFunction: timing.easeInOut,

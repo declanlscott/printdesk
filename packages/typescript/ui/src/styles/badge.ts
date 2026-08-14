@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 
-import { colors, fontSizes, radii, spacing, timing } from "./tokens.stylex";
+import { colors, fontSizes, fontWeights, radii, spacing, timing } from "./tokens.stylex";
 
 import type { StyleXComponentProps } from "./types";
 
@@ -38,7 +38,7 @@ export const badgeStyles = stylex.create({
       [stylex.when.descendant('[data-icon="inline-start"]')]: spacing[1.5],
     },
     fontSize: fontSizes.xs,
-    fontWeight: "500",
+    fontWeight: fontWeights.medium,
     whiteSpace: "nowrap",
     transitionProperty: "all",
     transitionTimingFunction: timing.easeInOut,

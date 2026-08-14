@@ -78,6 +78,18 @@ export const fontSizes = stylex.defineConsts({
   "9xl": "8rem",
 } as const);
 
+export const fontWeights = stylex.defineConsts({
+  thin: "100",
+  extralight: "200",
+  light: "300",
+  normal: "400",
+  medium: "500",
+  semibold: "600",
+  bold: "700",
+  extrabold: "800",
+  black: "900",
+} as const);
+
 const space = <TMultiplier extends number>(multiplier: TMultiplier) =>
   `calc(var(--spacing) * ${multiplier})` as const;
 export const spacing = stylex.defineConsts({

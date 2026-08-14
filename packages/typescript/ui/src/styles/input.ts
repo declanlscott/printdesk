@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 
-import { colors, fontSizes, radii, spacing, timing } from "./tokens.stylex";
+import { colors, fontSizes, fontWeights, radii, spacing, timing } from "./tokens.stylex";
 
 import type { StyleXComponentProps } from "./types";
 
@@ -50,7 +50,7 @@ export const inputStyles = stylex.create({
     },
     fontWeight: {
       default: null,
-      [FILE]: "500",
+      [FILE]: fontWeights.medium,
     },
     color: {
       default: null,

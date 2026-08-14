@@ -6,6 +6,7 @@
     "@stylexjs/atoms": "catalog:",
     "@stylexjs/stylex": "catalog:",
     "effect": "catalog:",
+    "lucide-react": "catalog:",
     "react": "catalog:",
     "react-aria-components": "catalog:",
     "react-dom": "catalog:"

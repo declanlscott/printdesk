@@ -79,8 +79,8 @@ catalogs:
       specifier: ^1.168.42
       version: 1.168.42
     '@typeonce/effect-machine':
-      specifier: ^0.5.1
-      version: 0.5.1
+      specifier: ^0.7.0
+      version: 0.7.0
     '@types/aws-lambda':
       specifier: ^8.10.162
       version: 8.10.162
@@ -117,6 +117,9 @@ catalogs:
     hono:
       specifier: ^4.13.1
       version: 4.13.1
+    lucide-react:
+      specifier: ^1.31.0
+      version: 1.31.0
     pg:
       specifier: ^8.23.0
       version: 8.23.0
@@ -549,6 +552,9 @@ importers:
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.106
+      lucide-react:
+        specifier: 'catalog:'
+        version: 1.31.0(react@19.2.8)
       react:
         specifier: 'catalog:'
         version: 19.2.8
@@ -824,7 +830,7 @@ importers:
         version: 1.168.42(esbuild@0.28.2)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(rolldown@1.2.3)(supports-color@10.2.2)(vite@8.2.1(@types/node@24.13.3)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.12))
       '@typeonce/effect-machine':
         specifier: 'catalog:'
-        version: 0.5.1(effect@4.0.0-beta.106)
+        version: 0.7.0(effect@4.0.0-beta.106)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.106
@@ -3015,11 +3021,11 @@ packages:
   '@total-typescript/ts-reset@0.6.1':
     resolution: {integrity: sha512-cka47fVSo6lfQDIATYqb/vO1nvFfbPw7uWLayIXIhGETj0wcOOlrlkobOMDNQOFr9QOafegUPq13V2+6vtD7yg==}
 
-  '@typeonce/effect-machine@0.5.1':
-    resolution: {integrity: sha512-yj+aeaEx4tko6cKKwMJ+7CsLpLa0kh7XIiJI+hq8JLi06MXdoINs+84WRN+e0oc9v/O6qXrZvXmJNcRJmYCVAg==}
+  '@typeonce/effect-machine@0.7.0':
+    resolution: {integrity: sha512-0CzSuC20oih/vbU0piqgmfC1EsmWGm/jY5Az0P3ns26twE+sXSBOUeUM+HPVAoq833njBo9tLfHTuBiO6RzRSg==}
     engines: {node: '>=20'}
     peerDependencies:
-      effect: 4.0.0-beta.107
+      effect: 4.0.0-rc.108
 
   '@types/aria-query@5.0.4':
     resolution: {integrity: sha512-rfT93uj5s0PRL7EzccGMs3brplhcrghnDoV26NqKhCAS1hVo+WdNsPvE/yb6ilfr5hi2MEk6d5EWJTKdxg8jVw==}
@@ -4449,6 +4455,11 @@ packages:
   lru-cache@6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
+
+  lucide-react@1.31.0:
+    resolution: {integrity: sha512-G8u2eEtoHUnUa9f8lbvqDhCiORMnYLdUEo06EEG9MQvHQrInKcX3Pa2TH39MM5qyzRcWETxB0+aOwAPI1g1kEg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -7298,7 +7309,7 @@ snapshots:
 
   '@total-typescript/ts-reset@0.6.1': {}
 
-  '@typeonce/effect-machine@0.5.1(effect@4.0.0-beta.106)':
+  '@typeonce/effect-machine@0.7.0(effect@4.0.0-beta.106)':
     dependencies:
       effect: 4.0.0-beta.106
 
@@ -8469,6 +8480,10 @@ snapshots:
   lru-cache@6.0.0:
     dependencies:
       yallist: 4.0.0
+
+  lucide-react@1.31.0(react@19.2.8):
+    dependencies:
+      react: 19.2.8
 
   lz-string@1.5.0: {}
 

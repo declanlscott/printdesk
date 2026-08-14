@@ -34,7 +34,7 @@ catalog:
   "@tanstack/react-router": ^1.170.25
   "@tanstack/react-router-devtools": ^1.167.1
   "@tanstack/react-start": ^1.168.42
-  "@typeonce/effect-machine": ^0.5.1
+  "@typeonce/effect-machine": ^0.7.0
   "@types/aws-lambda": ^8.10.162
   "@types/node": ^24.13.3
   "@types/pg": ^8.21.0
@@ -47,6 +47,7 @@ catalog:
   drizzle-orm: 1.0.0-rc.5-ab785fc
   effect: 4.0.0-beta.106
   hono: ^4.13.1
+  lucide-react: ^1.31.0
   pg: ^8.23.0
   react: ^19.2.8
   react-aria-components: ^1.20.0
@@ -59,7 +60,7 @@ catalog:
   wrangler: ^4.120.1
 
 minimumReleaseAgeExclude:
-  - "@typeonce/effect-machine@0.4.0"
+  - "@typeonce/effect-machine@0.7.0"
   - "@effect/tsgo-darwin-arm64@0.36.4"
   - "@effect/tsgo-darwin-x64@0.36.4"
   - "@effect/tsgo-linux-arm64@0.36.4"
@@ -68,8 +69,8 @@ minimumReleaseAgeExclude:
   - "@effect/tsgo-win32-arm64@0.36.4"
   - "@effect/tsgo-win32-x64@0.36.4"
   - "@effect/tsgo@0.36.4"
-  - '@effect/atom-react@4.0.0-rc.108'
-  - '@effect/platform-browser@4.0.0-rc.108'
-  - '@effect/platform-node-shared@4.0.0-rc.108'
-  - '@effect/platform-node@4.0.0-rc.108'
-  - '@effect/sql-pg@4.0.0-rc.108'
+  - "@effect/atom-react@4.0.0-rc.108"
+  - "@effect/platform-browser@4.0.0-rc.108"
+  - "@effect/platform-node-shared@4.0.0-rc.108"
+  - "@effect/platform-node@4.0.0-rc.108"
+  - "@effect/sql-pg@4.0.0-rc.108"

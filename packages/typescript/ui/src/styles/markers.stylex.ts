@@ -14,3 +14,5 @@ export const fieldMarker = stylex.defineMarker();
 export const fieldGroupMarker = stylex.defineMarker();
 
 export const radioGroupMarker = stylex.defineMarker();
+
+export const switchMarker = stylex.defineMarker();

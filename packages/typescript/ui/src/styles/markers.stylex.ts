@@ -11,3 +11,6 @@ export const cardFooterMarker = stylex.defineMarker();
 export const checkboxMarker = stylex.defineMarker();
 
 export const fieldMarker = stylex.defineMarker();
+export const fieldGroupMarker = stylex.defineMarker();
+
+export const radioGroupMarker = stylex.defineMarker();

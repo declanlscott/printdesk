@@ -10,9 +10,9 @@ allowBuilds:
 
 catalog:
   "@aws-crypto/sha256-js": ^5.2.0
-  "@aws-sdk/client-dynamodb": ^3.1107.0
-  "@aws-sdk/credential-providers": ^3.1107.0
-  "@cloudflare/vite-plugin": ^1.51.2
+  "@aws-sdk/client-dynamodb": ^3.1111.0
+  "@aws-sdk/credential-providers": ^3.1111.0
+  "@cloudflare/vite-plugin": ^1.52.1
   "@cloudflare/workers-types": ^4.20260702.1
   "@effect/atom-react": 4.0.0-rc.108
   "@effect/platform-browser": 4.0.0-rc.108
@@ -31,10 +31,10 @@ catalog:
   "@tailwindcss/vite": ^4.3.3
   "@tanstack/devtools-vite": ^0.6.1
   "@tanstack/react-devtools": ^0.10.10
-  "@tanstack/react-router": ^1.170.25
+  "@tanstack/react-router": ^1.170.28
   "@tanstack/react-router-devtools": ^1.167.1
-  "@tanstack/react-start": ^1.168.42
-  "@typeonce/effect-machine": ^0.7.0
+  "@tanstack/react-start": ^1.168.45
+  "@typeonce/effect-machine": ^0.12.0
   "@types/aws-lambda": ^8.10.162
   "@types/node": ^24.13.3
   "@types/pg": ^8.21.0
@@ -46,7 +46,7 @@ catalog:
   drizzle-kit: 1.0.0-rc.5-ab785fc
   drizzle-orm: 1.0.0-rc.5-ab785fc
   effect: 4.0.0-beta.106
-  hono: ^4.13.1
+  hono: ^4.13.2
   lucide-react: ^1.31.0
   pg: ^8.23.0
   react: ^19.2.8
@@ -57,20 +57,7 @@ catalog:
   tailwindcss: ^4.3.3
   typescript: ^7.0.2
   vite: ^8.2.1
-  wrangler: ^4.120.1
+  wrangler: ^4.123.0
 
 minimumReleaseAgeExclude:
-  - "@typeonce/effect-machine@0.7.0"
-  - "@effect/tsgo-darwin-arm64@0.36.4"
-  - "@effect/tsgo-darwin-x64@0.36.4"
-  - "@effect/tsgo-linux-arm64@0.36.4"
-  - "@effect/tsgo-linux-arm@0.36.4"
-  - "@effect/tsgo-linux-x64@0.36.4"
-  - "@effect/tsgo-win32-arm64@0.36.4"
-  - "@effect/tsgo-win32-x64@0.36.4"
-  - "@effect/tsgo@0.36.4"
-  - "@effect/atom-react@4.0.0-rc.108"
-  - "@effect/platform-browser@4.0.0-rc.108"
-  - "@effect/platform-node-shared@4.0.0-rc.108"
-  - "@effect/platform-node@4.0.0-rc.108"
-  - "@effect/sql-pg@4.0.0-rc.108"
+  - "@typeonce/effect-machine@0.12.0"

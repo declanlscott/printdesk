@@ -22,10 +22,10 @@
     "eslint-plugin-drizzle": "^0.2.3",
     "eslint-plugin-react-hooks": "^7.1.1",
     "pg": "catalog:",
-    "remeda": "^2.39.0",
+    "remeda": "^2.40.0",
     "sst": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "^0.2.8"
+    "vite-plus": "^0.2.9"
   },
   "browserslist": [
     "chrome >= 123",

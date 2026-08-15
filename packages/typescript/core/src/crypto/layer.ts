@@ -19,7 +19,7 @@ export const makeService = Effect.gen(function* () {
     crypto.randomBytes(size).pipe(
       Effect.map((bytes) => Buffer.from(bytes).toString("base64")),
       Effect.map(Redacted.make),
-      Effect.map(CryptoContract.Secret.make),
+      Effect.map((secret) => CryptoContract.Secret.make(secret)),
     ),
   );
 
@@ -27,6 +27,7 @@ export const makeService = Effect.gen(function* () {
     (secret: CryptoContract.Secret, salt: CryptoContract.Secret) =>
       Effect.tryPromise({
         try: () =>
+          // oxlint-disable-next-line effecttsgo/new-promise
           new Promise<CryptoContract.Secret>((resolve, reject) =>
             scrypt(
               secret.pipe(Redacted.value).normalize(),
@@ -36,7 +37,7 @@ export const makeService = Effect.gen(function* () {
                 error
                   ? reject(error)
                   : resolve(
-                      Redacted.make(derivedKey.toString("base64")).pipe(CryptoContract.Secret.make),
+                      CryptoContract.Secret.make(Redacted.make(derivedKey.toString("base64"))),
                     ),
             ),
           ),

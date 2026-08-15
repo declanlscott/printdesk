@@ -103,6 +103,7 @@ export namespace Mutation {
       >
     >();
 
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     public readonly Record = {} as TRecord;
 
     public mutation<
@@ -148,6 +149,7 @@ export namespace Mutation {
     ) {
       this.#isFinal = true;
 
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       return this as Dispatcher<THandlerRecord, TRecord, true>;
     }
 
@@ -159,6 +161,7 @@ export namespace Mutation {
       return Effect.gen({ self: this }, function* () {
         const user = yield* Actor.pipe(Effect.flatMap(Struct.get("assertUser")));
 
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         const mutation = (yield* this.#map.pipe(
           HashMap.get(name),
           Effect.fromOption,

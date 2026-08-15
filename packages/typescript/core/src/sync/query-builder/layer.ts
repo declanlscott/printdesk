@@ -16,7 +16,7 @@ export const makeService = Effect.gen(function* () {
   const table = replicacheClientViewEntries.table;
 
   const creates = Effect.fn("Sync.QueryBuilder.creates")(
-    <TEntity extends Models.SyncTableName>(entity: TEntity, clientView: ReplicacheClientView) =>
+    (entity: Models.SyncTableName, clientView: ReplicacheClientView) =>
       db.useQueryBuilder((tx) =>
         tx
           .select({ id: table.entityId })
@@ -34,7 +34,7 @@ export const makeService = Effect.gen(function* () {
   );
 
   const updates = Effect.fn("Sync.QueryBuilder.updates")(
-    <TEntity extends Models.SyncTableName>(entity: TEntity, clientView: ReplicacheClientView) =>
+    (entity: Models.SyncTableName, clientView: ReplicacheClientView) =>
       db.useQueryBuilder((tx) =>
         tx
           .select()
@@ -51,7 +51,7 @@ export const makeService = Effect.gen(function* () {
   );
 
   const deletes = Effect.fn("Sync.QueryBuilder.deletes")(
-    <TEntity extends Models.SyncTableName>(entity: TEntity, clientView: ReplicacheClientView) =>
+    (entity: Models.SyncTableName, clientView: ReplicacheClientView) =>
       db.useQueryBuilder((tx) =>
         tx
           .select({ id: table.entityId })
@@ -75,7 +75,7 @@ export const makeService = Effect.gen(function* () {
   );
 
   const fastForward = Effect.fn("Sync.QueryBuilder.fastForward")(
-    <TEntity extends Models.SyncTableName>(entity: TEntity, clientView: ReplicacheClientView) =>
+    (entity: Models.SyncTableName, clientView: ReplicacheClientView) =>
       db.useQueryBuilder((tx) =>
         tx
           .select()

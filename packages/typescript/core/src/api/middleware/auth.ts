@@ -41,6 +41,7 @@ export class AuthMiddleware extends HttpApiMiddleware.Service<
         });
 
         const providedHttpEffect = httpEffect.pipe(
+          // oxlint-disable-next-line effecttsgo/strict-effect-provide
           Effect.provide(
             Layer.mergeAll(
               actorLayerMap.get(subject.properties.actor.wrap),

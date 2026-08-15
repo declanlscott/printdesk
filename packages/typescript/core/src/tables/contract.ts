@@ -1,5 +1,4 @@
-// oxlint-disable typescript/no-explicit-any
-// oxlint-disable typescript/no-extraneous-class
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion typescript/no-extraneous-class
 import * as Array from "effect/Array";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";

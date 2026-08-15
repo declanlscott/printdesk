@@ -24,13 +24,14 @@ export const makeDsqlSigner = Effect.gen(function* () {
   return {
     getDbConnectAuthToken: () => Effect.promise(() => client.getDbConnectAuthToken()),
     getDbConnectAdminAuthToken: () => Effect.promise(() => client.getDbConnectAdminAuthToken()),
-  } as DsqlSigner$;
+  };
 });
 
 /**
  * @since 0.1.0
  * @category models
  */
+// oxlint-disable-next-line effecttsgo/lazy-effect
 export class DsqlSigner extends Context.Service<DsqlSigner, DsqlSigner$>()(
   "@effect-aws/dsql/DsqlSigner",
 ) {

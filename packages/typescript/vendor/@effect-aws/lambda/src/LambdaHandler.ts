@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
 import { Readable } from "node:stream";
 
 import * as Context from "effect/Context";
@@ -76,7 +76,7 @@ export declare namespace LambdaHandler {
  * @category context
  */
 export const event = <T extends LambdaHandler.Event>(): Effect.Effect<T> =>
-  Effect.map(Effect.context<never>(), (context) =>
+  Effect.map(Effect.context(), (context) =>
     Context.getUnsafe(context, internal.lambdaEventTag),
   ) as Effect.Effect<T>;
 
@@ -84,10 +84,9 @@ export const event = <T extends LambdaHandler.Event>(): Effect.Effect<T> =>
  * @since 1.4.0
  * @category context
  */
+// oxlint-disable-next-line effecttsgo/lazy-effect
 export const context = (): Effect.Effect<LambdaContext> =>
-  Effect.map(Effect.context<never>(), (context) =>
-    Context.getUnsafe(context, internal.lambdaContextTag),
-  );
+  Effect.map(Effect.context(), (context) => Context.getUnsafe(context, internal.lambdaContextTag));
 
 /**
  * Makes a lambda handler from the given EffectHandler and optional global layer.

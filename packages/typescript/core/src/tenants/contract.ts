@@ -2,7 +2,6 @@ import { decodeBase32IgnorePadding, encodeBase32LowerCaseNoPadding } from "@oslo
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Encoding from "effect/Encoding";
-import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as SchemaIssue from "effect/SchemaIssue";
@@ -56,9 +55,7 @@ export namespace TenantsContract {
                 }),
             }),
           ),
-          Effect.mapError(
-            (e) => new SchemaIssue.InvalidValue(Option.some(e.input), { message: e.message }),
-          ),
+          Effect.mapError((e) => new SchemaIssue.InvalidValue({ message: e.message })),
         ),
       ),
       encode: SchemaGetter.transform((tenantId) =>

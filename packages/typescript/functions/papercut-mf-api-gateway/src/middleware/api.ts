@@ -20,10 +20,12 @@ const url =
   resource.PORT.pipe(Redacted.value) +
   Constants.PAPERCUT_MF_API_PATH;
 
-const customFetch = resource.PAPERCUT_API.pipe(Redacted.value).fetch;
+const papercutApi = resource.PAPERCUT_API.pipe(Redacted.value);
 
 export const api = createMiddleware((c) =>
-  Effect.tryPromise((signal) => proxy(url, { raw: c.req.raw, signal, customFetch }))
+  Effect.tryPromise((signal) =>
+    proxy(url, { raw: c.req.raw, signal, customFetch: (req) => papercutApi.fetch(req) }),
+  )
     .pipe(Effect.timeout(Duration.seconds(10)), Effect.runPromiseExit)
     .then(
       Exit.match({

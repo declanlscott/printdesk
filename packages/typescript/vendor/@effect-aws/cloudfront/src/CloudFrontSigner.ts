@@ -68,7 +68,7 @@ const makeCloudFrontSigner = (credentials: CloudFrontSignerCredentials): CloudFr
   return {
     getSignedUrl: (input) => Effect.sync(() => awsGetSignedUrl(withCredentials(input))),
     getSignedCookies: (input) => Effect.sync(() => awsGetSignedCookies(withCredentials(input))),
-  } as CloudFrontSigner$;
+  };
 };
 
 /**

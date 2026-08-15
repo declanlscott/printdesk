@@ -70,7 +70,7 @@ export namespace RealtimeContract {
   export class Data extends Schema.Class<Data>("Data")({
     type: Schema.tag("data"),
     id: SubscriptionId,
-    event: Schema.UnknownFromJsonString,
+    event: Schema.Unknown.pipe(Schema.fromJsonString),
   }) {}
 
   export const BroadcastError = error("broadcast");

@@ -6,6 +6,7 @@ import { Resource } from "sst/resource";
 
 export class SstResource extends Context.Service<SstResource>()("@printdesk/core/sst/Resource", {
   make: Effect.succeed(
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     new Proxy(
       {},
       {

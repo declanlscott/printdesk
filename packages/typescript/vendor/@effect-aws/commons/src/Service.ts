@@ -81,6 +81,7 @@ export const catchServiceExceptions =
     if (e instanceof ServiceError && (!errorTags || errorTags.includes(e.name))) {
       class ServiceException extends Data.TaggedError(e.name)<TaggedException<ServiceError>> {}
 
+      // oxlint-disable-next-line typescript/no-misused-spread
       return new ServiceException({ ...e, message: e.message, stack: e.stack });
     }
     if (e instanceof Error) {
@@ -90,6 +91,7 @@ export const catchServiceExceptions =
       if (e.name === "TimeoutError") {
         return new Cause.TimeoutError(e.message);
       }
+      // oxlint-disable-next-line typescript/no-misused-spread
       return new SdkError({ ...e, name: "SdkError", message: e.message, stack: e.stack });
     }
     throw e;
@@ -107,7 +109,7 @@ export const makeServiceFn = (
   return (args: any, options?: HttpHandlerOptions) =>
     Effect.gen(function* () {
       const config = yield* fnOptions.resolveClientConfig;
-      const runtime = yield* Effect.context<never>();
+      const runtime = yield* Effect.context();
 
       return yield* Effect.acquireUseRelease(
         Scope.make(),
@@ -154,6 +156,7 @@ export const fromCommandsAndServiceFn = <Service>(
   Effect.gen(function* () {
     const maybeRequestHandler = yield* Effect.serviceOption(HttpHandler.RequestHandler);
 
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const effectCommands = pipe(
       commands,
       Record.filter(Boolean),

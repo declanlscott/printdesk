@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-unsafe-type-assertion
 import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
@@ -321,7 +322,7 @@ export namespace Replicache {
     const clientGroupId = Effect.tryPromise({
       try: () => client.clientGroupID,
       catch: (cause) => new ClientError({ cause }),
-    }).pipe(Effect.flatMap(ReplicacheContract.ClientGroupId.makeEffect));
+    }).pipe(Effect.flatMap((id) => ReplicacheContract.ClientGroupId.makeEffect(id)));
 
     const query = <TSuccess, TError, TServices>(
       query: Effect.Effect<TSuccess, TError, TServices | ReadTransaction>,

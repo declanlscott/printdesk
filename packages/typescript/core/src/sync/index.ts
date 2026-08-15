@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";
@@ -319,6 +319,7 @@ export namespace Sync {
       [TEntity in Models.SyncTableName]?: EntityStreamer<TEntity>;
       // oxlint-disable-next-line typescript/no-empty-object-type
     } = {},
+    // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
     TIsFinal extends boolean = false,
   > {
     #isFinal = false;

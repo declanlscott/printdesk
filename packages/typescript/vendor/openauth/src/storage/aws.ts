@@ -20,6 +20,7 @@ async function getCredentials(url: string): Promise<EC2Credentials> {
     }
   }
 
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const credentials = (await fetch(url).then((res) => res.json())) as EC2Credentials;
   cachedCredentials = credentials;
   return credentials;

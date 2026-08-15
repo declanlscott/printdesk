@@ -15,6 +15,7 @@ export function Layout(
     if (!theme[key]) return;
     if (typeof theme[key] === "string") return theme[key];
 
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return theme[key][mode] as string | undefined;
   }
 

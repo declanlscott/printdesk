@@ -63,6 +63,7 @@ export const toClientRequestHandler = (
     // oxlint-disable-next-line class-methods-use-this
     public handle(request: HttpRequest, options: HttpHandlerOptions = {}) {
       return runPromise(requestHandler.handle(request, options).pipe(scoped), {
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         signal: options.abortSignal as AbortSignal,
       });
     }

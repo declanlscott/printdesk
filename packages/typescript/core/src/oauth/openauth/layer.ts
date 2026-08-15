@@ -55,10 +55,7 @@ export const makeService = Effect.fn(function* (input: OpenauthClientInput) {
     return yield* decode(result).pipe(Effect.orDie);
   });
 
-  const refresh = Effect.fn(function* (
-    refresh: Redacted.Redacted<string>,
-    opts?: OpenauthRefreshOptions,
-  ) {
+  const refresh = Effect.fn(function* (refresh: Redacted.Redacted, opts?: OpenauthRefreshOptions) {
     const result = yield* Effect.tryPromise({
       try: () =>
         openauth.refresh(refresh.pipe(Redacted.value), {
@@ -86,10 +83,7 @@ export const makeService = Effect.fn(function* (input: OpenauthClientInput) {
     return yield* decode(result).pipe(Effect.orDie);
   });
 
-  const verify = Effect.fn(function* (
-    token: Redacted.Redacted<string>,
-    opts?: OpenauthVerifyOptions,
-  ) {
+  const verify = Effect.fn(function* (token: Redacted.Redacted, opts?: OpenauthVerifyOptions) {
     const result = yield* Effect.tryPromise({
       try: () =>
         openauth.verify(OauthContract.subjects, token.pipe(Redacted.value), {
@@ -129,6 +123,7 @@ export const makeService = Effect.fn(function* (input: OpenauthClientInput) {
         HttpClientRequest.toWeb,
       );
 
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       const response = (yield* Effect.tryPromise((signal) =>
         (input.fetch || globalThis.fetch)(request, { signal }),
       )) as Response;

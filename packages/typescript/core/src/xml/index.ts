@@ -14,7 +14,7 @@ export namespace Xml {
         catch: (error) => new XmlContract.BuilderError({ cause: error }),
       });
 
-      const build = <TInput>(input: TInput) =>
+      const build = (input: unknown) =>
         Effect.try({
           try: () => client.build(input),
           catch: (error) => new XmlContract.BuilderError({ cause: error }),
@@ -35,6 +35,7 @@ export namespace Xml {
 
       const parse = <TOutput>(xmlData: string | Uint8Array) =>
         Effect.try({
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           try: () => client.parse(xmlData) as TOutput,
           catch: (error) => new XmlContract.ParserError({ cause: error }),
         });

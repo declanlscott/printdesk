@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any
+// oxlint-disable typescript/no-explicit-any typescript/no-base-to-string typescript/no-unsafe-type-assertion typescript/no-unnecessary-type-assertion
 /**
  * Use this to connect authentication providers that support OAuth 2.0.
  *
@@ -250,6 +250,7 @@ export function Oauth2Provider(
 
         if (error)
           throw new OauthError(
+            // oxlint-disable-next-line typescript/no-unnecessary-type-conversion
             error.toString() as any,
             c.req.query("error_description")?.toString() || "",
           );

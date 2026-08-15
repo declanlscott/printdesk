@@ -36,6 +36,7 @@ export const auth = createMiddleware((c, next) =>
             AccessControl.policy("papercut_mf_api_gateway", "read"),
           ),
           AccessControl.permissionPolicy("papercut_mf_api_gateway:read"),
+          // oxlint-disable-next-line effecttsgo/strict-effect-provide
         ).pipe(Effect.provide(ActorLayerMap.get(subject.properties.actor.wrap))),
       ),
       authRuntime.runPromiseExit,
@@ -59,6 +60,7 @@ export const auth = createMiddleware((c, next) =>
                   Effect.map(
                     (res) =>
                       new HTTPException(
+                        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
                         Match.value(res.status).pipe(
                           Match.when(Match.is(401), () => 407),
                           Match.orElse((status) => status),

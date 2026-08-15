@@ -24,6 +24,7 @@ export interface ProviderOptions<Properties> {
     },
   ) => Promise<Response>;
   forward: (ctx: Context, response: Response) => Response;
+  // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
   set: <T>(ctx: Context, key: string, maxAge: number, value: T) => Promise<void>;
   get: <T>(ctx: Context, key: string) => Promise<T>;
   unset: (ctx: Context, key: string) => Promise<void>;

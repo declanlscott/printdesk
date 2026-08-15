@@ -172,6 +172,7 @@ export namespace OauthContract {
     Array.map(
       Record.toEntries(subjects),
       ([type, properties]) =>
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         Schema.Struct({ type: Schema.Literal(type), properties }) as {
           readonly [TKey in keyof typeof subjects]: Schema.Struct<{
             type: Schema.Literal<TKey>;

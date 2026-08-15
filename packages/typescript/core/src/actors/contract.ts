@@ -72,6 +72,7 @@ export namespace ActorsContract {
         if (this.properties._tag !== actorTag)
           return Effect.fail(new ForbiddenActorError({ actor: this.properties._tag }));
 
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         return Effect.succeed(this.properties as Extract<Actor["properties"], { _tag: TActorTag }>);
       });
 

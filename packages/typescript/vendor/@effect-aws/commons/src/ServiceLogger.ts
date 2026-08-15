@@ -27,11 +27,11 @@ const proto = {
  * @category constructors
  */
 export type ServiceLoggerConstructorProps = {
-  readonly trace?: (...message: ReadonlyArray<any>) => Effect.Effect<void, never, never>;
-  readonly debug: (...message: ReadonlyArray<any>) => Effect.Effect<void, never, never>;
-  readonly info: (...message: ReadonlyArray<any>) => Effect.Effect<void, never, never>;
-  readonly warn: (...message: ReadonlyArray<any>) => Effect.Effect<void, never, never>;
-  readonly error: (...message: ReadonlyArray<any>) => Effect.Effect<void, never, never>;
+  readonly trace?: (...message: ReadonlyArray<any>) => Effect.Effect<void>;
+  readonly debug: (...message: ReadonlyArray<any>) => Effect.Effect<void>;
+  readonly info: (...message: ReadonlyArray<any>) => Effect.Effect<void>;
+  readonly warn: (...message: ReadonlyArray<any>) => Effect.Effect<void>;
+  readonly error: (...message: ReadonlyArray<any>) => Effect.Effect<void>;
 };
 
 /**
@@ -67,7 +67,7 @@ export const defaultServiceLogger = make({
  */
 export const toClientLogger: (logger: ServiceLogger) => Effect.Effect<Logger> = (logger) =>
   Effect.gen(function* () {
-    const runtime = yield* Effect.context<never>();
+    const runtime = yield* Effect.context();
     const runSync = Effect.runSyncWith(runtime);
 
     return {

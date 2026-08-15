@@ -48,6 +48,7 @@ const getResponseToApiGateway: EventSource<
   };
 };
 
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 export default {
   getRequest: getRequestValuesFromApiGatewayEvent,
   getResponse: getResponseToApiGateway,

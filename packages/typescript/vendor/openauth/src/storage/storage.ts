@@ -21,6 +21,7 @@ export namespace Storage {
     return key.map((k) => k.replaceAll(SEPARATOR, ""));
   }
   export function get<T>(adapter: StorageAdapter, key: string[]) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     return adapter.get(encode(key)) as Promise<T | null>;
   }
 

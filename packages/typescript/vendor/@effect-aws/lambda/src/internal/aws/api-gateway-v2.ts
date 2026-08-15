@@ -54,6 +54,7 @@ function getRequestValuesFromApiGatewayEvent(
 const getResponseToApiGateway: EventSource<
   APIGatewayProxyEventV2,
   APIGatewayProxyResultV2
+  // oxlint-disable-next-line typescript/no-useless-default-assignment
 >["getResponse"] = ({ body, headers = {}, isBase64Encoded = false, response = {}, statusCode }) => {
   if (headers["transfer-encoding"] === "chunked" || response.chunkedEncoding) {
     throw new Error("chunked encoding is not supported by API Gateway");

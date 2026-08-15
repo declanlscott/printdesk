@@ -39,11 +39,8 @@ export const fromLayer = <R, E>(
         yield* Console.log("[runtime] cleaning up");
         yield* rt.disposeEffect;
         yield* Console.log("[runtime] exiting");
-        // @effect-diagnostics-next-line lazyPromiseInEffectSync:off
         // oxlint-disable-next-line unicorn/no-process-exit
-        // @effect-diagnostics-next-line missingReturnYieldStar:off
-        // oxlint-disable-next-line unicorn/no-process-exit
-        yield* Effect.sync(() => process.exit(0));
+        return yield* Effect.sync(() => process.exit(0));
       }),
     );
   };

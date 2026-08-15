@@ -126,6 +126,7 @@ export namespace Constants {
   export const SOFT_DELETE_LIFETIME = "12 weeks" satisfies Duration.Input;
 
   export const NANOID_REGEX = new RegExp(
+    // oxlint-disable-next-line typescript/no-misused-spread
     `^[${[...NANOID_ALPHABET].toSorted().join("")}]{${NANOID_LENGTH}}$`,
   );
   export const TENANT_SLUG_REGEX = new RegExp(/^[a-z0-9-]+$/);

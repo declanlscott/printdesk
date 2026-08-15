@@ -49,7 +49,7 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
       Effect.flatMap(notifier.notifyAfterTransaction),
-      Effect.catch(() => Effect.void),
+      Effect.ignoreCause,
     );
 
   const create = Mutation.make(DeliveryOptionsContract.create, {

@@ -9,11 +9,11 @@ export interface OpenauthClientInput extends Omit<ClientInput, "issuer"> {
 }
 
 export interface OpenauthRefreshOptions extends Omit<RefreshOptions, "access"> {
-  access?: Redacted.Redacted<string>;
+  access?: Redacted.Redacted;
 }
 
 export interface OpenauthVerifyOptions extends Omit<VerifyOptions, "refresh"> {
-  refresh?: Redacted.Redacted<string>;
+  refresh?: Redacted.Redacted;
 }
 
 export class Openauth extends Context.Service<Openauth, ServiceShape>()(

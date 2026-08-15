@@ -1,3 +1,4 @@
+// oxlint-disable effecttsgo/strict-effect-provide
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
@@ -21,7 +22,14 @@ export class AwsCredentialIdentityProviderMiddleware extends HttpApiMiddleware.S
 }) {
   public static readonly makeAppconfig = AppconfigCredentialIdentityProviderLayerMap.pipe(
     Effect.map((layerMap) =>
-      this.of(Effect.provide(Actor.pipe(Effect.map(layerMap.get), Layer.unwrap))),
+      this.of(
+        Effect.provide(
+          Actor.pipe(
+            Effect.map((actor) => layerMap.get(actor)),
+            Layer.unwrap,
+          ),
+        ),
+      ),
     ),
   );
   public static readonly appconfigLayer = this.makeAppconfig.pipe(
@@ -32,7 +40,12 @@ export class AwsCredentialIdentityProviderMiddleware extends HttpApiMiddleware.S
     AppsyncPublisherCredentialIdentityProviderLayerMap.pipe(
       Effect.map((layerMap) =>
         AwsCredentialIdentityProviderMiddleware.of(
-          Effect.provide(Actor.pipe(Effect.map(layerMap.get), Layer.unwrap)),
+          Effect.provide(
+            Actor.pipe(
+              Effect.map((actor) => layerMap.get(actor)),
+              Layer.unwrap,
+            ),
+          ),
         ),
       ),
     );
@@ -44,7 +57,12 @@ export class AwsCredentialIdentityProviderMiddleware extends HttpApiMiddleware.S
     AppsyncSubscriberCredentialIdentityProviderLayerMap.pipe(
       Effect.map((layerMap) =>
         AwsCredentialIdentityProviderMiddleware.of(
-          Effect.provide(Actor.pipe(Effect.map(layerMap.get), Layer.unwrap)),
+          Effect.provide(
+            Actor.pipe(
+              Effect.map((actor) => layerMap.get(actor)),
+              Layer.unwrap,
+            ),
+          ),
         ),
       ),
     );

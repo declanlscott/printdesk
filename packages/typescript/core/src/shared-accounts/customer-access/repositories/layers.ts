@@ -79,6 +79,7 @@ export const makeRepository = Effect.gen(function* () {
         .pipe(
           Effect.map(
             (data) =>
+              // oxlint-disable-next-line typescript/no-unsafe-type-assertion
               data as Array<{
                 access: (typeof data)[number]["access"];
                 customer: (typeof data)[number]["customer"];

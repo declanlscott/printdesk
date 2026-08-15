@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
 import { getTableColumns, getTableName, sql } from "drizzle-orm";
 import { snakeCase, primaryKey } from "drizzle-orm/pg-core";
 import * as Array from "effect/Array";
@@ -67,6 +68,7 @@ export namespace Tables {
         self: PgBuildExtraConfigColumns<Columns.Sync & TColumns>,
       ) => Array<PgTableExtraConfigValue>,
     ) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       this.table = snakeCase.table(
         name,
         {
@@ -79,7 +81,6 @@ export namespace Tables {
           primaryKey({ columns: [table.id, table.tenantId] }),
           ...(extraConfig?.(table) ?? []),
         ],
-        // oxlint-disable-next-line typescript/no-explicit-any
       ) as any;
     }
 
@@ -136,7 +137,6 @@ export namespace Tables {
           primaryKey({ columns: [table.id, table.tenantId] }),
           ...(extraConfig?.(table) ?? []),
         ],
-        // oxlint-disable-next-line typescript/no-explicit-any
       ) as any;
     }
 

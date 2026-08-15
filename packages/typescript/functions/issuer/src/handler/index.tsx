@@ -100,11 +100,14 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
         </Layout>
       );
 
+      // oxlint-disable-next-line typescript/no-base-to-string
       return new Response(jsx.toString(), { headers: { "Content-Type": "text/html" } });
     },
     success: (response, result) => {
-      const subject = <TSubjectArgs extends Parameters<typeof response.subject>>(
-        ...[properties, opts]: TSubjectArgs extends [string, ...infer TArgs] ? TArgs : never
+      const subject = (
+        ...[properties, opts]: Parameters<typeof response.subject> extends [string, ...infer TArgs]
+          ? TArgs
+          : never
       ) =>
         Effect.tryPromise({
           try: () => response.subject(properties._tag, properties, opts),

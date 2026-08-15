@@ -82,6 +82,7 @@ const getResponseToAlb: EventSource<ALBEvent, ALBResult>["getResponse"] = ({
   };
 };
 
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 export default {
   getRequest: getRequestValuesFromAlbEvent,
   getResponse: getResponseToAlb,

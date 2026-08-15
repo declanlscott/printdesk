@@ -85,11 +85,11 @@ export const makeService = Effect.gen(function* () {
   const patch = Function.dual<
     <TScimResource extends ScimResource>(
       patchOperations: Array<ScimPatchOperation>,
-    ) => (scimResource: TScimResource) => Effect.Effect<TScimResource, ScimContract.V2Error, never>,
+    ) => (scimResource: TScimResource) => Effect.Effect<TScimResource, ScimContract.V2Error>,
     <TScimResource extends ScimResource>(
       scimResource: TScimResource,
       patchOperations: Array<ScimPatchOperation>,
-    ) => Effect.Effect<TScimResource, ScimContract.V2Error, never>
+    ) => Effect.Effect<TScimResource, ScimContract.V2Error>
   >(
     2,
     Effect.fn("Scim.patch")((...args) =>
@@ -367,7 +367,7 @@ export const makeService = Effect.gen(function* () {
   );
 
   const replaceGroup = Effect.fn("Scim.replaceGroup")(
-    (dtos: typeof GroupsContract.Dtos.Type) =>
+    (dtos: GroupsContract.Dtos) =>
       db.useTransaction(
         Effect.fn(function* () {
           const group = yield* groupsRepository.updateById(
@@ -669,7 +669,7 @@ export const makeService = Effect.gen(function* () {
           Effect.tapCause(() => errorCountRef.pipe(SynchronizedRef.update(Number.increment))),
           Effect.catchCause((cause) =>
             Cause.findError(cause).pipe(
-              Result.filterOrFail(ScimContract.V2Error.guard, Cause.fail),
+              Result.filterOrFail((error) => ScimContract.V2Error.guard(error), Cause.fail),
               Result.match({
                 onSuccess: (response) =>
                   Effect.succeed(

@@ -52,6 +52,7 @@ interface _NonEmptyString extends Schema.Bottom<
   // oxlint-disable-next-line typescript/no-empty-object-type
 > {}
 
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 export const NonEmptyString = Schema.NonEmptyString as _NonEmptyString;
 export type NonEmptyString = typeof NonEmptyString.Type;
 
@@ -187,7 +188,7 @@ export const pluck =
       Schema.decodeTo(Schema.toType(schema.fields[propertyKey]), {
         // oxlint-disable-next-line typescript/no-explicit-any
         decode: SchemaGetter.transform((whole: any) => whole[propertyKey]),
-        // oxlint-disable-next-line typescript/no-explicit-any
+        // oxlint-disable-next-line typescript/no-explicit-any typescript/no-unsafe-type-assertion
         encode: SchemaGetter.transform((value) => ({ [propertyKey]: value }) as any),
       }),
     );
@@ -199,7 +200,8 @@ export const orDieWhenUnrespondable = <TSuccess, TError, TServices>(
     Effect.catchFilter(
       Filter.make((error) =>
         HttpServerRespondable.isRespondable(error)
-          ? Result.fail(error as TError extends HttpServerRespondable.Respondable ? TError : never)
+          ? // oxlint-disable-next-line typescript/no-unsafe-type-assertion
+            Result.fail(error as TError extends HttpServerRespondable.Respondable ? TError : never)
           : Result.succeed(error),
       ),
       Effect.die,

@@ -648,7 +648,7 @@ export namespace ScimContract {
                   Predicate.isNotUndefined,
                   () => new SchemaIssue.MissingKey({ messageMissingKey: "missing group id" }),
                 ),
-                Effect.flatMap(EntityId.makeEffect),
+                Effect.flatMap((id) => EntityId.makeEffect(id)),
               );
               const members = yield* Effect.all(
                 Array.map(groupMemberships, (membership) =>
@@ -835,7 +835,7 @@ export namespace ScimContract {
                   Predicate.isNotUndefined,
                   () => new SchemaIssue.MissingKey({ messageMissingKey: "missing user id" }),
                 ),
-                Effect.flatMap(EntityId.makeEffect),
+                Effect.flatMap((id) => EntityId.makeEffect(id)),
               );
               const role = yield* Effect.succeed(user.role).pipe(
                 Effect.filterOrFail(

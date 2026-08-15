@@ -32,6 +32,7 @@ export const runPromise =
                   Effect.map(HttpServerResponse.toWeb),
                   Effect.map(
                     (res) =>
+                      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
                       new HTTPException(res.status as ContentfulStatusCode, {
                         res,
                         cause: respondable,

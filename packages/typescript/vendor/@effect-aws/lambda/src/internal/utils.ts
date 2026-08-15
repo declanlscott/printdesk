@@ -11,6 +11,7 @@ export function getEventBody({
   return Buffer.from(body ?? "", isBase64Encoded ? "base64" : "utf8");
 }
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function getRequestValuesFromEvent<TEvent extends ALBEvent | APIGatewayProxyEvent>({
   event,
   path,
@@ -69,7 +70,8 @@ export function getMultiValueHeaders(headers: ResponseValues<unknown>["headers"]
   Object.entries(headers).forEach(([headerKey, headerValue]) => {
     const headerArray = Array.isArray(headerValue)
       ? headerValue.map(String)
-      : [String(headerValue)];
+      : // oxlint-disable-next-line typescript/no-unnecessary-type-conversion
+        [String(headerValue)];
 
     multiValueHeaders[headerKey.toLowerCase()] = headerArray;
   });

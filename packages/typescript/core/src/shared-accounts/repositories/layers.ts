@@ -73,6 +73,7 @@ export const makeRepository = Effect.gen(function* () {
             .where(and(eq(table.origin, origin), eq(table.tenantId, tenantId))),
         )
         .pipe(
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
           Effect.map((accounts) => accounts as Array<SharedAccountByOrigin<TSharedAccountOrigin>>),
         ),
   );

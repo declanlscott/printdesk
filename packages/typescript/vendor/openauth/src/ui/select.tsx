@@ -80,6 +80,7 @@ export function Select(props?: SelectProps) {
       </Layout>
     );
 
+    // oxlint-disable-next-line typescript/no-base-to-string
     return new Response(jsx.toString(), {
       headers: {
         "Content-Type": "text/html",

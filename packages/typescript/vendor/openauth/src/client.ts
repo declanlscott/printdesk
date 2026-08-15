@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any
+// oxlint-disable typescript/no-non-null-assertion typescript/no-explicit-any typescript/no-unsafe-type-assertion
 /**
  * Use the OpenAuth client kick off your OAuth flows, exchange tokens, refresh tokens,
  * and verify tokens.
@@ -700,6 +700,7 @@ export function createClient(input: ClientInput): Client {
         if (!validated.issues && result.payload.mode === "access")
           return {
             aud: result.payload.aud as string,
+            // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
             subject: {
               type: result.payload.type,
               properties: validated.value,

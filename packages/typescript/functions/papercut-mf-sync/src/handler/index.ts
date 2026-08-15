@@ -22,9 +22,7 @@ import * as Struct from "effect/Struct";
 export const TenantActorFromEvent = Schema.Struct({ tenantId: TenantId }).pipe(
   Schema.decodeTo(ActorsContract.TenantActor, {
     decode: SchemaGetter.transformOrFail(({ tenantId }) =>
-      ActorsContract.TenantActor.makeEffect({ id: tenantId }).pipe(
-        Effect.mapError(Struct.get("issue")),
-      ),
+      ActorsContract.TenantActor.makeEffect({ id: tenantId }),
     ),
     encode: SchemaGetter.forbidden(() => "Not implemented"),
   }),
@@ -60,6 +58,7 @@ export const handler = Effect.fn(
           { concurrency: "unbounded" },
         ),
       ),
+      // oxlint-disable-next-line effecttsgo/strict-effect-provide
       Effect.provide(
         Function.pipe(
           event,

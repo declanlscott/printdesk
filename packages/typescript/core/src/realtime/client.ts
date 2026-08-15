@@ -127,10 +127,9 @@ export namespace Realtime {
       } as const;
     },
     (effect, opts) =>
-      effect.pipe(
-        opts.networkMonitor.whenOnline,
-        Effect.retry(opts.retrySchedule ?? defaultRetrySchedule),
-      ),
+      opts.networkMonitor.onlineLatch
+        .whenOpen(effect)
+        .pipe(Effect.retry(opts.retrySchedule ?? defaultRetrySchedule)),
   );
 
   export type Realtime = Effect.Success<ReturnType<typeof make>>;
@@ -199,7 +198,7 @@ export namespace Realtime {
         yield* realtime.connection.pipe(Deferred.await);
 
         const id = yield* crypto.randomUUIDv4.pipe(
-          Effect.flatMap(RealtimeContract.SubscriptionId.makeEffect),
+          Effect.flatMap((id) => RealtimeContract.SubscriptionId.makeEffect(id)),
         );
 
         const handler = yield* RealtimeEventHandlers.registry.resolve(name);
@@ -274,7 +273,7 @@ export namespace Realtime {
       }).pipe((effect) =>
         get
           .resultOnce(opts.atoms.networkMonitor)
-          .pipe(Effect.flatMap((monitor) => effect.pipe(monitor.whenOnline))),
+          .pipe(Effect.flatMap((monitor) => monitor.onlineLatch.whenOpen(effect))),
       );
 
       const disconnection = get
@@ -308,7 +307,7 @@ export namespace Realtime {
             while: Function.constTrue,
             body: () => pull,
             step: (events) =>
-              AsyncResult.success(Array.lastNonEmpty(events), { waiting: true }).pipe(get.setSelf),
+              get.setSelf(AsyncResult.success(Array.lastNonEmpty(events), { waiting: true })),
           }),
         ),
         Effect.scoped,
@@ -321,13 +320,15 @@ export namespace Realtime {
                   Option.flatMap(AsyncResult.value),
                   Option.match({
                     onNone: () =>
-                      AsyncResult.failWithPrevious(new Cause.NoSuchElementError(), {
-                        previous: getSelf(),
-                      }).pipe(get.setSelf),
+                      get.setSelf(
+                        AsyncResult.failWithPrevious(new Cause.NoSuchElementError(), {
+                          previous: getSelf(),
+                        }),
+                      ),
                     onSome: (output) => get.setSelf(AsyncResult.success(output)),
                   }),
                 )
-              : AsyncResult.failureWithPrevious(cause, { previous: getSelf() }).pipe(get.setSelf),
+              : get.setSelf(AsyncResult.failureWithPrevious(cause, { previous: getSelf() })),
           ),
         ),
         runFork,

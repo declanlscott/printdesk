@@ -31,13 +31,12 @@ export namespace NetworkMonitor {
       Effect.forkDetach,
     );
 
-    const whenOnline = onlineLatch.whenOpen;
     const onlineChanges = yield* onlineRef.pipe(
       SubscriptionRef.changes,
       Stream.share({ capacity: 16, strategy: "suspend" }),
     );
 
-    return { whenOnline, onlineChanges };
+    return { onlineLatch, onlineChanges };
   });
 
   export type NetworkMonitor = Effect.Success<typeof make>;

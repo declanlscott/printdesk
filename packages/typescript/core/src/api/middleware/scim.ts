@@ -1,3 +1,4 @@
+// oxlint-disable effecttsgo/strict-effect-provide
 import * as Cause from "effect/Cause";
 import * as Crypto from "effect/Crypto";
 import * as Effect from "effect/Effect";

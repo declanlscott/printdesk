@@ -49,6 +49,7 @@ export default defineConfig({
       restriction: "error",
     },
     rules: {
+      "effecttsgo/async-function": "off",
       "eslint/no-new": "off",
       "eslint/no-param-reassign": "off",
       "eslint/no-shadow": "off",
@@ -61,13 +62,29 @@ export default defineConfig({
       "react-perf/jsx-no-new-array-as-prop": "off",
       "react-perf/jsx-no-new-function-as-prop": "off",
       "react/react-in-jsx-scope": "off",
-      "typescript/no-namespace": "off",
+      "typescript/consistent-return": "off",
       "typescript/explicit-function-return-type": "off",
       "typescript/explicit-module-boundary-types": "off",
+      "typescript/no-namespace": "off",
+      "typescript/promise-function-async": "off",
       "typescript/no-invalid-void-type": "off",
       "unicorn/no-array-for-each": "off",
       "unicorn/no-array-reduce": "off",
     },
     ignorePatterns: ["**/sst-env.d.ts", "**/routeTree.gen.ts"],
+    overrides: [
+      {
+        files: ["packages/typescript/vendor/openauth/**"],
+        rules: {
+          "effecttsgo/crypto-random-uuid": "off",
+          "effecttsgo/extends-native-error": "off",
+          "effecttsgo/global-console": "off",
+          "effecttsgo/global-date": "off",
+          "effecttsgo/global-fetch": "off",
+          "effecttsgo/process-env": "off",
+          "effecttsgo/node-builtin-import": "off",
+        },
+      },
+    ],
   },
 });

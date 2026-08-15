@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any typescript/no-empty-object-type typescript/no-non-null-assertion no-console unicorn/consistent-function-scoping
+// oxlint-disable typescript/no-explicit-any typescript/no-empty-object-type typescript/no-non-null-assertion no-console unicorn/consistent-function-scoping typescript/no-unsafe-type-assertion typescript/no-base-to-string
 import { Context } from "hono";
 import { handle as awsHandle } from "hono/aws-lambda";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
@@ -211,7 +211,7 @@ import type { Theme } from "./ui/theme";
 export const aws = awsHandle;
 
 export interface IssuerInput<
-  Providers extends Record<string, Provider<any>>,
+  Providers extends Record<string, Provider>,
   Subjects extends SubjectSchema,
   Result = {
     [key in keyof Providers]: Prettify<
@@ -446,7 +446,7 @@ export interface IssuerInput<
  * Create an OpenAuth server, a Hono app.
  */
 export function issuer<
-  Providers extends Record<string, Provider<any>>,
+  Providers extends Record<string, Provider>,
   Subjects extends SubjectSchema,
   Result = {
     [key in keyof Providers]: Prettify<
@@ -457,6 +457,7 @@ export function issuer<
   }[keyof Providers],
 >(input: IssuerInput<Providers, Subjects, Result>) {
   const error =
+    // oxlint-disable-next-line typescript/unbound-method
     input.error ??
     function (err) {
       return new Response(err.message, {
@@ -474,9 +475,11 @@ export function issuer<
     setTheme(input.theme);
   }
 
+  // oxlint-disable-next-line typescript/unbound-method
   const select = lazy(() => input.select ?? Select());
   const allow = lazy(
     () =>
+      // oxlint-disable-next-line typescript/unbound-method
       input.allow ??
       (async (input: any, req: Request) => {
         const redir = new URL(input.redirectURI).hostname;
@@ -528,7 +531,7 @@ export function issuer<
               const location = new URL(authorization.redirect_uri);
               const tokens = await generateTokens(ctx, {
                 subject,
-                type: type as string,
+                type,
                 properties,
                 clientID: authorization.client_id,
                 ttl: {
@@ -599,7 +602,7 @@ export function issuer<
     async get(ctx: Context, key: string): Promise<any> {
       const raw = getCookie(ctx, key);
       if (!raw) return;
-      return decrypt(raw).catch((ex) => {
+      return decrypt(raw).catch((ex: unknown) => {
         console.error("failed to decrypt", key, ex);
       });
     },
@@ -974,7 +977,7 @@ export function issuer<
               const tokens = await generateTokens(
                 c,
                 {
-                  type: type as string,
+                  type,
                   subject: opts?.subject || (await resolveSubject(type, properties)),
                   properties,
                   clientID: clientID.toString(),

@@ -74,7 +74,7 @@ export const makeService = Effect.gen(function* () {
         }),
         Effect.flatMap((client) => client.execute(entry.request)),
         Effect.exit,
-        Effect.map(entry.completeUnsafe),
+        Effect.map((exit) => entry.completeUnsafe(exit)),
       ),
     ),
   ).pipe(
@@ -166,6 +166,7 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap(
         xmlRpc.response(
           XmlRpcContract.tupleResponse(
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion
             ...(propertyKeys.map((key) => sharedAccountPropertySchemas[key]) as {
               [TKey in keyof TPropertyKeys]: SharedAccountPropertySchemas[TPropertyKeys[TKey]];
             }),

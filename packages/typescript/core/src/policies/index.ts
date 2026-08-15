@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
 import * as HashMap from "effect/HashMap";

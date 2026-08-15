@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
 import * as NS from "node:stream/promises";
 
 import * as NodeStream from "@effect/platform-node-shared/NodeStream";
@@ -29,6 +29,7 @@ const handleErrnoException =
 
 /** @internal */
 export const pipeline: {
+  // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
   <A extends PipelineSource<any>, B extends PipelineDestination<A, any>>(
     source: A,
     destination: B,

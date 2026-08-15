@@ -39,7 +39,9 @@ export function makeResource<
   TPrefixedOnly extends boolean = false,
 >({
   env,
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   prefix = Constants.SST_RESOURCE_PREFIX as TPrefix,
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   prefixedOnly = false as TPrefixedOnly,
 }: {
   env: TEnv;

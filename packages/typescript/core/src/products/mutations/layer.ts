@@ -126,10 +126,10 @@ export const makeService = Effect.gen(function* () {
               id,
               {
                 status: "published",
-                config: ProductsContract.Configuration.make({
-                  ...prev.config,
-                  status: "published",
-                }),
+                config: ProductsContract.ConfigurationV1.statusLens.replace(
+                  "published",
+                  prev.config,
+                ),
                 updatedAt,
               },
               user.tenantId,
@@ -155,10 +155,7 @@ export const makeService = Effect.gen(function* () {
               id,
               {
                 status: "draft",
-                config: ProductsContract.Configuration.make({
-                  ...prev.config,
-                  status: "draft",
-                }),
+                config: ProductsContract.ConfigurationV1.statusLens.replace("draft", prev.config),
                 updatedAt,
               },
               user.tenantId,

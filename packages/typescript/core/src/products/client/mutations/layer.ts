@@ -39,10 +39,12 @@ export const makeService = Effect.gen(function* () {
         policies.canEdit.make({ id }),
       ),
     mutator: ({ id, updatedAt }) =>
-      repository.updateById(id, ({ config }) =>
-        ProductsContract.Configuration.makeEffect({ ...config, status: "published" }).pipe(
-          Effect.map((config) => ({ status: config.status, config, updatedAt })),
-        ),
+      repository.updateById(id, (prev) =>
+        Effect.succeed({
+          status: "published",
+          config: ProductsContract.ConfigurationV1.statusLens.replace("published", prev.config),
+          updatedAt,
+        }),
       ),
   });
 
@@ -53,10 +55,12 @@ export const makeService = Effect.gen(function* () {
         policies.canEdit.make({ id }),
       ),
     mutator: ({ id, updatedAt }) =>
-      repository.updateById(id, ({ config }) =>
-        ProductsContract.Configuration.makeEffect({ ...config, status: "draft" }).pipe(
-          Effect.map((config) => ({ status: config.status, config, updatedAt })),
-        ),
+      repository.updateById(id, (prev) =>
+        Effect.succeed({
+          status: "draft",
+          config: ProductsContract.ConfigurationV1.statusLens.replace("draft", prev.config),
+          updatedAt,
+        }),
       ),
   });
 

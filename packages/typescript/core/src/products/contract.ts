@@ -90,7 +90,9 @@ export namespace ProductsContract {
       }).pipe(Schema.optional),
       attributes: AttributesV1,
     },
-  ) {}
+  ) {
+    public static readonly statusLens = this.pipe(Schema.toIso).key("status");
+  }
   export const Configuration = Schema.Union([ConfigurationV1]);
 
   export class Table extends TablesContract.Table<ProductsTable>("products")(

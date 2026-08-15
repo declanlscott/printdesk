@@ -377,12 +377,12 @@ importers:
 
   packages/typescript/functions/invoices-processor:
     dependencies:
+      '@effect-aws/lambda':
+        specifier: workspace:@printdesk/effect-aws-lambda@*
+        version: link:../../vendor/@effect-aws/lambda
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
-      '@printdesk/effect-aws-lambda':
-        specifier: workspace:^
-        version: link:../../vendor/@effect-aws/lambda
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.106

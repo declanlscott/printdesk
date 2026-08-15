@@ -11,6 +11,7 @@ import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Optic from "effect/Optic";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
@@ -134,10 +135,9 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
               Array.dropRight(entry.request.input, 1),
               Array.last<any>(entry.request.input).pipe(
                 Option.match({
-                  onSome: (config: RequestConfiguration<any>) => ({
-                    options: [...(config.options ?? []), new AbortSignalOption(signal)],
-                    ...config,
-                  }),
+                  onSome: Optic.id<RequestConfiguration<any>>()
+                    .key("options")
+                    .modify((options = []) => Array.append(options, new AbortSignalOption(signal))),
                   onNone: () => ({ options: [new AbortSignalOption(signal)] }),
                 }),
               ),

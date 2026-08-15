@@ -1,4 +1,5 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
+import * as ApiUrlBuilder from "@printdesk/core/api/url-builder/layer";
 import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
 import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
@@ -9,22 +10,21 @@ import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
 import * as PgClient from "@printdesk/core/database/postgres";
 import { Graph } from "@printdesk/core/graph";
-import * as CustomerGroupMembershipsRepository from "@printdesk/core/groups/customer-memberships/repository/layer";
-import * as CustomerGroupsRepository from "@printdesk/core/groups/customers/repository/layer";
-import { EntraId } from "@printdesk/core/identity/entra-id";
-import * as IdentityProvidersRepository from "@printdesk/core/identity/providers-repository/layer";
+import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
+import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
+import * as IdentityRepository from "@printdesk/core/identity/repository/layer";
 import { Oauth } from "@printdesk/core/oauth";
 import * as PapercutMfApi from "@printdesk/core/papercut-mf/api/layer";
-import * as PapercutMfSyncer from "@printdesk/core/papercut-mf/syncer/layer";
+import * as PapercutMfSynchronizer from "@printdesk/core/papercut-mf/synchronizer/layer";
 import { Realtime } from "@printdesk/core/realtime";
 import * as ReplicacheNotifier from "@printdesk/core/replicache/notifier/layer";
-import * as SharedAccountCustomerAccessRepository from "@printdesk/core/shared-accounts/customer-access/repository/layer";
-import * as SharedAccountCustomerGroupAccessRepository from "@printdesk/core/shared-accounts/customer-group-access/repository/layer";
-import * as SharedAccountsRepository from "@printdesk/core/shared-accounts/repository/layer";
+import * as ScimLocator from "@printdesk/core/scim/locator/layer";
+import * as SharedAccountCustomerAccessRepositories from "@printdesk/core/shared-accounts/customer-access/repositories/layers";
+import * as SharedAccountGroupCustomerAccessRepositories from "@printdesk/core/shared-accounts/group-customer-access/repositories/layers";
+import * as SharedAccountsRepositories from "@printdesk/core/shared-accounts/repositories/layers";
 import { SstResource } from "@printdesk/core/sst/resource";
-import * as SyncQueryBuilder from "@printdesk/core/sync/query-builder/layer";
-import * as TenantsRepository from "@printdesk/core/tenants/repository/layer";
-import * as UsersRepository from "@printdesk/core/users/repository/layer";
+import * as TenantsRepositories from "@printdesk/core/tenants/repositories/layers";
+import * as UsersRepositories from "@printdesk/core/users/repositories/layers";
 import { Xml } from "@printdesk/core/xml";
 import { XmlRpc } from "@printdesk/core/xml/rpc";
 import * as Layer from "effect/Layer";
@@ -38,31 +38,31 @@ export const layer = Layer.mergeAll(
   ActorLayerMap.layer,
   ClientsRepository.layer,
   openauthLayer,
-  PapercutMfSyncer.layer,
+  PapercutMfSynchronizer.layer,
   ReplicacheNotifier.layer,
-  TenantsRepository.layer,
+  TenantsRepositories.repositoryLayer,
 ).pipe(
   Layer.provide([
-    CustomerGroupMembershipsRepository.layer,
-    CustomerGroupsRepository.layer,
+    GroupMembershipsRepositories.repositoryLayer,
+    GroupsRepositories.repositoryLayer,
     Graph.layer,
-    IdentityProvidersRepository.layer,
+    IdentityRepository.providersRepositoryLayer,
     PapercutMfApi.layer,
     Realtime.layer,
-    SharedAccountCustomerAccessRepository.layer,
-    SharedAccountCustomerGroupAccessRepository.layer,
-    SharedAccountsRepository.layer,
-    UsersRepository.layer,
+    SharedAccountCustomerAccessRepositories.repositoryLayer,
+    SharedAccountGroupCustomerAccessRepositories.repositoryLayer,
+    SharedAccountsRepositories.repositoryLayer,
+    UsersRepositories.repositoryLayer,
   ]),
-  Layer.provideMerge([Config.layer, EntraId.AuthProviderLayerMap.layer]),
+  Layer.provideMerge(Config.layer),
   Layer.provide([
     Appconfig.layer,
     AppconfigAgent.layer,
     AppsyncSigner.layer,
-    SyncQueryBuilder.layer,
+    ScimLocator.layer,
     XmlRpc.XmlRpc.layer,
   ]),
-  Layer.provide([Database.layer, Xml.Builder.layer, Xml.Parser.layer]),
+  Layer.provide([ApiUrlBuilder.layer, Database.layer, Xml.Builder.layer, Xml.Parser.layer]),
   Layer.provide([Drizzle.layerWithDrizzleServices, FetchHttpClient.layer]),
   Layer.provide(PgClient.layer),
   Layer.provideMerge(SstResource.layer),

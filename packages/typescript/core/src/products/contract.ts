@@ -10,8 +10,8 @@ import { Cost, EntityId, HexColor } from "../utils";
 import type { ActiveProductsView, ActivePublishedProductsView, ProductsTable } from "./sql";
 
 export namespace ProductsContract {
-  export const statuses = ["draft", "published"] as const;
-  export type Status = (typeof statuses)[number];
+  export const Status = Schema.Literals(["draft", "published"]);
+  export type Status = typeof Status.Type;
 
   export class Option extends Schema.Class<Option>("Option")({
     name: Schema.Trim,
@@ -83,9 +83,7 @@ export namespace ProductsContract {
     "ProductConfigurationV1",
     {
       image: Schema.String,
-      status: Schema.Literals(statuses).pipe(
-        Schema.withDecodingDefaultType(Effect.succeed("draft")),
-      ),
+      status: Status.pipe(Schema.withDecodingDefaultType(Effect.succeed("draft"))),
       orderAttachments: Schema.Struct({
         fileUploadEnabled: Schema.Boolean,
         physicalCopyEnabled: Schema.Boolean,
@@ -99,9 +97,7 @@ export namespace ProductsContract {
     {
       ...TablesContract.BaseSyncModel.fields,
       name: ColumnsContract.VarChar,
-      status: Schema.Literals(statuses).pipe(
-        Schema.withDecodingDefaultType(Effect.succeed("draft")),
-      ),
+      status: Status.pipe(Schema.withDecodingDefaultType(Effect.succeed("draft"))),
       roomId: EntityId,
       config: Configuration,
     },

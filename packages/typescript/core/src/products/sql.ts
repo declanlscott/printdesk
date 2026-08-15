@@ -12,7 +12,7 @@ export const products = new Tables.Sync(
   "products",
   {
     name: Columns.varchar().notNull(),
-    status: Columns.union(ProductsContract.statuses).default("draft").notNull(),
+    status: Columns.union(ProductsContract.Status.literals).default("draft").notNull(),
     roomId: Columns.entityId().notNull(),
     config: Columns.jsonb(ProductsContract.Configuration).notNull(),
   },

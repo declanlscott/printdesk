@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-explicit-any
 import { createGraphServiceClient, GraphRequestAdapter } from "@microsoft/msgraph-sdk";
 import { createGraphClientFactory, getDefaultMiddlewares } from "@microsoft/msgraph-sdk-core";
 import { version } from "@microsoft/msgraph-sdk/version";
@@ -17,13 +18,18 @@ import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 
 import { EntraId } from "../identity/entra-id";
 import { ScimLocator } from "../scim/locator";
 import { SstResource } from "../sst/resource";
 import { Constants } from "../utils/constants";
 
-import type { RequestOption, RequestConfiguration } from "@microsoft/kiota-abstractions";
+import type {
+  RequestOption,
+  RequestConfiguration,
+  BaseRequestBuilder,
+} from "@microsoft/kiota-abstractions";
 import type { Middleware } from "@microsoft/kiota-http-fetchlibrary";
 import type { GraphServiceClient } from "@microsoft/msgraph-sdk";
 import type { GroupsContract } from "../groups/contracts";
@@ -34,12 +40,31 @@ export class GraphError extends Schema.TaggedError<GraphError>()("GraphError", {
   cause: Schema.Defect(),
 }) {}
 
-// oxlint-disable-next-line typescript/no-explicit-any
-export type AnyMethod = (...args: Array<any>) => Promise<any>;
+type AnyRequestBuilder = BaseRequestBuilder<any>;
 
-export class GraphRequest<TMethod extends AnyMethod = AnyMethod> extends Request.Class<
-  { method: TMethod; args: Parameters<TMethod> },
-  NonNullable<Awaited<ReturnType<TMethod>>>,
+type RequestBuilderMethod<TBuilder extends AnyRequestBuilder> = Extract<
+  keyof TBuilder,
+  "get" | "post" | "put" | "patch" | "delete"
+>;
+
+type RequestBuilderMethodInputOutput<
+  TBuilder extends AnyRequestBuilder,
+  TMethod extends RequestBuilderMethod<TBuilder>,
+> = TBuilder[TMethod] extends (...input: infer TInput) => Promise<infer TOutput>
+  ? { input: TInput; output: TOutput }
+  : never;
+
+export class GraphRequest<
+  TBuilder extends AnyRequestBuilder = any,
+  TMethod extends RequestBuilderMethod<TBuilder> = any,
+  TInputOutput extends RequestBuilderMethodInputOutput<TBuilder, TMethod> = any,
+> extends Request.Class<
+  {
+    builder: TBuilder;
+    method: TMethod;
+    input: TInputOutput["input"];
+  },
+  NonNullable<TInputOutput["output"]>,
   GraphError | Cause.NoSuchElementError
 > {}
 
@@ -58,6 +83,7 @@ export class AbortSignalMiddleware implements Middleware {
     requestInit: RequestInit,
     requestOptions?: Record<string, RequestOption>,
   ) {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const option = requestOptions?.[AbortSignalOption.key] as AbortSignalOption | undefined;
     if (option) requestInit.signal = option.signal;
 
@@ -73,7 +99,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
     const clientCache = yield* Cache.make({
       capacity: 10,
       requireServicesAt: "lookup",
-      lookup: (_accessToken: Redacted.Redacted<string>) =>
+      lookup: (_accessToken: Redacted.Redacted) =>
         EntraId.AuthProvider.use((authProvider) =>
           Effect.try({
             try: () =>
@@ -104,11 +130,10 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       Effect.forEach((entry) =>
         Effect.tryPromise({
           try: (signal) =>
-            entry.request.method(
-              ...Array.dropRight(entry.request.args, 1),
-              Array.last(entry.request.args).pipe(
+            entry.request.builder[entry.request.method](
+              Array.dropRight(entry.request.input, 1),
+              Array.last<any>(entry.request.input).pipe(
                 Option.match({
-                  // oxlint-disable-next-line typescript/no-explicit-any
                   onSome: (config: RequestConfiguration<any>) => ({
                     options: [...(config.options ?? []), new AbortSignalOption(signal)],
                     ...config,
@@ -121,7 +146,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         }).pipe(
           Effect.filterOrFail(Predicate.isNotUndefined),
           Effect.exit,
-          Effect.map(entry.completeUnsafe),
+          Effect.map((exit) => entry.completeUnsafe(exit)),
         ),
       ),
     ).pipe(
@@ -131,9 +156,12 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
     );
 
     const batchRequest = Effect.fn("Graph.batchRequest")(
-      <TMethod extends AnyMethod>(
-        callback: (client: GraphServiceClient) => TMethod,
-        ...args: Parameters<TMethod>
+      <TBuilder extends AnyRequestBuilder, TMethod extends RequestBuilderMethod<TBuilder>>(
+        getArgs: (client: GraphServiceClient) => {
+          builder: TBuilder;
+          method: TMethod;
+          input: RequestBuilderMethodInputOutput<TBuilder, TMethod>["input"];
+        },
       ) =>
         EntraId.AuthProvider.use((authProvider) =>
           Effect.tryPromise({
@@ -142,8 +170,8 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
           }),
         ).pipe(
           Effect.flatMap((accessToken) => clientCache.pipe(Cache.get(accessToken))),
-          Effect.map(callback),
-          Effect.flatMap((method) => Effect.request(new GraphRequest({ method, args }), resolver)),
+          Effect.map(getArgs),
+          Effect.flatMap((args) => Effect.request(new GraphRequest(args), resolver)),
         ),
     );
 
@@ -154,9 +182,17 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       Effect.map((hostnames) => `https://${hostnames.auth}/token`),
     );
 
-    const me = batchRequest((client) => client.me.get).pipe(Effect.withSpan("Graph.me"));
+    const me = batchRequest((client) => ({
+      builder: client.me,
+      method: "get",
+      input: Tuple.make(),
+    })).pipe(Effect.withSpan("Graph.me"));
 
-    const groups = batchRequest((client) => client.groups.get).pipe(
+    const groups = batchRequest((client) => ({
+      builder: client.groups,
+      method: "get",
+      input: Tuple.make(),
+    })).pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.groups"),
@@ -164,43 +200,69 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
 
     const groupMembers = Effect.fn("Graph.groupMembers")(
       (id: GroupsContract.ExternalId, transitive: boolean = true) =>
-        batchRequest(
-          (client) =>
-            client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"].graphUser.get,
-        ).pipe(Effect.map(Struct.get("value")), Effect.filterOrFail(Predicate.isNotNullish)),
+        batchRequest((client) => ({
+          builder: client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"],
+          method: "get",
+          input: Tuple.make(),
+        })).pipe(Effect.map(Struct.get("value")), Effect.filterOrFail(Predicate.isNotNullish)),
     );
 
-    const users = batchRequest((client) => client.users.get).pipe(
+    const users = batchRequest((client) => ({
+      builder: client.users,
+      method: "get",
+      input: Tuple.make(),
+    })).pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.users"),
     );
 
     const user = Effect.fn("Graph.user")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => client.users.byUserId(id).get),
+      batchRequest((client) => ({
+        builder: client.users.byUserId(id),
+        method: "get",
+        input: Tuple.make(),
+      })),
     );
 
     const userPhoto = Effect.fn("Graph.userPhoto")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => client.users.byUserId(id).photo.content.get),
+      batchRequest((client) => ({
+        builder: client.users.byUserId(id).photo.content,
+        method: "get",
+        input: Tuple.make(),
+      })),
+    );
+
+    const createProvisioningJob = Effect.fn("Graph.createProvisioningJob")(
+      (servicePrincipalId: string) =>
+        batchRequest((client) => ({
+          builder:
+            client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs,
+          method: "post",
+          input: Tuple.make({
+            // TODO
+          }),
+        })),
     );
 
     const validateProvisioningClientCredentials = Effect.fn(
       "Graph.validateProvisioningClientCredentials",
     )((servicePrincipalId: string, credentials: OauthContract.ClientCredentials) =>
-      batchRequest(
-        (client) =>
+      batchRequest((client) => ({
+        builder:
           client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
-            .validateCredentials.post,
-        {
+            .validateCredentials,
+        method: "post",
+        input: Tuple.make({
           useSavedCredentials: false,
-          credentials: [
+          credentials: Tuple.make(
             { key: "BaseAddress", value: baseScimUrl },
             { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
             { key: "Oauth2ClientId", value: credentials.id },
             { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
-          ],
-        },
-      ),
+          ),
+        }),
+      })),
     );
 
     return {
@@ -210,6 +272,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       users,
       user,
       userPhoto,
+      createProvisioningJob,
       validateProvisioningClientCredentials,
     } as const;
   }),

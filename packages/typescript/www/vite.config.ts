@@ -25,6 +25,7 @@ export default defineConfig({
     babel({ presets: [reactCompilerPreset()] }),
     cloudflare({
       viteEnvironment: { name: "ssr" },
+      // oxlint-disable-next-line effecttsgo/process-env
       configPath: process.env.SST_WRANGLER_PATH,
     }),
   ],

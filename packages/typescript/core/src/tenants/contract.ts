@@ -98,17 +98,10 @@ export namespace TenantsContract {
       HttpServerResponse.schemaJson(TenantSlugConflictError)(this, { status: 409 });
   }
 
-  export class InactiveTenantError
-    extends Schema.TaggedError<InactiveTenantError>()(
-      "InactiveTenantError",
-      { status: Status },
-      { httpApiStatus: 403 },
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(InactiveTenantError)(this, { status: 403 });
-  }
+  export class InvalidStatusError extends Schema.TaggedError<InvalidStatusError>()(
+    "InvalidTenantStatusError",
+    Table.Model.mapFields(Struct.pick(["id", "status"])),
+  ) {}
 
   export const edit = new Handler.Handler({
     name: "editTenant",

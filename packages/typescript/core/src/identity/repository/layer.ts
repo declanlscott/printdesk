@@ -85,7 +85,7 @@ export const makeProvidersRepository = Effect.gen(function* () {
   )(
     (
       idpKind: IdentityProvider["kind"],
-      idpOrgId: IdentityProvider["externalId"],
+      idpExternalId: IdentityProvider["externalId"],
       idpUserId: User["externalId"],
     ) =>
       db
@@ -106,7 +106,7 @@ export const makeProvidersRepository = Effect.gen(function* () {
                 eq(usersTable.externalId, idpUserId),
               ),
             )
-            .where(and(eq(table.kind, idpKind), eq(table.externalId, idpOrgId))),
+            .where(and(eq(table.kind, idpKind), eq(table.externalId, idpExternalId))),
         )
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );

@@ -33,7 +33,7 @@ export class IssuerError extends Schema.Error<IssuerError>("IssuerError")({
 }) {}
 
 export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, context: Context) {
-  const { handleUser, verifyClient } = yield* Oauth.Oauth;
+  const { verifyClient, verifyUser } = yield* Oauth.Oauth;
   const identityProvidersRepository = yield* IdentityProvidersRepository;
 
   const app = issuer({
@@ -124,7 +124,7 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
               Effect.die(new globalThis.Error("missing id_token")),
             ),
             Effect.flatMap(Schema.decodeUnknownEffect(IdentityProvidersContract.EntraIdIdToken)),
-            Effect.flatMap(handleUser),
+            Effect.flatMap(verifyUser),
             Effect.flatMap(subject),
           ),
         ),

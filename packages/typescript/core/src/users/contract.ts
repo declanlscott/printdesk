@@ -127,6 +127,11 @@ export namespace UsersContract {
     }),
   }) {}
 
+  export class InvalidStatusError extends Schema.TaggedError<InvalidStatusError>()(
+    "InvalidUserStatusError",
+    Table.Model.mapFields(Struct.pick(["id", "status"])),
+  ) {}
+
   export const ProvisionalDto = UsersContract.Table.Dto.mapFields(
     Struct.pick([
       "username",

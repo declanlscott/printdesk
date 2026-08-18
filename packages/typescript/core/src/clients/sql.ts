@@ -12,6 +12,7 @@ export const clients = new Tables.NonSync(
   {
     name: Columns.varchar().notNull(),
     secretHash: Columns.hash().notNull(),
+    status: Columns.union(ClientsContract.Status.literals).notNull().default("active"),
     role: Columns.union(ClientsContract.Role.literals).notNull(),
     scopes: Columns.stringArray().notNull(),
     callbackId: text().$type<CallbackId>(),

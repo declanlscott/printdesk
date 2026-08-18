@@ -38,9 +38,11 @@ export namespace OauthContract {
   export class AccessDeniedError
     extends Schema.TaggedError<AccessDeniedError>()("OauthAccessDeniedError", {
       reason: Schema.Union([
+        ClientsContract.InvalidStatusError,
         IdentityProvidersContract.NotFoundError,
         UsersContract.NotFoundError,
-        TenantsContract.InactiveTenantError,
+        UsersContract.InvalidStatusError,
+        TenantsContract.InvalidStatusError,
       ]).pipe(Schema.toTaggedUnion("_tag")),
     })
     implements HttpServerRespondable.Respondable

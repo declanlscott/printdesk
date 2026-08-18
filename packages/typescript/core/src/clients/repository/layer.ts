@@ -1,10 +1,11 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, getTableColumns } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { ClientsRepository } from ".";
 import { Database } from "../../database";
+import { tenants } from "../../tenants/sql";
 import { clientsTable } from "../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -15,6 +16,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const db = yield* Database;
   const table = clientsTable;
+  const tenantsTable = tenants.table;
 
   const create = Effect.fn("Clients.Repository.create")((value: InferInsertModel<ClientsTable>) =>
     db
@@ -26,32 +28,18 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
-  const findById = Effect.fn("Clients.Repository.findById")(
+  const findWithTenantById = Effect.fn("Clients.Repository.findWithTenantById")(
     (id: Client["id"], tenantId?: Client["tenantId"]) =>
       db
         .useTransaction((tx) =>
           tx
-            .select()
+            .select({
+              client: getTableColumns(table),
+              tenant: getTableColumns(tenantsTable),
+            })
             .from(table)
+            .innerJoin(tenantsTable, eq(table.tenantId, tenantsTable.id))
             .where(and(eq(table.id, id), tenantId ? eq(table.tenantId, tenantId) : undefined)),
-        )
-        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
-  );
-
-  const findActiveById = Effect.fn("Clients.Repository.findById")(
-    (id: Client["id"], tenantId?: Client["tenantId"]) =>
-      db
-        .useTransaction((tx) =>
-          tx
-            .select()
-            .from(table)
-            .where(
-              and(
-                eq(table.id, id),
-                tenantId ? eq(table.tenantId, tenantId) : undefined,
-                isNull(table.deletedAt),
-              ),
-            ),
         )
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
@@ -82,8 +70,7 @@ export const makeService = Effect.gen(function* () {
 
   return {
     create,
-    findById,
-    findActiveById,
+    findWithTenantById,
     updateById,
     deleteByTenantId,
   } as const;

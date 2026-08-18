@@ -5,6 +5,7 @@ import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 
+import { Crypto } from "../crypto";
 import { SstResource } from "../sst/resource";
 import { CloudflareContract } from "./contract";
 
@@ -16,6 +17,7 @@ export class Cloudflare extends Context.Service<Cloudflare>()(
   "@printdesk/core/cloudflare/Cloudflare",
   {
     make: Effect.gen(function* () {
+      const crypto = yield* Crypto;
       const { account, apiToken } = yield* SstResource.useSync((resource) =>
         resource.Cloudflare.pipe(Redacted.value),
       );
@@ -38,7 +40,32 @@ export class Cloudflare extends Context.Service<Cloudflare>()(
           }).pipe(Effect.flatMap(Schema.decodeEffect(CloudflareContract.TunnelToken))),
       );
 
-      return { getTunnelToken } as const;
+      const refreshTunnelToken = Effect.fn("Cloudflare.refreshTunnelToken")(
+        (tunnelId: CloudflareContract.TunnelId) =>
+          crypto.generateToken().pipe(
+            Effect.map(Redacted.value),
+            Effect.flatMap((tunnel_secret) =>
+              Effect.tryPromise({
+                try: (signal) =>
+                  client.zeroTrust.tunnels.cloudflared.edit(
+                    tunnelId,
+                    {
+                      account_id: account.id,
+                      tunnel_secret,
+                    },
+                    { signal },
+                  ),
+                catch: (cause) => new CloudflareError({ cause }),
+              }),
+            ),
+            Effect.andThen(getTunnelToken(tunnelId)),
+          ),
+      );
+
+      return {
+        getTunnelToken,
+        refreshTunnelToken,
+      } as const;
     }),
   },
 ) {

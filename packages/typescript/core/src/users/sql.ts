@@ -19,9 +19,9 @@ export const users = new Tables.Sync(
     role: Columns.union(UsersContract.Role.literals).notNull().default("customer"),
   },
   (table) => [
-    unique().on(table.username, table.tenantId),
-    unique().on(table.externalId, table.tenantId),
-    unique().on(table.email, table.tenantId),
+    unique().on(table.username, table.identityProviderId, table.tenantId),
+    unique().on(table.externalId, table.identityProviderId, table.tenantId),
+    unique().on(table.email, table.identityProviderId, table.tenantId),
     index().on(table.externalId),
     index().on(table.identityProviderId),
   ],

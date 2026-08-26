@@ -2,7 +2,9 @@ import * as Effect from "effect/Effect";
 import * as Latch from "effect/Latch";
 import * as Queue from "effect/Queue";
 import * as Stream from "effect/Stream";
+import * as Struct from "effect/Struct";
 import * as SubscriptionRef from "effect/SubscriptionRef";
+import * as Atom from "effect/unstable/reactivity/Atom";
 
 export namespace NetworkMonitor {
   export const make = Effect.gen(function* () {
@@ -40,4 +42,9 @@ export namespace NetworkMonitor {
   });
 
   export type NetworkMonitor = Effect.Success<typeof make>;
+
+  export const atom = Atom.make(make).pipe(Atom.keepAlive);
+  export const onlineAtom = Atom.make((get) =>
+    get.resultOnce(atom).pipe(Effect.map(Struct.get("onlineChanges")), Stream.unwrap),
+  );
 }

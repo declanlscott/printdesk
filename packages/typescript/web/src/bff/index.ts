@@ -1,5 +1,3 @@
-import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
-import { ErrorMiddleware } from "@printdesk/core/api/middleware/error";
 import * as Layer from "effect/Layer";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServer from "effect/unstable/http/HttpServer";
@@ -13,8 +11,6 @@ export default {
   fetch: Bff.pipe(
     HttpApiBuilder.layer,
     Layer.provide([authGroupLayer, spaGroupLayer, HttpRouter.layer, HttpServer.layerServices]),
-    Layer.provide(ErrorMiddleware.layer),
-    Layer.provide(NodeCrypto.layer),
     HttpRouter.toWebHandler,
   ).handler,
 };

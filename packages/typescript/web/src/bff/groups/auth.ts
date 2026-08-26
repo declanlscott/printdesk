@@ -16,8 +16,8 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { Bff } from "../contract";
 import { openauthLayer } from "../lib/auth";
-import { ViteResource } from "../lib/sst";
-import { tenantSlugValidatorLayer } from "../middleware/tenant-slug-validator";
+import { errorMiddlewareLayer } from "../middleware/error";
+import { tenantSlugValidatorMiddlewareLayer } from "../middleware/tenant-slug-validator";
 
 const redirectUri = (request: HttpServerRequest.HttpServerRequest) =>
   HttpServerRequest.toClientRequest(request).pipe(
@@ -91,7 +91,5 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
 );
 
 export const authGroupLayer = baseAuthGroupLayer.pipe(
-  Layer.provide(openauthLayer),
-  Layer.provide(tenantSlugValidatorLayer),
-  Layer.provide(ViteResource.layer),
+  Layer.provide([errorMiddlewareLayer, openauthLayer, tenantSlugValidatorMiddlewareLayer]),
 );

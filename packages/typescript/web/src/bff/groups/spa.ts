@@ -8,6 +8,7 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { Bff } from "../contract";
 import { ViteResource } from "../lib/sst";
+import { errorMiddlewareLayer } from "../middleware/error";
 
 export const baseSpaGroupLayer = HttpApiBuilder.group(
   Bff,
@@ -27,4 +28,6 @@ export const baseSpaGroupLayer = HttpApiBuilder.group(
   }),
 );
 
-export const spaGroupLayer = baseSpaGroupLayer.pipe(Layer.provide(ViteResource.layer));
+export const spaGroupLayer = baseSpaGroupLayer.pipe(
+  Layer.provide([errorMiddlewareLayer, ViteResource.layer]),
+);

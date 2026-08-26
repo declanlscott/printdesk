@@ -45,7 +45,7 @@ const FromQuery = Schema.Struct({ slug: TenantsContract.Slug }).pipe(
   }),
 );
 
-export const tenantSlugValidatorLayer = Effect.gen(function* () {
+export const tenantSlugValidatorMiddlewareLayer = Effect.gen(function* () {
   const resourceContext = yield* Effect.context<ViteResource>();
 
   const fromHostname = resourceContext.pipe(
@@ -80,4 +80,4 @@ export const tenantSlugValidatorLayer = Effect.gen(function* () {
       (effect) => effect.pipe(Effect.catchTag("SchemaError", () => new HttpApiError.BadRequest())),
     ),
   );
-}).pipe(Layer.effect(Auth.TenantSlugValidatorMiddleware));
+}).pipe(Layer.effect(Auth.TenantSlugValidatorMiddleware), Layer.provide(ViteResource.layer));

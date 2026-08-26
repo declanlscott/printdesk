@@ -11,4 +11,5 @@ export const openauthLayer = ViteResource.useSync(
 ).pipe(
   Effect.map((issuer) => Openauth.layer({ clientID: Constants.OPENAUTH_CLIENT_IDS.WEB, issuer })),
   Layer.unwrap,
+  Layer.provide(ViteResource.layer),
 );

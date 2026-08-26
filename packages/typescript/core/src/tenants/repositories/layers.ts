@@ -34,6 +34,13 @@ export const makeRepository = Effect.gen(function* () {
       .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
+  const findByLicenseId = Effect.fn("Tenants.Repository.findByLicenseId")(
+    (licenseId: Tenant["licenseId"]) =>
+      db
+        .useTransaction((tx) => tx.select().from(table).where(eq(table.licenseId, licenseId)))
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
   const findBySlug = Effect.fn("Tenants.Repository.findBySlug")((slug: Tenant["slug"]) =>
     db
       .useTransaction((tx) => tx.select().from(table).where(eq(table.slug, slug)))
@@ -54,6 +61,7 @@ export const makeRepository = Effect.gen(function* () {
   return {
     create,
     findById,
+    findByLicenseId,
     findBySlug,
     updateById,
     deleteById,

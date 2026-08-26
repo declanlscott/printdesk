@@ -14,9 +14,9 @@ export namespace ClientsContract {
 
   export const Role = Schema.Literals([
     "api",
+    "bootstrap",
     "invoicesProcessor",
     "papercutMfSync",
-    "setup",
     "scim",
   ]);
   export type Role = typeof Role.Type;

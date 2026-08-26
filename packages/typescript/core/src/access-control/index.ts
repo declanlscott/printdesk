@@ -182,23 +182,26 @@ export namespace AccessControl {
     () =>
       ({
         api: HashSet.make<ReadonlyArray<Permissions.Permission>>("papercut_mf_api_gateway:read"),
+        bootstrap: HashSet.make<ReadonlyArray<Permissions.Permission>>(
+          "groups:create",
+          "groups:read",
+          "groups:update",
+          "groups:delete",
+          "group_memberships:create",
+          "group_memberships:read",
+          "group_memberships:update",
+          "group_memberships:delete",
+          "users:create",
+          "users:read",
+          "users:update",
+          "users:delete",
+        ),
         invoicesProcessor: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "papercut_mf_api_gateway:read",
         ),
         papercutMfSync: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "papercut_mf_api_gateway:read",
           "papercut_mf_sync:create",
-        ),
-        setup: HashSet.make<ReadonlyArray<Permissions.Permission>>(
-          "clients:create",
-          "clients:delete",
-          "cloudflare_tunnel_tokens:read",
-          "config:update",
-          "identity_providers:delete",
-          "infra_input:delete",
-          "infra_output:read",
-          "papercut_mf_api_gateway:read",
-          "tenants:delete",
         ),
         scim: HashSet.make<ReadonlyArray<Permissions.Permission>>(
           "groups:create",

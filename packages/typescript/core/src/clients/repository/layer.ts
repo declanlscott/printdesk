@@ -28,8 +28,20 @@ export const makeService = Effect.gen(function* () {
       ),
   );
 
+  const findById = Effect.fn("Clients.Repository.findById")(
+    (id: Client["id"], tenantId: Client["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select()
+            .from(table)
+            .where(and(eq(table.id, id), eq(table.tenantId, tenantId))),
+        )
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
   const findWithTenantById = Effect.fn("Clients.Repository.findWithTenantById")(
-    (id: Client["id"], tenantId?: Client["tenantId"]) =>
+    (id: Client["id"]) =>
       db
         .useTransaction((tx) =>
           tx
@@ -39,7 +51,7 @@ export const makeService = Effect.gen(function* () {
             })
             .from(table)
             .innerJoin(tenantsTable, eq(table.tenantId, tenantsTable.id))
-            .where(and(eq(table.id, id), tenantId ? eq(table.tenantId, tenantId) : undefined)),
+            .where(eq(table.id, id)),
         )
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
@@ -70,6 +82,7 @@ export const makeService = Effect.gen(function* () {
 
   return {
     create,
+    findById,
     findWithTenantById,
     updateById,
     deleteByTenantId,

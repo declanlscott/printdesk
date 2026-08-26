@@ -1,5 +1,6 @@
 import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
+import { NetworkMonitor } from "@printdesk/core/network/client/monitor";
 import { PolicyDispatcher } from "@printdesk/core/policies/client/dispatcher";
 import { layer as policyDispatcherLayer } from "@printdesk/core/policies/client/dispatcher/layer";
 import { Realtime } from "@printdesk/core/realtime/client";
@@ -17,7 +18,6 @@ import * as Atom from "effect/unstable/reactivity/Atom";
 import { realtimeEventAtomLayer } from ".";
 import { realtimeAtom } from "..";
 import { actorAtom } from "../../actor";
-import { networkMonitorAtom } from "../../network";
 import { replicacheAtom } from "../../replicache";
 
 export const replicacheNotificationAtom = Realtime.makeEventAtom("/replicache/notification", {
@@ -29,7 +29,7 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom("/replicache/no
   atoms: {
     actor: actorAtom,
     realtime: realtimeAtom,
-    networkMonitor: networkMonitorAtom,
+    networkMonitor: NetworkMonitor.atom,
   },
   handler: Effect.fn(function* (get, notification) {
     const replicache = yield* get.resultOnce(replicacheAtom);
@@ -59,6 +59,7 @@ export const replicacheNotificationAtom = Realtime.makeEventAtom("/replicache/no
         ),
       ),
     ).pipe(
+      // oxlint-disable-next-line effecttsgo/strict-effect-provide
       Effect.provide(get.resultOnce(actorAtom).pipe(Effect.map(ActorLayerMap.get), Layer.unwrap)),
       Effect.andThen(replicache.pull),
     );

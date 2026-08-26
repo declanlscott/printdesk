@@ -1,5 +1,6 @@
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 
+import { Bootstrap } from "./bootstrap";
 import { Config } from "./config";
 import { AuthMiddleware } from "./middleware/auth";
 import { ErrorMiddleware } from "./middleware/error";
@@ -9,6 +10,7 @@ import { Replicache } from "./replicache";
 import { Scim } from "./scim";
 
 export class Api extends HttpApi.make("Api")
+  .addHttpApi(Bootstrap.Api)
   .addHttpApi(Config.Api)
   .addHttpApi(Papercut.MfApi)
   .addHttpApi(Realtime.Api)

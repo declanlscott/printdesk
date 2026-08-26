@@ -3,7 +3,9 @@ import { char, customType, integer, varchar as pgVarchar } from "drizzle-orm/pg-
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as MsgPack from "effect/unstable/encoding/Msgpack";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaIssue from "effect/SchemaIssue";
+import { encode as msgpackEncode, decode as msgpackDecode } from "msgpackr";
 
 import { CryptoContract } from "../crypto/contract";
 import { EntityId, generateEntityId, separatedString, ShortId, TenantId, Version } from "../utils";
@@ -42,7 +44,28 @@ export namespace Columns {
   });
 
   export function jsonb<TType, TEncoded>(schema: Schema.Codec<TType, TEncoded>) {
-    const Jsonb = schema.pipe(MsgPack.schema);
+    const Jsonb = schema.pipe(
+      Schema.encodeTo(Schema.Uint8Array, {
+        decode: SchemaGetter.transformOrFail((bytes, options) =>
+          Effect.try({
+            try: () => msgpackDecode(bytes),
+            catch: () =>
+              new SchemaIssue.InvalidValue({ expected: "valid MessagePack bytes" }, bytes, options),
+          }),
+        ),
+        encode: SchemaGetter.transformOrFail((value, options) =>
+          Effect.try({
+            try: () => msgpackEncode(value),
+            catch: () =>
+              new SchemaIssue.InvalidValue(
+                { expected: "a MessagePack-serializable value" },
+                value,
+                options,
+              ),
+          }),
+        ),
+      }),
+    );
 
     const make = customType<{
       driverData: typeof Jsonb.Encoded;

@@ -1,10 +1,9 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
-import babel from "@rolldown/plugin-babel";
 import stylex from "@stylexjs/unplugin";
 import tailwindcss from "@tailwindcss/vite";
 import { devtools } from "@tanstack/devtools-vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
-import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -14,6 +13,7 @@ export default defineConfig({
   ssr: { optimizeDeps: { exclude: ["@printdesk/ui"] } },
   plugins: [
     stylex.vite({
+      enableMediaQueryOrder: true,
       useCSSLayers: true,
       unstable_moduleResolution: { type: "commonJS" },
       devMode: "css-only",
@@ -21,8 +21,7 @@ export default defineConfig({
     tailwindcss(),
     devtools(),
     tanstackStart({ spa: { enabled: true } }),
-    react(),
-    babel({ presets: [reactCompilerPreset()] }),
+    react({ compiler: true }),
     cloudflare(),
   ],
 });

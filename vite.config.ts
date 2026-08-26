@@ -36,9 +36,9 @@ export default defineConfig({
     },
     plugins: ["eslint", "unicorn", "typescript", "react", "react-perf"],
     jsPlugins: [
+      "@stylexjs/eslint-plugin",
       "@tanstack/eslint-plugin-router",
       "eslint-plugin-drizzle",
-      { name: "react-hooks-js", specifier: "eslint-plugin-react-hooks" },
     ],
     categories: {
       correctness: "error",
@@ -49,6 +49,8 @@ export default defineConfig({
       restriction: "error",
     },
     rules: {
+      "@stylexjs/valid-styles": "error",
+      "@stylexjs/sort-keys": "warn",
       "effecttsgo/async-function": "off",
       "eslint/no-new": "off",
       "eslint/no-param-reassign": "off",
@@ -74,7 +76,7 @@ export default defineConfig({
     ignorePatterns: ["**/sst-env.d.ts", "**/routeTree.gen.ts"],
     overrides: [
       {
-        files: ["packages/typescript/vendor/openauth/**"],
+        files: ["sst.config.ts", "./infra/**", "packages/typescript/vendor/openauth/**"],
         rules: {
           "effecttsgo/crypto-random-uuid": "off",
           "effecttsgo/extends-native-error": "off",

@@ -4,7 +4,6 @@ import { Constants } from "@printdesk/core/utils/constants";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
@@ -23,12 +22,12 @@ const FromHostname = Schema.TemplateLiteralParser([
 ]).pipe(
   Schema.decodeTo(TenantsContract.Slug, {
     decode: SchemaGetter.transformOrFail(
-      Effect.fn(function* ([slug, , apexDomain]) {
+      Effect.fn(function* ([slug, , apexDomain], options) {
         const resource = yield* ViteResource;
 
         if (apexDomain !== resource.ApexDomain.pipe(Redacted.value).value)
           return yield* Effect.fail(
-            new SchemaIssue.InvalidValue(Option.some(apexDomain), { message: "Invalid hostname" }),
+            new SchemaIssue.InvalidValue({ message: "Invalid hostname" }, apexDomain, options),
           );
 
         return slug;

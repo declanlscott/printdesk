@@ -1,7 +1,6 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as SchemaIssue from "effect/SchemaIssue";
@@ -74,10 +73,10 @@ export namespace XmlRpc {
             }),
             {
               decode: SchemaGetter.forbidden(() => "Not implemented"),
-              encode: SchemaGetter.transformOrFail((input) =>
+              encode: SchemaGetter.transformOrFail((input, options) =>
                 build(input).pipe(
                   Effect.mapError(
-                    (e) => new SchemaIssue.InvalidValue(Option.some(input), { message: e.message }),
+                    (e) => new SchemaIssue.InvalidValue({ message: e.message }, input, options),
                   ),
                 ),
               ),
@@ -103,10 +102,10 @@ export namespace XmlRpc {
       ) {
         const decode = Schema.String.pipe(
           Schema.decodeTo(Schema.Union([SuccessResponse, XmlRpcContract.FaultResponse]), {
-            decode: SchemaGetter.transformOrFail((text) =>
+            decode: SchemaGetter.transformOrFail((text, options) =>
               parse<TEncoded | typeof XmlRpcContract.FaultResponse.Encoded>(text).pipe(
                 Effect.mapError(
-                  (e) => new SchemaIssue.InvalidValue(Option.some(text), { message: e.message }),
+                  (e) => new SchemaIssue.InvalidValue({ message: e.message }, text, options),
                 ),
               ),
             ),

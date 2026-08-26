@@ -490,7 +490,6 @@ export namespace ScimContract {
             Effect.fn(function* (scimGroup) {
               const actor = yield* Actor;
               const locator = yield* ScimLocator;
-              const _asdf = String.startsWith;
               const tenantId = yield* actor.tenantId.pipe(
                 Effect.mapError(
                   () => new SchemaIssue.MissingKey({ messageMissingKey: "missing tenantId" }),
@@ -574,7 +573,7 @@ export namespace ScimContract {
       return this.pipe(
         Schema.decodeTo(GroupsContract.Dtos, {
           decode: SchemaGetter.transformOrFail(
-            Effect.fn(function* (scimGroup) {
+            Effect.fn(function* (scimGroup, options) {
               const actor = yield* Actor;
               const locator = yield* ScimLocator;
 
@@ -600,6 +599,7 @@ export namespace ScimContract {
                       new SchemaIssue.InvalidValue(
                         { message: "bulkId is not supported in non-provisional groups" },
                         userId,
+                        options,
                       ),
                   ),
                   Effect.flatMap((userId) =>

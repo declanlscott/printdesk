@@ -1,5 +1,5 @@
 {
-  "name": "@printdesk/provisioner",
+  "name": "@printdesk/bootstrapper",
   "private": true,
   "type": "module",
   "dependencies": {

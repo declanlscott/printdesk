@@ -1,21 +1,23 @@
-import { sql } from "drizzle-orm";
-import { primaryKey } from "drizzle-orm/pg-core";
+import { uniqueIndex } from "drizzle-orm/pg-core";
+import * as Effect from "effect/Effect";
 
 import { Columns } from "../columns";
 import { Tables } from "../tables";
+import { generateEntityId } from "../utils";
 
 import type { InferSelectModel } from "drizzle-orm";
 
 export const licenses = new Tables.Table(
   "licenses",
   {
-    key: Columns.redactedUuid()
-      .notNull()
-      .default(sql`gen_random_uuid()`),
+    id: Columns.entityId()
+      .primaryKey()
+      .$defaultFn(() => generateEntityId.pipe(Effect.runSync)),
+    keyHash: Columns.hash().notNull(),
     expiresAt: Columns.dateTime(),
     ...Columns.timestamps,
   },
-  (table) => [primaryKey({ columns: [table.key] })],
+  (table) => [uniqueIndex().on(table.keyHash)],
 );
 export const licensesTable = licenses.table;
 export type LicensesTable = typeof licensesTable;

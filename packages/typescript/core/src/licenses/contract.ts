@@ -1,18 +1,46 @@
+import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
+import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ColumnsContract } from "../columns/contract";
+import { CryptoContract } from "../crypto/contract";
 import { TablesContract } from "../tables/contract";
+import { EntityId, Separator } from "../utils";
 
 import type { LicensesTable } from "./sql";
 
 export namespace LicensesContract {
-  export const Key = Schema.String.pipe(Schema.check(Schema.isUUID()), Schema.Redacted);
+  export const Key = CryptoContract.Secret;
+  export type Key = typeof Key.Type;
+
+  export class KeyPair extends Schema.Class<KeyPair>("KeyPair")({
+    id: EntityId,
+    key: Key,
+  }) {}
+
+  export const KeyPairFromString = Schema.TemplateLiteralParser([EntityId, Separator, Key]).pipe(
+    Schema.decodeTo(KeyPair, {
+      decode: SchemaGetter.transformOrFail(([id, , key]) =>
+        Schema.encodeEffect(KeyPair)({ id, key }).pipe(Effect.mapError(Struct.get("issue"))),
+      ),
+      encode: SchemaGetter.transformOrFail(({ id, key }) =>
+        Schema.decodeEffect(KeyPair)({ id, key }).pipe(
+          Effect.mapBoth({
+            onSuccess: ({ id, key }) => [id, Separator.literal, key],
+            onFailure: Struct.get("issue"),
+          }),
+        ),
+      ),
+    }),
+  );
 
   export class Table extends TablesContract.Table<LicensesTable>("licenses")(
     {
-      key: Key,
+      id: EntityId,
+      keyHash: CryptoContract.HashFromString,
       expiresAt: ColumnsContract.NullableTimestamp,
       ...ColumnsContract.Timestamps.fields,
     },
@@ -20,28 +48,16 @@ export namespace LicensesContract {
     [],
   ) {}
 
-  export class NoSuchLicenseError
-    extends Schema.TaggedError<NoSuchLicenseError>()(
-      "NoSuchLicenseError",
-      { key: Key },
-      { httpApiStatus: 422 },
+  export class InvalidLicenseKeyError
+    extends Schema.TaggedError<InvalidLicenseKeyError>()(
+      "InvalidLicenseKeyError",
+      { id: EntityId },
+      { httpApiStatus: 400 },
     )
     implements HttpServerRespondable.Respondable
   {
     public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(NoSuchLicenseError)(this, { status: 422 });
-  }
-
-  export class LicenseKeyConflictError
-    extends Schema.TaggedError<LicenseKeyConflictError>()(
-      "LicenseKeyConflictError",
-      { key: Key },
-      { httpApiStatus: 409 },
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(LicenseKeyConflictError)(this, { status: 409 });
+      HttpServerResponse.schemaJson(InvalidLicenseKeyError)(this, { status: 400 });
   }
 
   export class ExpiredLicenseError
@@ -54,5 +70,29 @@ export namespace LicensesContract {
   {
     public [HttpServerRespondable.symbol] = () =>
       HttpServerResponse.schemaJson(ExpiredLicenseError)(this, { status: 403 });
+  }
+
+  export class LicenseConflictError
+    extends Schema.TaggedError<LicenseConflictError>()(
+      "LicenseConflictError",
+      { id: EntityId },
+      { httpApiStatus: 409 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(LicenseConflictError)(this, { status: 409 });
+  }
+
+  export class NoSuchLicenseError
+    extends Schema.TaggedError<NoSuchLicenseError>()(
+      "NoSuchLicenseError",
+      { id: EntityId },
+      { httpApiStatus: 422 },
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(NoSuchLicenseError)(this, { status: 422 });
   }
 }

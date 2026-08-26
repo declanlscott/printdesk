@@ -3,7 +3,6 @@ import * as HttpApiEndpoint from "effect/unstable/httpapi/HttpApiEndpoint";
 import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 
 import { RealtimeContract } from "../realtime/contract";
-import { ActorMiddleware } from "./middleware/actor";
 import { AwsCredentialIdentityProviderMiddleware } from "./middleware/aws";
 
 export namespace Realtime {
@@ -11,9 +10,7 @@ export namespace Realtime {
     HttpApiEndpoint.post("getAuthorization", "/authorization", {
       payload: RealtimeContract.AuthorizationPayload,
       success: RealtimeContract.AuthorizationSuccess,
-    })
-      .middleware(AwsCredentialIdentityProviderMiddleware)
-      .middleware(ActorMiddleware),
+    }).middleware(AwsCredentialIdentityProviderMiddleware),
   ) {}
 
   export class Api extends HttpApi.make("RealtimeApi").add(Group) {}

@@ -6,12 +6,13 @@ import * as Schema from "effect/Schema";
 import * as String from "effect/String";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
 
+const unexpectedServerErrorMessage = "unexpected server error";
 export class UnexpectedServerError extends Schema.Class<UnexpectedServerError>(
   "UnexpectedServerError",
 )(
   {
-    message: Schema.Literal("unexpected server error").pipe(
-      Schema.withConstructorDefault(Effect.succeed("unexpected server error")),
+    message: Schema.Literal(unexpectedServerErrorMessage).pipe(
+      Schema.withConstructorDefault(Effect.succeed(unexpectedServerErrorMessage)),
     ),
     ref: Schema.TemplateLiteral(["err_", Schema.String]),
   },

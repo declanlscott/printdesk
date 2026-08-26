@@ -1,6 +1,7 @@
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 
 import { Config } from "./config";
+import { AuthMiddleware } from "./middleware/auth";
 import { ErrorMiddleware } from "./middleware/error";
 import { Papercut } from "./papercut";
 import { Realtime } from "./realtime";
@@ -12,5 +13,6 @@ export class Api extends HttpApi.make("Api")
   .addHttpApi(Papercut.MfApi)
   .addHttpApi(Realtime.Api)
   .addHttpApi(Replicache.Api)
+  .middleware(AuthMiddleware)
   .middleware(ErrorMiddleware)
   .addHttpApi(Scim.Api) {}

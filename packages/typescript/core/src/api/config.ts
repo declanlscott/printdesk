@@ -5,7 +5,6 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
 import { ConfigContract } from "../config/contract";
-import { ActorMiddleware } from "./middleware/actor";
 import { AwsCredentialIdentityProviderMiddleware } from "./middleware/aws";
 
 export namespace Config {
@@ -21,6 +20,5 @@ export namespace Config {
   export class Api extends HttpApi.make("ConfigApi")
     .add(PapercutMf)
     .middleware(AwsCredentialIdentityProviderMiddleware)
-    .middleware(ActorMiddleware)
     .prefix("/config") {}
 }

@@ -5,7 +5,6 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
 import { ReplicachePullerContract, ReplicachePusherContract } from "../replicache/contracts";
-import { ActorMiddleware } from "./middleware/actor";
 import { AwsCredentialIdentityProviderMiddleware } from "./middleware/aws";
 
 export namespace Replicache {
@@ -29,8 +28,7 @@ export namespace Replicache {
           ReplicachePusherContract.FutureMutationError,
         ],
       }).middleware(AwsCredentialIdentityProviderMiddleware),
-    )
-    .middleware(ActorMiddleware) {}
+    ) {}
 
   export class Api extends HttpApi.make("ReplicacheApi").add(Group).prefix("/replicache") {}
 }

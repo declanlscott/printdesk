@@ -5,7 +5,6 @@ import * as HttpApiGroup from "effect/unstable/httpapi/HttpApiGroup";
 import { AccessControl } from "../access-control";
 import { ActorsContract } from "../actors/contract";
 import { PapercutMfContract } from "../papercut-mf/contract";
-import { AuthMiddleware } from "./middleware/auth";
 import { AwsCredentialIdentityProviderMiddleware } from "./middleware/aws";
 
 export namespace Papercut {
@@ -47,9 +46,7 @@ export namespace Papercut {
       HttpApiEndpoint.post(
         "sharedAccountGroupCustomerAccess",
         "/shared-account-group-customer-access",
-        {
-          error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
-        },
+        { error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError] },
       ),
     )
     .middleware(AwsCredentialIdentityProviderMiddleware)
@@ -58,6 +55,5 @@ export namespace Papercut {
   export class MfApi extends HttpApi.make("PapercutMfApi")
     .add(Mf)
     .add(MfSync)
-    .middleware(AuthMiddleware)
     .prefix("/papercut/mf") {}
 }

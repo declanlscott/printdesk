@@ -189,3 +189,27 @@ export const appconfigAgentExtensionTransform: Transform<aws.lambda.FunctionArgs
       ),
     ];
 };
+
+export const apiClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "ApiClientCredentialsConfigurationProfileTemplate",
+    { identifier: "ApiClientCredentials" },
+  );
+
+export const papercutMfApiAuthTokenConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "PapercutMfApiAuthTokenConfigurationProfileTemplate",
+    { identifier: "PapercutMfApiAuthToken" },
+  );
+
+export const papercutMfSyncClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "PapercutMfSyncClientCredentialsConfigurationProfileTemplate",
+    { identifier: "PapercutMfSyncClientCredentials" },
+  );
+
+export const invoicesProcessorClientCredentialsConfigurationProfileTemplate =
+  new lib.templates.aws.appconfig.ConfigurationProfile(
+    "InvoicesProcessorClientCredentialsConfigurationProfileTemplate",
+    { identifier: "InvoicesProcessorClientCredentials" },
+  );

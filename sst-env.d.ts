@@ -117,6 +117,11 @@ declare module "sst" {
       "region": string
       "type": "sst.sst.Linkable"
     }
+    "Bootstrapper": {
+      "name": string
+      "qualifier": string
+      "type": "sst.aws.Workflow"
+    }
     "Cloudflare": {
       "account": {
         "id": string
@@ -125,6 +130,11 @@ declare module "sst" {
       "type": "sst.sst.Linkable"
     }
     "DevBridgeCodeUseast2Bridge": {
+      "bucket": string
+      "key": string
+      "type": "aws.s3/bucketObjectv2.BucketObjectv2"
+    }
+    "DevBridgeCodeUseast2Nodejsbridge": {
       "bucket": string
       "key": string
       "type": "aws.s3/bucketObjectv2.BucketObjectv2"

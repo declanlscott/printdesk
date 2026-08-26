@@ -9,26 +9,20 @@ import {
   appconfigAgentExtensionTransform,
   appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
   appconfigRoleTemplate,
+  apiClientCredentialsConfigurationProfileTemplate,
+  papercutMfApiAuthTokenConfigurationProfileTemplate,
 } from "./config";
 import { dsql, dynamo } from "./db";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
-import {
-  invoicesProcessorQueueSenderRoleTemplate,
-  papercutMfApiAuthTokenConfigurationProfileTemplate,
-} from "./papercut";
+import { invoicesProcessorQueueSenderRoleTemplate } from "./papercut";
 import {
   appsyncApi,
   appsyncChannelNamespacePublisherRoleTemplate,
   appsyncChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, isProdStage } from "./utils";
-
-export const apiClientCredentialsConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "ApiClientCredentialsConfigurationProfileTemplate",
-    { identifier: "ApiClientCredentials" },
-  );
+import { bootstrapper } from "./workflows";
 
 export const api = new lib.aws.lambda.Function(
   "Api",
@@ -50,6 +44,7 @@ export const api = new lib.aws.lambda.Function(
       assetsPrivateKey,
       assetsRouter,
       aws_,
+      bootstrapper,
       cloudflare_,
       dsql,
       dynamo,

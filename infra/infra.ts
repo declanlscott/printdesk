@@ -2,28 +2,29 @@ import Path from "node:path";
 
 import { Constants } from "@printdesk/core/utils/constants";
 
-import { api, apiClientCredentialsConfigurationProfileTemplate } from "./api";
+import { api } from "./api";
 import { assetsBucket, assetsBucketAccessPointTemplate, assetsRouter } from "./assets";
 import { issuer } from "./auth";
 import {
+  apiClientCredentialsConfigurationProfileTemplate,
   appconfigAllAtOnceDeploymentStrategy,
   appconfigApplication,
   appconfigEnvironment,
   appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
   appconfigRoleTemplate,
+  invoicesProcessorClientCredentialsConfigurationProfileTemplate,
+  papercutMfApiAuthTokenConfigurationProfileTemplate,
+  papercutMfSyncClientCredentialsConfigurationProfileTemplate,
 } from "./config";
 import { dynamo } from "./db";
 import { hostnames, zone } from "./dns";
 import * as lib from "./lib";
 import {
   invoicesProcessorQueueSenderRoleTemplate,
-  papercutMfApiAuthTokenConfigurationProfileTemplate,
   papercutMfApiGatewayAwsAccessKey,
   papercutMfApiGatewayScriptObject,
   papercutMfSync,
   invoicesProcessor,
-  papercutMfSyncClientCredentialsConfigurationProfileTemplate,
-  invoicesProcessorClientCredentialsConfigurationProfileTemplate,
 } from "./papercut";
 import {
   appsyncApi,
@@ -31,6 +32,7 @@ import {
   appsyncChannelNamespaceSubscriberRoleTemplate,
 } from "./realtime";
 import { aws_, cloudflare_, nanoId, snsTopicEmail } from "./utils";
+import { bootstrapper } from "./workflows";
 
 export const pulumiBucket = new sst.aws.Bucket("PulumiBucket");
 
@@ -58,7 +60,7 @@ export const infraManager = dynamo.subscribe(
       PULUMI_CONFIG_PASSPHRASE: pulumiPassphrase,
       ...($dev
         ? {
-            PULUMI_HONE: Path.join(
+            PULUMI_HOME: Path.join(
               $cli.paths.root,
               "packages/python/functions/infra_manager/pulumi_home",
             ),
@@ -80,6 +82,7 @@ export const infraManager = dynamo.subscribe(
       assetsBucketAccessPointTemplate,
       assetsRouter,
       aws_,
+      bootstrapper,
       cloudflare_,
       dynamo,
       hostnames,

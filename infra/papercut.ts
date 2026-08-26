@@ -2,7 +2,12 @@ import Path from "node:path";
 
 import { assetsBucket } from "./assets";
 import { invokeIssuerFunctionUrl } from "./auth";
-import { appconfigAgent } from "./config";
+import {
+  appconfigAgent,
+  invoicesProcessorClientCredentialsConfigurationProfileTemplate,
+  papercutMfApiAuthTokenConfigurationProfileTemplate,
+  papercutMfSyncClientCredentialsConfigurationProfileTemplate,
+} from "./config";
 import { dsql } from "./db";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
@@ -14,12 +19,6 @@ export const invoicesProcessorQueueSenderRoleTemplate = new lib.templates.aws.ia
   "InvoicesProcessorQueueSenderRoleTemplate",
   { identifier: "InvoicesSenderRole" },
 );
-
-export const papercutMfApiAuthTokenConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "PapercutMfApiAuthTokenConfigurationProfileTemplate",
-    { identifier: "PapercutMfApiAuthToken" },
-  );
 
 const papercutMfApiGatewayPackagePath = Path.resolve(
   Path.join($cli.paths.root, "packages/typescript/functions/papercut-mf-api-gateway"),
@@ -58,12 +57,6 @@ export const papercutMfApiGatewayAwsAccessKey = new lib.aws.iam.AccessKey(
   { permissions: [invokeIssuerFunctionUrl] },
 );
 
-export const papercutMfSyncClientCredentialsConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "PapercutMfSyncClientCredentialsConfigurationProfileTemplate",
-    { identifier: "PapercutMfSyncClientCredentials" },
-  );
-
 export const papercutMfSync = new lib.aws.lambda.Function("PapercutMfSync", {
   handler: "packages/typescript/functions/papercut-mf-sync/src/index.default",
   link: [
@@ -74,12 +67,6 @@ export const papercutMfSync = new lib.aws.lambda.Function("PapercutMfSync", {
     papercutMfSyncClientCredentialsConfigurationProfileTemplate,
   ],
 });
-
-export const invoicesProcessorClientCredentialsConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "InvoicesProcessorClientCredentialsConfigurationProfileTemplate",
-    { identifier: "InvoicesProcessorClientCredentials" },
-  );
 
 export const invoicesProcessor = new lib.aws.lambda.Function("InvoicesProcessor", {
   handler: "packages/typescript/functions/invoices-processor/src/index.default",

@@ -77,13 +77,6 @@ export default $config({
       include: [sst.aws.permission({ actions: ["s3:GetObject"], resources: [object.arn] })],
     }));
 
-    sst.Linkable.wrap(cloudflare.ZeroTrustAccessServiceToken, (token) => ({
-      properties: {
-        clientId: token.clientId,
-        clientSecret: token.clientSecret,
-      },
-    }));
-
     sst.Linkable.wrap(sst.aws.Dsql, (dsql) => ({
       properties: {
         host: dsql.endpoint,

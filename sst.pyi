@@ -94,12 +94,20 @@ class Resource:
             id: str
         region: str
         type: str
+    class Bootstrapper:
+        name: str
+        qualifier: str
+        type: str
     class Cloudflare:
         class account:
             id: str
         apiToken: str
         type: str
     class DevBridgeCodeUseast2Bridge:
+        bucket: str
+        key: str
+        type: str
+    class DevBridgeCodeUseast2Nodejsbridge:
         bucket: str
         key: str
         type: str

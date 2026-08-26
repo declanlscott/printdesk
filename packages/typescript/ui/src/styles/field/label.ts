@@ -7,22 +7,32 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldLabelStyles = stylex.create({
   base: {
-    display: "flex",
-    width: "fit-content",
+    borderColor: {
+      [stylex.when.descendant('[data-selected="true"]', checkboxMarker)]:
+        `light-dark(color-mix(in oklab, ${colors.primary} 30%, transparent), color-mix(in oklab, ${colors.primary} 20%, transparent))`,
+    },
+    borderRadius: {
+      [stylex.when.descendant('[data-slot="field"]', fieldMarker)]: radii.lg,
+    },
+    borderWidth: {
+      [stylex.when.descendant('[data-slot="field"]', fieldMarker)]: spacing.px,
+    },
     gap: spacing[2],
+    backgroundColor: {
+      [stylex.when.descendant('[data-selected="true"]', checkboxMarker)]:
+        `light-dark(color-mix(in oklab, ${colors.primary} 5%, transparent), color-mix(in oklab, ${colors.primary} 10%, transparent))`,
+    },
+    display: "flex",
+    flexDirection: {
+      [stylex.when.descendant('[data-slot="field"]', fieldMarker)]: "column",
+    },
     lineHeight: leading.snug,
-    [stylex.when.ancestor('[data-disabled="true"]', fieldMarker)]: {
-      opacity: "50%",
+    opacity: {
+      [stylex.when.ancestor('[data-disabled="true"]', fieldMarker)]: "50%",
     },
-    [stylex.when.descendant('[data-selected="true"]', checkboxMarker)]: {
-      borderColor: `light-dark(color-mix(in oklab, ${colors.primary} 30%, transparent), color-mix(in oklab, ${colors.primary} 20%, transparent))`,
-      backgroundColor: `light-dark(color-mix(in oklab, ${colors.primary} 5%, transparent), color-mix(in oklab, ${colors.primary} 10%, transparent))`,
-    },
-    [stylex.when.descendant('[data-slot="field"]', fieldMarker)]: {
-      borderRadius: radii.lg,
-      borderWidth: spacing.px,
-      width: "100%",
-      flexDirection: "column",
+    width: {
+      default: "fit-content",
+      [stylex.when.descendant('[data-slot="field"]', fieldMarker)]: "100%",
     },
   },
 });

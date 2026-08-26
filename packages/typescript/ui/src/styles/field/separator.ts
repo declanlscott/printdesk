@@ -7,13 +7,13 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldSeparatorStyles = stylex.create({
   base: {
-    position: "relative",
     marginBlock: spacing[-2],
-    height: spacing[5],
     fontSize: fontSizes.sm,
     lineHeight: leading.sm,
-    [stylex.when.ancestor('[data-variant="outline"]', fieldGroupMarker)]: {
-      marginBottom: spacing[-2],
+    position: "relative",
+    height: spacing[5],
+    marginBottom: {
+      [stylex.when.ancestor('[data-variant="outline"]', fieldGroupMarker)]: spacing[-2],
     },
   },
 });

@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-non-null-assertion
+// oxlint-disable typescript/no-non-null-assertion typescript/no-unsafe-type-assertion
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import Path from "node:path";

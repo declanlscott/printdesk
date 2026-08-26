@@ -7,8 +7,8 @@ import type { StyleXComponentProps } from "../types";
 export const cardTitleStyles = stylex.create({
   base: {
     fontSize: fontSizes.base,
-    lineHeight: leading.snug,
     fontWeight: fontWeights.medium,
+    lineHeight: leading.snug,
   },
 });
 

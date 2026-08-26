@@ -11,7 +11,7 @@ export const dsql = new sst.aws.Dsql(name.logical, {
   transform: {
     cluster(args) {
       args.deletionProtectionEnabled = isProdStage;
-      args.tags = { ...args.tags, Name: name.result };
+      args.tags = $output(args.tags).apply((tags) => ({ ...tags, Name: name.result }));
     },
   },
 });

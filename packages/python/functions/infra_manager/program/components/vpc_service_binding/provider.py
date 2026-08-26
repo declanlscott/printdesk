@@ -1,9 +1,8 @@
 import json
-from typing import TypedDict, Optional, Dict, Any, List
+from typing import Any, TypedDict
 
 import pulumi
-
-from utils import Cloudflare
+from cloudflare import Cloudflare
 
 
 class VpcServiceBindingProviderInputs(TypedDict):
@@ -19,7 +18,7 @@ class VpcServiceBindingProviderOutputs(VpcServiceBindingProviderInputs):
 class VpcServiceBindingProvider(pulumi.dynamic.ResourceProvider):
     def __init__(self):
         super().__init__()
-        self._cloudflare: Optional[Cloudflare] = None
+        self._cloudflare: Cloudflare | None = None
 
     def configure(self, req: pulumi.dynamic.ConfigureRequest):
         self._cloudflare = Cloudflare(
@@ -27,7 +26,7 @@ class VpcServiceBindingProvider(pulumi.dynamic.ResourceProvider):
             api_token=req.config.require("cloudflare:apiToken"),
         )
 
-    def _get_bindings(self, script_name: str) -> List[Dict[str, Any]]:
+    def _get_bindings(self, script_name: str) -> list[dict[str, Any]]:
         return (
             self._cloudflare.request(
                 resource=f"/accounts/{self._cloudflare.account_id}/workers/scripts/{script_name}/settings",
@@ -35,7 +34,7 @@ class VpcServiceBindingProvider(pulumi.dynamic.ResourceProvider):
             or []
         )
 
-    def _set_bindings(self, script_name: str, bindings: List[Dict[str, Any]]):
+    def _set_bindings(self, script_name: str, bindings: list[dict[str, Any]]):
         files = {"settings": (None, json.dumps({"bindings": bindings}))}
 
         self._cloudflare.request(

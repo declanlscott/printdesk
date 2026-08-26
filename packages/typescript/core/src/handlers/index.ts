@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-unsafe-type-assertion
 import * as Array from "effect/Array";
 import * as Data from "effect/Data";
 import * as Effect from "effect/Effect";
@@ -10,6 +11,7 @@ export namespace Handler {
   export class Handler<
     TName extends string = string,
     TInput extends Schema.Top = Schema.Top,
+    // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
     TOutput extends Schema.Top = Schema.Top,
   > extends Data.Class<{
     readonly name: TName;

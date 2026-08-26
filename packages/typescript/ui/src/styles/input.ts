@@ -13,67 +13,67 @@ const PLACEHOLDER = "::placeholder";
 
 export const inputStyles = stylex.create({
   base: {
-    height: {
-      default: spacing[8],
-      [FILE]: spacing[6],
+    borderColor: {
+      [ARIA_INVALID]: `light-dark(${colors.destructive}, color-mix(in oklab, ${colors.destructive} 50%, transparent))`,
+      [FOCUS_VISIBLE]: colors.ring,
+      default: colors.input,
     },
-    width: "100%",
-    minWidth: spacing[0],
     borderRadius: radii.lg,
     borderWidth: {
-      default: "1px",
       [FILE]: 0,
+      default: "1px",
     },
-    borderColor: {
-      default: colors.input,
-      [FOCUS_VISIBLE]: colors.ring,
-      [ARIA_INVALID]: `light-dark(${colors.destructive}, color-mix(in oklab, ${colors.destructive} 50%, transparent))`,
-    },
-    backgroundColor: {
-      default: `light-dark(transparent, color-mix(in oklab, ${colors.input} 30%, transparent))`,
-      [DISABLED]: `light-dark(color-mix(in oklab, ${colors.input} 50%, transparent), color-mix(in oklab, ${colors.input} 80%, transparent))`,
-    },
-    paddingInline: spacing[2.5],
     paddingBlock: spacing[1],
-    fontSize: {
-      default: fontSizes.base,
-      [FILE]: fontSizes.sm,
+    paddingInline: spacing[2.5],
+    backgroundColor: {
+      [DISABLED]: `light-dark(color-mix(in oklab, ${colors.input} 50%, transparent), color-mix(in oklab, ${colors.input} 80%, transparent))`,
+      default: `light-dark(transparent, color-mix(in oklab, ${colors.input} 30%, transparent))`,
     },
+    boxShadow: {
+      [ARIA_INVALID]: `0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent)`,
+      [FOCUS_VISIBLE]: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+      default: null,
+    },
+    color: {
+      [FILE]: colors.foreground,
+      [PLACEHOLDER]: colors.mutedForeground,
+      default: null,
+    },
+    cursor: {
+      [DISABLED]: "not-allowed",
+      default: null,
+    },
+    display: {
+      [FILE]: "inline-flex",
+      default: null,
+    },
+    fontSize: {
+      [FILE]: fontSizes.sm,
+      default: fontSizes.base,
+    },
+    fontWeight: {
+      [FILE]: fontWeights.medium,
+      default: null,
+    },
+    opacity: {
+      [DISABLED]: 0.5,
+      default: null,
+    },
+    outlineStyle: "none",
+    pointerEvents: {
+      [FOCUS_VISIBLE]: "none",
+      default: null,
+    },
+    transitionDuration: timing[150],
     transitionProperty:
       "color, background-color, border-color, outline-color, text-decoration-color, stroke",
     transitionTimingFunction: timing.easeInOut,
-    transitionDuration: timing[150],
-    outlineStyle: "none",
-    display: {
-      default: null,
-      [FILE]: "inline-flex",
+    height: {
+      [FILE]: spacing[6],
+      default: spacing[8],
     },
-    fontWeight: {
-      default: null,
-      [FILE]: fontWeights.medium,
-    },
-    color: {
-      default: null,
-      [FILE]: colors.foreground,
-      [PLACEHOLDER]: colors.mutedForeground,
-    },
-    boxShadow: {
-      default: null,
-      [FOCUS_VISIBLE]: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
-      [ARIA_INVALID]: `0 0 0 3px color-mix(in oklab, ${colors.destructive} 20%, transparent)`,
-    },
-    pointerEvents: {
-      default: null,
-      [FOCUS_VISIBLE]: "none",
-    },
-    cursor: {
-      default: null,
-      [DISABLED]: "not-allowed",
-    },
-    opacity: {
-      default: null,
-      [DISABLED]: 0.5,
-    },
+    minWidth: spacing[0],
+    width: "100%",
   },
 });
 

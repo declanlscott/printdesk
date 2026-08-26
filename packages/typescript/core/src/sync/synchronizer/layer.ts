@@ -102,6 +102,7 @@ export const makeService = Effect.gen(function* () {
       Stream.Error<ReturnType<typeof streamer.streamUpdates | typeof streamer.streamDeletes>>,
       Stream.Services<ReturnType<typeof streamer.streamUpdates | typeof streamer.streamDeletes>>
     > = Stream.mergeAll(
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       [
         streamer
           .streamUpdates(clientView, userId)

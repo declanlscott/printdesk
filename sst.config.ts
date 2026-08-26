@@ -1,7 +1,9 @@
 // oxlint-disable-next-line typescript/triple-slash-reference
 /// <reference path="./.sst/platform/config.d.ts" />
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 function requireEnvVar<TValue extends string = string>(key: string) {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   const value = process.env[key] as TValue | undefined;
   if (!value) throw new Error(`${key} is not set`);
 

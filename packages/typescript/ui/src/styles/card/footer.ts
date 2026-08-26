@@ -6,13 +6,13 @@ import type { StyleXComponentProps } from "../types";
 
 export const cardFooterStyles = stylex.create({
   base: {
-    display: "flex",
+    padding: "var(--card-spacing)",
     alignItems: "center",
+    backgroundColor: `color-mix(in oklab, ${colors.muted} 50%, transparent)`,
+    display: "flex",
     borderBottomLeftRadius: radii.xl,
     borderBottomRightRadius: radii.xl,
     borderTopWidth: "1px",
-    backgroundColor: `color-mix(in oklab, ${colors.muted} 50%, transparent)`,
-    padding: "var(--card-spacing)",
   },
 });
 

@@ -1,4 +1,4 @@
-from typing import Optional, Annotated
+from typing import Annotated
 
 from aws_lambda_powertools.utilities.parser.models import (
     DynamoDBStreamChangedRecordModel,
@@ -6,13 +6,13 @@ from aws_lambda_powertools.utilities.parser.models import (
 )
 from pydantic import Field
 
-from models.io import InputKeys, Input
+from models.io import Input, InputKeys
 
 
 class InputDynamoDBStreamChangedRecord(DynamoDBStreamChangedRecordModel):
     Keys: InputKeys
-    NewImage: Annotated[Optional[Input], Field(default=None)]
-    OldImage: Annotated[Optional[Input], Field(default=None)]
+    NewImage: Annotated[Input | None, Field(default=None)]
+    OldImage: Annotated[Input | None, Field(default=None)]
 
 
 class InputDynamoDBStreamRecord(DynamoDBStreamRecordModel):

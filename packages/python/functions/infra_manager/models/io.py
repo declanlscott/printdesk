@@ -1,17 +1,17 @@
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Annotated
 
 from pydantic import BaseModel, Field, computed_field
-from sst import Resource
-
 from utils import (
     SEPARATOR,
-    tenant_id_key_pattern,
-    tenant_deployment_id_key_pattern,
     infra_input_key_pattern,
     infra_output_key_pattern,
+    tenant_deployment_id_key_pattern,
+    tenant_id_key_pattern,
 )
+
 from models.config import PapercutMfConfig
+from sst import Resource
 
 
 class InputKeys(BaseModel):
@@ -49,7 +49,7 @@ class InputKeys(BaseModel):
 
 class Input(InputKeys):
     papercut_mf_config: Annotated[PapercutMfConfig, Field(alias="papercutMfConfig")]
-    callback_id: Annotated[Optional[str], Field(alias="callbackId", default=None)]
+    callback_id: Annotated[str | None, Field(alias="callbackId", default=None)]
     created_at: Annotated[datetime, Field(alias="createdAt")]
 
 
@@ -75,6 +75,6 @@ class Output(BaseModel):
         ),
     ]
     papercut_mf_api_tunnel_id: Annotated[
-        Optional[str], Field(alias="papercutMfApiTunnelId", default=None)
+        str | None, Field(alias="papercutMfApiTunnelId", default=None)
     ]
     deployed_at: Annotated[datetime, Field(alias="deployedAt")]

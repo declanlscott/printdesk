@@ -12,63 +12,65 @@ const SELECTED = '[data-selected="true"]';
 
 export const switchStyles = stylex.create({
   base: {
-    position: "relative",
-    display: "inline-flex",
-    flexShrink: "0",
-    alignItems: "center",
-    borderRadius: radii.full,
-    borderWidth: spacing.px,
-    borderColor: "transparent",
-    transitionProperty: "all",
-    transitionTimingFunction: timing.easeInOut,
-    transitionDuration: timing[150],
-    outline: "none",
-    backgroundColor: {
-      default: `light-dark(${colors.input}, color-mix(in oklab, ${colors.input} 80%, transparent))`,
-      [SELECTED]: colors.primary,
-    },
-    cursor: {
-      default: "pointer",
-      [DISABLED]: "not-allowed",
-    },
     [AFTER]: {
+      insetBlock: spacing[-2],
+      insetInline: spacing[-3],
       content: "",
       position: "absolute",
-      insetInline: spacing[-3],
-      insetBlock: spacing[-2],
     },
-    [FOCUS_VISIBLE]: {
-      borderColor: colors.ring,
-      boxShadow: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+    borderColor: {
+      [FOCUS_VISIBLE]: colors.ring,
+      default: "transparent",
     },
-    [DISABLED]: {
-      opacity: "50%",
+    borderRadius: radii.full,
+    borderWidth: spacing.px,
+    outline: "none",
+    alignItems: "center",
+    backgroundColor: {
+      [SELECTED]: colors.primary,
+      default: `light-dark(${colors.input}, color-mix(in oklab, ${colors.input} 80%, transparent))`,
     },
+    boxShadow: {
+      [FOCUS_VISIBLE]: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+    },
+    cursor: {
+      [DISABLED]: "not-allowed",
+      default: "pointer",
+    },
+    display: "inline-flex",
+    flexShrink: "0",
+    opacity: {
+      [DISABLED]: "50%",
+    },
+    position: "relative",
+    transitionDuration: timing[150],
+    transitionProperty: "all",
+    transitionTimingFunction: timing.easeInOut,
   },
   thumb: {
-    pointerEvents: "none",
-    display: "block",
     borderRadius: radii.full,
     backgroundColor: {
-      default: `light-dark(${colors.background}, ${colors.foreground})`,
       [SELECTED]: {
         [modes.dark]: colors.primaryForeground,
       },
+      default: `light-dark(${colors.background}, ${colors.foreground})`,
     },
+    display: "block",
+    pointerEvents: "none",
+    transitionDuration: timing[150],
     transitionProperty: "transform, translate, scale, rotate",
     transitionTimingFunction: timing.easeInOut,
-    transitionDuration: timing[150],
     translate: {
-      default: `${spacing[0]} ${spacing[0]}`,
       [SELECTED]: `calc(100% - 2px) ${spacing[0]}`,
+      default: `${spacing[0]} ${spacing[0]}`,
     },
-    [stylex.when.ancestor('[data-size="default"]', switchMarker)]: {
-      height: spacing[4],
-      width: spacing[4],
+    height: {
+      [stylex.when.ancestor('[data-size="default"]', switchMarker)]: spacing[4],
+      [stylex.when.ancestor('[data-size="sm"]', switchMarker)]: spacing[3],
     },
-    [stylex.when.ancestor('[data-size="sm"]', switchMarker)]: {
-      height: spacing[3],
-      width: spacing[3],
+    width: {
+      [stylex.when.ancestor('[data-size="default"]', switchMarker)]: spacing[4],
+      [stylex.when.ancestor('[data-size="sm"]', switchMarker)]: spacing[3],
     },
   },
 });

@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import pulumi
 import pulumi_aws as aws
-from sst import Resource
-
 from utils import naming
+
+from sst import Resource
 
 
 @dataclass
@@ -14,7 +13,7 @@ class ConfigArgs:
 
 
 class Config:
-    def __init__(self, args: ConfigArgs, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, args: ConfigArgs, opts: pulumi.ResourceOptions | None = None):
         super().__init__(
             t="pd:aws:Config",
             name="Config",

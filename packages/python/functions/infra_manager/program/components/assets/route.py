@@ -2,10 +2,10 @@ from dataclasses import dataclass
 
 import pulumi
 import pulumi_aws as aws
-from sst import Resource
+from utils import naming
 
 from program.components.assets.routes import Routes, RoutesArgs
-from utils import naming
+from sst import Resource
 
 
 @dataclass

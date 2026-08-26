@@ -63,7 +63,8 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
     );
 
     const bindings = this.#worker.nodes.worker.bindings.apply(
-      // @ts-expect-error Pulumi type is incorrect
+      // @ts-ignore Pulumi type is incorrect
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       (bindings) => bindings.value as Array<cloudflare.types.output.WorkersScriptBinding>,
     );
 

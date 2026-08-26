@@ -1,12 +1,13 @@
-import re
-import math
 import hashlib
+import math
 import os
-from typing import Dict, Tuple, Optional, Callable
+import re
+from collections.abc import Callable
 
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
+
 from sst import Resource
 
 
@@ -22,15 +23,15 @@ def build_kv_namespace(name: str):
 class TransformOptions:
     def __init__(
         self,
-        lower: Optional[bool] = None,
-        suffix: Optional[Callable[[pulumi.Inputs], pulumi.Output[str]]] = None,
+        lower: bool | None = None,
+        suffix: Callable[[pulumi.Inputs], pulumi.Output[str]] | None = None,
     ):
         self.lower = lower
         self.suffix = suffix
 
 
 def transform_resource(tenant_id: str):
-    rules: Dict[str, Tuple[str, int, Optional[TransformOptions]]] = {
+    rules: dict[str, tuple[str, int, TransformOptions | None]] = {
         str(aws.appconfig.ConfigurationProfile.pulumi_resource_type): (
             "name",
             128,

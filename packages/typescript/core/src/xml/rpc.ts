@@ -57,11 +57,10 @@ export namespace XmlRpc {
       const { parse } = yield* Xml.Parser;
 
       const request = Effect.fn("XmlRpc.request")(function* <
-        TMethodName extends string,
         // oxlint-disable-next-line typescript/no-explicit-any
         TCodecs extends Array<Schema.Codec<any>>,
       >(
-        methodName: TMethodName,
+        methodName: string,
         schemas: { [TKey in keyof TCodecs]: SchemaAndValue<TCodecs[TKey]> },
         parseOptions?: ParseOptions,
       ) {
@@ -120,7 +119,7 @@ export namespace XmlRpc {
           response.text.pipe(
             Effect.flatMap((text) => decode(text, parseOptions)),
             Effect.flatMap((output) =>
-              output instanceof XmlRpcContract.FaultError
+              Schema.is(XmlRpcContract.FaultError)(output)
                 ? Effect.fail(output)
                 : Effect.succeed(output),
             ),

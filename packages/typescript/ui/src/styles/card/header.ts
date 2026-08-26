@@ -7,13 +7,11 @@ import type { StyleXComponentProps } from "../types";
 
 export const cardHeaderStyles = stylex.create({
   base: {
+    gap: spacing[1],
+    paddingInline: "var(--card-spacing)",
+    alignItems: "start",
     display: "grid",
     gridAutoRows: "min-content",
-    alignItems: "start",
-    gap: spacing[1],
-    borderTopLeftRadius: radii.xl,
-    borderTopRightRadius: radii.xl,
-    paddingInline: "var(--card-spacing)",
     gridTemplateColumns: {
       default: null,
       [stylex.when.descendant('[data-slot="card-action"]', cardActionMarker)]: "1fr auto",
@@ -23,6 +21,8 @@ export const cardHeaderStyles = stylex.create({
       [stylex.when.descendant('[data-slot="card-description"]', cardDescriptionMarker)]:
         "auto auto",
     },
+    borderTopLeftRadius: radii.xl,
+    borderTopRightRadius: radii.xl,
   },
 });
 

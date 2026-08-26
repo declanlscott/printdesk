@@ -17,6 +17,7 @@ const seed = Drizzle.pipe(
 );
 
 seed.pipe(
+  // oxlint-disable-next-line effecttsgo/strict-effect-provide
   Effect.provide(
     Drizzle.layerWithDrizzleServices.pipe(
       Layer.provide(PgClient.layer),

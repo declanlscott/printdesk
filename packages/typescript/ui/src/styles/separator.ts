@@ -4,15 +4,19 @@ import { colors, spacing } from "../styles/tokens.stylex";
 
 import type { StyleXComponentProps } from "../styles/types";
 
+const IS_HR = ":is(hr)";
+
 export const separatorStyles = stylex.create({
   base: {
-    display: "block",
-    flexShrink: "0",
     borderWidth: spacing[0],
     backgroundColor: colors.border,
-    [":is(hr)"]: {
-      height: spacing.px,
-      width: "100%",
+    display: "block",
+    flexShrink: "0",
+    height: {
+      [IS_HR]: spacing.px,
+    },
+    width: {
+      [IS_HR]: "100%",
     },
   },
 });
@@ -23,9 +27,9 @@ export const separatorOrientations = stylex.create({
     width: "100%",
   },
   vertical: {
+    alignSelf: "stretch",
     height: "100%",
     width: spacing.px,
-    alignSelf: "stretch",
   },
 });
 export type SeparatorOrientation = keyof typeof separatorOrientations;

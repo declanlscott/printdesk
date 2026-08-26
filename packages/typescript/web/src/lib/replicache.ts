@@ -34,6 +34,7 @@ export const replicacheAtom = replicacheAtomRuntime.atom((get) =>
           ),
       ),
     ),
+    // oxlint-disable-next-line effecttsgo/strict-effect-provide
     Effect.provide(get.resultOnce(actorAtom).pipe(Effect.map(ActorLayerMap.get), Layer.unwrap)),
   ),
 );
@@ -61,7 +62,7 @@ export const makeQueryAtom = <
                   get.setSelf(data);
                 },
               })
-              .pipe(Effect.map(get.addFinalizer)),
+              .pipe(Effect.map((finalizer) => get.addFinalizer(finalizer))),
           ),
         ),
       ),

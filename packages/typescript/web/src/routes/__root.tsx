@@ -3,6 +3,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 
+// oxlint-disable-next-line typescript/no-floating-promises
 if (import.meta.env.DEV && typeof document !== "undefined") import("virtual:stylex:css-only");
 
 const plugins = [{ name: "TanStack Router", render: <TanStackRouterDevtoolsPanel /> }];

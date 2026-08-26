@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-unsafe-type-assertion
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Record from "effect/Record";

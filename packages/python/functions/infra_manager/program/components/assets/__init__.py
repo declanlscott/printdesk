@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import pulumi
 import pulumi_aws as aws
-from sst import Resource
-
 from utils import naming
+
 from program.components.assets.route import Route, RouteArgs
+from sst import Resource
 
 
 @dataclass
@@ -15,7 +14,7 @@ class AssetsArgs:
 
 
 class Assets(pulumi.ComponentResource):
-    def __init__(self, args: AssetsArgs, opts: Optional[pulumi.ResourceOptions] = None):
+    def __init__(self, args: AssetsArgs, opts: pulumi.ResourceOptions | None = None):
         super().__init__(
             t="pd:aws:Assets",
             name="Assets",

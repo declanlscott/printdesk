@@ -7,30 +7,28 @@ import type { StyleXComponentProps } from "../types";
 
 export const avatarBadgeStyles = stylex.create({
   base: {
-    position: "absolute",
-    right: spacing[0],
-    bottom: spacing[0],
-    zIndex: 10,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
     borderRadius: radii.full,
-    backgroundColor: colors.primary,
-    color: colors.primaryForeground,
+    alignItems: "center",
     backgroundBlendMode: "color",
+    backgroundColor: colors.primary,
     boxShadow: `0 0 0 2px ${colors.background}`,
+    color: colors.primaryForeground,
+    display: "inline-flex",
+    justifyContent: "center",
+    position: "absolute",
     userSelect: "none",
-    [stylex.when.ancestor('[data-size="sm"]', avatarMarker)]: {
-      height: spacing[2],
-      width: spacing[2],
+    zIndex: 10,
+    bottom: spacing[0],
+    height: {
+      [stylex.when.ancestor('[data-size="default"]', avatarMarker)]: spacing[2.5],
+      [stylex.when.ancestor('[data-size="lg"]', avatarMarker)]: spacing[3],
+      [stylex.when.ancestor('[data-size="sm"]', avatarMarker)]: spacing[2],
     },
-    [stylex.when.ancestor('[data-size="default"]', avatarMarker)]: {
-      height: spacing[2.5],
-      width: spacing[2.5],
-    },
-    [stylex.when.ancestor('[data-size="lg"]', avatarMarker)]: {
-      height: spacing[3],
-      width: spacing[3],
+    right: spacing[0],
+    width: {
+      [stylex.when.ancestor('[data-size="default"]', avatarMarker)]: spacing[2.5],
+      [stylex.when.ancestor('[data-size="lg"]', avatarMarker)]: spacing[3],
+      [stylex.when.ancestor('[data-size="sm"]', avatarMarker)]: spacing[2],
     },
   },
 });

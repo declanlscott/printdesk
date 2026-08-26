@@ -1,3 +1,4 @@
+// oxlint-disable effecttsgo/strict-effect-provide
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";

@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-unnecessary-type-assertion
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import Path from "node:path";
 

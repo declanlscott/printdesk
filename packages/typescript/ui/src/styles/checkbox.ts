@@ -14,50 +14,52 @@ const DISABLED = ":disabled";
 
 export const checkboxStyles = stylex.create({
   base: {
-    position: "relative",
-    display: "flex",
-    width: spacing[4],
-    height: spacing[4],
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "center",
+    [AFTER]: {
+      insetBlock: spacing[-2],
+      insetInline: spacing[-3],
+      content: "",
+      position: "absolute",
+    },
+    borderColor: {
+      [DATA_FOCUS_VISIBLE]: colors.ring,
+      [DATA_INVALID]: {
+        [DATA_SELECTED]: colors.primary,
+        default: `light-dark(${colors.destructive}, color-mix(in oklab, ${colors.destructive} 50%, transparent))`,
+      },
+      [DATA_SELECTED]: colors.primary,
+      default: colors.input,
+    },
     borderRadius: "4px",
     borderWidth: spacing.px,
-    borderColor: colors.input,
+    outline: "none",
+    alignItems: "center",
+    backgroundColor: {
+      [DATA_SELECTED]: colors.primary,
+    },
+    boxShadow: {
+      [DATA_FOCUS_VISIBLE]: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
+      [DATA_INVALID]: `0 0 0 3px light-dark(color-mix(in oklab, ${colors.destructive} 20%, transparent), color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
+    },
+    color: {
+      [DATA_SELECTED]: colors.primaryForeground,
+    },
+    cursor: {
+      [DISABLED]: "not-allowed",
+    },
+    display: "flex",
+    flexShrink: 0,
+    justifyContent: "center",
+    opacity: {
+      [DATA_DISABLED]: "50%",
+      [stylex.when.ancestor(DISABLED, fieldMarker)]: "50%",
+    },
+    position: "relative",
+    transitionDuration: timing[150],
     transitionProperty:
       "color, background-color, border-color, outline-color, text-decoration-color, stroke",
     transitionTimingFunction: timing.easeInOut,
-    transitionDuration: timing[150],
-    outline: "none",
-    [stylex.when.ancestor(DISABLED, fieldMarker)]: {
-      opacity: "50%",
-    },
-    [AFTER]: {
-      content: "",
-      position: "absolute",
-      insetInline: spacing[-3],
-      insetBlock: spacing[-2],
-    },
-    [DATA_DISABLED]: {
-      cursor: "not-allowed",
-      opacity: "50%",
-    },
-    [DATA_FOCUS_VISIBLE]: {
-      borderColor: colors.ring,
-      boxShadow: `0 0 0 3px color-mix(in oklab, ${colors.ring} 50%, transparent)`,
-    },
-    [DATA_INVALID]: {
-      borderColor: `light-dark(${colors.destructive}, color-mix(in oklab, ${colors.destructive} 50%, transparent))`,
-      boxShadow: `0 0 0 3px light-dark(color-mix(in oklab, ${colors.destructive} 20%, transparent), color-mix(in oklab, ${colors.destructive} 40%, transparent))`,
-      [DATA_SELECTED]: {
-        borderColor: colors.primary,
-      },
-    },
-    [DATA_SELECTED]: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary,
-      color: colors.primaryForeground,
-    },
+    height: spacing[4],
+    width: spacing[4],
   },
 });
 

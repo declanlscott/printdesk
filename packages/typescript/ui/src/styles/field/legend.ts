@@ -6,8 +6,8 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldLegendStyles = stylex.create({
   base: {
-    marginBottom: spacing[1.5],
     fontWeight: fontWeights.medium,
+    marginBottom: spacing[1.5],
   },
 });
 

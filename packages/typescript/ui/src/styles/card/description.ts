@@ -6,9 +6,9 @@ import type { StyleXComponentProps } from "../types";
 
 export const cardDescriptionStyles = stylex.create({
   base: {
+    color: colors.mutedForeground,
     fontSize: fontSizes.sm,
     lineHeight: leading.sm,
-    color: colors.mutedForeground,
   },
 });
 

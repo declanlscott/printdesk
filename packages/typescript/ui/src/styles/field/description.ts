@@ -9,11 +9,11 @@ const SECOND_LAST = ":nth-last-child(2)";
 
 export const fieldDescriptionStyles = stylex.create({
   base: {
-    textAlign: "left",
-    fontSize: fontSizes.sm,
-    lineHeight: leading.sm,
-    fontWeight: fontWeights.normal,
     color: colors.mutedForeground,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.normal,
+    lineHeight: leading.sm,
+    textAlign: "left",
     marginTop: {
       [LAST]: spacing[0],
       [SECOND_LAST]: spacing[-1],

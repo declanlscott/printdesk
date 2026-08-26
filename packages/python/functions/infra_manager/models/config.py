@@ -1,9 +1,9 @@
-from typing import Literal, Union, Sequence, Optional, Annotated
+from collections.abc import Sequence
+from typing import Annotated, Literal
 from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, Field, field_validator
 from pyawscron import AWSCron
-
+from pydantic import BaseModel, Field, field_validator
 from utils import ipv4_pattern
 
 ipv4 = Annotated[str, Field(pattern=ipv4_pattern)]
@@ -13,7 +13,7 @@ class PapercutMfApiHostNameConfig(BaseModel):
     _tag: Literal["PapercutMfApiHostNameConfig"]
     name: str
     resolver_ips: Annotated[
-        Optional[Sequence[ipv4]], Field(alias="resolverIps", default=None)
+        Sequence[ipv4] | None, Field(alias="resolverIps", default=None)
     ]
 
 
@@ -22,9 +22,7 @@ class PapercutMfApiHostIpv4Config(BaseModel):
     ipv4: ipv4
 
 
-PapercutMfApiHostConfig = Union[
-    PapercutMfApiHostNameConfig, PapercutMfApiHostIpv4Config
-]
+PapercutMfApiHostConfig = PapercutMfApiHostNameConfig | PapercutMfApiHostIpv4Config
 
 
 class PapercutMfApiConfig(BaseModel):
@@ -58,4 +56,4 @@ class PapercutMfDisabledConfig(BaseModel):
     enabled: Literal[False] = False
 
 
-PapercutMfConfig = Union[PapercutMfEnabledConfig, PapercutMfDisabledConfig]
+PapercutMfConfig = PapercutMfEnabledConfig | PapercutMfDisabledConfig

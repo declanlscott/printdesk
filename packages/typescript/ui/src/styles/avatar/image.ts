@@ -6,11 +6,11 @@ import type { StyleXComponentProps } from "../types";
 
 export const avatarImageStyles = stylex.create({
   loaded: {
-    aspectRatio: "1 / 1",
-    width: "100%",
-    height: "100%",
     borderRadius: radii.full,
+    aspectRatio: "1 / 1",
     objectFit: "cover",
+    height: "100%",
+    width: "100%",
   },
   loading: {
     display: "none",

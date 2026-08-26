@@ -61,7 +61,7 @@ export const api = new lib.aws.lambda.Function(
     ],
     permissions: [invokeIssuerFunctionUrl],
     environment: {
-      AWS_APPCONFIG_EXTENSION_HTTP_PORT: appconfigAgent.properties.port.toString(),
+      AWS_APPCONFIG_EXTENSION_HTTP_PORT: appconfigAgent.properties.port.apply(String),
       AWS_APPCONFIG_EXTENSION_LOG_LEVEL: isProdStage ? "info" : "error",
     },
     transform: { function: appconfigAgentExtensionTransform },

@@ -6,10 +6,10 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldErrorStyles = stylex.create({
   base: {
-    fontSize: fontSizes.sm,
-    lineHeight: leading.sm,
-    fontWeight: fontWeights.normal,
     color: colors.destructive,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.normal,
+    lineHeight: leading.sm,
   },
 });
 

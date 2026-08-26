@@ -7,16 +7,16 @@ import type { StyleXComponentProps } from "../types";
 
 export const cardStyles = stylex.create({
   base: {
-    display: "flex",
-    flexDirection: "column",
+    borderRadius: radii.xl,
     gap: "var(--card-spacing)",
     overflow: "hidden",
-    borderRadius: radii.xl,
     paddingBlock: "var(--card-spacing)",
     backgroundColor: colors.card,
-    fontSize: fontSizes.sm,
-    color: colors.cardForeground,
     boxShadow: `0 0 0 1px color-mix(in oklab, ${colors.foreground} 10%, transparent)`,
+    color: colors.cardForeground,
+    display: "flex",
+    flexDirection: "column",
+    fontSize: fontSizes.sm,
     paddingBottom: {
       default: null,
       [stylex.when.descendant('[data-slot="card-footer"]', cardFooterMarker)]: spacing[0],

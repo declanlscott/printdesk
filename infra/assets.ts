@@ -52,10 +52,10 @@ export const assetsRouter = new sst.aws.Router("AssetsRouter", {
       transform: {
         distribution: (args) => {
           args.priceClass = "PriceClass_100";
-          args.defaultCacheBehavior = {
-            ...args.defaultCacheBehavior,
+          args.defaultCacheBehavior = $output(args.defaultCacheBehavior).apply((behavior) => ({
+            ...behavior,
             trustedKeyGroups: [assetsKeyGroup.id],
-          };
+          }));
         },
       },
     },

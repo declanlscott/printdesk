@@ -6,10 +6,10 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldContentStyles = stylex.create({
   base: {
-    display: "flex",
     flex: "1",
-    flexDirection: "column",
     gap: spacing[0.5],
+    display: "flex",
+    flexDirection: "column",
     lineHeight: leading.snug,
   },
 });

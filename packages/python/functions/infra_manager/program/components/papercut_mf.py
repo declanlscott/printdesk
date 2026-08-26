@@ -1,19 +1,18 @@
 import base64
-from dataclasses import dataclass
 import json
-from typing import Optional
+from dataclasses import dataclass
 
 import pulumi
 import pulumi_aws as aws
 import pulumi_cloudflare as cloudflare
-from sst import Resource
+from models import PapercutMfEnabledConfig
+from utils import is_prod_stage, naming
 
 from program.components.vpc_service_binding import (
     VpcServiceBinding,
     VpcServiceBindingArgs,
 )
-from models import PapercutMfEnabledConfig
-from utils import naming, is_prod_stage
+from sst import Resource
 
 
 @dataclass
@@ -24,7 +23,7 @@ class PapercutMfArgs:
 
 class PapercutMf(pulumi.ComponentResource):
     def __init__(
-        self, args: PapercutMfArgs, opts: Optional[pulumi.ResourceOptions] = None
+        self, args: PapercutMfArgs, opts: pulumi.ResourceOptions | None = None
     ):
         super().__init__(
             t="pd:awscf:PapercutMf", name="PapercutMf", props=vars(args), opts=opts

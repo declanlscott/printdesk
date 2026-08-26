@@ -6,12 +6,12 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldStyles = stylex.create({
   base: {
+    gap: spacing[2],
+    color: {
+      '[data-invalid="true"]': colors.destructive,
+    },
     display: "flex",
     width: "100%",
-    gap: spacing[2],
-    ['[data-invalid="true"]']: {
-      color: colors.destructive,
-    },
   },
 });
 
@@ -20,8 +20,8 @@ export const fieldOrientations = stylex.create({
     flexDirection: "column",
   },
   horizontal: {
-    flexDirection: "row",
     alignItems: "start",
+    flexDirection: "row",
   },
   responsive: {
     flexDirection: "column",

@@ -4,7 +4,7 @@ import * as Struct from "effect/Struct";
 
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
-import { OrdersContract } from "../orders/contract";
+// import { OrdersContract } from "../orders/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId, TenantId } from "../utils";
 
@@ -67,16 +67,16 @@ export namespace InvoicesContract {
     items: LineItem.pipe(Schema.Array),
   }) {}
 
-  export const estimateCost = (order: typeof OrdersContract.Attributes.Type, script: string) =>
-    Effect.succeed(
-      globalThis.Function(
-        "__order__",
-        [`Object.freeze(__order__);`, script, `return estimateCost(__order__);`].join("\n"),
-      ),
-    ).pipe(
-      Effect.tap((fn) => fn(order)),
-      Effect.flatMap(Schema.decodeUnknownEffect(Estimate)),
-    );
+  // export const estimateCost = (order: typeof OrdersContract.Attributes.Type, script: string) =>
+  //   Effect.succeed(
+  //     globalThis.Function(
+  //       "__order__",
+  //       [`Object.freeze(__order__);`, script, `return estimateCost(__order__);`].join("\n"),
+  //     ),
+  //   ).pipe(
+  //     Effect.tap((fn) => fn(order)),
+  //     Effect.flatMap(Schema.decodeUnknownEffect(Estimate)),
+  //   );
 
   export const ProcessInvoicePayload = Schema.Struct({
     invoiceId: EntityId,

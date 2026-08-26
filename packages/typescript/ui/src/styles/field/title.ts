@@ -7,16 +7,16 @@ import type { StyleXComponentProps } from "../types";
 
 export const fieldTitleStyles = stylex.create({
   base: {
-    display: "flex",
-    width: "fit-content",
-    alignItems: "center",
     gap: spacing[2],
+    alignItems: "center",
+    display: "flex",
     fontSize: fontSizes.sm,
-    lineHeight: leading.sm,
     fontWeight: fontWeights.medium,
-    [stylex.when.ancestor('[data-disabled="true"]', fieldMarker)]: {
-      opacity: "50%",
+    lineHeight: leading.sm,
+    opacity: {
+      [stylex.when.ancestor('[data-disabled="true"]', fieldMarker)]: "50%",
     },
+    width: "fit-content",
   },
 });
 

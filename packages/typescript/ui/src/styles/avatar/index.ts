@@ -9,30 +9,32 @@ const AFTER = "::after";
 
 export const avatarStyles = stylex.create({
   base: {
-    position: "relative",
-    display: "flex",
-    flexShrink: 0,
-    borderRadius: radii.full,
-    userSelect: "none",
     [AFTER]: {
-      content: "",
-      position: "absolute",
       inset: spacing[0],
+      borderColor: colors.border,
       borderRadius: radii.full,
       borderWidth: spacing.px,
-      borderColor: colors.border,
+      content: "",
       mixBlendMode: {
         default: null,
         [modes.light]: "darken",
         [modes.dark]: "lighten",
       },
+      position: "absolute",
     },
+    // oxlint-disable-next-line @stylexjs/valid-styles
     [stylex.when.ancestor('[data-slot="avatar-group"]', avatarGroupMarker)]: {
       ":not(:last-child)": {
         boxShadow: `0 0 0 2px ${colors.background}`,
         marginInlineEnd: spacing[-2],
       },
     },
+    borderRadius: radii.full,
+    display: "flex",
+    flexShrink: 0,
+    marginInlineEnd: {},
+    position: "relative",
+    userSelect: "none",
   },
 });
 

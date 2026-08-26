@@ -3,18 +3,16 @@
 import json
 import random
 import time
-from typing import TypedDict, Optional
+from typing import TypedDict
 
-import pulumi
 import boto3
-from types_boto3_sts import STSClient
-
+import pulumi
 from types_boto3_cloudfront_keyvaluestore import CloudFrontKeyValueStoreClient
 from types_boto3_cloudfront_keyvaluestore.type_defs import (
-    PutKeyRequestListItemTypeDef,
     DeleteKeyRequestListItemTypeDef,
+    PutKeyRequestListItemTypeDef,
 )
-
+from types_boto3_sts import STSClient
 
 MAX_RETRIES = 50
 CHUNK_SIZE = 1_000
@@ -35,7 +33,7 @@ class RoutesProviderOutputs(RoutesProviderInputs):
 class RoutesProvider(pulumi.dynamic.ResourceProvider):
     def __init__(self):
         super().__init__()
-        self._client: Optional[CloudFrontKeyValueStoreClient] = None
+        self._client: CloudFrontKeyValueStoreClient | None = None
 
     def configure(self, req: pulumi.dynamic.ConfigureRequest):
         sts: STSClient = boto3.client("sts")
@@ -278,7 +276,7 @@ class RoutesProvider(pulumi.dynamic.ResourceProvider):
         # Parse routes array
         routes = json.loads(routes_json)
         if not isinstance(routes, list):
-            raise ValueError("Expected a JSON array of routes")
+            raise TypeError("Expected a JSON array of routes")
 
         return routes, chunk_count
 

@@ -1,11 +1,10 @@
 from dataclasses import dataclass
-from typing import Optional
 
 import pulumi
 import pulumi_aws as aws
-from sst import Resource
-
 from utils import naming
+
+from sst import Resource
 
 
 @dataclass
@@ -14,9 +13,7 @@ class RealtimeArgs:
 
 
 class Realtime(pulumi.ComponentResource):
-    def __init__(
-        self, args: RealtimeArgs, opts: Optional[pulumi.ResourceOptions] = None
-    ):
+    def __init__(self, args: RealtimeArgs, opts: pulumi.ResourceOptions | None = None):
         super().__init__(
             t="pd:aws:Realtime",
             name="Realtime",

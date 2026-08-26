@@ -1,10 +1,5 @@
 import { AccessControl } from "@printdesk/core/access-control";
-import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
-import { AuthMiddleware } from "@printdesk/core/api/middleware/auth";
-import { AwsCredentialIdentityProviderMiddleware } from "@printdesk/core/api/middleware/aws";
-import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
-import { Oauth } from "@printdesk/core/oauth";
 import { PapercutMfApi } from "@printdesk/core/papercut-mf/api";
 import { PapercutMfSynchronizer } from "@printdesk/core/papercut-mf/synchronizer";
 import { ReplicacheNotifier } from "@printdesk/core/replicache/notifier";
@@ -15,8 +10,10 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { openauthLayer } from "../lib/auth";
+import { authMiddlewareLayer } from "../lib/auth";
+import { appsyncPublisherCredentialIdentityProviderLayer } from "../lib/aws";
 import { databaseLayer } from "../lib/database";
+import { errorMiddlewareLayer } from "../lib/error";
 import { papercutMfApiLayer, papercutMfSynchronizerLayer } from "../lib/papercut";
 import { realtimeLayer } from "../lib/realtime";
 
@@ -59,8 +56,7 @@ export const basePapercutMfGroupLayer = HttpApiBuilder.group(
 );
 
 export const papercutMfGroupLayer = basePapercutMfGroupLayer.pipe(
-  Layer.provide([AuthMiddleware.layer, papercutMfApiLayer]),
-  Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
+  Layer.provide([authMiddlewareLayer, errorMiddlewareLayer, papercutMfApiLayer]),
 );
 
 export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
@@ -113,19 +109,13 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
 
 export const papercutMfSyncGroupLayer = basePapercutMfSyncGroupLayer.pipe(
   Layer.provide([
-    AuthMiddleware.layer,
-    AwsCredentialIdentityProviderMiddleware.appsyncPublisherLayer,
+    authMiddlewareLayer,
+    appsyncPublisherCredentialIdentityProviderLayer,
+    errorMiddlewareLayer,
     papercutMfSynchronizerLayer,
     replicacheNotifierLayer,
   ]),
-  Layer.provide([
-    ActorLayerMap.layer,
-    AppsyncPublisherCredentialIdentityProviderLayerMap.layer,
-    databaseLayer,
-    Oauth.AccessTokenLayerMap.layer,
-    openauthLayer,
-    realtimeLayer,
-  ]),
+  Layer.provide([databaseLayer, realtimeLayer]),
 );
 
 export const papercutMfGroupsLayer = Layer.mergeAll(papercutMfGroupLayer, papercutMfSyncGroupLayer);

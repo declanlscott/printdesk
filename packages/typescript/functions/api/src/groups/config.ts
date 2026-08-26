@@ -1,17 +1,15 @@
 import { AccessControl } from "@printdesk/core/access-control";
-import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
-import { ActorMiddleware } from "@printdesk/core/api/middleware/actor";
-import { AwsCredentialIdentityProviderMiddleware } from "@printdesk/core/api/middleware/aws";
-import { AppconfigCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appconfig";
 import { Config } from "@printdesk/core/config";
 import { orDieWhenUnrespondable } from "@printdesk/core/utils";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { openauthLayer } from "../lib/auth";
+import { authMiddlewareLayer } from "../lib/auth";
+import { appconfigCredentialIdentityProviderLayer } from "../lib/aws";
 import { configLayer } from "../lib/config";
+import { errorMiddlewareLayer } from "../lib/error";
 
 export const basePapercutMfConfigGroupLayer = HttpApiBuilder.group(
   Api,
@@ -36,14 +34,10 @@ export const basePapercutMfConfigGroupLayer = HttpApiBuilder.group(
 
 export const papercutMfConfigGroupLayer = basePapercutMfConfigGroupLayer.pipe(
   Layer.provide([
-    ActorMiddleware.layer,
-    AwsCredentialIdentityProviderMiddleware.appconfigLayer,
+    authMiddlewareLayer,
+    appconfigCredentialIdentityProviderLayer,
     configLayer,
-  ]),
-  Layer.provide([
-    ActorLayerMap.layer,
-    AppconfigCredentialIdentityProviderLayerMap.layer,
-    openauthLayer,
+    errorMiddlewareLayer,
   ]),
 );
 

@@ -1,5 +1,8 @@
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
+import { ActorLayerMap } from "@printdesk/core/actors";
+import { AuthMiddleware } from "@printdesk/core/api/middleware/auth";
 import { AwsCredentialIdentityProvider } from "@printdesk/core/aws/credential-identity";
+import { Oauth } from "@printdesk/core/oauth";
 import * as Openauth from "@printdesk/core/oauth/openauth/issuer";
 import { SstResource } from "@printdesk/core/sst/resource";
 import { Constants } from "@printdesk/core/utils/constants";
@@ -10,4 +13,8 @@ export const openauthLayer = Openauth.issuerLayer(Constants.OPENAUTH_CLIENT_IDS.
     AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain),
     SstResource.layer,
   ]),
+);
+
+export const authMiddlewareLayer = AuthMiddleware.layer.pipe(
+  Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
 );

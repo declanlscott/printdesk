@@ -42,7 +42,8 @@ export const makeService = Effect.gen(function* () {
           }),
       ),
       Effect.filterOrFail(
-        ({ tenant }) => tenant.status === "active",
+        ({ client, tenant }) =>
+          client.role === "bootstrap" ? tenant.status === "setup" : tenant.status === "active",
         ({ tenant }) =>
           new OauthContract.AccessDeniedError({
             reason: new TenantsContract.InvalidStatusError({

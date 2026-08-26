@@ -5,10 +5,10 @@ import * as Layer from "effect/Layer";
 
 import { LicensesRepository } from ".";
 import { Database } from "../../database";
-import { tenants } from "../../tenants/sql";
 import { licenses } from "../sql";
 
-import type { License } from "../sql";
+import type { InferInsertModel } from "drizzle-orm";
+import type { License, LicensesTable } from "../sql";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
@@ -16,26 +16,42 @@ export const makeService = Effect.gen(function* () {
   const db = yield* Database;
   const table = licenses.table;
 
-  const findByKeyWithTenant = Effect.fn("Licenses.Repository.findByKey")((key: License["key"]) =>
+  const create = Effect.fn("Licenses.Repository.create")((value: InferInsertModel<LicensesTable>) =>
     db
-      .useTransaction((tx) =>
-        tx
-          .select({ license: table, tenant: tenants.table })
-          .from(table)
-          .leftJoin(tenants.table, eq(tenants.table.licenseKey, table.key))
-          .where(eq(table.key, key)),
-      )
+      .useTransaction((tx) => tx.insert(table).values(value).returning())
+      .pipe(
+        Effect.map(Array.head),
+        Effect.flatMap(Effect.fromOption),
+        Effect.catchTag("NoSuchElementError", Effect.die),
+      ),
+  );
+
+  const findById = Effect.fn("Licenses.Repository.findById")((id: License["id"]) =>
+    db
+      .useTransaction((tx) => tx.select().from(table).where(eq(table.id, id)))
       .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
-  const updateByKey = Effect.fn("Licenses.Repository.updateByKey")(
-    (key: License["key"], license: Partial<Omit<License, "key">>) =>
+  const findByIdForUpdate = Effect.fn("Licenses.Repository.findByIdForUpdate")(
+    (id: License["id"]) =>
       db
-        .useTransaction((tx) => tx.update(table).set(license).where(eq(table.key, key)).returning())
+        .useTransaction((tx) => tx.select().from(table).where(eq(table.id, id)).for("update"))
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
-  return { findByKeyWithTenant, updateByKey } as const;
+  const updateById = Effect.fn("Licenses.Repository.updateById")(
+    (id: License["id"], license: Partial<Omit<License, "id" | "keyHash">>) =>
+      db
+        .useTransaction((tx) => tx.update(table).set(license).where(eq(table.id, id)).returning())
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
+  return {
+    create,
+    findById,
+    findByIdForUpdate,
+    updateById,
+  } as const;
 });
 
 export const layer = makeService.pipe(Layer.effect(LicensesRepository));

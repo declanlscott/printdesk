@@ -4,10 +4,10 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { authMiddlewareLayer } from "../lib/auth";
-import { appsyncSubscriberCredentialIdentityProviderLayer } from "../lib/aws";
-import { errorMiddlewareLayer } from "../lib/error";
 import { realtimeLayer } from "../lib/realtime";
+import { authMiddlewareLayer } from "../middleware/auth";
+import { appsyncSubscriberCredentialIdentityProviderMiddlewareLayer } from "../middleware/aws";
+import { errorMiddlewareLayer } from "../middleware/error";
 
 export const baseRealtimeGroupLayer = HttpApiBuilder.group(
   Api,
@@ -27,7 +27,7 @@ export const baseRealtimeGroupLayer = HttpApiBuilder.group(
 export const realtimeGroupLayer = baseRealtimeGroupLayer.pipe(
   Layer.provide([
     authMiddlewareLayer,
-    appsyncSubscriberCredentialIdentityProviderLayer,
+    appsyncSubscriberCredentialIdentityProviderMiddlewareLayer,
     errorMiddlewareLayer,
     realtimeLayer,
   ]),

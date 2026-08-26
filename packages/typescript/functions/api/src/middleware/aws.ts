@@ -6,17 +6,17 @@ import {
 } from "@printdesk/core/aws/credential-identity/appsync";
 import * as Layer from "effect/Layer";
 
-export const appconfigCredentialIdentityProviderLayer =
+export const appconfigCredentialIdentityProviderMiddlewareLayer =
   AwsCredentialIdentityProviderMiddleware.appconfigLayer.pipe(
     Layer.provide(AppconfigCredentialIdentityProviderLayerMap.layer),
   );
 
-export const appsyncPublisherCredentialIdentityProviderLayer =
+export const appsyncPublisherCredentialIdentityProviderMiddlewareLayer =
   AwsCredentialIdentityProviderMiddleware.appsyncPublisherLayer.pipe(
     Layer.provide(AppsyncPublisherCredentialIdentityProviderLayerMap.layer),
   );
 
-export const appsyncSubscriberCredentialIdentityProviderLayer =
+export const appsyncSubscriberCredentialIdentityProviderMiddlewareLayer =
   AwsCredentialIdentityProviderMiddleware.appsyncSubscriberLayer.pipe(
     Layer.provide(AppsyncSubscriberCredentialIdentityProviderLayerMap.layer),
   );

@@ -6,10 +6,10 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { authMiddlewareLayer } from "../lib/auth";
-import { appconfigCredentialIdentityProviderLayer } from "../lib/aws";
 import { configLayer } from "../lib/config";
-import { errorMiddlewareLayer } from "../lib/error";
+import { authMiddlewareLayer } from "../middleware/auth";
+import { appconfigCredentialIdentityProviderMiddlewareLayer } from "../middleware/aws";
+import { errorMiddlewareLayer } from "../middleware/error";
 
 export const basePapercutMfConfigGroupLayer = HttpApiBuilder.group(
   Api,
@@ -35,7 +35,7 @@ export const basePapercutMfConfigGroupLayer = HttpApiBuilder.group(
 export const papercutMfConfigGroupLayer = basePapercutMfConfigGroupLayer.pipe(
   Layer.provide([
     authMiddlewareLayer,
-    appconfigCredentialIdentityProviderLayer,
+    appconfigCredentialIdentityProviderMiddlewareLayer,
     configLayer,
     errorMiddlewareLayer,
   ]),

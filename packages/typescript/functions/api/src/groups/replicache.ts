@@ -8,10 +8,10 @@ import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { authMiddlewareLayer } from "../lib/auth";
-import { appsyncPublisherCredentialIdentityProviderLayer } from "../lib/aws";
-import { errorMiddlewareLayer } from "../lib/error";
 import { replicacheLayer } from "../lib/replicache";
+import { authMiddlewareLayer } from "../middleware/auth";
+import { appsyncPublisherCredentialIdentityProviderMiddlewareLayer } from "../middleware/aws";
+import { errorMiddlewareLayer } from "../middleware/error";
 
 export const baseReplicacheGroupLayer = HttpApiBuilder.group(
   Api,
@@ -52,7 +52,7 @@ export const baseReplicacheGroupLayer = HttpApiBuilder.group(
 export const replicacheGroupLayer = baseReplicacheGroupLayer.pipe(
   Layer.provide([
     authMiddlewareLayer,
-    appsyncPublisherCredentialIdentityProviderLayer,
+    appsyncPublisherCredentialIdentityProviderMiddlewareLayer,
     errorMiddlewareLayer,
     replicacheLayer,
   ]),

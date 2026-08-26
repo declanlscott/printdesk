@@ -10,12 +10,12 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { authMiddlewareLayer } from "../lib/auth";
-import { appsyncPublisherCredentialIdentityProviderLayer } from "../lib/aws";
 import { databaseLayer } from "../lib/database";
-import { errorMiddlewareLayer } from "../lib/error";
 import { papercutMfApiLayer, papercutMfSynchronizerLayer } from "../lib/papercut";
 import { realtimeLayer } from "../lib/realtime";
+import { authMiddlewareLayer } from "../middleware/auth";
+import { appsyncPublisherCredentialIdentityProviderMiddlewareLayer } from "../middleware/aws";
+import { errorMiddlewareLayer } from "../middleware/error";
 
 export const basePapercutMfGroupLayer = HttpApiBuilder.group(
   Api,
@@ -110,7 +110,7 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
 export const papercutMfSyncGroupLayer = basePapercutMfSyncGroupLayer.pipe(
   Layer.provide([
     authMiddlewareLayer,
-    appsyncPublisherCredentialIdentityProviderLayer,
+    appsyncPublisherCredentialIdentityProviderMiddlewareLayer,
     errorMiddlewareLayer,
     papercutMfSynchronizerLayer,
     replicacheNotifierLayer,

@@ -1,14 +1,6 @@
-import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import { AccessControl } from "@printdesk/core/access-control";
 import { ActorLayerMap } from "@printdesk/core/actors";
 import { Api } from "@printdesk/core/api";
-import {
-  ScimAuthMiddleware,
-  ScimBulkIdMapMiddleware,
-  ScimLocatorMiddleware,
-  ScimErrorMiddleware,
-  ScimHttpApiSchemaErrorHandlerMiddleware,
-} from "@printdesk/core/api/middleware/scim";
 import { Oauth } from "@printdesk/core/oauth";
 import { Scim } from "@printdesk/core/scim";
 import { ScimContract } from "@printdesk/core/scim/contract";
@@ -23,6 +15,13 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
 import { scimLayer, scimLocatorLayer } from "../lib/scim";
+import {
+  scimAuthMiddlewareLayer,
+  scimBulkIdMapMiddlewareLayer,
+  scimErrorMiddlewareLayer,
+  scimHttpApiSchemaErrorHandlerMiddlewareLayer,
+  scimLocatorMiddlewareLayer,
+} from "../middleware/scim";
 
 export const scimV2RootGroupLayer = HttpApiBuilder.group(Api, "ScimV2Root", (handlers) =>
   handlers.handle(
@@ -47,7 +46,7 @@ export const baseScimV2ServiceProviderConfigGroupLayer = HttpApiBuilder.group(
 );
 
 export const scimV2ServiceProviderConfigGroupLayer = baseScimV2ServiceProviderConfigGroupLayer.pipe(
-  Layer.provide([ScimHttpApiSchemaErrorHandlerMiddleware.layer, scimLayer]),
+  Layer.provide([scimHttpApiSchemaErrorHandlerMiddlewareLayer, scimLayer]),
 );
 
 export const baseScimV2ResourceTypesGroupLayer = HttpApiBuilder.group(
@@ -73,7 +72,7 @@ export const baseScimV2ResourceTypesGroupLayer = HttpApiBuilder.group(
 );
 
 export const scimV2ResourceTypesGroupLayer = baseScimV2ResourceTypesGroupLayer.pipe(
-  Layer.provide([ScimHttpApiSchemaErrorHandlerMiddleware.layer, scimLayer]),
+  Layer.provide([scimHttpApiSchemaErrorHandlerMiddlewareLayer, scimLayer]),
 );
 
 export const baseScimV2SchemasGroupLayer = HttpApiBuilder.group(
@@ -99,7 +98,7 @@ export const baseScimV2SchemasGroupLayer = HttpApiBuilder.group(
 );
 
 export const scimV2SchemasGroupLayer = baseScimV2SchemasGroupLayer.pipe(
-  Layer.provide([ScimHttpApiSchemaErrorHandlerMiddleware.layer, scimLayer]),
+  Layer.provide([scimHttpApiSchemaErrorHandlerMiddlewareLayer, scimLayer]),
 );
 
 export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
@@ -239,9 +238,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
 
 export const scimV2GroupsGroupLayer = baseScimV2GroupsGroupLayer.pipe(
   Layer.provide([
-    ScimAuthMiddleware.layer,
-    ScimLocatorMiddleware.layer,
-    ScimHttpApiSchemaErrorHandlerMiddleware.layer,
+    scimAuthMiddlewareLayer,
+    scimLocatorMiddlewareLayer,
+    scimHttpApiSchemaErrorHandlerMiddlewareLayer,
     scimLayer,
   ]),
   Layer.provide([
@@ -373,9 +372,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
 
 export const scimV2UsersGroupLayer = baseScimV2UsersGroupLayer.pipe(
   Layer.provide([
-    ScimAuthMiddleware.layer,
-    ScimLocatorMiddleware.layer,
-    ScimHttpApiSchemaErrorHandlerMiddleware.layer,
+    scimAuthMiddlewareLayer,
+    scimLocatorMiddlewareLayer,
+    scimHttpApiSchemaErrorHandlerMiddlewareLayer,
     scimLayer,
   ]),
   Layer.provide([
@@ -440,10 +439,10 @@ export const scimV2BulkGroupLayer = baseScimV2BulkGroupLayer.pipe(
     ),
   ),
   Layer.provide([
-    ScimAuthMiddleware.layer,
-    ScimBulkIdMapMiddleware.layer,
-    ScimLocatorMiddleware.layer,
-    ScimHttpApiSchemaErrorHandlerMiddleware.layer,
+    scimAuthMiddlewareLayer,
+    scimBulkIdMapMiddlewareLayer,
+    scimHttpApiSchemaErrorHandlerMiddlewareLayer,
+    scimLocatorMiddlewareLayer,
     scimLayer,
   ]),
   Layer.provide([
@@ -451,7 +450,6 @@ export const scimV2BulkGroupLayer = baseScimV2BulkGroupLayer.pipe(
     openauthLayer,
     Oauth.AccessTokenLayerMap.layer,
     scimLocatorLayer,
-    NodeCrypto.layer,
   ]),
 );
 
@@ -463,4 +461,4 @@ export const scimGroupsLayer = Layer.mergeAll(
   scimV2GroupsGroupLayer,
   scimV2UsersGroupLayer,
   scimV2BulkGroupLayer,
-).pipe(Layer.provide(ScimErrorMiddleware.layer), Layer.provide(NodeCrypto.layer));
+).pipe(Layer.provide(scimErrorMiddlewareLayer));

@@ -1,3 +1,4 @@
+import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as ApiUrlBuilder from "@printdesk/core/api/url-builder/layer";
 import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
 import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
@@ -16,6 +17,7 @@ export const scimLocatorLayer = ScimLocator.layer.pipe(
 
 export const scimLayer = layer.pipe(
   Layer.provide([
+    NodeCrypto.layer,
     scimLocatorLayer,
     GroupMembershipsRepositories.repositoryLayer,
     GroupsRepositories.repositoryLayer,

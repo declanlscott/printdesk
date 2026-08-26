@@ -10,9 +10,10 @@ import * as HttpEffect from "effect/unstable/http/HttpEffect";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { authMiddlewareLayer, openauthLayer } from "../lib/auth";
+import { openauthLayer } from "../lib/auth";
 import { bootstrapLayer } from "../lib/bootstrap";
-import { errorMiddlewareLayer } from "../lib/error";
+import { authMiddlewareLayer } from "../middleware/auth";
+import { errorMiddlewareLayer } from "../middleware/error";
 
 export const baseBootstrapGroupLayer = HttpApiBuilder.group(
   Api,

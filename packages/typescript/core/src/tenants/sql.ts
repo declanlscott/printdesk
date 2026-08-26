@@ -14,12 +14,12 @@ export const tenants = new Tables.Sync(
     name: Columns.varchar().notNull(),
     status: Columns.union(TenantsContract.Status.literals).notNull().default("setup"),
     lastPapercutSyncAt: Columns.dateTime(),
-    licenseKey: Columns.redactedUuid().notNull(),
+    licenseId: Columns.entityId().notNull(),
   },
   (table) => [
     check("tenant_id", eq(table.id, table.tenantId)),
     uniqueIndex().on(table.slug),
-    uniqueIndex().on(table.licenseKey),
+    uniqueIndex().on(table.licenseId),
   ],
 );
 export const tenantsTable = tenants.table;

@@ -1,5 +1,4 @@
 import { decodeBase32IgnorePadding, encodeBase32LowerCaseNoPadding } from "@oslojs/encoding";
-import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Encoding from "effect/Encoding";
 import * as Schema from "effect/Schema";
@@ -11,9 +10,6 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
-import { IdentityProvidersContract } from "../identity/contract";
-import { LicensesContract } from "../licenses/contract";
-import { PapercutMfContract } from "../papercut-mf/contract";
 import { TablesContract } from "../tables/contract";
 import { EntityId, TenantId, UnpaddedBase32 } from "../utils";
 import { Constants } from "../utils/constants";
@@ -26,7 +22,7 @@ export namespace TenantsContract {
 
   export const IdFromUnpaddedBase32String = UnpaddedBase32.pipe(
     Schema.decodeTo(TenantId, {
-      decode: SchemaGetter.transformOrFail((base32) =>
+      decode: SchemaGetter.transformOrFail((base32, options) =>
         Effect.try({
           try: () => decodeBase32IgnorePadding(base32),
           catch: (error) =>
@@ -55,7 +51,9 @@ export namespace TenantsContract {
                 }),
             }),
           ),
-          Effect.mapError((e) => new SchemaIssue.InvalidValue({ message: e.message })),
+          Effect.mapError(
+            (e) => new SchemaIssue.InvalidValue({ message: e.message }, base32, options),
+          ),
         ),
       ),
       encode: SchemaGetter.transform((tenantId) =>
@@ -80,10 +78,10 @@ export namespace TenantsContract {
       name: Schema.String,
       status: Status.pipe(Schema.withDecodingDefaultType(Effect.succeed("setup"))),
       lastPapercutSyncAt: ColumnsContract.NullableTimestamp,
-      licenseKey: LicensesContract.Key,
+      licenseId: EntityId,
     },
     ["read", "update", "delete"],
-    ["lastPapercutSyncAt", "licenseKey", "version"],
+    ["lastPapercutSyncAt", "licenseId", "version"],
   ) {}
 
   export class TenantSlugConflictError
@@ -118,28 +116,4 @@ export namespace TenantsContract {
       ),
     Output: Table.Dto,
   });
-
-  export class ProvisionPayload extends Schema.Class<ProvisionPayload>("ProvisionPayload")({
-    tenant: Table.Model.mapFields(
-      Struct.pick(["name", "slug", "licenseKey", "tenantId"]),
-    ).mapFields(Struct.renameKeys({ tenantId: "id" })),
-    identityProviders: IdentityProvidersContract.Table.Model.mapFields(
-      Struct.pick(["kind", "externalId"]),
-    ).pipe(
-      Schema.NonEmptyArray,
-      Schema.check(
-        Schema.makeFilter((providers) =>
-          Array.length(Array.dedupeWith(providers, (a, b) => a.kind === b.kind)) !==
-          Array.length(providers)
-            ? ["Identity provider kind must be unique"]
-            : [],
-        ),
-      ),
-    ),
-    papercut: Schema.Struct({
-      apiAuthToken: PapercutMfContract.ApiAuthToken,
-      config: PapercutMfContract.EnabledConfig.mapFields(Struct.omit(["enabled"])),
-    }).pipe(Schema.OptionFromOptional),
-    clientId: EntityId,
-  }) {}
 }

@@ -74,9 +74,7 @@ export const makeService = Effect.gen(function* () {
                 Schedule.jittered,
                 Schedule.while(
                   Effect.fn(function* (metadata) {
-                    const isRetryable = Predicate.isTagged("ConditionalCheckFailedException")(
-                      metadata.input,
-                    );
+                    const isRetryable = metadata.input._tag === "ConditionalCheckFailedException";
 
                     yield* Effect.log(
                       `[Orders.ShortIdGenerator]: Generation attempt #${metadata.attempt} failed, ${isRetryable ? `retrying again in ${metadata.duration.pipe(Duration.format)}` : "not retryable"}:`,

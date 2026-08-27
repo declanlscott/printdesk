@@ -3,10 +3,13 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
+import * as Tuple from "effect/Tuple";
 
 import { OrdersMutations } from ".";
 import { AccessControl } from "../../access-control";
+import { Transaction } from "../../database/transaction";
 import { Mutation } from "../../mutations";
+import { ProductsRepository } from "../../products/repositories";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { SharedAccountsPolicies } from "../../shared-accounts/policies";
@@ -14,11 +17,15 @@ import { UsersPolicies } from "../../users/policies";
 import { OrdersContract } from "../contract";
 import { OrdersPolicies } from "../policies";
 import { OrdersRepository } from "../repositories";
+import { OrdersShortIdGenerator } from "../short-id-generator";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
   const repository = yield* OrdersRepository;
+  const productsRepository = yield* ProductsRepository;
+
+  const shortIdGenerator = yield* OrdersShortIdGenerator;
 
   const userPolicies = yield* UsersPolicies;
   const sharedAccountPolicies = yield* SharedAccountsPolicies;
@@ -66,7 +73,31 @@ export const makeService = Effect.gen(function* () {
     ),
     mutator: Effect.fn("Orders.Mutations.create.mutator")((order, { tenantId }) =>
       // TODO: Verify workflow status is correct
-      repository.create({ ...order, tenantId }).pipe(Effect.tap(notify)),
+      Effect.all(
+        [
+          repository.create({ ...order, tenantId }),
+          productsRepository.findById(order.productId, tenantId),
+        ],
+        { concurrency: "unbounded" },
+      ).pipe(
+        Effect.catchTag("NoSuchElementError", Effect.die),
+        Effect.tap(([order, { roomId }]) =>
+          shortIdGenerator.generate({ tenantId: order.tenantId, roomId }).pipe(
+            Effect.flatMap((shortId) =>
+              repository.updateById(order.id, { shortId }, order.tenantId),
+            ),
+            Effect.catch((error) =>
+              Effect.logError(
+                `[Orders.Mutations]: Failed to save short ID for order "${order.id}":`,
+                error,
+              ),
+            ),
+            Transaction.after(),
+          ),
+        ),
+        Effect.map(Tuple.get(0)),
+        Effect.tap(notify),
+      ),
     ),
   });
 

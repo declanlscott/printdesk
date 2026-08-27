@@ -17,12 +17,10 @@ import * as Struct from "effect/Struct";
 
 import { OrdersRepository, OrdersSyncRepository } from ".";
 import { Database } from "../../database";
-import { products } from "../../products/sql";
 import { replicacheClientViewEntries } from "../../replicache/sql";
 import { SyncQueryBuilder } from "../../sync/query-builder";
 import { workflowStatuses } from "../../workflows/sql";
 import { OrdersContract } from "../contract";
-import { OrdersShortIdGenerator } from "../short-id-generator";
 import { activeManagerAuthorizedSharedAccountOrdersView, activeOrdersView, orders } from "../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
@@ -43,51 +41,15 @@ export const makeRepository = Effect.gen(function* () {
 
   const activeManagerAuthorizedSharedAccountView = activeManagerAuthorizedSharedAccountOrdersView;
 
-  const shortIdGenerator = yield* OrdersShortIdGenerator;
-
   const create = Effect.fn("Orders.Repository.create")((value: InferInsertModel<OrdersTable>) =>
-    Effect.all(
-      [
-        db
-          .useTransaction((tx) => tx.insert(table).values(value).returning())
-          .pipe(
-            Effect.map(Array.head),
-            Effect.flatMap(Effect.fromOption),
-            Effect.map((order) => order as Order),
-          ),
-        db
-          .useTransaction((tx) =>
-            tx
-              .select({ roomId: products.table.roomId })
-              .from(products.table)
-              .where(
-                and(
-                  eq(products.table.id, value.productId),
-                  eq(products.table.tenantId, value.tenantId),
-                ),
-              ),
-          )
-          .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
-      ],
-      { concurrency: "unbounded" },
-    ).pipe(
-      Effect.catchTag("NoSuchElementError", Effect.die),
-      Effect.flatMap(([order, { roomId }]) =>
-        db
-          .afterTransaction(
-            shortIdGenerator.generate({ tenantId: order.tenantId, roomId }).pipe(
-              Effect.flatMap((shortId) => updateById(order.id, { shortId }, order.tenantId)),
-              Effect.catch((error) =>
-                Effect.logError(
-                  `[Orders.Repository]: Failed to save short ID for order "${order.id}":`,
-                  error,
-                ),
-              ),
-            ),
-          )
-          .pipe(Effect.as(order)),
+    db
+      .useTransaction((tx) => tx.insert(table).values(value).returning())
+      .pipe(
+        Effect.map(Array.head),
+        Effect.flatMap(Effect.fromOption),
+        Effect.catchTag("NoSuchElementError", Effect.die),
+        Effect.map((order) => order as Order),
       ),
-    ),
   );
 
   const findById = Effect.fn("Orders.Repository.findById")(

@@ -151,6 +151,5 @@ export const replicacheLayer = ReplicachePuller.layer.pipe(
     ReplicacheClientViewEntriesRepository.layer,
   ]),
   Layer.provide([OrdersShortIdGenerator.layer, SyncQueryBuilder.layer]),
-  Layer.provide([databaseLayer, dynamoLayer]),
-  Layer.provide(SstResource.layer),
+  Layer.provide([databaseLayer, dynamoLayer, SstResource.layer]),
 );

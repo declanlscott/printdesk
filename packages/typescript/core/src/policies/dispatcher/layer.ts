@@ -2,20 +2,20 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { PolicyDispatcher } from ".";
-import { Policy } from "../..";
-import { AnnouncementsPolicies } from "../../../announcements/client/policies";
-import { CommentsPolicies } from "../../../comments/client/policies";
-import { DeliveryOptionsPolicies } from "../../../delivery-options/client/policies";
-import { GroupsPolicies } from "../../../groups/client/policies";
-import { PolicyHandlers } from "../../../handlers/policies";
-import { OrdersPolicies } from "../../../orders/client/policies";
-import { ProductsPolicies } from "../../../products/client/policies";
-import { RoomsPolicies } from "../../../rooms/client/policies";
-import { SharedAccountManagerAccessPolicies } from "../../../shared-accounts/client/manager-access/policies";
-import { SharedAccountsPolicies } from "../../../shared-accounts/client/policies";
-import { UsersPolicies } from "../../../users/client/policies";
-import { SharedAccountWorkflowsPolicies } from "../../../workflows/client/shared-account/policies";
-import { WorkflowStatusesPolicies } from "../../../workflows/client/status/policies";
+import { Policy } from "..";
+import { AnnouncementsPolicies } from "../../announcements/policies";
+import { CommentsPolicies } from "../../comments/policies";
+import { DeliveryOptionsPolicies } from "../../delivery-options/policies";
+import { GroupsPolicies } from "../../groups/policies";
+import { PolicyHandlers } from "../../handlers/policies";
+import { OrdersPolicies } from "../../orders/policies";
+import { ProductsPolicies } from "../../products/policies";
+import { RoomsPolicies } from "../../rooms/policies";
+import { SharedAccountManagerAccessPolicies } from "../../shared-accounts/manager-access/policies";
+import { SharedAccountsPolicies } from "../../shared-accounts/policies";
+import { UsersPolicies } from "../../users/policies";
+import { SharedAccountWorkflowsPolicies } from "../../workflows/shared-account/policies";
+import { WorkflowStatusesPolicies } from "../../workflows/status/policies";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

@@ -25,6 +25,8 @@ import { ReadTransaction, Database, WriteTransaction } from "../database/client"
 import * as DeliveryOptionsMutations from "../delivery-options/client/mutations/layer";
 import * as DeliveryOptionsPolicies from "../delivery-options/client/policies/layer";
 import * as DeliveryOptionsRepository from "../delivery-options/client/repository/layer";
+import * as GroupMembershipsRepository from "../groups/client/memberships/repository/layer";
+import * as GroupsPolicies from "../groups/client/policies/layer";
 import { MutationHandlers } from "../handlers/mutations";
 import * as InvoicesMutations from "../invoices/client/mutations/layer";
 import * as InvoicesRepository from "../invoices/client/repository/layer";
@@ -141,6 +143,7 @@ export namespace Replicache {
     AnnouncementsRepository.layer,
     CommentsRepository.layer,
     DeliveryOptionsRepository.layer,
+    GroupMembershipsRepository.layer,
     InvoicesRepository.layer,
     OrdersRepository.layer,
     ProductsRepository.layer,
@@ -165,6 +168,7 @@ export namespace Replicache {
     AnnouncementsPolicies.layer,
     CommentsPolicies.layer,
     DeliveryOptionsPolicies.layer,
+    GroupsPolicies.layer,
     OrdersPolicies.layer,
     ProductsPolicies.layer,
     RoomsPolicies.layer,

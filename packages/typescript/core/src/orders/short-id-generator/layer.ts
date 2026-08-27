@@ -4,6 +4,7 @@ import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Redacted from "effect/Redacted";
 import * as Ref from "effect/Ref";
@@ -37,12 +38,15 @@ export const makeService = Effect.gen(function* () {
           }),
         ),
         Effect.map(Struct.get("Items")),
-        Effect.filterOrFail(Predicate.isNotUndefined),
+        Effect.filterOrElse(Predicate.isNotUndefined, () => Effect.succeed([])),
         Effect.map(Array.head),
-        Effect.flatMap(Effect.fromOption),
-        Effect.flatMap(Schema.decodeUnknownEffect(OrdersContract.Item)),
-        Effect.map(Struct.get(Constants.DYNAMO_KEYS.SK)),
-        Effect.catchTag("NoSuchElementError", () => Effect.succeed(ShortId.make(0))),
+        Effect.map(Option.map(Schema.decodeUnknownEffect(OrdersContract.Item))),
+        Effect.flatMap(
+          Option.match({
+            onSome: Effect.map(Struct.get(Constants.DYNAMO_KEYS.SK)),
+            onNone: () => Effect.succeed(ShortId.make(0, { disableChecks: true })),
+          }),
+        ),
         Effect.flatMap(Ref.make),
         Effect.flatMap((lastId) =>
           lastId.pipe(

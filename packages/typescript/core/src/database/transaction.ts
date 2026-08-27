@@ -4,6 +4,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Result from "effect/Result";
 import * as SynchronizedRef from "effect/SynchronizedRef";
@@ -45,12 +46,27 @@ export class Transaction extends Context.Service<Transaction>()(
         const registerAfterEffect = (afterEffect: TransactionAfterEffect) =>
           afterEffectsRef.pipe(SynchronizedRef.update(Chunk.append(afterEffect)));
 
-        return { tx, registerAfterEffect } as const;
+        return {
+          tx,
+          registerAfterEffect,
+        } as const;
       }
     }),
   },
 ) {
-  public static layer(...args: Parameters<typeof Transaction.make>) {
-    return this.make(...args).pipe(Layer.effect(this));
-  }
+  public static readonly after =
+    ({ onSuccessOnly = true }: { onSuccessOnly?: boolean } = {}) =>
+    (effect: Effect.Effect<void>) =>
+      this.pipe(
+        Effect.serviceOption,
+        Effect.flatMap(
+          Option.match({
+            onSome: (transaction) => transaction.registerAfterEffect({ onSuccessOnly, effect }),
+            onNone: () => effect,
+          }),
+        ),
+      );
+
+  public static readonly layer = (...args: Parameters<typeof Transaction.make>) =>
+    this.make(...args).pipe(Layer.effect(this));
 }

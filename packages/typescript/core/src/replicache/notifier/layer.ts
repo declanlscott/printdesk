@@ -2,7 +2,7 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { ReplicacheNotifier } from ".";
-import { Database } from "../../database";
+import { Transaction } from "../../database/transaction";
 import { RealtimeEventHandlers } from "../../handlers/realtime-events";
 import { Realtime } from "../../realtime";
 import { ReplicacheClientGroupId } from "../client-group-id";
@@ -12,7 +12,6 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
   const realtime = yield* Realtime;
-  const db = yield* Database;
 
   const notify = Effect.fn("ReplicacheNotifier.notify")(
     (data: ReplicacheContract.Notification["data"]) =>
@@ -37,7 +36,7 @@ export const makeService = Effect.gen(function* () {
             Effect.catchCause((cause) =>
               Effect.logError("[ReplicacheNotifier]: Replicache notification failed:", cause),
             ),
-            db.afterTransaction,
+            Transaction.after(),
           ),
         ),
       ),
@@ -56,7 +55,7 @@ export const makeService = Effect.gen(function* () {
         Effect.catchCause((cause) =>
           Effect.logError("[ReplicacheNotifier]: Replicache poke failed:", cause),
         ),
-        db.afterTransaction,
+        Transaction.after(),
       ),
     ),
     Effect.withSpan("ReplicacheNotifier.pokeAfterTransaction"),

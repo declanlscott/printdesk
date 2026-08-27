@@ -97,24 +97,10 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
       );
     });
 
-    const afterTransaction = Effect.fn("Database.TransactionManager.afterTransaction")(
-      (effect: Effect.Effect<void>, { onSuccessOnly = true }: { onSuccessOnly?: boolean } = {}) =>
-        Transaction.pipe(
-          Effect.serviceOption,
-          Effect.flatMap(
-            Option.match({
-              onSome: (transaction) => transaction.registerAfterEffect({ onSuccessOnly, effect }),
-              onNone: () => effect,
-            }),
-          ),
-        ),
-    );
-
     return {
       withTransaction,
       useTransaction,
       useQueryBuilder,
-      afterTransaction,
     } as const;
   }),
 }) {

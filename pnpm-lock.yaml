@@ -15,6 +15,9 @@ catalogs:
     '@aws-sdk/credential-providers':
       specifier: ^3.1117.0
       version: 3.1117.0
+    '@aws-sdk/types':
+      specifier: ^3.974.5
+      version: 3.974.5
     '@cloudflare/vite-plugin':
       specifier: ^1.53.1
       version: 1.53.1
@@ -45,12 +48,6 @@ catalogs:
     '@rolldown/plugin-babel':
       specifier: ^0.2.3
       version: 0.2.3
-    '@smithy/protocol-http':
-      specifier: ^5.6.2
-      version: 5.6.2
-    '@smithy/types':
-      specifier: ^4.17.2
-      version: 4.17.2
     '@stylexjs/atoms':
       specifier: ^0.19.0
       version: 0.19.0
@@ -221,9 +218,6 @@ importers:
       '@effect-aws/client-lambda':
         specifier: workspace:@printdesk/effect-aws-client-lambda@*
         version: link:../vendor/@effect-aws/client-lambda
-      '@effect-aws/cloudfront':
-        specifier: workspace:@printdesk/effect-aws-cloudfront@*
-        version: link:../vendor/@effect-aws/cloudfront
       '@effect-aws/dsql':
         specifier: workspace:@printdesk/effect-aws-dsql@*
         version: link:../vendor/@effect-aws/dsql
@@ -264,7 +258,7 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0
       '@smithy/protocol-http':
-        specifier: 'catalog:'
+        specifier: ^5.6.2
         version: 5.6.2
       '@smithy/signature-v4':
         specifier: ^5.7.3
@@ -312,12 +306,12 @@ importers:
         specifier: 'catalog:'
         version: 4.17.1
     devDependencies:
+      '@aws-sdk/types':
+        specifier: 'catalog:'
+        version: 3.974.5
       '@effect/tsgo':
         specifier: 'catalog:'
         version: 0.37.0
-      '@smithy/types':
-        specifier: 'catalog:'
-        version: 4.17.2
       '@standard-schema/spec':
         specifier: ^1.1.0
         version: 1.1.0
@@ -363,6 +357,28 @@ importers:
         version: 0.37.0
 
   packages/typescript/functions/api-gateway:
+    dependencies:
+      '@printdesk/core':
+        specifier: workspace:^
+        version: link:../../core
+      aws4fetch:
+        specifier: 'catalog:'
+        version: 1.0.20
+      effect:
+        specifier: 'catalog:'
+        version: 4.0.0-beta.106
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.4
+    devDependencies:
+      '@effect/tsgo':
+        specifier: 'catalog:'
+        version: 0.37.0
+      wrangler:
+        specifier: 'catalog:'
+        version: 4.125.0(@cloudflare/workers-types@4.20260702.1)
+
+  packages/typescript/functions/assets:
     dependencies:
       '@printdesk/core':
         specifier: workspace:^
@@ -613,15 +629,24 @@ importers:
         specifier: 'catalog:'
         version: 0.37.0
 
-  packages/typescript/vendor/@effect-aws/cloudfront:
+  packages/typescript/vendor/@effect-aws/client-s3:
     dependencies:
-      '@aws-sdk/cloudfront-signer':
-        specifier: ^3.1116.0
-        version: 3.1116.0
+      '@aws-sdk/client-s3':
+        specifier: ^3.1117.0
+        version: 3.1118.0
+      '@aws-sdk/s3-request-presigner':
+        specifier: ^3.1117.0
+        version: 3.1118.0
+      '@effect-aws/commons':
+        specifier: workspace:@printdesk/effect-aws-commons@*
+        version: link:../commons
       effect:
         specifier: 'catalog:'
         version: 4.0.0-beta.106
     devDependencies:
+      '@aws-sdk/types':
+        specifier: ^3.974.5
+        version: 3.974.5
       '@effect/tsgo':
         specifier: 'catalog:'
         version: 0.37.0
@@ -635,15 +660,12 @@ importers:
         specifier: 'catalog:'
         version: 4.0.0-beta.106
     devDependencies:
+      '@aws-sdk/types':
+        specifier: 'catalog:'
+        version: 3.974.5
       '@effect/tsgo':
         specifier: 'catalog:'
         version: 0.37.0
-      '@smithy/protocol-http':
-        specifier: 'catalog:'
-        version: 5.6.2
-      '@smithy/types':
-        specifier: 'catalog:'
-        version: 4.17.2
       '@types/node':
         specifier: 'catalog:'
         version: 24.13.3
@@ -921,6 +943,10 @@ packages:
   '@aws-crypto/util@5.2.0':
     resolution: {integrity: sha512-4RkU9EsI6ZpBve5fseQlGNUWKMa1RLPQ1dnjnQoe07ldfIzcsGb5hC5W0Dm7u423KWzawlrpbjXBrXCEv9zazQ==}
 
+  '@aws-sdk/checksums@3.1000.29':
+    resolution: {integrity: sha512-Dtu0gr4dnATZAPwEYbpCsG+MpLM7OAliy2gTepEFQwl1vZ6DL3QMH2FveMa3HLvPsOdhJsPRB3KtxVhph9T75A==}
+    engines: {node: '>=20.0.0'}
+
   '@aws-sdk/client-appconfig@3.1117.0':
     resolution: {integrity: sha512-AArGDzHJug1rtG8CJO/2W+zTLmCvXkqWP3/ZnprHOwS8A54Qnyrdm7kU9pfn71QWmG9k3/W3jCBb69ho81gC6g==}
     engines: {node: '>=20.0.0'}
@@ -933,8 +959,8 @@ packages:
     resolution: {integrity: sha512-cfCabCqjOXW3lnAwF2MeTxiYt/RSLfTVU0czfpJLlJveK4oW8/wMeFOiZREWwCkcuWwIlPeU19zZ/01RnrMxHA==}
     engines: {node: '>=20.0.0'}
 
-  '@aws-sdk/cloudfront-signer@3.1116.0':
-    resolution: {integrity: sha512-zdNMkn/b5c7pZFiyL5BR0RMPJKwyYvS6YH9j131O97XMTVrpm870OyeafVrFIMinqRvNBWzoxp7y8b8IA8VJwQ==}
+  '@aws-sdk/client-s3@3.1118.0':
+    resolution: {integrity: sha512-nh46pLKeRNFvTOZAJMfYR7kZ/KzhSqzhXVIJSwl4jJ/b2D+KOXL2jeOCryOvGgwpUQo9YNWFUg63cm2qr5MX9g==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/core@3.977.9':
@@ -1003,8 +1029,16 @@ packages:
     resolution: {integrity: sha512-0hmD7/NG2NoVOVHvUb6rtY5POQYr+/9gdHvrYhIBA1zmCqKOBd5Gz3dL+iZ15FHOJbs/5kLplGoePc8PHTlzYA==}
     engines: {node: '>=20.0.0'}
 
+  '@aws-sdk/middleware-sdk-s3@3.972.75':
+    resolution: {integrity: sha512-wMIsNumRVKaNMKhvU/s9VrdEwE8S6gSzXp4RygFG5BEMnGkkXf8cjh8zf7cKJBpUDpqTWqwbz5isEgp9rH6Lng==}
+    engines: {node: '>=20.0.0'}
+
   '@aws-sdk/nested-clients@3.997.44':
     resolution: {integrity: sha512-NhEgryjlBF9w38ZXqGymQV28IhkYa1mKhlbYnqIis57AYwWGVYfUPgg/qC2rLRqOUfblxx++irvju10kVTa8Vw==}
+    engines: {node: '>=20.0.0'}
+
+  '@aws-sdk/s3-request-presigner@3.1118.0':
+    resolution: {integrity: sha512-F8x0DHHEftcQ3jilXdHy180mi8A+WmCdGvaBDBeihVgtSoUQNy6B7yIvlLnvmrHQtqnqAkkQHqnx/kKx6n8gbw==}
     engines: {node: '>=20.0.0'}
 
   '@aws-sdk/signature-v4-multi-region@3.996.46':
@@ -5524,6 +5558,14 @@ snapshots:
       '@smithy/util-utf8': 2.3.0
       tslib: 2.8.1
 
+  '@aws-sdk/checksums@3.1000.29':
+    dependencies:
+      '@aws-sdk/core': 3.977.9
+      '@aws-sdk/types': 3.974.5
+      '@smithy/core': 3.33.3
+      '@smithy/types': 4.17.2
+      tslib: 2.8.1
+
   '@aws-sdk/client-appconfig@3.1117.0':
     dependencies:
       '@aws-sdk/core': 3.977.9
@@ -5559,9 +5601,18 @@ snapshots:
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 
-  '@aws-sdk/cloudfront-signer@3.1116.0':
+  '@aws-sdk/client-s3@3.1118.0':
     dependencies:
+      '@aws-sdk/checksums': 3.1000.29
+      '@aws-sdk/core': 3.977.9
+      '@aws-sdk/credential-provider-node': 3.972.81
+      '@aws-sdk/middleware-sdk-s3': 3.972.75
+      '@aws-sdk/signature-v4-multi-region': 3.996.46
+      '@aws-sdk/types': 3.974.5
       '@smithy/core': 3.33.3
+      '@smithy/fetch-http-handler': 5.7.2
+      '@smithy/node-http-handler': 4.11.3
+      '@smithy/types': 4.17.2
       tslib: 2.8.1
 
   '@aws-sdk/core@3.977.9':
@@ -5724,6 +5775,15 @@ snapshots:
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 
+  '@aws-sdk/middleware-sdk-s3@3.972.75':
+    dependencies:
+      '@aws-sdk/core': 3.977.9
+      '@aws-sdk/signature-v4-multi-region': 3.996.46
+      '@aws-sdk/types': 3.974.5
+      '@smithy/core': 3.33.3
+      '@smithy/types': 4.17.2
+      tslib: 2.8.1
+
   '@aws-sdk/nested-clients@3.997.44':
     dependencies:
       '@aws-sdk/core': 3.977.9
@@ -5732,6 +5792,15 @@ snapshots:
       '@smithy/core': 3.33.3
       '@smithy/fetch-http-handler': 5.7.2
       '@smithy/node-http-handler': 4.11.3
+      '@smithy/types': 4.17.2
+      tslib: 2.8.1
+
+  '@aws-sdk/s3-request-presigner@3.1118.0':
+    dependencies:
+      '@aws-sdk/core': 3.977.9
+      '@aws-sdk/signature-v4-multi-region': 3.996.46
+      '@aws-sdk/types': 3.974.5
+      '@smithy/core': 3.33.3
       '@smithy/types': 4.17.2
       tslib: 2.8.1
 

@@ -18,9 +18,9 @@ import { NonEmptyString } from "../../utils";
 import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
 import type {
-  RequestPresigningArguments as SmithyRequestPresigningArguments,
-  RequestSigningArguments as SmithyRequestSigningArguments,
-} from "@smithy/types";
+  RequestPresigningArguments as AwsSdkRequestPresigningArguments,
+  RequestSigningArguments as AwsSdkRequestSigningArguments,
+} from "@aws-sdk/types";
 import type * as HttpBody from "effect/unstable/http/HttpBody";
 
 export class SignatureV4Error extends Schema.TaggedError<SignatureV4Error>()("SignatureV4Error", {
@@ -33,7 +33,7 @@ export class SigningError extends Schema.TaggedError<SigningError>()("SigningErr
 }) {}
 
 export interface RequestPresigningArguments extends Omit<
-  SmithyRequestPresigningArguments,
+  AwsSdkRequestPresigningArguments,
   "expiresIn" | "signingDate"
 > {
   expiresIn?: Duration.Duration;
@@ -42,7 +42,7 @@ export interface RequestPresigningArguments extends Omit<
 }
 
 export interface RequestSigningArguments extends Omit<
-  SmithyRequestSigningArguments,
+  AwsSdkRequestSigningArguments,
   "signingDate"
 > {
   signingDate?: DateTime.Utc;

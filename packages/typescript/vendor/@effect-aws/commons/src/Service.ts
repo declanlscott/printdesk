@@ -16,7 +16,6 @@ import * as HttpHandler from "./HttpHandler.js";
 /**
  * @since 0.1.0
  */
-import type { CommandImpl, SmithyResolvedConfiguration } from "@smithy/smithy-client";
 import type {
   Client,
   HandlerOptions,
@@ -25,7 +24,8 @@ import type {
   PaginationConfiguration,
   Paginator,
   RequestHandler,
-} from "@smithy/types";
+} from "@aws-sdk/types";
+import type { CommandImpl, SmithyResolvedConfiguration } from "@smithy/smithy-client";
 import type { NonEmptyReadonlyArray } from "effect/Array";
 import type { TaggedException } from "./Errors.js";
 import type { RuntimeOptions } from "./internal/httpHandler.js";

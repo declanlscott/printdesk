@@ -1,10 +1,10 @@
+// oxlint-disable typescript/no-explicit-any
 import * as Effect from "effect/Effect";
 
-// oxlint-disable typescript/no-explicit-any
 /**
  * @since 0.1.0
  */
-import type { Logger } from "@smithy/types";
+import type { Logger } from "@aws-sdk/types";
 
 /**
  * @since 0.1.0

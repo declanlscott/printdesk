@@ -12,6 +12,7 @@ catalog:
   "@aws-crypto/sha256-js": ^5.2.0
   "@aws-sdk/client-dynamodb": ^3.1117.0
   "@aws-sdk/credential-providers": ^3.1117.0
+  "@aws-sdk/types": ^3.974.5
   "@cloudflare/vite-plugin": ^1.53.1
   "@cloudflare/workers-types": ^4.20260702.1
   "@effect/atom-react": 4.0.0-rc.108
@@ -23,8 +24,6 @@ catalog:
   "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
   "@rolldown/plugin-babel": ^0.2.3
-  "@smithy/types": ^4.17.2
-  "@smithy/protocol-http": ^5.6.2
   "@stylexjs/atoms": ^0.19.0
   "@stylexjs/stylex": ^0.19.0
   "@stylexjs/unplugin": ^0.19.0

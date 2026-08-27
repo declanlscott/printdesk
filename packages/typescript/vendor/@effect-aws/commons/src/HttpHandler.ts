@@ -5,12 +5,13 @@ import * as Scope from "effect/Scope";
 /**
  * @since 0.3.0
  */
-import type { HttpRequest, HttpResponse } from "@smithy/protocol-http";
 import type {
+  HttpRequest,
+  HttpResponse,
   HttpHandlerOptions,
   RequestHandler as ClientRequestHandler,
   RequestHandlerOutput,
-} from "@smithy/types";
+} from "@aws-sdk/types";
 import type * as Cause from "effect/Cause";
 import type { RuntimeOptions } from "./internal/httpHandler.js";
 

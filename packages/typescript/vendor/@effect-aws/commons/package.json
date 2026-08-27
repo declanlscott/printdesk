@@ -11,9 +11,8 @@
     "effect": "catalog:"
   },
   "devDependencies": {
+    "@aws-sdk/types": "catalog:",
     "@effect/tsgo": "catalog:",
-    "@smithy/protocol-http": "catalog:",
-    "@smithy/types": "catalog:",
     "@types/node": "catalog:"
   }
 }

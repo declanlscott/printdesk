@@ -6,9 +6,9 @@ import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondab
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
 import type {
-  AwsCredentialIdentity as SmithyAwsCredentialIdentity,
-  AwsCredentialIdentityProvider as SmithyAwsCredentialIdentityProvider,
-} from "@smithy/types";
+  AwsCredentialIdentity as AwsSdkCredentialIdentity,
+  AwsCredentialIdentityProvider as AwsSdkCredentialIdentityProvider,
+} from "@aws-sdk/types";
 
 export class AwsCredentialIdentityProviderError
   extends Schema.TaggedError<AwsCredentialIdentityProviderError>()(
@@ -45,7 +45,7 @@ export class AwsCredentialIdentity extends Schema.Class<AwsCredentialIdentity>(
 export class AwsCredentialIdentityProvider extends Context.Service<AwsCredentialIdentityProvider>()(
   "@printdesk/core/aws/CredentialIdentityProvider",
   {
-    make: Effect.fn(function* (smithy: SmithyAwsCredentialIdentity) {
+    make: Effect.fn(function* (smithy: AwsSdkCredentialIdentity) {
       const credentials = yield* Effect.succeed(smithy).pipe(
         Effect.flatMap(Schema.decodeEffect(AwsCredentialIdentity)),
         Effect.mapError((cause) => new AwsCredentialIdentityProviderError({ cause })),
@@ -55,18 +55,18 @@ export class AwsCredentialIdentityProvider extends Context.Service<AwsCredential
     }),
   },
 ) {
-  public static fromProvider(provider: () => SmithyAwsCredentialIdentityProvider) {
+  public static fromProvider(provider: () => AwsSdkCredentialIdentityProvider) {
     return Effect.tryPromise({
       try: () => provider()(),
       catch: (cause) => new AwsCredentialIdentityProviderError({ cause }),
     }).pipe(Effect.flatMap(this.make));
   }
 
-  public static layer(identity: SmithyAwsCredentialIdentity) {
+  public static layer(identity: AwsSdkCredentialIdentity) {
     return this.make(identity).pipe(Layer.effect(this), Layer.fresh);
   }
 
-  public static providerLayer(provider: () => SmithyAwsCredentialIdentityProvider) {
+  public static providerLayer(provider: () => AwsSdkCredentialIdentityProvider) {
     return this.fromProvider(provider).pipe(Layer.effect(this), Layer.fresh);
   }
 }

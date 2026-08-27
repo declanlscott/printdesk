@@ -7,6 +7,7 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import { bootstrapGroupLayer } from "./groups/bootstrap";
 import { configGroupsLayer } from "./groups/config";
 import { papercutMfGroupsLayer } from "./groups/papercut";
+import { policyGroupLayer } from "./groups/policy";
 import { realtimeGroupLayer } from "./groups/realtime";
 import { replicacheGroupLayer } from "./groups/replicache";
 import { scimGroupsLayer } from "./groups/scim";
@@ -18,6 +19,7 @@ export default Api.pipe(
     bootstrapGroupLayer,
     configGroupsLayer,
     papercutMfGroupsLayer,
+    policyGroupLayer,
     realtimeGroupLayer,
     replicacheGroupLayer,
     scimGroupsLayer,

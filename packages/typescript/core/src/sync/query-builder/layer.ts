@@ -24,7 +24,7 @@ export const makeService = Effect.gen(function* () {
           .where(
             and(
               eq(table.entity, entity),
-              lte(table.clientViewVersion, clientView.clientVersion),
+              lte(table.clientViewVersion, clientView.version),
               eq(table.clientGroupId, clientView.clientGroupId),
               eq(table.tenantId, clientView.tenantId),
             ),
@@ -61,10 +61,10 @@ export const makeService = Effect.gen(function* () {
               eq(table.entity, entity),
               or(
                 and(
-                  lte(table.clientViewVersion, clientView.clientVersion),
+                  lte(table.clientViewVersion, clientView.version),
                   isNotNull(table.entityVersion),
                 ),
-                gt(table.clientViewVersion, clientView.clientVersion),
+                gt(table.clientViewVersion, clientView.version),
               ),
               eq(table.clientGroupId, clientView.clientGroupId),
               eq(table.tenantId, clientView.tenantId),
@@ -83,7 +83,7 @@ export const makeService = Effect.gen(function* () {
           .where(
             and(
               eq(table.entity, entity),
-              gt(table.clientViewVersion, clientView.clientVersion),
+              gt(table.clientViewVersion, clientView.version),
               eq(table.clientGroupId, clientView.clientGroupId),
               eq(table.tenantId, clientView.tenantId),
             ),

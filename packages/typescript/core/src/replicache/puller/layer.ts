@@ -49,7 +49,7 @@ export const makeService = Effect.gen(function* () {
               "NoSuchElementError",
               () => new ReplicacheContract.ClientStateNotFoundError(),
             ),
-            Effect.map(Option.some),
+            Effect.asSome,
           )
         : Effect.succeedNone;
 

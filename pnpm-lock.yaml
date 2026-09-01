@@ -225,29 +225,29 @@ importers:
         specifier: 'catalog:'
         version: 4.0.0-rc.112(effect@4.0.0-rc.112)
       '@microsoft/kiota-abstractions':
-        specifier: 1.0.0-preview.103
-        version: 1.0.0-preview.103
+        specifier: 1.0.0-preview.106
+        version: 1.0.0-preview.106
       '@microsoft/kiota-authentication-azure':
-        specifier: 1.0.0-preview.103
-        version: 1.0.0-preview.103(supports-color@10.2.2)
+        specifier: 1.0.0-preview.106
+        version: 1.0.0-preview.106(supports-color@10.2.2)
       '@microsoft/kiota-http-fetchlibrary':
-        specifier: 1.0.0-preview.103
-        version: 1.0.0-preview.103
+        specifier: 1.0.0-preview.106
+        version: 1.0.0-preview.106
       '@microsoft/msgraph-sdk':
-        specifier: 1.0.0-preview.83
-        version: 1.0.0-preview.83(supports-color@10.2.2)
+        specifier: 1.0.0-preview.88
+        version: 1.0.0-preview.88(supports-color@10.2.2)
       '@microsoft/msgraph-sdk-core':
         specifier: 1.0.0-preview.17
         version: 1.0.0-preview.17(supports-color@10.2.2)
       '@microsoft/msgraph-sdk-groups':
-        specifier: 1.0.0-preview.83
-        version: 1.0.0-preview.83(supports-color@10.2.2)
+        specifier: 1.0.0-preview.88
+        version: 1.0.0-preview.88(supports-color@10.2.2)
       '@microsoft/msgraph-sdk-serviceprincipals':
-        specifier: 1.0.0-preview.86
-        version: 1.0.0-preview.86(supports-color@10.2.2)
+        specifier: 1.0.0-preview.88
+        version: 1.0.0-preview.88(supports-color@10.2.2)
       '@microsoft/msgraph-sdk-users':
-        specifier: 1.0.0-preview.83
-        version: 1.0.0-preview.83(supports-color@10.2.2)
+        specifier: 1.0.0-preview.88
+        version: 1.0.0-preview.88(supports-color@10.2.2)
       '@openauthjs/openauth':
         specifier: workspace:@printdesk/openauth@*
         version: link:../vendor/openauth
@@ -2118,20 +2118,14 @@ packages:
       '@effect-atom/atom': ^0.5.0
       effect: ^3.19.15
 
-  '@microsoft/kiota-abstractions@1.0.0-preview.103':
-    resolution: {integrity: sha512-om7nKH8nWyEAQ0lgbIdKdrkmznhkdDJdliCnAIo31X/hlUah1aBzvfUx+pbyp67Q040yLK+2J6P7AnvGSoN/qQ==}
-
   '@microsoft/kiota-abstractions@1.0.0-preview.106':
     resolution: {integrity: sha512-W3BRyBzTUW2RKsUWcUEBTHczTL3tGCY6Ca4kdpwDZoq0J2KTSoCsXqb9/2S9BaAgI/Nv5Px7I/T1+G2Q7Vzpvw==}
 
-  '@microsoft/kiota-authentication-azure@1.0.0-preview.103':
-    resolution: {integrity: sha512-eggxtsJWLcvaExghUJsOuUhVsJoalyWBGPtBYhlQEgJsUkozJOa1C4Mml8nq88vaQJ7rh+LbS3sTgZI69plIUg==}
+  '@microsoft/kiota-authentication-azure@1.0.0-preview.106':
+    resolution: {integrity: sha512-mt7BTmT0XZcWZ5ShJbZONRum9SWNCCuUUUTKBvJf6LhzVB2V/5Cokmagm6jl5wJijEvQa3TS3Un2wwxFL4z3iw==}
 
   '@microsoft/kiota-bundle@1.0.0-preview.106':
     resolution: {integrity: sha512-gIiPK3mt/FzX6qa3QSKb97jkngeLOItAvyFamDckR2NxqpVjbX1B+KHIXnOaFP6iB/cxIQ0d6owEq5G/YshaJQ==}
-
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.103':
-    resolution: {integrity: sha512-DbhGL+pdVjtv2AVvxB4fxvNC/GMzKbYyeQsknaXJXwqnPR/oIClWjaXlIxWL5SBK72DOmrZ18leaWMB2vfWvpw==}
 
   '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.106':
     resolution: {integrity: sha512-/3g90hQYZuZhi1KiHVnaX2tCgWyMdwbWdG5B1iLO9OGYVCiARdn7XxoB54uUQawYGqMNVqH3OS7ccVDUyI6fBQ==}
@@ -2151,17 +2145,17 @@ packages:
   '@microsoft/msgraph-sdk-core@1.0.0-preview.17':
     resolution: {integrity: sha512-zg4adBwEIwJBjM3IHi8xmz6Hyumz/IyEdCiX4JLWd+v4Jo9qIexZ0+IPEhi8xbgMwdrJ0h82D1CKGRe1vcsCBw==}
 
-  '@microsoft/msgraph-sdk-groups@1.0.0-preview.83':
-    resolution: {integrity: sha512-Sqcdp7/GpecvyGeOc8LVDsBgucBqmmIqPiSlJwKLnpTd3KamtwmhSIJqK5o2W6P/N0GzzACCj90zYlunjtd4jA==}
+  '@microsoft/msgraph-sdk-groups@1.0.0-preview.88':
+    resolution: {integrity: sha512-JO88A+6iu2UsZHt1Cqs5vPAMu2X0QfObtxBAC0wUE6NaK6GIW/WlYUpSXlNhz8Qyxfk91q9stO6R2biMSO8UiA==}
 
-  '@microsoft/msgraph-sdk-serviceprincipals@1.0.0-preview.86':
-    resolution: {integrity: sha512-iiEIf9Xy7U52HglBPnsQeOOLP8XTL+UVt9iopt12HZTZ2u4LWVzWq3hWNZMdivCOUa0KlPUx+3aXslR1fB8MlA==}
+  '@microsoft/msgraph-sdk-serviceprincipals@1.0.0-preview.88':
+    resolution: {integrity: sha512-BxtvuSkzF3YMSMQV797rOMNE2JBd3J8Ngx4ZWAzNiMnys/WkNuoUYwquYiJNYLcHH+xHRam0yMpxVBluNBcNCg==}
 
-  '@microsoft/msgraph-sdk-users@1.0.0-preview.83':
-    resolution: {integrity: sha512-QWmFznZhiTtM2xGmvKUXbpyMsrdyfv1bZUk0nf+Jr3MzdwRgNmv+21265oR6A3Dt2Rco5ZJFZD17dnn9QJ4NbA==}
+  '@microsoft/msgraph-sdk-users@1.0.0-preview.88':
+    resolution: {integrity: sha512-gNGBIaLAj8m26F6/mvGY21mjO3vo673OF4urL5hZZqxGd0HRz9DnnIZf/1sY6ZmE287pmtLlusB6isWjHaJbxQ==}
 
-  '@microsoft/msgraph-sdk@1.0.0-preview.83':
-    resolution: {integrity: sha512-2mEB6RlmOzu3uMcASgWlyBfEMakxLb1dh6rLThLxAZBhveUpYsEmYJ6LPC0VHNjVm7iU4zJlJrr3V5N5agoXNQ==}
+  '@microsoft/msgraph-sdk@1.0.0-preview.88':
+    resolution: {integrity: sha512-dYgrFniu/vFJL51DlSI3B88+Gco4rg9nw9kKwdL5zT66CQNXA2/WTP9r4p3QdiZzWtwfL64aj+Xv9skbS7tRNA==}
 
   '@msgpackr-extract/msgpackr-extract-darwin-arm64@3.0.4':
     resolution: {integrity: sha512-LCkGo6JDfaBhgST7UpPWgNgLINpcpabaHfyz5OBx75nUYxBsaEPxjnyNjWpeb/xBup/682QnBfRBy2/LvPutZQ==}
@@ -6787,13 +6781,6 @@ snapshots:
       '@effect-atom/atom': 0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.112))(effect@4.0.0-rc.112))(@effect/platform@0.94.5(effect@4.0.0-rc.112))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.112))(effect@4.0.0-rc.112))(effect@4.0.0-rc.112)
       effect: 4.0.0-rc.112
 
-  '@microsoft/kiota-abstractions@1.0.0-preview.103':
-    dependencies:
-      '@opentelemetry/api': 1.9.1
-      '@std-uritemplate/std-uritemplate': 2.0.12
-      tinyduration: 3.4.1
-      tslib: 2.8.1
-
   '@microsoft/kiota-abstractions@1.0.0-preview.106':
     dependencies:
       '@opentelemetry/api': 1.9.1
@@ -6801,10 +6788,10 @@ snapshots:
       tinyduration: 3.4.1
       tslib: 2.8.1
 
-  '@microsoft/kiota-authentication-azure@1.0.0-preview.103(supports-color@10.2.2)':
+  '@microsoft/kiota-authentication-azure@1.0.0-preview.106(supports-color@10.2.2)':
     dependencies:
       '@azure/core-auth': 1.11.0(supports-color@10.2.2)
-      '@microsoft/kiota-abstractions': 1.0.0-preview.103
+      '@microsoft/kiota-abstractions': 1.0.0-preview.106
       '@opentelemetry/api': 1.9.1
       tslib: 2.8.1
     transitivePeerDependencies:
@@ -6818,12 +6805,6 @@ snapshots:
       '@microsoft/kiota-serialization-json': 1.0.0-preview.106
       '@microsoft/kiota-serialization-multipart': 1.0.0-preview.106
       '@microsoft/kiota-serialization-text': 1.0.0-preview.106
-
-  '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.103':
-    dependencies:
-      '@microsoft/kiota-abstractions': 1.0.0-preview.103
-      '@opentelemetry/api': 1.9.1
-      tslib: 2.8.1
 
   '@microsoft/kiota-http-fetchlibrary@1.0.0-preview.106':
     dependencies:
@@ -6854,34 +6835,34 @@ snapshots:
   '@microsoft/msgraph-sdk-core@1.0.0-preview.17(supports-color@10.2.2)':
     dependencies:
       '@azure/core-auth': 1.11.0(supports-color@10.2.2)
-      '@microsoft/kiota-authentication-azure': 1.0.0-preview.103(supports-color@10.2.2)
+      '@microsoft/kiota-authentication-azure': 1.0.0-preview.106(supports-color@10.2.2)
       '@microsoft/kiota-bundle': 1.0.0-preview.106
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@microsoft/msgraph-sdk-groups@1.0.0-preview.83(supports-color@10.2.2)':
+  '@microsoft/msgraph-sdk-groups@1.0.0-preview.88(supports-color@10.2.2)':
     dependencies:
-      '@microsoft/msgraph-sdk': 1.0.0-preview.83(supports-color@10.2.2)
+      '@microsoft/msgraph-sdk': 1.0.0-preview.88(supports-color@10.2.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@microsoft/msgraph-sdk-serviceprincipals@1.0.0-preview.86(supports-color@10.2.2)':
+  '@microsoft/msgraph-sdk-serviceprincipals@1.0.0-preview.88(supports-color@10.2.2)':
     dependencies:
-      '@microsoft/msgraph-sdk': 1.0.0-preview.83(supports-color@10.2.2)
+      '@microsoft/msgraph-sdk': 1.0.0-preview.88(supports-color@10.2.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@microsoft/msgraph-sdk-users@1.0.0-preview.83(supports-color@10.2.2)':
+  '@microsoft/msgraph-sdk-users@1.0.0-preview.88(supports-color@10.2.2)':
     dependencies:
-      '@microsoft/msgraph-sdk': 1.0.0-preview.83(supports-color@10.2.2)
+      '@microsoft/msgraph-sdk': 1.0.0-preview.88(supports-color@10.2.2)
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@microsoft/msgraph-sdk@1.0.0-preview.83(supports-color@10.2.2)':
+  '@microsoft/msgraph-sdk@1.0.0-preview.88(supports-color@10.2.2)':
     dependencies:
       '@microsoft/msgraph-sdk-core': 1.0.0-preview.17(supports-color@10.2.2)
       tslib: 2.8.1

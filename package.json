@@ -22,7 +22,7 @@
     "@types/pg": "catalog:",
     "eslint-plugin-drizzle": "^0.2.3",
     "pg": "catalog:",
-    "remeda": "^2.44.0",
+    "remeda": "^2.45.0",
     "sst": "catalog:",
     "typescript": "catalog:",
     "vite-plus": "^0.3.0"

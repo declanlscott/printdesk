@@ -12,6 +12,6 @@
   },
   "devDependencies": {
     "@effect/tsgo": "catalog:",
-    "tsx": "^4.23.12"
+    "tsx": "^4.23.13"
   }
 }

@@ -7,7 +7,7 @@
     "./*": "./src/*.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-lambda": "^3.1117.0",
+    "@aws-sdk/client-lambda": "^3.1121.0",
     "@effect-aws/commons": "workspace:@printdesk/effect-aws-commons@*",
     "effect": "catalog:"
   },

@@ -26,7 +26,6 @@
     "@cloudflare/vite-plugin": "catalog:",
     "@cloudflare/workers-types": "catalog:",
     "@effect/tsgo": "catalog:",
-    "@rolldown/plugin-babel": "catalog:",
     "@stylexjs/unplugin": "catalog:",
     "@tailwindcss/vite": "catalog:",
     "@types/node": "catalog:",

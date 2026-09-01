@@ -10,43 +10,42 @@ allowBuilds:
 
 catalog:
   "@aws-crypto/sha256-js": ^5.2.0
-  "@aws-sdk/client-dynamodb": ^3.1117.0
-  "@aws-sdk/credential-providers": ^3.1117.0
+  "@aws-sdk/client-dynamodb": ^3.1121.0
+  "@aws-sdk/credential-providers": ^3.1121.0
   "@aws-sdk/types": ^3.974.5
-  "@cloudflare/vite-plugin": ^1.53.1
+  "@cloudflare/vite-plugin": ^1.54.2
   "@cloudflare/workers-types": ^4.20260702.1
-  "@effect/atom-react": 4.0.0-rc.108
-  "@effect/platform-browser": 4.0.0-rc.108
-  "@effect/platform-node": 4.0.0-rc.108
-  "@effect/platform-node-shared": 4.0.0-rc.108
-  "@effect/sql-pg": 4.0.0-rc.108
-  "@effect/tsgo": ^0.37.0
+  "@effect/atom-react": 4.0.0-rc.112
+  "@effect/platform-browser": 4.0.0-rc.112
+  "@effect/platform-node": 4.0.0-rc.112
+  "@effect/platform-node-shared": 4.0.0-rc.112
+  "@effect/sql-pg": 4.0.0-rc.112
+  "@effect/tsgo": ^0.39.0
   "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
-  "@rolldown/plugin-babel": ^0.2.3
   "@stylexjs/atoms": ^0.19.0
   "@stylexjs/stylex": ^0.19.0
   "@stylexjs/unplugin": ^0.19.0
   "@tailwindcss/vite": ^4.3.3
-  "@tanstack/devtools-vite": ^0.6.1
+  "@tanstack/devtools-vite": ^0.8.5
   "@tanstack/react-devtools": ^0.10.12
   "@tanstack/react-router": ^1.170.32
   "@tanstack/react-router-devtools": ^1.167.1
   "@tanstack/react-start": ^1.168.49
-  "@typeonce/effect-machine": ^0.25.0
+  "@typeonce/effect-machine": ^0.31.2
   "@types/aws-lambda": ^8.10.162
   "@types/node": ^24.13.3
   "@types/pg": ^8.23.1
   "@types/react": ^19.2.18
   "@types/react-dom": ^19.2.5
-  "@vitejs/plugin-react": ^6.1.0
+  "@vitejs/plugin-react": ^6.1.1
   aws4fetch: ^1.0.20
   drizzle-kit: 1.0.0-rc.5-ab785fc
   drizzle-orm: 1.0.0-rc.5-ab785fc
-  effect: 4.0.0-beta.106
-  hono: ^4.13.4
-  lucide-react: ^1.34.0
-  oxc-transform-react: ^0.147.0
+  effect: 4.0.0-rc.112
+  hono: ^4.13.5
+  lucide-react: ^1.38.0
+  oxc-transform-react: ^0.148.0
   pg: ^8.23.0
   react: ^19.2.8
   react-aria-components: ^1.20.0
@@ -56,15 +55,34 @@ catalog:
   tailwindcss: ^4.3.3
   typescript: ^7.0.2
   vite: ^8.2.2
-  wrangler: ^4.125.0
+  wrangler: ^4.127.1
 
 minimumReleaseAgeExclude:
-  - "@effect/tsgo-darwin-arm64@0.37.0"
-  - "@effect/tsgo-darwin-x64@0.37.0"
-  - "@effect/tsgo-linux-arm64@0.37.0"
-  - "@effect/tsgo-linux-arm@0.37.0"
-  - "@effect/tsgo-linux-x64@0.37.0"
-  - "@effect/tsgo-win32-arm64@0.37.0"
-  - "@effect/tsgo-win32-x64@0.37.0"
-  - "@effect/tsgo@0.37.0"
-  - "@typeonce/effect-machine@0.25.0"
+  - '@effect/tsgo-darwin-arm64@0.39.0'
+  - '@effect/tsgo-darwin-x64@0.39.0'
+  - '@effect/tsgo-linux-arm64@0.39.0'
+  - '@effect/tsgo-linux-arm@0.39.0'
+  - '@effect/tsgo-linux-x64@0.39.0'
+  - '@effect/tsgo-win32-arm64@0.39.0'
+  - '@effect/tsgo-win32-x64@0.39.0'
+  - '@effect/tsgo@0.39.0'
+  - '@oxc-transform-react/binding-android-arm-eabi@0.148.0'
+  - '@oxc-transform-react/binding-android-arm64@0.148.0'
+  - '@oxc-transform-react/binding-darwin-arm64@0.148.0'
+  - '@oxc-transform-react/binding-darwin-x64@0.148.0'
+  - '@oxc-transform-react/binding-freebsd-x64@0.148.0'
+  - '@oxc-transform-react/binding-linux-arm-gnueabihf@0.148.0'
+  - '@oxc-transform-react/binding-linux-arm-musleabihf@0.148.0'
+  - '@oxc-transform-react/binding-linux-arm64-gnu@0.148.0'
+  - '@oxc-transform-react/binding-linux-arm64-musl@0.148.0'
+  - '@oxc-transform-react/binding-linux-ppc64-gnu@0.148.0'
+  - '@oxc-transform-react/binding-linux-riscv64-gnu@0.148.0'
+  - '@oxc-transform-react/binding-linux-riscv64-musl@0.148.0'
+  - '@oxc-transform-react/binding-linux-s390x-gnu@0.148.0'
+  - '@oxc-transform-react/binding-linux-x64-gnu@0.148.0'
+  - '@oxc-transform-react/binding-linux-x64-musl@0.148.0'
+  - '@oxc-transform-react/binding-openharmony-arm64@0.148.0'
+  - '@oxc-transform-react/binding-win32-arm64-msvc@0.148.0'
+  - '@oxc-transform-react/binding-win32-ia32-msvc@0.148.0'
+  - '@oxc-transform-react/binding-win32-x64-msvc@0.148.0'
+  - oxc-transform-react@0.148.0

@@ -143,7 +143,7 @@ export const makeSyncRepository = Effect.gen(function* () {
               .$with(`${SharedAccountManagerAccessContract.ActiveAuthorizedView.name}_creates`)
               .as(
                 tx
-                  .select(getViewSelectedFields(activeView))
+                  .select()
                   .from(activeView)
                   .where(
                     and(

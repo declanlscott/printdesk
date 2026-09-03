@@ -105,7 +105,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const findCreates = Effect.fn("Products.Repository.findCreates")(
+  const findCreates = Effect.fn("Products.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(products.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -124,7 +124,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("Products.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("Products.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(products.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -143,31 +143,32 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActivePublishedCreates = Effect.fn("Products.Repository.findActivePublishedCreates")(
-    (clientView: ReplicacheClientView) =>
-      entriesQueryBuilder.creates(products.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) => {
-            const cte = tx
-              .$with(`${getViewName(activePublishedView)}_creates`)
-              .as(
-                tx
-                  .select()
-                  .from(activePublishedView)
-                  .where(eq(activePublishedView.tenantId, clientView.tenantId)),
-              );
+  const findActivePublishedCreates = Effect.fn(
+    "Products.SyncRepository.findActivePublishedCreates",
+  )((clientView: ReplicacheClientView) =>
+    entriesQueryBuilder.creates(products.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) => {
+          const cte = tx
+            .$with(`${getViewName(activePublishedView)}_creates`)
+            .as(
+              tx
+                .select()
+                .from(activePublishedView)
+                .where(eq(activePublishedView.tenantId, clientView.tenantId)),
+            );
 
-            return tx
-              .with(cte)
-              .select()
-              .from(cte)
-              .where(inArray(cte.id, tx.select({ id: cte.id }).from(cte).except(qb)));
-          }),
-        ),
+          return tx
+            .with(cte)
+            .select()
+            .from(cte)
+            .where(inArray(cte.id, tx.select({ id: cte.id }).from(cte).except(qb)));
+        }),
       ),
+    ),
   );
 
-  const findUpdates = Effect.fn("Products.Repository.findUpdates")(
+  const findUpdates = Effect.fn("Products.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(products.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -193,7 +194,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("Products.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("Products.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(products.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -219,33 +220,34 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActivePublishedUpdates = Effect.fn("Products.Repository.findActivePublishedUpdates")(
-    (clientView: ReplicacheClientView) =>
-      entriesQueryBuilder.updates(products.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) => {
-            const cte = tx
-              .$with(`${getViewName(activePublishedView)}_updates`)
-              .as(
-                qb
-                  .innerJoin(
-                    activePublishedView,
-                    and(
-                      eq(entriesTable.entityId, activePublishedView.id),
-                      not(eq(entriesTable.entityVersion, activePublishedView.version)),
-                      eq(entriesTable.tenantId, activePublishedView.tenantId),
-                    ),
-                  )
-                  .where(eq(activePublishedView.tenantId, clientView.tenantId)),
-              );
+  const findActivePublishedUpdates = Effect.fn(
+    "Products.SyncRepository.findActivePublishedUpdates",
+  )((clientView: ReplicacheClientView) =>
+    entriesQueryBuilder.updates(products.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) => {
+          const cte = tx
+            .$with(`${getViewName(activePublishedView)}_updates`)
+            .as(
+              qb
+                .innerJoin(
+                  activePublishedView,
+                  and(
+                    eq(entriesTable.entityId, activePublishedView.id),
+                    not(eq(entriesTable.entityVersion, activePublishedView.version)),
+                    eq(entriesTable.tenantId, activePublishedView.tenantId),
+                  ),
+                )
+                .where(eq(activePublishedView.tenantId, clientView.tenantId)),
+            );
 
-            return tx.with(cte).select(cte[getViewName(activePublishedView)]).from(cte);
-          }),
-        ),
+          return tx.with(cte).select(cte[getViewName(activePublishedView)]).from(cte);
+        }),
       ),
+    ),
   );
 
-  const findDeletes = Effect.fn("Products.Repository.findDeletes")(
+  const findDeletes = Effect.fn("Products.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(products.name, clientView)
@@ -263,7 +265,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveDeletes = Effect.fn("Products.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("Products.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(products.name, clientView)
@@ -281,25 +283,26 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActivePublishedDeletes = Effect.fn("Products.Repository.findActivePublishedDeletes")(
-    (clientView: ReplicacheClientView) =>
-      entriesQueryBuilder
-        .deletes(products.name, clientView)
-        .pipe(
-          Effect.flatMap((qb) =>
-            db.useTransaction((tx) =>
-              qb.except(
-                tx
-                  .select({ id: activePublishedView.id })
-                  .from(activePublishedView)
-                  .where(eq(activePublishedView.tenantId, clientView.tenantId)),
-              ),
+  const findActivePublishedDeletes = Effect.fn(
+    "Products.SyncRepository.findActivePublishedDeletes",
+  )((clientView: ReplicacheClientView) =>
+    entriesQueryBuilder
+      .deletes(products.name, clientView)
+      .pipe(
+        Effect.flatMap((qb) =>
+          db.useTransaction((tx) =>
+            qb.except(
+              tx
+                .select({ id: activePublishedView.id })
+                .from(activePublishedView)
+                .where(eq(activePublishedView.tenantId, clientView.tenantId)),
             ),
           ),
         ),
+      ),
   );
 
-  const findFastForward = Effect.fn("Products.Repository.findFastForward")(
+  const findFastForward = Effect.fn("Products.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<Product["id"]>) =>
       entriesQueryBuilder.fastForward(products.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -321,7 +324,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("Products.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("Products.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<ActiveProduct["id"]>) =>
       entriesQueryBuilder.fastForward(products.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -347,7 +350,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActivePublishedFastForward = Effect.fn(
-    "Products.Repository.findActivePublishedFastForward",
+    "Products.SyncRepository.findActivePublishedFastForward",
   )((clientView: ReplicacheClientView, excludeIds: Array<ActivePublishedProduct["id"]>) =>
     entriesQueryBuilder.fastForward(products.name, clientView).pipe(
       Effect.flatMap((qb) =>

@@ -168,7 +168,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const findCreates = Effect.fn("Groups.Repository.findCreates")(
+  const findCreates = Effect.fn("Groups.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(groups.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -187,7 +187,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("Groups.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("Groups.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(groups.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -206,37 +206,38 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveMembershipCreates = Effect.fn("Groups.Repository.findActiveMembershipCreates")(
-    (clientView: ReplicacheClientView, userId: ActiveMembershipGroup["userId"]) =>
-      entriesQueryBuilder.creates(groups.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) => {
-            const cte = tx.$with(`${getViewName(activeMembershipView)}_creates`).as(
-              tx
-                .selectDistinctOn(
-                  [activeMembershipView.id, activeMembershipView.tenantId],
-                  Struct.omit(getViewSelectedFields(activeMembershipView), ["userId"]),
-                )
-                .from(activeMembershipView)
-                .where(
-                  and(
-                    eq(activeMembershipView.userId, userId),
-                    eq(activeMembershipView.tenantId, clientView.tenantId),
-                  ),
+  const findActiveMembershipCreates = Effect.fn(
+    "Groups.SyncRepository.findActiveMembershipCreates",
+  )((clientView: ReplicacheClientView, userId: ActiveMembershipGroup["userId"]) =>
+    entriesQueryBuilder.creates(groups.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) => {
+          const cte = tx.$with(`${getViewName(activeMembershipView)}_creates`).as(
+            tx
+              .selectDistinctOn(
+                [activeMembershipView.id, activeMembershipView.tenantId],
+                Struct.omit(getViewSelectedFields(activeMembershipView), ["userId"]),
+              )
+              .from(activeMembershipView)
+              .where(
+                and(
+                  eq(activeMembershipView.userId, userId),
+                  eq(activeMembershipView.tenantId, clientView.tenantId),
                 ),
-            );
+              ),
+          );
 
-            return tx
-              .with(cte)
-              .select()
-              .from(cte)
-              .where(inArray(cte.id, tx.select({ id: cte.id }).from(cte).except(qb)));
-          }),
-        ),
+          return tx
+            .with(cte)
+            .select()
+            .from(cte)
+            .where(inArray(cte.id, tx.select({ id: cte.id }).from(cte).except(qb)));
+        }),
       ),
+    ),
   );
 
-  const findUpdates = Effect.fn("Groups.Repository.findUpdates")(
+  const findUpdates = Effect.fn("Groups.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(groups.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -262,7 +263,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("Groups.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("Groups.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(groups.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -288,47 +289,48 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveMembershipUpdates = Effect.fn("Groups.Repository.findActiveMembershipUpdates")(
-    (clientView: ReplicacheClientView, userId: ActiveMembershipGroup["userId"]) =>
-      entriesQueryBuilder.updates(groups.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) => {
-            const cte = tx
-              .$with(`${getViewName(activeMembershipView)}_updates`)
-              .as(
-                qb
-                  .innerJoin(
-                    activeMembershipView,
-                    and(
-                      eq(entriesTable.entityId, activeMembershipView.id),
-                      not(eq(entriesTable.entityVersion, activeMembershipView.version)),
-                      eq(entriesTable.tenantId, activeMembershipView.tenantId),
-                    ),
-                  )
-                  .where(
-                    and(
-                      eq(activeMembershipView.userId, userId),
-                      eq(activeMembershipView.tenantId, clientView.tenantId),
-                    ),
+  const findActiveMembershipUpdates = Effect.fn(
+    "Groups.SyncRepository.findActiveMembershipUpdates",
+  )((clientView: ReplicacheClientView, userId: ActiveMembershipGroup["userId"]) =>
+    entriesQueryBuilder.updates(groups.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) => {
+          const cte = tx
+            .$with(`${getViewName(activeMembershipView)}_updates`)
+            .as(
+              qb
+                .innerJoin(
+                  activeMembershipView,
+                  and(
+                    eq(entriesTable.entityId, activeMembershipView.id),
+                    not(eq(entriesTable.entityVersion, activeMembershipView.version)),
+                    eq(entriesTable.tenantId, activeMembershipView.tenantId),
                   ),
-              );
+                )
+                .where(
+                  and(
+                    eq(activeMembershipView.userId, userId),
+                    eq(activeMembershipView.tenantId, clientView.tenantId),
+                  ),
+                ),
+            );
 
-            return tx
-              .with(cte)
-              .selectDistinctOn(
-                [
-                  cte[getViewName(activeMembershipView)].id,
-                  cte[getViewName(activeMembershipView)].tenantId,
-                ],
-                Struct.omit(cte[getViewName(activeMembershipView)], ["userId"]),
-              )
-              .from(cte);
-          }),
-        ),
+          return tx
+            .with(cte)
+            .selectDistinctOn(
+              [
+                cte[getViewName(activeMembershipView)].id,
+                cte[getViewName(activeMembershipView)].tenantId,
+              ],
+              Struct.omit(cte[getViewName(activeMembershipView)], ["userId"]),
+            )
+            .from(cte);
+        }),
       ),
+    ),
   );
 
-  const findDeletes = Effect.fn("Groups.Repository.findDeletes")(
+  const findDeletes = Effect.fn("Groups.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(groups.name, clientView)
@@ -346,7 +348,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveDeletes = Effect.fn("Groups.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("Groups.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(groups.name, clientView)
@@ -364,30 +366,31 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveMembershipDeletes = Effect.fn("Groups.Repository.findActiveMembershipDeletes")(
-    (clientView: ReplicacheClientView, userId: ActiveMembershipGroup["userId"]) =>
-      entriesQueryBuilder.deletes(groups.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) =>
-            qb.except(
-              tx
-                .selectDistinctOn([activeMembershipView.id, activeMembershipView.tenantId], {
-                  id: activeMembershipView.id,
-                })
-                .from(activeMembershipView)
-                .where(
-                  and(
-                    eq(activeMembershipView.userId, userId),
-                    eq(activeMembershipView.tenantId, clientView.tenantId),
-                  ),
+  const findActiveMembershipDeletes = Effect.fn(
+    "Groups.SyncRepository.findActiveMembershipDeletes",
+  )((clientView: ReplicacheClientView, userId: ActiveMembershipGroup["userId"]) =>
+    entriesQueryBuilder.deletes(groups.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) =>
+          qb.except(
+            tx
+              .selectDistinctOn([activeMembershipView.id, activeMembershipView.tenantId], {
+                id: activeMembershipView.id,
+              })
+              .from(activeMembershipView)
+              .where(
+                and(
+                  eq(activeMembershipView.userId, userId),
+                  eq(activeMembershipView.tenantId, clientView.tenantId),
                 ),
-            ),
+              ),
           ),
         ),
       ),
+    ),
   );
 
-  const findFastForward = Effect.fn("Groups.Repository.findFastForward")(
+  const findFastForward = Effect.fn("Groups.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<Group["id"]>) =>
       entriesQueryBuilder.fastForward(groups.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -409,7 +412,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("Groups.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("Groups.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<ActiveGroup["id"]>) =>
       entriesQueryBuilder.fastForward(groups.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -435,7 +438,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveMembershipFastForward = Effect.fn(
-    "Groups.Repository.findActiveMembershipFastForward",
+    "Groups.SyncRepository.findActiveMembershipFastForward",
   )(
     (
       clientView: ReplicacheClientView,

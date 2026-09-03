@@ -71,7 +71,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const findCreates = Effect.fn("Rooms.Repository.findCreates")(
+  const findCreates = Effect.fn("Rooms.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -90,7 +90,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("Rooms.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("Rooms.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -109,7 +109,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActivePublishedCreates = Effect.fn("Rooms.Repository.findActivePublishedCreates")(
+  const findActivePublishedCreates = Effect.fn("Rooms.SyncRepository.findActivePublishedCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -133,7 +133,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findUpdates = Effect.fn("Rooms.Repository.findUpdates")(
+  const findUpdates = Effect.fn("Rooms.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -159,7 +159,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("Rooms.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("Rooms.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -185,7 +185,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActivePublishedUpdates = Effect.fn("Rooms.Repository.findActivePublishedUpdates")(
+  const findActivePublishedUpdates = Effect.fn("Rooms.SyncRepository.findActivePublishedUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -211,7 +211,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findDeletes = Effect.fn("Rooms.Repository.findDeletes")(
+  const findDeletes = Effect.fn("Rooms.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(rooms.name, clientView)
@@ -229,7 +229,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveDeletes = Effect.fn("Rooms.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("Rooms.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(rooms.name, clientView)
@@ -247,7 +247,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActivePublishedDeletes = Effect.fn("Rooms.Repository.findActivePublishedDeletes")(
+  const findActivePublishedDeletes = Effect.fn("Rooms.SyncRepository.findActivePublishedDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(rooms.name, clientView)
@@ -265,7 +265,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findFastForward = Effect.fn("Rooms.Repository.findFastForward")(
+  const findFastForward = Effect.fn("Rooms.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<Room["id"]>) =>
       entriesQueryBuilder.fastForward(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -287,7 +287,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("Rooms.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("Rooms.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<Room["id"]>) =>
       entriesQueryBuilder.fastForward(rooms.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -313,7 +313,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActivePublishedFastForward = Effect.fn(
-    "Rooms.Repository.findActivePublishedFastForward",
+    "Rooms.SyncRepository.findActivePublishedFastForward",
   )((clientView: ReplicacheClientView, excludeIds: Array<Room["id"]>) =>
     entriesQueryBuilder.fastForward(rooms.name, clientView).pipe(
       Effect.flatMap((qb) =>

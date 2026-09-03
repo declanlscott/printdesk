@@ -77,17 +77,18 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const create = Effect.fn("Tenants.Repository.create")((value: InferInsertModel<TenantsTable>) =>
-    db
-      .useTransaction((tx) => tx.insert(table).values(value).returning())
-      .pipe(
-        Effect.map(Array.head),
-        Effect.flatMap(Effect.fromOption),
-        Effect.catchTag("NoSuchElementError", Effect.die),
-      ),
+  const create = Effect.fn("Tenants.SyncRepository.create")(
+    (value: InferInsertModel<TenantsTable>) =>
+      db
+        .useTransaction((tx) => tx.insert(table).values(value).returning())
+        .pipe(
+          Effect.map(Array.head),
+          Effect.flatMap(Effect.fromOption),
+          Effect.catchTag("NoSuchElementError", Effect.die),
+        ),
   );
 
-  const findCreates = Effect.fn("Tenants.Repository.findCreates")(
+  const findCreates = Effect.fn("Tenants.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(tenants.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -106,7 +107,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findUpdates = Effect.fn("Tenants.Repository.findUpdates")(
+  const findUpdates = Effect.fn("Tenants.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(tenants.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -132,7 +133,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findDeletes = Effect.fn("Tenants.Repository.findDeletes")(
+  const findDeletes = Effect.fn("Tenants.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(tenants.name, clientView)
@@ -147,7 +148,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findFastForward = Effect.fn("Tenants.Repository.findFastForward")(
+  const findFastForward = Effect.fn("Tenants.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<Tenant["id"]>) =>
       entriesQueryBuilder.fastForward(tenants.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -169,39 +170,12 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findById = Effect.fn("Tenants.Repository.findById")((id: Tenant["id"]) =>
-    db
-      .useTransaction((tx) => tx.select().from(table).where(eq(table.id, id)))
-      .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
-  );
-
-  const findBySlug = Effect.fn("Tenants.Repository.findBySlug")((slug: Tenant["slug"]) =>
-    db
-      .useTransaction((tx) => tx.select().from(table).where(eq(table.slug, slug)))
-      .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
-  );
-
-  const updateById = Effect.fn("Tenants.Repository.updateById")(
-    (id: Tenant["id"], tenant: Partial<Omit<Tenant, "id">>) =>
-      db
-        .useTransaction((tx) => tx.update(table).set(tenant).where(eq(table.id, id)).returning())
-        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
-  );
-
-  const deleteById = Effect.fn("Tenants.Repository.deleteById")((id: Tenant["id"]) =>
-    db.useTransaction((tx) => tx.delete(table).where(eq(table.id, id))).pipe(Effect.asVoid),
-  );
-
   return {
     create,
     findCreates,
     findUpdates,
     findDeletes,
     findFastForward,
-    findById,
-    findBySlug,
-    updateById,
-    deleteById,
   } as const;
 });
 export const syncRepositoryLayer = makeSyncRepository.pipe(Layer.effect(TenantsSyncRepository));

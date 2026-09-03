@@ -103,7 +103,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntriesTable;
 
-  const findCreates = Effect.fn("Users.Repository.findCreates")(
+  const findCreates = Effect.fn("Users.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(users.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -122,7 +122,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("Users.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("Users.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(users.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -141,7 +141,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findUpdates = Effect.fn("Users.Repository.findUpdates")(
+  const findUpdates = Effect.fn("Users.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(users.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -167,7 +167,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("Users.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("Users.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(users.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -193,24 +193,25 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findDeletes = Effect.fn("Users.Repository.finDeletes")((clientView: ReplicacheClientView) =>
-    entriesQueryBuilder
-      .deletes(users.name, clientView)
-      .pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) =>
-            qb.except(
-              tx
-                .select({ id: table.id })
-                .from(table)
-                .where(eq(table.tenantId, clientView.tenantId)),
+  const findDeletes = Effect.fn("Users.SyncRepository.finDeletes")(
+    (clientView: ReplicacheClientView) =>
+      entriesQueryBuilder
+        .deletes(users.name, clientView)
+        .pipe(
+          Effect.flatMap((qb) =>
+            db.useTransaction((tx) =>
+              qb.except(
+                tx
+                  .select({ id: table.id })
+                  .from(table)
+                  .where(eq(table.tenantId, clientView.tenantId)),
+              ),
             ),
           ),
         ),
-      ),
   );
 
-  const findActiveDeletes = Effect.fn("Users.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("Users.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(users.name, clientView)
@@ -228,7 +229,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findFastForward = Effect.fn("Users.Repository.findFastForward")(
+  const findFastForward = Effect.fn("Users.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<User["id"]>) =>
       entriesQueryBuilder.fastForward(users.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -250,7 +251,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("Users.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("Users.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<ActiveUser["id"]>) =>
       entriesQueryBuilder.fastForward(users.name, clientView).pipe(
         Effect.flatMap((qb) =>

@@ -163,7 +163,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const findCreates = Effect.fn("SharedAccounts.Repository.findCreates")(
+  const findCreates = Effect.fn("SharedAccounts.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(sharedAccounts.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -182,7 +182,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("SharedAccounts.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("SharedAccounts.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(sharedAccounts.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -202,7 +202,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedCreates = Effect.fn(
-    "SharedAccounts.Repository.findActiveCustomerAuthorizedCreates",
+    "SharedAccounts.SyncRepository.findActiveCustomerAuthorizedCreates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -237,7 +237,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedCreates = Effect.fn(
-    "SharedAccounts.Repository.findActiveManagerAuthorizedCreates",
+    "SharedAccounts.SyncRepository.findActiveManagerAuthorizedCreates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -271,7 +271,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findUpdates = Effect.fn("SharedAccounts.Repository.findUpdates")(
+  const findUpdates = Effect.fn("SharedAccounts.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(sharedAccounts.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -297,7 +297,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("SharedAccounts.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("SharedAccounts.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(sharedAccounts.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -324,7 +324,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedUpdates = Effect.fn(
-    "SharedAccounts.Repository.findActiveCustomerAuthorizedUpdates",
+    "SharedAccounts.SyncRepository.findActiveCustomerAuthorizedUpdates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -369,7 +369,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedUpdates = Effect.fn(
-    "SharedAccounts.Repository.findActiveManagerAuthorizedUpdates",
+    "SharedAccounts.SyncRepository.findActiveManagerAuthorizedUpdates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -413,7 +413,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findDeletes = Effect.fn("SharedAccounts.Repository.findDeletes")(
+  const findDeletes = Effect.fn("SharedAccounts.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(sharedAccounts.name, clientView)
@@ -431,7 +431,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveDeletes = Effect.fn("SharedAccounts.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("SharedAccounts.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(sharedAccounts.name, clientView)
@@ -450,7 +450,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedDeletes = Effect.fn(
-    "SharedAccounts.Repository.findActiveCustomerAuthorizedDeletes",
+    "SharedAccounts.SyncRepository.findActiveCustomerAuthorizedDeletes",
   )(
     (
       clientView: ReplicacheClientView,
@@ -479,7 +479,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedDeletes = Effect.fn(
-    "SharedAccounts.Repository.findActiveManagerAuthorizedDeletes",
+    "SharedAccounts.SyncRepository.findActiveManagerAuthorizedDeletes",
   )(
     (
       clientView: ReplicacheClientView,
@@ -507,7 +507,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findFastForward = Effect.fn("SharedAccounts.Repository.findFastForward")(
+  const findFastForward = Effect.fn("SharedAccounts.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<SharedAccount["id"]>) =>
       entriesQueryBuilder.fastForward(sharedAccounts.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -529,7 +529,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("SharedAccounts.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("SharedAccounts.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<ActiveSharedAccount["id"]>) =>
       entriesQueryBuilder.fastForward(sharedAccounts.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -555,7 +555,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedFastForward = Effect.fn(
-    "SharedAccounts.Repository.findActiveCustomerAuthorizedFastForward",
+    "SharedAccounts.SyncRepository.findActiveCustomerAuthorizedFastForward",
   )(
     (
       clientView: ReplicacheClientView,
@@ -600,7 +600,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedFastForward = Effect.fn(
-    "SharedAccounts.Repository.findActiveManagerAuthorizedFastForward",
+    "SharedAccounts.SyncRepository.findActiveManagerAuthorizedFastForward",
   )(
     (
       clientView: ReplicacheClientView,

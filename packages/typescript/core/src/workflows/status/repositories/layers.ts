@@ -268,7 +268,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntriesTable;
 
-  const findCreates = Effect.fn("WorkflowStatuses.Repository.findCreates")(
+  const findCreates = Effect.fn("WorkflowStatuses.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(workflowStatuses.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -288,7 +288,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("WorkflowStatuses.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("WorkflowStatuses.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(workflowStatuses.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -309,7 +309,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedSharedAccountCreates = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountCreates",
+    "WorkflowStatuses.SyncRepository.findActiveCustomerAuthorizedSharedAccountCreates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -357,7 +357,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountCreates = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountCreates",
+    "WorkflowStatuses.SyncRepository.findActiveManagerAuthorizedSharedAccountCreates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -405,7 +405,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActivePublishedRoomCreates = Effect.fn(
-    "WorkflowStatuses.Repository.findActivePublishedRoomCreates",
+    "WorkflowStatuses.SyncRepository.findActivePublishedRoomCreates",
   )((clientView: ReplicacheClientView) =>
     entriesQueryBuilder.creates(workflowStatuses.name, clientView).pipe(
       Effect.flatMap((qb) =>
@@ -430,7 +430,7 @@ export const makeSyncRepository = Effect.gen(function* () {
     ),
   );
 
-  const findUpdates = Effect.fn("WorkflowStatuses.Repository.findUpdates")(
+  const findUpdates = Effect.fn("WorkflowStatuses.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(workflowStatuses.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -457,7 +457,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("WorkflowStatuses.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("WorkflowStatuses.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(workflowStatuses.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -485,7 +485,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedSharedAccountUpdates = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountUpdates",
+    "WorkflowStatuses.SyncRepository.findActiveCustomerAuthorizedSharedAccountUpdates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -543,7 +543,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountUpdates = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountUpdates",
+    "WorkflowStatuses.SyncRepository.findActiveManagerAuthorizedSharedAccountUpdates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -601,7 +601,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActivePublishedRoomUpdates = Effect.fn(
-    "WorkflowStatuses.Repository.findActivePublishedRoomUpdates",
+    "WorkflowStatuses.SyncRepository.findActivePublishedRoomUpdates",
   )((clientView: ReplicacheClientView) =>
     entriesQueryBuilder.updates(workflowStatuses.name, clientView).pipe(
       Effect.flatMap((qb) =>
@@ -628,7 +628,7 @@ export const makeSyncRepository = Effect.gen(function* () {
     ),
   );
 
-  const findDeletes = Effect.fn("WorkflowStatuses.Repository.findDeletes")(
+  const findDeletes = Effect.fn("WorkflowStatuses.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(workflowStatuses.name, clientView)
@@ -646,7 +646,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveDeletes = Effect.fn("WorkflowStatuses.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("WorkflowStatuses.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(workflowStatuses.name, clientView)
@@ -665,7 +665,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedSharedAccountDeletes = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountDeletes",
+    "WorkflowStatuses.SyncRepository.findActiveCustomerAuthorizedSharedAccountDeletes",
   )(
     (
       clientView: ReplicacheClientView,
@@ -693,7 +693,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountDeletes = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountDeletes",
+    "WorkflowStatuses.SyncRepository.findActiveManagerAuthorizedSharedAccountDeletes",
   )(
     (
       clientView: ReplicacheClientView,
@@ -721,7 +721,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActivePublishedRoomDeletes = Effect.fn(
-    "WorkflowStatuses.Repository.findActivePublishedRoomDeletes",
+    "WorkflowStatuses.SyncRepository.findActivePublishedRoomDeletes",
   )((clientView: ReplicacheClientView) =>
     entriesQueryBuilder
       .deletes(workflowStatuses.name, clientView)
@@ -739,7 +739,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findFastForward = Effect.fn("WorkflowStatuses.Repository.findFastForward")(
+  const findFastForward = Effect.fn("WorkflowStatuses.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<WorkflowStatus["id"]>) =>
       entriesQueryBuilder.fastForward(workflowStatuses.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -762,7 +762,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("WorkflowStatuses.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("WorkflowStatuses.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<ActiveWorkflowStatus["id"]>) =>
       entriesQueryBuilder.fastForward(workflowStatuses.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -789,7 +789,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerAuthorizedSharedAccountFastForward = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveCustomerAuthorizedSharedAccountFastForward",
+    "WorkflowStatuses.SyncRepository.findActiveCustomerAuthorizedSharedAccountFastForward",
   )(
     (
       clientView: ReplicacheClientView,
@@ -842,7 +842,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountFastForward = Effect.fn(
-    "WorkflowStatuses.Repository.findActiveManagerAuthorizedSharedAccountFastForward",
+    "WorkflowStatuses.SyncRepository.findActiveManagerAuthorizedSharedAccountFastForward",
   )(
     (
       clientView: ReplicacheClientView,
@@ -895,7 +895,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActivePublishedRoomFastForward = Effect.fn(
-    "WorkflowStatuses.Repository.findActivePublishedRoomFastForward",
+    "WorkflowStatuses.SyncRepository.findActivePublishedRoomFastForward",
   )(
     (
       clientView: ReplicacheClientView,

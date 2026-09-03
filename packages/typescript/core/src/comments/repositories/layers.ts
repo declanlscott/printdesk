@@ -106,7 +106,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const entriesQueryBuilder = yield* SyncQueryBuilder;
   const entriesTable = replicacheClientViewEntries.table;
 
-  const findCreates = Effect.fn("Comments.Repository.findCreates")(
+  const findCreates = Effect.fn("Comments.SyncRepository.findCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -125,7 +125,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCreates = Effect.fn("Comments.Repository.findActiveCreates")(
+  const findActiveCreates = Effect.fn("Comments.SyncRepository.findActiveCreates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.creates(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -145,7 +145,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerPlacedOrderCreates = Effect.fn(
-    "Comments.Repository.findActiveCustomerPlacedOrderCreates",
+    "Comments.SyncRepository.findActiveCustomerPlacedOrderCreates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -179,7 +179,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderCreates = Effect.fn(
-    "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderCreates",
+    "Comments.SyncRepository.findActiveManagerAuthorizedSharedAccountOrderCreates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -218,7 +218,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findUpdates = Effect.fn("Comments.Repository.findUpdates")(
+  const findUpdates = Effect.fn("Comments.SyncRepository.findUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -244,7 +244,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveUpdates = Effect.fn("Comments.Repository.findActiveUpdates")(
+  const findActiveUpdates = Effect.fn("Comments.SyncRepository.findActiveUpdates")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder.updates(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -271,7 +271,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerPlacedOrderUpdates = Effect.fn(
-    "Comments.Repository.findActiveCustomerPlacedOrderUpdates",
+    "Comments.SyncRepository.findActiveCustomerPlacedOrderUpdates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -310,7 +310,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderUpdates = Effect.fn(
-    "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderUpdates",
+    "Comments.SyncRepository.findActiveManagerAuthorizedSharedAccountOrderUpdates",
   )(
     (
       clientView: ReplicacheClientView,
@@ -358,7 +358,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findDeletes = Effect.fn("Comments.Repository.findDeletes")(
+  const findDeletes = Effect.fn("Comments.SyncRepository.findDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(comments.name, clientView)
@@ -376,7 +376,7 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveDeletes = Effect.fn("Comments.Repository.findActiveDeletes")(
+  const findActiveDeletes = Effect.fn("Comments.SyncRepository.findActiveDeletes")(
     (clientView: ReplicacheClientView) =>
       entriesQueryBuilder
         .deletes(comments.name, clientView)
@@ -395,7 +395,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerPlacedOrderDeletes = Effect.fn(
-    "Comments.Repository.findActiveCustomerPlacedOrderDeletes",
+    "Comments.SyncRepository.findActiveCustomerPlacedOrderDeletes",
   )(
     (
       clientView: ReplicacheClientView,
@@ -423,7 +423,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderDeletes = Effect.fn(
-    "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderDeletes",
+    "Comments.SyncRepository.findActiveManagerAuthorizedSharedAccountOrderDeletes",
   )(
     (
       clientView: ReplicacheClientView,
@@ -454,7 +454,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findFastForward = Effect.fn("Comments.Repository.findFastForward")(
+  const findFastForward = Effect.fn("Comments.SyncRepository.findFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<Comment["id"]>) =>
       entriesQueryBuilder.fastForward(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -476,7 +476,7 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveFastForward = Effect.fn("Comments.Repository.findActiveFastForward")(
+  const findActiveFastForward = Effect.fn("Comments.SyncRepository.findActiveFastForward")(
     (clientView: ReplicacheClientView, excludeIds: Array<ActiveComment["id"]>) =>
       entriesQueryBuilder.fastForward(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
@@ -502,7 +502,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveCustomerPlacedOrderFastForward = Effect.fn(
-    "Comments.Repository.findActiveCustomerPlacedOrderFastForward",
+    "Comments.SyncRepository.findActiveCustomerPlacedOrderFastForward",
   )(
     (
       clientView: ReplicacheClientView,
@@ -541,7 +541,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderFastForward = Effect.fn(
-    "Comments.Repository.findActiveManagerAuthorizedSharedAccountOrderFastForward",
+    "Comments.SyncRepository.findActiveManagerAuthorizedSharedAccountOrderFastForward",
   )(
     (
       clientView: ReplicacheClientView,

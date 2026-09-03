@@ -11,7 +11,7 @@ export const rooms = new Tables.Sync(
   "rooms",
   {
     name: Columns.varchar().notNull(),
-    status: Columns.union(RoomsContract.statuses).default("draft").notNull(),
+    status: Columns.union(RoomsContract.Status.literals).default("draft").notNull(),
     details: text(),
   },
   (table) => [unique().on(table.name, table.tenantId), index().on(table.status)],

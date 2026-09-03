@@ -10,16 +10,14 @@ import { EntityId, generateEntityId } from "../utils";
 import type { ActivePublishedRoomsView, ActiveRoomsView, RoomsTable } from "./sql";
 
 export namespace RoomsContract {
-  export const statuses = ["draft", "published"] as const;
-  export type Status = (typeof statuses)[number];
+  export const Status = Schema.Literals(["draft", "published"]);
+  export type Status = typeof Status.Type;
 
   export class Table extends TablesContract.Table<RoomsTable>("rooms")(
     {
       ...TablesContract.BaseSyncModel.fields,
       name: ColumnsContract.VarChar,
-      status: Schema.Literals(statuses).pipe(
-        Schema.withDecodingDefaultType(Effect.succeed("draft")),
-      ),
+      status: Status.pipe(Schema.withDecodingDefaultType(Effect.succeed("draft"))),
       details: Schema.String.pipe(Schema.NullOr),
     },
     ["create", "read", "update", "delete"],

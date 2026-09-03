@@ -11,7 +11,6 @@ dependencies = [
   "pulumiverse-time>=0.1.1",
   "pyawscron>=1.0.7",
   "pydantic>=2.13.5",
-  "requests>=2.34.2",
   "sst-sdk>=4.17.1",
   "types-boto3-cloudfront-keyvaluestore>=1.43.0",
   "types-boto3-lambda>=1.43.76",

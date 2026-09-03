@@ -8,10 +8,6 @@ import pulumi_cloudflare as cloudflare
 from models import PapercutMfEnabledConfig
 from utils import is_prod_stage, naming
 
-from program.components.vpc_service_binding import (
-    VpcServiceBinding,
-    VpcServiceBindingArgs,
-)
 from sst import Resource
 
 
@@ -278,6 +274,11 @@ class PapercutMf(pulumi.ComponentResource):
                         else args.config.api.host.name,
                     ),
                     cloudflare.WorkersScriptBindingArgs(
+                        type="vpc_service",
+                        name="PAPERCUT_MF_API",
+                        service_id=self._api_vpc_service.id,
+                    ),
+                    cloudflare.WorkersScriptBindingArgs(
                         type="plain_text",
                         name="PORT",
                         text=args.config.api.port,
@@ -311,17 +312,6 @@ class PapercutMf(pulumi.ComponentResource):
                         text=args.tenant_id,
                     ),
                 ],
-                keep_bindings=["vpc_service"],
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
-        self._api_gateway_vpc_service_binding = VpcServiceBinding(
-            resource_name="PapercutMfApiGatewayVpcServiceBinding",
-            args=VpcServiceBindingArgs(
-                script_name=self._api_gateway_script.script_name,
-                name="PAPERCUT_MF_API",
-                service_id=self._api_vpc_service.id,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )

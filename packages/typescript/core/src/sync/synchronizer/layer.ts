@@ -16,6 +16,7 @@ import { DeliveryOptionsSync } from "../../delivery-options/sync";
 import { GroupMembershipsSync } from "../../groups/memberships/sync";
 import { GroupsSync } from "../../groups/sync";
 import { InvoicesSync } from "../../invoices/sync";
+import { OrderObjectsSync } from "../../orders/objects/sync";
 import { OrdersSync } from "../../orders/sync";
 import { ProductsSync } from "../../products/sync";
 import { ReplicachePullerContract } from "../../replicache/contracts";
@@ -48,6 +49,7 @@ export const makeService = Effect.gen(function* () {
   const groupMemberships = yield* GroupMembershipsSync.useSync(Struct.get("streamer"));
   const invoices = yield* InvoicesSync.useSync(Struct.get("streamer"));
   const orders = yield* OrdersSync.useSync(Struct.get("streamer"));
+  const orderObjects = yield* OrderObjectsSync.useSync(Struct.get("streamer"));
   const products = yield* ProductsSync.useSync(Struct.get("streamer"));
   const rooms = yield* RoomsSync.useSync(Struct.get("streamer"));
   const sharedAccounts = yield* SharedAccountsSync.useSync(Struct.get("streamer"));
@@ -74,6 +76,7 @@ export const makeService = Effect.gen(function* () {
     .entity(groupMemberships)
     .entity(invoices)
     .entity(orders)
+    .entity(orderObjects)
     .entity(products)
     .entity(rooms)
     .entity(sharedAccounts)

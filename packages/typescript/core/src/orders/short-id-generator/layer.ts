@@ -16,7 +16,7 @@ import { OrdersShortIdGenerator } from ".";
 import { SstResource } from "../../sst/resource";
 import { ShortId } from "../../utils";
 import { Constants } from "../../utils/constants";
-import { OrdersContract } from "../contract";
+import { OrdersContract } from "../contracts";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 

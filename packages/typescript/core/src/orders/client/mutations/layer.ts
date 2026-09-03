@@ -8,7 +8,7 @@ import { AccessControl } from "../../../access-control";
 import { Mutation } from "../../../mutations";
 import { SharedAccountsPolicies } from "../../../shared-accounts/client/policies";
 import { UsersPolicies } from "../../../users/client/policies";
-import { OrdersContract } from "../../contract";
+import { OrdersContract } from "../../contracts";
 import { OrdersPolicies } from "../policies";
 import { OrdersRepository } from "../repository";
 

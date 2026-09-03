@@ -33,6 +33,9 @@ import * as InvoicesRepository from "../invoices/client/repository/layer";
 import { MutationDispatcher } from "../mutations/client/dispatcher";
 import { layer as baseMutationDispatcherLayer } from "../mutations/client/dispatcher/layer";
 import * as OrdersMutations from "../orders/client/mutations/layer";
+import * as OrderObjectsMutations from "../orders/client/objects/mutations/layer";
+import * as OrderObjectsPolicies from "../orders/client/objects/policies/layer";
+import * as OrderObjectsRepository from "../orders/client/objects/repository/layer";
 import * as OrdersPolicies from "../orders/client/policies/layer";
 import * as OrdersRepository from "../orders/client/repository/layer";
 import * as ProductsMutations from "../products/client/mutations/layer";
@@ -146,6 +149,7 @@ export namespace Replicache {
     GroupMembershipsRepository.layer,
     InvoicesRepository.layer,
     OrdersRepository.layer,
+    OrderObjectsRepository.layer,
     ProductsRepository.layer,
     RoomsRepository.layer,
     SharedAccountsRepository.layer,
@@ -169,7 +173,7 @@ export namespace Replicache {
     CommentsPolicies.layer,
     DeliveryOptionsPolicies.layer,
     GroupsPolicies.layer,
-    OrdersPolicies.layer,
+    OrderObjectsPolicies.layer,
     ProductsPolicies.layer,
     RoomsPolicies.layer,
     SharedAccountsPolicies.layer,
@@ -177,7 +181,7 @@ export namespace Replicache {
     UsersPolicies.layer,
     WorkflowStatusesPolicies.layer,
   ).pipe(
-    Layer.provideMerge(SharedAccountWorkflowsPolicies.layer),
+    Layer.provideMerge([OrdersPolicies.layer, SharedAccountWorkflowsPolicies.layer]),
     Layer.provide(repositoriesLayer),
   );
 
@@ -188,6 +192,7 @@ export namespace Replicache {
       DeliveryOptionsMutations.layer,
       InvoicesMutations.layer,
       OrdersMutations.layer,
+      OrderObjectsMutations.layer,
       ProductsMutations.layer,
       RoomsMutations.layer,
       SharedAccountsMutations.layer,

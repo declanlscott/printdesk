@@ -3,7 +3,7 @@ import { AnnouncementsContract } from "../announcements/contract";
 import { CommentsContract } from "../comments/contract";
 import { DeliveryOptionsContract } from "../delivery-options/contract";
 import { InvoicesContract } from "../invoices/contract";
-import { OrdersContract } from "../orders/contract";
+import { OrderObjectsContract, OrdersContract } from "../orders/contracts";
 import { ProductsContract } from "../products/contract";
 import { RoomsContract } from "../rooms/contract";
 import {
@@ -36,6 +36,9 @@ export namespace MutationHandlers {
     .handle(OrdersContract.transitionSharedAccountWorkflowStatus)
     .handle(OrdersContract.delete_)
     .handle(OrdersContract.restore)
+    .handle(OrderObjectsContract.create)
+    .handle(OrderObjectsContract.transitionStatus)
+    .handle(OrderObjectsContract.delete_)
     .handle(ProductsContract.create)
     .handle(ProductsContract.edit)
     .handle(ProductsContract.publish)

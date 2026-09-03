@@ -6,7 +6,7 @@ import { OrdersRepository } from ".";
 import { repositoryFactory } from "../../../database/client/repository-factory";
 import { SharedAccountManagerAccessRepository } from "../../../shared-accounts/client/manager-access/repository";
 import { WorkflowStatusesRepository } from "../../../workflows/client/status/repository";
-import { OrdersContract } from "../../contract";
+import { OrdersContract } from "../../contracts";
 
 import type { EntityId } from "../../../utils";
 

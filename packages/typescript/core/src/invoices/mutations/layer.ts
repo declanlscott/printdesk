@@ -6,7 +6,7 @@ import * as Option from "effect/Option";
 import { InvoicesMutations } from ".";
 import { AccessControl } from "../../access-control";
 import { Mutation } from "../../mutations";
-import { OrdersContract } from "../../orders/contract";
+import { OrdersContract } from "../../orders/contracts";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { InvoicesContract } from "../contract";

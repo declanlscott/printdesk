@@ -94,6 +94,7 @@ export namespace ProductsContract {
     public static readonly statusLens = this.pipe(Schema.toIso).key("status");
   }
   export const Configuration = Schema.Union([ConfigurationV1]);
+  // TODO: Add object constraints configuration
 
   export class Table extends TablesContract.Table<ProductsTable>("products")(
     {

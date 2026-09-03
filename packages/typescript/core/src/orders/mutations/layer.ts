@@ -14,7 +14,7 @@ import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { SharedAccountsPolicies } from "../../shared-accounts/policies";
 import { UsersPolicies } from "../../users/policies";
-import { OrdersContract } from "../contract";
+import { OrdersContract } from "../contracts";
 import { OrdersPolicies } from "../policies";
 import { OrdersRepository } from "../repositories";
 import { OrdersShortIdGenerator } from "../short-id-generator";

@@ -10,7 +10,7 @@ import * as Struct from "effect/Struct";
 import { OrdersPolicies } from ".";
 import { AccessControl } from "../../../access-control";
 import { Policy } from "../../../policies";
-import { OrdersContract } from "../../contract";
+import { OrdersContract } from "../../contracts";
 import { OrdersRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;

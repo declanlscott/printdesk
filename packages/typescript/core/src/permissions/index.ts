@@ -41,7 +41,6 @@ export namespace Permissions {
   const externalPermissions = makeFromConfig({
     cloudflare_tunnel_tokens: ["read"],
     config: ["update"],
-    document_constraints: ["read", "update"],
     infra_input: ["delete"],
     infra_output: ["read"],
     papercut_mf_api_gateway: ["read"],
@@ -58,9 +57,9 @@ export namespace Permissions {
   export type Permissions = typeof permissions;
 
   export type Resource = {
-    readonly [TPermission in Permissions[number]]: TPermission extends `${infer TResource}:${Action}`
-      ? TResource
-      : never;
+    readonly [
+      TPermission in Permissions[number]
+    ]: TPermission extends `${infer TResource}:${Action}` ? TResource : never;
   }[Permissions[number]];
 
   export const Permission = Schema.Literals(permissions).pipe(
@@ -94,9 +93,9 @@ export namespace Permissions {
       String.endsWith(`${separator}read`)(permission)
         ? Result.succeed(
             permission as {
-              readonly [TPermission in TPermissions[number]]: TPermission extends `${string}${Separator}read`
-                ? TPermission
-                : never;
+              readonly [
+                TPermission in TPermissions[number]
+              ]: TPermission extends `${string}${Separator}read` ? TPermission : never;
             }[TPermissions[number]],
           )
         : Result.failVoid,

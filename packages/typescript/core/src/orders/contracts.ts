@@ -9,9 +9,13 @@ import { EntityId, IsoDate, IsoTimestamp } from "../utils";
 import { Constants } from "../utils/constants";
 
 import type {
+  ActiveCustomerPlacedOrderObjectsView,
   ActiveCustomerPlacedOrdersView,
+  ActiveManagerAuthorizedSharedAccountOrderObjectsView,
   ActiveManagerAuthorizedSharedAccountOrdersView,
+  ActiveOrderObjectsView,
   ActiveOrdersView,
+  OrderObjectsTable,
   OrdersTable,
 } from "./sql";
 
@@ -372,6 +376,83 @@ export namespace OrdersContract {
   export const restore = new Handler.Handler({
     name: "restoreOrder",
     Input: IdOnly,
+    Output: Table.Dto,
+  });
+}
+
+export namespace OrderObjectsContract {
+  export const Status = Schema.Literals(["pending", "uploading", "success", "failure"]);
+  export type Status = typeof Status.Type;
+
+  export class Table extends TablesContract.Table<OrderObjectsTable>("order_objects")(
+    {
+      ...TablesContract.BaseSyncModel.fields,
+      orderId: EntityId,
+      key: Schema.String,
+      filename: Schema.String,
+      contentType: Schema.String,
+      sizeBytes: Schema.Int.pipe(Schema.check(Schema.isGreaterThan(0))),
+      status: Status,
+    },
+    ["create", "read", "update", "delete"],
+  ) {}
+
+  export class ActiveView extends TablesContract.View<ActiveOrderObjectsView>(
+    `active_${Table.name}`,
+  )(
+    Struct.evolve(Table.Model.fields, {
+      deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[1],
+    }),
+  ) {}
+
+  export class ActiveCustomerPlacedView extends TablesContract.VirtualView<ActiveCustomerPlacedOrderObjectsView>()(
+    `active_customer_placed_${Table.name}`,
+    { ...ActiveView.Model.fields, customerId: EntityId },
+  ) {}
+
+  export class ActiveManagerAuthorizedSharedAccountView extends TablesContract.View<ActiveManagerAuthorizedSharedAccountOrderObjectsView>(
+    `active_manager_authorized_shared_account_${Table.name}`,
+  )({ ...ActiveView.Model.fields, authorizedManagerId: EntityId }) {}
+
+  const IdOnly = Schema.Struct(
+    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
+      id: (id) => id.from.schema.members[0],
+    }),
+  );
+
+  export const canEdit = new Handler.Handler({
+    name: "canEditOrderObject",
+    Input: IdOnly,
+    Output: Schema.Void,
+  });
+
+  export const canDelete = new Handler.Handler({
+    name: "canDeleteOrderObject",
+    Input: IdOnly,
+    Output: Schema.Void,
+  });
+
+  export const create = new Handler.Handler({
+    name: "createOrderObject",
+    Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
+    Output: Table.Dto,
+  });
+
+  export const transitionStatus = new Handler.Handler({
+    name: "transitionOrderObjectStatus",
+    Input: IdOnly.mapFields(Struct.assign(Struct.pick(Table.Model.fields, ["status"]))),
+    Output: Table.Dto,
+  });
+
+  export const delete_ = new Handler.Handler({
+    name: "deleteOrderObject",
+    Input: IdOnly.mapFields(
+      Struct.assign(
+        Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {
+          deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[0],
+        }),
+      ),
+    ),
     Output: Table.Dto,
   });
 }

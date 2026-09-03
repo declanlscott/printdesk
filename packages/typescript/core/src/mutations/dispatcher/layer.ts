@@ -9,6 +9,7 @@ import { DeliveryOptionsMutations } from "../../delivery-options/mutations";
 import { MutationHandlers } from "../../handlers/mutations";
 import { InvoicesMutations } from "../../invoices/mutations";
 import { OrdersMutations } from "../../orders/mutations";
+import { OrderObjectsMutations } from "../../orders/objects/mutations";
 import { ProductsMutations } from "../../products/mutations";
 import { RoomsMutations } from "../../rooms/mutations";
 import { SharedAccountManagerAccessMutations } from "../../shared-accounts/manager-access/mutations";
@@ -25,6 +26,7 @@ export const makeService = Effect.gen(function* () {
   const deliveryOptions = yield* DeliveryOptionsMutations;
   const invoices = yield* InvoicesMutations;
   const orders = yield* OrdersMutations;
+  const orderObjects = yield* OrderObjectsMutations;
   const products = yield* ProductsMutations;
   const rooms = yield* RoomsMutations;
   const sharedAccounts = yield* SharedAccountsMutations;
@@ -54,6 +56,9 @@ export const makeService = Effect.gen(function* () {
     .mutation(orders.transitionSharedAccountWorkflowStatus)
     .mutation(orders.delete)
     .mutation(orders.restore)
+    .mutation(orderObjects.create)
+    .mutation(orderObjects.transitionStatus)
+    .mutation(orderObjects.delete)
     .mutation(products.create)
     .mutation(products.edit)
     .mutation(products.publish)

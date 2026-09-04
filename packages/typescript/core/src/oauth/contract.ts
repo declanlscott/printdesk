@@ -23,6 +23,17 @@ import { EntityId } from "../utils";
 import { Constants } from "../utils/constants";
 
 export namespace OauthContract {
+  export class MultipleAuthenticationMethodsError
+    extends Schema.TaggedError<MultipleAuthenticationMethodsError>()(
+      "MultipleAuthenticationMethodsError",
+      {},
+    )
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(MultipleAuthenticationMethodsError)(this, { status: 400 });
+  }
+
   export class OpenauthError
     extends Schema.TaggedError<OpenauthError>()(
       "OpenauthError",
@@ -299,5 +310,15 @@ export namespace OauthContract {
   {
     public [HttpServerRespondable.symbol] = () =>
       HttpServerResponse.schemaJson(InvalidCookiesError)(this, { status: 400 });
+  }
+
+  export class InvalidHeadersError
+    extends Schema.TaggedError<InvalidHeadersError>()("InvalidHeadersError", {
+      cause: Schema.instanceOf(Schema.SchemaError),
+    })
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(InvalidHeadersError)(this, { status: 400 });
   }
 }

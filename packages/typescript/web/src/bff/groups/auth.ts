@@ -43,8 +43,7 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
           HttpServerRequest.schemaCookies,
           Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
           Effect.flatMap((tokens) => openauth.verify(tokens.accessToken)),
-          Effect.map((result) => result.subject.properties.actor.wrap),
-          Effect.flatMap(Struct.get("assertUser")),
+          Effect.flatMap((result) => result.subject.properties.actor.wrap.assertUser),
         ),
       )
       .handle("login", ({ request }) =>

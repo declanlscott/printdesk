@@ -34,7 +34,7 @@ export namespace Auth {
           Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI }),
         ),
         error: OauthContract.AuthorizeError,
-      }),
+      }).middleware(TenantSlugValidatorMiddleware),
     )
     .add(
       HttpApiEndpoint.get("oauthCallback", Constants.WEB_BFF_PATHS.oauthCallback, {
@@ -43,7 +43,7 @@ export namespace Auth {
           redirectUri: Schema.URLFromString,
         }).pipe(Schema.encodeKeys({ redirectUri: Constants.URL_PARAM_NAMES.REDIRECT_URI })),
         error: [OauthContract.ExchangeError, OauthContract.InvalidAuthorizationCodeError],
-      }).middleware(TenantSlugValidatorMiddleware),
+      }),
     ) {}
 
   export class Api extends HttpApi.make("AuthApi").add(Group) {}

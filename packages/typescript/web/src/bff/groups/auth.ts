@@ -1,4 +1,3 @@
-import { ActorsContract } from "@printdesk/core/actors/contract";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import { Openauth } from "@printdesk/core/oauth/openauth";
 import { TenantSlug } from "@printdesk/core/tenants/slug";
@@ -6,7 +5,6 @@ import { orDieWhenUnrespondable } from "@printdesk/core/utils";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
@@ -45,13 +43,8 @@ export const baseAuthGroupLayer = HttpApiBuilder.group(
           HttpServerRequest.schemaCookies,
           Effect.mapError((error) => new OauthContract.InvalidCookiesError({ cause: error })),
           Effect.flatMap((tokens) => openauth.verify(tokens.accessToken)),
-          Effect.flatMap((result) =>
-            Match.valueTags(result.subject.properties.actor, {
-              ClientActor: (client) =>
-                new ActorsContract.ForbiddenActorError({ actor: client._tag }),
-              UserActor: (user) => Effect.succeed(user),
-            }),
-          ),
+          Effect.map((result) => result.subject.properties.actor.wrap),
+          Effect.flatMap(Struct.get("assertUser")),
         ),
       )
       .handle("login", ({ request }) =>

@@ -366,7 +366,10 @@ export namespace AccessControl {
 
   export const privateActorPolicy = <TError, TServices>(
     predicate: (
-      privateActor: Exclude<ActorsContract.Actor["properties"], { _tag: "PublicActor" }>,
+      privateActor: Exclude<
+        ActorsContract.Actor["properties"],
+        { _tag: typeof ActorsContract.PublicActor.tag }
+      >,
     ) => Effect.Effect<boolean, TError, TServices>,
     resource: Resource,
     action?: Permissions.Action,

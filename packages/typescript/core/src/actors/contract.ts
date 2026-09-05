@@ -20,6 +20,8 @@ export namespace ActorsContract {
     extends Schema.TaggedClass<PublicActor>()("PublicActor", {})
     implements Wrappable
   {
+    public static readonly tag = this.fields._tag.schema.literal;
+
     public static readonly singleton = new this();
 
     // oxlint-disable-next-line class-methods-use-this
@@ -37,6 +39,8 @@ export namespace ActorsContract {
     })
     implements Wrappable
   {
+    public static readonly tag = this.fields._tag.schema.literal;
+
     public get wrap() {
       return new Actor({ properties: new ClientActor(this) });
     }
@@ -50,6 +54,8 @@ export namespace ActorsContract {
     })
     implements Wrappable
   {
+    public static readonly tag = this.fields._tag.schema.literal;
+
     public get wrap() {
       return new Actor({ properties: new UserActor(this) });
     }
@@ -59,6 +65,8 @@ export namespace ActorsContract {
     extends Schema.TaggedClass<TenantActor>()("TenantActor", { id: TenantId })
     implements Wrappable
   {
+    public static readonly tag = this.fields._tag.schema.literal;
+
     public get wrap() {
       return new Actor({ properties: new TenantActor(this) });
     }
@@ -77,21 +85,21 @@ export namespace ActorsContract {
       });
 
     public get assertPublic() {
-      return this.#assert("PublicActor");
+      return this.#assert(PublicActor.tag);
     }
     public get assertClient() {
-      return this.#assert("ClientActor");
+      return this.#assert(ClientActor.tag);
     }
     public get assertUser() {
-      return this.#assert("UserActor");
+      return this.#assert(UserActor.tag);
     }
     public get assertTenant() {
-      return this.#assert("TenantActor");
+      return this.#assert(TenantActor.tag);
     }
 
     public get assertPrivate() {
       return Match.value(this.properties).pipe(
-        Match.tag("PublicActor", (actor) =>
+        Match.tag(PublicActor.tag, (actor) =>
           Effect.fail(new ForbiddenActorError({ actor: actor._tag })),
         ),
         Match.orElse((actor) => Effect.succeed(actor)),
@@ -101,7 +109,7 @@ export namespace ActorsContract {
     public get tenantId() {
       return this.assertPrivate.pipe(
         Effect.map(Match.value),
-        Effect.map(Match.tag("TenantActor", (tenant) => tenant.id)),
+        Effect.map(Match.tag(TenantActor.tag, (tenant) => tenant.id)),
         Effect.map(Match.orElse((actor) => actor.tenantId)),
       );
     }

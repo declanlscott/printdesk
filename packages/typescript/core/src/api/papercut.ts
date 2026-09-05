@@ -52,8 +52,5 @@ export namespace Papercut {
     .middleware(AwsCredentialIdentityProviderMiddleware)
     .prefix("/sync") {}
 
-  export class MfApi extends HttpApi.make("PapercutMfApi")
-    .add(Mf)
-    .add(MfSync)
-    .prefix("/papercut/mf") {}
+  export class MfApi extends HttpApi.make("PapercutMfApi").add(Mf).add(MfSync) {}
 }

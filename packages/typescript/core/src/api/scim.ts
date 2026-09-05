@@ -163,5 +163,5 @@ export namespace Scim {
     .add(Root)
     .prefix("/v2") {}
 
-  export class Api extends HttpApi.make("ScimApi").addHttpApi(V2Api).prefix("/scim") {}
+  export class Api extends HttpApi.make("ScimApi").addHttpApi(V2Api) {}
 }

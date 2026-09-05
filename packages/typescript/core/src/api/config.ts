@@ -19,6 +19,5 @@ export namespace Config {
 
   export class Api extends HttpApi.make("ConfigApi")
     .add(PapercutMf)
-    .middleware(AwsCredentialIdentityProviderMiddleware)
-    .prefix("/config") {}
+    .middleware(AwsCredentialIdentityProviderMiddleware) {}
 }

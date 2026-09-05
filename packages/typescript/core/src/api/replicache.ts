@@ -30,5 +30,5 @@ export namespace Replicache {
       }).middleware(AwsCredentialIdentityProviderMiddleware),
     ) {}
 
-  export class Api extends HttpApi.make("ReplicacheApi").add(Group).prefix("/replicache") {}
+  export class Api extends HttpApi.make("ReplicacheApi").add(Group) {}
 }

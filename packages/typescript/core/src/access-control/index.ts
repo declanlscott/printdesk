@@ -304,7 +304,15 @@ export namespace AccessControl {
 
   export const some = <TError, TServices>(
     ...policies: NonEmptyReadonlyArray<Policy<TError, TServices>>
-  ): Policy<TError, TServices> => Effect.firstSuccessOf(policies);
+  ): Policy<TError, TServices> =>
+    Effect.findFirstFilter(policies, (policy, index) =>
+      policy.pipe(
+        Effect.map(Result.succeed),
+        Effect.catchTag("AccessDeniedError", (error) =>
+          index < policies.length - 1 ? Effect.succeed(Result.fail(error)) : Effect.fail(error),
+        ),
+      ),
+    ).pipe(Effect.map(Option.getOrThrow));
 
   export const every = <TError, TServices>(
     ...policies: NonEmptyReadonlyArray<Policy<TError, TServices>>

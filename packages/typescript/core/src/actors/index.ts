@@ -2,6 +2,7 @@ import * as Context from "effect/Context";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 
+import { Constants } from "../utils/constants";
 import { ActorsContract } from "./contract";
 
 // @effect-leakable-service
@@ -17,5 +18,6 @@ export class ActorLayerMap extends LayerMap.Service<ActorLayerMap>()(
   {
     preloadKeys: [ActorsContract.PublicActor.singleton.wrap],
     lookup: Actor.layer,
+    idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
 ) {}

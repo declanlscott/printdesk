@@ -144,4 +144,6 @@ export namespace Constants {
   );
 
   export const SEPARATOR = String.fromCharCode(0x1f);
+
+  export const DEFAULT_LAYER_MAP_IDLE_TTL = "1 minute" satisfies Duration.Input;
 }

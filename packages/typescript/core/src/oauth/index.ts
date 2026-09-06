@@ -2,6 +2,8 @@ import * as Context from "effect/Context";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 
+import { Constants } from "../utils/constants";
+
 import type { OauthContract } from "./contract";
 import type { ServiceShape } from "./layer";
 
@@ -20,6 +22,6 @@ export namespace Oauth {
 
   export class AccessTokenLayerMap extends LayerMap.Service<AccessTokenLayerMap>()(
     "@printdesk/core/oauth/AccessTokenLayerMap",
-    { lookup: AccessToken.layer },
+    { lookup: AccessToken.layer, idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL },
   ) {}
 }

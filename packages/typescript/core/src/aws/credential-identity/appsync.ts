@@ -9,13 +9,14 @@ import { Actor, ActorLayerMap } from "../../actors";
 import { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
 import { SstResource } from "../../sst/resource";
 import { tenantTemplate } from "../../utils";
+import { Constants } from "../../utils/constants";
 
 import type { FromTemporaryCredentialsOptions } from "@aws-sdk/credential-providers";
 
 export const appsyncPublisherCredentialIdentityProviderLayer = Effect.gen(function* () {
   const roleArnTemplate = yield* SstResource.useSync(
-    (resource) => resource.AppsyncChannelNamespacePublisherRoleTemplate.pipe(Redacted.value).arn,
-  );
+    Struct.get("AppsyncChannelNamespacePublisherRoleTemplate"),
+  ).pipe(Effect.map(Redacted.value), Effect.map(Struct.get("arn")));
 
   return yield* Actor.use(Struct.get("tenantId")).pipe(
     Effect.map(tenantTemplate(roleArnTemplate)),
@@ -33,13 +34,14 @@ export class AppsyncPublisherCredentialIdentityProviderLayerMap extends LayerMap
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
       appsyncPublisherCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
+    idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
 ) {}
 
 export const appsyncSubscriberCredentialIdentityProviderLayer = Effect.gen(function* () {
   const roleArnTemplate = yield* SstResource.useSync(
-    (resource) => resource.AppsyncChannelNamespaceSubscriberRoleTemplate.pipe(Redacted.value).arn,
-  );
+    Struct.get("AppsyncChannelNamespaceSubscriberRoleTemplate"),
+  ).pipe(Effect.map(Redacted.value), Effect.map(Struct.get("arn")));
 
   return yield* Actor.use(Struct.get("tenantId")).pipe(
     Effect.map(tenantTemplate(roleArnTemplate)),
@@ -59,5 +61,6 @@ export class AppsyncSubscriberCredentialIdentityProviderLayerMap extends LayerMa
       appsyncSubscriberCredentialIdentityProviderLayer.pipe(
         Layer.provide(ActorLayerMap.get(actor)),
       ),
+    idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
 ) {}

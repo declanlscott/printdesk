@@ -9,12 +9,14 @@ import { Actor, ActorLayerMap } from "../../actors";
 import { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
 import { SstResource } from "../../sst/resource";
 import { tenantTemplate } from "../../utils";
+import { Constants } from "../../utils/constants";
 
 import type { FromTemporaryCredentialsOptions } from "@aws-sdk/credential-providers";
 
 export const appconfigCredentialIdentityProviderLayer = Effect.gen(function* () {
-  const roleArnTemplate = yield* SstResource.useSync(
-    (resource) => resource.AppconfigRoleTemplate.pipe(Redacted.value).arn,
+  const roleArnTemplate = yield* SstResource.useSync(Struct.get("AppconfigRoleTemplate")).pipe(
+    Effect.map(Redacted.value),
+    Effect.map(Struct.get("arn")),
   );
 
   return yield* Actor.use(Struct.get("tenantId")).pipe(
@@ -33,5 +35,6 @@ export class AppconfigCredentialIdentityProviderLayerMap extends LayerMap.Servic
     dependencies: [ActorLayerMap.layer, SstResource.layer],
     lookup: (actor: typeof Actor.Service) =>
       appconfigCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
+    idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
 ) {}

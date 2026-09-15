@@ -91,10 +91,7 @@ export namespace AttributesContract {
     EntityId,
   ]).pipe(
     Schema.decodeTo(TenantClientId, {
-      decode: SchemaGetter.transform(([, , tenantId, , , , clientId]) => ({
-        tenantId: String(tenantId),
-        clientId: String(clientId),
-      })),
+      decode: SchemaGetter.transform(([, , tenantId, , , , clientId]) => ({ tenantId, clientId })),
       encode: SchemaGetter.transform(({ tenantId, clientId }) => [
         Tenant.literal,
         Separator.literal,
@@ -122,8 +119,8 @@ export namespace AttributesContract {
   ]).pipe(
     Schema.decodeTo(TenantDeploymentId, {
       decode: SchemaGetter.transform(([, , tenantId, , , , deploymentId]) => ({
-        tenantId: String(tenantId),
-        deploymentId: String(deploymentId),
+        tenantId,
+        deploymentId,
       })),
       encode: SchemaGetter.transform(({ tenantId, deploymentId }) => [
         Tenant.literal,
@@ -151,10 +148,7 @@ export namespace AttributesContract {
     EntityId,
   ]).pipe(
     Schema.decodeTo(TenantRoomId, {
-      decode: SchemaGetter.transform(([, , tenantId, , , , roomId]) => ({
-        tenantId: String(tenantId),
-        roomId: String(roomId),
-      })),
+      decode: SchemaGetter.transform(([, , tenantId, , , , roomId]) => ({ tenantId, roomId })),
       encode: SchemaGetter.transform(({ tenantId, roomId }) => [
         Tenant.literal,
         Separator.literal,
@@ -181,10 +175,7 @@ export namespace AttributesContract {
     EntityId,
   ]).pipe(
     Schema.decodeTo(TenantUserId, {
-      decode: SchemaGetter.transform(([, , tenantId, , , , userId]) => ({
-        tenantId: String(tenantId),
-        userId: String(userId),
-      })),
+      decode: SchemaGetter.transform(([, , tenantId, , , , userId]) => ({ tenantId, userId })),
       encode: SchemaGetter.transform(({ tenantId, userId }) => [
         Tenant.literal,
         Separator.literal,

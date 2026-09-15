@@ -33,9 +33,9 @@ import * as InvoicesRepository from "../invoices/client/repository/layer";
 import { MutationDispatcher } from "../mutations/client/dispatcher";
 import { layer as baseMutationDispatcherLayer } from "../mutations/client/dispatcher/layer";
 import * as OrdersMutations from "../orders/client/mutations/layer";
-import * as OrderObjectsMutations from "../orders/client/objects/mutations/layer";
-import * as OrderObjectsPolicies from "../orders/client/objects/policies/layer";
-import * as OrderObjectsRepository from "../orders/client/objects/repository/layer";
+import * as OrderObjectMetadataMutations from "../orders/client/objects/mutations/layer";
+import * as OrderObjectMetadataPolicies from "../orders/client/objects/policies/layer";
+import * as OrderObjectMetadataRepository from "../orders/client/objects/repository/layer";
 import * as OrdersPolicies from "../orders/client/policies/layer";
 import * as OrdersRepository from "../orders/client/repository/layer";
 import * as ProductsMutations from "../products/client/mutations/layer";
@@ -148,8 +148,7 @@ export namespace Replicache {
     DeliveryOptionsRepository.layer,
     GroupMembershipsRepository.layer,
     InvoicesRepository.layer,
-    OrdersRepository.layer,
-    OrderObjectsRepository.layer,
+    OrderObjectMetadataRepository.layer,
     ProductsRepository.layer,
     RoomsRepository.layer,
     SharedAccountsRepository.layer,
@@ -158,6 +157,7 @@ export namespace Replicache {
     RoomWorkflowsRepository.layer,
     SharedAccountWorkflowsRepository.layer,
   ).pipe(
+    Layer.provideMerge(OrdersRepository.layer),
     Layer.provideMerge([
       WorkflowStatusesRepository.layer,
       SharedAccountManagerAccessRepository.layer,
@@ -173,7 +173,7 @@ export namespace Replicache {
     CommentsPolicies.layer,
     DeliveryOptionsPolicies.layer,
     GroupsPolicies.layer,
-    OrderObjectsPolicies.layer,
+    OrderObjectMetadataPolicies.layer,
     ProductsPolicies.layer,
     RoomsPolicies.layer,
     SharedAccountsPolicies.layer,
@@ -192,7 +192,7 @@ export namespace Replicache {
       DeliveryOptionsMutations.layer,
       InvoicesMutations.layer,
       OrdersMutations.layer,
-      OrderObjectsMutations.layer,
+      OrderObjectMetadataMutations.layer,
       ProductsMutations.layer,
       RoomsMutations.layer,
       SharedAccountsMutations.layer,

@@ -2,11 +2,12 @@ import * as Context from "effect/Context";
 
 import type { Repository, SyncRepository } from "./layers";
 
-export class OrderObjectsRepository extends Context.Service<OrderObjectsRepository, Repository>()(
-  "@printdesk/core/orders/ObjectsRepository",
-) {}
+export class OrderObjectMetadataRepository extends Context.Service<
+  OrderObjectMetadataRepository,
+  Repository
+>()("@printdesk/core/orders/ObjectMetadataRepository") {}
 
-export class OrderObjectsSyncRepository extends Context.Service<
-  OrderObjectsSyncRepository,
+export class OrderObjectMetadataSyncRepository extends Context.Service<
+  OrderObjectMetadataSyncRepository,
   SyncRepository
->()("@printdesk/core/orders/ObjectsSyncRepository") {}
+>()("@printdesk/core/orders/ObjectMetadataSyncRepository") {}

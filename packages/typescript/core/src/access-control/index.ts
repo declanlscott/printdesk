@@ -1,7 +1,9 @@
 import * as Effect from "effect/Effect";
 import * as HashSet from "effect/HashSet";
 import * as Match from "effect/Match";
+import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
+import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as SchemaAST from "effect/SchemaAST";
 import * as Struct from "effect/Struct";
@@ -53,10 +55,10 @@ export namespace AccessControl {
           "orders:read",
           "orders:update",
           "orders:delete",
-          "order_objects:create",
-          "order_objects:read",
-          "order_objects:update",
-          "order_objects:delete",
+          "order_object_metadata:create",
+          "order_object_metadata:read",
+          "order_object_metadata:update",
+          "order_object_metadata:delete",
           "papercut_mf_api_gateway:read",
           "papercut_mf_sync:create",
           "products:create",
@@ -104,10 +106,10 @@ export namespace AccessControl {
           "active_orders:read",
           "orders:update",
           "orders:delete",
-          "order_objects:create",
-          "active_order_objects:read",
-          "order_objects:update",
-          "order_objects:delete",
+          "order_object_metadata:create",
+          "active_order_object_metadata:read",
+          "order_object_metadata:update",
+          "order_object_metadata:delete",
           "products:create",
           "active_products:read",
           "products:update",
@@ -135,8 +137,8 @@ export namespace AccessControl {
           "active_manager_authorized_shared_account_order_invoices:read",
           "active_customer_placed_orders:read",
           "active_manager_authorized_shared_account_orders:read",
-          "active_customer_placed_order_objects:read",
-          "active_manager_authorized_shared_account_order_objects:read",
+          "active_customer_placed_order_object_metadata:read",
+          "active_manager_authorized_shared_account_order_object_metadata:read",
           "active_published_products:read",
           "active_published_rooms:read",
           "active_manager_authorized_shared_accounts:read",
@@ -161,7 +163,7 @@ export namespace AccessControl {
           "active_membership_groups:read",
           "active_customer_placed_order_invoices:read",
           "active_customer_placed_orders:read",
-          "active_customer_placed_order_objects:read",
+          "active_customer_placed_order_object_metadata:read",
           "active_published_products:read",
           "active_published_rooms:read",
           "active_customer_authorized_shared_accounts:read",

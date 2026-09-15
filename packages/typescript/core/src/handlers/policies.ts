@@ -3,7 +3,7 @@ import { AnnouncementsContract } from "../announcements/contract";
 import { CommentsContract } from "../comments/contract";
 import { DeliveryOptionsContract } from "../delivery-options/contract";
 import { GroupsContract } from "../groups/contracts";
-import { OrderObjectsContract, OrdersContract } from "../orders/contracts";
+import { OrderObjectMetadataContract, OrdersContract } from "../orders/contracts";
 import { ProductsContract } from "../products/contract";
 import { RoomsContract } from "../rooms/contract";
 import {
@@ -35,8 +35,8 @@ export namespace PolicyHandlers {
     .handle(OrdersContract.canTransition)
     .handle(OrdersContract.canDelete)
     .handle(OrdersContract.canRestore)
-    .handle(OrderObjectsContract.canEdit)
-    .handle(OrderObjectsContract.canDelete)
+    .handle(OrderObjectMetadataContract.canEdit)
+    .handle(OrderObjectMetadataContract.canDelete)
     .handle(ProductsContract.canEdit)
     .handle(ProductsContract.canDelete)
     .handle(ProductsContract.canRestore)

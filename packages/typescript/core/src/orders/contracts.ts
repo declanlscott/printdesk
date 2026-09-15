@@ -9,13 +9,13 @@ import { EntityId, IsoDate, IsoTimestamp } from "../utils";
 import { Constants } from "../utils/constants";
 
 import type {
-  ActiveCustomerPlacedOrderObjectsView,
+  ActiveCustomerPlacedOrderObjectMetadataView,
   ActiveCustomerPlacedOrdersView,
-  ActiveManagerAuthorizedSharedAccountOrderObjectsView,
+  ActiveManagerAuthorizedSharedAccountOrderObjectMetadataView,
   ActiveManagerAuthorizedSharedAccountOrdersView,
-  ActiveOrderObjectsView,
+  ActiveOrderObjectMetadataView,
   ActiveOrdersView,
-  OrderObjectsTable,
+  OrderObjectMetadataTable,
   OrdersTable,
 } from "./sql";
 
@@ -380,24 +380,25 @@ export namespace OrdersContract {
   });
 }
 
-export namespace OrderObjectsContract {
+export namespace OrderObjectMetadataContract {
   export const Status = Schema.Literals(["pending", "uploading", "success", "failure"]);
   export type Status = typeof Status.Type;
 
-  export class Table extends TablesContract.Table<OrderObjectsTable>("order_objects")(
+  export class Table extends TablesContract.Table<OrderObjectMetadataTable>(
+    "order_object_metadata",
+  )(
     {
       ...TablesContract.BaseSyncModel.fields,
       orderId: EntityId,
-      key: Schema.String,
-      filename: Schema.String,
-      contentType: Schema.String,
-      sizeBytes: Schema.Int.pipe(Schema.check(Schema.isGreaterThan(0))),
+      filename: Schema.NonEmptyString,
+      mimeType: Schema.NonEmptyString,
+      byteSize: Schema.ByteSizeFromNumber,
       status: Status,
     },
     ["create", "read", "update", "delete"],
   ) {}
 
-  export class ActiveView extends TablesContract.View<ActiveOrderObjectsView>(
+  export class ActiveView extends TablesContract.View<ActiveOrderObjectMetadataView>(
     `active_${Table.name}`,
   )(
     Struct.evolve(Table.Model.fields, {
@@ -405,12 +406,12 @@ export namespace OrderObjectsContract {
     }),
   ) {}
 
-  export class ActiveCustomerPlacedView extends TablesContract.VirtualView<ActiveCustomerPlacedOrderObjectsView>()(
+  export class ActiveCustomerPlacedView extends TablesContract.VirtualView<ActiveCustomerPlacedOrderObjectMetadataView>()(
     `active_customer_placed_${Table.name}`,
     { ...ActiveView.Model.fields, customerId: EntityId },
   ) {}
 
-  export class ActiveManagerAuthorizedSharedAccountView extends TablesContract.View<ActiveManagerAuthorizedSharedAccountOrderObjectsView>(
+  export class ActiveManagerAuthorizedSharedAccountView extends TablesContract.View<ActiveManagerAuthorizedSharedAccountOrderObjectMetadataView>(
     `active_manager_authorized_shared_account_${Table.name}`,
   )({ ...ActiveView.Model.fields, authorizedManagerId: EntityId }) {}
 
@@ -439,7 +440,7 @@ export namespace OrderObjectsContract {
   });
 
   export const transitionStatus = new Handler.Handler({
-    name: "transitionOrderObjectStatus",
+    name: "transitionOrderObjectMetadataStatus",
     Input: IdOnly.mapFields(Struct.assign(Struct.pick(Table.Model.fields, ["status"]))),
     Output: Table.Dto,
   });

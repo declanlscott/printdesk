@@ -8,7 +8,7 @@ import { GroupMembershipsContract, GroupsContract } from "../groups/contracts";
 import { IdentityProvidersContract } from "../identity/contract";
 import { InvoicesContract } from "../invoices/contract";
 import { LicensesContract } from "../licenses/contract";
-import { OrderObjectsContract, OrdersContract } from "../orders/contracts";
+import { OrderObjectMetadataContract, OrdersContract } from "../orders/contracts";
 import { ProductsContract } from "../products/contract";
 import { RoomsContract } from "../rooms/contract";
 import {
@@ -34,7 +34,7 @@ export namespace Models {
     GroupMembershipsContract.Table,
     InvoicesContract.Table,
     OrdersContract.Table,
-    OrderObjectsContract.Table,
+    OrderObjectMetadataContract.Table,
     ProductsContract.Table,
     RoomsContract.Table,
     SharedAccountsContract.Table,
@@ -80,9 +80,9 @@ export namespace Models {
     OrdersContract.ActiveView,
     OrdersContract.ActiveCustomerPlacedView,
     OrdersContract.ActiveManagerAuthorizedSharedAccountView,
-    OrderObjectsContract.ActiveView,
-    OrderObjectsContract.ActiveCustomerPlacedView,
-    OrderObjectsContract.ActiveManagerAuthorizedSharedAccountView,
+    OrderObjectMetadataContract.ActiveView,
+    OrderObjectMetadataContract.ActiveCustomerPlacedView,
+    OrderObjectMetadataContract.ActiveManagerAuthorizedSharedAccountView,
     ProductsContract.ActiveView,
     ProductsContract.ActivePublishedView,
     RoomsContract.ActiveView,

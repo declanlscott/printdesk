@@ -8,7 +8,7 @@ import { CommentsPolicies } from "../../comments/policies";
 import { DeliveryOptionsPolicies } from "../../delivery-options/policies";
 import { GroupsPolicies } from "../../groups/policies";
 import { PolicyHandlers } from "../../handlers/policies";
-import { OrderObjectsPolicies } from "../../orders/objects/policies";
+import { OrderObjectMetadataPolicies } from "../../orders/objects/policies";
 import { OrdersPolicies } from "../../orders/policies";
 import { ProductsPolicies } from "../../products/policies";
 import { RoomsPolicies } from "../../rooms/policies";
@@ -26,7 +26,7 @@ export const makeService = Effect.gen(function* () {
   const deliveryOptions = yield* DeliveryOptionsPolicies;
   const groups = yield* GroupsPolicies;
   const orders = yield* OrdersPolicies;
-  const orderObjects = yield* OrderObjectsPolicies;
+  const orderObjectMetadata = yield* OrderObjectMetadataPolicies;
   const products = yield* ProductsPolicies;
   const rooms = yield* RoomsPolicies;
   const sharedAccounts = yield* SharedAccountsPolicies;
@@ -56,8 +56,8 @@ export const makeService = Effect.gen(function* () {
     .policy(orders.canTransition)
     .policy(orders.canDelete)
     .policy(orders.canRestore)
-    .policy(orderObjects.canEdit)
-    .policy(orderObjects.canDelete)
+    .policy(orderObjectMetadata.canEdit)
+    .policy(orderObjectMetadata.canDelete)
     .policy(products.canEdit)
     .policy(products.canDelete)
     .policy(products.canRestore)

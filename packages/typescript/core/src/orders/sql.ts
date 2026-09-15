@@ -1,10 +1,10 @@
 import { and, eq, getViewSelectedFields, isNull, ne } from "drizzle-orm";
-import { bigint, check, index, snakeCase, text, unique } from "drizzle-orm/pg-core";
+import { check, index, snakeCase, text, unique } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
 import { activeSharedAccountManagerAccessView } from "../shared-accounts/sql";
 import { Tables } from "../tables";
-import { OrderObjectsContract, OrdersContract } from "./contracts";
+import { OrderObjectMetadataContract, OrdersContract } from "./contracts";
 
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 import type { EntityId } from "../utils";
@@ -77,60 +77,62 @@ export type ActiveManagerAuthorizedSharedAccountOrder = OrderRow<
   InferSelectViewModel<ActiveManagerAuthorizedSharedAccountOrdersView>
 >;
 
-export const orderObjects = new Tables.Sync(
-  "order_objects",
+export const orderObjectMetadata = new Tables.Sync(
+  "order_object_metadata",
   {
     orderId: Columns.entityId().notNull(),
-    key: text().notNull(),
     filename: text().notNull(),
-    contentType: text().notNull(),
-    sizeBytes: bigint({ mode: "number" }).notNull(),
-    status: Columns.union(OrderObjectsContract.Status.literals).notNull(),
+    mimeType: text().notNull(),
+    byteSize: Columns.byteSize().notNull(),
+    status: Columns.union(OrderObjectMetadataContract.Status.literals).notNull(),
   },
-  (table) => [unique().on(table.orderId, table.key, table.filename, table.tenantId)],
+  (table) => [unique().on(table.orderId, table.filename, table.tenantId)],
 );
-export const orderObjectsTable = orderObjects.table;
-export type OrderObjectsTable = typeof orderObjects.table;
-export type OrderObject = InferSelectModel<OrderObjectsTable>;
-export const activeOrderObjectsView = snakeCase
-  .view(`active_${orderObjects.name}`)
-  .as((qb) => qb.select().from(orderObjects.table).where(isNull(orderObjects.table.deletedAt)));
-export type ActiveOrderObjectsView = typeof activeOrderObjectsView;
-export type ActiveOrderObject = InferSelectViewModel<ActiveOrderObjectsView>;
-export const activeCustomerPlacedOrderObjectsView = snakeCase
-  .view(`active_customer_placed_${orderObjects.name}`)
+export const orderObjectMetadataTable = orderObjectMetadata.table;
+export type OrderObjectMetadataTable = typeof orderObjectMetadata.table;
+export type OrderObjectMetadata = InferSelectModel<OrderObjectMetadataTable>;
+export const activeOrderObjectMetadataView = snakeCase
+  .view(`active_${orderObjectMetadata.name}`)
+  .as((qb) =>
+    qb.select().from(orderObjectMetadata.table).where(isNull(orderObjectMetadata.table.deletedAt)),
+  );
+export type ActiveOrderObjectMetadataView = typeof activeOrderObjectMetadataView;
+export type ActiveOrderObjectMetadata = InferSelectViewModel<ActiveOrderObjectMetadataView>;
+export const activeCustomerPlacedOrderObjectMetadataView = snakeCase
+  .view(`active_customer_placed_${orderObjectMetadata.name}`)
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeOrderObjectsView),
+        ...getViewSelectedFields(activeOrderObjectMetadataView),
         customerId: activeOrdersView.customerId,
       })
-      .from(activeOrderObjectsView)
+      .from(activeOrderObjectMetadataView)
       .innerJoin(
         activeOrdersView,
         and(
-          eq(activeOrderObjectsView.orderId, activeOrdersView.id),
-          eq(activeOrderObjectsView.tenantId, activeOrdersView.tenantId),
+          eq(activeOrderObjectMetadataView.orderId, activeOrdersView.id),
+          eq(activeOrderObjectMetadataView.tenantId, activeOrdersView.tenantId),
         ),
       ),
   );
-export type ActiveCustomerPlacedOrderObjectsView = typeof activeCustomerPlacedOrderObjectsView;
-export type ActiveCustomerPlacedOrderObject =
-  InferSelectViewModel<ActiveCustomerPlacedOrderObjectsView>;
-export const activeManagerAuthorizedSharedAccountOrderObjectsView = snakeCase
-  .view(`active_manager_authorized_shared_account_${orderObjects.name}`)
+export type ActiveCustomerPlacedOrderObjectMetadataView =
+  typeof activeCustomerPlacedOrderObjectMetadataView;
+export type ActiveCustomerPlacedOrderObjectMetadata =
+  InferSelectViewModel<ActiveCustomerPlacedOrderObjectMetadataView>;
+export const activeManagerAuthorizedSharedAccountOrderObjectMetadataView = snakeCase
+  .view(`active_manager_authorized_shared_account_${orderObjectMetadata.name}`)
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeOrderObjectsView),
+        ...getViewSelectedFields(activeOrderObjectMetadataView),
         authorizedManagerId: activeSharedAccountManagerAccessView.managerId,
       })
-      .from(activeOrderObjectsView)
+      .from(activeOrderObjectMetadataView)
       .innerJoin(
         activeOrdersView,
         and(
-          eq(activeOrderObjectsView.orderId, activeOrdersView.id),
-          eq(activeOrderObjectsView.tenantId, activeOrdersView.tenantId),
+          eq(activeOrderObjectMetadataView.orderId, activeOrdersView.id),
+          eq(activeOrderObjectMetadataView.tenantId, activeOrdersView.tenantId),
         ),
       )
       .innerJoin(
@@ -144,7 +146,7 @@ export const activeManagerAuthorizedSharedAccountOrderObjectsView = snakeCase
         ),
       ),
   );
-export type ActiveManagerAuthorizedSharedAccountOrderObjectsView =
-  typeof activeManagerAuthorizedSharedAccountOrderObjectsView;
-export type ActiveManagerAuthorizedSharedAccountOrderObject =
-  InferSelectViewModel<ActiveManagerAuthorizedSharedAccountOrderObjectsView>;
+export type ActiveManagerAuthorizedSharedAccountOrderObjectMetadataView =
+  typeof activeManagerAuthorizedSharedAccountOrderObjectMetadataView;
+export type ActiveManagerAuthorizedSharedAccountOrderObjectMetadata =
+  InferSelectViewModel<ActiveManagerAuthorizedSharedAccountOrderObjectMetadataView>;

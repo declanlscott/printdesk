@@ -68,7 +68,7 @@ export const makeRepository = Effect.gen(function* () {
         ),
   );
 
-  const findByIdWithWorkflowStatus = Effect.fn("Orders.Repository.findByIdWithWorkflowStatus")(
+  const findWithWorkflowStatusById = Effect.fn("Orders.Repository.findWithWorkflowStatusById")(
     (id: Order["id"], tenantId: Order["tenantId"]) =>
       db
         .useTransaction((tx) =>
@@ -166,7 +166,7 @@ export const makeRepository = Effect.gen(function* () {
   return {
     create,
     findById,
-    findByIdWithWorkflowStatus,
+    findWithWorkflowStatusById,
     findByWorkflowStatusId,
     findActiveManagerIds,
     updateById,

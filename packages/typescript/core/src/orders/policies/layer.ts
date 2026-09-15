@@ -87,7 +87,7 @@ export const makeService = Effect.gen(function* () {
     make: Effect.fn("Orders.Policies.canEdit.make")(({ id }) =>
       AccessControl.userPolicy(
         ({ tenantId }) =>
-          repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
+          repository.findWithWorkflowStatusById(id, tenantId).pipe(
             Effect.flatMap(({ order, workflowStatus }) =>
               decode(order).pipe(Effect.map((order) => ({ order, workflowStatus }))),
             ),
@@ -120,7 +120,7 @@ export const makeService = Effect.gen(function* () {
     make: Effect.fn("Orders.Policies.canApprove.make")(({ id }) =>
       AccessControl.userPolicy(
         ({ tenantId }) =>
-          repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
+          repository.findWithWorkflowStatusById(id, tenantId).pipe(
             Effect.map(({ order }) =>
               Match.value(order).pipe(
                 Match.when(
@@ -140,7 +140,7 @@ export const makeService = Effect.gen(function* () {
     make: Effect.fn("Orders.Policies.canTransition.make")(({ id }) =>
       AccessControl.userPolicy(
         ({ tenantId }) =>
-          repository.findByIdWithWorkflowStatus(id, tenantId).pipe(
+          repository.findWithWorkflowStatusById(id, tenantId).pipe(
             Effect.map(({ order, workflowStatus }) =>
               Match.value(order).pipe(
                 Match.when({ deletedAt: Match.null }, () => workflowStatus.type !== "Completed"),

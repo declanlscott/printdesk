@@ -13,6 +13,7 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { SstResource } from "../../sst/resource";
+import { Constants } from "../../utils/constants";
 import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
 export class AppconfigError extends Schema.TaggedError<AppconfigError>()("AppconfigError", {
@@ -54,7 +55,7 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
     const environment = resource.AppconfigEnvironment.pipe(Redacted.value);
 
     const clientCache = yield* Cache.make({
-      capacity: 10,
+      capacity: Constants.DEFAULT_CACHE_CAPACITY,
       lookup: (credentials: AwsCredentialIdentity) =>
         credentials.encode.pipe(
           Effect.flatMap((credentials) =>
@@ -73,42 +74,45 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
         ),
     });
 
+    const client = AwsCredentialIdentityProvider.provide.pipe(
+      Effect.flatMap((credentials) => clientCache.pipe(Cache.get(credentials))),
+    );
+
     const version = Effect.fn("Appconfig.version")(function* <
       TType extends object,
       TEncoded,
       TServices,
     >(args: VersionArgs<TType, TEncoded, TServices>) {
-      const client = yield* AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
-        Effect.flatMap((credentials) => clientCache.pipe(Cache.get(credentials))),
-      );
-
       const encode = args.Codec.pipe(Schema.fromJsonString, Schema.encodeEffect);
       const Content = yield* encode(args.value);
 
-      return yield* Effect.tryPromise({
-        try: (abortSignal) =>
-          client.send(
-            new CreateHostedConfigurationVersionCommand({
-              ApplicationId: application.id,
-              ConfigurationProfileId: args.profileId,
-              Content,
-              ContentType: "application/json",
-            }),
-            { abortSignal },
+      return yield* client.pipe(
+        Effect.flatMap((client) =>
+          Effect.tryPromise({
+            try: (abortSignal) =>
+              client.send(
+                new CreateHostedConfigurationVersionCommand({
+                  ApplicationId: application.id,
+                  ConfigurationProfileId: args.profileId,
+                  Content,
+                  ContentType: "application/json",
+                }),
+                { abortSignal },
+              ),
+            catch: (cause) => new VersionError({ cause }),
+          }).pipe(
+            Effect.map(Struct.get("VersionNumber")),
+            Effect.filterOrFail(
+              Predicate.isNotUndefined,
+              () => new VersionError({ cause: new Error("undefined version number") }),
+            ),
           ),
-        catch: (cause) => new VersionError({ cause }),
-      }).pipe(
-        Effect.map(Struct.get("VersionNumber")),
-        Effect.filterOrFail(
-          Predicate.isNotUndefined,
-          () => new VersionError({ cause: new Error("undefined version number") }),
         ),
       );
     });
 
     const deploy = Effect.fn("Appconfig.deploy")((args: DeployArgs) =>
-      AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
-        Effect.flatMap((credentials) => clientCache.pipe(Cache.get(credentials))),
+      client.pipe(
         Effect.flatMap((client) =>
           Effect.tryPromise({
             try: (abortSignal) =>
@@ -141,7 +145,11 @@ export class Appconfig extends Context.Service<Appconfig>()("@printdesk/core/aws
         ),
     );
 
-    return { version, deploy, publish } as const;
+    return {
+      version,
+      deploy,
+      publish,
+    } as const;
   }),
 }) {
   public static readonly layer = this.make.pipe(Layer.effect(this));

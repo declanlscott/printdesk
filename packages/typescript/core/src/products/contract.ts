@@ -1,3 +1,4 @@
+import * as ByteSize from "effect/ByteSize";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
@@ -5,7 +6,8 @@ import * as Struct from "effect/Struct";
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
-import { Cost, EntityId, HexColor } from "../utils";
+import { Cost, EntityId, HexColor, NonEmptyString } from "../utils";
+import { Constants } from "../utils/constants";
 
 import type { ActiveProductsView, ActivePublishedProductsView, ProductsTable } from "./sql";
 
@@ -87,14 +89,43 @@ export namespace ProductsContract {
       orderAttachments: Schema.Struct({
         fileUploadEnabled: Schema.Boolean,
         physicalCopyEnabled: Schema.Boolean,
+        byteSizeLimit: Schema.ByteSizeFromString.pipe(
+          Schema.withConstructorDefault(
+            Effect.succeed(
+              ByteSize.fromInputUnsafe(Constants.DEFAULT_ORDER_OBJECT_BYTE_SIZE_LIMIT),
+            ),
+          ),
+          Schema.check(
+            Schema.makeFilter((byteSize) => {
+              if (
+                byteSize &&
+                ByteSize.isGreaterThan(
+                  byteSize,
+                  ByteSize.fromInputUnsafe(Constants.DEFAULT_ORDER_OBJECT_BYTE_SIZE_LIMIT),
+                )
+              )
+                return "Order attachment byte size limit exceeded";
+            }),
+          ),
+        ),
+        mimeTypeWhitelist: NonEmptyString.pipe(Schema.Array, Schema.optional),
       }).pipe(Schema.optional),
       attributes: AttributesV1,
     },
   ) {
     public static readonly statusLens = this.pipe(Schema.toIso).key("status");
+
+    public isValidOrderAttachment(metadata: { mimeType: string; byteSize: ByteSize.ByteSize }) {
+      if (!this.orderAttachments) return false;
+
+      return (
+        (this.orderAttachments.mimeTypeWhitelist?.includes(metadata.mimeType) ?? true) &&
+        ByteSize.isLessThanOrEqualTo(metadata.byteSize, this.orderAttachments.byteSizeLimit)
+      );
+    }
   }
   export const Configuration = Schema.Union([ConfigurationV1]);
-  // TODO: Add object constraints configuration
+  export type Configuration = typeof Configuration.Type;
 
   export class Table extends TablesContract.Table<ProductsTable>("products")(
     {

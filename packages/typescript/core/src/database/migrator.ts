@@ -69,6 +69,8 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
     const config = yield* MigratorConfig;
     const crypto = yield* Crypto.Crypto;
 
+    const textEncoder = new TextEncoder();
+
     const schema = snakeCase.schema(config.migrationsSchema ?? defaultSchema);
     const schemaDdl = sql`CREATE SCHEMA IF NOT EXISTS ${schema};`;
 
@@ -131,8 +133,8 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
             migration.sql,
             Effect.fn(function* (statement, index) {
               const hash = yield* crypto
-                .digest("SHA-256", Buffer.from(statement.trim()))
-                .pipe(Effect.map((bytes) => Buffer.from(bytes).toString("hex")));
+                .digest("SHA-256", textEncoder.encode(statement.trim()))
+                .pipe(Effect.flatMap(Schema.encodeEffect(Schema.Uint8ArrayFromHex)));
 
               const storedHash = statements.pipe(
                 HashMap.get(
@@ -188,7 +190,7 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
                                   ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
                                   : "not retryable"
                               }:`,
-                              metadata.input.pipe(Cause.fail),
+                              metadata.input.pipe(Cause.fail, Cause.pretty),
                             );
 
                             return isRetryable;

@@ -41,7 +41,7 @@ export const makeService = Effect.gen(function* () {
 
   const baseHttpClient = yield* HttpClient.HttpClient;
   const httpClientCache = yield* Cache.make({
-    capacity: 10,
+    capacity: Constants.DEFAULT_CACHE_CAPACITY,
     lookup: Effect.fn(function* (key: {
       actor: ActorsContract.Actor;
       accessToken: OauthContract.Tokens["access"];

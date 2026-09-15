@@ -98,7 +98,7 @@ export class AbortSignalMiddleware implements Middleware {
 export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph", {
   make: Effect.gen(function* () {
     const clientCache = yield* Cache.make({
-      capacity: 10,
+      capacity: Constants.DEFAULT_CACHE_CAPACITY,
       requireServicesAt: "lookup",
       lookup: (_accessToken: Redacted.Redacted) =>
         EntraId.AuthProvider.use((authProvider) =>

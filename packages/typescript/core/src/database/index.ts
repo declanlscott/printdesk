@@ -23,7 +23,7 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
   make: Effect.gen(function* () {
     const db = yield* Drizzle;
 
-    const withTransaction = Effect.fn("Database.TransactionManager.withTransaction")(
+    const withTransaction = Effect.fn("Database.withTransaction")(
       <TSuccess, TError, TServices>(
         execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
         { disableRetries = false }: { disableRetries?: boolean } = {},
@@ -50,7 +50,7 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
                         ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
                         : "not retrying"
                     }:`,
-                    Cause.fail(metadata.input),
+                    Cause.fail(metadata.input).pipe(Cause.pretty),
                   );
 
                   return shouldRetry;
@@ -61,7 +61,7 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
         ),
     );
 
-    const useTransaction = Effect.fn("Database.TransactionManager.useTransaction")(
+    const useTransaction = Effect.fn("Database.useTransaction")(
       <TSuccess, TError, TServices>(
         execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
       ) =>
@@ -76,7 +76,7 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
         ),
     );
 
-    const useQueryBuilder = Effect.fn("Database.TransactionManager.useQueryBuilder")(function* <
+    const useQueryBuilder = Effect.fn("Database.useQueryBuilder")(function* <
       TQueryBuilder extends AnyPgSelectQueryBuilder,
       TDynamic extends PgSelectDynamic<TQueryBuilder>,
     >(callback: (tx: typeof Transaction.Service.tx) => TDynamic) {

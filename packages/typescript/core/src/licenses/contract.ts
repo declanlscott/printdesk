@@ -23,10 +23,10 @@ export namespace LicensesContract {
 
   export const KeyPairFromString = Schema.TemplateLiteralParser([EntityId, Separator, Key]).pipe(
     Schema.decodeTo(KeyPair, {
-      decode: SchemaGetter.transformOrFail(([id, , key]) =>
+      decode: SchemaGetter.transformEffect(([id, , key]) =>
         Schema.encodeEffect(KeyPair)({ id, key }).pipe(Effect.mapError(Struct.get("issue"))),
       ),
-      encode: SchemaGetter.transformOrFail(({ id, key }) =>
+      encode: SchemaGetter.transformEffect(({ id, key }) =>
         Schema.decodeEffect(KeyPair)({ id, key }).pipe(
           Effect.mapBoth({
             onSuccess: ({ id, key }) => [id, Separator.literal, key],

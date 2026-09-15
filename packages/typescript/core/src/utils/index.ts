@@ -118,7 +118,7 @@ export const BulkId = Schema.TemplateLiteralParser([
 ]).pipe(
   Schema.decodeTo(Schema.Struct({ bulkId: NonEmptyString }), {
     decode: SchemaGetter.transform(([, bulkId]) => ({ bulkId })),
-    encode: SchemaGetter.transformOrFail(({ bulkId }) =>
+    encode: SchemaGetter.transformEffect(({ bulkId }) =>
       Schema.decodeEffect(NonEmptyString)(bulkId).pipe(
         Effect.mapBoth({
           onSuccess: (bulkId) => ["bulkId:", bulkId],

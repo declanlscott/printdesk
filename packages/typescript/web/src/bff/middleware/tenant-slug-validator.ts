@@ -21,7 +21,7 @@ const FromHostname = Schema.TemplateLiteralParser([
   Schema.NonEmptyString,
 ]).pipe(
   Schema.decodeTo(TenantsContract.Slug, {
-    decode: SchemaGetter.transformOrFail(
+    decode: SchemaGetter.transformEffect(
       Effect.fn(function* ([slug, , apexDomain], options) {
         const resource = yield* ViteResource;
 

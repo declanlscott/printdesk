@@ -101,7 +101,7 @@ export namespace GroupsContract {
       return this.pipe(
         Schema.toType,
         Schema.decodeTo(ProvisionalDtos, {
-          decode: SchemaGetter.transformOrFail(
+          decode: SchemaGetter.transformEffect(
             Effect.fn(function* ({ group, groupMemberships }) {
               const bulkIdMap = yield* ScimBulkIdMap;
 

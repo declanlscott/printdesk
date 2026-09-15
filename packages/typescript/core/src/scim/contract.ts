@@ -1,9 +1,9 @@
 import * as Array from "effect/Array";
 import * as Boolean from "effect/Boolean";
+import * as ByteSize from "effect/ByteSize";
 import * as DateTime from "effect/DateTime";
 import * as Effect from "effect/Effect";
 import * as Equal from "effect/Equal";
-import * as FileSystem from "effect/FileSystem";
 import * as Predicate from "effect/Predicate";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
@@ -371,7 +371,7 @@ export namespace ScimContract {
      * An integer value specifying the maximum bulk payload size in bytes.
      */
     public static get maxBulkPayloadSize() {
-      return FileSystem.MiB(1);
+      return ByteSize.mebibytes(1);
     }
 
     /**
@@ -404,7 +404,7 @@ export namespace ScimContract {
     public static get ProvisionalToDtos() {
       return this.Provisional.pipe(
         Schema.decodeTo(GroupsContract.ProvisionalDtos, {
-          decode: SchemaGetter.transformOrFail(
+          decode: SchemaGetter.transformEffect(
             Effect.fn(function* (scimGroup) {
               const actor = yield* Actor;
               const locator = yield* ScimLocator;
@@ -449,7 +449,7 @@ export namespace ScimContract {
               }).pipe(Effect.mapError(Struct.get("issue")));
             }),
           ),
-          encode: SchemaGetter.transformOrFail(
+          encode: SchemaGetter.transformEffect(
             Effect.fn({ self: this }, function* ({ group, groupMemberships }) {
               const locator = yield* ScimLocator;
 
@@ -486,7 +486,7 @@ export namespace ScimContract {
     public static get BulkProvisionalToDtos() {
       return this.BulkProvisional.pipe(
         Schema.decodeTo(GroupsContract.BulkProvisionalDtos, {
-          decode: SchemaGetter.transformOrFail(
+          decode: SchemaGetter.transformEffect(
             Effect.fn(function* (scimGroup) {
               const actor = yield* Actor;
               const locator = yield* ScimLocator;
@@ -529,7 +529,7 @@ export namespace ScimContract {
               }).pipe(Effect.mapError(Struct.get("issue")));
             }),
           ),
-          encode: SchemaGetter.transformOrFail(
+          encode: SchemaGetter.transformEffect(
             Effect.fn({ self: this }, function* ({ group, groupMemberships }) {
               const locator = yield* ScimLocator;
 
@@ -572,7 +572,7 @@ export namespace ScimContract {
     public static get ToDtos() {
       return this.pipe(
         Schema.decodeTo(GroupsContract.Dtos, {
-          decode: SchemaGetter.transformOrFail(
+          decode: SchemaGetter.transformEffect(
             Effect.fn(function* (scimGroup, options) {
               const actor = yield* Actor;
               const locator = yield* ScimLocator;
@@ -639,7 +639,7 @@ export namespace ScimContract {
               );
             }),
           ),
-          encode: SchemaGetter.transformOrFail(
+          encode: SchemaGetter.transformEffect(
             Effect.fn({ self: this }, function* ({ group, groupMemberships }) {
               const locator = yield* ScimLocator;
 
@@ -717,7 +717,7 @@ export namespace ScimContract {
     public static get ProvisionalToDto() {
       return this.Provisional.pipe(
         Schema.decodeTo(UsersContract.ProvisionalDto, {
-          decode: SchemaGetter.transformOrFail(
+          decode: SchemaGetter.transformEffect(
             Effect.fn(function* (scimUser) {
               const actor = yield* Actor;
 
@@ -750,7 +750,7 @@ export namespace ScimContract {
               }).pipe(Effect.mapError(Struct.get("issue")));
             }),
           ),
-          encode: SchemaGetter.transformOrFail((user) =>
+          encode: SchemaGetter.transformEffect((user) =>
             Schema.decodeEffect(this.Provisional)({
               externalId: user.externalId,
               displayName: user.displayName,
@@ -781,7 +781,7 @@ export namespace ScimContract {
     public static get ToDto() {
       return this.pipe(
         Schema.decodeTo(UsersContract.Table.Dto, {
-          decode: SchemaGetter.transformOrFail(
+          decode: SchemaGetter.transformEffect(
             Effect.fn(function* (scimUser) {
               const actor = yield* Actor;
 
@@ -828,7 +828,7 @@ export namespace ScimContract {
               }).pipe(Effect.mapError(Struct.get("issue")));
             }),
           ),
-          encode: SchemaGetter.transformOrFail(
+          encode: SchemaGetter.transformEffect(
             Effect.fn({ self: this }, function* (user) {
               const id = yield* Effect.succeed(user.id).pipe(
                 Effect.filterOrFail(
@@ -1033,14 +1033,14 @@ export namespace ScimContract {
     public static get UsersToDtos() {
       return this.Users.pipe(
         Schema.decodeTo(V2User.ToDto.pipe(Schema.Array), {
-          decode: SchemaGetter.transformOrFail((list) =>
+          decode: SchemaGetter.transformEffect((list) =>
             Effect.all(
               Array.map(list.Resources, (v2User) =>
                 Effect.succeed(v2User).pipe(Effect.flatMap(Schema.encodeEffect(V2User))),
               ),
             ).pipe(Effect.mapError(Struct.get("issue"))),
           ),
-          encode: SchemaGetter.transformOrFail((users) =>
+          encode: SchemaGetter.transformEffect((users) =>
             Schema.decodeEffect(this.Users)({
               totalResults: users.length,
               Resources: users,
@@ -1055,14 +1055,14 @@ export namespace ScimContract {
     public static get GroupsToDtos() {
       return this.Groups.pipe(
         Schema.decodeTo(V2Group.ToDtos.pipe(Schema.Array), {
-          decode: SchemaGetter.transformOrFail((list) =>
+          decode: SchemaGetter.transformEffect((list) =>
             Effect.all(
               Array.map(list.Resources, (v2Group) =>
                 Effect.succeed(v2Group).pipe(Effect.flatMap(Schema.encodeEffect(V2Group))),
               ),
             ).pipe(Effect.mapError(Struct.get("issue"))),
           ),
-          encode: SchemaGetter.transformOrFail((groups) =>
+          encode: SchemaGetter.transformEffect((groups) =>
             Schema.decodeEffect(this.Groups)({
               totalResults: groups.length,
               Resources: groups,

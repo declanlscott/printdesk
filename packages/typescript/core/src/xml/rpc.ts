@@ -73,7 +73,7 @@ export namespace XmlRpc {
             }),
             {
               decode: SchemaGetter.forbidden(() => "Not implemented"),
-              encode: SchemaGetter.transformOrFail((input, options) =>
+              encode: SchemaGetter.transformEffect((input, options) =>
                 build(input).pipe(
                   Effect.mapError(
                     (e) => new SchemaIssue.InvalidValue({ message: e.message }, input, options),
@@ -102,7 +102,7 @@ export namespace XmlRpc {
       ) {
         const decode = Schema.String.pipe(
           Schema.decodeTo(Schema.Union([SuccessResponse, XmlRpcContract.FaultResponse]), {
-            decode: SchemaGetter.transformOrFail((text, options) =>
+            decode: SchemaGetter.transformEffect((text, options) =>
               parse<TEncoded | typeof XmlRpcContract.FaultResponse.Encoded>(text).pipe(
                 Effect.mapError(
                   (e) => new SchemaIssue.InvalidValue({ message: e.message }, text, options),
@@ -117,9 +117,11 @@ export namespace XmlRpc {
         return Effect.fn("XmlRpc.response")((response: HttpClientResponse) =>
           response.text.pipe(
             Effect.flatMap((text) => decode(text, parseOptions)),
+            // oxlint-disable-next-line effecttsgo/flat-map-conditional-to-filter-or-fail
             Effect.flatMap((output) =>
               Schema.is(XmlRpcContract.FaultError)(output)
-                ? Effect.fail(output)
+                ? // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
+                  Effect.fail(output as XmlRpcContract.FaultError)
                 : Effect.succeed(output),
             ),
           ),

@@ -22,7 +22,7 @@ export namespace TenantsContract {
 
   export const IdFromUnpaddedBase32String = UnpaddedBase32.pipe(
     Schema.decodeTo(TenantId, {
-      decode: SchemaGetter.transformOrFail((base32, options) =>
+      decode: SchemaGetter.transformEffect((base32, options) =>
         Effect.try({
           try: () => decodeBase32IgnorePadding(base32),
           catch: (error) =>

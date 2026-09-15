@@ -20,7 +20,7 @@ import * as SchemaGetter from "effect/SchemaGetter";
 
 export const TenantActorFromEvent = Schema.Struct({ tenantId: TenantId }).pipe(
   Schema.decodeTo(ActorsContract.TenantActor, {
-    decode: SchemaGetter.transformOrFail(({ tenantId }) =>
+    decode: SchemaGetter.transformEffect(({ tenantId }) =>
       ActorsContract.TenantActor.makeEffect({ id: tenantId }),
     ),
     encode: SchemaGetter.forbidden(() => "Not implemented"),

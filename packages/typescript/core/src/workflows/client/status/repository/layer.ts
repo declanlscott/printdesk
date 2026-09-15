@@ -17,7 +17,7 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 export const makeService = Effect.gen(function* () {
   const repository = yield* repositoryFactory(WorkflowStatusesContract.Table);
 
-  const findLastByWorkflowId = (workflowId: EntityId) =>
+  const findLastByWorkflowId = Effect.fn((workflowId: EntityId) =>
     repository
       .findWhere((ws) =>
         ws.roomWorkflowId === workflowId || ws.sharedAccountWorkflowId === workflowId
@@ -28,29 +28,32 @@ export const makeService = Effect.gen(function* () {
         Effect.map(Array.sortBy(Order.mapInput(Order.Number, Struct.get("index")))),
         Effect.map(Array.last),
         Effect.flatMap(Effect.fromOption),
-      );
-
-  const findSlice = (
-    id: typeof WorkflowStatusesContract.Table.Model.Type.id,
-    index: typeof WorkflowStatusesContract.Table.Model.Type.index,
-  ) =>
-    repository.findById(id).pipe(
-      Effect.flatMap((workflowStatus) =>
-        repository.findWhere((ws) =>
-          (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
-            ws.sharedAccountWorkflowId === workflowStatus.sharedAccountWorkflowId) &&
-          Number.between(ws.index, {
-            minimum: Number.min(workflowStatus.index, index),
-            maximum: Number.max(workflowStatus.index, index),
-          })
-            ? Result.succeed(ws)
-            : Result.failVoid,
-        ),
       ),
-      Effect.map(Array.sortBy(Order.mapInput(Order.Number, Struct.get("index")))),
-    );
+  );
 
-  const findTailSliceById = (id: typeof WorkflowStatusesContract.Table.Model.Type.id) =>
+  const findSlice = Effect.fn(
+    (
+      id: typeof WorkflowStatusesContract.Table.Model.Type.id,
+      index: typeof WorkflowStatusesContract.Table.Model.Type.index,
+    ) =>
+      repository.findById(id).pipe(
+        Effect.flatMap((workflowStatus) =>
+          repository.findWhere((ws) =>
+            (ws.roomWorkflowId === workflowStatus.roomWorkflowId ||
+              ws.sharedAccountWorkflowId === workflowStatus.sharedAccountWorkflowId) &&
+            Number.between(ws.index, {
+              minimum: Number.min(workflowStatus.index, index),
+              maximum: Number.max(workflowStatus.index, index),
+            })
+              ? Result.succeed(ws)
+              : Result.failVoid,
+          ),
+        ),
+        Effect.map(Array.sortBy(Order.mapInput(Order.Number, Struct.get("index")))),
+      ),
+  );
+
+  const findTailSliceById = Effect.fn((id: typeof WorkflowStatusesContract.Table.Model.Type.id) =>
     repository
       .findById(id)
       .pipe(
@@ -63,7 +66,8 @@ export const makeService = Effect.gen(function* () {
               : Result.failVoid,
           ),
         ),
-      );
+      ),
+  );
 
   return {
     ...repository,

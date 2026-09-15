@@ -21,37 +21,42 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountCustomerAccessRepository = yield* SharedAccountCustomerAccessRepository;
   const sharedAccountManagerAccessRepository = yield* SharedAccountManagerAccessRepository;
 
-  const findActiveCustomerAuthorized = (
-    customerId: typeof SharedAccountCustomerAccessContract.Table.Model.Type.customerId,
-    id: typeof SharedAccountWorkflowsContract.Table.Model.Type.id,
-  ) =>
-    repository
-      .findById(id)
-      .pipe(
+  const findActiveCustomerAuthorized = Effect.fn(
+    (
+      customerId: typeof SharedAccountCustomerAccessContract.Table.Model.Type.customerId,
+      id: typeof SharedAccountWorkflowsContract.Table.Model.Type.id,
+    ) =>
+      repository
+        .findById(id)
+        .pipe(
+          Effect.flatMap((workflow) =>
+            sharedAccountCustomerAccessRepository.findWhere((access) =>
+              access.sharedAccountId === workflow.sharedAccountId &&
+              access.customerId === customerId
+                ? Result.succeed(workflow)
+                : Result.failVoid,
+            ),
+          ),
+        ),
+  );
+
+  const findActiveManagerAuthorized = Effect.fn(
+    (
+      managerId: typeof SharedAccountManagerAccessContract.Table.Model.Type.managerId,
+      id: typeof SharedAccountWorkflowsContract.Table.Model.Type.id,
+    ) =>
+      repository.findById(id).pipe(
         Effect.flatMap((workflow) =>
-          sharedAccountCustomerAccessRepository.findWhere((access) =>
-            access.sharedAccountId === workflow.sharedAccountId && access.customerId === customerId
+          sharedAccountManagerAccessRepository.findWhere((access) =>
+            access.sharedAccountId === workflow.sharedAccountId && access.managerId === managerId
               ? Result.succeed(workflow)
               : Result.failVoid,
           ),
         ),
-      );
-
-  const findActiveManagerAuthorized = (
-    managerId: typeof SharedAccountManagerAccessContract.Table.Model.Type.managerId,
-    id: typeof SharedAccountWorkflowsContract.Table.Model.Type.id,
-  ) =>
-    repository.findById(id).pipe(
-      Effect.flatMap((workflow) =>
-        sharedAccountManagerAccessRepository.findWhere((access) =>
-          access.sharedAccountId === workflow.sharedAccountId && access.managerId === managerId
-            ? Result.succeed(workflow)
-            : Result.failVoid,
-        ),
+        Effect.map(Array.head),
+        Effect.flatMap(Effect.fromOption),
       ),
-      Effect.map(Array.head),
-      Effect.flatMap(Effect.fromOption),
-    );
+  );
 
   return {
     ...repository,

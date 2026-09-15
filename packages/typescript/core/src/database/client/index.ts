@@ -35,7 +35,7 @@ export class Database extends Context.Service<Database>()(
   "@printdesk/core/database/client/Database",
   {
     make: Effect.sync(() => {
-      const scan = <TTable extends Models.SyncTable>(table: TTable) =>
+      const scan = Effect.fn(<TTable extends Models.SyncTable>(table: TTable) =>
         ReadTransaction.pipe(
           Effect.flatMap((tx) =>
             Effect.tryPromise({
@@ -48,65 +48,73 @@ export class Database extends Context.Service<Database>()(
               Schema.ConstraintDecoder<ReadonlyArray<TTable["Dto"]["Type"]>>
             >(table.Dto.pipe(Schema.Array)),
           ),
-        );
+        ),
+      );
 
-      const get = <TTable extends Models.SyncTable>(
-        table: TTable,
-        id: TTable["Model"]["Type"]["id"],
-      ) =>
-        ReadTransaction.pipe(
-          Effect.flatMap((tx) =>
-            Effect.tryPromise({
-              try: () => tx.get(`${table.name}/${id}`),
-              catch: (cause) => new ReadTransactionError({ cause }),
-            }),
-          ),
-          Effect.filterOrFail(Predicate.isNotUndefined),
-          Effect.flatMap(
-            Schema.decodeUnknownEffect<Schema.ConstraintDecoder<TTable["Dto"]["Type"]>>(table.Dto),
-          ),
-        );
-
-      const set = <TTable extends Models.SyncTable>(
-        table: TTable,
-        id: TTable["Dto"]["Type"]["id"],
-        value: TTable["Dto"]["Type"],
-      ) =>
-        Effect.succeed(value).pipe(
-          Effect.flatMap(
-            Schema.encodeEffect<Schema.ConstraintEncoder<TTable["Dto"]["Encoded"]>>(table.Dto),
-          ),
-          Effect.tap((encoded) =>
-            WriteTransaction.pipe(
-              Effect.flatMap((tx) =>
-                Effect.tryPromise({
-                  try: () => tx.set(`${table.name}/${id}`, encoded),
-                  catch: (cause) => new WriteTransactionError({ cause }),
-                }),
+      const get = Effect.fn(
+        <TTable extends Models.SyncTable>(table: TTable, id: TTable["Model"]["Type"]["id"]) =>
+          ReadTransaction.pipe(
+            Effect.flatMap((tx) =>
+              Effect.tryPromise({
+                try: () => tx.get(`${table.name}/${id}`),
+                catch: (cause) => new ReadTransactionError({ cause }),
+              }),
+            ),
+            Effect.filterOrFail(Predicate.isNotUndefined),
+            Effect.flatMap(
+              Schema.decodeUnknownEffect<Schema.ConstraintDecoder<TTable["Dto"]["Type"]>>(
+                table.Dto,
               ),
             ),
           ),
-          Effect.andThen(() => get(table, id)),
-        );
+      );
 
-      const del = <TTable extends Models.SyncTable>(
-        table: TTable,
-        id: TTable["Dto"]["Type"]["id"],
-      ) =>
-        get(table, id).pipe(
-          Effect.tap(() =>
-            WriteTransaction.pipe(
-              Effect.flatMap((tx) =>
-                Effect.tryPromise({
-                  try: () => tx.del(`${table.name}${id}`),
-                  catch: (cause) => new WriteTransactionError({ cause }),
-                }),
+      const set = Effect.fn(
+        <TTable extends Models.SyncTable>(
+          table: TTable,
+          id: TTable["Dto"]["Type"]["id"],
+          value: TTable["Dto"]["Type"],
+        ) =>
+          Effect.succeed(value).pipe(
+            Effect.flatMap(
+              Schema.encodeEffect<Schema.ConstraintEncoder<TTable["Dto"]["Encoded"]>>(table.Dto),
+            ),
+            Effect.tap((encoded) =>
+              WriteTransaction.pipe(
+                Effect.flatMap((tx) =>
+                  Effect.tryPromise({
+                    try: () => tx.set(`${table.name}/${id}`, encoded),
+                    catch: (cause) => new WriteTransactionError({ cause }),
+                  }),
+                ),
+              ),
+            ),
+            Effect.andThen(() => get(table, id)),
+          ),
+      );
+
+      const del = Effect.fn(
+        <TTable extends Models.SyncTable>(table: TTable, id: TTable["Dto"]["Type"]["id"]) =>
+          get(table, id).pipe(
+            Effect.tap(() =>
+              WriteTransaction.pipe(
+                Effect.flatMap((tx) =>
+                  Effect.tryPromise({
+                    try: () => tx.del(`${table.name}${id}`),
+                    catch: (cause) => new WriteTransactionError({ cause }),
+                  }),
+                ),
               ),
             ),
           ),
-        );
+      );
 
-      return { scan, get, set, del } as const;
+      return {
+        scan,
+        get,
+        set,
+        del,
+      } as const;
     }),
   },
 ) {

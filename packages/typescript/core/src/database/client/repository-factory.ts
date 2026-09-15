@@ -13,13 +13,15 @@ export const repositoryFactory = Effect.fn(function* <TTable extends Models.Sync
 
   const findAll = scan(table);
 
-  const findById = (id: TTable["Dto"]["Type"]["id"]) => get(table, id);
+  const findById = Effect.fn((id: TTable["Dto"]["Type"]["id"]) => get(table, id));
 
-  const findWhere = <TValue>(
-    filter: (value: TTable["Dto"]["Type"], index: number) => Result.Result<TValue, void>,
-  ) => findAll.pipe(Effect.map(Array.filterMap(filter)));
+  const findWhere = Effect.fn(
+    <TValue>(
+      filter: (value: TTable["Dto"]["Type"], index: number) => Result.Result<TValue, void>,
+    ) => findAll.pipe(Effect.map(Array.filterMap(filter))),
+  );
 
-  const create = (value: TTable["Dto"]["Type"]) => set(table, value.id, value);
+  const create = Effect.fn((value: TTable["Dto"]["Type"]) => set(table, value.id, value));
 
   const updateById = Effect.fn(function* <TGetUpdateError, TGetUpdateServices>(
     id: TTable["Dto"]["Type"]["id"],

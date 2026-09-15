@@ -17,46 +17,50 @@ export const makeService = Effect.gen(function* () {
   const managerAccessRepository = yield* SharedAccountManagerAccessRepository;
   const customerGroupAccessRepository = yield* SharedAccountGroupCustomerAccessRepository;
 
-  const findActiveAuthorizedCustomerIds = (id: typeof SharedAccountsContract.Table.Model.Type.id) =>
-    repository
-      .findById(id)
-      .pipe(
-        Effect.flatMap((sharedAccount) =>
-          customerAccessRepository.findWhere((access) =>
-            access.sharedAccountId === sharedAccount.id && access.deletedAt === null
-              ? Result.succeed(access.customerId)
-              : Result.failVoid,
+  const findActiveAuthorizedCustomerIds = Effect.fn(
+    (id: typeof SharedAccountsContract.Table.Model.Type.id) =>
+      repository
+        .findById(id)
+        .pipe(
+          Effect.flatMap((sharedAccount) =>
+            customerAccessRepository.findWhere((access) =>
+              access.sharedAccountId === sharedAccount.id && access.deletedAt === null
+                ? Result.succeed(access.customerId)
+                : Result.failVoid,
+            ),
           ),
         ),
-      );
+  );
 
-  const findActiveAuthorizedManagerIds = (id: typeof SharedAccountsContract.Table.Model.Type.id) =>
-    repository
-      .findById(id)
-      .pipe(
-        Effect.flatMap((sharedAccount) =>
-          managerAccessRepository.findWhere((access) =>
-            access.sharedAccountId === sharedAccount.id && access.deletedAt === null
-              ? Result.succeed(access.managerId)
-              : Result.failVoid,
+  const findActiveAuthorizedManagerIds = Effect.fn(
+    (id: typeof SharedAccountsContract.Table.Model.Type.id) =>
+      repository
+        .findById(id)
+        .pipe(
+          Effect.flatMap((sharedAccount) =>
+            managerAccessRepository.findWhere((access) =>
+              access.sharedAccountId === sharedAccount.id && access.deletedAt === null
+                ? Result.succeed(access.managerId)
+                : Result.failVoid,
+            ),
           ),
         ),
-      );
+  );
 
-  const findActiveAuthorizedCustomerGroupIds = (
-    id: typeof SharedAccountsContract.Table.Model.Type.id,
-  ) =>
-    repository
-      .findById(id)
-      .pipe(
-        Effect.flatMap((sharedAccount) =>
-          customerGroupAccessRepository.findWhere((access) =>
-            access.sharedAccountId === sharedAccount.id && access.deletedAt === null
-              ? Result.succeed(access.groupId)
-              : Result.failVoid,
+  const findActiveAuthorizedCustomerGroupIds = Effect.fn(
+    (id: typeof SharedAccountsContract.Table.Model.Type.id) =>
+      repository
+        .findById(id)
+        .pipe(
+          Effect.flatMap((sharedAccount) =>
+            customerGroupAccessRepository.findWhere((access) =>
+              access.sharedAccountId === sharedAccount.id && access.deletedAt === null
+                ? Result.succeed(access.groupId)
+                : Result.failVoid,
+            ),
           ),
         ),
-      );
+  );
 
   return {
     ...repository,

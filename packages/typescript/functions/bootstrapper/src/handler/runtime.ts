@@ -12,7 +12,7 @@ import * as Config from "@printdesk/core/config/layer";
 import * as Crypto from "@printdesk/core/crypto/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
-import * as PgClient from "@printdesk/core/database/postgres";
+import * as PgClient from "@printdesk/core/database/pg";
 import { Graph } from "@printdesk/core/graph";
 import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
 import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";

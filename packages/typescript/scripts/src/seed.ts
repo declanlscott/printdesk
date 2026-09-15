@@ -1,5 +1,5 @@
 import { Drizzle } from "@printdesk/core/database/drizzle";
-import * as PgClient from "@printdesk/core/database/postgres";
+import * as PgClient from "@printdesk/core/database/pg";
 import { replicacheMetaTable } from "@printdesk/core/replicache/sql";
 import { SstResource } from "@printdesk/core/sst/resource";
 import { Constants } from "@printdesk/core/utils/constants";

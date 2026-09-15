@@ -3,7 +3,7 @@ import * as ClientsRepository from "@printdesk/core/clients/repository/layer";
 import * as Crypto from "@printdesk/core/crypto/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
-import * as PgClient from "@printdesk/core/database/postgres";
+import * as PgClient from "@printdesk/core/database/pg";
 import * as IdentityRepository from "@printdesk/core/identity/repository/layer";
 import * as Oauth from "@printdesk/core/oauth/layer";
 import { SstResource } from "@printdesk/core/sst/resource";

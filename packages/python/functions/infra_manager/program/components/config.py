@@ -21,22 +21,6 @@ class Config:
             opts=opts,
         )
 
-        self._api_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
-            resource_name="ConfigApiClientCredentialsConfigurationProfile",
-            args=aws.appconfig.ConfigurationProfileArgs(
-                application_id=Resource.AppconfigApplication.id,
-                type="AWS.Freeform",
-                location_uri="hosted",
-                name=pulumi.Output.from_input(args.tenant_id).apply(
-                    lambda tenant_id: naming.template(
-                        name_template=Resource.ApiClientCredentialsConfigurationProfileTemplate.name,
-                        tenant_id=tenant_id,
-                    )
-                ),
-            ),
-            opts=pulumi.ResourceOptions(parent=self),
-        )
-
         self._invoices_processor_client_credentials_configuration_profile = aws.appconfig.ConfigurationProfile(
             resource_name="ConfigInvoicesProcessorClientCredentialsConfigurationProfile",
             args=aws.appconfig.ConfigurationProfileArgs(
@@ -110,7 +94,6 @@ class Config:
                     aws.iam.RoleInlinePolicyArgs(
                         policy=aws.iam.get_policy_document_output(
                             statements=pulumi.Output.all(
-                                api_client_credentials_configuration_profile=self._api_client_credentials_configuration_profile.arn,
                                 invoices_processor_client_credentials_configuration_profile=self._invoices_processor_client_credentials_configuration_profile.arn,
                                 papercut_mf_api_auth_token_configuration_profile=self._papercut_mf_api_auth_token_configuration_profile.arn,
                                 papercut_mf_sync_client_credentials_configuration_profile=self._papercut_mf_sync_client_credentials_configuration_profile.arn,
@@ -122,9 +105,6 @@ class Config:
                                         ],
                                         resources=[
                                             Resource.AppconfigApplication.arn,
-                                            arns[
-                                                "api_client_credentials_configuration_profile"
-                                            ],
                                             arns[
                                                 "invoices_processor_client_credentials_configuration_profile"
                                             ],
@@ -143,9 +123,6 @@ class Config:
                                             Resource.AppconfigApplication.arn,
                                             Resource.AppconfigEnvironment.arn,
                                             Resource.AppconfigLinear20PercentEvery6MinutesDeploymentStrategy.arn,
-                                            arns[
-                                                "api_client_credentials_configuration_profile"
-                                            ],
                                             arns[
                                                 "invoices_processor_client_credentials_configuration_profile"
                                             ],

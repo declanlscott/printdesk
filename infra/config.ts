@@ -190,12 +190,6 @@ export const appconfigAgentExtensionTransform: Transform<aws.lambda.FunctionArgs
     ];
 };
 
-export const apiClientCredentialsConfigurationProfileTemplate =
-  new lib.templates.aws.appconfig.ConfigurationProfile(
-    "ApiClientCredentialsConfigurationProfileTemplate",
-    { identifier: "ApiClientCredentials" },
-  );
-
 export const papercutMfApiAuthTokenConfigurationProfileTemplate =
   new lib.templates.aws.appconfig.ConfigurationProfile(
     "PapercutMfApiAuthTokenConfigurationProfileTemplate",

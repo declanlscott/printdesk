@@ -9,7 +9,6 @@ import {
   appconfigAgentExtensionTransform,
   appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
   appconfigRoleTemplate,
-  apiClientCredentialsConfigurationProfileTemplate,
   papercutMfApiAuthTokenConfigurationProfileTemplate,
 } from "./config";
 import { dsql, dynamo } from "./db";
@@ -30,7 +29,6 @@ export const api = new lib.aws.lambda.Function(
     handler: "packages/typescript/functions/api/src/index.default",
     url: { authorization: "iam" },
     link: [
-      apiClientCredentialsConfigurationProfileTemplate,
       appconfigAgent,
       appconfigAllAtOnceDeploymentStrategy,
       appconfigApplication,

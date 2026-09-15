@@ -6,7 +6,6 @@ import { api } from "./api";
 import { assetsBucket, assetsBucketAccessPointTemplate, assetsRouter } from "./assets";
 import { issuer } from "./auth";
 import {
-  apiClientCredentialsConfigurationProfileTemplate,
   appconfigAllAtOnceDeploymentStrategy,
   appconfigApplication,
   appconfigEnvironment,
@@ -69,7 +68,6 @@ export const infraManager = dynamo.subscribe(
     },
     link: [
       api,
-      apiClientCredentialsConfigurationProfileTemplate,
       appconfigAllAtOnceDeploymentStrategy,
       appconfigApplication,
       appconfigEnvironment,

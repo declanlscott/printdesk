@@ -8,7 +8,6 @@ import {
   appconfigAgentExtensionTransform,
   appconfigLinear20PercentEvery6MinutesDeploymentStrategy,
   appconfigRoleTemplate,
-  apiClientCredentialsConfigurationProfileTemplate,
   invoicesProcessorClientCredentialsConfigurationProfileTemplate,
   papercutMfSyncClientCredentialsConfigurationProfileTemplate,
 } from "./config";
@@ -22,7 +21,6 @@ export const bootstrapper = new sst.aws.Workflow(
   {
     handler: "packages/typescript/functions/bootstrapper/src/index.default",
     link: [
-      apiClientCredentialsConfigurationProfileTemplate,
       appconfigAgent,
       appconfigAllAtOnceDeploymentStrategy,
       appconfigApplication,

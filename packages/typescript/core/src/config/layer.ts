@@ -35,15 +35,7 @@ export const makeService = Effect.gen(function* () {
     Match.exhaustive,
   );
 
-  const apiClientCredentialsProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
-    Effect.map(
-      tenantTemplate(
-        resource.ApiClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value).name,
-      ),
-    ),
-  );
-
-  const papercutMfApiAuthTokenProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
+  const papercutMfApiAuthTokenProfileIdEffect = Actor.tenantId.pipe(
     Effect.map(
       tenantTemplate(
         resource.PapercutMfApiAuthTokenConfigurationProfileTemplate.pipe(Redacted.value).name,
@@ -67,27 +59,6 @@ export const makeService = Effect.gen(function* () {
           .name,
       ),
     ),
-  );
-
-  const getApiClientCredentials = apiClientCredentialsProfileIdEffect.pipe(
-    Effect.andThen((profileId) =>
-      agent.getConfiguration(profileId, OauthContract.ClientCredentials),
-    ),
-    Effect.withSpan("Config.getApiClientCredentials"),
-  );
-
-  const setApiClientCredentials = Effect.fn("Config.setApiClientCredentials")(
-    (value: OauthContract.ClientCredentials, deploymentStrategy: DeploymentStrategy = "slow") =>
-      apiClientCredentialsProfileIdEffect.pipe(
-        Effect.andThen((profileId) =>
-          appconfig.publish({
-            profileId,
-            Codec: OauthContract.ClientCredentials,
-            deploymentStrategyId: matchDeploymentStrategyId(deploymentStrategy),
-            value,
-          }),
-        ),
-      ),
   );
 
   const getPapercutMfApiAuthToken = papercutMfApiAuthTokenProfileIdEffect.pipe(
@@ -157,8 +128,6 @@ export const makeService = Effect.gen(function* () {
   );
 
   return {
-    getApiClientCredentials,
-    setApiClientCredentials,
     getPapercutMfApiAuthToken,
     setPapercutMfApiAuthToken,
     getPapercutMfSyncClientCredentials,

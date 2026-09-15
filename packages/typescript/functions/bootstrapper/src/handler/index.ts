@@ -42,6 +42,7 @@ export async function handler(
   event: typeof BootstrapContract.Payload.Encoded,
   context: DurableContext,
 ) {
+  // oxlint-disable-next-line effecttsgo/schema-sync
   const payload = Schema.decodeSync(BootstrapContract.Payload)(event);
 
   await context.step("set-license-expiration", () =>
@@ -120,6 +121,7 @@ export async function handler(
       serdes: {
         deserialize: async (data) =>
           Option.fromUndefinedOr(data).pipe(
+            // oxlint-disable-next-line effecttsgo/schema-sync
             Option.map(Schema.decodeSync(InfraContract.OutputItem.pipe(Schema.fromJsonString))),
             Option.getOrUndefined,
           ),
@@ -134,22 +136,6 @@ export async function handler(
         const clientsRepository = yield* ClientsRepository;
         const config = yield* Config;
         const crypto = yield* Crypto;
-
-        const apiClientSecret = yield* crypto.generateToken();
-        const apiClientSecretHash = yield* apiClientSecret.pipe(crypto.hashSecret);
-        yield* clientsRepository
-          .create({
-            name: "API Client",
-            secretHash: apiClientSecretHash,
-            role: "api",
-            scopes: ["api"],
-            tenantId,
-          })
-          .pipe(
-            Effect.andThen(({ id }) =>
-              config.setApiClientCredentials({ id, secret: apiClientSecret }, "fast"),
-            ),
-          );
 
         const invoicesProcessorClientSecret = yield* crypto.generateToken();
         const invoicesProcessorClientSecretHash = yield* invoicesProcessorClientSecret.pipe(

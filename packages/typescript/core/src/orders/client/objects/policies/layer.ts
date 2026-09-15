@@ -2,22 +2,22 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Struct from "effect/Struct";
 
-import { OrderObjectsPolicies } from ".";
+import { OrderObjectMetadataPolicies } from ".";
 import { AccessControl } from "../../../../access-control";
 import { Policy } from "../../../../policies";
-import { OrderObjectsContract } from "../../../contracts";
+import { OrderObjectMetadataContract } from "../../../contracts";
 import { OrdersPolicies } from "../../policies";
-import { OrderObjectsRepository } from "../repository";
+import { OrderObjectMetadataRepository } from "../repository";
 
 export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
-  const repository = yield* OrderObjectsRepository;
+  const repository = yield* OrderObjectMetadataRepository;
 
   const ordersPolicies = yield* OrdersPolicies;
 
-  const canEdit = Policy.make(OrderObjectsContract.canEdit, {
-    make: Effect.fn("OrderObjects.Policies.canEdit.make")(({ id }) =>
+  const canEdit = Policy.make(OrderObjectMetadataContract.canEdit, {
+    make: ({ id }) =>
       AccessControl.userPolicy(
         () =>
           repository.findById(id).pipe(
@@ -26,13 +26,12 @@ export const makeService = Effect.gen(function* () {
             Effect.as(true),
             Effect.catchTag("AccessDeniedError", () => Effect.succeed(false)),
           ),
-        { name: OrderObjectsContract.Table.name, id },
+        { name: OrderObjectMetadataContract.Table.name, id },
       ),
-    ),
   });
 
-  const canDelete = Policy.make(OrderObjectsContract.canDelete, {
-    make: Effect.fn("OrderObjects.Policies.canDelete.make")(canEdit.make),
+  const canDelete = Policy.make(OrderObjectMetadataContract.canDelete, {
+    make: canEdit.make,
   });
 
   return {
@@ -41,4 +40,4 @@ export const makeService = Effect.gen(function* () {
   } as const;
 });
 
-export const layer = makeService.pipe(Layer.effect(OrderObjectsPolicies));
+export const layer = makeService.pipe(Layer.effect(OrderObjectMetadataPolicies));

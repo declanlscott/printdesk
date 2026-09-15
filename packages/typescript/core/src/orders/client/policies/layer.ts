@@ -78,7 +78,7 @@ export const makeService = Effect.gen(function* () {
 
   const canEdit = Policy.make(OrdersContract.canEdit, {
     make: ({ id }) =>
-      repository.findByIdWithWorkflowStatus(id).pipe(
+      repository.findWithWorkflowStatusById(id).pipe(
         Effect.map(({ order, workflowStatus }) =>
           Match.value(order).pipe(
             Match.when({ deletedAt: Match.null }, (o) =>
@@ -101,7 +101,7 @@ export const makeService = Effect.gen(function* () {
 
   const canApprove = Policy.make(OrdersContract.canApprove, {
     make: ({ id }) =>
-      repository.findByIdWithWorkflowStatus(id).pipe(
+      repository.findWithWorkflowStatusById(id).pipe(
         Effect.map(({ order }) =>
           Match.value(order).pipe(
             Match.when({ deletedAt: Match.null }, (o) => o.sharedAccountWorkflowStatusId !== null),
@@ -114,7 +114,7 @@ export const makeService = Effect.gen(function* () {
 
   const canTransition = Policy.make(OrdersContract.canTransition, {
     make: ({ id }) =>
-      repository.findByIdWithWorkflowStatus(id).pipe(
+      repository.findWithWorkflowStatusById(id).pipe(
         Effect.map(({ order, workflowStatus }) =>
           Match.value(order).pipe(
             Match.when({ deletedAt: Match.null }, () => workflowStatus.type !== "Completed"),

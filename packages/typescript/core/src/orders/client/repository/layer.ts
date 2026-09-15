@@ -17,7 +17,7 @@ export const makeService = Effect.gen(function* () {
   const workflowStatusesRepository = yield* WorkflowStatusesRepository;
   const sharedAccountManagerAccessRepository = yield* SharedAccountManagerAccessRepository;
 
-  const findByIdWithWorkflowStatus = Effect.fn(function* (
+  const findWithWorkflowStatusById = Effect.fn(function* (
     id: typeof OrdersContract.Table.Model.Type.id,
   ) {
     const order = yield* repository.findById(id);
@@ -29,15 +29,16 @@ export const makeService = Effect.gen(function* () {
     return { order, workflowStatus };
   });
 
-  const findByWorkflowStatusId = (workflowStatusId: EntityId) =>
+  const findByWorkflowStatusId = Effect.fn((workflowStatusId: EntityId) =>
     repository.findWhere((order) =>
       order.roomWorkflowStatusId === workflowStatusId ||
       order.sharedAccountWorkflowStatusId === workflowStatusId
         ? Result.succeed(order)
         : Result.failVoid,
-    );
+    ),
+  );
 
-  const findActiveManagerIds = (id: typeof OrdersContract.Table.Model.Type.id) =>
+  const findActiveManagerIds = Effect.fn((id: typeof OrdersContract.Table.Model.Type.id) =>
     repository
       .findById(id)
       .pipe(
@@ -48,11 +49,12 @@ export const makeService = Effect.gen(function* () {
               : Result.failVoid,
           ),
         ),
-      );
+      ),
+  );
 
   return {
     ...repository,
-    findByIdWithWorkflowStatus,
+    findWithWorkflowStatusById,
     findByWorkflowStatusId,
     findActiveManagerIds,
   } as const;

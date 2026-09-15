@@ -78,7 +78,7 @@ export const makeService = Effect.gen(function* () {
 
                     yield* Effect.log(
                       `[Orders.ShortIdGenerator]: Generation attempt #${metadata.attempt} failed, ${isRetryable ? `retrying again in ${metadata.duration.pipe(Duration.format)}` : "not retryable"}:`,
-                      Cause.fail(metadata.input),
+                      Cause.fail(metadata.input).pipe(Cause.pretty),
                     );
 
                     return isRetryable;

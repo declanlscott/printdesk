@@ -1,5 +1,7 @@
+import type * as ByteSize from "effect/ByteSize";
 import type * as Duration from "effect/Duration";
 import type * as Cookies from "effect/unstable/http/Cookies";
+
 export namespace Constants {
   export const TENANT_ID_PLACEHOLDER = "{{tenant_id}}";
 
@@ -43,6 +45,7 @@ export namespace Constants {
   export const OPENAUTH_CLIENT_IDS = {
     API: "api",
     API_GATEWAY: "api-gateway",
+    ASSETS: "assets",
     BOOTSTRAPPER: "bootstrapper",
     INVOICES_PROCESSOR: "invoices-processor",
     PAPERCUT_MF_API_GATEWAY: "papercut-mf-api-gateway",
@@ -101,21 +104,22 @@ export namespace Constants {
   export const GRAPH_REQUEST_BATCH_SIZE = 50;
   export const GRAPH_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
 
-  export const ASSETS_MIME_TYPES = [
-    "image/jpeg",
-    "image/png",
-    "image/svg+xml",
-    "image/gif",
-  ] as const;
-
   export const WEB_BFF_PATHS = {
     login: "/login",
     oauthCallback: "/oauth/callback",
   } as const;
 
+  export const IMAGE_MIME_TYPE_WHITELIST = [
+    "image/jpeg",
+    "image/png",
+    "image/svg+xml",
+    "image/gif",
+  ] as const;
+  export const IMAGE_BYTE_SIZE_LIMIT = "250 kB" satisfies ByteSize.Input;
+
   export const DEFAULT_PAPERCUT_MF_SYNC_CRON_EXPRESSION = "55 1 * * ? *";
-  export const DEFAULT_DOCUMENTS_MIME_TYPES = ["application/pdf"] as const;
-  export const DEFAULT_DOCUMENTS_SIZE_LIMIT = 1024 * 1024 * 10; // 10MB
+  export const DEFAULT_ORDER_OBJECT_MIME_TYPE_WHITELIST = ["application/pdf"] as const;
+  export const DEFAULT_ORDER_OBJECT_BYTE_SIZE_LIMIT = "10 MB" satisfies ByteSize.Input;
 
   /** This order of characters is optimized for better gzip and brotli compression. */
   export const NANOID_ALPHABET = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict";

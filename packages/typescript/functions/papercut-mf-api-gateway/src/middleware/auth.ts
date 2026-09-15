@@ -8,7 +8,6 @@ import * as Exit from "effect/Exit";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
-import * as Struct from "effect/Struct";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
@@ -31,7 +30,7 @@ export const auth = createMiddleware((c, next) =>
       Effect.flatMap(({ accessToken }) => Openauth.use((openauth) => openauth.verify(accessToken))),
       Effect.flatMap(({ subject }) =>
         AccessControl.every(
-          Actor.use(Struct.get("tenantId")).pipe(
+          Actor.tenantId.pipe(
             Effect.map(Equal.equals(resource.TENANT_ID.pipe(Redacted.value))),
             AccessControl.policy("papercut_mf_api_gateway", "read"),
           ),

@@ -62,7 +62,7 @@ export const makeService = Effect.gen(function* () {
   const groupMembershipsRepository = yield* GroupMembershipsRepository;
   const usersRepository = yield* UsersRepository;
 
-  const tenantIdEffect = Actor.use(Struct.get("tenantId")).pipe(
+  const tenantIdEffect = Actor.tenantId.pipe(
     Effect.mapError((error) => new ScimContract.V2Error({ status: 403, detail: error.message })),
   );
 

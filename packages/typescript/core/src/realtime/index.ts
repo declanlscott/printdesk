@@ -91,7 +91,7 @@ export class Realtime extends Context.Service<Realtime>()("@printdesk/core/realt
     );
 
     const publish = Effect.fn("Realtime.publish")((eventHandler: RealtimeContract.EventHandler) =>
-      Actor.use(Struct.get("tenantId")).pipe(
+      Actor.tenantId.pipe(
         Effect.flatMap((tenantId) =>
           Effect.request(new PublishRequest({ eventHandler, tenantId }), publishResolver),
         ),

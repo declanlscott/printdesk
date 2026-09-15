@@ -56,7 +56,7 @@ export const makeService = Effect.gen(function* () {
   const usersRepository = yield* UsersRepository;
 
   const syncSharedAccounts = Effect.gen(function* () {
-    const tenantId = yield* Actor.use(Struct.get("tenantId"));
+    const tenantId = yield* Actor.tenantId;
 
     const [prev, next] = yield* Effect.all(
       [
@@ -140,7 +140,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutMfSynchronizer.syncSharedAccounts"));
 
   const syncSharedAccountCustomerAccess = Effect.gen(function* () {
-    const tenantId = yield* Actor.use(Struct.get("tenantId"));
+    const tenantId = yield* Actor.tenantId;
 
     const lookup = yield* Effect.all(
       {
@@ -255,7 +255,7 @@ export const makeService = Effect.gen(function* () {
   }).pipe(Effect.withSpan("PapercutMfSynchronizer.syncSharedAccountCustomerAccess"));
 
   const syncSharedAccountCustomerGroupAccess = Effect.gen(function* () {
-    const tenantId = yield* Actor.use(Struct.get("tenantId"));
+    const tenantId = yield* Actor.tenantId;
 
     const lookup = yield* Effect.all(
       {

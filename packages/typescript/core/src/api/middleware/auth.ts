@@ -10,11 +10,13 @@ import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
 
-import { ActorLayerMap, type Actor } from "../../actors";
+import { ActorLayerMap } from "../../actors";
 import { Oauth } from "../../oauth";
 import { OauthContract } from "../../oauth/contract";
 import { Openauth } from "../../oauth/openauth";
 import { Constants } from "../../utils/constants";
+
+import type { Actor } from "../../actors";
 
 export class AuthMiddleware extends HttpApiMiddleware.Service<
   AuthMiddleware,

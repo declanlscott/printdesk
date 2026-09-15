@@ -43,7 +43,7 @@ export const makeService = Effect.gen(function* () {
     ),
   );
 
-  const papercutMfSyncClientCredentialsProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
+  const papercutMfSyncClientCredentialsProfileIdEffect = Actor.tenantId.pipe(
     Effect.map(
       tenantTemplate(
         resource.PapercutMfSyncClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)
@@ -52,7 +52,7 @@ export const makeService = Effect.gen(function* () {
     ),
   );
 
-  const invoicesProcessorClientCredentialsProfileIdEffect = Actor.use(Struct.get("tenantId")).pipe(
+  const invoicesProcessorClientCredentialsProfileIdEffect = Actor.tenantId.pipe(
     Effect.map(
       tenantTemplate(
         resource.InvoicesProcessorClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)

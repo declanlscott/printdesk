@@ -17,7 +17,6 @@ import * as Function from "effect/Function";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
-import * as Struct from "effect/Struct";
 
 export const TenantActorFromEvent = Schema.Struct({ tenantId: TenantId }).pipe(
   Schema.decodeTo(ActorsContract.TenantActor, {
@@ -50,7 +49,7 @@ export const handler = Effect.fn(
             openauth
               .clientCredentials(credentials)
               .pipe(Effect.map((result) => result.tokens.access)),
-            Actor.use(Struct.get("tenantId")).pipe(
+            Actor.tenantId.pipe(
               Effect.flatMap((tenantId) => clientsRepository.findById(credentials.id, tenantId)),
               Effect.map((client) => new ActorsContract.ClientActor(client).wrap),
             ),
@@ -86,7 +85,7 @@ export const handler = Effect.fn(
         );
 
         const lastPapercutSyncAt = yield* DateTime.now;
-        yield* Actor.use(Struct.get("tenantId")).pipe(
+        yield* Actor.tenantId.pipe(
           Effect.flatMap((tenantId) =>
             tenantsRepository.updateById(tenantId, { lastPapercutSyncAt }),
           ),

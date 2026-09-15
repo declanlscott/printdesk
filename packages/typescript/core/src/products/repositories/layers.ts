@@ -1,15 +1,18 @@
-import { and, eq, getViewName, inArray, not, notInArray } from "drizzle-orm";
+import { and, eq, getTableColumns, getViewName, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Result from "effect/Result";
 
 import { ProductsRepository, ProductsSyncRepository } from ".";
 import { Database } from "../../database";
+import { ordersTable } from "../../orders/sql";
 import { replicacheClientViewEntries } from "../../replicache/sql";
 import { SyncQueryBuilder } from "../../sync/query-builder";
 import { activeProductsView, activePublishedProductsView, products } from "../sql";
 
 import type { InferInsertModel } from "drizzle-orm";
+import type { Order } from "../../orders/sql";
 import type { ReplicacheClientView } from "../../replicache/sql";
 import type { ActiveProduct, ActivePublishedProduct, Product, ProductsTable } from "../sql";
 
@@ -53,6 +56,37 @@ export const makeRepository = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
+  const findByOrderId = Effect.fn("Products.Repository.findByOrderId")(
+    (orderId: Order["id"], tenantId: Product["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select({ product: getTableColumns(table) })
+            .from(table)
+            .rightJoin(
+              ordersTable,
+              and(eq(table.id, ordersTable.productId), eq(table.tenantId, ordersTable.tenantId)),
+            )
+            .where(
+              and(
+                eq(ordersTable.id, orderId),
+                eq(ordersTable.tenantId, tenantId),
+                eq(table.tenantId, tenantId),
+              ),
+            ),
+        )
+        .pipe(
+          Effect.filterOrFail(Array.isArrayNonEmpty),
+          Effect.flatMap(
+            Effect.filterMap(({ product }) =>
+              product ? Result.succeed(product) : Result.failVoid,
+            ),
+          ),
+          Effect.map(Array.head),
+          Effect.flatMap(Effect.fromOption),
+        ),
+  );
+
   const updateById = Effect.fn("Products.Repository.updateById")(
     (
       id: Product["id"],
@@ -89,6 +123,7 @@ export const makeRepository = Effect.gen(function* () {
     create,
     findById,
     findByIdForUpdate,
+    findByOrderId,
     updateById,
     updateByRoomId,
   } as const;

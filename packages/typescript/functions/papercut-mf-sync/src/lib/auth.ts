@@ -9,7 +9,7 @@ export const openauthLayer = Openauth.issuerLayer(
   Constants.OPENAUTH_CLIENT_IDS.PAPERCUT_MF_SYNC,
 ).pipe(
   Layer.provide([
-    AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain),
+    AwsCredentialIdentityProvider.layerFromProvider(fromNodeProviderChain),
     SstResource.layer,
   ]),
 );

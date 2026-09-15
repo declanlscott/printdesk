@@ -15,6 +15,7 @@ import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
 
 import { SstResource } from "../../sst/resource";
 import { NonEmptyString } from "../../utils";
+import { Constants } from "../../utils/constants";
 import { AwsCredentialIdentity, AwsCredentialIdentityProvider } from "../credential-identity";
 
 import type {
@@ -55,7 +56,7 @@ export const makeSigV4Signer = Effect.fn(function* (service: NonEmptyString) {
   );
 
   const sigv4Cache = yield* Cache.make({
-    capacity: 10,
+    capacity: Constants.DEFAULT_CACHE_CAPACITY,
     lookup: (credentials: AwsCredentialIdentity) =>
       credentials.encode.pipe(
         Effect.flatMap((credentials) =>
@@ -67,9 +68,12 @@ export const makeSigV4Signer = Effect.fn(function* (service: NonEmptyString) {
       ),
   });
 
+  const sigv4 = AwsCredentialIdentityProvider.provide.pipe(
+    Effect.flatMap((credentials) => sigv4Cache.pipe(Cache.get(credentials))),
+  );
+
   const presign = (...args: Parameters<SignatureV4["presign"]>) =>
-    AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
-      Effect.flatMap((credentials) => sigv4Cache.pipe(Cache.get(credentials))),
+    sigv4.pipe(
       Effect.flatMap((sigv4) =>
         Effect.tryPromise({
           try: () => sigv4.presign(...args),
@@ -79,8 +83,7 @@ export const makeSigV4Signer = Effect.fn(function* (service: NonEmptyString) {
     );
 
   const sign = (...args: Parameters<SignatureV4["sign"]>) =>
-    AwsCredentialIdentityProvider.useSync(Struct.get("credentials")).pipe(
-      Effect.flatMap((credentials) => sigv4Cache.pipe(Cache.get(credentials))),
+    sigv4.pipe(
       Effect.flatMap((sigv4) =>
         Effect.tryPromise({
           try: () => sigv4.sign(...args),

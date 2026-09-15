@@ -10,9 +10,9 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Struct from "effect/Struct";
 
-export const openauthLayer = issuerLayer(Constants.OPENAUTH_CLIENT_IDS.PROVISIONER).pipe(
+export const openauthLayer = issuerLayer(Constants.OPENAUTH_CLIENT_IDS.BOOTSTRAPPER).pipe(
   Layer.provide([
-    AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain),
+    AwsCredentialIdentityProvider.layerFromProvider(fromNodeProviderChain),
     SstResource.layer,
   ]),
 );

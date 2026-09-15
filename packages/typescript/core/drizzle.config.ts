@@ -12,7 +12,7 @@ import { layer as dsqlSignerLayer } from "./src/aws/dsql-signer/layer";
 import { SstResource } from "./src/sst/resource";
 
 const configRuntime = dsqlSignerLayer({ expiresIn: Duration.hours(12) }).pipe(
-  Layer.provide(AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain)),
+  Layer.provide(AwsCredentialIdentityProvider.layerFromProvider(fromNodeProviderChain)),
   Layer.provideMerge(SstResource.layer),
   ManagedRuntime.make,
 );

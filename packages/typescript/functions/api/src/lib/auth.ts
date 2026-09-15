@@ -7,7 +7,7 @@ import * as Layer from "effect/Layer";
 
 export const openauthLayer = Openauth.issuerLayer(Constants.OPENAUTH_CLIENT_IDS.API).pipe(
   Layer.provide([
-    AwsCredentialIdentityProvider.providerLayer(fromNodeProviderChain),
+    AwsCredentialIdentityProvider.layerFromProvider(fromNodeProviderChain),
     SstResource.layer,
   ]),
 );

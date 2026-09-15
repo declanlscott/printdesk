@@ -2,6 +2,7 @@ import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
@@ -33,12 +34,10 @@ export class AwsCredentialIdentity extends Schema.Class<AwsCredentialIdentity>(
   accountId: Schema.String.pipe(Schema.RedactedFromValue, Schema.optional),
   expiration: Schema.DateTimeUtcFromDate.pipe(Schema.RedactedFromValue, Schema.optional),
 }) {
-  public get encode() {
-    return Effect.succeed(this).pipe(
-      Effect.flatMap(Schema.encodeEffect(AwsCredentialIdentity)),
-      Effect.orDie,
-    );
-  }
+  public readonly encode = Effect.succeed(this).pipe(
+    Effect.flatMap(Schema.encodeEffect(AwsCredentialIdentity)),
+    Effect.orDie,
+  );
 }
 
 // @effect-leakable-service
@@ -55,18 +54,20 @@ export class AwsCredentialIdentityProvider extends Context.Service<AwsCredential
     }),
   },
 ) {
-  public static fromProvider(provider: () => AwsSdkCredentialIdentityProvider) {
-    return Effect.tryPromise({
+  public static readonly provide = this.useSync(Struct.get("credentials"));
+
+  public static readonly fromProvider = (provider: () => AwsSdkCredentialIdentityProvider) =>
+    Effect.tryPromise({
       try: () => provider()(),
       catch: (cause) => new AwsCredentialIdentityProviderError({ cause }),
     }).pipe(Effect.flatMap(this.make));
-  }
 
-  public static layer(identity: AwsSdkCredentialIdentity) {
-    return this.make(identity).pipe(Layer.effect(this), Layer.fresh);
-  }
+  public static readonly layer = (identity: AwsSdkCredentialIdentity) =>
+    this.make(identity).pipe(Layer.effect(this), Layer.fresh);
 
-  public static providerLayer(provider: () => AwsSdkCredentialIdentityProvider) {
-    return this.fromProvider(provider).pipe(Layer.effect(this), Layer.fresh);
-  }
+  public static readonly layerFromSelf = (self: AwsCredentialIdentityProvider["Service"]) =>
+    Layer.succeed(this, self);
+
+  public static readonly layerFromProvider = (provider: () => AwsSdkCredentialIdentityProvider) =>
+    this.fromProvider(provider).pipe(Layer.effect(this), Layer.fresh);
 }

@@ -43,6 +43,7 @@ export namespace Constants {
   export const OPENAUTH_CLIENT_IDS = {
     API: "api",
     API_GATEWAY: "api-gateway",
+    BOOTSTRAPPER: "bootstrapper",
     INVOICES_PROCESSOR: "invoices-processor",
     PAPERCUT_MF_API_GATEWAY: "papercut-mf-api-gateway",
     PAPERCUT_MF_SYNC: "papercut-mf-sync",

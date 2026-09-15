@@ -22,6 +22,15 @@ export namespace Columns {
     },
   ) => pgVarchar(config);
 
+  export const byteSize = customType<{
+    driverData: typeof Schema.ByteSizeFromNumber.Encoded;
+    data: typeof Schema.ByteSizeFromNumber.Type;
+  }>({
+    dataType: () => "numeric",
+    fromDriver: Schema.ByteSizeFromNumber.pipe(Schema.decodeSync),
+    toDriver: Schema.ByteSizeFromNumber.pipe(Schema.encodeSync),
+  });
+
   export const dateTime = customType<{
     driverData: typeof Schema.DateTimeUtc.Encoded;
     data: typeof Schema.DateTimeUtc.Type;

@@ -9,6 +9,7 @@ import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as String from "effect/String";
 import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import { customAlphabet } from "nanoid";
 
@@ -135,6 +136,17 @@ export const tenantTemplate = Function.dual<
   (tenantId: TenantId, template: string) => string
 >(2, (tenantId, template) =>
   template.replace(new RegExp(Constants.TENANT_ID_PLACEHOLDER, "g"), tenantId),
+);
+
+export const TenantIdFromTemplate = Schema.TemplateLiteralParser([
+  Schema.String,
+  TenantId,
+  Schema.String,
+]).pipe(
+  Schema.decodeTo(TenantId, {
+    decode: SchemaGetter.transform(Tuple.get(1)),
+    encode: SchemaGetter.forbidden(() => "Not implemented"),
+  }),
 );
 
 export const getUserInitials = Effect.fn(function* (name: string) {

@@ -18,7 +18,7 @@ export class Role extends $util.ComponentResource implements Link.Linkable {
 
     this.identifier = $output(args.identifier);
     this.name = this.identifier.apply(buildTemplate);
-    this.arn = $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/${this.identifier}`;
+    this.arn = $interpolate`arn:aws:iam::${aws.getCallerIdentityOutput().accountId}:role/${this.name}`;
   }
 
   public getSSTLink() {

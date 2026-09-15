@@ -8,12 +8,12 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Function from "effect/Function";
 import * as Option from "effect/Option";
-import * as PubSub from "effect/PubSub";
 import * as Pull from "effect/Pull";
 import * as Result from "effect/Result";
 import * as Schedule from "effect/Schedule";
 import * as Scheduler from "effect/Scheduler";
 import * as Schema from "effect/Schema";
+import * as Sink from "effect/Sink";
 import * as Stream from "effect/Stream";
 import * as Struct from "effect/Struct";
 import * as HttpClient from "effect/unstable/http/HttpClient";
@@ -25,11 +25,11 @@ import * as Socket from "effect/unstable/socket/Socket";
 
 import { Api } from "../api";
 import { RealtimeEventHandlers } from "../handlers/realtime-events";
-import { NetworkMonitor } from "../network/client/monitor";
 import { prefix, suffix } from "../utils";
 import { RealtimeContract } from "./contract";
 
 import type { ActorsContract } from "../actors/contract";
+import type { NetworkMonitor } from "../network/client/monitor";
 
 export namespace Realtime {
   const timeoutDuration = Duration.seconds(5);
@@ -45,6 +45,8 @@ export namespace Realtime {
     // oxlint-disable-next-line typescript/no-explicit-any
     readonly retrySchedule?: Schedule.Schedule<any>;
   }
+
+  export type RealtimeError = Socket.SocketError | Schema.SchemaError | Cause.TimeoutError;
 
   export const make = Effect.fn(
     function* (opts: Options) {
@@ -62,37 +64,22 @@ export namespace Realtime {
         new URL("/event/realtime", opts.baseUrls.realtime).href,
         { protocols: ["aws-appsync-event-ws", authProtocol] },
       );
-      const write = yield* socket.writer;
+      const { write } = yield* socket.writer;
 
-      const pubSub = yield* PubSub.unbounded<RealtimeContract.Message>();
-
-      yield* socket.runString(
-        (string) =>
-          Effect.succeed(string).pipe(
-            Effect.flatMap(Schema.decodeEffect(RealtimeContract.Message)),
-            Effect.flatMap((message) => pubSub.pipe(PubSub.publish(message))),
-          ),
-        {
-          onOpen: RealtimeContract.ConnectionInit.makeEffect().pipe(
-            Effect.flatMap(
-              Schema.encodeEffect(RealtimeContract.ConnectionInit.pipe(Schema.fromJsonString)),
-            ),
-            Effect.flatMap(write),
-            Effect.catchCause(Effect.log),
-          ),
-        },
-      );
-
-      const stream = yield* pubSub.pipe(
-        Stream.fromPubSub,
+      const stream = yield* Socket.readerString(socket).pipe(
+        Stream.fromPull,
+        Stream.mapEffect((string) => Schema.decodeEffect(RealtimeContract.Message)(string)),
         Stream.share({ capacity: 32, strategy: "suspend" }),
       );
 
-      const connection = yield* Deferred.make<RealtimeContract.ConnectionAck, Cause.TimeoutError>();
-      const disconnection = yield* Deferred.make<never, Cause.TimeoutError>();
+      const connection = yield* Deferred.make<RealtimeContract.ConnectionAck, RealtimeError>();
+      const disconnection = yield* Deferred.make<never, RealtimeError>();
 
       yield* stream.pipe(
-        Stream.filter((message) => message.type === "connection_ack"),
+        Stream.filter(
+          (message) =>
+            message.type === RealtimeContract.ConnectionAck.to.fields.type.schema.literal,
+        ),
         Stream.take(1),
         Stream.timeoutOrElse({
           duration: timeoutDuration,
@@ -100,11 +87,13 @@ export namespace Realtime {
         }),
         Stream.tapBoth({
           onElement: (ack) => connection.pipe(Deferred.succeed(ack)),
-          onError: (cause) => connection.pipe(Deferred.fail(cause)),
+          onError: (error) => connection.pipe(Deferred.fail(error)),
         }),
         Stream.tap((ack) =>
           stream.pipe(
-            Stream.filter((message) => message.type === "ka"),
+            Stream.filter(
+              (message) => message.type === RealtimeContract.KeepAlive.fields.type.schema.literal,
+            ),
             Stream.timeoutOrElse({
               duration: ack.connectionTimeout,
               orElse: () => Stream.fail(new Cause.TimeoutError("Keep-alive timed out")),
@@ -112,15 +101,25 @@ export namespace Realtime {
             Stream.runDrain,
           ),
         ),
-        Stream.runDrain,
+        Stream.run(
+          Sink.fromTransform<RealtimeContract.Message, void, RealtimeError, never>((upstream) =>
+            RealtimeContract.ConnectionInit.makeEffect().pipe(
+              Effect.mapError((issue) => new Schema.SchemaError(issue)),
+              Effect.flatMap(
+                Schema.encodeEffect(RealtimeContract.ConnectionInit.pipe(Schema.fromJsonString)),
+              ),
+              Effect.flatMap(write),
+              Effect.andThen(upstream.pipe(Effect.forever({ disableYield: true }), Effect.orDie)),
+            ),
+          ),
+        ),
         Effect.tapError((error) => disconnection.pipe(Deferred.fail(error))),
-        Effect.forkScoped,
+        Effect.forkScoped({ startImmediately: true }),
       );
 
       return {
         api,
         socket,
-        pubSub,
         stream,
         connection,
         disconnection,
@@ -193,7 +192,7 @@ export namespace Realtime {
       const streamEffect = Effect.gen(function* () {
         const crypto = yield* Crypto.Crypto;
         const realtime = yield* get.resultOnce(opts.atoms.realtime);
-        const write = yield* realtime.socket.writer;
+        const { write } = yield* realtime.socket.writer;
 
         yield* realtime.connection.pipe(Deferred.await);
 
@@ -222,7 +221,11 @@ export namespace Realtime {
         );
 
         yield* realtime.stream.pipe(
-          Stream.filter((message) => message.type === "subscribe_success" && message.id === id),
+          Stream.filter(
+            (message) =>
+              message.type === RealtimeContract.SubscribeSuccess.fields.type.schema.literal &&
+              message.id === id,
+          ),
           Stream.take(1),
           Stream.timeoutOrElse({
             duration: timeoutDuration,
@@ -240,7 +243,10 @@ export namespace Realtime {
             Effect.flatMap(() =>
               realtime.stream.pipe(
                 Stream.filter(
-                  (message) => message.type === "unsubscribe_success" && message.id === id,
+                  (message) =>
+                    message.type ===
+                      RealtimeContract.UnsubscribeSuccess.fields.type.schema.literal &&
+                    message.id === id,
                 ),
                 Stream.take(1),
                 Stream.timeoutOrElse({
@@ -256,7 +262,7 @@ export namespace Realtime {
 
         return realtime.stream.pipe(
           Stream.filterMapEffect((message) =>
-            message.type === "data" && message.id === id
+            message.type === RealtimeContract.Data.fields.type.schema.literal && message.id === id
               ? Effect.succeed(message.event).pipe(
                   Effect.flatMap(
                     Schema.decodeUnknownEffect<RealtimeEventHandlers.Record[TName]["Input"]>(

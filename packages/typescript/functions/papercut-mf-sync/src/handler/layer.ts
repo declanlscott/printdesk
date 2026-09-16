@@ -17,6 +17,7 @@ import { Oauth } from "@printdesk/core/oauth";
 import * as PapercutMfApi from "@printdesk/core/papercut-mf/api/layer";
 import * as PapercutMfSynchronizer from "@printdesk/core/papercut-mf/synchronizer/layer";
 import { Realtime } from "@printdesk/core/realtime";
+import { appsyncPublisherRoleLayer } from "@printdesk/core/realtime/roles";
 import * as ReplicacheNotifier from "@printdesk/core/replicache/notifier/layer";
 import * as ScimLocator from "@printdesk/core/scim/locator/layer";
 import * as SharedAccountCustomerAccessRepositories from "@printdesk/core/shared-accounts/customer-access/repositories/layers";
@@ -43,6 +44,7 @@ export const layer = Layer.mergeAll(
   TenantsRepositories.repositoryLayer,
 ).pipe(
   Layer.provide([
+    appsyncPublisherRoleLayer,
     GroupMembershipsRepositories.repositoryLayer,
     GroupsRepositories.repositoryLayer,
     Graph.layer,

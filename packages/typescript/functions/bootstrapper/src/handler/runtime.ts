@@ -9,6 +9,7 @@ import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/c
 import { AppsyncSigner } from "@printdesk/core/aws/sigv4-signers/appsync";
 import * as ClientsRepository from "@printdesk/core/clients/repository/layer";
 import * as Config from "@printdesk/core/config/layer";
+import { appconfigRoleLayer } from "@printdesk/core/config/role";
 import * as Crypto from "@printdesk/core/crypto/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
@@ -23,6 +24,7 @@ import { Oauth } from "@printdesk/core/oauth";
 import * as PapercutMfApi from "@printdesk/core/papercut-mf/api/layer";
 import * as PapercutMfSynchronizer from "@printdesk/core/papercut-mf/synchronizer/layer";
 import { Realtime } from "@printdesk/core/realtime";
+import { appsyncPublisherRoleLayer } from "@printdesk/core/realtime/roles";
 import * as ReplicacheNotifier from "@printdesk/core/replicache/notifier/layer";
 import * as ScimLocator from "@printdesk/core/scim/locator/layer";
 import * as SharedAccountCustomerAccessRepositories from "@printdesk/core/shared-accounts/customer-access/repositories/layers";
@@ -53,6 +55,7 @@ export const layer = Layer.mergeAll(
   PapercutMfSynchronizer.layer,
   ReplicacheNotifier.layer,
 ).pipe(
+  Layer.provide([appconfigRoleLayer, appsyncPublisherRoleLayer]),
   Layer.provideMerge([
     Crypto.layer,
     IdentityRepository.providersRepositoryLayer,

@@ -1,63 +1,32 @@
+import { invokeIssuerFunctionUrl, issuer } from "./auth";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
+import { aws_, cloudflare_ } from "./utils";
 
-export const assetsBucket = new sst.aws.Bucket("AssetsBucket", {
-  transform: {
-    policy: (args) => {
-      args.policy = sst.aws.iamEdit(args.policy, (policy) => {
-        policy.Statement.push({
-          Effect: "Allow",
-          Principal: { AWS: "*" },
-          Action: ["s3:*"],
-          Resource: [
-            $interpolate`arn:aws:s3:::${args.bucket}`,
-            $interpolate`arn:aws:s3:::${args.bucket}/*`,
-          ],
-          Condition: {
-            StringEquals: {
-              "s3:DataAccessPointAccount": aws.getCallerIdentityOutput().accountId,
-            },
-          },
-        });
-      });
-    },
+export const r2S3AccessKeyId = new sst.Secret("R2S3AccessKeyId");
+export const r2S3SecretAccessKey = new sst.Secret("R2S3SecretAccessKey");
+export const r2S3Credentials = new sst.Linkable("R2S3Credentials", {
+  properties: {
+    accessKeyId: r2S3AccessKeyId.value,
+    secretAccessKey: r2S3SecretAccessKey.value,
   },
 });
 
-export const assetsBucketAccessPointTemplate = new lib.templates.aws.s3.AccessPoint(
-  "AssetsBucketAccessPointTemplate",
-  { identifier: "assets-ap" },
-);
-
-export const assetsPrivateKey = new tls.PrivateKey("AssetsPrivateKey", {
-  algorithm: "RSA",
-  rsaBits: 2048,
+export const assetsBucketTemplate = new lib.templates.cloudflare.r2.Bucket("AssetsBucketTemplate", {
+  identifier: "assets-bucket",
 });
 
-export const assetsPublicKey = new aws.cloudfront.PublicKey("AssetsPublicKey", {
-  encodedKey: assetsPrivateKey.publicKeyPem,
+export const assetsAwsPermissions = new sst.Linkable("AssetsAwsPermissions", {
+  properties: {},
+  include: [invokeIssuerFunctionUrl],
 });
 
-export const assetsKeyGroup = new aws.cloudfront.KeyGroup("AssetsKeyGroup", {
-  items: [assetsPublicKey.id],
+export const assetsInvalidationQueue = new sst.cloudflare.Queue("AssetsInvalidationQueue");
+
+export const assets = new lib.cloudflare.Worker("AssetsWorker", {
+  handler: "packages/typescript/functions/assets/src/index.ts",
+  domains: { assets: hostnames.properties.assets },
+  link: [assetsBucketTemplate, assetsInvalidationQueue, aws_, cloudflare_, issuer, r2S3Credentials],
 });
 
-export const assetsRouter = new sst.aws.Router("AssetsRouter", {
-  domain: {
-    name: hostnames.properties.assets,
-    dns: sst.cloudflare.dns({ proxy: true }),
-  },
-  transform: {
-    cdn: {
-      transform: {
-        distribution: (args) => {
-          args.priceClass = "PriceClass_100";
-          args.defaultCacheBehavior = $output(args.defaultCacheBehavior).apply((behavior) => ({
-            ...behavior,
-            trustedKeyGroups: [assetsKeyGroup.id],
-          }));
-        },
-      },
-    },
-  },
-});
+export const codeBucket = new sst.aws.Bucket("CodeBucket");

@@ -17,10 +17,6 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "ApiClientCredentialsConfigurationProfileTemplate": {
-      "name": string
-      "type": "pd.templates.AwsAppConfigConfigurationProfile"
-    }
     "ApiGateway": {
       "type": "pd.cloudflare.Worker"
       "urls": {
@@ -87,28 +83,20 @@ declare module "sst" {
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
-    "AssetsBucket": {
+    "AssetsAwsPermissions": {
+      "type": "sst.sst.Linkable"
+    }
+    "AssetsBucketTemplate": {
+      "endpoint": string
       "name": string
-      "type": "sst.aws.Bucket"
+      "type": "pd.templates.CloudflareR2Bucket"
     }
-    "AssetsBucketAccessPointTemplate": {
-      "name": string
-      "type": "pd.templates.AwsS3AccessPoint"
-    }
-    "AssetsKeyGroup": {
-      "id": string
-      "type": "aws.cloudfront/keyGroup.KeyGroup"
-    }
-    "AssetsPrivateKey": {
-      "pem": string
-      "type": "tls.index/privateKey.PrivateKey"
-    }
-    "AssetsRouter": {
-      "distributionId": string
-      "keyValueStoreArn": string
-      "keyValueStoreNamespace": string
-      "type": "sst.aws.Router"
-      "url": string
+    "AssetsInvalidationQueue": import("@cloudflare/workers-types").Queue
+    "AssetsWorker": {
+      "type": "pd.cloudflare.Worker"
+      "urls": {
+        "assets": string
+      }
     }
     "Aws": {
       "account": {
@@ -128,6 +116,10 @@ declare module "sst" {
       }
       "apiToken": string
       "type": "sst.sst.Linkable"
+    }
+    "CodeBucket": {
+      "name": string
+      "type": "sst.aws.Bucket"
     }
     "DevBridgeCodeUseast2Bridge": {
       "bucket": string
@@ -268,6 +260,19 @@ declare module "sst" {
       "externalId": string
       "name": string
       "type": "pd.aws.IamExternalRole"
+    }
+    "R2S3AccessKeyId": {
+      "type": "sst.sst.Secret"
+      "value": string
+    }
+    "R2S3Credentials": {
+      "accessKeyId": string
+      "secretAccessKey": string
+      "type": "sst.sst.Linkable"
+    }
+    "R2S3SecretAccessKey": {
+      "type": "sst.sst.Secret"
+      "value": string
     }
     "RateLimit": import("@cloudflare/workers-types").RateLimit
     "SnsTopicEmail": {

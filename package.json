@@ -22,10 +22,10 @@
     "@types/pg": "catalog:",
     "eslint-plugin-drizzle": "^0.2.3",
     "pg": "catalog:",
-    "remeda": "^2.45.0",
+    "remeda": "^2.48.0",
     "sst": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "^0.3.0"
+    "vite-plus": "^0.3.1"
   },
   "browserslist": [
     "chrome >= 123",
@@ -37,5 +37,5 @@
     "and_ff >= 120",
     "android >= 123"
   ],
-  "packageManager": "pnpm@11.25.0"
+  "packageManager": "pnpm@12.4.1"
 }

@@ -31,6 +31,17 @@ type Configuration = {
       period: number;
     };
   }>;
+  queues?: {
+    consumers: Array<{
+      queue: string;
+      max_batch_size?: number;
+      max_batch_timeout?: number;
+      max_retries?: number;
+      dead_letter_queue?: string;
+      max_concurrency?: number;
+      retry_delay?: number;
+    }>;
+  };
 };
 
 export class Worker extends $util.ComponentResource implements Link.Linkable {
@@ -90,6 +101,13 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
                     namespace_id: binding.namespaceId,
                     // oxlint-disable-next-line typescript/no-non-null-assertion
                     simple: binding.simple!,
+                  });
+                  break;
+                case "queue":
+                  cfg.queues ??= { consumers: [] };
+                  cfg.queues.consumers.push({
+                    // oxlint-disable-next-line typescript/no-non-null-assertion
+                    queue: binding.queueName!,
                   });
                   break;
                 default:

@@ -35,7 +35,6 @@ export default $config({
         command: { version: "1.2.1" },
         docker: { version: "4.11.2" },
         random: { version: "4.19.2" },
-        tls: { version: "5.3.1" },
         "@pulumiverse/time": { version: "0.1.1" },
       },
     };
@@ -66,10 +65,6 @@ export default $config({
           realtime: api.dns.apply((dns) => dns.REALTIME),
         },
       },
-    }));
-
-    sst.Linkable.wrap(aws.cloudfront.KeyGroup, (keyGroup) => ({
-      properties: { id: keyGroup.id },
     }));
 
     sst.Linkable.wrap(aws.s3.BucketObjectv2, (object) => ({
@@ -127,17 +122,18 @@ export default $config({
       args.runtime ??= "nodejs24.x";
     });
 
-    sst.Linkable.wrap(sst.aws.Router, (router) => ({
+    sst.Linkable.wrap(sst.cloudflare.Queue, (queue) => ({
       properties: {
-        url: router.url,
-        distributionId: router.distributionID,
-        keyValueStoreArn: router._kvStoreArn,
-        keyValueStoreNamespace: router._kvNamespace,
+        id: queue.id,
       },
-    }));
-
-    sst.Linkable.wrap(tls.PrivateKey, (privateKey) => ({
-      properties: { pem: privateKey.privateKeyPem },
+      include: [
+        sst.cloudflare.binding({
+          type: "queueBindings",
+          properties: {
+            queueName: queue.nodes.queue.queueName,
+          },
+        }),
+      ],
     }));
 
     const outputs = {};

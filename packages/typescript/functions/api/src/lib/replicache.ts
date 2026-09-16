@@ -19,6 +19,10 @@ import * as InvoicesRepositories from "@printdesk/core/invoices/repositories/lay
 import * as InvoicesSync from "@printdesk/core/invoices/sync/layer";
 import * as MutationsDispatcher from "@printdesk/core/mutations/dispatcher/layer";
 import * as OrdersMutations from "@printdesk/core/orders/mutations/layer";
+import * as OrderObjectMetadataMutations from "@printdesk/core/orders/objects/mutations/layer";
+import * as OrderObjectMetadataPolicies from "@printdesk/core/orders/objects/policies/layer";
+import * as OrderObjectMetadataRepositories from "@printdesk/core/orders/objects/repositories/layers";
+import * as OrderObjectMetadataSync from "@printdesk/core/orders/objects/sync/layer";
 import * as OrdersPolicies from "@printdesk/core/orders/policies/layer";
 import * as OrdersRepositories from "@printdesk/core/orders/repositories/layers";
 import * as OrdersShortIdGenerator from "@printdesk/core/orders/short-id-generator/layer";
@@ -85,6 +89,7 @@ export const replicacheLayer = ReplicachePuller.layer.pipe(
     GroupMembershipsSync.layer,
     InvoicesSync.layer,
     OrdersSync.layer,
+    OrderObjectMetadataSync.layer,
     ProductsSync.layer,
     RoomsSync.layer,
     SharedAccountsSync.layer,
@@ -104,6 +109,7 @@ export const replicacheLayer = ReplicachePuller.layer.pipe(
     DeliveryOptionsMutations.layer,
     InvoicesMutations.layer,
     OrdersMutations.layer,
+    OrderObjectMetadataMutations.layer,
     ProductsMutations.layer,
     RoomsMutations.layer,
     SharedAccountsMutations.layer,
@@ -116,7 +122,7 @@ export const replicacheLayer = ReplicachePuller.layer.pipe(
     AnnouncementsPolicies.layer,
     CommentsPolicies.layer,
     DeliveryOptionsPolicies.layer,
-    OrdersPolicies.layer,
+    OrderObjectMetadataPolicies.layer,
     ProductsPolicies.layer,
     RoomsPolicies.layer,
     SharedAccountsPolicies.layer,
@@ -124,7 +130,11 @@ export const replicacheLayer = ReplicachePuller.layer.pipe(
     UsersPolicies.layer,
     WorkflowStatusesPolicies.layer,
   ]),
-  Layer.provide([SharedAccountWorkflowsPolicies.layer, ReplicacheNotifier.layer]),
+  Layer.provide([
+    OrdersPolicies.layer,
+    SharedAccountWorkflowsPolicies.layer,
+    ReplicacheNotifier.layer,
+  ]),
   Layer.provide(realtimeLayer),
   Layer.provide([
     AnnouncementsRepositories.layer,
@@ -134,6 +144,7 @@ export const replicacheLayer = ReplicachePuller.layer.pipe(
     GroupMembershipsRepositories.layer,
     InvoicesRepositories.layer,
     OrdersRepositories.layer,
+    OrderObjectMetadataRepositories.layer,
     ProductsRepositories.layer,
     RoomsRepositories.layer,
     SharedAccountsRepositories.layer,

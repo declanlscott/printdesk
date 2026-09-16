@@ -11,6 +11,7 @@ import {
   AppsyncPublisherCredentialIdentityProviderLayerMap,
   AppsyncSubscriberCredentialIdentityProviderLayerMap,
 } from "../../aws/credential-identity/appsync";
+import { R2CredentialIdentityProviderLayerMap } from "../../aws/credential-identity/r2";
 
 import type { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
 
@@ -67,6 +68,22 @@ export class AwsCredentialIdentityProviderMiddleware extends HttpApiMiddleware.S
       ),
     );
   public static readonly appsyncSubscriberLayer = this.makeAppsyncSubscriber.pipe(
+    Layer.effect(AwsCredentialIdentityProviderMiddleware),
+  );
+
+  public static readonly makeR2 = R2CredentialIdentityProviderLayerMap.pipe(
+    Effect.map((layerMap) =>
+      AwsCredentialIdentityProviderMiddleware.of(
+        Effect.provide(
+          Actor.pipe(
+            Effect.map((actor) => layerMap.get(actor)),
+            Layer.unwrap,
+          ),
+        ),
+      ),
+    ),
+  );
+  public static readonly r2Layer = this.makeR2.pipe(
     Layer.effect(AwsCredentialIdentityProviderMiddleware),
   );
 }

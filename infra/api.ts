@@ -1,4 +1,4 @@
-import { assetsPrivateKey, assetsPublicKey, assetsRouter } from "./assets";
+import { assetsBucketTemplate, r2S3Credentials } from "./assets";
 import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
 import {
   appconfigAgent,
@@ -38,9 +38,7 @@ export const api = new lib.aws.lambda.Function(
       appsyncApi,
       appsyncChannelNamespacePublisherRoleTemplate,
       appsyncChannelNamespaceSubscriberRoleTemplate,
-      assetsPublicKey,
-      assetsPrivateKey,
-      assetsRouter,
+      assetsBucketTemplate,
       aws_,
       bootstrapper,
       cloudflare_,
@@ -51,6 +49,7 @@ export const api = new lib.aws.lambda.Function(
       identityProviders,
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,
+      r2S3Credentials,
     ],
     permissions: [invokeIssuerFunctionUrl],
     environment: {

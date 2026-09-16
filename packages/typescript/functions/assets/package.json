@@ -1,0 +1,17 @@
+{
+  "name": "@printdesk/assets",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@effect-aws/client-s3": "workspace:@printdesk/effect-aws-client-s3@*",
+    "@effect/platform-node": "catalog:",
+    "@printdesk/core": "workspace:^",
+    "aws4fetch": "catalog:",
+    "effect": "catalog:",
+    "hono": "catalog:"
+  },
+  "devDependencies": {
+    "@effect/tsgo": "catalog:",
+    "wrangler": "catalog:"
+  }
+}

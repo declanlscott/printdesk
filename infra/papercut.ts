@@ -1,6 +1,6 @@
 import Path from "node:path";
 
-import { assetsBucket } from "./assets";
+import { codeBucket } from "./assets";
 import { invokeIssuerFunctionUrl } from "./auth";
 import {
   appconfigAgent,
@@ -45,8 +45,8 @@ export const papercutMfApiGatewayScriptSource = papercutMfApiGatewayScriptBuilde
 export const papercutMfApiGatewayScriptObject = new aws.s3.BucketObjectv2(
   "PapercutMfApiGatewayScriptObject",
   {
-    bucket: assetsBucket.name,
-    key: "code/papercut-mf-api-gateway.js",
+    bucket: codeBucket.name,
+    key: "papercut-mf-api-gateway.js",
     source: papercutMfApiGatewayScriptSource,
     contentType: "text/javascript",
   },

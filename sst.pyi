@@ -13,9 +13,6 @@ class Resource:
         roleArn: str
         type: str
         url: str
-    class ApiClientCredentialsConfigurationProfileTemplate:
-        name: str
-        type: str
     class ApiGateway:
         type: str
         class urls:
@@ -71,24 +68,19 @@ class Resource:
         arn: str
         name: str
         type: str
-    class AssetsBucket:
+    class AssetsAwsPermissions:
+        type: str
+    class AssetsBucketTemplate:
+        endpoint: str
         name: str
         type: str
-    class AssetsBucketAccessPointTemplate:
-        name: str
-        type: str
-    class AssetsKeyGroup:
+    class AssetsInvalidationQueue:
         id: str
         type: str
-    class AssetsPrivateKey:
-        pem: str
+    class AssetsWorker:
         type: str
-    class AssetsRouter:
-        distributionId: str
-        keyValueStoreArn: str
-        keyValueStoreNamespace: str
-        type: str
-        url: str
+        class urls:
+            assets: str
     class Aws:
         class account:
             id: str
@@ -102,6 +94,9 @@ class Resource:
         class account:
             id: str
         apiToken: str
+        type: str
+    class CodeBucket:
+        name: str
         type: str
     class DevBridgeCodeUseast2Bridge:
         bucket: str
@@ -217,6 +212,16 @@ class Resource:
         externalId: str
         name: str
         type: str
+    class R2S3AccessKeyId:
+        type: str
+        value: str
+    class R2S3Credentials:
+        accessKeyId: str
+        secretAccessKey: str
+        type: str
+    class R2S3SecretAccessKey:
+        type: str
+        value: str
     class RateLimit:
         type: str
     class SnsTopicEmail:

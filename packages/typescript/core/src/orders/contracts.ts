@@ -1,6 +1,11 @@
 import * as Schema from "effect/Schema";
+import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
+import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
 
+import { AssetsContract } from "../assets/contract";
 import { AttributesContract } from "../attributes/contract";
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
@@ -378,6 +383,14 @@ export namespace OrdersContract {
     Input: IdOnly,
     Output: Table.Dto,
   });
+
+  export class NotFoundError
+    extends Schema.TaggedError<NotFoundError>()("OrderNotFoundError", { id: EntityId })
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(NotFoundError)(this, { status: 404 });
+  }
 }
 
 export namespace OrderObjectMetadataContract {
@@ -414,6 +427,27 @@ export namespace OrderObjectMetadataContract {
   export class ActiveManagerAuthorizedSharedAccountView extends TablesContract.View<ActiveManagerAuthorizedSharedAccountOrderObjectMetadataView>(
     `active_manager_authorized_shared_account_${Table.name}`,
   )({ ...ActiveView.Model.fields, authorizedManagerId: EntityId }) {}
+
+  export const Key = Schema.TemplateLiteralParser([
+    OrdersContract.Table.name,
+    "/",
+    EntityId, // orderId
+    "/",
+    EntityId, // objectId
+  ]).pipe(
+    Schema.decodeTo(Schema.Struct({ orderId: EntityId, objectId: EntityId }), {
+      decode: SchemaGetter.transform(([, , orderId, , objectId]) => ({ orderId, objectId })),
+      encode: SchemaGetter.transform(({ orderId, objectId }) => [
+        OrdersContract.Table.name,
+        "/",
+        EntityId.make(orderId),
+        "/",
+        EntityId.make(objectId),
+      ]),
+    }),
+  );
+  export type Key = typeof Key.Type;
+  export type EncodedKey = typeof Key.Encoded;
 
   const IdOnly = Schema.Struct(
     Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
@@ -456,4 +490,17 @@ export namespace OrderObjectMetadataContract {
     ),
     Output: Table.Dto,
   });
+
+  export const PresignedUrlsSuccess = Schema.Record(
+    EntityId,
+    AssetsContract.PresignedUrlSuccess,
+  ).pipe(HttpApiSchema.status(200));
+
+  export class NotFoundError
+    extends Schema.TaggedError<NotFoundError>()("OrderObjectNotFoundError", { id: EntityId })
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(NotFoundError)(this, { status: 404 });
+  }
 }

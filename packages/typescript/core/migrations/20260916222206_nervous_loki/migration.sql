@@ -20,6 +20,7 @@ CREATE TABLE "clients" (
 	"deleted_at" timestamp,
 	"name" varchar(50) NOT NULL,
 	"secret_hash" varchar(113) NOT NULL,
+	"status" varchar(50) DEFAULT 'active' NOT NULL,
 	"role" varchar(50) NOT NULL,
 	"scopes" text NOT NULL,
 	"callback_id" text,
@@ -131,11 +132,29 @@ CREATE TABLE "invoices" (
 
 --> statement-breakpoint
 CREATE TABLE "licenses" (
-	"key" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+	"id" char(11) PRIMARY KEY,
+	"key_hash" varchar(113) NOT NULL,
 	"expires_at" timestamp,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp
+);
+
+--> statement-breakpoint
+CREATE TABLE "order_object_metadata" (
+	"id" char(11),
+	"tenant_id" char(11),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	"deleted_at" timestamp,
+	"version" integer DEFAULT 1 NOT NULL,
+	"order_id" char(11) NOT NULL,
+	"filename" text NOT NULL,
+	"mime_type" text NOT NULL,
+	"byte_size" bigint NOT NULL,
+	"status" varchar(50) NOT NULL,
+	CONSTRAINT "order_object_metadata_pkey" PRIMARY KEY("id", "tenant_id"),
+	CONSTRAINT "order_object_metadata_order_id_filename_tenant_id_unique" UNIQUE("order_id", "filename", "tenant_id")
 );
 
 --> statement-breakpoint
@@ -333,7 +352,7 @@ CREATE TABLE "tenants" (
 	"name" varchar(50) NOT NULL,
 	"status" varchar(50) DEFAULT 'setup' NOT NULL,
 	"last_papercut_sync_at" timestamp,
-	"license_key" uuid NOT NULL,
+	"license_id" char(11) NOT NULL,
 	CONSTRAINT "tenants_pkey" PRIMARY KEY("id", "tenant_id"),
 	CONSTRAINT "tenant_id" CHECK ("id" = "tenant_id")
 );
@@ -354,9 +373,13 @@ CREATE TABLE "users" (
 	"status" varchar(50) DEFAULT 'active' NOT NULL,
 	"role" varchar(50) DEFAULT 'customer' NOT NULL,
 	CONSTRAINT "users_pkey" PRIMARY KEY("id", "tenant_id"),
-	CONSTRAINT "users_username_tenant_id_unique" UNIQUE("username", "tenant_id"),
-	CONSTRAINT "users_external_id_tenant_id_unique" UNIQUE("external_id", "tenant_id"),
-	CONSTRAINT "users_email_tenant_id_unique" UNIQUE("email", "tenant_id")
+	CONSTRAINT "users_username_identity_provider_id_tenant_id_unique" UNIQUE("username", "identity_provider_id", "tenant_id"),
+	CONSTRAINT "users_external_id_identity_provider_id_tenant_id_unique" UNIQUE(
+		"external_id",
+		"identity_provider_id",
+		"tenant_id"
+	),
+	CONSTRAINT "users_email_identity_provider_id_tenant_id_unique" UNIQUE("email", "identity_provider_id", "tenant_id")
 );
 
 --> statement-breakpoint
@@ -431,6 +454,9 @@ CREATE UNIQUE INDEX "identity_providers_external_id_tenant_id_index" ON "identit
 CREATE INDEX "invoices_order_id_index" ON "invoices" ("order_id");
 
 --> statement-breakpoint
+CREATE UNIQUE INDEX "licenses_key_hash_index" ON "licenses" ("key_hash");
+
+--> statement-breakpoint
 CREATE INDEX "orders_customer_id_index" ON "orders" ("customer_id");
 
 --> statement-breakpoint
@@ -495,7 +521,7 @@ CREATE INDEX "shared_accounts_origin_tenant_id_index" ON "shared_accounts" ("ori
 CREATE UNIQUE INDEX "tenants_slug_index" ON "tenants" ("slug");
 
 --> statement-breakpoint
-CREATE UNIQUE INDEX "tenants_license_key_index" ON "tenants" ("license_key");
+CREATE UNIQUE INDEX "tenants_license_id_index" ON "tenants" ("license_id");
 
 --> statement-breakpoint
 CREATE INDEX "users_external_id_index" ON "users" ("external_id");
@@ -1080,6 +1106,88 @@ CREATE VIEW "active_manager_authorized_shared_account_order_invoices" AS (
 			)
 			and (
 				"active_invoices"."tenant_id" = "active_orders"."tenant_id"
+			)
+		)
+		inner join "active_shared_account_manager_access" on (
+			(
+				"active_orders"."shared_account_id" = "active_shared_account_manager_access"."shared_account_id"
+			)
+			and (
+				"active_orders"."tenant_id" = "active_shared_account_manager_access"."tenant_id"
+			)
+		)
+);
+
+--> statement-breakpoint
+CREATE VIEW "active_order_object_metadata" AS (
+	select
+		"id",
+		"tenant_id",
+		"created_at",
+		"updated_at",
+		"deleted_at",
+		"version",
+		"order_id",
+		"filename",
+		"mime_type",
+		"byte_size",
+		"status"
+	from
+		"order_object_metadata"
+	where
+		("order_object_metadata"."deleted_at" is null)
+);
+
+--> statement-breakpoint
+CREATE VIEW "active_customer_placed_order_object_metadata" AS (
+	select
+		"active_order_object_metadata"."id",
+		"active_order_object_metadata"."tenant_id",
+		"active_order_object_metadata"."created_at",
+		"active_order_object_metadata"."updated_at",
+		"active_order_object_metadata"."deleted_at",
+		"active_order_object_metadata"."version",
+		"active_order_object_metadata"."order_id",
+		"active_order_object_metadata"."filename",
+		"active_order_object_metadata"."mime_type",
+		"active_order_object_metadata"."byte_size",
+		"active_order_object_metadata"."status",
+		"active_orders"."customer_id"
+	from
+		"active_order_object_metadata"
+		inner join "active_orders" on (
+			(
+				"active_order_object_metadata"."order_id" = "active_orders"."id"
+			)
+			and (
+				"active_order_object_metadata"."tenant_id" = "active_orders"."tenant_id"
+			)
+		)
+);
+
+--> statement-breakpoint
+CREATE VIEW "active_manager_authorized_shared_account_order_object_metadata" AS (
+	select
+		"active_order_object_metadata"."id",
+		"active_order_object_metadata"."tenant_id",
+		"active_order_object_metadata"."created_at",
+		"active_order_object_metadata"."updated_at",
+		"active_order_object_metadata"."deleted_at",
+		"active_order_object_metadata"."version",
+		"active_order_object_metadata"."order_id",
+		"active_order_object_metadata"."filename",
+		"active_order_object_metadata"."mime_type",
+		"active_order_object_metadata"."byte_size",
+		"active_order_object_metadata"."status",
+		"active_shared_account_manager_access"."manager_id"
+	from
+		"active_order_object_metadata"
+		inner join "active_orders" on (
+			(
+				"active_order_object_metadata"."order_id" = "active_orders"."id"
+			)
+			and (
+				"active_order_object_metadata"."tenant_id" = "active_orders"."tenant_id"
 			)
 		)
 		inner join "active_shared_account_manager_access" on (

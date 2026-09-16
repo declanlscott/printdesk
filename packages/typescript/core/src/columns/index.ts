@@ -26,7 +26,7 @@ export namespace Columns {
     driverData: typeof Schema.ByteSizeFromNumber.Encoded;
     data: typeof Schema.ByteSizeFromNumber.Type;
   }>({
-    dataType: () => "numeric",
+    dataType: () => "bigint",
     fromDriver: Schema.ByteSizeFromNumber.pipe(Schema.decodeSync),
     toDriver: Schema.ByteSizeFromNumber.pipe(Schema.encodeSync),
   });

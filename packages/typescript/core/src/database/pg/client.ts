@@ -64,6 +64,8 @@ export interface PgClient extends SqlClient.SqlClient {
   readonly notify: (channel: string, payload: string) => Effect.Effect<void, SqlError.SqlError>;
 }
 
+Pg.defaults.parseInt8 = true;
+
 export const PgClient = Context.Service<PgClient>("@effect/sql-pg/PgClient");
 
 const cancelEffects = new WeakMap<Pg.PoolClient, Effect.Effect<void> | undefined>();

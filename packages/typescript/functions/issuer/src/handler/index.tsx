@@ -92,7 +92,7 @@ export const handler = Effect.fn(function* (event: APIGatewayProxyEventV2, conte
               return (
                 <a href={`/${kind}/authorize`} data-component="button" data-color="ghost">
                   <i data-slot="icon">{icon}</i>
-                  Continue with {name}
+                  {`Continue with ${name}`}
                 </a>
               );
             })}

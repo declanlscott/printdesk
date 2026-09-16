@@ -72,7 +72,7 @@ export function Select(props?: SelectProps) {
             return (
               <a href={`/${key}/authorize`} data-component="button" data-color="ghost">
                 {icon && <i data-slot="icon">{icon}</i>}
-                Continue with {match?.display || DISPLAY[type] || type}
+                {`Continue with ${match?.display || DISPLAY[type] || type}`}
               </a>
             );
           })}

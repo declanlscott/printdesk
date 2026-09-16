@@ -8,7 +8,6 @@
     "@effect/platform-node": "catalog:",
     "@openauthjs/openauth": "workspace:@printdesk/openauth@*",
     "@printdesk/core": "workspace:^",
-    "drizzle-orm": "catalog:",
     "effect": "catalog:",
     "hono": "catalog:"
   },

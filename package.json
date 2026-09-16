@@ -22,10 +22,10 @@
     "@types/pg": "catalog:",
     "eslint-plugin-drizzle": "^0.2.3",
     "pg": "catalog:",
-    "remeda": "^2.48.0",
+    "remeda": "^2.50.0",
     "sst": "catalog:",
     "typescript": "catalog:",
-    "vite-plus": "^0.3.1"
+    "vite-plus": "^0.3.2"
   },
   "browserslist": [
     "chrome >= 123",

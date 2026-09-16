@@ -1,4 +1,7 @@
 import styles from "@printdesk/ui/styles/index.css?url";
+import { colors } from "@printdesk/ui/styles/tokens.stylex";
+import x from "@stylexjs/atoms";
+import * as stylex from "@stylexjs/stylex";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
@@ -26,7 +29,9 @@ export const Route = createRootRoute({
         <head>
           <HeadContent />
         </head>
-        <body>
+        <body
+          {...stylex.props(x.backgroundColor(`light-dark(${colors.muted}, ${colors.background})`))}
+        >
           <Outlet />
           <Scripts />
           <TanStackDevtools plugins={plugins} />

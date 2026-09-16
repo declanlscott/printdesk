@@ -8,9 +8,9 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "catalog:",
-    "@aws-sdk/client-appconfig": "^3.1125.0",
+    "@aws-sdk/client-appconfig": "^3.1132.0",
     "@aws-sdk/credential-providers": "catalog:",
-    "@azure/identity": "^4.13.2",
+    "@azure/identity": "^4.13.3",
     "@effect-aws/client-lambda": "workspace:@printdesk/effect-aws-client-lambda@*",
     "@effect-aws/client-s3": "workspace:@printdesk/effect-aws-client-s3@*",
     "@effect-aws/dsql": "workspace:@printdesk/effect-aws-dsql@*",
@@ -41,7 +41,7 @@
     "pg-connection-string": "catalog:",
     "pg-cursor": "catalog:",
     "replicache": "catalog:",
-    "scim-patch": "^0.9.2",
+    "scim-patch": "^0.9.3",
     "scim2-parse-filter": "^0.3.0",
     "sst": "catalog:"
   },

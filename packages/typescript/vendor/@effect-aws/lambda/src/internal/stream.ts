@@ -1,4 +1,4 @@
-// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
+// oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion effecttsgo/node-builtin-import
 import * as NS from "node:stream/promises";
 
 import * as NodeStream from "@effect/platform-node-shared/NodeStream";

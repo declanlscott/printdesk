@@ -1,4 +1,5 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-unsafe-type-assertion
+// oxlint-disable-next-line effecttsgo/node-builtin-import
 import { Readable } from "node:stream";
 
 import * as Context from "effect/Context";

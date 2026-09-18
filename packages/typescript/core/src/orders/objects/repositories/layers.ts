@@ -35,6 +35,8 @@ export const makeRepository = Effect.gen(function* () {
   const db = yield* Database;
 
   const table = orderObjectMetadata.table;
+  const activeManagerAuthorizedSharedAccountView =
+    activeManagerAuthorizedSharedAccountOrderObjectMetadataView;
 
   const create = Effect.fn("OrderObjectMetadata.Repository.create")(
     (value: InferInsertModel<OrderObjectMetadataTable>) =>
@@ -141,6 +143,23 @@ export const makeRepository = Effect.gen(function* () {
         ),
   );
 
+  const findActiveManagerIds = Effect.fn("OrderObjectMetadata.Repository.findActiveManagerIds")(
+    (id: OrderObjectMetadata["id"], tenantId: OrderObjectMetadata["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select({ managerId: activeManagerAuthorizedSharedAccountView.authorizedManagerId })
+            .from(activeManagerAuthorizedSharedAccountView)
+            .where(
+              and(
+                eq(activeManagerAuthorizedSharedAccountView.id, id),
+                eq(activeManagerAuthorizedSharedAccountView.tenantId, tenantId),
+              ),
+            ),
+        )
+        .pipe(Effect.map(Array.map(Struct.get("managerId")))),
+  );
+
   const updateById = Effect.fn("OrderObjectMetadata.Repository.updateById")(
     (
       id: OrderObjectMetadata["id"],
@@ -164,6 +183,7 @@ export const makeRepository = Effect.gen(function* () {
     findWithOrderById,
     findByOrderId,
     findByOrderIdWithOrder,
+    findActiveManagerIds,
     updateById,
   } as const;
 });

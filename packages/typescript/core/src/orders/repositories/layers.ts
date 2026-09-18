@@ -28,8 +28,8 @@ import type {
 export type Repository = Effect.Success<typeof makeRepository>;
 export const makeRepository = Effect.gen(function* () {
   const db = yield* Database;
-  const table = orders.table;
 
+  const table = orders.table;
   const activeManagerAuthorizedSharedAccountView = activeManagerAuthorizedSharedAccountOrdersView;
 
   const create = Effect.fn("Orders.Repository.create")((value: InferInsertModel<OrdersTable>) =>
@@ -147,9 +147,7 @@ export const makeRepository = Effect.gen(function* () {
       db
         .useTransaction((tx) =>
           tx
-            .select({
-              managerId: activeManagerAuthorizedSharedAccountView.authorizedManagerId,
-            })
+            .select({ managerId: activeManagerAuthorizedSharedAccountView.authorizedManagerId })
             .from(activeManagerAuthorizedSharedAccountView)
             .where(
               and(

@@ -79,8 +79,7 @@ export const makeService = Effect.gen(function* () {
     orderId: OrderObjectMetadata["orderId"],
     expiresIn: Duration.Duration,
   ) {
-    const tenantId = yield* Actor.tenantId;
-    const objectsMetadata = yield* repository.findByOrderId(orderId, tenantId);
+    const objectsMetadata = yield* repository.findByOrderId(orderId, yield* Actor.tenantId);
     const expiresAt = yield* DateTime.now.pipe(Effect.map(DateTime.addDuration(expiresIn)));
 
     return yield* Effect.reduce(
@@ -107,8 +106,10 @@ export const makeService = Effect.gen(function* () {
     orderId: OrderObjectMetadata["orderId"],
     expiresIn: Duration.Duration,
   ) {
-    const tenantId = yield* Actor.tenantId;
-    const objectsMetadataWithOrders = yield* repository.findByOrderIdWithOrder(orderId, tenantId);
+    const objectsMetadataWithOrders = yield* repository.findByOrderIdWithOrder(
+      orderId,
+      yield* Actor.tenantId,
+    );
     const expiresAt = yield* DateTime.now.pipe(Effect.map(DateTime.addDuration(expiresIn)));
 
     return yield* Effect.reduce(

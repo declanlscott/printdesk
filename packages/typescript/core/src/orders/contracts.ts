@@ -567,20 +567,50 @@ export namespace OrderObjectMetadataContract {
     }),
   );
 
+  export const isCustomer = new Handler.Handler({
+    name: "isOrderObjectMetadataCustomer",
+    Input: IdOnly.mapFields(
+      Struct.assign({ customerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
+    ),
+    Output: Schema.Void,
+  });
+
+  export const isManager = new Handler.Handler({
+    name: "isOrderObjectMetadataManager",
+    Input: IdOnly.mapFields(
+      Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
+    ),
+    Output: Schema.Void,
+  });
+
+  export const isCustomerOrManager = new Handler.Handler({
+    name: "isOrderObjectMetadataCustomerOrManager",
+    Input: IdOnly.mapFields(Struct.assign({ userId: EntityId.pipe(Schema.OptionFromUndefinedOr) })),
+    Output: Schema.Void,
+  });
+
+  export const isManagerAuthorized = new Handler.Handler({
+    name: "isOrderObjectMetadataManagerAuthorized",
+    Input: IdOnly.mapFields(
+      Struct.assign({ managerId: EntityId.pipe(Schema.OptionFromUndefinedOr) }),
+    ),
+    Output: Schema.Void,
+  });
+
   export const canEdit = new Handler.Handler({
-    name: "canEditOrderObject",
+    name: "canEditOrderObjectMetadata",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
   export const canDelete = new Handler.Handler({
-    name: "canDeleteOrderObject",
+    name: "canDeleteOrderObjectMetadata",
     Input: IdOnly,
     Output: Schema.Void,
   });
 
   export const create = new Handler.Handler({
-    name: "createOrderObject",
+    name: "createOrderObjectMetadata",
     Input: Table.Dto.mapFields(Struct.omit(["deletedAt", "tenantId"])),
     Output: Table.Dto,
   });
@@ -592,7 +622,7 @@ export namespace OrderObjectMetadataContract {
   });
 
   export const delete_ = new Handler.Handler({
-    name: "deleteOrderObject",
+    name: "deleteOrderObjectMetadata",
     Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(Struct.pick(Table.Model.fields, ["deletedAt"]), {

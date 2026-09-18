@@ -1,13 +1,4 @@
-import {
-  and,
-  eq,
-  getTableColumns,
-  getViewName,
-  getViewSelectedFields,
-  inArray,
-  not,
-  notInArray,
-} from "drizzle-orm";
+import { and, eq, getViewName, getColumns, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -58,8 +49,8 @@ export const makeRepository = Effect.gen(function* () {
       .useTransaction((tx) =>
         tx
           .select({
-            invoice: getTableColumns(table),
-            sharedAccount: getTableColumns(sharedAccounts.table),
+            invoice: getColumns(table),
+            sharedAccount: getColumns(sharedAccounts.table),
           })
           .from(table)
           .innerJoin(
@@ -207,10 +198,9 @@ export const makeSyncRepository = Effect.gen(function* () {
                       activeManagerAuthorizedSharedAccountOrderView.id,
                       activeManagerAuthorizedSharedAccountOrderView.tenantId,
                     ],
-                    Struct.omit(
-                      getViewSelectedFields(activeManagerAuthorizedSharedAccountOrderView),
-                      ["authorizedManagerId"],
-                    ),
+                    Struct.omit(getColumns(activeManagerAuthorizedSharedAccountOrderView), [
+                      "authorizedManagerId",
+                    ]),
                   )
                   .from(activeManagerAuthorizedSharedAccountOrderView)
                   .where(

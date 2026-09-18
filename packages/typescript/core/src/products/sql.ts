@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
+import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { index, snakeCase } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
@@ -32,7 +32,7 @@ export const activePublishedProductsView = snakeCase
   .view(`active_published_${products.name}`)
   .as((qb) =>
     qb
-      .select(getViewSelectedFields(activeProductsView))
+      .select(getColumns(activeProductsView))
       .from(activeProductsView)
       .innerJoin(
         activePublishedRoomsView,

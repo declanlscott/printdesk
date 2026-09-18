@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
+import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { boolean, index, snakeCase, text } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
@@ -33,7 +33,7 @@ export const activeCustomerPlacedOrderCommentsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeCommentsView),
+        ...getColumns(activeCommentsView),
         customerId: activeOrdersView.customerId,
       })
       .from(activeCommentsView)
@@ -54,7 +54,7 @@ export const activeManagerAuthorizedSharedAccountOrderCommentsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeCommentsView),
+        ...getColumns(activeCommentsView),
         authorizedManagerId: activeSharedAccountManagerAccessView.managerId,
       })
       .from(activeCommentsView)

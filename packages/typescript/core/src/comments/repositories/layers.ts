@@ -1,4 +1,4 @@
-import { and, eq, getViewName, getViewSelectedFields, inArray, not, notInArray } from "drizzle-orm";
+import { and, eq, getViewName, getColumns, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -195,7 +195,7 @@ export const makeSyncRepository = Effect.gen(function* () {
                     activeManagedSharedAccountOrderView.id,
                     activeManagedSharedAccountOrderView.tenantId,
                   ],
-                  Struct.omit(getViewSelectedFields(activeManagedSharedAccountOrderView), [
+                  Struct.omit(getColumns(activeManagedSharedAccountOrderView), [
                     "authorizedManagerId",
                   ]),
                 )

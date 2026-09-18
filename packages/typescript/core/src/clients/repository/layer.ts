@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getColumns } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -46,8 +46,8 @@ export const makeService = Effect.gen(function* () {
         .useTransaction((tx) =>
           tx
             .select({
-              client: getTableColumns(table),
-              tenant: getTableColumns(tenantsTable),
+              client: getColumns(table),
+              tenant: getColumns(tenantsTable),
             })
             .from(table)
             .innerJoin(tenantsTable, eq(table.tenantId, tenantsTable.id))

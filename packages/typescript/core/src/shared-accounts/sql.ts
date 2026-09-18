@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNotNull, isNull, or } from "drizzle-orm";
+import { and, eq, getColumns, isNotNull, isNull, or } from "drizzle-orm";
 import {
   bigint,
   check,
@@ -83,7 +83,7 @@ export const activeCustomerAuthorizedSharedAccountManagerAccessView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountManagerAccessView),
+        ...getColumns(activeSharedAccountManagerAccessView),
         customerId: activeSharedAccountCustomerAccessView.customerId,
       })
       .from(activeSharedAccountManagerAccessView)
@@ -154,7 +154,7 @@ export const activeCustomerAuthorizedSharedAccountsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountsView),
+        ...getColumns(activeSharedAccountsView),
         customerId: activeSharedAccountCustomerAccessView.customerId,
       })
       .from(activeSharedAccountsView)
@@ -176,7 +176,7 @@ export const activeManagerAuthorizedSharedAccountsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountsView),
+        ...getColumns(activeSharedAccountsView),
         managerId: activeSharedAccountManagerAccessView.managerId,
       })
       .from(activeSharedAccountsView)
@@ -227,7 +227,7 @@ export const activeAuthorizedSharedAccountGroupCustomerAccessView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountGroupCustomerAccessView),
+        ...getColumns(activeSharedAccountGroupCustomerAccessView),
         memberId: activeGroupMembershipsView.userId,
       })
       .from(activeSharedAccountGroupCustomerAccessView)

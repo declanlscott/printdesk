@@ -1,14 +1,5 @@
 // oxlint-disable typescript/no-unsafe-type-assertion
-import {
-  and,
-  eq,
-  getTableColumns,
-  getViewName,
-  getViewSelectedFields,
-  inArray,
-  not,
-  notInArray,
-} from "drizzle-orm";
+import { and, eq, getViewName, getColumns, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -74,8 +65,8 @@ export const makeRepository = Effect.gen(function* () {
         .useTransaction((tx) =>
           tx
             .select({
-              order: getTableColumns(ordersTable),
-              metadata: getTableColumns(table),
+              order: getColumns(ordersTable),
+              metadata: getColumns(table),
             })
             .from(table)
             .innerJoin(
@@ -92,7 +83,7 @@ export const makeRepository = Effect.gen(function* () {
       db
         .useTransaction((tx) =>
           tx
-            .select({ metadata: getTableColumns(table) })
+            .select({ metadata: getColumns(table) })
             .from(table)
             .rightJoin(
               ordersTable,
@@ -123,8 +114,8 @@ export const makeRepository = Effect.gen(function* () {
         .useTransaction((tx) =>
           tx
             .select({
-              order: getTableColumns(ordersTable),
-              metadata: getTableColumns(table),
+              order: getColumns(ordersTable),
+              metadata: getColumns(table),
             })
             .from(table)
             .rightJoin(

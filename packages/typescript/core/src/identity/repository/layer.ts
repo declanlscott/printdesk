@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns } from "drizzle-orm";
+import { and, eq, getColumns } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -52,7 +52,7 @@ export const makeProvidersRepository = Effect.gen(function* () {
     (slug: Tenant["slug"]) =>
       db.useTransaction((tx) =>
         tx
-          .select(getTableColumns(table))
+          .select(getColumns(table))
           .from(tenantsTable)
           .innerJoin(table, eq(tenantsTable.id, table.tenantId))
           .where(eq(tenantsTable.slug, slug)),
@@ -65,8 +65,8 @@ export const makeProvidersRepository = Effect.gen(function* () {
     db.useTransaction((tx) =>
       tx
         .select({
-          identityProvider: getTableColumns(table),
-          group: getTableColumns(groupsTable),
+          identityProvider: getColumns(table),
+          group: getColumns(groupsTable),
         })
         .from(table)
         .leftJoin(
@@ -92,9 +92,9 @@ export const makeProvidersRepository = Effect.gen(function* () {
         .useTransaction((tx) =>
           tx
             .select({
-              identityProvider: getTableColumns(table),
-              tenant: getTableColumns(tenantsTable),
-              user: getTableColumns(usersTable),
+              identityProvider: getColumns(table),
+              tenant: getColumns(tenantsTable),
+              user: getColumns(usersTable),
             })
             .from(table)
             .innerJoin(tenantsTable, eq(table.tenantId, tenantsTable.id))

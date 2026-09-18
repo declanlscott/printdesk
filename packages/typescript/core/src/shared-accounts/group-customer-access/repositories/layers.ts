@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, getViewName, inArray, not, notInArray } from "drizzle-orm";
+import { and, eq, getColumns, getViewName, inArray, not, notInArray } from "drizzle-orm";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
@@ -58,9 +58,9 @@ export const makeRepository = Effect.gen(function* () {
         .useTransaction((tx) =>
           tx
             .select({
-              access: getTableColumns(table),
-              group: getTableColumns(groups.table),
-              sharedAccount: getTableColumns(sharedAccounts.table),
+              access: getColumns(table),
+              group: getColumns(groups.table),
+              sharedAccount: getColumns(sharedAccounts.table),
             })
             .from(table)
             .innerJoin(

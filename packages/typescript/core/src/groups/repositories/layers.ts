@@ -1,13 +1,4 @@
-import {
-  and,
-  eq,
-  getTableColumns,
-  getViewName,
-  getViewSelectedFields,
-  inArray,
-  not,
-  notInArray,
-} from "drizzle-orm";
+import { and, eq, getViewName, getColumns, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -30,8 +21,8 @@ export const makeRepository = Effect.gen(function* () {
   const membershipsTable = groupMemberships.table;
 
   const withMembershipSelection = {
-    group: getTableColumns(table),
-    groupMembership: getTableColumns(membershipsTable),
+    group: getColumns(table),
+    groupMembership: getColumns(membershipsTable),
   };
 
   const create = Effect.fn("Groups.Repository.create")((value: InferInsertModel<GroupsTable>) =>
@@ -216,7 +207,7 @@ export const makeSyncRepository = Effect.gen(function* () {
             tx
               .selectDistinctOn(
                 [activeMembershipView.id, activeMembershipView.tenantId],
-                Struct.omit(getViewSelectedFields(activeMembershipView), ["userId"]),
+                Struct.omit(getColumns(activeMembershipView), ["userId"]),
               )
               .from(activeMembershipView)
               .where(

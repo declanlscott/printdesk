@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
+import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { snakeCase, text } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
@@ -26,7 +26,7 @@ export const activePublishedRoomAnnouncementsView = snakeCase
   .view(`active_published_room_${announcements.name}`)
   .as((qb) =>
     qb
-      .select(getViewSelectedFields(activeAnnouncementsView))
+      .select(getColumns(activeAnnouncementsView))
       .from(activeAnnouncementsView)
       .innerJoin(
         activePublishedRoomsView,

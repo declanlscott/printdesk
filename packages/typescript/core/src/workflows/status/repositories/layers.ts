@@ -5,9 +5,8 @@ import {
   between,
   desc,
   eq,
-  getTableColumns,
   getViewName,
-  getViewSelectedFields,
+  getColumns,
   gte,
   inArray,
   not,
@@ -137,7 +136,7 @@ export const makeRepository = Effect.gen(function* () {
 
           return tx
             .with(cte)
-            .select(getTableColumns(table))
+            .select(getColumns(table))
             .from(table)
             .innerJoin(
               cte,
@@ -176,7 +175,7 @@ export const makeRepository = Effect.gen(function* () {
 
       return tx
         .with(cte)
-        .select(getTableColumns(table))
+        .select(getColumns(table))
         .from(table)
         .innerJoin(
           cte,
@@ -327,7 +326,7 @@ export const makeSyncRepository = Effect.gen(function* () {
                       activeCustomerAuthorizedSharedAccountView.id,
                       activeCustomerAuthorizedSharedAccountView.tenantId,
                     ],
-                    Struct.omit(getViewSelectedFields(activeCustomerAuthorizedSharedAccountView), [
+                    Struct.omit(getColumns(activeCustomerAuthorizedSharedAccountView), [
                       "customerId",
                     ]),
                   )
@@ -375,7 +374,7 @@ export const makeSyncRepository = Effect.gen(function* () {
                       activeManagerAuthorizedSharedAccountView.id,
                       activeManagerAuthorizedSharedAccountView.tenantId,
                     ],
-                    Struct.omit(getViewSelectedFields(activeManagerAuthorizedSharedAccountView), [
+                    Struct.omit(getColumns(activeManagerAuthorizedSharedAccountView), [
                       "managerId",
                     ]),
                   )

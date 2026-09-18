@@ -1,4 +1,4 @@
-import { and, eq, getViewName, getViewSelectedFields, inArray, not, notInArray } from "drizzle-orm";
+import { and, eq, getViewName, getColumns, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -215,7 +215,7 @@ export const makeSyncRepository = Effect.gen(function* () {
               tx
                 .selectDistinctOn(
                   [activeCustomerAuthorizedView.id, activeCustomerAuthorizedView.tenantId],
-                  Struct.omit(getViewSelectedFields(activeCustomerAuthorizedView), ["customerId"]),
+                  Struct.omit(getColumns(activeCustomerAuthorizedView), ["customerId"]),
                 )
                 .from(activeCustomerAuthorizedView)
                 .where(
@@ -250,7 +250,7 @@ export const makeSyncRepository = Effect.gen(function* () {
               tx
                 .selectDistinctOn(
                   [activeManagerAuthorizedView.id, activeManagerAuthorizedView.tenantId],
-                  Struct.omit(getViewSelectedFields(activeManagerAuthorizedView), ["managerId"]),
+                  Struct.omit(getColumns(activeManagerAuthorizedView), ["managerId"]),
                 )
                 .from(activeManagerAuthorizedView)
                 .where(

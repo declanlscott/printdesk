@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNotNull, isNull, ne, or } from "drizzle-orm";
+import { and, eq, getColumns, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { check, index, snakeCase } from "drizzle-orm/pg-core";
 import * as Schema from "effect/Schema";
 
@@ -48,7 +48,7 @@ export const activeCustomerPlacedOrderInvoicesView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeInvoicesView),
+        ...getColumns(activeInvoicesView),
         customerId: activeOrdersView.customerId,
       })
       .from(activeInvoicesView)
@@ -69,7 +69,7 @@ export const activeManagerAuthorizedSharedAccountOrderInvoicesView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeInvoicesView),
+        ...getColumns(activeInvoicesView),
         authorizedManagerId: activeSharedAccountManagerAccessView.managerId,
       })
       .from(activeInvoicesView)

@@ -1,15 +1,5 @@
 // oxlint-disable typescript/no-unsafe-type-assertion
-import {
-  and,
-  eq,
-  getTableColumns,
-  getViewName,
-  getViewSelectedFields,
-  inArray,
-  not,
-  notInArray,
-  or,
-} from "drizzle-orm";
+import { and, eq, getViewName, getColumns, inArray, not, notInArray, or } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
@@ -74,8 +64,8 @@ export const makeRepository = Effect.gen(function* () {
         .useTransaction((tx) =>
           tx
             .select({
-              order: getTableColumns(table),
-              workflowStatus: getTableColumns(workflowStatuses.table),
+              order: getColumns(table),
+              workflowStatus: getColumns(workflowStatuses.table),
             })
             .from(table)
             .innerJoin(
@@ -273,7 +263,7 @@ export const makeSyncRepository = Effect.gen(function* () {
                       activeManagerAuthorizedSharedAccountView.id,
                       activeManagerAuthorizedSharedAccountView.tenantId,
                     ],
-                    Struct.omit(getViewSelectedFields(activeManagerAuthorizedSharedAccountView), [
+                    Struct.omit(getColumns(activeManagerAuthorizedSharedAccountView), [
                       "authorizedManagerId",
                     ]),
                   )

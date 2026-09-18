@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNull } from "drizzle-orm";
+import { and, eq, getColumns, isNull } from "drizzle-orm";
 import { index, snakeCase, text, unique, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
@@ -57,7 +57,7 @@ export const activeMembershipGroupsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeGroupsView),
+        ...getColumns(activeGroupsView),
         userId: activeGroupMembershipsView.userId,
       })
       .from(activeGroupsView)

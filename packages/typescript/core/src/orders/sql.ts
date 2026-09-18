@@ -1,4 +1,4 @@
-import { and, eq, getViewSelectedFields, isNull, ne } from "drizzle-orm";
+import { and, eq, getColumns, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { check, index, snakeCase, text, unique } from "drizzle-orm/pg-core";
 
 import { Columns } from "../columns";
@@ -55,7 +55,7 @@ export const activeManagerAuthorizedSharedAccountOrdersView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeOrdersView),
+        ...getColumns(activeOrdersView),
         authorizedManagerId:
           activeSharedAccountManagerAccessView.managerId.as("authorized_manager_id"),
       })
@@ -103,7 +103,7 @@ export const activeCustomerPlacedOrderObjectMetadataView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeOrderObjectMetadataView),
+        ...getColumns(activeOrderObjectMetadataView),
         customerId: activeOrdersView.customerId,
       })
       .from(activeOrderObjectMetadataView)
@@ -124,7 +124,7 @@ export const activeManagerAuthorizedSharedAccountOrderObjectMetadataView = snake
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeOrderObjectMetadataView),
+        ...getColumns(activeOrderObjectMetadataView),
         authorizedManagerId: activeSharedAccountManagerAccessView.managerId,
       })
       .from(activeOrderObjectMetadataView)

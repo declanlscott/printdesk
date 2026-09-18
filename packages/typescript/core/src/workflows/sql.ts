@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, getViewSelectedFields, isNull, ne } from "drizzle-orm";
+import { and, eq, getColumns, isNull, ne } from "drizzle-orm";
 import {
   boolean,
   check,
@@ -41,7 +41,7 @@ export const activePublishedRoomRoomWorkflowsView = snakeCase
   .view(`active_published_room_${roomWorkflows.name}`)
   .as((qb) =>
     qb
-      .select(getViewSelectedFields(activeRoomWorkflowsView))
+      .select(getColumns(activeRoomWorkflowsView))
       .from(activeRoomWorkflowsView)
       .innerJoin(
         activePublishedRoomsView,
@@ -80,7 +80,7 @@ export const activeCustomerAuthorizedSharedAccountWorkflowsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountWorkflowsView),
+        ...getColumns(activeSharedAccountWorkflowsView),
         customerId: activeSharedAccountCustomerAccessView.customerId,
       })
       .from(activeSharedAccountWorkflowsView)
@@ -108,7 +108,7 @@ export const activeManagerAuthorizedSharedAccountWorkflowsView = snakeCase
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeSharedAccountWorkflowsView),
+        ...getColumns(activeSharedAccountWorkflowsView),
         managerId: activeSharedAccountManagerAccessView.managerId,
       })
       .from(activeSharedAccountWorkflowsView)
@@ -160,7 +160,7 @@ export const activeWorkflowStatusesView = snakeCase
   .view(`active_${workflowStatuses.name}`)
   .as((qb) =>
     qb
-      .select(getTableColumns(workflowStatusesTable))
+      .select(getColumns(workflowStatusesTable))
       .from(workflowStatusesTable)
       .where(isNull(workflowStatusesTable.deletedAt)),
   );
@@ -174,7 +174,7 @@ export const activeCustomerAuthorizedSharedAccountWorkflowStatusesView = snakeCa
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeWorkflowStatusesView),
+        ...getColumns(activeWorkflowStatusesView),
         customerId: activeCustomerAuthorizedSharedAccountWorkflowsView.customerId,
       })
       .from(activeWorkflowStatusesView)
@@ -203,7 +203,7 @@ export const activeManagerAuthorizedSharedAccountWorkflowStatusesView = snakeCas
   .as((qb) =>
     qb
       .select({
-        ...getViewSelectedFields(activeWorkflowStatusesView),
+        ...getColumns(activeWorkflowStatusesView),
         managerId: activeManagerAuthorizedSharedAccountWorkflowsView.managerId,
       })
       .from(activeWorkflowStatusesView)
@@ -231,7 +231,7 @@ export const activePublishedRoomWorkflowStatusesView = snakeCase
   .view(`active_published_room_${workflowStatuses.name}`)
   .as((qb) =>
     qb
-      .select(getViewSelectedFields(activeWorkflowStatusesView))
+      .select(getColumns(activeWorkflowStatusesView))
       .from(activeWorkflowStatusesView)
       .innerJoin(
         activePublishedRoomRoomWorkflowsView,

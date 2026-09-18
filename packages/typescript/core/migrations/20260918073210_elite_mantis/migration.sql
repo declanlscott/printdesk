@@ -165,6 +165,7 @@ CREATE TABLE "orders" (
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	"deleted_at" timestamp,
 	"version" integer DEFAULT 1 NOT NULL,
+	"status" varchar(50) DEFAULT 'draft' NOT NULL,
 	"short_id" integer,
 	"customer_id" char(11) NOT NULL,
 	"manager_id" char(11),
@@ -173,10 +174,22 @@ CREATE TABLE "orders" (
 	"shared_account_id" char(11),
 	"room_workflow_status_id" char(11),
 	"shared_account_workflow_status_id" char(11),
-	"delivery_option_id" char(11) NOT NULL,
-	"attributes" bytea NOT NULL,
+	"delivery_option_id" char(11),
+	"attributes" bytea,
 	"approved_at" timestamp,
 	CONSTRAINT "orders_pkey" PRIMARY KEY("id", "tenant_id"),
+	CONSTRAINT "status_validity" CHECK (
+		(
+			("status" = 'draft')
+			or (
+				(
+					("status" = 'submitted')
+					and (("attributes" is not null))
+					and (("delivery_option_id" is not null))
+				)
+			)
+		)
+	),
 	CONSTRAINT "workflow_status_id_xor" CHECK (
 		("room_workflow_status_id" is null) <> ("shared_account_workflow_status_id" is null)
 	)
@@ -864,6 +877,7 @@ CREATE VIEW "active_orders" AS (
 		"updated_at",
 		"deleted_at",
 		"version",
+		"status",
 		"short_id",
 		"customer_id",
 		"manager_id",
@@ -890,6 +904,7 @@ CREATE VIEW "active_manager_authorized_shared_account_orders" AS (
 		"active_orders"."updated_at",
 		"active_orders"."deleted_at",
 		"active_orders"."version",
+		"active_orders"."status",
 		"active_orders"."short_id",
 		"active_orders"."customer_id",
 		"active_orders"."manager_id",
@@ -934,7 +949,7 @@ CREATE VIEW "active_comments" AS (
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_customer_placed_order_comments" AS (
+CREATE VIEW "active_customer_order_comments" AS (
 	select
 		"active_comments"."id",
 		"active_comments"."tenant_id",
@@ -1059,7 +1074,7 @@ CREATE VIEW "active_invoices" AS (
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_customer_placed_order_invoices" AS (
+CREATE VIEW "active_customer_order_invoices" AS (
 	select
 		"active_invoices"."id",
 		"active_invoices"."tenant_id",
@@ -1139,7 +1154,7 @@ CREATE VIEW "active_order_object_metadata" AS (
 );
 
 --> statement-breakpoint
-CREATE VIEW "active_customer_placed_order_object_metadata" AS (
+CREATE VIEW "active_customer_order_object_metadata" AS (
 	select
 		"active_order_object_metadata"."id",
 		"active_order_object_metadata"."tenant_id",

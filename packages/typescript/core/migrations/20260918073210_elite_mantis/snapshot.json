@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "08ac3c39-c3eb-4379-ae1a-44774ca2be0a",
+  "id": "92292ae7-7834-427e-8f1d-de54ff4aec94",
   "prevIds": [
     "00000000-0000-0000-0000-000000000000"
   ],
@@ -1456,6 +1456,19 @@
       "table": "orders"
     },
     {
+      "type": "varchar(50)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'draft'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "orders"
+    },
+    {
       "type": "integer",
       "typeSchema": null,
       "notNull": false,
@@ -1562,7 +1575,7 @@
     {
       "type": "char(11)",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -1575,7 +1588,7 @@
     {
       "type": "bytea",
       "typeSchema": null,
-      "notNull": true,
+      "notNull": false,
       "dimensions": 0,
       "default": null,
       "generated": null,
@@ -4608,6 +4621,13 @@
       "table": "invoices"
     },
     {
+      "value": "((\"status\" = 'draft') or (((\"status\" = 'submitted') and ((\"attributes\" is not null)) and ((\"delivery_option_id\" is not null)))))",
+      "name": "status_validity",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "orders"
+    },
+    {
       "value": "(\"room_workflow_status_id\" is null) <> (\"shared_account_workflow_status_id\" is null)",
       "name": "workflow_status_id_xor",
       "entityType": "checks",
@@ -4675,7 +4695,7 @@
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_customer_placed_order_comments",
+      "name": "active_customer_order_comments",
       "entityType": "views",
       "schema": "public"
     },
@@ -4763,7 +4783,7 @@
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_customer_placed_order_invoices",
+      "name": "active_customer_order_invoices",
       "entityType": "views",
       "schema": "public"
     },
@@ -4796,7 +4816,7 @@
       "using": null,
       "tablespace": null,
       "materialized": false,
-      "name": "active_customer_placed_order_object_metadata",
+      "name": "active_customer_order_object_metadata",
       "entityType": "views",
       "schema": "public"
     },
@@ -4812,7 +4832,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"short_id\", \"customer_id\", \"manager_id\", \"operator_id\", \"product_id\", \"shared_account_id\", \"room_workflow_status_id\", \"shared_account_workflow_status_id\", \"delivery_option_id\", \"attributes\", \"approved_at\" from \"orders\" where (\"orders\".\"deleted_at\" is null)",
+      "definition": "select \"id\", \"tenant_id\", \"created_at\", \"updated_at\", \"deleted_at\", \"version\", \"status\", \"short_id\", \"customer_id\", \"manager_id\", \"operator_id\", \"product_id\", \"shared_account_id\", \"room_workflow_status_id\", \"shared_account_workflow_status_id\", \"delivery_option_id\", \"attributes\", \"approved_at\" from \"orders\" where (\"orders\".\"deleted_at\" is null)",
       "with": null,
       "withNoData": null,
       "using": null,
@@ -4823,7 +4843,7 @@
       "schema": "public"
     },
     {
-      "definition": "select \"active_orders\".\"id\", \"active_orders\".\"tenant_id\", \"active_orders\".\"created_at\", \"active_orders\".\"updated_at\", \"active_orders\".\"deleted_at\", \"active_orders\".\"version\", \"active_orders\".\"short_id\", \"active_orders\".\"customer_id\", \"active_orders\".\"manager_id\", \"active_orders\".\"operator_id\", \"active_orders\".\"product_id\", \"active_orders\".\"shared_account_id\", \"active_orders\".\"room_workflow_status_id\", \"active_orders\".\"shared_account_workflow_status_id\", \"active_orders\".\"delivery_option_id\", \"active_orders\".\"attributes\", \"active_orders\".\"approved_at\", \"active_shared_account_manager_access\".\"manager_id\" as \"authorized_manager_id\" from \"active_orders\" inner join \"active_shared_account_manager_access\" on ((\"active_orders\".\"shared_account_id\" = \"active_shared_account_manager_access\".\"shared_account_id\") and (\"active_orders\".\"tenant_id\" = \"active_shared_account_manager_access\".\"tenant_id\"))",
+      "definition": "select \"active_orders\".\"id\", \"active_orders\".\"tenant_id\", \"active_orders\".\"created_at\", \"active_orders\".\"updated_at\", \"active_orders\".\"deleted_at\", \"active_orders\".\"version\", \"active_orders\".\"status\", \"active_orders\".\"short_id\", \"active_orders\".\"customer_id\", \"active_orders\".\"manager_id\", \"active_orders\".\"operator_id\", \"active_orders\".\"product_id\", \"active_orders\".\"shared_account_id\", \"active_orders\".\"room_workflow_status_id\", \"active_orders\".\"shared_account_workflow_status_id\", \"active_orders\".\"delivery_option_id\", \"active_orders\".\"attributes\", \"active_orders\".\"approved_at\", \"active_shared_account_manager_access\".\"manager_id\" as \"authorized_manager_id\" from \"active_orders\" inner join \"active_shared_account_manager_access\" on ((\"active_orders\".\"shared_account_id\" = \"active_shared_account_manager_access\".\"shared_account_id\") and (\"active_orders\".\"tenant_id\" = \"active_shared_account_manager_access\".\"tenant_id\"))",
       "with": null,
       "withNoData": null,
       "using": null,

@@ -1,6 +1,7 @@
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as Struct from "effect/Struct";
+import * as Tuple from "effect/Tuple";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
@@ -10,12 +11,12 @@ import { AttributesContract } from "../attributes/contract";
 import { ColumnsContract } from "../columns/contract";
 import { Handler } from "../handlers";
 import { TablesContract } from "../tables/contract";
-import { EntityId, IsoDate, IsoTimestamp } from "../utils";
+import { EntityId, IsoDate, IsoTimestamp, omitStructFields, optionalStructFields } from "../utils";
 import { Constants } from "../utils/constants";
 
 import type {
-  ActiveCustomerPlacedOrderObjectMetadataView,
-  ActiveCustomerPlacedOrdersView,
+  ActiveCustomerOrderObjectMetadataView,
+  ActiveCustomerOrdersView,
   ActiveManagerAuthorizedSharedAccountOrderObjectMetadataView,
   ActiveManagerAuthorizedSharedAccountOrdersView,
   ActiveOrderObjectMetadataView,
@@ -25,6 +26,10 @@ import type {
 } from "./sql";
 
 export namespace OrdersContract {
+  export const draftStatus = "draft";
+  export const submittedStatus = "submitted";
+  export const Status = Schema.Literals([draftStatus, submittedStatus]);
+
   export class AttributesV1 extends Schema.TaggedClass<AttributesV1>()("OrderAttributesV1", {
     // Product name
     productName: Schema.String,
@@ -163,70 +168,135 @@ export namespace OrdersContract {
   }) {}
   export const Attributes = Schema.Union([AttributesV1]);
 
-  class BaseModel extends Schema.Class<BaseModel>("BaseModel")({
-    ...TablesContract.BaseSyncModel.fields,
+  class BaseModel extends TablesContract.BaseSyncModel.extend<BaseModel>("BaseModel")({
     shortId: ColumnsContract.NullableShortId,
     customerId: EntityId,
     managerId: ColumnsContract.NullableEntityId,
     operatorId: ColumnsContract.NullableEntityId,
     productId: EntityId,
     sharedAccountId: EntityId.pipe(Schema.NullOr),
-    deliveryOptionId: EntityId,
-    attributes: Attributes,
     approvedAt: ColumnsContract.NullableTimestamp,
   }) {}
 
-  export class RoomWorkflowStatusModel extends BaseModel.extend<RoomWorkflowStatusModel>(
-    "RoomWorkflowStatus",
-  )({ roomWorkflowStatusId: EntityId, sharedAccountWorkflowStatusId: Schema.Null }) {}
+  export class DraftRoomWorkflowStatusModel extends BaseModel.extend<DraftRoomWorkflowStatusModel>(
+    "DraftRoomWorkflowStatusModel",
+  )({
+    status: Status.members[0],
+    deliveryOptionId: EntityId.pipe(Schema.NullOr),
+    attributes: Attributes.pipe(Schema.NullOr),
+    roomWorkflowStatusId: EntityId.pipe(Schema.NullOr),
+    sharedAccountWorkflowStatusId: Schema.Null,
+  }) {}
 
-  export class SharedAccountWorkflowStatusModel extends BaseModel.extend<SharedAccountWorkflowStatusModel>(
-    "SharedAccountWorkflowStatus",
-  )({ roomWorkflowStatusId: Schema.Null, sharedAccountWorkflowStatusId: EntityId }) {}
+  export class DraftSharedAccountWorkflowStatusModel extends BaseModel.extend<DraftSharedAccountWorkflowStatusModel>(
+    "DraftSharedAccountWorkflowStatusModel",
+  )({
+    status: Status.members[0],
+    deliveryOptionId: EntityId.pipe(Schema.NullOr),
+    attributes: Attributes.pipe(Schema.NullOr),
+    roomWorkflowStatusId: Schema.Null,
+    sharedAccountWorkflowStatusId: EntityId.pipe(Schema.NullOr),
+  }) {}
+
+  export class SubmittedRoomWorkflowStatusModel extends BaseModel.extend<SubmittedRoomWorkflowStatusModel>(
+    "SubmittedRoomWorkflowStatusModel",
+  )({
+    status: Status.members[1],
+    deliveryOptionId: EntityId,
+    attributes: Attributes,
+    roomWorkflowStatusId: EntityId,
+    sharedAccountWorkflowStatusId: Schema.Null,
+  }) {}
+
+  export class SubmittedSharedAccountWorkflowStatusModel extends BaseModel.extend<SubmittedSharedAccountWorkflowStatusModel>(
+    "SubmittedSharedAccountWorkflowStatusModel",
+  )({
+    status: Status.members[1],
+    deliveryOptionId: EntityId,
+    attributes: Attributes,
+    roomWorkflowStatusId: Schema.Null,
+    sharedAccountWorkflowStatusId: EntityId,
+  }) {}
 
   export class Table extends TablesContract.UnionTable<OrdersTable>("orders")(
-    [RoomWorkflowStatusModel.fields, SharedAccountWorkflowStatusModel.fields],
+    [
+      DraftRoomWorkflowStatusModel.fields,
+      DraftSharedAccountWorkflowStatusModel.fields,
+      SubmittedRoomWorkflowStatusModel.fields,
+      SubmittedSharedAccountWorkflowStatusModel.fields,
+    ],
     ["create", "read", "update", "delete"],
   ) {}
 
-  export class ActiveRoomWorkflowStatusModel extends Schema.Class<ActiveRoomWorkflowStatusModel>(
-    "ActiveRoomWorkflowStatus",
+  export class ActiveDraftRoomWorkflowStatusModel extends Schema.Class<ActiveDraftRoomWorkflowStatusModel>(
+    "ActiveDraftRoomWorkflowStatusModel",
   )(
-    Struct.evolve(RoomWorkflowStatusModel.fields, {
+    Struct.evolve(DraftRoomWorkflowStatusModel.fields, {
       deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[1],
     }),
   ) {}
 
-  export class ActiveSharedAccountWorkflowStatusModel extends Schema.Class<ActiveSharedAccountWorkflowStatusModel>(
-    "ActiveSharedAccountWorkflowStatus",
+  export class ActiveDraftSharedAccountWorkflowStatusModel extends Schema.Class<ActiveDraftSharedAccountWorkflowStatusModel>(
+    "ActiveDraftSharedAccountWorkflowStatusModel",
   )(
-    Struct.evolve(SharedAccountWorkflowStatusModel.fields, {
+    Struct.evolve(DraftSharedAccountWorkflowStatusModel.fields, {
+      deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[1],
+    }),
+  ) {}
+
+  export class ActiveSubmittedRoomWorkflowStatusModel extends Schema.Class<ActiveSubmittedRoomWorkflowStatusModel>(
+    "ActiveSubmittedRoomWorkflowStatusModel",
+  )(
+    Struct.evolve(SubmittedRoomWorkflowStatusModel.fields, {
+      deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[1],
+    }),
+  ) {}
+
+  export class ActiveSubmittedSharedAccountWorkflowStatusModel extends Schema.Class<ActiveSubmittedSharedAccountWorkflowStatusModel>(
+    "ActiveSubmittedSharedAccountWorkflowStatusModel",
+  )(
+    Struct.evolve(SubmittedSharedAccountWorkflowStatusModel.fields, {
       deletedAt: (deletedAt) => deletedAt.schema.from.schema.members[0].members[1],
     }),
   ) {}
 
   export class ActiveView extends TablesContract.UnionView<ActiveOrdersView>(
     `active_${Table.name}`,
-  )([ActiveSharedAccountWorkflowStatusModel.fields, ActiveRoomWorkflowStatusModel.fields]) {}
+  )([
+    ActiveDraftSharedAccountWorkflowStatusModel.fields,
+    ActiveDraftRoomWorkflowStatusModel.fields,
+    ActiveSubmittedSharedAccountWorkflowStatusModel.fields,
+    ActiveSubmittedRoomWorkflowStatusModel.fields,
+  ]) {}
 
-  export class ActiveCustomerPlacedView extends TablesContract.UnionVirtualView<ActiveCustomerPlacedOrdersView>()(
-    `active_customer_placed_${Table.name}`,
+  export class ActiveCustomerView extends TablesContract.UnionVirtualView<ActiveCustomerOrdersView>()(
+    `active_customer_${Table.name}`,
     ActiveView.membersFields,
   ) {}
 
-  export class ActiveManagerAuthorizedRoomWorkflowStatusModel extends ActiveRoomWorkflowStatusModel.extend<ActiveManagerAuthorizedRoomWorkflowStatusModel>(
-    "ActiveManagerAuthorizedSharedAccountRoomWorkflowStatus",
+  export class ActiveDraftManagerAuthorizedRoomWorkflowStatusModel extends ActiveDraftRoomWorkflowStatusModel.extend<ActiveDraftManagerAuthorizedRoomWorkflowStatusModel>(
+    "ActiveDraftManagerAuthorizedSharedAccountRoomWorkflowStatusModel",
   )({ authorizedManagerId: EntityId }) {}
 
-  export class ActiveManagerAuthorizedSharedAccountWorkflowStatusModel extends ActiveSharedAccountWorkflowStatusModel.extend<ActiveManagerAuthorizedSharedAccountWorkflowStatusModel>(
-    "ActiveManagerAuthorizedSharedAccountWorkflowStatus",
+  export class ActiveDraftManagerAuthorizedSharedAccountWorkflowStatusModel extends ActiveDraftSharedAccountWorkflowStatusModel.extend<ActiveDraftManagerAuthorizedSharedAccountWorkflowStatusModel>(
+    "ActiveDraftManagerAuthorizedSharedAccountWorkflowStatusModel",
+  )({ authorizedManagerId: EntityId }) {}
+
+  export class ActiveSubmittedManagerAuthorizedRoomWorkflowStatusModel extends ActiveSubmittedRoomWorkflowStatusModel.extend<ActiveSubmittedManagerAuthorizedRoomWorkflowStatusModel>(
+    "ActiveSubmittedManagerAuthorizedSharedAccountRoomWorkflowStatusModel",
+  )({ authorizedManagerId: EntityId }) {}
+
+  export class ActiveSubmittedManagerAuthorizedSharedAccountWorkflowStatusModel extends ActiveSubmittedSharedAccountWorkflowStatusModel.extend<ActiveSubmittedManagerAuthorizedSharedAccountWorkflowStatusModel>(
+    "ActiveSubmittedManagerAuthorizedSharedAccountWorkflowStatusModel",
   )({ authorizedManagerId: EntityId }) {}
 
   export class ActiveManagerAuthorizedSharedAccountView extends TablesContract.UnionView<ActiveManagerAuthorizedSharedAccountOrdersView>(
     `active_manager_authorized_shared_account_${Table.name}`,
   )([
-    ActiveManagerAuthorizedSharedAccountWorkflowStatusModel.fields,
-    ActiveManagerAuthorizedRoomWorkflowStatusModel.fields,
+    ActiveDraftManagerAuthorizedSharedAccountWorkflowStatusModel.fields,
+    ActiveDraftManagerAuthorizedRoomWorkflowStatusModel.fields,
+    ActiveSubmittedManagerAuthorizedSharedAccountWorkflowStatusModel.fields,
+    ActiveSubmittedManagerAuthorizedRoomWorkflowStatusModel.fields,
   ]) {}
 
   export class Item extends Schema.Class<Item>("Item")({
@@ -235,7 +305,9 @@ export namespace OrdersContract {
   }) {}
 
   const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), { id: (id) => id.from.schema.members[0] }),
+    Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), {
+      id: (id) => id.from.schema.members[0],
+    }),
   );
 
   export const isCustomer = new Handler.Handler({
@@ -298,33 +370,73 @@ export namespace OrdersContract {
     Output: Schema.Void,
   });
 
-  const omittedOnCreate = [
+  const omittedOnDraft = [
     ...Table.dtoOmitKeys,
     "shortId",
+    "status",
     "managerId",
     "operatorId",
     "approvedAt",
     "deletedAt",
     "tenantId",
   ] as const;
-  export const create = new Handler.Handler({
-    name: "createOrder",
+  export const draft = new Handler.Handler({
+    name: "draftOrder",
     Input: Schema.Union([
-      SharedAccountWorkflowStatusModel.mapFields(Struct.omit(omittedOnCreate)),
-      RoomWorkflowStatusModel.mapFields(Struct.omit(omittedOnCreate)),
+      DraftSharedAccountWorkflowStatusModel.mapFields(Struct.omit(omittedOnDraft)),
+      DraftRoomWorkflowStatusModel.mapFields(Struct.omit(omittedOnDraft)),
+    ]),
+    Output: Table.Dto,
+  });
+
+  export const submit = new Handler.Handler({
+    name: "submitOrder",
+    Input: Schema.Union([
+      IdOnly.pipe(
+        Schema.fieldsAssign(
+          Struct.pick(SubmittedRoomWorkflowStatusModel.fields, [
+            "roomWorkflowStatusId",
+            "sharedAccountWorkflowStatusId",
+          ]),
+        ),
+      ),
+      IdOnly.pipe(
+        Schema.fieldsAssign(
+          Struct.pick(SubmittedSharedAccountWorkflowStatusModel.fields, [
+            "roomWorkflowStatusId",
+            "sharedAccountWorkflowStatusId",
+          ]),
+        ),
+      ),
     ]),
     Output: Table.Dto,
   });
 
   export const edit = new Handler.Handler({
     name: "editOrder",
-    Input: BaseModel.mapFields(Struct.omit([...Struct.keys(TablesContract.BaseSyncModel.fields)]))
-      .mapFields(Struct.map(Schema.optional))
-      .mapFields(
-        Struct.assign(
-          Struct.evolve(Struct.pick(BaseModel.fields, ["id", "updatedAt"]), {
-            id: (id) => id.from.schema.members[0],
-          }),
+    Input: Table.Model.mapMembers(
+      Tuple.map(
+        omitStructFields([
+          ...Struct.keys(TablesContract.BaseSyncModel.fields),
+          "shortId",
+          "status",
+          "customerId",
+          "managerId",
+          "operatorId",
+          "roomWorkflowStatusId",
+          "sharedAccountWorkflowStatusId",
+          "approvedAt",
+        ]),
+      ),
+    )
+      .mapMembers(Tuple.map(optionalStructFields))
+      .mapMembers(
+        Tuple.map(
+          Schema.fieldsAssign(
+            Struct.evolve(Struct.pick(BaseModel.fields, ["id", "updatedAt"]), {
+              id: (id) => id.from.schema.members[0],
+            }),
+          ),
         ),
       ),
     Output: Table.Dto,
@@ -335,7 +447,7 @@ export namespace OrdersContract {
     Input: IdOnly.mapFields(
       Struct.assign(
         Struct.evolve(
-          Struct.pick(RoomWorkflowStatusModel.fields, ["approvedAt", "roomWorkflowStatusId"]),
+          Struct.pick(DraftRoomWorkflowStatusModel.fields, ["approvedAt", "roomWorkflowStatusId"]),
           { approvedAt: (approvedAt) => approvedAt.schema.from.schema.members[0].members[0] },
         ),
       ),
@@ -347,7 +459,7 @@ export namespace OrdersContract {
     name: "transitionOrderRoomWorkflowStatus",
     Input: IdOnly.mapFields(
       Struct.assign(
-        Struct.pick(RoomWorkflowStatusModel.fields, ["updatedAt", "roomWorkflowStatusId"]),
+        Struct.pick(DraftRoomWorkflowStatusModel.fields, ["updatedAt", "roomWorkflowStatusId"]),
       ),
     ),
     Output: Table.Dto,
@@ -357,7 +469,7 @@ export namespace OrdersContract {
     name: "transitionOrderSharedAccountWorkflowStatus",
     Input: IdOnly.mapFields(
       Struct.assign(
-        Struct.pick(SharedAccountWorkflowStatusModel.fields, [
+        Struct.pick(DraftSharedAccountWorkflowStatusModel.fields, [
           "updatedAt",
           "sharedAccountWorkflowStatusId",
         ]),
@@ -419,8 +531,8 @@ export namespace OrderObjectMetadataContract {
     }),
   ) {}
 
-  export class ActiveCustomerPlacedView extends TablesContract.VirtualView<ActiveCustomerPlacedOrderObjectMetadataView>()(
-    `active_customer_placed_${Table.name}`,
+  export class ActiveCustomerView extends TablesContract.VirtualView<ActiveCustomerOrderObjectMetadataView>()(
+    `active_customer_${Table.name}`,
     { ...ActiveView.Model.fields, customerId: EntityId },
   ) {}
 

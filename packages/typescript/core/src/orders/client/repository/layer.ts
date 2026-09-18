@@ -1,5 +1,6 @@
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as Result from "effect/Result";
 
 import { OrdersRepository } from ".";
@@ -22,9 +23,9 @@ export const makeService = Effect.gen(function* () {
   ) {
     const order = yield* repository.findById(id);
 
-    const workflowStatus = yield* workflowStatusesRepository.findById(
+    const workflowStatus = yield* Option.fromNullOr(
       order.roomWorkflowStatusId ?? order.sharedAccountWorkflowStatusId,
-    );
+    ).pipe(Effect.fromOption, Effect.flatMap(workflowStatusesRepository.findById));
 
     return { order, workflowStatus };
   });

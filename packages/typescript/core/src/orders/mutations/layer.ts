@@ -3,13 +3,11 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
 import * as Option from "effect/Option";
-import * as Tuple from "effect/Tuple";
 
 import { OrdersMutations } from ".";
 import { AccessControl } from "../../access-control";
 import { Transaction } from "../../database/transaction";
 import { Mutation } from "../../mutations";
-import { ProductsRepository } from "../../products/repositories";
 import { ReplicacheContract } from "../../replicache/contracts";
 import { ReplicacheNotifier } from "../../replicache/notifier";
 import { SharedAccountsPolicies } from "../../shared-accounts/policies";
@@ -23,7 +21,6 @@ export type ServiceShape = Effect.Success<typeof makeService>;
 
 export const makeService = Effect.gen(function* () {
   const repository = yield* OrdersRepository;
-  const productsRepository = yield* ProductsRepository;
 
   const shortIdGenerator = yield* OrdersShortIdGenerator;
 
@@ -47,8 +44,8 @@ export const makeService = Effect.gen(function* () {
       ),
     );
 
-  const create = Mutation.make(OrdersContract.create, {
-    makePolicy: Effect.fn("Orders.Mutations.create.makePolicy")((order) =>
+  const draft = Mutation.make(OrdersContract.draft, {
+    makePolicy: Effect.fn("Orders.Mutations.draft.makePolicy")((order) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("orders:create"),
         Match.value(order).pipe(
@@ -71,18 +68,11 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     ),
-    mutator: Effect.fn("Orders.Mutations.create.mutator")((order, { tenantId }) =>
+    mutator: Effect.fn("Orders.Mutations.draft.mutator")((order, { tenantId }) =>
       // TODO: Verify workflow status is correct
-      Effect.all(
-        [
-          repository.create({ ...order, tenantId }),
-          productsRepository.findById(order.productId, tenantId),
-        ],
-        { concurrency: "unbounded" },
-      ).pipe(
-        Effect.catchTag("NoSuchElementError", Effect.die),
-        Effect.tap(([order, { roomId }]) =>
-          shortIdGenerator.generate({ tenantId: order.tenantId, roomId }).pipe(
+      repository.createWithRoomId({ ...order, status: OrdersContract.draftStatus, tenantId }).pipe(
+        Effect.tap((order) =>
+          shortIdGenerator.generate({ tenantId: order.tenantId, roomId: order.roomId }).pipe(
             Effect.flatMap((shortId) =>
               repository.updateById(order.id, { shortId }, order.tenantId),
             ),
@@ -95,9 +85,24 @@ export const makeService = Effect.gen(function* () {
             Transaction.after(),
           ),
         ),
-        Effect.map(Tuple.get(0)),
         Effect.tap(notify),
       ),
+    ),
+  });
+
+  const submit = Mutation.make(OrdersContract.submit, {
+    makePolicy: Effect.fn("Orders.Mutations.submit.makePolicy")(({ id }) =>
+      AccessControl.some(
+        AccessControl.userPermissionPolicy("orders:update"),
+        policies.isCustomerOrManager.make({ id, userId: Option.none() }),
+        policies.isManagerAuthorized.make({ id, managerId: Option.none() }),
+      ),
+    ),
+    mutator: Effect.fn("Orders.Mutations.submit.mutator")((order, user) =>
+      // TODO: Verify workflow status is correct
+      repository
+        .updateById(order.id, { ...order, status: OrdersContract.submittedStatus }, user.tenantId)
+        .pipe(Effect.tap(notify)),
     ),
   });
 
@@ -208,7 +213,8 @@ export const makeService = Effect.gen(function* () {
   });
 
   return {
-    create,
+    draft,
+    submit,
     edit,
     approve,
     transitionRoomWorkflowStatus,

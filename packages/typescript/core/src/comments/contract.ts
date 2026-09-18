@@ -8,7 +8,7 @@ import { EntityId } from "../utils";
 
 import type {
   ActiveCommentsView,
-  ActiveCustomerPlacedOrderCommentsView,
+  ActiveCustomerOrderCommentsView,
   ActiveManagerAuthorizedSharedAccountOrderCommentsView,
   CommentsTable,
 } from "./sql";
@@ -31,8 +31,8 @@ export namespace CommentsContract {
     }),
   ) {}
 
-  export class ActiveCustomerPlacedOrderView extends TablesContract.View<ActiveCustomerPlacedOrderCommentsView>(
-    `active_customer_placed_order_${Table.name}`,
+  export class ActiveCustomerOrderView extends TablesContract.View<ActiveCustomerOrderCommentsView>(
+    `active_customer_order_${Table.name}`,
   )({ ...ActiveView.Model.fields, customerId: EntityId }) {}
 
   export class ActiveManagerAuthorizedSharedAccountOrderView extends TablesContract.View<ActiveManagerAuthorizedSharedAccountOrderCommentsView>(

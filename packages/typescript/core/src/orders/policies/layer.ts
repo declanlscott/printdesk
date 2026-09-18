@@ -60,8 +60,8 @@ export const makeService = Effect.gen(function* () {
             .pipe(
               Effect.map(
                 (order) =>
-                  order.customerId === userId.pipe(Option.getOrElse(() => userId)) ||
-                  order.managerId === userId.pipe(Option.getOrElse(() => userId)),
+                  order.customerId === userId.pipe(Option.getOrElse(() => user.id)) ||
+                  order.managerId === userId.pipe(Option.getOrElse(() => user.id)),
               ),
             ),
         { name: OrdersContract.Table.name, id },
@@ -93,19 +93,15 @@ export const makeService = Effect.gen(function* () {
             ),
             Effect.map(({ order, workflowStatus }) =>
               Match.value(order).pipe(
-                Match.when({ deletedAt: Match.null }, (o) =>
-                  Match.value(o).pipe(
-                    Match.when(
-                      { sharedAccountWorkflowStatusId: Match.null },
-                      () =>
-                        !order.approvedAt &&
-                        !(
-                          workflowStatus.type === "InProgress" ||
-                          workflowStatus.type === "Completed"
-                        ),
-                    ),
-                    Match.orElse(() => true),
-                  ),
+                Match.when({ deletedAt: Match.null, roomWorkflowStatusId: Match.null }, () => true),
+                Match.when(
+                  {
+                    deletedAt: Match.null,
+                    sharedAccountWorkflowStatusId: Match.null,
+                    approvedAt: Match.null,
+                  },
+                  () =>
+                    !(workflowStatus.type === "InProgress" || workflowStatus.type === "Completed"),
                 ),
                 Match.orElse(() => false),
               ),
@@ -123,10 +119,7 @@ export const makeService = Effect.gen(function* () {
           repository.findWithWorkflowStatusById(id, tenantId).pipe(
             Effect.map(({ order }) =>
               Match.value(order).pipe(
-                Match.when(
-                  { deletedAt: Match.null },
-                  (o) => o.sharedAccountWorkflowStatusId !== null,
-                ),
+                Match.when({ deletedAt: Match.null, roomWorkflowStatusId: Match.null }, () => true),
                 Match.orElse(() => false),
               ),
             ),

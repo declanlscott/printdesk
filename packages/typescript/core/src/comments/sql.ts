@@ -28,8 +28,8 @@ export const activeCommentsView = snakeCase
 export type ActiveCommentsView = typeof activeCommentsView;
 export type ActiveComment = InferSelectViewModel<ActiveCommentsView>;
 
-export const activeCustomerPlacedOrderCommentsView = snakeCase
-  .view(`active_customer_placed_order_${comments.name}`)
+export const activeCustomerOrderCommentsView = snakeCase
+  .view(`active_customer_order_${comments.name}`)
   .as((qb) =>
     qb
       .select({
@@ -45,9 +45,8 @@ export const activeCustomerPlacedOrderCommentsView = snakeCase
         ),
       ),
   );
-export type ActiveCustomerPlacedOrderCommentsView = typeof activeCustomerPlacedOrderCommentsView;
-export type ActiveCustomerPlacedOrderComment =
-  InferSelectViewModel<ActiveCustomerPlacedOrderCommentsView>;
+export type ActiveCustomerOrderCommentsView = typeof activeCustomerOrderCommentsView;
+export type ActiveCustomerOrderComment = InferSelectViewModel<ActiveCustomerOrderCommentsView>;
 
 export const activeManagerAuthorizedSharedAccountOrderCommentsView = snakeCase
   .view(`active_manager_authorized_shared_account_order_${comments.name}`)

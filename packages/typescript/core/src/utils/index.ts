@@ -205,6 +205,50 @@ export const pluck =
       }),
     );
 
+export interface OmitStructFields<
+  TFields extends Schema.Struct.Fields,
+  TKeys extends ReadonlyArray<keyof TFields>,
+>
+  extends Struct.Lambda {
+  <TFields extends Schema.Struct.Fields>(
+    struct: Schema.Struct<TFields>,
+  ): Schema.Struct<Struct.Simplify<Omit<TFields, TKeys[number]>>>;
+  readonly "~lambda.out": this["~lambda.in"] extends Schema.Struct<Schema.Struct.Fields>
+    ? Schema.Struct<Struct.Simplify<Omit<this["~lambda.in"]["fields"], TKeys[number]>>>
+    : never;
+}
+
+export const omitStructFields = <
+  const TFields extends Schema.Struct.Fields,
+  const TKeys extends ReadonlyArray<keyof TFields>,
+>(
+  keys: TKeys,
+) =>
+  Struct.lambda<OmitStructFields<TFields, TKeys>>((struct) => struct.mapFields(Struct.omit(keys)));
+
+export interface OptionalStructFields extends Struct.Lambda {
+  <TFields extends Schema.Struct.Fields>(
+    struct: Schema.Struct<TFields>,
+  ): Schema.Struct<
+    Struct.Simplify<{
+      [TKey in keyof TFields]: Schema.optional<TFields[TKey]>;
+    }>
+  >;
+  readonly "~lambda.out": this["~lambda.in"] extends Schema.Struct<Schema.Struct.Fields>
+    ? Schema.Struct<
+        Struct.Simplify<{
+          [TKey in keyof this["~lambda.in"]["fields"]]: Schema.optional<
+            this["~lambda.in"]["fields"][TKey]
+          >;
+        }>
+      >
+    : never;
+}
+
+export const optionalStructFields = Struct.lambda<OptionalStructFields>((struct) =>
+  struct.mapFields(Struct.map(Schema.optional)),
+);
+
 export const orDieWhenUnrespondable = <TSuccess, TError, TServices>(
   self: Effect.Effect<TSuccess, TError, TServices>,
 ) =>

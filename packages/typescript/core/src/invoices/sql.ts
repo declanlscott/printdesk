@@ -43,8 +43,8 @@ export const activeInvoicesView = snakeCase
 export type ActiveInvoicesView = typeof activeInvoicesView;
 export type ActiveInvoice = InferSelectViewModel<ActiveInvoicesView>;
 
-export const activeCustomerPlacedOrderInvoicesView = snakeCase
-  .view(`active_customer_placed_order_${invoices.name}`)
+export const activeCustomerOrderInvoicesView = snakeCase
+  .view(`active_customer_order_${invoices.name}`)
   .as((qb) =>
     qb
       .select({
@@ -60,9 +60,8 @@ export const activeCustomerPlacedOrderInvoicesView = snakeCase
         ),
       ),
   );
-export type ActiveCustomerPlacedOrderInvoicesView = typeof activeCustomerPlacedOrderInvoicesView;
-export type ActiveCustomerPlacedOrderInvoice =
-  InferSelectViewModel<ActiveCustomerPlacedOrderInvoicesView>;
+export type ActiveCustomerOrderInvoicesView = typeof activeCustomerOrderInvoicesView;
+export type ActiveCustomerOrderInvoice = InferSelectViewModel<ActiveCustomerOrderInvoicesView>;
 
 export const activeManagerAuthorizedSharedAccountOrderInvoicesView = snakeCase
   .view(`active_manager_authorized_shared_account_order_${invoices.name}`)

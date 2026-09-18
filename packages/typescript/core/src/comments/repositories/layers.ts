@@ -10,7 +10,7 @@ import { replicacheClientViewEntries } from "../../replicache/sql";
 import { SyncQueryBuilder } from "../../sync/query-builder";
 import {
   activeCommentsView,
-  activeCustomerPlacedOrderCommentsView,
+  activeCustomerOrderCommentsView,
   activeManagerAuthorizedSharedAccountOrderCommentsView,
   comments,
 } from "../sql";
@@ -19,7 +19,7 @@ import type { InferInsertModel } from "drizzle-orm";
 import type { ReplicacheClientView } from "../../replicache/sql";
 import type {
   ActiveComment,
-  ActiveCustomerPlacedOrderComment,
+  ActiveCustomerOrderComment,
   ActiveManagerAuthorizedSharedAccountOrderComment,
   Comment,
   CommentsTable,
@@ -100,7 +100,7 @@ export const makeSyncRepository = Effect.gen(function* () {
   const db = yield* Database;
   const table = comments.table;
   const activeView = activeCommentsView;
-  const activeCustomerPlacedOrderView = activeCustomerPlacedOrderCommentsView;
+  const activeCustomerOrderView = activeCustomerOrderCommentsView;
   const activeManagedSharedAccountOrderView = activeManagerAuthorizedSharedAccountOrderCommentsView;
 
   const entriesQueryBuilder = yield* SyncQueryBuilder;
@@ -144,38 +144,32 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCustomerPlacedOrderCreates = Effect.fn(
-    "Comments.SyncRepository.findActiveCustomerPlacedOrderCreates",
-  )(
-    (
-      clientView: ReplicacheClientView,
-      customerId: ActiveCustomerPlacedOrderComment["customerId"],
-    ) =>
-      entriesQueryBuilder.creates(comments.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) => {
-            const cte = tx.$with(`${getViewName(activeCustomerPlacedOrderView)}_creates`).as(
-              tx
-                .select(
-                  Struct.omit(getViewSelectedFields(activeCustomerPlacedOrderView), ["customerId"]),
-                )
-                .from(activeCustomerPlacedOrderView)
-                .where(
-                  and(
-                    eq(activeCustomerPlacedOrderView.customerId, customerId),
-                    eq(activeCustomerPlacedOrderView.tenantId, clientView.tenantId),
-                  ),
+  const findActiveCustomerOrderCreates = Effect.fn(
+    "Comments.SyncRepository.findActiveCustomerOrderCreates",
+  )((clientView: ReplicacheClientView, customerId: ActiveCustomerOrderComment["customerId"]) =>
+    entriesQueryBuilder.creates(comments.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) => {
+          const cte = tx.$with(`${getViewName(activeCustomerOrderView)}_creates`).as(
+            tx
+              .select(Struct.omit(getColumns(activeCustomerOrderView), ["customerId"]))
+              .from(activeCustomerOrderView)
+              .where(
+                and(
+                  eq(activeCustomerOrderView.customerId, customerId),
+                  eq(activeCustomerOrderView.tenantId, clientView.tenantId),
                 ),
-            );
+              ),
+          );
 
-            return tx
-              .with(cte)
-              .select()
-              .from(cte)
-              .where(inArray(cte.id, tx.select({ id: cte.id }).from(cte).except(qb)));
-          }),
-        ),
+          return tx
+            .with(cte)
+            .select()
+            .from(cte)
+            .where(inArray(cte.id, tx.select({ id: cte.id }).from(cte).except(qb)));
+        }),
       ),
+    ),
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderCreates = Effect.fn(
@@ -270,43 +264,39 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCustomerPlacedOrderUpdates = Effect.fn(
-    "Comments.SyncRepository.findActiveCustomerPlacedOrderUpdates",
-  )(
-    (
-      clientView: ReplicacheClientView,
-      customerId: ActiveCustomerPlacedOrderComment["customerId"],
-    ) =>
-      entriesQueryBuilder.updates(comments.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) => {
-            const cte = tx
-              .$with(`${getViewName(activeCustomerPlacedOrderView)}_updates`)
-              .as(
-                qb
-                  .innerJoin(
-                    activeCustomerPlacedOrderView,
-                    and(
-                      eq(entriesTable.entityId, activeCustomerPlacedOrderView.id),
-                      not(eq(entriesTable.entityVersion, activeCustomerPlacedOrderView.version)),
-                      eq(entriesTable.tenantId, activeCustomerPlacedOrderView.tenantId),
-                    ),
-                  )
-                  .where(
-                    and(
-                      eq(activeCustomerPlacedOrderView.customerId, customerId),
-                      eq(activeCustomerPlacedOrderView.tenantId, clientView.tenantId),
-                    ),
+  const findActiveCustomerOrderUpdates = Effect.fn(
+    "Comments.SyncRepository.findActiveCustomerOrderUpdates",
+  )((clientView: ReplicacheClientView, customerId: ActiveCustomerOrderComment["customerId"]) =>
+    entriesQueryBuilder.updates(comments.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) => {
+          const cte = tx
+            .$with(`${getViewName(activeCustomerOrderView)}_updates`)
+            .as(
+              qb
+                .innerJoin(
+                  activeCustomerOrderView,
+                  and(
+                    eq(entriesTable.entityId, activeCustomerOrderView.id),
+                    not(eq(entriesTable.entityVersion, activeCustomerOrderView.version)),
+                    eq(entriesTable.tenantId, activeCustomerOrderView.tenantId),
                   ),
-              );
+                )
+                .where(
+                  and(
+                    eq(activeCustomerOrderView.customerId, customerId),
+                    eq(activeCustomerOrderView.tenantId, clientView.tenantId),
+                  ),
+                ),
+            );
 
-            return tx
-              .with(cte)
-              .select(Struct.omit(cte[getViewName(activeCustomerPlacedOrderView)], ["customerId"]))
-              .from(cte);
-          }),
-        ),
+          return tx
+            .with(cte)
+            .select(Struct.omit(cte[getViewName(activeCustomerOrderView)], ["customerId"]))
+            .from(cte);
+        }),
       ),
+    ),
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderUpdates = Effect.fn(
@@ -394,32 +384,28 @@ export const makeSyncRepository = Effect.gen(function* () {
         ),
   );
 
-  const findActiveCustomerPlacedOrderDeletes = Effect.fn(
-    "Comments.SyncRepository.findActiveCustomerPlacedOrderDeletes",
-  )(
-    (
-      clientView: ReplicacheClientView,
-      customerId: ActiveCustomerPlacedOrderComment["customerId"],
-    ) =>
-      entriesQueryBuilder.deletes(comments.name, clientView).pipe(
-        Effect.flatMap((qb) =>
-          db.useTransaction((tx) =>
-            qb.except(
-              tx
-                .select({
-                  id: activeCustomerPlacedOrderView.id,
-                })
-                .from(activeCustomerPlacedOrderView)
-                .where(
-                  and(
-                    eq(activeCustomerPlacedOrderView.customerId, customerId),
-                    eq(activeCustomerPlacedOrderView.tenantId, clientView.tenantId),
-                  ),
+  const findActiveCustomerOrderDeletes = Effect.fn(
+    "Comments.SyncRepository.findActiveCustomerOrderDeletes",
+  )((clientView: ReplicacheClientView, customerId: ActiveCustomerOrderComment["customerId"]) =>
+    entriesQueryBuilder.deletes(comments.name, clientView).pipe(
+      Effect.flatMap((qb) =>
+        db.useTransaction((tx) =>
+          qb.except(
+            tx
+              .select({
+                id: activeCustomerOrderView.id,
+              })
+              .from(activeCustomerOrderView)
+              .where(
+                and(
+                  eq(activeCustomerOrderView.customerId, customerId),
+                  eq(activeCustomerOrderView.tenantId, clientView.tenantId),
                 ),
-            ),
+              ),
           ),
         ),
       ),
+    ),
   );
 
   const findActiveManagerAuthorizedSharedAccountOrderDeletes = Effect.fn(
@@ -501,39 +487,39 @@ export const makeSyncRepository = Effect.gen(function* () {
       ),
   );
 
-  const findActiveCustomerPlacedOrderFastForward = Effect.fn(
-    "Comments.SyncRepository.findActiveCustomerPlacedOrderFastForward",
+  const findActiveCustomerOrderFastForward = Effect.fn(
+    "Comments.SyncRepository.findActiveCustomerOrderFastForward",
   )(
     (
       clientView: ReplicacheClientView,
-      excludeIds: Array<ActiveCustomerPlacedOrderComment["id"]>,
-      customerId: ActiveCustomerPlacedOrderComment["customerId"],
+      excludeIds: Array<ActiveCustomerOrderComment["id"]>,
+      customerId: ActiveCustomerOrderComment["customerId"],
     ) =>
       entriesQueryBuilder.fastForward(comments.name, clientView).pipe(
         Effect.flatMap((qb) =>
           db.useTransaction((tx) => {
             const cte = tx
-              .$with(`${getViewName(activeCustomerPlacedOrderView)}_fast_forward`)
+              .$with(`${getViewName(activeCustomerOrderView)}_fast_forward`)
               .as(
                 qb
                   .innerJoin(
-                    activeCustomerPlacedOrderView,
+                    activeCustomerOrderView,
                     and(
-                      eq(entriesTable.entityId, activeCustomerPlacedOrderView.id),
-                      notInArray(activeCustomerPlacedOrderView.id, excludeIds),
+                      eq(entriesTable.entityId, activeCustomerOrderView.id),
+                      notInArray(activeCustomerOrderView.id, excludeIds),
                     ),
                   )
                   .where(
                     and(
-                      eq(activeCustomerPlacedOrderView.customerId, customerId),
-                      eq(activeCustomerPlacedOrderView.tenantId, clientView.tenantId),
+                      eq(activeCustomerOrderView.customerId, customerId),
+                      eq(activeCustomerOrderView.tenantId, clientView.tenantId),
                     ),
                   ),
               );
 
             return tx
               .with(cte)
-              .select(Struct.omit(cte[getViewName(activeCustomerPlacedOrderView)], ["customerId"]))
+              .select(Struct.omit(cte[getViewName(activeCustomerOrderView)], ["customerId"]))
               .from(cte);
           }),
         ),
@@ -590,19 +576,19 @@ export const makeSyncRepository = Effect.gen(function* () {
   return {
     findCreates,
     findActiveCreates,
-    findActiveCustomerPlacedOrderCreates,
+    findActiveCustomerOrderCreates,
     findActiveManagerAuthorizedSharedAccountOrderCreates,
     findUpdates,
     findActiveUpdates,
-    findActiveCustomerPlacedOrderUpdates,
+    findActiveCustomerOrderUpdates,
     findActiveManagerAuthorizedSharedAccountOrderUpdates,
     findDeletes,
     findActiveDeletes,
-    findActiveCustomerPlacedOrderDeletes,
+    findActiveCustomerOrderDeletes,
     findActiveManagerAuthorizedSharedAccountOrderDeletes,
     findFastForward,
     findActiveFastForward,
-    findActiveCustomerPlacedOrderFastForward,
+    findActiveCustomerOrderFastForward,
     findActiveManagerAuthorizedSharedAccountOrderFastForward,
   } as const;
 });

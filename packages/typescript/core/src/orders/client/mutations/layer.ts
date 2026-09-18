@@ -21,7 +21,7 @@ export const makeService = Effect.gen(function* () {
   const sharedAccountPolicies = yield* SharedAccountsPolicies;
   const policies = yield* OrdersPolicies;
 
-  const create = Mutation.make(OrdersContract.create, {
+  const draft = Mutation.make(OrdersContract.draft, {
     makePolicy: (order) =>
       AccessControl.some(
         AccessControl.userPermissionPolicy("orders:create"),
@@ -45,9 +45,21 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
     mutator: (order, { tenantId }) =>
-      OrdersContract.Table.Dto.makeEffect({ ...order, tenantId }).pipe(
-        Effect.flatMap(repository.create),
+      OrdersContract.Table.Dto.makeEffect({
+        ...order,
+        status: OrdersContract.draftStatus,
+        tenantId,
+      }).pipe(Effect.flatMap(repository.create)),
+  });
+
+  const submit = Mutation.make(OrdersContract.submit, {
+    makePolicy: ({ id }) =>
+      AccessControl.some(
+        AccessControl.userPermissionPolicy("orders:update"),
+        policies.isCustomerOrManager.make({ id, userId: Option.none() }),
+        policies.isManagerAuthorized.make({ id, managerId: Option.none() }),
       ),
+    mutator: (order) => repository.updateById(order.id, () => Effect.succeed(order)),
   });
 
   const edit = Mutation.make(OrdersContract.edit, {
@@ -136,7 +148,8 @@ export const makeService = Effect.gen(function* () {
   });
 
   return {
-    create,
+    draft,
+    submit,
     edit,
     approve,
     transitionRoomWorkflowStatus,

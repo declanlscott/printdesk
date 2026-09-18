@@ -9,14 +9,50 @@ import { OrderObjectMetadataContract, OrdersContract } from "./contracts";
 import type { InferSelectModel, InferSelectViewModel } from "drizzle-orm";
 import type { EntityId } from "../utils";
 
-type OrderRow<TRow> = Omit<TRow, "roomWorkflowStatusId" | "sharedAccountWorkflowStatusId"> &
+type OrderRow<TRow> = Omit<
+  TRow,
+  | "status"
+  | "deliveryOptionId"
+  | "attributes"
+  | "roomWorkflowStatusId"
+  | "sharedAccountWorkflowStatusId"
+> &
   (
-    | { roomWorkflowStatusId: EntityId; sharedAccountWorkflowStatusId: null }
-    | { roomWorkflowStatusId: null; sharedAccountWorkflowStatusId: EntityId }
+    | {
+        status: typeof OrdersContract.draftStatus;
+        deliveryOptionId: EntityId | null;
+        attributes: typeof OrdersContract.Attributes.Type | null;
+        roomWorkflowStatusId: EntityId;
+        sharedAccountWorkflowStatusId: null;
+      }
+    | {
+        status: typeof OrdersContract.draftStatus;
+        deliveryOptionId: EntityId | null;
+        attributes: typeof OrdersContract.Attributes.Type | null;
+        roomWorkflowStatusId: null;
+        sharedAccountWorkflowStatusId: EntityId;
+      }
+    | {
+        status: typeof OrdersContract.submittedStatus;
+        deliveryOptionId: EntityId;
+        attributes: typeof OrdersContract.Attributes.Type;
+        roomWorkflowStatusId: null;
+        sharedAccountWorkflowStatusId: EntityId;
+      }
+    | {
+        status: typeof OrdersContract.submittedStatus;
+        deliveryOptionId: EntityId;
+        attributes: typeof OrdersContract.Attributes.Type;
+        roomWorkflowStatusId: EntityId;
+        sharedAccountWorkflowStatusId: null;
+      }
   );
 export const orders = new Tables.Sync(
   "orders",
   {
+    status: Columns.union(OrdersContract.Status.literals)
+      .default(OrdersContract.draftStatus)
+      .notNull(),
     shortId: Columns.shortId(),
     customerId: Columns.entityId().notNull(),
     managerId: Columns.entityId(),
@@ -25,8 +61,8 @@ export const orders = new Tables.Sync(
     sharedAccountId: Columns.entityId(), // null when charging to customer's personal account
     roomWorkflowStatusId: Columns.entityId(),
     sharedAccountWorkflowStatusId: Columns.entityId(),
-    deliveryOptionId: Columns.entityId().notNull(),
-    attributes: Columns.jsonb(OrdersContract.Attributes).notNull(),
+    deliveryOptionId: Columns.entityId(),
+    attributes: Columns.jsonb(OrdersContract.Attributes),
     approvedAt: Columns.dateTime(),
   },
   (table) => [
@@ -34,6 +70,18 @@ export const orders = new Tables.Sync(
     index().on(table.sharedAccountId),
     index().on(table.roomWorkflowStatusId),
     index().on(table.sharedAccountWorkflowStatusId),
+    check(
+      "status_validity",
+      // oxlint-disable-next-line typescript/no-non-null-assertion
+      or(
+        eq(table.status, OrdersContract.draftStatus),
+        and(
+          eq(table.status, OrdersContract.submittedStatus),
+          isNotNull(table.attributes),
+          isNotNull(table.deliveryOptionId),
+        ),
+      )!,
+    ),
     check(
       "workflow_status_id_xor",
       ne(isNull(table.roomWorkflowStatusId), isNull(table.sharedAccountWorkflowStatusId)),
@@ -48,8 +96,8 @@ export const activeOrdersView = snakeCase
   .as((qb) => qb.select().from(orders.table).where(isNull(orders.table.deletedAt)));
 export type ActiveOrdersView = typeof activeOrdersView;
 export type ActiveOrder = OrderRow<InferSelectViewModel<ActiveOrdersView>>;
-export type ActiveCustomerPlacedOrdersView = ActiveOrdersView;
-export type ActiveCustomerPlacedOrder = ActiveOrder;
+export type ActiveCustomerOrdersView = ActiveOrdersView;
+export type ActiveCustomerOrder = ActiveOrder;
 export const activeManagerAuthorizedSharedAccountOrdersView = snakeCase
   .view(`active_manager_authorized_shared_account_${orders.name}`)
   .as((qb) =>
@@ -98,8 +146,8 @@ export const activeOrderObjectMetadataView = snakeCase
   );
 export type ActiveOrderObjectMetadataView = typeof activeOrderObjectMetadataView;
 export type ActiveOrderObjectMetadata = InferSelectViewModel<ActiveOrderObjectMetadataView>;
-export const activeCustomerPlacedOrderObjectMetadataView = snakeCase
-  .view(`active_customer_placed_${orderObjectMetadata.name}`)
+export const activeCustomerOrderObjectMetadataView = snakeCase
+  .view(`active_customer_${orderObjectMetadata.name}`)
   .as((qb) =>
     qb
       .select({
@@ -115,10 +163,9 @@ export const activeCustomerPlacedOrderObjectMetadataView = snakeCase
         ),
       ),
   );
-export type ActiveCustomerPlacedOrderObjectMetadataView =
-  typeof activeCustomerPlacedOrderObjectMetadataView;
-export type ActiveCustomerPlacedOrderObjectMetadata =
-  InferSelectViewModel<ActiveCustomerPlacedOrderObjectMetadataView>;
+export type ActiveCustomerOrderObjectMetadataView = typeof activeCustomerOrderObjectMetadataView;
+export type ActiveCustomerOrderObjectMetadata =
+  InferSelectViewModel<ActiveCustomerOrderObjectMetadataView>;
 export const activeManagerAuthorizedSharedAccountOrderObjectMetadataView = snakeCase
   .view(`active_manager_authorized_shared_account_${orderObjectMetadata.name}`)
   .as((qb) =>

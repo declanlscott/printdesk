@@ -25,11 +25,11 @@ export const makeService = Effect.gen(function* () {
       findDeletes: repository.findActiveDeletes,
       fastForward: repository.findActiveFastForward,
     })
-    .source(AccessControl.userPermissionPolicy("active_customer_placed_order_invoices:read"), {
-      findCreates: repository.findActiveCustomerPlacedOrderCreates,
-      findUpdates: repository.findActiveCustomerPlacedOrderUpdates,
-      findDeletes: repository.findActiveCustomerPlacedOrderDeletes,
-      fastForward: repository.findActiveCustomerPlacedOrderFastForward,
+    .source(AccessControl.userPermissionPolicy("active_customer_order_invoices:read"), {
+      findCreates: repository.findActiveCustomerOrderCreates,
+      findUpdates: repository.findActiveCustomerOrderUpdates,
+      findDeletes: repository.findActiveCustomerOrderDeletes,
+      fastForward: repository.findActiveCustomerOrderFastForward,
     })
     .source(
       AccessControl.userPermissionPolicy(

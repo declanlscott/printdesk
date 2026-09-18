@@ -9,7 +9,7 @@ import { TablesContract } from "../tables/contract";
 import { EntityId, TenantId } from "../utils";
 
 import type {
-  ActiveCustomerPlacedOrderInvoicesView,
+  ActiveCustomerOrderInvoicesView,
   ActiveInvoicesView,
   ActiveManagerAuthorizedSharedAccountOrderInvoicesView,
   InvoicesTable,
@@ -47,8 +47,8 @@ export namespace InvoicesContract {
     }),
   ) {}
 
-  export class ActiveCustomerPlacedOrderView extends TablesContract.View<ActiveCustomerPlacedOrderInvoicesView>(
-    `active_customer_placed_order_${Table.name}`,
+  export class ActiveCustomerOrderView extends TablesContract.View<ActiveCustomerOrderInvoicesView>(
+    `active_customer_order_${Table.name}`,
   )({ ...ActiveView.Model.fields, customerId: EntityId }) {}
 
   export class ActiveManagerAuthorizedSharedAccountOrderView extends TablesContract.View<ActiveManagerAuthorizedSharedAccountOrderInvoicesView>(

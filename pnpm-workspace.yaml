@@ -10,31 +10,31 @@ allowBuilds:
 
 catalog:
   "@aws-crypto/sha256-js": ^5.2.0
-  "@aws-sdk/client-dynamodb": ^3.1132.0
-  "@aws-sdk/credential-providers": ^3.1132.0
+  "@aws-sdk/client-dynamodb": ^3.1136.0
+  "@aws-sdk/credential-providers": ^3.1136.0
   "@aws-sdk/types": ^3.974.5
-  "@cloudflare/vite-plugin": ^1.54.9
+  "@cloudflare/vite-plugin": ^1.56.0
   "@cloudflare/workers-types": ^4.20260702.1
-  "@effect/atom-react": 4.0.0-rc.115
-  "@effect/platform-browser": 4.0.0-rc.115
-  "@effect/platform-node": 4.0.0-rc.115
-  "@effect/platform-node-shared": 4.0.0-rc.115
-  "@effect/sql-pg": 4.0.0-rc.115
+  "@effect/atom-react": 4.0.0-rc.116
+  "@effect/platform-browser": 4.0.0-rc.116
+  "@effect/platform-node": 4.0.0-rc.116
+  "@effect/platform-node-shared": 4.0.0-rc.116
+  "@effect/sql-pg": 4.0.0-rc.116
   "@effect/tsgo": ^0.45.0
   "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
-  "@stylexjs/atoms": ^0.19.0
-  "@stylexjs/stylex": ^0.19.0
-  "@stylexjs/unplugin": ^0.19.0
+  "@stylexjs/atoms": ^0.19.1
+  "@stylexjs/stylex": ^0.19.1
+  "@stylexjs/unplugin": ^0.19.1
   "@tailwindcss/vite": ^4.3.3
   "@tanstack/devtools-vite": ^0.8.5
   "@tanstack/react-devtools": ^0.10.12
-  "@tanstack/react-router": ^1.170.36
+  "@tanstack/react-router": ^1.170.38
   "@tanstack/react-router-devtools": ^1.167.2
-  "@tanstack/react-start": ^1.168.54
+  "@tanstack/react-start": ^1.168.56
   "@typeonce/effect-machine": ^0.31.2
   "@types/aws-lambda": ^8.10.163
-  "@types/node": ^24.13.4
+  "@types/node": ^24.13.5
   "@types/pg": ^8.23.1
   "@types/pg-cursor": ^2.7.2
   "@types/react": ^19.3.0
@@ -43,10 +43,10 @@ catalog:
   aws4fetch: ^1.0.20
   drizzle-kit: 1.0.0-rc.5-ab785fc
   drizzle-orm: 1.0.0-rc.5-ab785fc
-  effect: 4.0.0-rc.115
-  hono: ^4.13.7
+  effect: 4.0.0-rc.116
+  hono: ^4.13.8
   jose: ^6.2.12
-  lucide-react: ^1.46.0
+  lucide-react: ^1.47.0
   oxc-transform-react: ^0.148.0
   pg: ^8.23.0
   pg-connection-string: ^2.14.0
@@ -59,4 +59,4 @@ catalog:
   tailwindcss: ^4.3.3
   typescript: ^7.0.2
   vite: ^8.3.0
-  wrangler: ^4.131.2
+  wrangler: ^4.135.0

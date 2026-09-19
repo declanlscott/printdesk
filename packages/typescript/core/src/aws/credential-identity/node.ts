@@ -1,6 +1,6 @@
 import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
 
-import { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
+import { AwsCredentialIdentityProvider } from ".";
 
 export const nodeCredentialIdentityProviderLayer =
   AwsCredentialIdentityProvider.layerFromProvider(fromNodeProviderChain);

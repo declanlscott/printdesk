@@ -3,8 +3,8 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
 
+import { AwsCredentialIdentityProvider } from ".";
 import { Actor, ActorLayerMap } from "../../actors";
-import { AwsCredentialIdentityProvider } from "../../aws/credential-identity";
 import { Constants } from "../../utils/constants";
 import { AppconfigRole } from "../appconfig/role";
 

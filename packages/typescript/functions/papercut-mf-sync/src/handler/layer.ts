@@ -3,12 +3,14 @@ import * as ApiUrlBuilder from "@printdesk/core/api/url-builder/layer";
 import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
 import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
+import { nodeCredentialIdentityProviderLayer } from "@printdesk/core/aws/credential-identity/node";
+import * as DsqlSigner from "@printdesk/core/aws/dsql-signer/layer";
 import { AppsyncSigner } from "@printdesk/core/aws/sigv4-signers/appsync";
 import * as ClientsRepository from "@printdesk/core/clients/repository/layer";
 import * as Config from "@printdesk/core/config/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
-import * as PgClient from "@printdesk/core/database/pg";
+import * as PgClient from "@printdesk/core/database/pg-client";
 import { Graph } from "@printdesk/core/graph";
 import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
 import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
@@ -28,6 +30,7 @@ import * as TenantsRepositories from "@printdesk/core/tenants/repositories/layer
 import * as UsersRepositories from "@printdesk/core/users/repositories/layers";
 import { Xml } from "@printdesk/core/xml";
 import { XmlRpc } from "@printdesk/core/xml/rpc";
+import * as Duration from "effect/Duration";
 import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 
@@ -67,5 +70,7 @@ export const layer = Layer.mergeAll(
   Layer.provide([ApiUrlBuilder.layer, Database.layer, Xml.Builder.layer, Xml.Parser.layer]),
   Layer.provide([Drizzle.layerWithDrizzleServices, FetchHttpClient.layer]),
   Layer.provide(PgClient.layer),
+  Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),
+  Layer.provide(nodeCredentialIdentityProviderLayer),
   Layer.provideMerge(SstResource.layer),
 );

@@ -6,6 +6,8 @@ import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
 import { AppconfigCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appconfig";
 import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
+import { nodeCredentialIdentityProviderLayer } from "@printdesk/core/aws/credential-identity/node";
+import * as DsqlSigner from "@printdesk/core/aws/dsql-signer/layer";
 import { AppsyncSigner } from "@printdesk/core/aws/sigv4-signers/appsync";
 import * as ClientsRepository from "@printdesk/core/clients/repository/layer";
 import * as Config from "@printdesk/core/config/layer";
@@ -13,7 +15,7 @@ import { appconfigRoleLayer } from "@printdesk/core/config/role";
 import * as Crypto from "@printdesk/core/crypto/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
-import * as PgClient from "@printdesk/core/database/pg";
+import * as PgClient from "@printdesk/core/database/pg-client";
 import { Graph } from "@printdesk/core/graph";
 import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
 import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
@@ -36,6 +38,7 @@ import * as UsersRepositories from "@printdesk/core/users/repositories/layers";
 import { Xml } from "@printdesk/core/xml";
 import { XmlRpc } from "@printdesk/core/xml/rpc";
 import * as Console from "effect/Console";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
@@ -85,6 +88,8 @@ export const layer = Layer.mergeAll(
     Xml.Parser.layer,
   ]),
   Layer.provide([FetchHttpClient.layer, PgClient.layer]),
+  Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),
+  Layer.provide(nodeCredentialIdentityProviderLayer),
   Layer.provideMerge(SstResource.layer),
 );
 

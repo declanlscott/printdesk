@@ -5,9 +5,9 @@ import { Oauth } from "@printdesk/core/oauth";
 import { Scim } from "@printdesk/core/scim";
 import { ScimContract } from "@printdesk/core/scim/contract";
 import { orDieWhenUnrespondable } from "@printdesk/core/utils";
+import * as ByteSize from "effect/ByteSize";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import * as Number from "effect/Number";
 import * as Option from "effect/Option";
 import * as Struct from "effect/Struct";
 import * as HttpIncomingMessage from "effect/unstable/http/HttpIncomingMessage";
@@ -396,14 +396,14 @@ export const baseScimV2BulkGroupLayer = HttpApiBuilder.group(
       Effect.fn("Api.ScimV2Bulk.create")(function* ({ payload, request }) {
         const maxPayloadSize = yield* HttpIncomingMessage.MaxBodySize.pipe(
           Effect.map(Option.fromUndefinedOr),
-          Effect.map(Option.map(globalThis.Number)),
         );
         if (
           Option.isSome(maxPayloadSize) &&
           (yield* request.arrayBuffer.pipe(
             Effect.orDie,
             Effect.map(Struct.get("byteLength")),
-            Effect.map(Number.isGreaterThan(maxPayloadSize.value)),
+            Effect.map(ByteSize.fromInputUnsafe),
+            Effect.map(ByteSize.isGreaterThan(maxPayloadSize.value)),
           ))
         )
           return yield* new ScimContract.V2Error({

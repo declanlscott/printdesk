@@ -1,14 +1,18 @@
+import { AccessControl } from "@printdesk/core/access-control";
 import { Api } from "@printdesk/core/api";
 import { OrderObjectMetadataContract, OrdersContract } from "@printdesk/core/orders/contracts";
+import { OrderObjectMetadataPolicies } from "@printdesk/core/orders/objects/policies";
 import { OrderObjectsPresigner } from "@printdesk/core/orders/objects/presigner";
+import { OrdersPolicies } from "@printdesk/core/orders/policies";
 import { orDieWhenUnrespondable } from "@printdesk/core/utils";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
+import * as Option from "effect/Option";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
-import { orderObjectsPresignerLayer } from "../lib/orders";
+import { orderPoliciesLayer, orderObjectsPresignerLayer } from "../lib/orders";
 import { authMiddlewareLayer } from "../middleware/auth";
 import { r2CredentialIdentityProviderMiddlewareLayer } from "../middleware/aws";
 import { errorMiddlewareLayer } from "../middleware/error";
@@ -18,6 +22,7 @@ export const baseOrdersGroupLayer = HttpApiBuilder.group(
   "Orders",
   Effect.fn(function* (handlers) {
     const presigner = yield* OrderObjectsPresigner;
+    const policies = yield* OrdersPolicies;
 
     return handlers
       .handle("objectsUploadUrls", ({ params, payload }) =>
@@ -25,6 +30,16 @@ export const baseOrdersGroupLayer = HttpApiBuilder.group(
           Effect.catchTag(
             "NoSuchElementError",
             () => new OrdersContract.NotFoundError({ id: params.orderId }),
+          ),
+          AccessControl.enforce(
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permissionPolicy("order_objects:create"),
+                policies.isCustomerOrManager.make({ id: params.orderId, userId: Option.none() }),
+                policies.isManagerAuthorized.make({ id: params.orderId, managerId: Option.none() }),
+              ),
+              policies.canEdit.make({ id: params.orderId }),
+            ),
           ),
           orDieWhenUnrespondable,
         ),
@@ -34,6 +49,13 @@ export const baseOrdersGroupLayer = HttpApiBuilder.group(
           Effect.catchTag(
             "NoSuchElementError",
             () => new OrdersContract.NotFoundError({ id: params.orderId }),
+          ),
+          AccessControl.enforce(
+            AccessControl.some(
+              AccessControl.permissionPolicy("order_objects:read"),
+              policies.isCustomerOrManager.make({ id: params.orderId, userId: Option.none() }),
+              policies.isManagerAuthorized.make({ id: params.orderId, managerId: Option.none() }),
+            ),
           ),
           orDieWhenUnrespondable,
         ),
@@ -46,6 +68,7 @@ export const baseOrderObjectsGroupLayer = HttpApiBuilder.group(
   "OrderObjects",
   Effect.fn(function* (handlers) {
     const presigner = yield* OrderObjectsPresigner;
+    const policies = yield* OrderObjectMetadataPolicies;
 
     return handlers
       .handle("uploadUrl", ({ params, payload }) =>
@@ -53,6 +76,19 @@ export const baseOrderObjectsGroupLayer = HttpApiBuilder.group(
           Effect.catchTag(
             "NoSuchElementError",
             () => new OrderObjectMetadataContract.NotFoundError({ id: params.objectId }),
+          ),
+          AccessControl.enforce(
+            AccessControl.every(
+              AccessControl.some(
+                AccessControl.permissionPolicy("order_objects:create"),
+                policies.isCustomerOrManager.make({ id: params.objectId, userId: Option.none() }),
+                policies.isManagerAuthorized.make({
+                  id: params.objectId,
+                  managerId: Option.none(),
+                }),
+              ),
+              policies.canEdit.make({ id: params.objectId }),
+            ),
           ),
           orDieWhenUnrespondable,
         ),
@@ -63,6 +99,13 @@ export const baseOrderObjectsGroupLayer = HttpApiBuilder.group(
           Effect.catchTag(
             "NoSuchElementError",
             () => new OrderObjectMetadataContract.NotFoundError({ id: params.objectId }),
+          ),
+          AccessControl.enforce(
+            AccessControl.some(
+              AccessControl.permissionPolicy("order_objects:read"),
+              policies.isCustomerOrManager.make({ id: params.objectId, userId: Option.none() }),
+              policies.isManagerAuthorized.make({ id: params.objectId, managerId: Option.none() }),
+            ),
           ),
           orDieWhenUnrespondable,
         ),
@@ -75,6 +118,7 @@ export const ordersGroupLayer = Layer.merge(baseOrdersGroupLayer, baseOrderObjec
     authMiddlewareLayer,
     errorMiddlewareLayer,
     orderObjectsPresignerLayer,
+    orderPoliciesLayer,
     r2CredentialIdentityProviderMiddlewareLayer,
   ]),
 );

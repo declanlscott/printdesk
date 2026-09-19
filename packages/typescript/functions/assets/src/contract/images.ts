@@ -1,3 +1,4 @@
+import { AccessControl } from "@printdesk/core/access-control";
 import { ActorsContract } from "@printdesk/core/actors/contract";
 import { AwsCredentialIdentityProviderMiddleware } from "@printdesk/core/api/middleware/aws";
 import { AssetsContract } from "@printdesk/core/assets/contract";
@@ -13,7 +14,11 @@ export namespace Images {
     .add(
       HttpApiEndpoint.get("image", "/:image", {
         params: { image: NonEmptyString },
-        error: [ActorsContract.ForbiddenActorError, HttpApiError.NotFound],
+        error: [
+          AccessControl.AccessDeniedError,
+          ActorsContract.ForbiddenActorError,
+          HttpApiError.NotFound,
+        ],
       }),
     )
     .add(
@@ -21,7 +26,7 @@ export namespace Images {
         params: { image: NonEmptyString },
         payload: ImagesContract.PresignedUrlPayload,
         success: AssetsContract.PresignedUrlSuccess,
-        error: [ActorsContract.ForbiddenActorError],
+        error: [AccessControl.AccessDeniedError, ActorsContract.ForbiddenActorError],
       }),
     )
     .middleware(AwsCredentialIdentityProviderMiddleware) {}

@@ -17,8 +17,8 @@ export namespace Orders {
         payload: AssetsContract.PresignedUrlPayload,
         success: OrderObjectMetadataContract.PresignedUrlsSuccess,
         error: [
-          ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
+          ActorsContract.ForbiddenActorError,
           OrdersContract.NotFoundError,
         ],
       }),
@@ -29,8 +29,8 @@ export namespace Orders {
         payload: AssetsContract.PresignedUrlPayload,
         success: OrderObjectMetadataContract.PresignedUrlsSuccess,
         error: [
-          ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
+          ActorsContract.ForbiddenActorError,
           OrdersContract.NotFoundError,
         ],
       }),
@@ -44,8 +44,8 @@ export namespace Orders {
         payload: AssetsContract.PresignedUrlPayload,
         success: AssetsContract.PresignedUrlSuccess,
         error: [
-          ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
+          ActorsContract.ForbiddenActorError,
           OrderObjectMetadataContract.NotFoundError,
         ],
       }),
@@ -54,8 +54,8 @@ export namespace Orders {
       HttpApiEndpoint.get("object", "/:objectId", {
         params: { objectId: EntityId },
         error: [
-          ActorsContract.ForbiddenActorError,
           AccessControl.AccessDeniedError,
+          ActorsContract.ForbiddenActorError,
           OrderObjectMetadataContract.NotFoundError,
         ],
       }),

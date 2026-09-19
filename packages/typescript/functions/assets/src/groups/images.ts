@@ -1,3 +1,4 @@
+import { AccessControl } from "@printdesk/core/access-control";
 import { ImagesFetcher } from "@printdesk/core/images/fetcher";
 import { ImagesPresigner } from "@printdesk/core/images/presigner";
 import { orDieWhenUnrespondable } from "@printdesk/core/utils";
@@ -23,11 +24,17 @@ export const baseImagesGroupLayer = HttpApiBuilder.group(
       .handle("image", ({ params }) =>
         fetcher.fetchResponse(params.image).pipe(
           Effect.catchTag("NoSuchElementError", () => new HttpApiError.NotFound()),
+          AccessControl.enforce(AccessControl.permissionPolicy("images:read")),
           orDieWhenUnrespondable,
         ),
       )
       .handle("uploadUrl", ({ params, payload }) =>
-        presigner.presignPutUrl(params.image, payload).pipe(orDieWhenUnrespondable),
+        presigner
+          .presignPutUrl(params.image, payload)
+          .pipe(
+            AccessControl.enforce(AccessControl.permissionPolicy("images:create")),
+            orDieWhenUnrespondable,
+          ),
       );
   }),
 );

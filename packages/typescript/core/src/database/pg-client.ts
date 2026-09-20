@@ -18,5 +18,6 @@ export const layer = Effect.gen(function* () {
     ssl: dsql.ssl,
     username: dsql.user,
     password: signer.getDbConnectAdminAuthToken().pipe(Effect.map(Redacted.make)),
+    startupParameters: { TimeZone: "UTC" },
   });
 }).pipe(Layer.unwrap);

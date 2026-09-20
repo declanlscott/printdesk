@@ -23,21 +23,21 @@ export namespace Columns {
   ) => pgVarchar(config);
 
   export const byteSize = customType<{
-    driverData: typeof Schema.ByteSizeFromNumber.Encoded;
-    data: typeof Schema.ByteSizeFromNumber.Type;
+    driverData: typeof Schema.ByteSizeFromBigInt.Encoded;
+    data: typeof Schema.ByteSizeFromBigInt.Type;
   }>({
     dataType: () => "bigint",
-    fromDriver: Schema.ByteSizeFromNumber.pipe(Schema.decodeSync),
-    toDriver: Schema.ByteSizeFromNumber.pipe(Schema.encodeSync),
+    fromDriver: Schema.ByteSizeFromBigInt.pipe(Schema.decodeSync),
+    toDriver: Schema.ByteSizeFromBigInt.pipe(Schema.encodeSync),
   });
 
   export const dateTime = customType<{
-    driverData: typeof Schema.DateTimeUtc.Encoded;
-    data: typeof Schema.DateTimeUtc.Type;
+    driverData: typeof Schema.DateTimeUtcFromDate.Encoded;
+    data: typeof Schema.DateTimeUtcFromDate.Type;
   }>({
     dataType: () => "timestamp",
-    fromDriver: Schema.DateTimeUtc.pipe(Schema.decodeSync),
-    toDriver: Schema.DateTimeUtc.pipe(Schema.encodeSync),
+    fromDriver: Schema.DateTimeUtcFromDate.pipe(Schema.decodeSync),
+    toDriver: Schema.DateTimeUtcFromDate.pipe(Schema.encodeSync),
   });
 
   export const hash = customType<{

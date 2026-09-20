@@ -1,5 +1,4 @@
-import { fromNodeProviderChain } from "@aws-sdk/credential-providers";
-import { AwsCredentialIdentityProvider } from "@printdesk/core/aws/credential-identity";
+import { nodeCredentialIdentityProviderLayer } from "@printdesk/core/aws/credential-identity/node";
 import { Config } from "@printdesk/core/config";
 import { Oauth } from "@printdesk/core/oauth";
 import { Openauth } from "@printdesk/core/oauth/openauth";
@@ -11,10 +10,7 @@ import * as Layer from "effect/Layer";
 import * as Struct from "effect/Struct";
 
 export const openauthLayer = issuerLayer(Constants.OPENAUTH_CLIENT_IDS.BOOTSTRAPPER).pipe(
-  Layer.provide([
-    AwsCredentialIdentityProvider.layerFromProvider(fromNodeProviderChain),
-    SstResource.layer,
-  ]),
+  Layer.provide([nodeCredentialIdentityProviderLayer, SstResource.layer]),
 );
 
 export const papercutSyncClientAccessTokenLayer = Config.use(

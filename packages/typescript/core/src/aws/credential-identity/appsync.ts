@@ -27,7 +27,19 @@ export class AppsyncPublisherCredentialIdentityProviderLayerMap extends LayerMap
       appsyncPublisherCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
     idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
-) {}
+) {
+  public static readonly provide = this.pipe(
+    Effect.map((layerMap) =>
+      // oxlint-disable-next-line effecttsgo/strict-effect-provide
+      Effect.provide(
+        Actor.pipe(
+          Effect.map((actor) => layerMap.get(actor)),
+          Layer.unwrap,
+        ),
+      ),
+    ),
+  );
+}
 
 export const appsyncSubscriberCredentialIdentityProviderLayer = AppsyncSubscriberRole.arn.pipe(
   Effect.map((RoleArn) => ({ RoleArn, RoleSessionName: "AppsyncSubscriber" })),
@@ -48,4 +60,16 @@ export class AppsyncSubscriberCredentialIdentityProviderLayerMap extends LayerMa
       ),
     idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
-) {}
+) {
+  public static readonly provide = this.pipe(
+    Effect.map((layerMap) =>
+      // oxlint-disable-next-line effecttsgo/strict-effect-provide
+      Effect.provide(
+        Actor.pipe(
+          Effect.map((actor) => layerMap.get(actor)),
+          Layer.unwrap,
+        ),
+      ),
+    ),
+  );
+}

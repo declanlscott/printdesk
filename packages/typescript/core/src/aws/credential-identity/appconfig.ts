@@ -27,4 +27,16 @@ export class AppconfigCredentialIdentityProviderLayerMap extends LayerMap.Servic
       appconfigCredentialIdentityProviderLayer.pipe(Layer.provide(ActorLayerMap.get(actor))),
     idleTimeToLive: Constants.DEFAULT_LAYER_MAP_IDLE_TTL,
   },
-) {}
+) {
+  public static readonly provide = this.pipe(
+    Effect.map((layerMap) =>
+      // oxlint-disable-next-line effecttsgo/strict-effect-provide
+      Effect.provide(
+        Actor.pipe(
+          Effect.map((actor) => layerMap.get(actor)),
+          Layer.unwrap,
+        ),
+      ),
+    ),
+  );
+}

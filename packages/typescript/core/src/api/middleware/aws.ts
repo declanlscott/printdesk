@@ -21,67 +21,27 @@ export class AwsCredentialIdentityProviderMiddleware extends HttpApiMiddleware.S
 >()("@printdesk/core/api/AwsCredentialIdentityProviderMiddleware", {
   error: [ActorsContract.ForbiddenActorError, AwsCredentialIdentityProviderError],
 }) {
-  public static readonly makeAppconfig = AppconfigCredentialIdentityProviderLayerMap.pipe(
-    Effect.map((layerMap) =>
-      this.of(
-        Effect.provide(
-          Actor.pipe(
-            Effect.map((actor) => layerMap.get(actor)),
-            Layer.unwrap,
-          ),
-        ),
-      ),
-    ),
+  public static readonly makeAppconfig = AppconfigCredentialIdentityProviderLayerMap.provide.pipe(
+    Effect.map(this.of),
   );
   public static readonly appconfigLayer = this.makeAppconfig.pipe(
     Layer.effect(AwsCredentialIdentityProviderMiddleware),
   );
 
   public static readonly makeAppsyncPublisher =
-    AppsyncPublisherCredentialIdentityProviderLayerMap.pipe(
-      Effect.map((layerMap) =>
-        AwsCredentialIdentityProviderMiddleware.of(
-          Effect.provide(
-            Actor.pipe(
-              Effect.map((actor) => layerMap.get(actor)),
-              Layer.unwrap,
-            ),
-          ),
-        ),
-      ),
-    );
+    AppsyncPublisherCredentialIdentityProviderLayerMap.provide.pipe(Effect.map(this.of));
   public static readonly appsyncPublisherLayer = this.makeAppsyncPublisher.pipe(
     Layer.effect(AwsCredentialIdentityProviderMiddleware),
   );
 
   public static readonly makeAppsyncSubscriber =
-    AppsyncSubscriberCredentialIdentityProviderLayerMap.pipe(
-      Effect.map((layerMap) =>
-        AwsCredentialIdentityProviderMiddleware.of(
-          Effect.provide(
-            Actor.pipe(
-              Effect.map((actor) => layerMap.get(actor)),
-              Layer.unwrap,
-            ),
-          ),
-        ),
-      ),
-    );
+    AppsyncSubscriberCredentialIdentityProviderLayerMap.provide.pipe(Effect.map(this.of));
   public static readonly appsyncSubscriberLayer = this.makeAppsyncSubscriber.pipe(
     Layer.effect(AwsCredentialIdentityProviderMiddleware),
   );
 
-  public static readonly makeR2 = R2CredentialIdentityProviderLayerMap.pipe(
-    Effect.map((layerMap) =>
-      AwsCredentialIdentityProviderMiddleware.of(
-        Effect.provide(
-          Actor.pipe(
-            Effect.map((actor) => layerMap.get(actor)),
-            Layer.unwrap,
-          ),
-        ),
-      ),
-    ),
+  public static readonly makeR2 = R2CredentialIdentityProviderLayerMap.provide.pipe(
+    Effect.map(this.of),
   );
   public static readonly r2Layer = this.makeR2.pipe(
     Layer.effect(AwsCredentialIdentityProviderMiddleware),

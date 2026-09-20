@@ -408,7 +408,7 @@ export const baseScimV2BulkGroupLayer = HttpApiBuilder.group(
         )
           return yield* new ScimContract.V2Error({
             status: 413,
-            detail: `The size of the bulk operation exceeds the maxPayloadSize (${maxPayloadSize.value}).`,
+            detail: `The size of the bulk operation exceeds the maxPayloadSize (${ByteSize.format(maxPayloadSize.value)}).`,
           });
 
         return yield* scim.bulkCreate(payload).pipe(

@@ -135,7 +135,7 @@ export const makeService = Effect.gen(function* () {
       bulk: {
         supported: true,
         maxOperations: ScimContract.V2ServiceProviderConfig.maxBulkOperations,
-        maxPayloadSize: globalThis.Number(ScimContract.V2ServiceProviderConfig.maxBulkPayloadSize),
+        maxPayloadSize: ScimContract.V2ServiceProviderConfig.maxBulkPayloadSize,
       },
       filter: {
         supported: true,

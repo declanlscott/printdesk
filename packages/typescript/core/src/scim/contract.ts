@@ -337,7 +337,9 @@ export namespace ScimContract {
         ),
         baseV2ServiceProviderConfigOption
           .mapFields(Struct.evolve({ supported: () => Schema.Literal(true) }))
-          .mapFields(Struct.assign({ maxOperations: Schema.Int, maxPayloadSize: Schema.Int })),
+          .mapFields(
+            Struct.assign({ maxOperations: Schema.Int, maxPayloadSize: Schema.ByteSizeFromNumber }),
+          ),
       ]),
       filter: Schema.Union([
         baseV2ServiceProviderConfigOption.mapFields(

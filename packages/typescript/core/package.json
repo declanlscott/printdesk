@@ -46,6 +46,7 @@
     "@aws-sdk/types": "catalog:",
     "@effect/tsgo": "catalog:",
     "@types/node": "catalog:",
-    "drizzle-kit": "catalog:"
+    "drizzle-kit": "catalog:",
+    "pg": "^8.23.0"
   }
 }

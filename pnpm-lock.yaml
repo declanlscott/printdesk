@@ -385,6 +385,9 @@ importers:
       '@microsoft/msgraph-sdk':
         specifier: 1.0.0-preview.88
         version: 1.0.0-preview.88(supports-color@10.2.2)
+      '@microsoft/msgraph-sdk-applicationtemplates':
+        specifier: 1.0.0-preview.88
+        version: 1.0.0-preview.88(supports-color@10.2.2)
       '@microsoft/msgraph-sdk-core':
         specifier: 1.0.0-preview.17
         version: 1.0.0-preview.17(supports-color@10.2.2)
@@ -484,7 +487,7 @@ importers:
         version: link:../../core
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(zod@4.6.5)
+        version: 1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(pg@8.23.0)(zod@4.6.5)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.116
@@ -618,7 +621,7 @@ importers:
         version: link:../../core
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(zod@4.6.5)
+        version: 1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(pg@8.23.0)(zod@4.6.5)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.116
@@ -688,7 +691,7 @@ importers:
         version: link:../core
       drizzle-orm:
         specifier: 'catalog:'
-        version: 1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(zod@4.6.5)
+        version: 1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(pg@8.23.0)(zod@4.6.5)
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.116
@@ -978,7 +981,7 @@ importers:
         version: 4.0.0-rc.116(effect@4.0.0-rc.116)(react@19.3.0)(scheduler@0.27.0)
       '@lucas-barake/effect-form-react':
         specifier: 'catalog:'
-        version: 0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/platform@0.94.5(effect@4.0.0-rc.116))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/atom-react@4.0.0-rc.116(effect@4.0.0-rc.116)(react@19.3.0))(effect@4.0.0-rc.116)(react@19.3.0)
+        version: 0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/platform@0.94.5(effect@4.0.0-rc.116))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/atom-react@4.0.0-rc.116(effect@4.0.0-rc.116)(react@19.3.0)(scheduler@0.27.0))(effect@4.0.0-rc.116)(react@19.3.0)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../core
@@ -2291,6 +2294,9 @@ packages:
 
   '@microsoft/kiota-serialization-text@1.0.0-preview.107':
     resolution: {integrity: sha512-es56XD6UxprJ+61ZYcU8k/5VxyC2wL3Z+4zzH2Lw14rjojEpuE33zPT3+ixpq86ARynBWYKicn1Ym5KlnzdJCw==}
+
+  '@microsoft/msgraph-sdk-applicationtemplates@1.0.0-preview.88':
+    resolution: {integrity: sha512-o2ipU4RfsMBIVPcxP8nT78IDaDDj1FYJziY0khGKSqU86YdAgRXIPsyTGSKsXR5Kv8tpT+CQxPywLwKoprhgCQ==}
 
   '@microsoft/msgraph-sdk-core@1.0.0-preview.17':
     resolution: {integrity: sha512-zg4adBwEIwJBjM3IHi8xmz6Hyumz/IyEdCiX4JLWd+v4Jo9qIexZ0+IPEhi8xbgMwdrJ0h82D1CKGRe1vcsCBw==}
@@ -6905,7 +6911,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@lucas-barake/effect-form-react@0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/platform@0.94.5(effect@4.0.0-rc.116))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/atom-react@4.0.0-rc.116(effect@4.0.0-rc.116)(react@19.3.0))(effect@4.0.0-rc.116)(react@19.3.0)':
+  '@lucas-barake/effect-form-react@0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/platform@0.94.5(effect@4.0.0-rc.116))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/atom-react@4.0.0-rc.116(effect@4.0.0-rc.116)(react@19.3.0)(scheduler@0.27.0))(effect@4.0.0-rc.116)(react@19.3.0)':
     dependencies:
       '@effect/atom-react': 4.0.0-rc.116(effect@4.0.0-rc.116)(react@19.3.0)(scheduler@0.27.0)
       '@lucas-barake/effect-form': 0.25.0(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(@effect/platform@0.94.5(effect@4.0.0-rc.116))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(effect@4.0.0-rc.116))(effect@4.0.0-rc.116)
@@ -6969,6 +6975,13 @@ snapshots:
     dependencies:
       '@microsoft/kiota-abstractions': 1.0.0-preview.107
       tslib: 2.8.1
+
+  '@microsoft/msgraph-sdk-applicationtemplates@1.0.0-preview.88(supports-color@10.2.2)':
+    dependencies:
+      '@microsoft/msgraph-sdk': 1.0.0-preview.88(supports-color@10.2.2)
+      tslib: 2.8.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@microsoft/msgraph-sdk-core@1.0.0-preview.17(supports-color@10.2.2)':
     dependencies:
@@ -8549,14 +8562,6 @@ snapshots:
       '@opentelemetry/api': 1.9.1
       effect: 4.0.0-rc.116
       pg: 8.23.0
-      zod: 4.6.5
-
-  drizzle-orm@1.0.0-rc.5-ab785fc(@cloudflare/workers-types@4.20260702.1)(@effect/sql-pg@4.0.0-rc.116(effect@4.0.0-rc.116))(@opentelemetry/api@1.9.1)(effect@4.0.0-rc.116)(zod@4.6.5):
-    optionalDependencies:
-      '@cloudflare/workers-types': 4.20260702.1
-      '@effect/sql-pg': 4.0.0-rc.116(effect@4.0.0-rc.116)
-      '@opentelemetry/api': 1.9.1
-      effect: 4.0.0-rc.116
       zod: 4.6.5
 
   dunder-proto@1.0.1:

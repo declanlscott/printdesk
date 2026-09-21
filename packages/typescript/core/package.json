@@ -20,6 +20,7 @@
     "@microsoft/kiota-authentication-azure": "1.0.0-preview.107",
     "@microsoft/kiota-http-fetchlibrary": "1.0.0-preview.107",
     "@microsoft/msgraph-sdk": "1.0.0-preview.88",
+    "@microsoft/msgraph-sdk-applicationtemplates": "1.0.0-preview.88",
     "@microsoft/msgraph-sdk-core": "1.0.0-preview.17",
     "@microsoft/msgraph-sdk-groups": "1.0.0-preview.88",
     "@microsoft/msgraph-sdk-serviceprincipals": "1.0.0-preview.88",

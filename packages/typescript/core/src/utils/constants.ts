@@ -21,6 +21,11 @@ export namespace Constants {
     "Application.ReadWrite.OwnedBy",
   ] as const;
 
+  export const ENTRA_ID_NON_GALLERY_APPLICATION_TEMPLATE_ID =
+    "8adf8e6e-67b2-4cf2-a259-e3dc5476c621";
+  export const ENTRA_ID_NON_GALLERY_APPLICATION_PROVISIONING_SYNCHRONIZATION_JOB_TEMPLATE_ID =
+    "scim";
+
   export const SST_RESOURCE_PREFIX = "SST_RESOURCE_";
   export const VITE_RESOURCE_PREFIX = "VITE_RESOURCE_";
 

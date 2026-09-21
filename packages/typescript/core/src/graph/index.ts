@@ -2,6 +2,7 @@
 import { createGraphServiceClient, GraphRequestAdapter } from "@microsoft/msgraph-sdk";
 import { createGraphClientFactory, getDefaultMiddlewares } from "@microsoft/msgraph-sdk-core";
 import { version } from "@microsoft/msgraph-sdk/version";
+import "@microsoft/msgraph-sdk-applicationtemplates";
 import "@microsoft/msgraph-sdk-groups";
 import "@microsoft/msgraph-sdk-serviceprincipals";
 import "@microsoft/msgraph-sdk-users";
@@ -19,7 +20,6 @@ import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
-import * as Tuple from "effect/Tuple";
 
 import { EntraId } from "../identity/entra-id";
 import { ScimLocator } from "../scim/locator";
@@ -231,38 +231,51 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       batchRequest((client) => client.users.byUserId(id).photo.content)({ method: "get" }),
     );
 
-    const createProvisioningJob = Effect.fn("Graph.createProvisioningJob")(
-      (servicePrincipalId: string) =>
+    const createNonGalleryApplication = Effect.fn("Graph.createNonGalleryApplication")(
+      (displayName: string) =>
+        batchRequest(
+          (client) =>
+            client.applicationTemplates.byApplicationTemplateId(
+              Constants.ENTRA_ID_NON_GALLERY_APPLICATION_TEMPLATE_ID,
+            ).instantiate,
+        )({ method: "post" }, { displayName }),
+    );
+
+    const createSynchronizationJob = Effect.fn("Graph.createSynchronizationJob")(
+      (servicePrincipalId: string, templateId: string) =>
         batchRequest(
           (client) =>
             client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs,
-        )(
-          { method: "post" },
-          {
-            // TODO
-          },
-        ),
+        )({ method: "post" }, { templateId }),
     );
 
-    const validateProvisioningClientCredentials = Effect.fn(
-      "Graph.validateProvisioningClientCredentials",
+    const provideSynchronizationJobClientCredentials = Effect.fn(
+      "Graph.provideSynchronizationJobClientCredentials",
     )((servicePrincipalId: string, credentials: OauthContract.ClientCredentials) =>
       batchRequest(
         (client) =>
-          client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
-            .validateCredentials,
+          client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.secrets,
       )(
-        { method: "post" },
+        { method: "put" },
         {
-          useSavedCredentials: false,
-          credentials: Tuple.make(
+          value: [
             { key: "BaseAddress", value: baseScimUrl },
             { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
             { key: "Oauth2ClientId", value: credentials.id },
             { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
-          ),
+          ],
         },
       ),
+    );
+
+    const validateSynchronizationJobClientCredentials = Effect.fn(
+      "Graph.validateSynchronizationJobClientCredentials",
+    )((servicePrincipalId: string) =>
+      batchRequest(
+        (client) =>
+          client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
+            .validateCredentials,
+      )({ method: "post" }, { useSavedCredentials: true }),
     );
 
     return {
@@ -272,8 +285,10 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       users,
       user,
       userPhoto,
-      createProvisioningJob,
-      validateProvisioningClientCredentials,
+      createNonGalleryApplication,
+      createSynchronizationJob,
+      provideSynchronizationJobClientCredentials,
+      validateSynchronizationJobClientCredentials,
     } as const;
   }),
 }) {

@@ -271,8 +271,8 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         ),
     );
 
-    const validateSynchronizationJobClientCredentials = Effect.fn(
-      "Graph.validateSynchronizationJobClientCredentials",
+    const validateSynchronizationJobCredentials = Effect.fn(
+      "Graph.validateSynchronizationJobCredentials",
     )((servicePrincipalId: string) =>
       batchRequest(
         (client) =>
@@ -291,7 +291,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       createNonGalleryApplication,
       createSynchronizationJob,
       provideSynchronizationJobClientCredentials,
-      validateSynchronizationJobClientCredentials,
+      validateSynchronizationJobCredentials,
     } as const;
   }),
 }) {

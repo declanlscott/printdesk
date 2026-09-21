@@ -83,7 +83,7 @@ export class AbortSignalOption implements RequestOption {
   public static readonly key = "AbortSignalOption";
   public constructor(public signal: AbortSignal) {}
   // oxlint-disable-next-line class-methods-use-this
-  public getKey = () => AbortSignalOption.key;
+  public readonly getKey = () => AbortSignalOption.key;
 }
 
 export class AbortSignalMiddleware implements Middleware {

@@ -155,13 +155,11 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       RequestResolver.withSpan("Graph.resolver"),
     );
 
-    const batchRequest = Effect.fn("Graph.batchRequest")(
-      <TBuilder extends AnyRequestBuilder, TMethod extends RequestBuilderMethod<TBuilder>>(
-        getArgs: (client: GraphServiceClient) => {
-          builder: TBuilder;
-          method: TMethod;
-          input: RequestBuilderMethodInputOutput<TBuilder, TMethod>["input"];
-        },
+    const batchRequest =
+      <TBuilder extends AnyRequestBuilder>(getBuilder: (client: GraphServiceClient) => TBuilder) =>
+      <TMethod extends RequestBuilderMethod<TBuilder>>(
+        method: TMethod,
+        ...input: NoInfer<RequestBuilderMethodInputOutput<TBuilder, TMethod>["input"]>
       ) =>
         EntraId.AuthProvider.use((authProvider) =>
           Effect.tryPromise({
@@ -170,10 +168,10 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
           }),
         ).pipe(
           Effect.flatMap((accessToken) => clientCache.pipe(Cache.get(accessToken))),
-          Effect.map(getArgs),
+          Effect.map((client) => ({ builder: getBuilder(client), method, input })),
           Effect.flatMap((args) => Effect.request(new GraphRequest(args), resolver)),
-        ),
-    );
+          Effect.withSpan("Graph.batchRequest"),
+        );
 
     const { href: baseScimUrl } = yield* ScimLocator.use(Struct.get("root"));
 
@@ -182,17 +180,9 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       Effect.map((hostnames) => `https://${hostnames.auth}/token`),
     );
 
-    const me = batchRequest((client) => ({
-      builder: client.me,
-      method: "get",
-      input: Tuple.make(),
-    })).pipe(Effect.withSpan("Graph.me"));
+    const me = batchRequest((client) => client.me)("get").pipe(Effect.withSpan("Graph.me"));
 
-    const groups = batchRequest((client) => ({
-      builder: client.groups,
-      method: "get",
-      input: Tuple.make(),
-    })).pipe(
+    const groups = batchRequest((client) => client.groups)("get").pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.groups"),
@@ -200,69 +190,51 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
 
     const groupMembers = Effect.fn("Graph.groupMembers")(
       (id: GroupsContract.ExternalId, transitive: boolean = true) =>
-        batchRequest((client) => ({
-          builder: client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"],
-          method: "get",
-          input: Tuple.make(),
-        })).pipe(Effect.map(Struct.get("value")), Effect.filterOrFail(Predicate.isNotNullish)),
+        batchRequest(
+          (client) => client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"],
+        )("get").pipe(Effect.map(Struct.get("value")), Effect.filterOrFail(Predicate.isNotNullish)),
     );
 
-    const users = batchRequest((client) => ({
-      builder: client.users,
-      method: "get",
-      input: Tuple.make(),
-    })).pipe(
+    const users = batchRequest((client) => client.users)("get").pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.users"),
     );
 
     const user = Effect.fn("Graph.user")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => ({
-        builder: client.users.byUserId(id),
-        method: "get",
-        input: Tuple.make(),
-      })),
+      batchRequest((client) => client.users.byUserId(id))("get"),
     );
 
     const userPhoto = Effect.fn("Graph.userPhoto")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => ({
-        builder: client.users.byUserId(id).photo.content,
-        method: "get",
-        input: Tuple.make(),
-      })),
+      batchRequest((client) => client.users.byUserId(id).photo.content)("get"),
     );
 
     const createProvisioningJob = Effect.fn("Graph.createProvisioningJob")(
       (servicePrincipalId: string) =>
-        batchRequest((client) => ({
-          builder:
+        batchRequest(
+          (client) =>
             client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs,
-          method: "post",
-          input: Tuple.make({
-            // TODO
-          }),
-        })),
+        )("post", {
+          // TODO
+        }),
     );
 
     const validateProvisioningClientCredentials = Effect.fn(
       "Graph.validateProvisioningClientCredentials",
     )((servicePrincipalId: string, credentials: OauthContract.ClientCredentials) =>
-      batchRequest((client) => ({
-        builder:
+      batchRequest(
+        (client) =>
           client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
             .validateCredentials,
-        method: "post",
-        input: Tuple.make({
-          useSavedCredentials: false,
-          credentials: Tuple.make(
-            { key: "BaseAddress", value: baseScimUrl },
-            { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
-            { key: "Oauth2ClientId", value: credentials.id },
-            { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
-          ),
-        }),
-      })),
+      )("post", {
+        useSavedCredentials: false,
+        credentials: Tuple.make(
+          { key: "BaseAddress", value: baseScimUrl },
+          { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
+          { key: "Oauth2ClientId", value: credentials.id },
+          { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
+        ),
+      }),
     );
 
     return {

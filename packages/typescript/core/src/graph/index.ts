@@ -22,7 +22,6 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { EntraId } from "../identity/entra-id";
-import { ScimLocator } from "../scim/locator";
 import { SstResource } from "../sst/resource";
 import { Constants } from "../utils/constants";
 
@@ -190,8 +189,6 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
           Effect.withSpan("Graph.batchRequest"),
         );
 
-    const { href: baseScimUrl } = yield* ScimLocator.use(Struct.get("root"));
-
     const oauth2TokenExchangeUri = yield* SstResource.useSync(Struct.get("Hostnames")).pipe(
       Effect.map(Redacted.value),
       Effect.map((hostnames) => `https://${hostnames.auth}/token`),
@@ -251,21 +248,27 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
 
     const provideSynchronizationJobClientCredentials = Effect.fn(
       "Graph.provideSynchronizationJobClientCredentials",
-    )((servicePrincipalId: string, credentials: OauthContract.ClientCredentials) =>
-      batchRequest(
-        (client) =>
-          client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.secrets,
-      )(
-        { method: "put" },
-        {
-          value: [
-            { key: "BaseAddress", value: baseScimUrl },
-            { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
-            { key: "Oauth2ClientId", value: credentials.id },
-            { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
-          ],
-        },
-      ),
+    )(
+      (
+        servicePrincipalId: string,
+        baseAddress: string,
+        credentials: OauthContract.ClientCredentials,
+      ) =>
+        batchRequest(
+          (client) =>
+            client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization
+              .secrets,
+        )(
+          { method: "put" },
+          {
+            value: [
+              { key: "BaseAddress", value: baseAddress },
+              { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
+              { key: "Oauth2ClientId", value: credentials.id },
+              { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
+            ],
+          },
+        ),
     );
 
     const validateSynchronizationJobClientCredentials = Effect.fn(

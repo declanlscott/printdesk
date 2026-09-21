@@ -13,11 +13,11 @@ export class ScimBulkIdMap extends Context.Service<ScimBulkIdMap>()(
     make: Effect.gen(function* () {
       const ref = yield* SynchronizedRef.make(HashMap.empty<NonEmptyString, EntityId>());
 
-      const get = Effect.fn("BulkIdMap.get")((bulkId: NonEmptyString) =>
+      const get = Effect.fn("ScimBulkIdMap.get")((bulkId: NonEmptyString) =>
         ref.pipe(SynchronizedRef.get, Effect.map(HashMap.get(bulkId))),
       );
 
-      const set = Effect.fn("BulkIdMap.set")((bulkId: NonEmptyString, entityId: EntityId) =>
+      const set = Effect.fn("ScimBulkIdMap.set")((bulkId: NonEmptyString, entityId: EntityId) =>
         ref.pipe(SynchronizedRef.update(HashMap.set(bulkId, entityId))),
       );
 

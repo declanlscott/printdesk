@@ -28,8 +28,8 @@ import { Constants } from "../utils/constants";
 
 import type {
   RequestOption,
-  RequestConfiguration,
   BaseRequestBuilder,
+  RequestConfiguration,
 } from "@microsoft/kiota-abstractions";
 import type { Middleware } from "@microsoft/kiota-http-fetchlibrary";
 import type { GraphServiceClient } from "@microsoft/msgraph-sdk";
@@ -48,24 +48,35 @@ type RequestBuilderMethod<TBuilder extends AnyRequestBuilder> = Extract<
   "get" | "post" | "put" | "patch" | "delete"
 >;
 
-type RequestBuilderMethodInputOutput<
+type RequestBuilderMethodMetadata<
   TBuilder extends AnyRequestBuilder,
   TMethod extends RequestBuilderMethod<TBuilder>,
-> = TBuilder[TMethod] extends (...input: infer TInput) => Promise<infer TOutput>
-  ? { input: TInput; output: TOutput }
+> = TBuilder[TMethod] extends (...args: infer TArgs) => Promise<infer TOutput>
+  ? TArgs extends [infer TBody, ...Array<unknown>]
+    ? {
+        config: Exclude<TArgs[number], TBody | undefined>;
+        input: [TBody];
+        output: TOutput;
+      }
+    : {
+        config: Exclude<TArgs[number], undefined>;
+        input: [];
+        output: TOutput;
+      }
   : never;
 
 export class GraphRequest<
   TBuilder extends AnyRequestBuilder = any,
   TMethod extends RequestBuilderMethod<TBuilder> = any,
-  TInputOutput extends RequestBuilderMethodInputOutput<TBuilder, TMethod> = any,
+  TMetadata extends RequestBuilderMethodMetadata<TBuilder, TMethod> = any,
 > extends Request.Class<
   {
     builder: TBuilder;
     method: TMethod;
-    input: TInputOutput["input"];
+    config: TMetadata["config"];
+    input: TMetadata["input"];
   },
-  NonNullable<TInputOutput["output"]>,
+  NonNullable<TMetadata["output"]>,
   GraphError | Cause.NoSuchElementError
 > {}
 
@@ -132,8 +143,8 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         Effect.tryPromise({
           try: (signal) =>
             entry.request.builder[entry.request.method](
-              Array.dropRight(entry.request.input, 1),
-              Array.last<any>(entry.request.input).pipe(
+              ...entry.request.input,
+              Option.fromUndefinedOr(entry.request.config).pipe(
                 Option.match({
                   onSome: Optic.id<RequestConfiguration<any>>()
                     .key("options")
@@ -158,8 +169,14 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
     const batchRequest =
       <TBuilder extends AnyRequestBuilder>(getBuilder: (client: GraphServiceClient) => TBuilder) =>
       <TMethod extends RequestBuilderMethod<TBuilder>>(
-        method: TMethod,
-        ...input: NoInfer<RequestBuilderMethodInputOutput<TBuilder, TMethod>["input"]>
+        {
+          method,
+          config,
+        }: {
+          method: TMethod;
+          config?: NoInfer<RequestBuilderMethodMetadata<TBuilder, TMethod>["config"]>;
+        },
+        ...input: NoInfer<RequestBuilderMethodMetadata<TBuilder, TMethod>["input"]>
       ) =>
         EntraId.AuthProvider.use((authProvider) =>
           Effect.tryPromise({
@@ -168,7 +185,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
           }),
         ).pipe(
           Effect.flatMap((accessToken) => clientCache.pipe(Cache.get(accessToken))),
-          Effect.map((client) => ({ builder: getBuilder(client), method, input })),
+          Effect.map((client) => ({ builder: getBuilder(client), method, config, input })),
           Effect.flatMap((args) => Effect.request(new GraphRequest(args), resolver)),
           Effect.withSpan("Graph.batchRequest"),
         );
@@ -180,9 +197,11 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       Effect.map((hostnames) => `https://${hostnames.auth}/token`),
     );
 
-    const me = batchRequest((client) => client.me)("get").pipe(Effect.withSpan("Graph.me"));
+    const me = batchRequest((client) => client.me)({ method: "get" }).pipe(
+      Effect.withSpan("Graph.me"),
+    );
 
-    const groups = batchRequest((client) => client.groups)("get").pipe(
+    const groups = batchRequest((client) => client.groups)({ method: "get" }).pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.groups"),
@@ -192,21 +211,24 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       (id: GroupsContract.ExternalId, transitive: boolean = true) =>
         batchRequest(
           (client) => client.groups.byGroupId(id)[transitive ? "transitiveMembers" : "members"],
-        )("get").pipe(Effect.map(Struct.get("value")), Effect.filterOrFail(Predicate.isNotNullish)),
+        )({ method: "get" }).pipe(
+          Effect.map(Struct.get("value")),
+          Effect.filterOrFail(Predicate.isNotNullish),
+        ),
     );
 
-    const users = batchRequest((client) => client.users)("get").pipe(
+    const users = batchRequest((client) => client.users)({ method: "get" }).pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.users"),
     );
 
     const user = Effect.fn("Graph.user")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => client.users.byUserId(id))("get"),
+      batchRequest((client) => client.users.byUserId(id))({ method: "get" }),
     );
 
     const userPhoto = Effect.fn("Graph.userPhoto")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => client.users.byUserId(id).photo.content)("get"),
+      batchRequest((client) => client.users.byUserId(id).photo.content)({ method: "get" }),
     );
 
     const createProvisioningJob = Effect.fn("Graph.createProvisioningJob")(
@@ -214,9 +236,12 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         batchRequest(
           (client) =>
             client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs,
-        )("post", {
-          // TODO
-        }),
+        )(
+          { method: "post" },
+          {
+            // TODO
+          },
+        ),
     );
 
     const validateProvisioningClientCredentials = Effect.fn(
@@ -226,15 +251,18 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         (client) =>
           client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
             .validateCredentials,
-      )("post", {
-        useSavedCredentials: false,
-        credentials: Tuple.make(
-          { key: "BaseAddress", value: baseScimUrl },
-          { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
-          { key: "Oauth2ClientId", value: credentials.id },
-          { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
-        ),
-      }),
+      )(
+        { method: "post" },
+        {
+          useSavedCredentials: false,
+          credentials: Tuple.make(
+            { key: "BaseAddress", value: baseScimUrl },
+            { key: "Oauth2TokenExchangeUri", value: oauth2TokenExchangeUri },
+            { key: "Oauth2ClientId", value: credentials.id },
+            { key: "Oauth2ClientSecret", value: credentials.secret.pipe(Redacted.value) },
+          ),
+        },
+      ),
     );
 
     return {

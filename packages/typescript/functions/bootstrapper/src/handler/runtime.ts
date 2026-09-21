@@ -1,7 +1,6 @@
 import { DynamoDBDocument } from "@effect-aws/dynamodb";
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import { ActorLayerMap } from "@printdesk/core/actors";
-import * as ApiUrlBuilder from "@printdesk/core/api/url-builder/layer";
 import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
 import { AppconfigCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appconfig";
@@ -16,7 +15,6 @@ import * as Crypto from "@printdesk/core/crypto/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
 import * as PgClient from "@printdesk/core/database/pg-client";
-import { Graph } from "@printdesk/core/graph";
 import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
 import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
 import * as IdentityRepository from "@printdesk/core/identity/repository/layer";
@@ -28,7 +26,6 @@ import * as PapercutMfSynchronizer from "@printdesk/core/papercut-mf/synchronize
 import { Realtime } from "@printdesk/core/realtime";
 import { appsyncPublisherRoleLayer } from "@printdesk/core/realtime/roles";
 import * as ReplicacheNotifier from "@printdesk/core/replicache/notifier/layer";
-import * as ScimLocator from "@printdesk/core/scim/locator/layer";
 import * as SharedAccountCustomerAccessRepositories from "@printdesk/core/shared-accounts/customer-access/repositories/layers";
 import * as SharedAccountGroupCustomerAccessRepositories from "@printdesk/core/shared-accounts/group-customer-access/repositories/layers";
 import * as SharedAccountsRepositories from "@printdesk/core/shared-accounts/repositories/layers";
@@ -68,7 +65,6 @@ export const layer = Layer.mergeAll(
   Layer.provide([
     GroupMembershipsRepositories.repositoryLayer,
     GroupsRepositories.repositoryLayer,
-    Graph.layer,
     LicensesRepository.layer,
     PapercutMfApi.layer,
     SharedAccountCustomerAccessRepositories.repositoryLayer,
@@ -77,15 +73,13 @@ export const layer = Layer.mergeAll(
     UsersRepositories.repositoryLayer,
     NodeCrypto.layer,
   ]),
-  Layer.provide([AppsyncSigner.layer, ScimLocator.layer, XmlRpc.XmlRpc.layer]),
+  Layer.provide([AppsyncSigner.layer, XmlRpc.XmlRpc.layer]),
   Layer.provideMerge([Config.layer, Database.layer]),
   Layer.provide([
-    ApiUrlBuilder.layer,
     Appconfig.layer,
     AppconfigAgent.layer,
     Drizzle.layerWithDrizzleServices,
-    Xml.Builder.layer,
-    Xml.Parser.layer,
+    Xml.layer,
   ]),
   Layer.provide([FetchHttpClient.layer, PgClient.layer]),
   Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),

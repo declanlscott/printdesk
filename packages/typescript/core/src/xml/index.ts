@@ -45,4 +45,6 @@ export namespace Xml {
   }) {
     public static readonly layer = this.make.pipe(Layer.effect(this));
   }
+
+  export const layer = Builder.layer.pipe(Layer.merge(Parser.layer));
 }

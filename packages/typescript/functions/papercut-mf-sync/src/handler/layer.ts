@@ -1,5 +1,4 @@
 import { ActorLayerMap } from "@printdesk/core/actors";
-import * as ApiUrlBuilder from "@printdesk/core/api/url-builder/layer";
 import { Appconfig } from "@printdesk/core/aws/appconfig";
 import { AppconfigAgent } from "@printdesk/core/aws/appconfig/agent";
 import { AppsyncPublisherCredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/appsync";
@@ -11,7 +10,6 @@ import * as Config from "@printdesk/core/config/layer";
 import { Database } from "@printdesk/core/database";
 import { Drizzle } from "@printdesk/core/database/drizzle";
 import * as PgClient from "@printdesk/core/database/pg-client";
-import { Graph } from "@printdesk/core/graph";
 import * as GroupMembershipsRepositories from "@printdesk/core/groups/memberships/repositories/layers";
 import * as GroupsRepositories from "@printdesk/core/groups/repositories/layers";
 import * as IdentityRepository from "@printdesk/core/identity/repository/layer";
@@ -21,7 +19,6 @@ import * as PapercutMfSynchronizer from "@printdesk/core/papercut-mf/synchronize
 import { Realtime } from "@printdesk/core/realtime";
 import { appsyncPublisherRoleLayer } from "@printdesk/core/realtime/roles";
 import * as ReplicacheNotifier from "@printdesk/core/replicache/notifier/layer";
-import * as ScimLocator from "@printdesk/core/scim/locator/layer";
 import * as SharedAccountCustomerAccessRepositories from "@printdesk/core/shared-accounts/customer-access/repositories/layers";
 import * as SharedAccountGroupCustomerAccessRepositories from "@printdesk/core/shared-accounts/group-customer-access/repositories/layers";
 import * as SharedAccountsRepositories from "@printdesk/core/shared-accounts/repositories/layers";
@@ -50,7 +47,6 @@ export const layer = Layer.mergeAll(
     appsyncPublisherRoleLayer,
     GroupMembershipsRepositories.repositoryLayer,
     GroupsRepositories.repositoryLayer,
-    Graph.layer,
     IdentityRepository.providersRepositoryLayer,
     PapercutMfApi.layer,
     Realtime.layer,
@@ -60,14 +56,8 @@ export const layer = Layer.mergeAll(
     UsersRepositories.repositoryLayer,
   ]),
   Layer.provideMerge(Config.layer),
-  Layer.provide([
-    Appconfig.layer,
-    AppconfigAgent.layer,
-    AppsyncSigner.layer,
-    ScimLocator.layer,
-    XmlRpc.XmlRpc.layer,
-  ]),
-  Layer.provide([ApiUrlBuilder.layer, Database.layer, Xml.Builder.layer, Xml.Parser.layer]),
+  Layer.provide([Appconfig.layer, AppconfigAgent.layer, AppsyncSigner.layer, XmlRpc.XmlRpc.layer]),
+  Layer.provide([Database.layer, Xml.layer]),
   Layer.provide([Drizzle.layerWithDrizzleServices, FetchHttpClient.layer]),
   Layer.provide(PgClient.layer),
   Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),

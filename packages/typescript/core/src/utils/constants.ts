@@ -21,6 +21,9 @@ export namespace Constants {
     "Application.ReadWrite.OwnedBy",
   ] as const;
 
+  export const ENTRA_ID_ADMIN_CONSENT_URL_TEMPLATE =
+    "https://login.microsoftonline.com/{organization}/adminconsent?client_id={client-id}";
+
   export const ENTRA_ID_NON_GALLERY_APPLICATION_TEMPLATE_ID =
     "8adf8e6e-67b2-4cf2-a259-e3dc5476c621";
   export const ENTRA_ID_NON_GALLERY_APPLICATION_SCIM_SYNCHRONIZATION_JOB_TEMPLATE_ID = "scim";

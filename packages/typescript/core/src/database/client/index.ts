@@ -100,7 +100,7 @@ export class Database extends Context.Service<Database>()(
               WriteTransaction.pipe(
                 Effect.flatMap((tx) =>
                   Effect.tryPromise({
-                    try: () => tx.del(`${table.name}${id}`),
+                    try: () => tx.del(`${table.name}/${id}`),
                     catch: (cause) => new WriteTransactionError({ cause }),
                   }),
                 ),

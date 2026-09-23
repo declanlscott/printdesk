@@ -194,11 +194,9 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       Effect.map((hostnames) => `https://${hostnames.auth}/token`),
     );
 
-    const me = batchRequest((client) => client.me)({ method: "get" }).pipe(
-      Effect.withSpan("Graph.me"),
-    );
+    const me = batchRequest(Struct.get("me"))({ method: "get" }).pipe(Effect.withSpan("Graph.me"));
 
-    const groups = batchRequest((client) => client.groups)({ method: "get" }).pipe(
+    const groups = batchRequest(Struct.get("groups"))({ method: "get" }).pipe(
       Effect.map(Struct.get("value")),
       Effect.filterOrFail(Predicate.isNotNullish),
       Effect.withSpan("Graph.groups"),

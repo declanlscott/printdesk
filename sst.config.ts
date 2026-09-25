@@ -122,18 +122,16 @@ export default $config({
       args.runtime ??= "nodejs24.x";
     });
 
-    sst.Linkable.wrap(sst.cloudflare.Queue, (queue) => ({
+    $transform(sst.cloudflare.Worker, (args) => {
+      // oxlint-disable-next-line unicorn/no-useless-fallback-in-spread
+      args.compatibility ??= { ...(args.compatibility ?? {}), date: "2026-09-23" };
+    });
+
+    sst.Linkable.wrap(azuread.ApplicationRegistration, (app) => ({
       properties: {
-        id: queue.id,
+        clientId: app.clientId,
+        displayName: app.displayName,
       },
-      include: [
-        sst.cloudflare.binding({
-          type: "queueBindings",
-          properties: {
-            queueName: queue.nodes.queue.queueName,
-          },
-        }),
-      ],
     }));
 
     const outputs = {};

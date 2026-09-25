@@ -1,4 +1,4 @@
-import { assetsBucketTemplate, r2S3Credentials } from "./assets";
+import { assetsBucketTemplate, r2S3Credentials, userAvatarsQueueProperties } from "./assets";
 import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
 import {
   appconfigAgent,
@@ -50,6 +50,7 @@ export const api = new lib.aws.lambda.Function(
       invoicesProcessorQueueSenderRoleTemplate,
       issuer,
       r2S3Credentials,
+      userAvatarsQueueProperties,
     ],
     permissions: [invokeIssuerFunctionUrl],
     environment: {

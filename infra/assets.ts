@@ -1,4 +1,4 @@
-import { invokeIssuerFunctionUrl, issuer } from "./auth";
+import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
 import { aws_, cloudflare_ } from "./utils";
@@ -22,11 +22,29 @@ export const assetsAwsPermissions = new sst.Linkable("AssetsAwsPermissions", {
 });
 
 export const assetsInvalidationQueue = new sst.cloudflare.Queue("AssetsInvalidationQueue");
+export const assetsInvalidationQueueProperties = new sst.Linkable(
+  "AssetsInvalidationQueueProperties",
+  { properties: { id: assetsInvalidationQueue.id } },
+);
+
+export const userAvatarsQueue = new sst.cloudflare.Queue("UserAvatarsQueue");
+export const userAvatarsQueueProperties = new sst.Linkable("UserAvatarsQueueProperties", {
+  properties: { id: userAvatarsQueue.id },
+});
 
 export const assets = new lib.cloudflare.Worker("AssetsWorker", {
   handler: "packages/typescript/functions/assets/src/index.ts",
   domains: { assets: hostnames.properties.assets },
-  link: [assetsBucketTemplate, assetsInvalidationQueue, aws_, cloudflare_, issuer, r2S3Credentials],
+  link: [
+    assetsBucketTemplate,
+    assetsInvalidationQueue,
+    aws_,
+    cloudflare_,
+    identityProviders,
+    issuer,
+    r2S3Credentials,
+    userAvatarsQueue,
+  ],
 });
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket");

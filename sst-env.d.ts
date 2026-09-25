@@ -92,6 +92,10 @@ declare module "sst" {
       "type": "pd.templates.CloudflareR2Bucket"
     }
     "AssetsInvalidationQueue": import("@cloudflare/workers-types").Queue
+    "AssetsInvalidationQueueProperties": {
+      "id": string
+      "type": "sst.sst.Linkable"
+    }
     "AssetsWorker": {
       "type": "pd.cloudflare.Worker"
       "urls": {
@@ -164,6 +168,11 @@ declare module "sst" {
       "name": string
       "rangeKey": string
       "type": "sst.aws.Dynamo"
+    }
+    "EntraIdApplicationRegistration": {
+      "clientId": string
+      "displayName": string
+      "type": "azuread.index/applicationRegistration.ApplicationRegistration"
     }
     "Environment": {
       "isDevMode": boolean
@@ -278,6 +287,11 @@ declare module "sst" {
     "SnsTopicEmail": {
       "type": "sst.sst.Secret"
       "value": string
+    }
+    "UserAvatarsQueue": import("@cloudflare/workers-types").Queue
+    "UserAvatarsQueueProperties": {
+      "id": string
+      "type": "sst.sst.Linkable"
     }
     "Web": {
       "type": "pd.cloudflare.StaticSite"

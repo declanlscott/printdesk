@@ -75,6 +75,8 @@ class Resource:
         name: str
         type: str
     class AssetsInvalidationQueue:
+        type: str
+    class AssetsInvalidationQueueProperties:
         id: str
         type: str
     class AssetsWorker:
@@ -134,6 +136,10 @@ class Resource:
             USER: str
         name: str
         rangeKey: str
+        type: str
+    class EntraIdApplicationRegistration:
+        clientId: str
+        displayName: str
         type: str
     class Environment:
         isDevMode: bool
@@ -227,6 +233,11 @@ class Resource:
     class SnsTopicEmail:
         type: str
         value: str
+    class UserAvatarsQueue:
+        type: str
+    class UserAvatarsQueueProperties:
+        id: str
+        type: str
     class Web:
         type: str
         url: str

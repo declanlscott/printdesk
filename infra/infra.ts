@@ -3,7 +3,7 @@ import Path from "node:path";
 import { Constants } from "@printdesk/core/utils/constants";
 
 import { api } from "./api";
-import { assetsBucketTemplate, assetsInvalidationQueue } from "./assets";
+import { assetsBucketTemplate, assetsInvalidationQueueProperties } from "./assets";
 import { issuer } from "./auth";
 import {
   appconfigAllAtOnceDeploymentStrategy,
@@ -77,7 +77,7 @@ export const infraManager = dynamo.subscribe(
       appsyncChannelNamespacePublisherRoleTemplate,
       appsyncChannelNamespaceSubscriberRoleTemplate,
       assetsBucketTemplate,
-      assetsInvalidationQueue,
+      assetsInvalidationQueueProperties,
       aws_,
       bootstrapper,
       cloudflare_,

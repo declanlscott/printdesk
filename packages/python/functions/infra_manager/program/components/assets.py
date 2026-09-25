@@ -45,7 +45,7 @@ class Assets(pulumi.ComponentResource):
             args=cloudflare.R2BucketEventNotificationArgs(
                 account_id=Resource.Cloudflare.account.id,
                 bucket_id=self._bucket.id,
-                queue_id=Resource.AssetsInvalidationQueue.id,
+                queue_id=Resource.AssetsInvalidationQueueProperties.id,
                 rules=[
                     cloudflare.R2BucketEventNotificationRuleArgs(
                         actions=["PutObject"],

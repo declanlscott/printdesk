@@ -304,10 +304,8 @@ export namespace OrdersContract {
     [Constants.DYNAMO_KEYS.SK]: AttributesContract.OrderShortIdFromString,
   }) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = BaseModel.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const isCustomer = new Handler.Handler({
@@ -561,10 +559,8 @@ export namespace OrderObjectMetadataContract {
   export type Key = typeof Key.Type;
   export type EncodedKey = typeof Key.Encoded;
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const isCustomer = new Handler.Handler({

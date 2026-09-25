@@ -39,10 +39,8 @@ export namespace CommentsContract {
     `active_manager_authorized_shared_account_order_${Table.name}`,
   )({ ...ActiveView.Model.fields, authorizedManagerId: EntityId }) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const isAuthor = new Handler.Handler({

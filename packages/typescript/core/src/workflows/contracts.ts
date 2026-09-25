@@ -61,10 +61,8 @@ export namespace SharedAccountWorkflowsContract {
     `active_manager_authorized_${Table.name}`,
   )({ ...ActiveView.Model.fields, managerId: EntityId }) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const isCustomerAuthorized = new Handler.Handler({
@@ -142,8 +140,8 @@ export namespace WorkflowStatusesContract {
     `active_published_room_${Table.name}`,
   )(ActiveRoomWorkflowModel.fields) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(BaseModel.fields, ["id"]), { id: (id) => id.from.schema.members[0] }),
+  const IdOnly = BaseModel.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const canEdit = new Handler.Handler({

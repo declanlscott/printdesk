@@ -152,10 +152,8 @@ export namespace ProductsContract {
     }),
   ) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   const IdAndUpdatedAt = IdOnly.mapFields(

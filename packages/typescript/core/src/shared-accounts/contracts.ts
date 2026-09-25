@@ -82,10 +82,8 @@ export namespace SharedAccountsContract {
     `active_manager_authorized_${Table.name}`,
   )({ ...ActiveView.Model.fields, managerId: EntityId }) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const isCustomerAuthorized = new Handler.Handler({
@@ -209,10 +207,8 @@ export namespace SharedAccountManagerAccessContract {
     `active_customer_authorized_${Table.name}`,
   )({ ...ActiveView.Model.fields, customerId: EntityId }) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const canDelete = new Handler.Handler({

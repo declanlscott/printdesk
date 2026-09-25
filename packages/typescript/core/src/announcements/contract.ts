@@ -34,10 +34,8 @@ export namespace AnnouncementsContract {
     `active_published_room_${Table.name}`,
   )(ActiveView.Model.fields) {}
 
-  const IdOnly = Schema.Struct(
-    Struct.evolve(Struct.pick(Table.Model.fields, ["id"]), {
-      id: (id) => id.from.schema.members[0],
-    }),
+  const IdOnly = Table.Model.mapFields(Struct.pick(["id"])).mapFields(
+    Struct.evolve({ id: (id) => id.from.schema.members[0] }),
   );
 
   export const canEdit = new Handler.Handler({

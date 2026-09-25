@@ -85,7 +85,8 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
           name: this.#worker.nodes.worker.scriptName,
           bindings,
           compatibility_date: this.#worker.nodes.worker.compatibilityDate,
-        }).apply(({ name, bindings, compatibility_date }) =>
+          compatibility_flags: this.#worker.nodes.worker.compatibilityFlags,
+        }).apply(({ name, bindings, compatibility_date, compatibility_flags }) =>
           bindings.reduce(
             (cfg, binding) => {
               // TODO: Add other bindings as needed
@@ -120,6 +121,7 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
               $schema: "node_modules/wrangler/config-schema.json",
               name,
               compatibility_date,
+              compatibility_flags,
             } as Configuration,
           ),
         ),

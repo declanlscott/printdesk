@@ -5,15 +5,17 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
-
-import { SstResource } from "../sst/resource";
-import { Constants } from "../utils/constants";
 
 import type { AccessToken } from "@azure/identity";
+import type { OauthContract } from "../oauth/contract";
 import type { IdentityProvidersContract } from "./contract";
 
 export namespace EntraId {
+  export class ClientCredentials extends Context.Service<
+    ClientCredentials,
+    OauthContract.ClientCredentials
+  >()("@printdesk/core/identity/entra-id/ClientCredentials") {}
+
   export class AuthProviderError extends Schema.TaggedError<AuthProviderError>()(
     "EntraIdAuthProviderError",
     { cause: Schema.Defect() },
@@ -33,12 +35,11 @@ export namespace EntraId {
     public static readonly fromClientCredentials = Effect.fn(function* (
       tenantId: IdentityProvidersContract.ExternalId,
     ) {
-      const { clientId, clientSecret } = yield* SstResource.useSync((resource) =>
-        resource.IdentityProviders.pipe(Redacted.value, Struct.get(Constants.ENTRA_ID)),
-      );
+      const client = yield* ClientCredentials;
 
       const credential = yield* Effect.try({
-        try: () => new ClientSecretCredential(tenantId, clientId, clientSecret),
+        try: () =>
+          new ClientSecretCredential(tenantId, client.id, client.secret.pipe(Redacted.value)),
         catch: (cause) => new AuthProviderError({ cause }),
       });
 

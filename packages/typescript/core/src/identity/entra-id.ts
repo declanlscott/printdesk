@@ -26,6 +26,13 @@ export namespace EntraId {
     AuthProvider,
     AzureIdentityAuthenticationProvider
   >()("@printdesk/core/identity/entra-id/AuthProvider") {
+    public static readonly accessToken = this.use((authProvider) =>
+      Effect.tryPromise({
+        try: () => authProvider.accessTokenProvider.getAuthorizationToken().then(Redacted.make),
+        catch: (cause) => new AuthProviderError({ cause }),
+      }),
+    );
+
     public static readonly fromAccessToken = Effect.fn((accessToken: AccessToken) =>
       Effect.try({
         try: () => new AzureIdentityAuthenticationProvider({ getToken: async () => accessToken }),

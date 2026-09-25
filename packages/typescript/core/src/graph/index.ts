@@ -20,6 +20,9 @@ import * as Request from "effect/Request";
 import * as RequestResolver from "effect/RequestResolver";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
+import * as HttpClient from "effect/unstable/http/HttpClient";
+import * as HttpClientRequest from "effect/unstable/http/HttpClientRequest";
+import * as HttpClientResponse from "effect/unstable/http/HttpClientResponse";
 
 import { EntraId } from "../identity/entra-id";
 import { Constants } from "../utils/constants";
@@ -31,10 +34,10 @@ import type {
 } from "@microsoft/kiota-abstractions";
 import type { Middleware } from "@microsoft/kiota-http-fetchlibrary";
 import type { GraphServiceClient } from "@microsoft/msgraph-sdk";
+import type { HttpClientError } from "effect/unstable/http/HttpClientError";
 import type { GroupsContract } from "../groups/contracts";
 import type { OauthContract } from "../oauth/contract";
 import type { UsersContract } from "../users/contract";
-import type { NonEmptyString } from "../utils";
 
 export class GraphError extends Schema.TaggedError<GraphError>()("GraphError", {
   cause: Schema.Defect(),
@@ -79,6 +82,13 @@ export class GraphRequest<
   GraphError | Cause.NoSuchElementError
 > {}
 
+export class GraphUserPhotoRequest extends Request.Class<
+  { id: UsersContract.ExternalId },
+  { contentType: string; data: ArrayBuffer },
+  EntraId.AuthProviderError | HttpClientError | Cause.NoSuchElementError | Schema.SchemaError,
+  EntraId.AuthProvider
+> {}
+
 export class AbortSignalOption implements RequestOption {
   public static readonly key = "AbortSignalOption";
   public constructor(public signal: AbortSignal) {}
@@ -107,6 +117,20 @@ export class AbortSignalMiddleware implements Middleware {
 
 export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph", {
   make: Effect.gen(function* () {
+    const httpClient = yield* HttpClient.HttpClient.pipe(
+      Effect.map(
+        HttpClient.mapRequest(HttpClientRequest.prependUrl("https://graph.microsoft.com/v1.0")),
+      ),
+      Effect.map(
+        HttpClient.mapRequestEffect((request) =>
+          EntraId.AuthProvider.accessToken.pipe(
+            Effect.map((accessToken) => request.pipe(HttpClientRequest.bearerToken(accessToken))),
+          ),
+        ),
+      ),
+      Effect.map(HttpClient.filterStatusOk),
+    );
+
     const clientCache = yield* Cache.make({
       capacity: Constants.DEFAULT_CACHE_CAPACITY,
       requireServicesAt: "lookup",
@@ -177,12 +201,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
         },
         ...input: NoInfer<RequestBuilderMethodMetadata<TBuilder, TMethod>["input"]>
       ) =>
-        EntraId.AuthProvider.use((authProvider) =>
-          Effect.tryPromise({
-            try: () => authProvider.accessTokenProvider.getAuthorizationToken().then(Redacted.make),
-            catch: (cause) => new EntraId.AuthProviderError({ cause }),
-          }),
-        ).pipe(
+        EntraId.AuthProvider.accessToken.pipe(
           Effect.flatMap((accessToken) => clientCache.pipe(Cache.get(accessToken))),
           Effect.map((client) => ({ builder: getBuilder(client), method, config, input })),
           Effect.flatMap((args) => Effect.request(new GraphRequest(args), resolver)),
@@ -217,10 +236,6 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       batchRequest((client) => client.users.byUserId(id))({ method: "get" }),
     );
 
-    const userPhoto = Effect.fn("Graph.userPhoto")((id: UsersContract.ExternalId) =>
-      batchRequest((client) => client.users.byUserId(id).photo.content)({ method: "get" }),
-    );
-
     const createNonGalleryApplication = Effect.fn("Graph.createNonGalleryApplication")(
       (displayName: string) =>
         batchRequest(
@@ -243,9 +258,9 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       "Graph.provideSynchronizationJobClientCredentials",
     )(
       (
-        servicePrincipalId: NonEmptyString,
-        baseAddress: NonEmptyString,
-        oauth2TokenExchangeUri: NonEmptyString,
+        servicePrincipalId: string,
+        baseAddress: string,
+        oauth2TokenExchangeUri: string,
         credentials: OauthContract.ClientCredentials,
       ) =>
         batchRequest(
@@ -273,6 +288,47 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
           client.servicePrincipals.byServicePrincipalId(servicePrincipalId).synchronization.jobs
             .validateCredentials,
       )({ method: "post" }, { useSavedCredentials: true }),
+    );
+
+    const userPhotoResolver = RequestResolver.make<GraphUserPhotoRequest>(
+      Effect.forEach(
+        Effect.fn(
+          function* (entry) {
+            const response = yield* httpClient.get(`/users/${entry.request.id}/photo`).pipe(
+              Effect.catchReason("HttpClientError", "StatusCodeError", (reason, error) =>
+                Effect.fail(
+                  reason.response.status === 404 ? new Cause.NoSuchElementError() : error,
+                ),
+              ),
+              Effect.provideContext(entry.context),
+            );
+
+            const data = yield* response.arrayBuffer;
+            const { contentType } = yield* response.pipe(
+              HttpClientResponse.schemaHeaders(
+                Schema.Struct({ contentType: Schema.NonEmptyString }).pipe(
+                  Schema.encodeKeys({ contentType: "content-type" }),
+                ),
+              ),
+            );
+
+            return { contentType, data };
+          },
+          (effect, entry) =>
+            effect.pipe(
+              Effect.exit,
+              Effect.map((exit) => entry.completeUnsafe(exit)),
+            ),
+        ),
+      ),
+    ).pipe(
+      RequestResolver.setDelay(Constants.GRAPH_REQUEST_BATCH_DELAY),
+      RequestResolver.batchN(Constants.GRAPH_REQUEST_BATCH_SIZE),
+      RequestResolver.withSpan("Graph.userPhotoResolver"),
+    );
+
+    const userPhoto = Effect.fn("Graph.userPhoto")((id: UsersContract.ExternalId) =>
+      Effect.request(new GraphUserPhotoRequest({ id }), userPhotoResolver),
     );
 
     return {

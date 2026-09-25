@@ -290,4 +290,4 @@ export interface SchemaAndValue<TSchema extends Schema.Top> {
 }
 
 // oxlint-disable-next-line typescript/no-explicit-any
-export type DistributiveOmit<T, K extends PropertyKey> = T extends any ? Omit<T, K> : never;
+export type DistributivePick<T, K extends keyof T> = T extends any ? Pick<T, K> : never;

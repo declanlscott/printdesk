@@ -22,7 +22,6 @@ import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
 
 import { EntraId } from "../identity/entra-id";
-import { SstResource } from "../sst/resource";
 import { Constants } from "../utils/constants";
 
 import type {
@@ -35,6 +34,7 @@ import type { GraphServiceClient } from "@microsoft/msgraph-sdk";
 import type { GroupsContract } from "../groups/contracts";
 import type { OauthContract } from "../oauth/contract";
 import type { UsersContract } from "../users/contract";
+import type { NonEmptyString } from "../utils";
 
 export class GraphError extends Schema.TaggedError<GraphError>()("GraphError", {
   cause: Schema.Defect(),
@@ -189,11 +189,6 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
           Effect.withSpan("Graph.batchRequest"),
         );
 
-    const oauth2TokenExchangeUri = yield* SstResource.useSync(Struct.get("Hostnames")).pipe(
-      Effect.map(Redacted.value),
-      Effect.map((hostnames) => `https://${hostnames.auth}/token`),
-    );
-
     const me = batchRequest(Struct.get("me"))({ method: "get" }).pipe(Effect.withSpan("Graph.me"));
 
     const groups = batchRequest(Struct.get("groups"))({ method: "get" }).pipe(
@@ -248,8 +243,9 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
       "Graph.provideSynchronizationJobClientCredentials",
     )(
       (
-        servicePrincipalId: string,
-        baseAddress: string,
+        servicePrincipalId: NonEmptyString,
+        baseAddress: NonEmptyString,
+        oauth2TokenExchangeUri: NonEmptyString,
         credentials: OauthContract.ClientCredentials,
       ) =>
         batchRequest(

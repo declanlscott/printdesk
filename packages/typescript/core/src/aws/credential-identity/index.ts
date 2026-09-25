@@ -65,9 +65,6 @@ export class AwsCredentialIdentityProvider extends Context.Service<AwsCredential
   public static readonly layer = (identity: AwsSdkCredentialIdentity) =>
     this.make(identity).pipe(Layer.effect(this), Layer.fresh);
 
-  public static readonly layerFromSelf = (self: AwsCredentialIdentityProvider["Service"]) =>
-    Layer.succeed(this, self);
-
   public static readonly layerFromProvider = (provider: () => AwsSdkCredentialIdentityProvider) =>
     this.fromProvider(provider).pipe(Layer.effect(this), Layer.fresh);
 }

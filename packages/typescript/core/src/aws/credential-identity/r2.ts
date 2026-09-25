@@ -2,32 +2,59 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as LayerMap from "effect/LayerMap";
+import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
+import * as String from "effect/String";
 
 import { AwsCredentialIdentityProvider, AwsCredentialIdentityProviderError } from ".";
 import { Actor, ActorLayerMap } from "../../actors";
-import { CloudflareClient } from "../../cloudflare/client";
+import { Cloudflare } from "../../cloudflare";
+import { Crypto } from "../../crypto";
 import { Constants } from "../../utils/constants";
 import { S3Bucket } from "../s3/bucket";
-
-const ttl = Duration.hours(1);
+import { S3Credentials } from "../s3/credentials";
 
 export const r2CredentialIdentityProviderLayer = Effect.gen(function* () {
-  const cloudflare = yield* CloudflareClient;
+  const { account } = yield* Cloudflare;
+  const crypto = yield* Crypto;
   const s3Bucket = yield* S3Bucket;
+  const r2S3Credentials = yield* S3Credentials;
 
-  return yield* cloudflare
-    .createR2TemporaryCredentials({
-      bucket: yield* s3Bucket.name,
-      endpoint: yield* s3Bucket.endpoint,
-      scope: "object-read-write",
-      actions: ["PutObject", "GetObject"],
-      ttl,
-    })
-    .pipe(
-      Effect.catch((error) => new AwsCredentialIdentityProviderError({ cause: error })),
-      Effect.map((credentials) => AwsCredentialIdentityProvider.layerFromSelf({ credentials })),
-    );
-}).pipe(Layer.unwrap);
+  const textEncoder = new TextEncoder();
+
+  const claims: Record<string, unknown> = {
+    actions: ["PutObject", "GetObject"],
+    bucket: yield* s3Bucket.name,
+    scope: "object-read-write",
+  };
+
+  const jwt = yield* crypto.signJwt({
+    claims,
+    subject: account.id,
+    issuer: r2S3Credentials.accessKeyId.pipe(Redacted.value),
+    audience: yield* s3Bucket.endpoint,
+    ttl: Duration.hours(1),
+    key: textEncoder.encode(r2S3Credentials.secretAccessKey.pipe(Redacted.value)),
+  });
+
+  const secretAccessKey = yield* crypto
+    .digest("SHA-256", textEncoder.encode(jwt))
+    .pipe(Effect.flatMap(Schema.encodeEffect(Schema.Uint8ArrayFromHex)));
+
+  const sessionToken = yield* Effect.succeed("jwt/").pipe(
+    Effect.map(String.concat(jwt)),
+    Effect.flatMap(Schema.encodeEffect(Schema.StringFromBase64)),
+  );
+
+  return AwsCredentialIdentityProvider.layer({
+    accessKeyId: r2S3Credentials.accessKeyId.pipe(Redacted.value),
+    secretAccessKey,
+    sessionToken,
+  });
+}).pipe(
+  Effect.mapError((error) => new AwsCredentialIdentityProviderError({ cause: error })),
+  Layer.unwrap,
+);
 
 export class R2CredentialIdentityProviderLayerMap extends LayerMap.Service<R2CredentialIdentityProviderLayerMap>()(
   "@printdesk/core/aws/credential-identity/R2ProviderLayerMap",

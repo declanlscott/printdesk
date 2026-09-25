@@ -49,7 +49,10 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
       Effect.flatMap(notifier.notifyAfterTransaction),
-      Effect.ignoreCause,
+      Effect.ignoreCause({
+        log: true,
+        message: `Tenant "${deliveryOption.tenantId}" delivery option "${deliveryOption.id}" notification failed.`,
+      }),
     );
 
   const create = Mutation.make(DeliveryOptionsContract.create, {

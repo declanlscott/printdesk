@@ -57,7 +57,10 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
       Effect.flatMap(notifier.notifyAfterTransaction),
-      Effect.ignoreCause,
+      Effect.ignoreCause({
+        log: true,
+        message: `Tenant "${product.tenantId}" product "${product.id}" notification failed.`,
+      }),
     );
   const notifyEdit = notifyCreate;
 
@@ -83,7 +86,10 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
       Effect.flatMap(notifier.notifyAfterTransaction),
-      Effect.ignoreCause,
+      Effect.ignoreCause({
+        log: true,
+        message: `Tenant "${product.tenantId}" product "${product.id}" notification failed.`,
+      }),
     );
   const notifyDraft = notifyPublish;
 

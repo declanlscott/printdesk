@@ -78,7 +78,10 @@ export const makeService = Effect.gen(function* () {
         ),
       ),
       Effect.flatMap(notifier.notifyAfterTransaction),
-      Effect.ignoreCause,
+      Effect.ignoreCause({
+        log: true,
+        message: `Tenant "${workflowStatus.tenantId}" workflow status "${workflowStatus.id}" notification failed.`,
+      }),
     );
 
   const append = Mutation.make(WorkflowStatusesContract.append, {

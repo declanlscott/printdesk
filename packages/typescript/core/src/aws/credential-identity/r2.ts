@@ -14,7 +14,7 @@ import { Constants } from "../../utils/constants";
 import { S3Bucket } from "../s3/bucket";
 import { S3Credentials } from "../s3/credentials";
 
-export const r2CredentialIdentityProviderLayer = Effect.gen(function* () {
+export const makeR2CredentialIdentityProvider = Effect.gen(function* () {
   const { account } = yield* Cloudflare;
   const crypto = yield* Crypto;
   const s3Bucket = yield* S3Bucket;
@@ -46,13 +46,21 @@ export const r2CredentialIdentityProviderLayer = Effect.gen(function* () {
     Effect.flatMap(Schema.encodeEffect(Schema.StringFromBase64)),
   );
 
-  return AwsCredentialIdentityProvider.layer({
+  return yield* AwsCredentialIdentityProvider.make({
     accessKeyId: r2S3Credentials.accessKeyId.pipe(Redacted.value),
     secretAccessKey,
     sessionToken,
   });
-}).pipe(
-  Effect.mapError((error) => new AwsCredentialIdentityProviderError({ cause: error })),
+});
+
+export const r2CredentialIdentityProviderLayer = makeR2CredentialIdentityProvider.pipe(
+  Effect.mapBoth({
+    onFailure: (error) =>
+      Schema.is(AwsCredentialIdentityProviderError)(error)
+        ? error
+        : new AwsCredentialIdentityProviderError({ cause: error }),
+    onSuccess: AwsCredentialIdentityProvider.layerFromSelf,
+  }),
   Layer.unwrap,
 );
 

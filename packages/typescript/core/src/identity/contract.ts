@@ -12,6 +12,11 @@ import { Constants } from "../utils/constants";
 import type { IdentityProvidersTable } from "./sql";
 
 export namespace IdentityProvidersContract {
+  export class ClientCredentials extends Schema.Class<ClientCredentials>("ClientCredentials")({
+    id: Schema.NonEmptyString,
+    secret: Schema.NonEmptyString.pipe(Schema.RedactedFromValue),
+  }) {}
+
   export const Kind = Schema.Literals([Constants.ENTRA_ID, Constants.GOOGLE]);
   export type Kind = typeof Kind.Type;
 

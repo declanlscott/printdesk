@@ -7,13 +7,12 @@ import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
 
 import type { AccessToken } from "@azure/identity";
-import type { OauthContract } from "../oauth/contract";
 import type { IdentityProvidersContract } from "./contract";
 
 export namespace EntraId {
   export class ClientCredentials extends Context.Service<
     ClientCredentials,
-    OauthContract.ClientCredentials
+    IdentityProvidersContract.ClientCredentials
   >()("@printdesk/core/identity/entra-id/ClientCredentials") {}
 
   export class AuthProviderError extends Schema.TaggedError<AuthProviderError>()(

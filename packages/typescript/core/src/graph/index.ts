@@ -303,7 +303,6 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
               Effect.provideContext(entry.context),
             );
 
-            const data = yield* response.arrayBuffer;
             const { contentType } = yield* response.pipe(
               HttpClientResponse.schemaHeaders(
                 Schema.Struct({ contentType: Schema.NonEmptyString }).pipe(
@@ -311,6 +310,7 @@ export class Graph extends Context.Service<Graph>()("@printdesk/core/graph/Graph
                 ),
               ),
             );
+            const data = yield* response.arrayBuffer;
 
             return { contentType, data };
           },

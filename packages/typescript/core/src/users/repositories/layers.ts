@@ -1,10 +1,11 @@
-import { and, eq, getViewName, inArray, not, notInArray } from "drizzle-orm";
+import { and, eq, getColumns, getViewName, inArray, not, notInArray } from "drizzle-orm";
 import * as Array from "effect/Array";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 import { UsersRepository, UsersSyncRepository } from ".";
 import { Database } from "../../database";
+import { identityProvidersTable } from "../../identity/sql";
 import { replicacheClientViewEntriesTable } from "../../replicache/sql";
 import { SyncQueryBuilder } from "../../sync/query-builder";
 import { activeUsersView, users } from "../sql";
@@ -26,6 +27,34 @@ export const makeRepository = Effect.gen(function* () {
         Effect.flatMap(Effect.fromOption),
         Effect.catchTag("NoSuchElementError", Effect.die),
       ),
+  );
+
+  const createWithIdentityProvider = Effect.fn("Users.Repository.createWithIdentityProvider")(
+    (value: InferInsertModel<UsersTable>) =>
+      db
+        .useTransaction((tx) => {
+          const inserted = tx.$with("inserted_user").as(tx.insert(table).values(value).returning());
+
+          return tx
+            .with(inserted)
+            .select({
+              user: getColumns(inserted),
+              identityProvider: getColumns(identityProvidersTable),
+            })
+            .from(inserted)
+            .innerJoin(
+              identityProvidersTable,
+              and(
+                eq(inserted.identityProviderId, identityProvidersTable.id),
+                eq(inserted.tenantId, identityProvidersTable.tenantId),
+              ),
+            );
+        })
+        .pipe(
+          Effect.map(Array.head),
+          Effect.flatMap(Effect.fromOption),
+          Effect.catchTag("NoSuchElementError", Effect.die),
+        ),
   );
 
   const findById = Effect.fn("Users.Repository.findById")(
@@ -85,6 +114,7 @@ export const makeRepository = Effect.gen(function* () {
 
   return {
     create,
+    createWithIdentityProvider,
     findById,
     findByIdForUpdate,
     findByExternalId,

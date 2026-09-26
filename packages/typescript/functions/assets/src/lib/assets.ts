@@ -15,7 +15,7 @@ import { appLayer } from "./app";
 import { s3ClientCacheLayer } from "./aws";
 import { SstResource } from "./sst";
 
-export const assetsS3BucketLayer = Effect.gen(function* () {
+export const makeAssetsS3Bucket = Effect.gen(function* () {
   const bucketTemplate = yield* SstResource.useSync(Struct.get("AssetsBucketTemplate")).pipe(
     Effect.map(Redacted.value),
   );
@@ -27,7 +27,12 @@ export const assetsS3BucketLayer = Effect.gen(function* () {
     endpoint,
     name,
   } as const;
-}).pipe(Layer.effect(S3Bucket), Layer.provide(SstResource.layer));
+});
+
+export const assetsS3BucketLayer = makeAssetsS3Bucket.pipe(
+  Layer.effect(S3Bucket),
+  Layer.provide(SstResource.layer),
+);
 
 export const imagesLayer = ImagesFetcher.layer.pipe(
   Layer.merge(ImagesPresigner.layer),

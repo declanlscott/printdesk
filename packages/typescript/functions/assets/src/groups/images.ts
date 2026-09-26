@@ -30,7 +30,11 @@ export const baseImagesGroupLayer = HttpApiBuilder.group(
       )
       .handle("uploadUrl", ({ params, payload }) =>
         presigner
-          .presignPutUrl(params.image, payload)
+          .presignPutUrl(params.image, {
+            type: payload.mimeType,
+            length: payload.byteSize,
+            expiresIn: payload.expiresIn,
+          })
           .pipe(
             AccessControl.enforce(AccessControl.permissionPolicy("images:create")),
             orDieWhenUnrespondable,

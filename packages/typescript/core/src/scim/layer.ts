@@ -12,6 +12,7 @@ import * as Option from "effect/Option";
 import * as Order from "effect/Order";
 import * as Predicate from "effect/Predicate";
 import * as Record from "effect/Record";
+import * as Redacted from "effect/Redacted";
 import * as Ref from "effect/Ref";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
@@ -32,10 +33,13 @@ import {
 
 import { Scim } from ".";
 import { Actor } from "../actors";
+import { AssetsContract } from "../assets/contract";
+import { CloudflareClient } from "../cloudflare/client";
 import { Database } from "../database";
 import { GroupMembershipsContract, GroupsContract } from "../groups/contracts";
 import { GroupMembershipsRepository } from "../groups/memberships/repositories";
 import { GroupsRepository } from "../groups/repositories";
+import { SstResource } from "../sst/resource";
 import { UsersContract } from "../users/contract";
 import { UsersRepository } from "../users/repositories";
 import { ScimBulkIdMap } from "./bulk-id-map";
@@ -61,6 +65,11 @@ export const makeService = Effect.gen(function* () {
   const groupsRepository = yield* GroupsRepository;
   const groupMembershipsRepository = yield* GroupMembershipsRepository;
   const usersRepository = yield* UsersRepository;
+
+  const cloudflare = yield* CloudflareClient;
+  const userAvatarsQueue = yield* SstResource.useSync(
+    Struct.get("UserAvatarsQueueProperties"),
+  ).pipe(Effect.map(Redacted.value));
 
   const tenantIdEffect = Actor.tenantId.pipe(
     Effect.mapError((error) => new ScimContract.V2Error({ status: 403, detail: error.message })),
@@ -529,13 +538,31 @@ export const makeService = Effect.gen(function* () {
   );
 
   const createUser = Effect.fn("Scim.createUser")(
-    (provisional: UsersContract.ProvisionalDto) => usersRepository.create(provisional),
+    (provisional: UsersContract.ProvisionalDto) =>
+      usersRepository.createWithIdentityProvider(provisional),
     Effect.catchReason(
       "SqlError",
       "UniqueViolation",
       (reason) =>
         new ScimContract.V2Error({ scimType: "uniqueness", status: 409, detail: reason.message }),
     ),
+    Effect.tap(({ user, identityProvider }) =>
+      AssetsContract.UserAvatarQueueMessage.makeEffect({
+        tenantId: user.tenantId,
+        user,
+        identityProvider,
+      }).pipe(
+        Effect.flatMap(Schema.encodeEffect(AssetsContract.UserAvatarQueueMessage)),
+        Effect.flatMap((body) =>
+          cloudflare.pushQueueMessage(userAvatarsQueue.id, { content_type: "json", body }),
+        ),
+        Effect.ignoreCause({
+          log: true,
+          message: `Tenant "${user.tenantId}" user "${user.id}" avatar queue message push failed.`,
+        }),
+      ),
+    ),
+    Effect.map(Struct.get("user")),
   );
 
   const replaceUser = Effect.fn("Scim.replaceUser")((user: typeof UsersContract.Table.Dto.Type) =>

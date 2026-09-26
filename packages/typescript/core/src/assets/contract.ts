@@ -4,10 +4,13 @@ import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as SchemaIssue from "effect/SchemaIssue";
 import * as SchemaTransformation from "effect/SchemaTransformation";
+import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
 
 import { Actor } from "../actors";
 import { App } from "../app";
+import { IdentityProvidersContract } from "../identity/contract";
+import { UsersContract } from "../users/contract";
 import { NonEmptyString, TenantId } from "../utils";
 
 export namespace AssetsContract {
@@ -51,4 +54,35 @@ export namespace AssetsContract {
     }),
     Schema.encode(SchemaTransformation.stringFromBase64UrlString),
   );
+
+  export const InvalidationNotificationQueueMessage = Schema.Struct({
+    _tag: Schema.tagDefaultOmit("InvalidationNotificationQueueMessage"),
+    account: NonEmptyString,
+    action: Schema.Literal("PutObject"),
+    bucket: NonEmptyString,
+    object: Schema.Struct({
+      key: NonEmptyString,
+      size: Schema.ByteSizeFromNumber,
+      eTag: Schema.String,
+    }),
+    eventTime: Schema.DateTimeUtcFromString,
+  });
+
+  export class UserAvatarQueueMessage extends Schema.TaggedClass<UserAvatarQueueMessage>()(
+    "UserAvatarQueueMessage",
+    {
+      tenantId: TenantId,
+      identityProvider: IdentityProvidersContract.Table.Model.mapFields(
+        Struct.pick(["externalId", "kind"]),
+      ),
+      user: UsersContract.Table.Model.mapFields(Struct.pick(["id", "externalId"])).mapFields(
+        Struct.evolve({ id: (id) => id.from.schema.members[0] }),
+      ),
+    },
+  ) {}
+
+  export const QueueMessage = Schema.Union([
+    InvalidationNotificationQueueMessage,
+    UserAvatarQueueMessage,
+  ]);
 }

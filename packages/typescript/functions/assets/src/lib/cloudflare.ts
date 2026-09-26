@@ -19,9 +19,10 @@ export const cloudflareLayer = Effect.gen(function* () {
   };
 }).pipe(Layer.effect(Cloudflare), Layer.provide(SstResource.layer));
 
-export const r2S3CredentialsLayer = SstResource.useSync(Struct.get("R2S3Credentials")).pipe(
+export const makeR2S3Credentials = SstResource.useSync(Struct.get("R2S3Credentials")).pipe(
   Effect.map(Redacted.value),
   Effect.flatMap(AwsCredentialIdentityProvider.make),
   Effect.map(Struct.get("credentials")),
-  Layer.effect(S3Credentials),
 );
+
+export const r2S3CredentialsLayer = makeR2S3Credentials.pipe(Layer.effect(S3Credentials));

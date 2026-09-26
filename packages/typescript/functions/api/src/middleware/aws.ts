@@ -7,7 +7,6 @@ import {
   AppsyncSubscriberCredentialIdentityProviderLayerMap,
 } from "@printdesk/core/aws/credential-identity/appsync";
 import { R2CredentialIdentityProviderLayerMap } from "@printdesk/core/aws/credential-identity/r2";
-import { CloudflareClient } from "@printdesk/core/cloudflare/client";
 import * as Cloudflare from "@printdesk/core/cloudflare/layer";
 import { r2S3CredentialsLayer } from "@printdesk/core/cloudflare/r2";
 import { appconfigRoleLayer } from "@printdesk/core/config/role";
@@ -43,7 +42,6 @@ export const appsyncSubscriberCredentialIdentityProviderMiddlewareLayer =
 export const r2CredentialIdentityProviderMiddlewareLayer =
   AwsCredentialIdentityProviderMiddleware.r2Layer.pipe(
     Layer.provide(R2CredentialIdentityProviderLayerMap.layer),
-    Layer.provide([assetsS3BucketLayer, CloudflareClient.layer]),
-    Layer.provide([Cloudflare.layer, Crypto.layer, r2S3CredentialsLayer]),
+    Layer.provide([assetsS3BucketLayer, Cloudflare.layer, Crypto.layer, r2S3CredentialsLayer]),
     Layer.provide([NodeCrypto.layer, SstResource.layer]),
   );

@@ -1,6 +1,7 @@
 import * as ByteSize from "effect/ByteSize";
 import * as Context from "effect/Context";
 import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
@@ -18,18 +19,22 @@ export class ImagesPresigner extends Context.Service<ImagesPresigner>()(
 
       const presignPutUrl = Effect.fn("ImagesPresigner.presignPutUrl")(function* (
         image: NonEmptyString,
-        payload: ImagesContract.PresignedUrlPayload,
+        content: {
+          type: string;
+          length: ByteSize.ByteSize;
+          expiresIn: Duration.Duration;
+        },
       ) {
         const Key = yield* Schema.encodeEffect(ImagesContract.Key)(["images/", image]);
         const expiresAt = yield* DateTime.now.pipe(
-          Effect.map(DateTime.addDuration(payload.expiresIn)),
+          Effect.map(DateTime.addDuration(content.expiresIn)),
         );
 
         return yield* presigner
           .presignPutUrl({
             Key,
-            ContentType: payload.mimeType,
-            ContentLength: ByteSize.toNumberUnsafe(payload.byteSize),
+            ContentType: content.type,
+            ContentLength: ByteSize.toNumberUnsafe(content.length),
             Expires: expiresAt.pipe(DateTime.toDateUtc),
           })
           .pipe(Effect.map((url) => ({ url: new URL(url), expiresAt })));

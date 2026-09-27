@@ -67,41 +67,53 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
     const replicacheNotifier = yield* ReplicacheNotifier;
 
     return handlers
-      .handle("all", () =>
-        syncer.syncAll.pipe(
-          Effect.map(Array.flatten),
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          orDieWhenUnrespondable,
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.all"),
+      .handle(
+        "all",
+        Effect.fn("Api.PapercutMfSync.all")(() =>
+          syncer.syncAll.pipe(
+            Effect.map(Array.flatten),
+            Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
+            Effect.asVoid,
+            orDieWhenUnrespondable,
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+            Effect.withSpan("Api.PapercutMfSync.all"),
+          ),
         ),
       )
-      .handle("sharedAccounts", () =>
-        syncer.syncSharedAccounts.pipe(
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          orDieWhenUnrespondable,
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.sharedAccounts"),
+      .handle(
+        "sharedAccounts",
+        Effect.fn("Api.PapercutMfSync.sharedAccounts")(() =>
+          syncer.syncSharedAccounts.pipe(
+            Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
+            Effect.asVoid,
+            orDieWhenUnrespondable,
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+            Effect.withSpan("Api.PapercutMfSync.sharedAccounts"),
+          ),
         ),
       )
-      .handle("sharedAccountCustomerAccess", () =>
-        syncer.syncSharedAccountCustomerAccess.pipe(
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          orDieWhenUnrespondable,
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerAccess"),
+      .handle(
+        "sharedAccountCustomerAccess",
+        Effect.fn("Api.PapercutMfSync.sharedAccountCustomerAccess")(() =>
+          syncer.syncSharedAccountCustomerAccess.pipe(
+            Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
+            Effect.asVoid,
+            orDieWhenUnrespondable,
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+            Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerAccess"),
+          ),
         ),
       )
-      .handle("sharedAccountGroupCustomerAccess", () =>
-        syncer.syncSharedAccountCustomerGroupAccess.pipe(
-          Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
-          Effect.asVoid,
-          orDieWhenUnrespondable,
-          AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-          Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerGroupAccess"),
+      .handle(
+        "sharedAccountGroupCustomerAccess",
+        Effect.fn("Api.PapercutMfSync.sharedAccountGroupCustomerAccess")(() =>
+          syncer.syncSharedAccountCustomerGroupAccess.pipe(
+            Effect.filterOrElse(Array.isArrayEmpty, () => replicacheNotifier.poke),
+            Effect.asVoid,
+            orDieWhenUnrespondable,
+            AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
+            Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerGroupAccess"),
+          ),
         ),
       );
   }),

@@ -25,39 +25,48 @@ export const baseOrdersGroupLayer = HttpApiBuilder.group(
     const policies = yield* OrdersPolicies;
 
     return handlers
-      .handle("objectsUploadUrls", ({ params, payload }) =>
-        presigner.presignPutUrls(params.orderId, payload.expiresIn).pipe(
-          Effect.catchTag(
-            "NoSuchElementError",
-            () => new OrdersContract.NotFoundError({ id: params.orderId }),
+      .handle(
+        "objectsUploadUrls",
+        Effect.fn("Api.Orders.objectsUploadUrls")(({ params, payload }) =>
+          presigner.presignPutUrls(params.orderId, payload.expiresIn).pipe(
+            Effect.catchTag(
+              "NoSuchElementError",
+              () => new OrdersContract.NotFoundError({ id: params.orderId }),
+            ),
+            AccessControl.enforce(
+              AccessControl.every(
+                AccessControl.some(
+                  AccessControl.permissionPolicy("order_objects:create"),
+                  policies.isCustomerOrManager.make({ id: params.orderId, userId: Option.none() }),
+                  policies.isManagerAuthorized.make({
+                    id: params.orderId,
+                    managerId: Option.none(),
+                  }),
+                ),
+                policies.canEdit.make({ id: params.orderId }),
+              ),
+            ),
+            orDieWhenUnrespondable,
           ),
-          AccessControl.enforce(
-            AccessControl.every(
+        ),
+      )
+      .handle(
+        "objectsDownloadUrls",
+        Effect.fn("Api.Orders.objectsDownloadUrls")(({ params, payload }) =>
+          presigner.presignGetUrls(params.orderId, payload.expiresIn).pipe(
+            Effect.catchTag(
+              "NoSuchElementError",
+              () => new OrdersContract.NotFoundError({ id: params.orderId }),
+            ),
+            AccessControl.enforce(
               AccessControl.some(
-                AccessControl.permissionPolicy("order_objects:create"),
+                AccessControl.permissionPolicy("order_objects:read"),
                 policies.isCustomerOrManager.make({ id: params.orderId, userId: Option.none() }),
                 policies.isManagerAuthorized.make({ id: params.orderId, managerId: Option.none() }),
               ),
-              policies.canEdit.make({ id: params.orderId }),
             ),
+            orDieWhenUnrespondable,
           ),
-          orDieWhenUnrespondable,
-        ),
-      )
-      .handle("objectsDownloadUrls", ({ params, payload }) =>
-        presigner.presignGetUrls(params.orderId, payload.expiresIn).pipe(
-          Effect.catchTag(
-            "NoSuchElementError",
-            () => new OrdersContract.NotFoundError({ id: params.orderId }),
-          ),
-          AccessControl.enforce(
-            AccessControl.some(
-              AccessControl.permissionPolicy("order_objects:read"),
-              policies.isCustomerOrManager.make({ id: params.orderId, userId: Option.none() }),
-              policies.isManagerAuthorized.make({ id: params.orderId, managerId: Option.none() }),
-            ),
-          ),
-          orDieWhenUnrespondable,
         ),
       );
   }),
@@ -71,43 +80,52 @@ export const baseOrderObjectsGroupLayer = HttpApiBuilder.group(
     const policies = yield* OrderObjectMetadataPolicies;
 
     return handlers
-      .handle("uploadUrl", ({ params, payload }) =>
-        presigner.presignPutUrl(params.objectId, payload.expiresIn).pipe(
-          Effect.catchTag(
-            "NoSuchElementError",
-            () => new OrderObjectMetadataContract.NotFoundError({ id: params.objectId }),
+      .handle(
+        "uploadUrl",
+        Effect.fn("Api.OrderObjects.uploadUrl")(({ params, payload }) =>
+          presigner.presignPutUrl(params.objectId, payload.expiresIn).pipe(
+            Effect.catchTag(
+              "NoSuchElementError",
+              () => new OrderObjectMetadataContract.NotFoundError({ id: params.objectId }),
+            ),
+            AccessControl.enforce(
+              AccessControl.every(
+                AccessControl.some(
+                  AccessControl.permissionPolicy("order_objects:create"),
+                  policies.isCustomerOrManager.make({ id: params.objectId, userId: Option.none() }),
+                  policies.isManagerAuthorized.make({
+                    id: params.objectId,
+                    managerId: Option.none(),
+                  }),
+                ),
+                policies.canEdit.make({ id: params.objectId }),
+              ),
+            ),
+            orDieWhenUnrespondable,
           ),
-          AccessControl.enforce(
-            AccessControl.every(
+        ),
+      )
+      .handle(
+        "object",
+        Effect.fn("Api.OrderObjects.object")(({ params }) =>
+          presigner.presignGetUrl(params.objectId, Duration.minutes(1)).pipe(
+            Effect.map(({ url }) => HttpServerResponse.redirect(url)),
+            Effect.catchTag(
+              "NoSuchElementError",
+              () => new OrderObjectMetadataContract.NotFoundError({ id: params.objectId }),
+            ),
+            AccessControl.enforce(
               AccessControl.some(
-                AccessControl.permissionPolicy("order_objects:create"),
+                AccessControl.permissionPolicy("order_objects:read"),
                 policies.isCustomerOrManager.make({ id: params.objectId, userId: Option.none() }),
                 policies.isManagerAuthorized.make({
                   id: params.objectId,
                   managerId: Option.none(),
                 }),
               ),
-              policies.canEdit.make({ id: params.objectId }),
             ),
+            orDieWhenUnrespondable,
           ),
-          orDieWhenUnrespondable,
-        ),
-      )
-      .handle("object", ({ params }) =>
-        presigner.presignGetUrl(params.objectId, Duration.minutes(1)).pipe(
-          Effect.map(({ url }) => HttpServerResponse.redirect(url)),
-          Effect.catchTag(
-            "NoSuchElementError",
-            () => new OrderObjectMetadataContract.NotFoundError({ id: params.objectId }),
-          ),
-          AccessControl.enforce(
-            AccessControl.some(
-              AccessControl.permissionPolicy("order_objects:read"),
-              policies.isCustomerOrManager.make({ id: params.objectId, userId: Option.none() }),
-              policies.isManagerAuthorized.make({ id: params.objectId, managerId: Option.none() }),
-            ),
-          ),
-          orDieWhenUnrespondable,
         ),
       );
   }),

@@ -123,9 +123,9 @@ export const makeService = Effect.fn(function* (input: OpenauthClientInput) {
         HttpClientRequest.toWeb,
       );
 
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      const response = (yield* Effect.tryPromise((signal) =>
-        (input.fetch || globalThis.fetch)(request, { signal }),
+      const response = (yield* Effect.tryPromise(
+        (signal) => (input.fetch || globalThis.fetch)(request, { signal }),
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       )) as Response;
 
       const tokens = yield* HttpClientResponse.fromWeb(

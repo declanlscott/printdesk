@@ -59,10 +59,10 @@ export const auth = createMiddleware((c, next) =>
                   Effect.map(
                     (res) =>
                       new HTTPException(
-                        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
                         Match.value(res.status).pipe(
                           Match.when(Match.is(401), () => 407),
                           Match.orElse((status) => status),
+                          // oxlint-disable-next-line typescript/no-unsafe-type-assertion
                         ) as ContentfulStatusCode,
                         { res, cause: respondable },
                       ),

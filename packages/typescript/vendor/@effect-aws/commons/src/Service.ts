@@ -156,7 +156,6 @@ export const fromCommandsAndServiceFn = <Service>(
   Effect.gen(function* () {
     const maybeRequestHandler = yield* Effect.serviceOption(HttpHandler.RequestHandler);
 
-    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const effectCommands = pipe(
       commands,
       Record.filter(Boolean),
@@ -197,6 +196,7 @@ export const fromCommandsAndServiceFn = <Service>(
         const serviceFnName = String.uncapitalize(command).replace(/Command$/, "");
         return [serviceFnName, serviceFnMaker(ExtendedCommand)];
       }),
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     ) as Service;
 
     const streamCommands = paginators

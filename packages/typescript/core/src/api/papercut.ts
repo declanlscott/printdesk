@@ -25,11 +25,7 @@ export namespace Papercut {
   export class MfSync extends HttpApiGroup.make("PapercutMfSync")
     .add(
       HttpApiEndpoint.post("all", "/", {
-        error: [
-          ActorsContract.ForbiddenActorError,
-          AccessControl.AccessDeniedError,
-          PapercutMfContract.IncompleteTaskStatusError,
-        ],
+        error: [ActorsContract.ForbiddenActorError, AccessControl.AccessDeniedError],
       }),
     )
     .add(

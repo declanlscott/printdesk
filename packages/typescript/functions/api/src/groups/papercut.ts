@@ -76,7 +76,6 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
             Effect.asVoid,
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-            Effect.withSpan("Api.PapercutMfSync.all"),
           ),
         ),
       )
@@ -88,7 +87,6 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
             Effect.asVoid,
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-            Effect.withSpan("Api.PapercutMfSync.sharedAccounts"),
           ),
         ),
       )
@@ -100,7 +98,6 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
             Effect.asVoid,
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-            Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerAccess"),
           ),
         ),
       )
@@ -112,7 +109,6 @@ export const basePapercutMfSyncGroupLayer = HttpApiBuilder.group(
             Effect.asVoid,
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("papercut_mf_sync:create")),
-            Effect.withSpan("Api.PapercutMfSync.sharedAccountCustomerGroupAccess"),
           ),
         ),
       );

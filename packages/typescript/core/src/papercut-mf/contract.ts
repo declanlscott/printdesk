@@ -98,18 +98,6 @@ export namespace PapercutMfContract {
       HttpServerResponse.schemaJson(UserAndGroupSyncFailure)(this, { status: 502 });
   }
 
-  export class IncompleteTaskStatusError
-    extends Schema.TaggedError<IncompleteTaskStatusError>()(
-      "IncompleteTaskStatusError",
-      { message: Schema.String },
-      { httpApiStatus: 503 },
-    )
-    implements HttpServerRespondable.Respondable
-  {
-    public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(IncompleteTaskStatusError)(this, { status: 503 });
-  }
-
   export class HealthSuccess extends Schema.Class<HealthSuccess>("HealthSuccess")({
     healthy: Schema.Boolean,
   }) {}

@@ -1,4 +1,3 @@
-import base64
 import json
 from dataclasses import dataclass
 
@@ -316,20 +315,16 @@ class PapercutMf(pulumi.ComponentResource):
             opts=pulumi.ResourceOptions(parent=self),
         )
 
-        self._api_domain = cloudflare.WorkersCustomDomain(
-            resource_name="PapercutMfApiDomain",
-            args=cloudflare.WorkersCustomDomainArgs(
-                account_id=Resource.Cloudflare.account.id,
+        self._api_route = cloudflare.WorkersRoute(
+            resource_name="PapercutMfApiRoute",
+            args=cloudflare.WorkersRouteArgs(
                 zone_id=Resource.Zone.id,
-                hostname=pulumi.Output.from_input(args.tenant_id).apply(
-                    lambda tenant_id: (
-                        base64.b32encode(tenant_id.encode("utf-8"))
-                        .decode("utf-8")
-                        .lower()
-                        .rstrip("=")
-                    )
+                pattern=pulumi.Output.format(
+                    "{0}/{1}/papercut/mf",
+                    Resource.Hostnames.api,
+                    args.tenant_id,
                 ),
-                service=self._api_gateway_script.script_name,
+                script=self._api_gateway_script.script_name,
             ),
             opts=pulumi.ResourceOptions(parent=self),
         )

@@ -149,7 +149,6 @@ class Resource:
         api: str
         assets: str
         auth: str
-        papercutMfApiTemplate: str
         realtime: str
         type: str
         web: str

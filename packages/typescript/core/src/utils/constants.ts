@@ -103,10 +103,9 @@ export namespace Constants {
   export const VARCHAR_LENGTH = 50;
 
   export const PAPERCUT_MF_API_PATH = "/rpc/api/xmlrpc";
-
-  export const PAPERCUT_API_PAGINATION_LIMIT = 1_000;
-  export const PAPERCUT_API_REQUEST_BATCH_SIZE = 50;
-  export const PAPERCUT_API_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
+  export const PAPERCUT_MF_API_PAGINATION_LIMIT = 1_000;
+  export const PAPERCUT_MF_API_REQUEST_BATCH_SIZE = 50;
+  export const PAPERCUT_MF_API_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
 
   export const GRAPH_REQUEST_BATCH_SIZE = 50;
   export const GRAPH_REQUEST_BATCH_DELAY = "100 millis" satisfies Duration.Input;
@@ -148,9 +147,6 @@ export namespace Constants {
   );
   export const ISO_DATE_REGEX = new RegExp(/^\d{4}-(?:0[1-9]|1[0-2])-(?:[12]\d|0[1-9]|3[01])$/u);
   export const HEX_COLOR_REGEX = new RegExp(/^#(?:[\da-fA-F]{3,4}|[\da-fA-F]{6}|[\da-fA-F]{8})$/u);
-  export const UNPADDED_BASE32_REGEX = new RegExp(
-    /^(?:[A-Z2-7]{8})*(?:[A-Z2-7]{2}|[A-Z2-7]{4}|[A-Z2-7]{5}|[A-Z2-7]{7})?$/i,
-  );
   export const IPV4_REGEX = new RegExp(
     /^(?:(?:[1-9]|1\d|2[0-4])?\d|25[0-5])(?:\.(?:(?:[1-9]|1\d|2[0-4])?\d|25[0-5])){3}$/u,
   );

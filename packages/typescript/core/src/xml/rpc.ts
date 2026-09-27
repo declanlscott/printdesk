@@ -45,12 +45,11 @@ export namespace XmlRpc {
     }),
   });
 
-  export const XmlRpcRequestPath = Context.Reference<string>(
-    "@printdesk/core/xml/rpc/XmlRpcRequestPath",
-    { defaultValue: () => "/" },
-  );
+  export const XmlRpcRequestPath = Context.Reference<string>("@printdesk/core/xml/RpcRequestPath", {
+    defaultValue: () => "/",
+  });
 
-  export class XmlRpc extends Context.Service<XmlRpc>()("@printdesk/core/xml/rpc/XmlRpc", {
+  export class XmlRpc extends Context.Service<XmlRpc>()("@printdesk/core/xml/Rpc", {
     make: Effect.gen(function* () {
       const { build } = yield* Xml.Builder;
       const { parse } = yield* Xml.Parser;

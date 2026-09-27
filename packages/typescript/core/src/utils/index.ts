@@ -58,9 +58,6 @@ export const NonEmptyString = Schema.NonEmptyString as _NonEmptyString;
 export type NonEmptyString = typeof NonEmptyString.Type;
 
 export const Base64 = Schema.NonEmptyString.pipe(Schema.check(Schema.isBase64()));
-export const UnpaddedBase32 = Schema.NonEmptyString.pipe(
-  Schema.check(Schema.isPattern(Constants.UNPADDED_BASE32_REGEX)),
-);
 
 export const Separator = Schema.Literal(Constants.SEPARATOR);
 

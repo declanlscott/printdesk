@@ -183,7 +183,6 @@ declare module "sst" {
       "api": string
       "assets": string
       "auth": string
-      "papercutMfApiTemplate": string
       "realtime": string
       "type": "sst.sst.Linkable"
       "web": string

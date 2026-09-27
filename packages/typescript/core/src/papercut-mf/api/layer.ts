@@ -20,9 +20,7 @@ import { GroupsContract } from "../../groups/contracts";
 import { Oauth } from "../../oauth";
 import { SharedAccountsContract } from "../../shared-accounts/contracts";
 import { SstResource } from "../../sst/resource";
-import { TenantsContract } from "../../tenants/contract";
 import { UsersContract } from "../../users/contract";
-import { TenantId, tenantTemplate } from "../../utils";
 import { Constants } from "../../utils/constants";
 import { XmlRpcContract } from "../../xml/contracts";
 import { XmlRpc } from "../../xml/rpc";
@@ -46,14 +44,15 @@ export const makeService = Effect.gen(function* () {
       actor: ActorsContract.Actor;
       accessToken: OauthContract.Tokens["access"];
     }) {
-      const hostname = yield* key.actor.tenantId.pipe(
-        Effect.flatMap(Schema.encodeEffect(TenantsContract.IdFromUnpaddedBase32String)),
-        Effect.map((base32) => TenantId.make(base32, { disableChecks: true })),
-        Effect.map(tenantTemplate(resource.Hostnames.pipe(Redacted.value).papercutMfApiTemplate)),
+      const baseUrl = yield* key.actor.tenantId.pipe(
+        Effect.map(
+          (tenantId) =>
+            `https://${resource.Hostnames.pipe(Redacted.value).api}/${tenantId}/papercut/mf`,
+        ),
       );
 
       return baseHttpClient.pipe(
-        HttpClient.mapRequest(HttpClientRequest.prependUrl(`https://${hostname}`)),
+        HttpClient.mapRequest(HttpClientRequest.prependUrl(baseUrl)),
         HttpClient.mapRequest(
           HttpClientRequest.setHeader(
             "Proxy-Authorization",
@@ -78,8 +77,8 @@ export const makeService = Effect.gen(function* () {
       ),
     ),
   ).pipe(
-    RequestResolver.setDelay(Constants.PAPERCUT_API_REQUEST_BATCH_DELAY),
-    RequestResolver.batchN(Constants.PAPERCUT_API_REQUEST_BATCH_SIZE),
+    RequestResolver.setDelay(Constants.PAPERCUT_MF_API_REQUEST_BATCH_DELAY),
+    RequestResolver.batchN(Constants.PAPERCUT_MF_API_REQUEST_BATCH_SIZE),
     RequestResolver.withSpan("PapercutMf.Api.resolver"),
   );
 
@@ -136,11 +135,11 @@ export const makeService = Effect.gen(function* () {
 
   const getGroupMembersStream = (groupName: string) =>
     Stream.paginate(0, (offset) =>
-      getGroupMembers(groupName, offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+      getGroupMembers(groupName, offset, Constants.PAPERCUT_MF_API_PAGINATION_LIMIT).pipe(
         Effect.map((page) =>
           Tuple.make(
             page,
-            page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+            page.length >= Constants.PAPERCUT_MF_API_PAGINATION_LIMIT
               ? Option.some(offset + page.length)
               : Option.none(),
           ),
@@ -224,11 +223,11 @@ export const makeService = Effect.gen(function* () {
   );
 
   const listSharedAccountsStream = Stream.paginate(0, (offset) =>
-    listSharedAccounts(offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+    listSharedAccounts(offset, Constants.PAPERCUT_MF_API_PAGINATION_LIMIT).pipe(
       Effect.map((page) =>
         Tuple.make(
           page,
-          page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+          page.length >= Constants.PAPERCUT_MF_API_PAGINATION_LIMIT
             ? Option.some(offset + page.length)
             : Option.none(),
         ),
@@ -260,11 +259,11 @@ export const makeService = Effect.gen(function* () {
   );
 
   const listUserAccountsStream = Stream.paginate(0, (offset) =>
-    listUserAccounts(offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+    listUserAccounts(offset, Constants.PAPERCUT_MF_API_PAGINATION_LIMIT).pipe(
       Effect.map((page) =>
         Tuple.make(
           page,
-          page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+          page.length >= Constants.PAPERCUT_MF_API_PAGINATION_LIMIT
             ? Option.some(offset + page.length)
             : Option.none(),
         ),
@@ -296,11 +295,11 @@ export const makeService = Effect.gen(function* () {
   );
 
   const listUserGroupsStream = Stream.paginate(0, (offset) =>
-    listUserGroups(offset, Constants.PAPERCUT_API_PAGINATION_LIMIT).pipe(
+    listUserGroups(offset, Constants.PAPERCUT_MF_API_PAGINATION_LIMIT).pipe(
       Effect.map((page) =>
         Tuple.make(
           page,
-          page.length >= Constants.PAPERCUT_API_PAGINATION_LIMIT
+          page.length >= Constants.PAPERCUT_MF_API_PAGINATION_LIMIT
             ? Option.some(offset + page.length)
             : Option.none(),
         ),

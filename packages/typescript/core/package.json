@@ -26,7 +26,6 @@
     "@microsoft/msgraph-sdk-serviceprincipals": "1.0.0-preview.90",
     "@microsoft/msgraph-sdk-users": "1.0.0-preview.90",
     "@openauthjs/openauth": "workspace:@printdesk/openauth@*",
-    "@oslojs/encoding": "^1.1.0",
     "@smithy/protocol-http": "^5.6.2",
     "@smithy/signature-v4": "^5.7.4",
     "aws-cron-parser": "^1.1.12",

@@ -75,7 +75,7 @@
   * {
     color-scheme: light dark;
     border-color: light-dark(var(--border), var(--dark-border));
-    outline-color: color-mix(in oklab, light-dark(var(--ring), var(--dark-ring)) 50%, transparent)
+    outline-color: color-mix(in oklab, light-dark(var(--ring), var(--dark-ring)) 50%, transparent);
   }
   body {
     background-color: light-dark(var(--background), var(--dark-background));

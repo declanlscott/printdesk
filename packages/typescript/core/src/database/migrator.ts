@@ -190,7 +190,7 @@ export class Migrator extends Context.Service<Migrator>()("@printdesk/core/datab
                                   ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
                                   : "not retryable"
                               }:`,
-                              metadata.input.pipe(Cause.fail, Cause.pretty),
+                              metadata.input.pipe(Cause.fail),
                             );
 
                             return isRetryable;

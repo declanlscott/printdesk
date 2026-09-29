@@ -50,7 +50,7 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
                         ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
                         : "not retrying"
                     }:`,
-                    Cause.fail(metadata.input).pipe(Cause.pretty),
+                    Cause.fail(metadata.input),
                   );
 
                   return shouldRetry;

@@ -12,7 +12,6 @@ import { ImagesPresigner } from "@printdesk/core/images/presigner";
 import { TenantIdFromTemplate } from "@printdesk/core/utils";
 import { Constants } from "@printdesk/core/utils/constants";
 import * as ByteSize from "effect/ByteSize";
-import * as Cause from "effect/Cause";
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Match from "effect/Match";
@@ -134,7 +133,7 @@ export const queue = ((batch, _env, ctx) =>
               Effect.fn((cause) =>
                 Effect.logError(
                   `Message "${message.id}" processing attempt #${message.attempts} failed:`,
-                  cause.pipe(Cause.pretty),
+                  cause,
                 ).pipe(Effect.andThen(Effect.sync(() => message.retry()))),
               ),
             ),
@@ -145,7 +144,7 @@ export const queue = ((batch, _env, ctx) =>
     ),
     Effect.andThen(Effect.sync(() => batch.ackAll())),
     Effect.catchCause((cause) =>
-      Effect.logError("Batch processing failed:", cause.pipe(Cause.pretty)).pipe(
+      Effect.logError("Batch processing failed:", cause).pipe(
         Effect.andThen(Effect.sync(() => batch.retryAll())),
       ),
     ),

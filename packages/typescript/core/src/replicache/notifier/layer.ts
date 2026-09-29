@@ -1,4 +1,3 @@
-import * as Cause from "effect/Cause";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
@@ -35,10 +34,7 @@ export const makeService = Effect.gen(function* () {
           notify(...args).pipe(
             Effect.provideContext(context),
             Effect.catchCause((cause) =>
-              Effect.logError(
-                "[ReplicacheNotifier]: Replicache notification failed:",
-                cause.pipe(Cause.pretty),
-              ),
+              Effect.logError("[ReplicacheNotifier]: Replicache notification failed:", cause),
             ),
             Transaction.after(),
           ),

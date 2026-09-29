@@ -9,25 +9,19 @@ import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
-const seed = Drizzle.pipe(
-  Effect.flatMap((db) =>
-    db
-      .insert(replicacheMetaTable)
-      .values({ key: "schemaVersion", value: Constants.DB_SCHEMA_VERSION }),
-  ),
+Drizzle.use((db) =>
+  db
+    .insert(replicacheMetaTable)
+    .values({ key: "schemaVersion", value: Constants.DB_SCHEMA_VERSION }),
+).pipe(
   Effect.tap(() => Effect.logInfo("✅ Seeding complete!")),
   Effect.tapCause((cause) => Effect.logError("❌ Error during seeding", cause)),
-  Effect.asVoid,
-);
-
-seed.pipe(
   // oxlint-disable-next-line effecttsgo/strict-effect-provide
   Effect.provide(
     Drizzle.layerWithDrizzleServices.pipe(
       Layer.provide(PgClient.layer),
       Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),
-      Layer.provide(nodeCredentialIdentityProviderLayer),
-      Layer.provide(SstResource.layer),
+      Layer.provide([nodeCredentialIdentityProviderLayer, SstResource.layer]),
     ),
   ),
   Effect.runFork,

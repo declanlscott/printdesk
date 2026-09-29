@@ -17,8 +17,8 @@ export namespace CryptoContract {
   ) {}
 
   export class Hash extends Schema.Class<Hash>("Hash")({
-    salt: Base64.pipe(Schema.RedactedFromValue, Schema.decodeTo(Secret)),
-    derivedKey: Base64.pipe(Schema.RedactedFromValue, Schema.decodeTo(Secret)),
+    salt: Base64.pipe(Schema.decodeTo(Secret)),
+    derivedKey: Base64.pipe(Schema.decodeTo(Secret)),
   }) {}
 
   export const HashFromString = Schema.TemplateLiteralParser([

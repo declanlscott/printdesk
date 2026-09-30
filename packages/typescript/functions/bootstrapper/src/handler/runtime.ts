@@ -87,21 +87,26 @@ export const layer = Layer.mergeAll(
   Layer.provideMerge(SstResource.layer),
 );
 
-export const runtime = layer.pipe(ManagedRuntime.make, (runtime) => {
-  function signalListener(signal: globalThis.NodeJS.Signals) {
-    Console.log(`[runtime]: ${signal} received`).pipe(
-      Effect.andThen(Console.log(`[runtime]: cleaning up`)),
-      Effect.andThen(runtime.disposeEffect),
-      Effect.andThen(Console.log(`[runtime]: exiting`)),
-      // @effect-diagnostics-next-line lazyPromiseInEffectSync:off
-      // oxlint-disable-next-line unicorn/no-process-exit
-      Effect.andThen(Effect.sync(() => globalThis.process.exit(0))),
-      Effect.runFork,
-    );
-  }
+export const runtime = layer.pipe(
+  Layer.tapCause(Effect.logError),
+  ManagedRuntime.make,
+  function (runtime) {
+    function signalListener(signal: globalThis.NodeJS.Signals) {
+      Console.log(`[runtime]: ${signal} received`).pipe(
+        Effect.andThen(Console.log(`[runtime]: cleaning up`)),
+        Effect.andThen(runtime.disposeEffect),
+        Effect.andThen(Console.log(`[runtime]: exiting`)),
+        // @effect-diagnostics-next-line lazyPromiseInEffectSync:off
+        // oxlint-disable-next-line unicorn/no-process-exit
+        Effect.andThen(Effect.sync(() => globalThis.process.exit(0))),
+        Effect.tapCause(Effect.logError),
+        Effect.runFork,
+      );
+    }
 
-  globalThis.process.on("SIGTERM", signalListener);
-  globalThis.process.on("SIGINT", signalListener);
+    globalThis.process.on("SIGTERM", signalListener);
+    globalThis.process.on("SIGINT", signalListener);
 
-  return runtime;
-});
+    return runtime;
+  },
+);

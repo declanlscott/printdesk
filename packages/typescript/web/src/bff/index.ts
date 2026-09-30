@@ -1,3 +1,4 @@
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpRouter from "effect/unstable/http/HttpRouter";
 import * as HttpServer from "effect/unstable/http/HttpServer";
@@ -11,6 +12,7 @@ export default {
   fetch: Bff.pipe(
     HttpApiBuilder.layer,
     Layer.provide([authGroupLayer, spaGroupLayer, HttpRouter.layer, HttpServer.layerServices]),
+    Layer.tapCause(Effect.logError),
     HttpRouter.toWebHandler,
   ).handler,
 };

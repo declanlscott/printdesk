@@ -6,6 +6,7 @@ import { Migrator } from "@printdesk/core/database/migrator";
 import * as PgClient from "@printdesk/core/database/pg-client";
 import { SstResource } from "@printdesk/core/sst/resource";
 import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 export const layer = Migrator.layer.pipe(
@@ -14,4 +15,5 @@ export const layer = Migrator.layer.pipe(
   Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),
   Layer.provide(nodeCredentialIdentityProviderLayer),
   Layer.provide([NodeCrypto.layer, SstResource.layer]),
+  Layer.tapCause(Effect.logError),
 );

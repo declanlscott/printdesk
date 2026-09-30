@@ -2,6 +2,7 @@ import { ActorLayerMap } from "@printdesk/core/actors";
 import { OauthContract } from "@printdesk/core/oauth/contract";
 import * as Openauth from "@printdesk/core/oauth/openauth/layer";
 import { Constants } from "@printdesk/core/utils/constants";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as Redacted from "effect/Redacted";
@@ -14,7 +15,7 @@ export const authRuntime = Openauth.layer({
   clientID: Constants.OPENAUTH_CLIENT_IDS.PAPERCUT_MF_API_GATEWAY,
   fetch: (input) => lambda.fetch(input),
   issuer: resource.Issuer.pipe(Redacted.value).url,
-}).pipe(Layer.merge(ActorLayerMap.layer), ManagedRuntime.make);
+}).pipe(Layer.merge(ActorLayerMap.layer), Layer.tapCause(Effect.logError), ManagedRuntime.make);
 
 export const AuthHeaders = OauthContract.AuthHeaders.to.pipe(
   Schema.encodeKeys({ accessToken: "proxy-authorization" }),

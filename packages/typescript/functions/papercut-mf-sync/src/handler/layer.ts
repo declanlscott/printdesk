@@ -28,6 +28,7 @@ import * as UsersRepositories from "@printdesk/core/users/repositories/layers";
 import { Xml } from "@printdesk/core/xml";
 import { XmlRpc } from "@printdesk/core/xml/rpc";
 import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
 
@@ -63,4 +64,5 @@ export const layer = Layer.mergeAll(
   Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),
   Layer.provide(nodeCredentialIdentityProviderLayer),
   Layer.provideMerge(SstResource.layer),
+  Layer.tapCause(Effect.logError),
 );

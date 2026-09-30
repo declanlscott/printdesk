@@ -26,7 +26,11 @@ export const api = createMiddleware((c) =>
   Effect.tryPromise((signal) =>
     proxy(url, { raw: c.req.raw, signal, customFetch: (req) => papercutApi.fetch(req) }),
   )
-    .pipe(Effect.timeout(Duration.seconds(10)), Effect.runPromiseExit)
+    .pipe(
+      Effect.timeout(Duration.seconds(10)),
+      Effect.tapCause(Effect.logError),
+      Effect.runPromiseExit,
+    )
     .then(
       Exit.match({
         onSuccess: (response) => response,

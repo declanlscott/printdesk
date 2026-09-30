@@ -13,6 +13,7 @@ import { SstResource } from "./src/sst/resource";
 const configRuntime = dsqlSignerLayer({ expiresIn: Duration.hours(12) }).pipe(
   Layer.provide(nodeCredentialIdentityProviderLayer),
   Layer.provideMerge(SstResource.layer),
+  Layer.tapCause(Effect.logError),
   ManagedRuntime.make,
 );
 

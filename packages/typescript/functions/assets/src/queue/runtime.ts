@@ -3,6 +3,7 @@ import { AssetsPresigner } from "@printdesk/core/assets/presigner";
 import * as Crypto from "@printdesk/core/crypto/layer";
 import { Graph } from "@printdesk/core/graph";
 import { ImagesPresigner } from "@printdesk/core/images/presigner";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as ManagedRuntime from "effect/ManagedRuntime";
 import * as FetchHttpClient from "effect/unstable/http/FetchHttpClient";
@@ -26,5 +27,6 @@ export const runtime = Layer.mergeAll(
   Layer.provideMerge(FetchHttpClient.layer),
   Layer.provide([AssetsPresigner.layer, NodeCrypto.layer]),
   Layer.provide([assetsS3BucketLayer, s3ClientCacheLayer]),
+  Layer.tapCause(Effect.logError),
   ManagedRuntime.make,
 );

@@ -11,6 +11,7 @@ import * as Oauth from "@printdesk/core/oauth/layer";
 import { SstResource } from "@printdesk/core/sst/resource";
 import * as SyncQueryBuilder from "@printdesk/core/sync/query-builder/layer";
 import * as Duration from "effect/Duration";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 
 export const layer = Oauth.layer.pipe(
@@ -22,4 +23,5 @@ export const layer = Oauth.layer.pipe(
   Layer.provide(DsqlSigner.layer({ expiresIn: Duration.minutes(15) })),
   Layer.provide(nodeCredentialIdentityProviderLayer),
   Layer.provideMerge(SstResource.layer),
+  Layer.tapCause(Effect.logError),
 );

@@ -35,28 +35,35 @@ export const makeService = Effect.gen(function* () {
     Match.exhaustive,
   );
 
-  const papercutMfApiAuthTokenProfileIdEffect = Actor.tenantId.pipe(
-    Effect.map(
-      tenantTemplate(
-        resource.PapercutMfApiAuthTokenConfigurationProfileTemplate.pipe(Redacted.value).name,
+  const papercutMfApiAuthTokenProfileIdEffect = Effect.suspend(() =>
+    Actor.tenantId.pipe(
+      Effect.map(
+        tenantTemplate(
+          resource.PapercutMfApiAuthTokenConfigurationProfileTemplate.pipe(Redacted.value).name,
+        ),
       ),
     ),
   );
 
-  const papercutMfSyncClientCredentialsProfileIdEffect = Actor.tenantId.pipe(
-    Effect.map(
-      tenantTemplate(
-        resource.PapercutMfSyncClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)
-          .name,
+  const papercutMfSyncClientCredentialsProfileIdEffect = Effect.suspend(() =>
+    Actor.tenantId.pipe(
+      Effect.map(
+        tenantTemplate(
+          resource.PapercutMfSyncClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)
+            .name,
+        ),
       ),
     ),
   );
 
-  const invoicesProcessorClientCredentialsProfileIdEffect = Actor.tenantId.pipe(
-    Effect.map(
-      tenantTemplate(
-        resource.InvoicesProcessorClientCredentialsConfigurationProfileTemplate.pipe(Redacted.value)
-          .name,
+  const invoicesProcessorClientCredentialsProfileIdEffect = Effect.suspend(() =>
+    Actor.tenantId.pipe(
+      Effect.map(
+        tenantTemplate(
+          resource.InvoicesProcessorClientCredentialsConfigurationProfileTemplate.pipe(
+            Redacted.value,
+          ).name,
+        ),
       ),
     ),
   );

@@ -226,7 +226,7 @@ export namespace ReplicachePullerContract {
     cookie: Cookie,
     lastMutationIdChanges: Schema.Record(
       Schema.String.pipe(Schema.check(Schema.isUUID())),
-      Version,
+      Version.pipe(Schema.toType),
     ),
     patch: PatchOperation.pipe(ChunkFromArray),
   });

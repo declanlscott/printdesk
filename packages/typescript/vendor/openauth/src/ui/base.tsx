@@ -1,6 +1,6 @@
 // oxlint-disable react/no-danger react-perf/jsx-no-new-object-as-prop
 import { getTheme } from "./theme.js";
-import css from "./ui.css" with { type: "text" };
+import css from "./ui.css";
 
 import type { PropsWithChildren } from "hono/jsx";
 

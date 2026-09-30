@@ -1,7 +1,7 @@
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
-import { Builder as XMLBuilder } from "fast-xml-builder";
+import XMLBuilder from "fast-xml-builder";
 import { XMLParser } from "fast-xml-parser";
 
 import { XmlContract } from "./contracts";

@@ -1,5 +1,6 @@
 import { LambdaHandler } from "@effect-aws/lambda";
 import { Api } from "@printdesk/core/api";
+import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as HttpServer from "effect/unstable/http/HttpServer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
@@ -24,5 +25,6 @@ export default Api.pipe(
     replicacheGroupLayer,
     scimGroupsLayer,
   ]),
+  Layer.tapCause(Effect.logError),
   LambdaHandler.fromHttpApi,
 );

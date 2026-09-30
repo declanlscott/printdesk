@@ -112,13 +112,10 @@ export namespace RealtimeContract {
   export const WebSocketAuthorizationProtocol = Authorization.pipe(
     Schema.fromJsonString,
     Schema.encode(SchemaTransformation.stringFromBase64UrlString),
-    Schema.encodeTo(
-      Schema.TemplateLiteral([Schema.Literal(headerPrefix), Schema.StringFromBase64Url]),
-      {
-        encode: SchemaGetter.transform((base64Url) => `${headerPrefix}${base64Url}` as const),
-        decode: SchemaGetter.transform(String.replace(headerPrefix, "")),
-      },
-    ),
+    Schema.encodeTo(Schema.TemplateLiteral([headerPrefix, Schema.NonEmptyString]), {
+      encode: SchemaGetter.transform((base64Url) => `${headerPrefix}${base64Url}` as const),
+      decode: SchemaGetter.transform(String.replace(headerPrefix, "")),
+    }),
   );
 
   export class PublishPayload extends Schema.Class<PublishPayload>("PublishPayload")({

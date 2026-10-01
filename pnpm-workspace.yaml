@@ -20,6 +20,8 @@ catalog:
   "@effect/platform-node-shared": 4.0.0-rc.117
   "@effect/sql-pg": 4.0.0-rc.117
   "@effect/tsgo": ^0.47.2
+  "@hono/aws-lambda": ^1.0.0
+  "@hono/cloudflare-workers": ^1.0.0
   "@lucas-barake/effect-form-react": 0.26.0-beta.5
   "@react-aria/optimize-locales-plugin": ^1.2.0
   "@stylexjs/atoms": ^0.19.1

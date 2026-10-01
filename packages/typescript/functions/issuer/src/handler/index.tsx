@@ -1,3 +1,4 @@
+import { handle } from "@hono/aws-lambda";
 import { issuer } from "@openauthjs/openauth";
 import { Layout } from "@openauthjs/openauth/ui/base";
 import { IdentityProvidersContract } from "@printdesk/core/identity/contract";
@@ -19,7 +20,6 @@ import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as Struct from "effect/Struct";
-import { handle } from "hono/aws-lambda";
 import { HTTPException } from "hono/http-exception";
 
 import { providerMetadata } from "../lib/metadata";

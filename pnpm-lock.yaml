@@ -197,6 +197,12 @@ catalogs:
     '@effect/tsgo':
       specifier: ^0.47.2
       version: 0.47.2
+    '@hono/aws-lambda':
+      specifier: ^1.0.0
+      version: 1.0.0
+    '@hono/cloudflare-workers':
+      specifier: ^1.0.0
+      version: 1.0.0
     '@lucas-barake/effect-form-react':
       specifier: 0.26.0-beta.5
       version: 0.26.0-beta.5
@@ -506,6 +512,9 @@ importers:
 
   packages/typescript/functions/api-gateway:
     dependencies:
+      '@hono/cloudflare-workers':
+        specifier: 'catalog:'
+        version: 1.0.0(hono@4.13.11)
       '@printdesk/core':
         specifier: workspace:^
         version: link:../../core
@@ -599,6 +608,9 @@ importers:
       '@effect/platform-node':
         specifier: 'catalog:'
         version: 4.0.0-rc.117(effect@4.0.0-rc.117)(redis@6.2.1(@opentelemetry/api@1.9.1))
+      '@hono/aws-lambda':
+        specifier: 'catalog:'
+        version: 1.0.0(hono@4.13.11)
       '@openauthjs/openauth':
         specifier: workspace:@printdesk/openauth@*
         version: link:../../vendor/openauth
@@ -877,6 +889,9 @@ importers:
 
   packages/typescript/vendor/openauth:
     dependencies:
+      '@hono/aws-lambda':
+        specifier: 'catalog:'
+        version: 1.0.0(hono@4.13.11)
       '@standard-schema/spec':
         specifier: ^1.1.0
         version: 1.1.0
@@ -995,7 +1010,7 @@ importers:
         version: 4.0.0-rc.117(effect@4.0.0-rc.117)(react@19.3.0)(scheduler@0.27.0)
       '@lucas-barake/effect-form-react':
         specifier: 'catalog:'
-        version: 0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/platform@0.94.5(effect@4.0.0-rc.117))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/atom-react@4.0.0-rc.117(effect@4.0.0-rc.117)(react@19.3.0))(effect@4.0.0-rc.117)(react@19.3.0)
+        version: 0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/platform@0.94.5(effect@4.0.0-rc.117))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/atom-react@4.0.0-rc.117(effect@4.0.0-rc.117)(react@19.3.0)(scheduler@0.27.0))(effect@4.0.0-rc.117)(react@19.3.0)
       '@printdesk/core':
         specifier: workspace:*
         version: link:../core
@@ -2054,6 +2069,18 @@ packages:
   '@eslint/plugin-kit@0.7.3':
     resolution: {integrity: sha512-IkO+/KEUvwbVpiURZg+P7zF74z5Jxe0UgJxVni+RtoHQ6IZieXaO02kmadomap/q+l6bc/jdPGGqTjhuZnuz1Q==}
     engines: {node: ^20.19.0 || ^22.13.0 || >=24}
+
+  '@hono/aws-lambda@1.0.0':
+    resolution: {integrity: sha512-9BbwTKwM0kLrEA6UH2i2BZhxTWrhDozRTp0y0GKKA+JedalgQ0Rw/7fnL8x0lc8EnXJQRvwRu2Nn78zNwMRODQ==}
+    engines: {node: '>=16.9.0'}
+    peerDependencies:
+      hono: '>=4.13.9'
+
+  '@hono/cloudflare-workers@1.0.0':
+    resolution: {integrity: sha512-yPnFZPLqpPjvUbXqIYXEuCseo9E9ub2s8uyf0wPDAkySy9+p8rm4cKIpzSvbblH5EuE5Ro1WEpvuumbUsdER9w==}
+    engines: {node: '>=16.9.0'}
+    peerDependencies:
+      hono: '>=4.13.9'
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -6774,6 +6801,14 @@ snapshots:
       '@eslint/core': 1.2.1
       levn: 0.4.1
 
+  '@hono/aws-lambda@1.0.0(hono@4.13.11)':
+    dependencies:
+      hono: 4.13.11
+
+  '@hono/cloudflare-workers@1.0.0(hono@4.13.11)':
+    dependencies:
+      hono: 4.13.11
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -6944,7 +6979,7 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@lucas-barake/effect-form-react@0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/platform@0.94.5(effect@4.0.0-rc.117))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/atom-react@4.0.0-rc.117(effect@4.0.0-rc.117)(react@19.3.0))(effect@4.0.0-rc.117)(react@19.3.0)':
+  '@lucas-barake/effect-form-react@0.26.0-beta.5(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/platform@0.94.5(effect@4.0.0-rc.117))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/atom-react@4.0.0-rc.117(effect@4.0.0-rc.117)(react@19.3.0)(scheduler@0.27.0))(effect@4.0.0-rc.117)(react@19.3.0)':
     dependencies:
       '@effect/atom-react': 4.0.0-rc.117(effect@4.0.0-rc.117)(react@19.3.0)(scheduler@0.27.0)
       '@lucas-barake/effect-form': 0.25.0(@effect-atom/atom@0.5.3(@effect/experimental@0.58.0(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(@effect/platform@0.94.5(effect@4.0.0-rc.117))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(effect@4.0.0-rc.117))(effect@4.0.0-rc.117)

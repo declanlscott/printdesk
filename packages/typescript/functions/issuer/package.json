@@ -6,6 +6,7 @@
   "dependencies": {
     "@effect-aws/lambda": "workspace:@printdesk/effect-aws-lambda@*",
     "@effect/platform-node": "catalog:",
+    "@hono/aws-lambda": "catalog:",
     "@openauthjs/openauth": "workspace:@printdesk/openauth@*",
     "@printdesk/core": "workspace:^",
     "effect": "catalog:",

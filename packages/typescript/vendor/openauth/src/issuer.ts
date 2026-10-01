@@ -1,6 +1,6 @@
 // oxlint-disable typescript/no-explicit-any typescript/no-empty-object-type typescript/no-non-null-assertion no-console unicorn/consistent-function-scoping typescript/no-unsafe-type-assertion typescript/no-base-to-string
+import { handle as awsHandle } from "@hono/aws-lambda";
 import { Context } from "hono";
-import { handle as awsHandle } from "hono/aws-lambda";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { Hono } from "hono/tiny";
 
@@ -112,7 +112,7 @@ import type { StandardTypedV1 } from "@standard-schema/spec";
  *   </TabItem>
  *   <TabItem label="Lambda">
  *   ```ts title="issuer.ts"
- *   import { handle } from "hono/aws-lambda"
+ *   import { handle } from "@hono/aws-lambda"
  *
  *   export const handler = handle(app)
  *   ```

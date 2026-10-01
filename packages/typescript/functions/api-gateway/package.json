@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@hono/cloudflare-workers": "catalog:",
     "@printdesk/core": "workspace:^",
     "aws4fetch": "catalog:",
     "effect": "catalog:",

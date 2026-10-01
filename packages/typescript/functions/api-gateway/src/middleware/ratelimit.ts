@@ -1,8 +1,8 @@
+import { getConnInfo } from "@hono/cloudflare-workers";
 import { AttributesContract } from "@printdesk/core/attributes/contract";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
-import { getConnInfo } from "hono/cloudflare-workers";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 

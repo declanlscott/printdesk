@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@aws/durable-execution-sdk-js": "^2.4.0",
+    "@aws/durable-execution-sdk-js": "^2.5.0",
     "@effect-aws/dynamodb": "workspace:@printdesk/effect-aws-dynamodb@*",
     "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",

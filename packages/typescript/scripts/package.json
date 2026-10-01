@@ -6,6 +6,7 @@
     "tsx": "tsx"
   },
   "dependencies": {
+    "@effect/platform-node": "catalog:",
     "@printdesk/core": "workspace:*",
     "drizzle-orm": "catalog:",
     "effect": "catalog:"

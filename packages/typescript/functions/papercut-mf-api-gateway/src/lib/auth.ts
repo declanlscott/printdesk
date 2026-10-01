@@ -13,7 +13,7 @@ import { resource } from "./sst";
 
 export const authRuntime = Openauth.layer({
   clientID: Constants.OPENAUTH_CLIENT_IDS.PAPERCUT_MF_API_GATEWAY,
-  fetch: (input) => lambda.fetch(input),
+  fetch: (input) => lambda.fetch(input, { redirect: "manual" }),
   issuer: resource.Issuer.pipe(Redacted.value).url,
 }).pipe(Layer.merge(ActorLayerMap.layer), Layer.tapCause(Effect.logError), ManagedRuntime.make);
 

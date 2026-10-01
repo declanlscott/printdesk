@@ -27,7 +27,7 @@ export const issuerLayer = Effect.fn(
 
     return layer({
       clientID: clientId,
-      fetch: (input) => lambda.fetch(input),
+      fetch: (input) => lambda.fetch(input, { redirect: "manual" }),
       issuer: Issuer.pipe(Redacted.value).url,
     });
   },

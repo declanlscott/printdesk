@@ -27,7 +27,7 @@ export const openauthLayer = Effect.gen(function* () {
 
   return Openauth.layer({
     clientID: Constants.OPENAUTH_CLIENT_IDS.ASSETS,
-    fetch: (input) => lambda.fetch(input),
+    fetch: (input) => lambda.fetch(input, { redirect: "manual" }),
     issuer: Issuer.pipe(Redacted.value).url,
   });
 }).pipe(Layer.unwrap, Layer.provide(SstResource.layer));

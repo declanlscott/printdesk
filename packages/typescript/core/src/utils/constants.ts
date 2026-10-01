@@ -156,4 +156,6 @@ export namespace Constants {
   export const DEFAULT_LAYER_MAP_IDLE_TTL = "1 minute" satisfies Duration.Input;
 
   export const DEFAULT_CACHE_CAPACITY = 10;
+
+  export const FORWARDED_AUTHORIZATION_HEADER_NAME = "x-forwarded-authorization";
 }

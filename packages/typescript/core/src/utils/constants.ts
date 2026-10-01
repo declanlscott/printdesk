@@ -115,7 +115,7 @@ export namespace Constants {
     oauthCallback: "/oauth/callback",
   } as const;
 
-  export const IMAGE_MIME_TYPE_WHITELIST = [
+  export const IMAGE_MIME_TYPE_ALLOWLIST = [
     "image/jpeg",
     "image/png",
     "image/svg+xml",
@@ -124,7 +124,7 @@ export namespace Constants {
   export const IMAGE_BYTE_SIZE_LIMIT = "250 kB" satisfies ByteSize.Input;
 
   export const DEFAULT_PAPERCUT_MF_SYNC_CRON_EXPRESSION = "55 1 * * ? *";
-  export const DEFAULT_ORDER_OBJECT_MIME_TYPE_WHITELIST = ["application/pdf"] as const;
+  export const DEFAULT_ORDER_OBJECT_MIME_TYPE_ALLOWLIST = ["application/pdf"] as const;
   export const DEFAULT_ORDER_OBJECT_BYTE_SIZE_LIMIT = "10 MB" satisfies ByteSize.Input;
 
   /** This order of characters is optimized for better gzip and brotli compression. */

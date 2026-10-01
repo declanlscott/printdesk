@@ -9,7 +9,7 @@ export namespace ImagesContract {
   export class PresignedUrlPayload extends AssetsContract.PresignedUrlPayload.extend<PresignedUrlPayload>(
     "PresignedUrlPayload",
   )({
-    mimeType: Schema.Literals(Constants.IMAGE_MIME_TYPE_WHITELIST),
+    mimeType: Schema.Literals(Constants.IMAGE_MIME_TYPE_ALLOWLIST),
     byteSize: Schema.ByteSizeFromNumber.pipe(
       Schema.check(
         Schema.makeFilter(

@@ -108,7 +108,7 @@ export namespace ProductsContract {
             }),
           ),
         ),
-        mimeTypeWhitelist: NonEmptyString.pipe(Schema.Array, Schema.optional),
+        mimeTypeAllowlist: NonEmptyString.pipe(Schema.Array, Schema.optional),
       }).pipe(Schema.optional),
       attributes: AttributesV1,
     },
@@ -119,7 +119,7 @@ export namespace ProductsContract {
       if (!this.orderAttachments) return false;
 
       return (
-        (this.orderAttachments.mimeTypeWhitelist?.includes(metadata.mimeType) ?? true) &&
+        (this.orderAttachments.mimeTypeAllowlist?.includes(metadata.mimeType) ?? true) &&
         ByteSize.isLessThanOrEqualTo(metadata.byteSize, this.orderAttachments.byteSizeLimit)
       );
     }

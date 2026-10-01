@@ -79,22 +79,22 @@ export namespace IdentityProvidersContract {
 
   export const EntraIdUser = Schema.Struct({
     id: Schema.String,
+    displayName: Schema.String,
     mail: Schema.String,
-    preferredName: Schema.String,
     userPrincipalName: Schema.String,
   }).pipe(
     Schema.decodeTo(User, {
       decode: SchemaGetter.transform(
         Struct.renameKeys({
           id: "externalId",
+          displayName: "displayName",
           mail: "email",
-          preferredName: "displayName",
           userPrincipalName: "username",
         }),
       ),
       encode: SchemaGetter.transform(
         Struct.renameKeys({
-          displayName: "preferredName",
+          displayName: "displayName",
           email: "mail",
           externalId: "id",
           username: "userPrincipalName",

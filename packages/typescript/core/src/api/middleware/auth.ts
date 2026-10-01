@@ -32,128 +32,140 @@ export class AuthMiddleware extends HttpApiMiddleware.Service<
     HttpApiError.Unauthorized,
   ],
 }) {
-  public static readonly make = Effect.gen({ self: this }, function* () {
-    const actorLayerMap = yield* ActorLayerMap;
-    const accessTokenLayerMap = yield* Oauth.AccessTokenLayerMap;
-    const openauth = yield* Openauth;
+  public static readonly make = Effect.fn(
+    { self: this },
+    function* (props: { forwardedHeader: boolean }) {
+      const actorLayerMap = yield* ActorLayerMap;
+      const accessTokenLayerMap = yield* Oauth.AccessTokenLayerMap;
+      const openauth = yield* Openauth;
 
-    return this.of(
-      Effect.fn(function* (httpEffect) {
-        const { subject, tokens, fallbackToken, method } = yield* Effect.all({
-          cookies: HttpServerRequest.HttpServerRequest.pipe(
-            Effect.map(Struct.get("cookies")),
-            Effect.map(
-              Option.liftPredicate((cookies) =>
-                Schema.toEncoded(OauthContract.AuthCookies)
-                  .schema.from.mapFields(Struct.omit(["_tag"]))
-                  .pipe(
-                    Struct.get("fields"),
-                    Struct.keys,
-                    Array.every((key) => key in cookies),
-                  ),
-              ),
-            ),
-          ),
-          headers: HttpServerRequest.HttpServerRequest.pipe(
-            Effect.map(Struct.get("headers")),
-            Effect.map(
-              Option.liftPredicate((headers) =>
-                Schema.toEncoded(OauthContract.AuthHeaders)
-                  .schema.from.mapFields(Struct.omit(["_tag"]))
-                  .pipe(
-                    Struct.get("fields"),
-                    Struct.keys,
-                    Array.every((key) => key in headers),
-                  ),
-              ),
-            ),
-          ),
-        }).pipe(
-          Effect.flatMap(
-            Effect.fn(function* (method) {
-              if (Option.product(method.cookies, method.headers))
-                return yield* new OauthContract.MultipleAuthenticationMethodsError();
+      const Headers = OauthContract.AuthHeaders.pipe(
+        Schema.encodeKeys({
+          accessToken: props.forwardedHeader
+            ? Constants.FORWARDED_AUTHORIZATION_HEADER_NAME
+            : "authorization",
+        }),
+      );
 
-              if (Option.isSome(method.cookies))
-                return yield* method.cookies.pipe(
-                  Option.getOrThrow,
-                  Schema.decodeUnknownEffect(OauthContract.AuthCookies),
-                  Effect.mapError(
-                    (error) => new OauthContract.InvalidCookiesError({ cause: error }),
-                  ),
-                  Effect.flatMap((cookies) =>
-                    openauth.verify(cookies.accessToken, { refresh: cookies.refreshToken }).pipe(
-                      Effect.map(
-                        Struct.assign({
-                          fallbackToken: cookies.accessToken,
-                          method: "cookies" as const,
-                        }),
-                      ),
+      return this.of(
+        Effect.fn(function* (httpEffect) {
+          const { subject, tokens, fallbackToken, method } = yield* Effect.all({
+            cookies: HttpServerRequest.HttpServerRequest.pipe(
+              Effect.map(Struct.get("cookies")),
+              Effect.map(
+                Option.liftPredicate((cookies) =>
+                  Schema.toEncoded(OauthContract.AuthCookies)
+                    .schema.from.mapFields(Struct.omit(["_tag"]))
+                    .pipe(
+                      Struct.get("fields"),
+                      Struct.keys,
+                      Array.every((key) => key in cookies),
                     ),
-                  ),
-                );
-
-              if (Option.isSome(method.headers))
-                return yield* method.headers.pipe(
-                  Option.getOrThrow,
-                  Schema.decodeUnknownEffect(OauthContract.AuthHeaders),
-                  Effect.mapError(
-                    (error) => new OauthContract.InvalidHeadersError({ cause: error }),
-                  ),
-                  Effect.flatMap((headers) =>
-                    openauth.verify(headers.accessToken).pipe(
-                      Effect.map(
-                        Struct.assign({
-                          fallbackToken: headers.accessToken,
-                          method: "headers" as const,
-                        }),
-                      ),
-                    ),
-                  ),
-                );
-
-              return yield* new HttpApiError.Unauthorized();
-            }),
-          ),
-        );
-
-        const providedHttpEffect = httpEffect.pipe(
-          // oxlint-disable-next-line effecttsgo/strict-effect-provide
-          Effect.provide(
-            Layer.mergeAll(
-              actorLayerMap.get(subject.properties.actor.wrap),
-              accessTokenLayerMap.get(
-                tokens.pipe(
-                  Option.map(Struct.get("access")),
-                  Option.getOrElse(() => fallbackToken),
                 ),
               ),
             ),
-          ),
-        );
+            headers: HttpServerRequest.HttpServerRequest.pipe(
+              Effect.map(Struct.get("headers")),
+              Effect.map(
+                Option.liftPredicate((headers) =>
+                  Schema.toEncoded(Headers)
+                    .schema.from.mapFields(Struct.omit(["_tag"]))
+                    .pipe(
+                      Struct.get("fields"),
+                      Struct.keys,
+                      Array.every((key) => key in headers),
+                    ),
+                ),
+              ),
+            ),
+          }).pipe(
+            Effect.flatMap(
+              Effect.fn(function* (method) {
+                if (Option.product(method.cookies, method.headers).pipe(Option.isSome))
+                  return yield* new OauthContract.MultipleAuthenticationMethodsError();
 
-        if (Option.isNone(tokens) || method !== "cookies") return yield* providedHttpEffect;
+                if (Option.isSome(method.cookies))
+                  return yield* method.cookies.pipe(
+                    Option.getOrThrow,
+                    Schema.decodeUnknownEffect(OauthContract.AuthCookies),
+                    Effect.mapError(
+                      (error) => new OauthContract.InvalidCookiesError({ cause: error }),
+                    ),
+                    Effect.flatMap((cookies) =>
+                      openauth.verify(cookies.accessToken, { refresh: cookies.refreshToken }).pipe(
+                        Effect.map(
+                          Struct.assign({
+                            fallbackToken: cookies.accessToken,
+                            method: "cookies" as const,
+                          }),
+                        ),
+                      ),
+                    ),
+                  );
 
-        return yield* providedHttpEffect.pipe(
-          Effect.flatMap(
-            HttpServerResponse.setCookies([
-              [
-                Constants.COOKIE_NAMES.ACCESS_TOKEN,
-                tokens.value.access.pipe(Redacted.value),
-                Constants.COOKIE_OPTIONS,
-              ],
-              [
-                Constants.COOKIE_NAMES.REFRESH_TOKEN,
-                tokens.value.refresh.pipe(Redacted.value),
-                Constants.COOKIE_OPTIONS,
-              ],
-            ]),
-          ),
-          Effect.orDie,
-        );
-      }),
-    );
-  });
+                if (Option.isSome(method.headers))
+                  return yield* method.headers.pipe(
+                    Option.getOrThrow,
+                    Schema.decodeUnknownEffect(Headers),
+                    Effect.mapError(
+                      (error) => new OauthContract.InvalidHeadersError({ cause: error }),
+                    ),
+                    Effect.flatMap((headers) =>
+                      openauth.verify(headers.accessToken).pipe(
+                        Effect.map(
+                          Struct.assign({
+                            fallbackToken: headers.accessToken,
+                            method: "headers" as const,
+                          }),
+                        ),
+                      ),
+                    ),
+                  );
 
-  public static readonly layer = this.make.pipe(Layer.effect(this));
+                return yield* new HttpApiError.Unauthorized();
+              }),
+            ),
+          );
+
+          const providedHttpEffect = httpEffect.pipe(
+            // oxlint-disable-next-line effecttsgo/strict-effect-provide
+            Effect.provide(
+              Layer.mergeAll(
+                actorLayerMap.get(subject.properties.actor.wrap),
+                accessTokenLayerMap.get(
+                  tokens.pipe(
+                    Option.map(Struct.get("access")),
+                    Option.getOrElse(() => fallbackToken),
+                  ),
+                ),
+              ),
+            ),
+          );
+
+          if (Option.isNone(tokens) || method !== "cookies") return yield* providedHttpEffect;
+
+          return yield* providedHttpEffect.pipe(
+            Effect.flatMap(
+              HttpServerResponse.setCookies([
+                [
+                  Constants.COOKIE_NAMES.ACCESS_TOKEN,
+                  tokens.value.access.pipe(Redacted.value),
+                  Constants.COOKIE_OPTIONS,
+                ],
+                [
+                  Constants.COOKIE_NAMES.REFRESH_TOKEN,
+                  tokens.value.refresh.pipe(Redacted.value),
+                  Constants.COOKIE_OPTIONS,
+                ],
+              ]),
+            ),
+            Effect.orDie,
+          );
+        }),
+      );
+    },
+  );
+
+  public static readonly layer = (...args: Parameters<typeof this.make>) =>
+    this.make(...args).pipe(Layer.effect(this));
 }

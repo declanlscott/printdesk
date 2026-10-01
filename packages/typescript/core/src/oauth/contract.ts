@@ -300,7 +300,7 @@ export namespace OauthContract {
   export const AuthHeaders = Schema.Struct({
     _tag: Schema.tagDefaultOmit("AuthHeaders"),
     accessToken: BearerToken,
-  }).pipe(Schema.encodeKeys({ accessToken: "authorization" }));
+  });
 
   export class InvalidCookiesError
     extends Schema.TaggedError<InvalidCookiesError>()("InvalidCookiesError", {

@@ -885,7 +885,7 @@ export namespace ScimContract {
                 externalId: user.externalId,
                 displayName: user.displayName,
                 userName: user.username,
-                active: user.status === "active",
+                active: user.status === "active" && user.deletedAt === null,
                 emails: [{ primary: true, value: user.email }],
                 roles: [{ primary: true, value: role }],
                 meta: { created, lastModified, location, resourceType: "User" },

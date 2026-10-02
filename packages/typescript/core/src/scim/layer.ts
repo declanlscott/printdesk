@@ -71,8 +71,10 @@ export const makeService = Effect.gen(function* () {
     Struct.get("UserAvatarsQueueProperties"),
   ).pipe(Effect.map(Redacted.value));
 
-  const tenantIdEffect = Actor.tenantId.pipe(
-    Effect.mapError((error) => new ScimContract.V2Error({ status: 403, detail: error.message })),
+  const tenantIdEffect = Effect.suspend(() =>
+    Actor.tenantId.pipe(
+      Effect.mapError((error) => new ScimContract.V2ForbiddenError({ detail: error.message })),
+    ),
   );
 
   const groupMembershipRelations = Effect.fn((relations: Array<GroupMembershipRelation>) =>
@@ -94,11 +96,19 @@ export const makeService = Effect.gen(function* () {
   const patch = Function.dual<
     <TScimResource extends ScimResource>(
       patchOperations: Array<ScimPatchOperation>,
-    ) => (scimResource: TScimResource) => Effect.Effect<TScimResource, ScimContract.V2Error>,
+    ) => (
+      scimResource: TScimResource,
+    ) => Effect.Effect<
+      TScimResource,
+      ScimContract.V2BadRequestError | ScimContract.V2InternalServerError
+    >,
     <TScimResource extends ScimResource>(
       scimResource: TScimResource,
       patchOperations: Array<ScimPatchOperation>,
-    ) => Effect.Effect<TScimResource, ScimContract.V2Error>
+    ) => Effect.Effect<
+      TScimResource,
+      ScimContract.V2BadRequestError | ScimContract.V2InternalServerError
+    >
   >(
     2,
     Effect.fn("Scim.patch")((...args) =>
@@ -112,9 +122,8 @@ export const makeService = Effect.gen(function* () {
               Match.instanceOf(RemoveValueNestedArrayNotSupported),
               Match.instanceOf(RemoveValueNotArray),
               (invalidSyntax) =>
-                new ScimContract.V2Error({
+                new ScimContract.V2BadRequestError({
                   scimType: "invalidSyntax",
-                  status: 400,
                   detail: invalidSyntax.message,
                 }),
             ),
@@ -122,13 +131,12 @@ export const makeService = Effect.gen(function* () {
               Match.instanceOf(NoPathInScimPatchOp),
               Match.instanceOf(NoTarget),
               (noTarget) =>
-                new ScimContract.V2Error({
+                new ScimContract.V2BadRequestError({
                   scimType: "noTarget",
-                  status: 400,
                   detail: noTarget.message,
                 }),
             ),
-            Match.orElse(() => new ScimContract.V2Error({ status: 500 })),
+            Match.orElse(() => new ScimContract.V2InternalServerError()),
           ),
       }),
     ),
@@ -139,7 +147,7 @@ export const makeService = Effect.gen(function* () {
     const lastModified = created;
     const location = yield* locator.serviceProviderConfig.pipe(Effect.map(Struct.get("href")));
 
-    return yield* ScimContract.V2ServiceProviderConfig.makeEffect({
+    return new ScimContract.V2ServiceProviderConfig({
       patch: { supported: true },
       bulk: {
         supported: true,
@@ -174,40 +182,43 @@ export const makeService = Effect.gen(function* () {
     const record = Effect.all({
       User: locator.resourceType("User").pipe(
         Effect.map(Struct.get("href")),
-        Effect.flatMap((location) =>
-          ScimContract.V2ResourceType.makeEffect({
-            id: "User",
-            name: "User",
-            endpoint: "/Users",
-            description: "User account",
-            schema: ScimContract.v2UserUri,
-            meta: { resourceType: "ResourceType", location },
-          }),
+        Effect.map(
+          (location) =>
+            new ScimContract.V2ResourceType({
+              id: "User",
+              name: "User",
+              endpoint: "/Users",
+              description: "User account",
+              schema: ScimContract.v2UserUri,
+              meta: { resourceType: "ResourceType", location },
+            }),
         ),
       ),
       Group: locator.resourceType("Group").pipe(
         Effect.map(Struct.get("href")),
-        Effect.flatMap((location) =>
-          ScimContract.V2ResourceType.makeEffect({
-            id: "Group",
-            name: "Group",
-            endpoint: "/Groups",
-            description: "Group account",
-            schema: ScimContract.v2GroupUri,
-            meta: { resourceType: "ResourceType", location },
-          }),
+        Effect.map(
+          (location) =>
+            new ScimContract.V2ResourceType({
+              id: "Group",
+              name: "Group",
+              endpoint: "/Groups",
+              description: "Group account",
+              schema: ScimContract.v2GroupUri,
+              meta: { resourceType: "ResourceType", location },
+            }),
         ),
       ),
     });
 
     const list = record.pipe(
-      Effect.flatMap((record) =>
-        ScimContract.V2ListResponse.makeEffect({
-          itemsPerPage: Record.size(record),
-          totalResults: Record.size(record),
-          startIndex: 1,
-          Resources: Record.values(record),
-        }),
+      Effect.map(
+        (record) =>
+          new ScimContract.V2ListResponse({
+            itemsPerPage: Record.size(record),
+            totalResults: Record.size(record),
+            startIndex: 1,
+            Resources: Record.values(record),
+          }),
       ),
     );
 
@@ -226,38 +237,41 @@ export const makeService = Effect.gen(function* () {
     const record = Effect.all({
       [ScimContract.v2UserUri]: locator.schema(ScimContract.v2UserUri).pipe(
         Effect.map(Struct.get("href")),
-        Effect.flatMap((location) =>
-          ScimContract.V2Schema.makeEffect({
-            id: ScimContract.v2UserUri,
-            name: "User",
-            description: "User account",
-            attributes: ScimContract.V2SchemaAttribute.userAttributes,
-            meta: { resourceType: "Schema", location },
-          }),
+        Effect.map(
+          (location) =>
+            new ScimContract.V2Schema({
+              id: ScimContract.v2UserUri,
+              name: "User",
+              description: "User account",
+              attributes: ScimContract.V2SchemaAttribute.userAttributes,
+              meta: { resourceType: "Schema", location },
+            }),
         ),
       ),
       [ScimContract.v2GroupUri]: locator.schema(ScimContract.v2GroupUri).pipe(
         Effect.map(Struct.get("href")),
-        Effect.flatMap((location) =>
-          ScimContract.V2Schema.makeEffect({
-            id: ScimContract.v2GroupUri,
-            name: "Group",
-            description: "Group account",
-            attributes: ScimContract.V2SchemaAttribute.groupAttributes,
-            meta: { resourceType: "Schema", location },
-          }),
+        Effect.map(
+          (location) =>
+            new ScimContract.V2Schema({
+              id: ScimContract.v2GroupUri,
+              name: "Group",
+              description: "Group account",
+              attributes: ScimContract.V2SchemaAttribute.groupAttributes,
+              meta: { resourceType: "Schema", location },
+            }),
         ),
       ),
     });
 
     const list = record.pipe(
-      Effect.flatMap((record) =>
-        ScimContract.V2ListResponse.makeEffect({
-          itemsPerPage: Record.size(record),
-          totalResults: Record.size(record),
-          startIndex: 1,
-          Resources: Record.values(record),
-        }),
+      Effect.map(
+        (record) =>
+          new ScimContract.V2ListResponse({
+            itemsPerPage: Record.size(record),
+            totalResults: Record.size(record),
+            startIndex: 1,
+            Resources: Record.values(record),
+          }),
       ),
     );
 
@@ -282,9 +296,8 @@ export const makeService = Effect.gen(function* () {
         );
 
     if (filter.op !== "eq")
-      return yield* new ScimContract.V2Error({
+      return yield* new ScimContract.V2BadRequestError({
         scimType: "invalidFilter",
-        status: 400,
         detail: `"${filter.op}" operator is not supported`,
       });
 
@@ -292,9 +305,8 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap(Schema.decodeEffect(ScimContract.V2Group.SupportedFilterAttributePath)),
       Effect.mapError(
         (error) =>
-          new ScimContract.V2Error({
+          new ScimContract.V2BadRequestError({
             scimType: "invalidFilter",
-            status: 400,
             detail: error.message,
           }),
       ),
@@ -307,9 +319,8 @@ export const makeService = Effect.gen(function* () {
           Effect.catchTag(
             "SchemaError",
             (error) =>
-              new ScimContract.V2Error({
+              new ScimContract.V2BadRequestError({
                 scimType: "invalidValue",
-                status: 400,
                 detail: error.message,
               }),
           ),
@@ -331,7 +342,7 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap(groupMembershipRelations),
       Effect.map(Array.head),
       Effect.flatMap(Effect.fromOption),
-      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
     ),
   );
 
@@ -366,11 +377,7 @@ export const makeService = Effect.gen(function* () {
           "SqlError",
           "UniqueViolation",
           (reason) =>
-            new ScimContract.V2Error({
-              scimType: "uniqueness",
-              status: 409,
-              detail: reason.message,
-            }),
+            new ScimContract.V2ConflictError({ scimType: "uniqueness", detail: reason.message }),
         ),
       ),
   );
@@ -410,16 +417,12 @@ export const makeService = Effect.gen(function* () {
       ),
     (effect) =>
       effect.pipe(
-        Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+        Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
         Effect.catchReason(
           "SqlError",
           "UniqueViolation",
           (reason) =>
-            new ScimContract.V2Error({
-              scimType: "uniqueness",
-              status: 409,
-              detail: reason.message,
-            }),
+            new ScimContract.V2ConflictError({ scimType: "uniqueness", detail: reason.message }),
         ),
       ),
   );
@@ -444,16 +447,12 @@ export const makeService = Effect.gen(function* () {
               ),
           ),
         ),
-        Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+        Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
         Effect.catchReason(
           "SqlError",
           "UniqueViolation",
           (reason) =>
-            new ScimContract.V2Error({
-              scimType: "uniqueness",
-              status: 409,
-              detail: reason.message,
-            }),
+            new ScimContract.V2ConflictError({ scimType: "uniqueness", detail: reason.message }),
         ),
       ),
   );
@@ -469,17 +468,7 @@ export const makeService = Effect.gen(function* () {
           { discard: true },
         ),
       ),
-      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
-      Effect.catchReason(
-        "SqlError",
-        "UniqueViolation",
-        (reason) =>
-          new ScimContract.V2Error({
-            scimType: "uniqueness",
-            status: 409,
-            detail: reason.message,
-          }),
-      ),
+      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
     ),
   );
 
@@ -489,9 +478,8 @@ export const makeService = Effect.gen(function* () {
     if (!filter) return yield* usersRepository.findByTenantId(tenantId);
 
     if (filter.op !== "eq")
-      return yield* new ScimContract.V2Error({
+      return yield* new ScimContract.V2BadRequestError({
         scimType: "invalidFilter",
-        status: 400,
         detail: `"${filter.op}" operator is not supported`,
       });
 
@@ -499,11 +487,7 @@ export const makeService = Effect.gen(function* () {
       Effect.flatMap(Schema.decodeEffect(ScimContract.V2User.SupportedFilterAttributePath)),
       Effect.mapError(
         (error) =>
-          new ScimContract.V2Error({
-            scimType: "invalidFilter",
-            status: 400,
-            detail: error.message,
-          }),
+          new ScimContract.V2BadRequestError({ scimType: "invalidFilter", detail: error.message }),
       ),
     );
 
@@ -514,9 +498,8 @@ export const makeService = Effect.gen(function* () {
           Effect.catchTag(
             "SchemaError",
             (error) =>
-              new ScimContract.V2Error({
+              new ScimContract.V2BadRequestError({
                 scimType: "invalidValue",
-                status: 400,
                 detail: error.message,
               }),
           ),
@@ -533,7 +516,7 @@ export const makeService = Effect.gen(function* () {
   const retrieveUser = Effect.fn("Scim.retrieveUser")((id: User["id"]) =>
     tenantIdEffect.pipe(
       Effect.flatMap((tenantId) => usersRepository.findById(id, tenantId)),
-      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
     ),
   );
 
@@ -544,7 +527,7 @@ export const makeService = Effect.gen(function* () {
       "SqlError",
       "UniqueViolation",
       (reason) =>
-        new ScimContract.V2Error({ scimType: "uniqueness", status: 409, detail: reason.message }),
+        new ScimContract.V2ConflictError({ scimType: "uniqueness", detail: reason.message }),
     ),
     Effect.tap(({ user, identityProvider }) =>
       AssetsContract.UserAvatarQueueMessage.makeEffect({
@@ -567,12 +550,12 @@ export const makeService = Effect.gen(function* () {
 
   const replaceUser = Effect.fn("Scim.replaceUser")((user: typeof UsersContract.Table.Dto.Type) =>
     usersRepository.updateById(user.id, user, user.tenantId).pipe(
-      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
       Effect.catchReason(
         "SqlError",
         "UniqueViolation",
         (reason) =>
-          new ScimContract.V2Error({ scimType: "uniqueness", status: 409, detail: reason.message }),
+          new ScimContract.V2ConflictError({ scimType: "uniqueness", detail: reason.message }),
       ),
     ),
   );
@@ -594,14 +577,13 @@ export const makeService = Effect.gen(function* () {
               ),
           ),
         ),
-        Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+        Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
         Effect.catchReason(
           "SqlError",
           "UniqueViolation",
           (reason) =>
-            new ScimContract.V2Error({
+            new ScimContract.V2ConflictError({
               scimType: "uniqueness",
-              status: 409,
               detail: reason.message,
             }),
         ),
@@ -614,7 +596,7 @@ export const makeService = Effect.gen(function* () {
         usersRepository.updateById(id, { deletedAt }, tenantId),
       ),
       Effect.asVoid,
-      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2Error({ status: 404 })),
+      Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
     ),
   );
 
@@ -673,8 +655,7 @@ export const makeService = Effect.gen(function* () {
               Effect.flatMap(Schema.decodeEffect(GroupsContract.BulkProvisionalDtos.ToNonBulk)),
               Effect.mapError((error) =>
                 error.issue._tag === "MissingKey"
-                  ? new ScimContract.V2Error({
-                      status: 400,
+                  ? new ScimContract.V2BadRequestError({
                       scimType: "noTarget",
                       detail: error.message,
                     })
@@ -716,8 +697,7 @@ export const makeService = Effect.gen(function* () {
                       ScimContract.V2BulkResponseOperation.make({
                         bulkId: operation.bulkId,
                         status: { code: 500 },
-                        response: new ScimContract.V2Error({
-                          status: 500,
+                        response: new ScimContract.V2InternalServerError({
                           detail: `unexpected server error: ${ref}`,
                         }),
                       }),

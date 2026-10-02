@@ -30,7 +30,9 @@ export class ScimAuthMiddleware extends HttpApiMiddleware.Service<
       key: Constants.FORWARDED_AUTHORIZATION_HEADER_NAME,
     }),
   },
-  error: ScimContract.V2Error.pipe(HttpApiSchema.asJson({ contentType: "application/scim+json" })),
+  error: ScimContract.V2UnauthorizedError.pipe(
+    HttpApiSchema.asJson({ contentType: "application/scim+json" }),
+  ),
 }) {
   public static readonly make = Effect.gen({ self: this }, function* () {
     const actorLayerMap = yield* ActorLayerMap;
@@ -42,12 +44,12 @@ export class ScimAuthMiddleware extends HttpApiMiddleware.Service<
         const accessToken = yield* opts.credential.pipe(
           Redacted.value,
           Schema.decodeUnknownEffect(OauthContract.BearerToken),
-          Effect.mapError(() => new ScimContract.V2Error({ status: 401 })),
+          Effect.mapError(() => new ScimContract.V2UnauthorizedError()),
         );
 
         const { subject } = yield* openauth
           .verify(accessToken)
-          .pipe(Effect.mapError(() => new ScimContract.V2Error({ status: 401 })));
+          .pipe(Effect.mapError(() => new ScimContract.V2UnauthorizedError()));
 
         return yield* httpEffect.pipe(
           Effect.provide(
@@ -86,7 +88,7 @@ export class ScimLocatorMiddleware extends HttpApiMiddleware.Service<
 
 export class ScimErrorMiddleware extends HttpApiMiddleware.Service<ScimErrorMiddleware>()(
   "@printdesk/core/api/ScimErrorMiddleware",
-  { error: ScimContract.V2Error },
+  { error: ScimContract.V2InternalServerError },
 ) {
   public static readonly make = Crypto.Crypto.pipe(
     Effect.map((crypto) =>
@@ -101,8 +103,7 @@ export class ScimErrorMiddleware extends HttpApiMiddleware.Service<ScimErrorMidd
               Effect.tap((ref) => Effect.logError(Cause.die(defect), ref)),
               Effect.flatMap((ref) =>
                 Effect.fail(
-                  new ScimContract.V2Error({
-                    status: 500,
+                  new ScimContract.V2InternalServerError({
                     detail: `unexpected server error: ${ref}`,
                   }),
                 ),
@@ -119,7 +120,7 @@ export class ScimErrorMiddleware extends HttpApiMiddleware.Service<ScimErrorMidd
 
 export class ScimHttpApiSchemaErrorHandlerMiddleware extends HttpApiMiddleware.Service<ScimHttpApiSchemaErrorHandlerMiddleware>()(
   "@printdesk/core/api/ScimHttpApiSchemaErrorHandlerMiddleware",
-  { error: ScimContract.V2Error },
+  { error: [ScimContract.V2BadRequestError, ScimContract.V2InternalServerError] },
 ) {
   public static readonly layer = HttpApiMiddleware.layerSchemaErrorTransform(
     this,
@@ -128,18 +129,18 @@ export class ScimHttpApiSchemaErrorHandlerMiddleware extends HttpApiMiddleware.S
         Match.when(
           { kind: Match.is("Payload") },
           () =>
-            new ScimContract.V2Error({
+            new ScimContract.V2BadRequestError({
               scimType: "invalidSyntax",
-              status: 400,
               detail: httpApiSchemaError.cause.message,
             }),
         ),
         Match.when(
           { kind: Match.is("Body") },
-          () => new ScimContract.V2Error({ status: 500, detail: httpApiSchemaError.cause.message }),
+          () =>
+            new ScimContract.V2InternalServerError({ detail: httpApiSchemaError.cause.message }),
         ),
         Match.orElse(
-          () => new ScimContract.V2Error({ status: 400, detail: httpApiSchemaError.cause.message }),
+          () => new ScimContract.V2BadRequestError({ detail: httpApiSchemaError.cause.message }),
         ),
       ),
   );

@@ -992,8 +992,52 @@ export namespace ScimContract {
     }
 
     public [HttpServerRespondable.symbol] = () =>
-      HttpServerResponse.schemaJson(V2Error)(this, { status: this.status });
+      HttpServerResponse.schemaJson(V2Error)(this, {
+        status: this.status,
+        contentType: "application/scim+json",
+      });
   }
+
+  const StatusFromString = <TStatus extends number>(status: TStatus) =>
+    Schema.Literal(status).pipe(
+      Schema.encodeTo(Schema.Literal(`${status}`), {
+        decode: SchemaGetter.transform(() => status),
+        encode: SchemaGetter.transform(() => `${status}` as const),
+      }),
+      Schema.withConstructorDefault(Effect.succeed(status)),
+    );
+
+  export class V2BadRequestError extends V2Error.extend<V2BadRequestError>("V2BadRequestError")(
+    { status: StatusFromString(400) },
+    { httpApiStatus: 400 },
+  ) {}
+
+  export class V2UnauthorizedError extends V2Error.extend<V2UnauthorizedError>(
+    "V2UnauthorizedError",
+  )({ status: StatusFromString(401) }, { httpApiStatus: 401 }) {}
+
+  export class V2ForbiddenError extends V2Error.extend<V2ForbiddenError>("V2ForbiddenError")(
+    { status: StatusFromString(403) },
+    { httpApiStatus: 403 },
+  ) {}
+
+  export class V2NotFoundError extends V2Error.extend<V2NotFoundError>("V2NotFoundError")(
+    { status: StatusFromString(404) },
+    { httpApiStatus: 404 },
+  ) {}
+
+  export class V2ConflictError extends V2Error.extend<V2ConflictError>("V2ConflictError")(
+    { status: StatusFromString(409) },
+    { httpApiStatus: 409 },
+  ) {}
+
+  export class V2ContentTooLargeError extends V2Error.extend<V2ContentTooLargeError>(
+    "V2ContentTooLargeError",
+  )({ status: StatusFromString(413) }, { httpApiStatus: 413 }) {}
+
+  export class V2InternalServerError extends V2Error.extend<V2InternalServerError>(
+    "V2InternalServerError",
+  )({ status: StatusFromString(500) }, { httpApiStatus: 500 }) {}
 
   export const v2ListResponseUri = "urn:ietf:params:scim:api:messages:2.0:ListResponse";
   export class V2ListResponse extends Schema.Class<V2ListResponse>("V2ListResponse")(

@@ -26,7 +26,7 @@ import {
 export const scimV2RootGroupLayer = HttpApiBuilder.group(Api, "ScimV2Root", (handlers) =>
   handlers.handle(
     "root",
-    Effect.fn("Api.ScimV2Root.root")(() => new ScimContract.V2Error({ status: 404 })),
+    Effect.fn("Api.ScimV2Root.root")(() => new ScimContract.V2NotFoundError()),
   ),
 );
 
@@ -38,8 +38,8 @@ export const baseScimV2ServiceProviderConfigGroupLayer = HttpApiBuilder.group(
 
     return handlers.handle(
       "discover",
-      Effect.fn("Api.ScimV2ServiceProviderConfig.discover")(() =>
-        scim.discoverServiceProviderConfig.pipe(Effect.orDie),
+      Effect.fn("Api.ScimV2ServiceProviderConfig.discover")(
+        () => scim.discoverServiceProviderConfig,
       ),
     );
   }),
@@ -59,13 +59,13 @@ export const baseScimV2ResourceTypesGroupLayer = HttpApiBuilder.group(
       .handle(
         "discover",
         Effect.fn("Api.ScimV2ResourceTypes.discover")(() =>
-          scim.discoverResourceTypes.pipe(Effect.flatMap(Struct.get("list")), Effect.orDie),
+          scim.discoverResourceTypes.pipe(Effect.flatMap(Struct.get("list"))),
         ),
       )
       .handle(
         "retrieve",
         Effect.fn("Api.ScimV2ResourceTypes.retrieve")(({ params }) =>
-          scim.retrieveResourceType(params.name).pipe(Effect.orDie),
+          scim.retrieveResourceType(params.name),
         ),
       );
   }),
@@ -85,14 +85,12 @@ export const baseScimV2SchemasGroupLayer = HttpApiBuilder.group(
       .handle(
         "discover",
         Effect.fn("Api.ScimV2Schemas.discover")(() =>
-          scim.discoverSchemas.pipe(Effect.flatMap(Struct.get("list")), Effect.orDie),
+          scim.discoverSchemas.pipe(Effect.flatMap(Struct.get("list"))),
         ),
       )
       .handle(
         "retrieve",
-        Effect.fn("Api.ScimV2Schemas.retrieve")(({ params }) =>
-          scim.retrieveSchema(params.id).pipe(Effect.orDie),
-        ),
+        Effect.fn("Api.ScimV2Schemas.retrieve")(({ params }) => scim.retrieveSchema(params.id)),
       );
   }),
 );
@@ -120,9 +118,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -139,9 +137,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -160,9 +158,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -174,9 +172,8 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
             Effect.filterOrFail(
               (payload) => payload.group.id === params.id,
               () =>
-                new ScimContract.V2Error({
+                new ScimContract.V2BadRequestError({
                   scimType: "mutability",
-                  status: 409,
                   detail: "Attribute 'id' is readOnly`",
                 }),
             ),
@@ -191,9 +188,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -212,9 +209,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -226,9 +223,9 @@ export const baseScimV2GroupsGroupLayer = HttpApiBuilder.group(
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("groups:delete")),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -265,9 +262,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("users:read")),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -279,9 +276,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("users:read")),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -298,9 +295,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -312,9 +309,8 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
             Effect.filterOrFail(
               (payload) => payload.id === params.id,
               () =>
-                new ScimContract.V2Error({
+                new ScimContract.V2BadRequestError({
                   scimType: "mutability",
-                  status: 400,
                   detail: "Attribute 'id' is readOnly`",
                 }),
             ),
@@ -327,9 +323,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -346,9 +342,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
               ),
             ),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -360,9 +356,9 @@ export const baseScimV2UsersGroupLayer = HttpApiBuilder.group(
             orDieWhenUnrespondable,
             AccessControl.enforce(AccessControl.permissionPolicy("users:delete")),
             Effect.catchTags({
-              ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+              ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
               AccessDeniedError: (error) =>
-                new ScimContract.V2Error({ status: 403, detail: error.message }),
+                new ScimContract.V2ForbiddenError({ detail: error.message }),
             }),
           ),
         ),
@@ -406,8 +402,7 @@ export const baseScimV2BulkGroupLayer = HttpApiBuilder.group(
             Effect.map(ByteSize.isGreaterThan(maxPayloadSize.value)),
           ))
         )
-          return yield* new ScimContract.V2Error({
-            status: 413,
+          return yield* new ScimContract.V2ContentTooLargeError({
             detail: `The size of the bulk operation exceeds the maxPayloadSize (${ByteSize.format(maxPayloadSize.value)}).`,
           });
 
@@ -421,9 +416,9 @@ export const baseScimV2BulkGroupLayer = HttpApiBuilder.group(
             ),
           ),
           Effect.catchTags({
-            ForbiddenActorError: () => new ScimContract.V2Error({ status: 403 }),
+            ForbiddenActorError: () => new ScimContract.V2ForbiddenError(),
             AccessDeniedError: (error) =>
-              new ScimContract.V2Error({ status: 403, detail: error.message }),
+              new ScimContract.V2ForbiddenError({ detail: error.message }),
           }),
         );
       }),

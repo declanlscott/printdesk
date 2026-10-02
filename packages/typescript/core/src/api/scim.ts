@@ -17,7 +17,7 @@ export namespace Scim {
   const contentType = HttpApiSchema.asJson({ contentType: "application/scim+json" });
 
   export class Root extends HttpApiGroup.make("ScimV2Root").add(
-    HttpApiEndpoint.get("root", "/", { error: ScimContract.V2Error.pipe(contentType) }),
+    HttpApiEndpoint.get("root", "/", { error: ScimContract.V2NotFoundError.pipe(contentType) }),
   ) {}
 
   export class ServiceProviderConfig extends HttpApiGroup.make("ScimV2ServiceProviderConfig")
@@ -57,21 +57,31 @@ export namespace Scim {
       HttpApiEndpoint.get("query", "/", {
         query: ScimContract.V2QueryParams,
         success: ScimContract.V2ListResponse.GroupsToDtos.pipe(contentType),
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2BadRequestError.pipe(contentType),
+          ScimContract.V2ForbiddenError.pipe(contentType),
+        ],
       }),
     )
     .add(
       HttpApiEndpoint.get("retrieve", "/:id", {
         params: { id: EntityId },
         success: ScimContract.V2Group.ToDtos.pipe(contentType),
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+        ],
       }),
     )
     .add(
       HttpApiEndpoint.post("create", "/:id", {
         params: { id: EntityId },
         payload: ScimContract.V2Group.ProvisionalToDtos,
-        success: ScimContract.V2Group.ToDtos.pipe(contentType),
+        success: ScimContract.V2Group.ToDtos.pipe(contentType, HttpApiSchema.status("Created")),
+        error: [
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2ConflictError.pipe(contentType),
+        ],
       }),
     )
     .add(
@@ -79,6 +89,12 @@ export namespace Scim {
         params: { id: EntityId },
         payload: ScimContract.V2Group.ToDtos,
         success: ScimContract.V2Group.ToDtos.pipe(contentType),
+        error: [
+          ScimContract.V2BadRequestError.pipe(contentType),
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+          ScimContract.V2ConflictError.pipe(contentType),
+        ],
       }),
     )
     .add(
@@ -86,13 +102,22 @@ export namespace Scim {
         params: { id: EntityId },
         payload: ScimContract.V2Patch,
         success: ScimContract.V2Group.ToDtos.pipe(contentType),
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2BadRequestError.pipe(contentType),
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+          ScimContract.V2ConflictError.pipe(contentType),
+          ScimContract.V2InternalServerError.pipe(contentType),
+        ],
       }),
     )
     .add(
       HttpApiEndpoint.delete("delete", "/:id", {
         params: { id: EntityId },
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+        ],
       }),
     )
     .prefix("/Groups") {}
@@ -102,21 +127,30 @@ export namespace Scim {
       HttpApiEndpoint.get("query", "/", {
         query: ScimContract.V2QueryParams,
         success: ScimContract.V2ListResponse.UsersToDtos.pipe(contentType),
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2BadRequestError.pipe(contentType),
+          ScimContract.V2ForbiddenError.pipe(contentType),
+        ],
       }),
     )
     .add(
       HttpApiEndpoint.get("retrieve", "/:id", {
         params: { id: EntityId },
-        success: ScimContract.V2User.ToDto.pipe(contentType, HttpApiSchema.status(200)),
-        error: ScimContract.V2Error.pipe(contentType),
+        success: ScimContract.V2User.ToDto.pipe(contentType),
+        error: [
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+        ],
       }),
     )
     .add(
       HttpApiEndpoint.post("create", "/", {
         payload: ScimContract.V2User.ProvisionalToDto,
-        success: ScimContract.V2User.ToDto.pipe(contentType, HttpApiSchema.status(201)),
-        error: ScimContract.V2Error.pipe(contentType),
+        success: ScimContract.V2User.ToDto.pipe(contentType, HttpApiSchema.status("Created")),
+        error: [
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2ConflictError.pipe(contentType),
+        ],
       }),
     )
     .add(
@@ -124,7 +158,12 @@ export namespace Scim {
         params: { id: EntityId },
         payload: ScimContract.V2User.ToDto,
         success: ScimContract.V2User.ToDto.pipe(contentType),
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2BadRequestError.pipe(contentType),
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+          ScimContract.V2ConflictError.pipe(contentType),
+        ],
       }),
     )
     .add(
@@ -132,13 +171,22 @@ export namespace Scim {
         params: { id: EntityId },
         payload: ScimContract.V2Patch,
         success: ScimContract.V2User.ToDto.pipe(contentType),
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2BadRequestError.pipe(contentType),
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+          ScimContract.V2ConflictError.pipe(contentType),
+          ScimContract.V2InternalServerError.pipe(contentType),
+        ],
       }),
     )
     .add(
       HttpApiEndpoint.delete("delete", "/:id", {
         params: { id: EntityId },
-        error: ScimContract.V2Error.pipe(contentType),
+        error: [
+          ScimContract.V2ForbiddenError.pipe(contentType),
+          ScimContract.V2NotFoundError.pipe(contentType),
+        ],
       }),
     )
     .prefix("/Users") {}
@@ -147,7 +195,10 @@ export namespace Scim {
     HttpApiEndpoint.post("create", "/", {
       payload: ScimContract.V2BulkRequest,
       success: ScimContract.V2BulkResponse.pipe(contentType),
-      error: ScimContract.V2Error.pipe(contentType),
+      error: [
+        ScimContract.V2ForbiddenError.pipe(contentType),
+        ScimContract.V2ContentTooLargeError.pipe(contentType),
+      ],
     }).middleware(ScimBulkIdMapMiddleware),
   ) {}
 

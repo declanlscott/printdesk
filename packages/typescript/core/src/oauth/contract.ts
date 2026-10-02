@@ -280,7 +280,7 @@ export namespace OauthContract {
     Schema.NonEmptyString,
   ]).pipe(
     Schema.decodeTo(Tokens.fields.access, {
-      decode: SchemaGetter.transform(([, token]) => token),
+      decode: SchemaGetter.transform(Tuple.get(1)),
       encode: SchemaGetter.transform((token) => Tuple.make(bearer, token)),
     }),
   );

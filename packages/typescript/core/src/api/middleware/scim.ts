@@ -4,6 +4,8 @@ import * as Crypto from "effect/Crypto";
 import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Match from "effect/Match";
+import * as Redacted from "effect/Redacted";
+import * as Schema from "effect/Schema";
 import * as String from "effect/String";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
 import * as HttpApiSchema from "effect/unstable/httpapi/HttpApiSchema";
@@ -11,16 +13,23 @@ import * as HttpApiSecurity from "effect/unstable/httpapi/HttpApiSecurity";
 
 import { ActorLayerMap, type Actor } from "../../actors";
 import { Oauth } from "../../oauth";
+import { OauthContract } from "../../oauth/contract";
 import { Openauth } from "../../oauth/openauth";
 import { ScimBulkIdMap } from "../../scim/bulk-id-map";
 import { ScimContract } from "../../scim/contract";
 import { ScimLocator } from "../../scim/locator";
+import { Constants } from "../../utils/constants";
 
 export class ScimAuthMiddleware extends HttpApiMiddleware.Service<
   ScimAuthMiddleware,
   { provides: Actor | Oauth.AccessToken }
 >()("@printdesk/core/api/ScimAuthMiddleware", {
-  security: { bearer: HttpApiSecurity.bearer },
+  security: {
+    bearer: HttpApiSecurity.apiKey({
+      in: "header",
+      key: Constants.FORWARDED_AUTHORIZATION_HEADER_NAME,
+    }),
+  },
   error: ScimContract.V2Error.pipe(HttpApiSchema.asJson({ contentType: "application/scim+json" })),
 }) {
   public static readonly make = Effect.gen({ self: this }, function* () {
@@ -30,15 +39,21 @@ export class ScimAuthMiddleware extends HttpApiMiddleware.Service<
 
     return this.of({
       bearer: Effect.fn(function* (httpEffect, opts) {
+        const accessToken = yield* opts.credential.pipe(
+          Redacted.value,
+          Schema.decodeUnknownEffect(OauthContract.BearerToken),
+          Effect.mapError(() => new ScimContract.V2Error({ status: 401 })),
+        );
+
         const { subject } = yield* openauth
-          .verify(opts.credential)
+          .verify(accessToken)
           .pipe(Effect.mapError(() => new ScimContract.V2Error({ status: 401 })));
 
         return yield* httpEffect.pipe(
           Effect.provide(
             Layer.mergeAll(
               actorLayerMap.get(subject.properties.actor.wrap),
-              accessTokenLayerMap.get(opts.credential),
+              accessTokenLayerMap.get(accessToken),
             ),
           ),
         );

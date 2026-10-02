@@ -8,6 +8,7 @@ import { EntityId } from "../utils";
 import {
   ScimAuthMiddleware,
   ScimBulkIdMapMiddleware,
+  ScimErrorMiddleware,
   ScimHttpApiSchemaErrorHandlerMiddleware,
   ScimLocatorMiddleware,
 } from "./middleware/scim";
@@ -161,6 +162,7 @@ export namespace Scim {
     .add(Schemas)
     .middleware(ScimHttpApiSchemaErrorHandlerMiddleware)
     .add(Root)
+    .middleware(ScimErrorMiddleware)
     .prefix("/v2") {}
 
   export class Api extends HttpApi.make("ScimApi").addHttpApi(V2Api) {}

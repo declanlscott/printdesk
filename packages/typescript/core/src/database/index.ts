@@ -1,3 +1,5 @@
+import { EffectDrizzleQueryError } from "drizzle-orm/effect-core";
+import { is } from "drizzle-orm/entity";
 import * as Cause from "effect/Cause";
 import * as Context from "effect/Context";
 import * as Duration from "effect/Duration";
@@ -6,6 +8,7 @@ import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Schedule from "effect/Schedule";
 import * as Schema from "effect/Schema";
+import * as Struct from "effect/Struct";
 import * as SqlError from "effect/unstable/sql/SqlError";
 
 import { Constants } from "../utils/constants";
@@ -29,6 +32,16 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
         { disableRetries = false }: { disableRetries?: boolean } = {},
       ) =>
         db.transaction(execute).pipe(
+          Effect.mapError((error) =>
+            Option.some(error).pipe(
+              Option.filter((e) => is(e, EffectDrizzleQueryError)),
+              Option.map(Struct.get("cause")),
+              Option.filter(Cause.isCause),
+              Option.flatMap(Cause.findErrorOption),
+              Option.filter(SqlError.isSqlError),
+              Option.getOrElse(() => error),
+            ),
+          ),
           Effect.retry(($) =>
             $(
               Schedule.max([

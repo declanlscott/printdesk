@@ -71,6 +71,17 @@ export namespace ScimContract {
           uniqueness: "server",
         }),
         new this({
+          name: "externalId",
+          type: "string",
+          multiValued: false,
+          description: "Unique external identifier for the user.",
+          required: false,
+          caseExact: true,
+          mutability: "readWrite",
+          returned: "default",
+          uniqueness: "server",
+        }),
+        new this({
           name: "userName",
           type: "string",
           multiValued: false,

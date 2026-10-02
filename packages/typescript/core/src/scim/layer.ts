@@ -495,21 +495,27 @@ export const makeService = Effect.gen(function* () {
       Match.when(Match.is("externalid"), () =>
         Effect.succeed(filter.compValue).pipe(
           Effect.flatMap(Schema.decodeUnknownEffect(UsersContract.ExternalId)),
-          Effect.catchTag(
-            "SchemaError",
-            (error) =>
-              new ScimContract.V2BadRequestError({
-                scimType: "invalidValue",
-                detail: error.message,
-              }),
-          ),
           Effect.flatMap((externalId) => usersRepository.findByExternalId(externalId, tenantId)),
-          Effect.map(Array.make),
-          Effect.catchNoSuchElement,
-          Effect.map(Option.getOrElse(Array.empty<User>)),
+        ),
+      ),
+      Match.when(Match.is("username"), () =>
+        Effect.succeed(filter.compValue).pipe(
+          Effect.flatMap(Schema.decodeUnknownEffect(UsersContract.Username)),
+          Effect.flatMap((username) => usersRepository.findByUsername(username, tenantId)),
         ),
       ),
       Match.exhaustive,
+      Effect.catchTag(
+        "SchemaError",
+        (error) =>
+          new ScimContract.V2BadRequestError({
+            scimType: "invalidValue",
+            detail: error.message,
+          }),
+      ),
+      Effect.map(Array.make),
+      Effect.catchNoSuchElement,
+      Effect.map(Option.getOrElse(Array.empty<User>)),
     );
   });
 

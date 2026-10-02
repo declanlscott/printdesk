@@ -773,7 +773,10 @@ export namespace ScimContract {
         }),
         Schema.decodeTo(
           Schema.Literals(
-            Array.map(Struct.keys(Struct.pick(this.fields, ["externalId"])), String.toLowerCase),
+            Array.map(
+              Struct.keys(Struct.pick(this.fields, ["externalId", "userName"])),
+              String.toLowerCase,
+            ),
           ),
         ),
         Schema.annotate({ message: "unsupported filter attribute path" }),

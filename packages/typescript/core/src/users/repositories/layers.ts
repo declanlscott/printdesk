@@ -94,6 +94,18 @@ export const makeRepository = Effect.gen(function* () {
         .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
   );
 
+  const findByUsername = Effect.fn("Users.Repository.findByUsername")(
+    (username: User["username"], tenantId: User["tenantId"]) =>
+      db
+        .useTransaction((tx) =>
+          tx
+            .select()
+            .from(table)
+            .where(and(eq(table.username, username), eq(table.tenantId, tenantId))),
+        )
+        .pipe(Effect.map(Array.head), Effect.flatMap(Effect.fromOption)),
+  );
+
   const findByTenantId = Effect.fn("Users.Repository.findByTenantId")(
     (tenantId: User["tenantId"]) =>
       db.useTransaction((tx) => tx.select().from(table).where(eq(table.tenantId, tenantId))),
@@ -118,6 +130,7 @@ export const makeRepository = Effect.gen(function* () {
     findById,
     findByIdForUpdate,
     findByExternalId,
+    findByUsername,
     findByTenantId,
     updateById,
   } as const;

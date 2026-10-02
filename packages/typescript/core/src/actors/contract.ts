@@ -24,9 +24,8 @@ export namespace ActorsContract {
 
     public static readonly singleton = new this();
 
-    // oxlint-disable-next-line class-methods-use-this
-    public get wrap() {
-      return new Actor({ properties: PublicActor.singleton });
+    public get wrap(): Actor {
+      return new Actor({ properties: this });
     }
   }
 
@@ -41,8 +40,8 @@ export namespace ActorsContract {
   {
     public static readonly tag = this.fields._tag.schema.literal;
 
-    public get wrap() {
-      return new Actor({ properties: new ClientActor(this) });
+    public get wrap(): Actor {
+      return new Actor({ properties: this });
     }
   }
 
@@ -56,8 +55,8 @@ export namespace ActorsContract {
   {
     public static readonly tag = this.fields._tag.schema.literal;
 
-    public get wrap() {
-      return new Actor({ properties: new UserActor(this) });
+    public get wrap(): Actor {
+      return new Actor({ properties: this });
     }
   }
 
@@ -67,8 +66,8 @@ export namespace ActorsContract {
   {
     public static readonly tag = this.fields._tag.schema.literal;
 
-    public get wrap() {
-      return new Actor({ properties: new TenantActor(this) });
+    public get wrap(): Actor {
+      return new Actor({ properties: this });
     }
   }
 

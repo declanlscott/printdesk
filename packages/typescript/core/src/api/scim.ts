@@ -76,7 +76,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.post("create", "/:id", {
         params: { id: EntityId },
-        payload: ScimContract.V2Group.ProvisionalToDtos,
+        payload: ScimContract.V2Group.ProvisionalToDtos.pipe(contentType),
         success: ScimContract.V2Group.ToDtos.pipe(contentType, HttpApiSchema.status("Created")),
         error: [
           ScimContract.V2ForbiddenError.pipe(contentType),
@@ -87,7 +87,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.put("replace", "/:id", {
         params: { id: EntityId },
-        payload: ScimContract.V2Group.ToDtos,
+        payload: ScimContract.V2Group.ToDtos.pipe(contentType),
         success: ScimContract.V2Group.ToDtos.pipe(contentType),
         error: [
           ScimContract.V2BadRequestError.pipe(contentType),
@@ -100,7 +100,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.patch("modify", "/:id", {
         params: { id: EntityId },
-        payload: ScimContract.V2Patch,
+        payload: ScimContract.V2Patch.pipe(contentType),
         success: ScimContract.V2Group.ToDtos.pipe(contentType),
         error: [
           ScimContract.V2BadRequestError.pipe(contentType),
@@ -145,7 +145,7 @@ export namespace Scim {
     )
     .add(
       HttpApiEndpoint.post("create", "/", {
-        payload: ScimContract.V2User.ProvisionalToDto,
+        payload: ScimContract.V2User.ProvisionalToDto.pipe(contentType),
         success: ScimContract.V2User.ToDto.pipe(contentType, HttpApiSchema.status("Created")),
         error: [
           ScimContract.V2ForbiddenError.pipe(contentType),
@@ -156,7 +156,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.put("replace", "/:id", {
         params: { id: EntityId },
-        payload: ScimContract.V2User.ToDto,
+        payload: ScimContract.V2User.ToDto.pipe(contentType),
         success: ScimContract.V2User.ToDto.pipe(contentType),
         error: [
           ScimContract.V2BadRequestError.pipe(contentType),
@@ -169,7 +169,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.patch("modify", "/:id", {
         params: { id: EntityId },
-        payload: ScimContract.V2Patch,
+        payload: ScimContract.V2Patch.pipe(contentType),
         success: ScimContract.V2User.ToDto.pipe(contentType),
         error: [
           ScimContract.V2BadRequestError.pipe(contentType),
@@ -193,7 +193,7 @@ export namespace Scim {
 
   export class Bulk extends HttpApiGroup.make("ScimV2Bulk").add(
     HttpApiEndpoint.post("create", "/", {
-      payload: ScimContract.V2BulkRequest,
+      payload: ScimContract.V2BulkRequest.pipe(contentType),
       success: ScimContract.V2BulkResponse.pipe(contentType),
       error: [
         ScimContract.V2ForbiddenError.pipe(contentType),

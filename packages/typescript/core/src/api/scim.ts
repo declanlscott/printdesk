@@ -74,8 +74,7 @@ export namespace Scim {
       }),
     )
     .add(
-      HttpApiEndpoint.post("create", "/:id", {
-        params: { id: EntityId },
+      HttpApiEndpoint.post("create", "/", {
         payload: ScimContract.V2Group.ProvisionalToDtos.pipe(contentType),
         success: ScimContract.V2Group.ToDtos.pipe(contentType, HttpApiSchema.status("Created")),
         error: [

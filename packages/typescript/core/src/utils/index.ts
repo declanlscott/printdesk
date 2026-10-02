@@ -7,6 +7,8 @@ import * as Option from "effect/Option";
 import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaIssue from "effect/SchemaIssue";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 import * as Tuple from "effect/Tuple";
@@ -107,6 +109,20 @@ export const ChunkFromArray = <TValue extends Schema.Top>(value: TValue) =>
 
 export const CallbackId = Schema.String.pipe(Schema.brand("CallbackId"));
 export type CallbackId = typeof CallbackId.Type;
+
+export const BooleanFromString = Schema.String.pipe(
+  Schema.decode(SchemaTransformation.toLowerCase()),
+  Schema.decodeTo(Schema.Boolean, {
+    decode: SchemaGetter.transformEffect((string) =>
+      string === "true"
+        ? Effect.succeed(true)
+        : string === "false"
+          ? Effect.succeed(false)
+          : Effect.fail(new SchemaIssue.InvalidValue({ message: "not a boolean" })),
+    ),
+    encode: SchemaGetter.String(),
+  }),
+);
 
 export const IntFromString = Schema.FiniteFromString.pipe(Schema.check(Schema.isInt()));
 

@@ -19,7 +19,7 @@ import { parse, stringify } from "scim2-parse-filter";
 import { Actor } from "../actors";
 import { GroupsContract } from "../groups/contracts";
 import { UsersContract } from "../users/contract";
-import { BulkId, EntityId, IntFromString, NonEmptyString } from "../utils";
+import { BooleanFromString, BulkId, EntityId, IntFromString, NonEmptyString } from "../utils";
 import { ScimLocator } from "./locator";
 
 export namespace ScimContract {
@@ -716,10 +716,16 @@ export namespace ScimContract {
     userName: UsersContract.Username,
     displayName: UsersContract.DisplayName,
     active: Schema.Boolean,
-    emails: Schema.Struct({ primary: Schema.Boolean, value: UsersContract.Email }).pipe(
-      Schema.Array,
-    ),
-    roles: Schema.Tuple([Schema.Struct({ primary: Schema.Boolean, value: UsersContract.Role })]),
+    emails: Schema.Struct({
+      primary: Schema.Union([Schema.Boolean, BooleanFromString]),
+      value: UsersContract.Email,
+    }).pipe(Schema.Array),
+    roles: Schema.Tuple([
+      Schema.Struct({
+        primary: Schema.Union([Schema.Boolean, BooleanFromString]),
+        value: UsersContract.Role,
+      }),
+    ]),
   }) {
     public static get Provisional() {
       return this.mapFields(Struct.omit(["_tag", "id", "meta", "roles"]));

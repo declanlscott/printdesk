@@ -3,7 +3,6 @@ import * as Chunk from "effect/Chunk";
 import * as Context from "effect/Context";
 import * as Effect from "effect/Effect";
 import * as Exit from "effect/Exit";
-import * as Layer from "effect/Layer";
 import * as Option from "effect/Option";
 import * as Predicate from "effect/Predicate";
 import * as Result from "effect/Result";
@@ -66,7 +65,4 @@ export class Transaction extends Context.Service<Transaction>()(
           }),
         ),
       );
-
-  public static readonly layer = (...args: Parameters<typeof Transaction.make>) =>
-    this.make(...args).pipe(Layer.effect(this));
 }

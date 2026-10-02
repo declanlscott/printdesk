@@ -31,47 +31,54 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
         execute: (tx: typeof Transaction.Service.tx) => Effect.Effect<TSuccess, TError, TServices>,
         { disableRetries = false }: { disableRetries?: boolean } = {},
       ) =>
-        db.transaction(execute).pipe(
-          Effect.mapError((error) =>
-            Option.some(error).pipe(
-              Option.filter((e) => is(e, EffectDrizzleQueryError)),
-              Option.map(Struct.get("cause")),
-              Option.filter(Cause.isCause),
-              Option.flatMap(Cause.findErrorOption),
-              Option.filter(SqlError.isSqlError),
-              Option.getOrElse(() => error),
+        db
+          .transaction((tx) =>
+            execute(tx).pipe(
+              Effect.provideServiceEffect(Transaction, Transaction.make(tx)),
+              Effect.scoped,
             ),
-          ),
-          Effect.retry(($) =>
-            $(
-              Schedule.max([
-                Schedule.exponential(Duration.millis(10)),
-                Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES),
-              ]),
-            ).pipe(
-              Schedule.jittered,
-              Schedule.while(
-                Effect.fn(function* (metadata) {
-                  const shouldRetry =
-                    !disableRetries &&
-                    SqlError.isSqlError(metadata.input) &&
-                    metadata.input.isRetryable;
+          )
+          .pipe(
+            Effect.mapError((error) =>
+              Option.some(error).pipe(
+                Option.filter((e) => is(e, EffectDrizzleQueryError)),
+                Option.map(Struct.get("cause")),
+                Option.filter(Cause.isCause),
+                Option.flatMap(Cause.findErrorOption),
+                Option.filter(SqlError.isSqlError),
+                Option.getOrElse(() => error),
+              ),
+            ),
+            Effect.retry(($) =>
+              $(
+                Schedule.max([
+                  Schedule.exponential(Duration.millis(10)),
+                  Schedule.recurs(Constants.DB_TRANSACTION_MAX_RETRIES),
+                ]),
+              ).pipe(
+                Schedule.jittered,
+                Schedule.while(
+                  Effect.fn(function* (metadata) {
+                    const shouldRetry =
+                      !disableRetries &&
+                      SqlError.isSqlError(metadata.input) &&
+                      metadata.input.isRetryable;
 
-                  yield* Effect.log(
-                    `[Database]: Transaction attempt #${metadata.attempt} failed, ${
-                      shouldRetry
-                        ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
-                        : "not retrying"
-                    }:`,
-                    Cause.fail(metadata.input),
-                  );
+                    yield* Effect.log(
+                      `[Database]: Transaction attempt #${metadata.attempt} failed, ${
+                        shouldRetry
+                          ? `retrying again in ${metadata.duration.pipe(Duration.format)}`
+                          : "not retrying"
+                      }:`,
+                      Cause.fail(metadata.input),
+                    );
 
-                  return shouldRetry;
-                }),
+                    return shouldRetry;
+                  }),
+                ),
               ),
             ),
           ),
-        ),
     );
 
     const useTransaction = Effect.fn("Database.useTransaction")(

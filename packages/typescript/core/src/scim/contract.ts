@@ -9,6 +9,7 @@ import * as Result from "effect/Result";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
 import * as SchemaIssue from "effect/SchemaIssue";
+import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as String from "effect/String";
 import * as Struct from "effect/Struct";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
@@ -558,10 +559,7 @@ export namespace ScimContract {
 
     public static get SupportedFilterAttributePath() {
       return Schema.NonEmptyString.pipe(
-        Schema.decodeTo(Schema.NonEmptyString, {
-          decode: SchemaGetter.transform(String.toLowerCase),
-          encode: SchemaGetter.forbidden(() => "Not implemented"),
-        }),
+        Schema.decode(SchemaTransformation.toLowerCase()),
         Schema.decodeTo(
           Schema.Literals(
             Array.map(Struct.keys(Struct.pick(this.fields, ["externalId"])), String.toLowerCase),
@@ -767,10 +765,7 @@ export namespace ScimContract {
 
     public static get SupportedFilterAttributePath() {
       return Schema.NonEmptyString.pipe(
-        Schema.decodeTo(Schema.NonEmptyString, {
-          decode: SchemaGetter.transform(String.toLowerCase),
-          encode: SchemaGetter.forbidden(() => "Not implemented"),
-        }),
+        Schema.decode(SchemaTransformation.toLowerCase()),
         Schema.decodeTo(
           Schema.Literals(
             Array.map(

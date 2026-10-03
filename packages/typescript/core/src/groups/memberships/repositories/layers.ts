@@ -118,6 +118,21 @@ export const makeRepository = Effect.gen(function* () {
       ),
   );
 
+  const updateByUserId = Effect.fn("Groups.MembershipsRepository.updateByUserId")(
+    (
+      userId: GroupMembership["userId"],
+      value: Partial<Omit<GroupMembership, "id" | "userId" | "groupId" | "tenantId">>,
+      tenantId: GroupMembership["tenantId"],
+    ) =>
+      db.useTransaction((tx) =>
+        tx
+          .update(table)
+          .set(value)
+          .where(and(eq(table.userId, userId), eq(table.tenantId, tenantId)))
+          .returning(),
+      ),
+  );
+
   return {
     createMany,
     upsertManyByIndex,
@@ -125,6 +140,7 @@ export const makeRepository = Effect.gen(function* () {
     findByIds,
     findActiveByIds,
     updateByGroupId,
+    updateByUserId,
   } as const;
 });
 export const repositoryLayer = makeRepository.pipe(Layer.effect(GroupMembershipsRepository));

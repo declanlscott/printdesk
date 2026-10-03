@@ -85,10 +85,12 @@ export const makeService = Effect.gen(function* () {
       Stream.mapEffect(([group, groupMembershipsStream]) =>
         groupMembershipsStream.pipe(
           Stream.filter(Predicate.isNotNull),
+          Stream.filter((membership) => membership.deletedAt === null),
           Stream.runCollect,
           Effect.map((groupMemberships) => ({ group, groupMemberships })),
         ),
       ),
+      Stream.filter(({ group }) => group.deletedAt === null),
       Stream.runCollect,
     ),
   );
@@ -465,7 +467,7 @@ export const makeService = Effect.gen(function* () {
             groupsRepository.updateById(id, { deletedAt }, tenantId),
             groupMembershipsRepository.updateByGroupId(id, { deletedAt }, tenantId),
           ],
-          { discard: true },
+          { concurrency: "unbounded", discard: true },
         ),
       ),
       Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
@@ -516,12 +518,14 @@ export const makeService = Effect.gen(function* () {
       Effect.map(Array.make),
       Effect.catchNoSuchElement,
       Effect.map(Option.getOrElse(Array.empty<User>)),
+      Effect.flatMap(Effect.filter((user) => user.deletedAt === null)),
     );
   });
 
   const retrieveUser = Effect.fn("Scim.retrieveUser")((id: User["id"]) =>
     tenantIdEffect.pipe(
       Effect.flatMap((tenantId) => usersRepository.findById(id, tenantId)),
+      Effect.filterOrFail((user) => user.deletedAt === null),
       Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
     ),
   );
@@ -571,16 +575,15 @@ export const makeService = Effect.gen(function* () {
       tenantIdEffect.pipe(
         Effect.flatMap((tenantId) =>
           db.useTransaction(() =>
-            usersRepository
-              .findByIdForUpdate(id, tenantId)
-              .pipe(
-                Effect.flatMap(Schema.encodeEffect(ScimContract.V2User.ToDto)),
-                Effect.flatMap(Schema.decodeEffect(ScimContract.V2User)),
-                Effect.flatMap(patch(operations)),
-                Effect.flatMap(Schema.encodeEffect(ScimContract.V2User)),
-                Effect.flatMap(Schema.decodeEffect(ScimContract.V2User.ToDto)),
-                Effect.flatMap(replaceUser),
-              ),
+            usersRepository.findByIdForUpdate(id, tenantId).pipe(
+              Effect.filterOrFail((user) => user.deletedAt === null),
+              Effect.flatMap(Schema.encodeEffect(ScimContract.V2User.ToDto)),
+              Effect.flatMap(Schema.decodeEffect(ScimContract.V2User)),
+              Effect.flatMap(patch(operations)),
+              Effect.flatMap(Schema.encodeEffect(ScimContract.V2User)),
+              Effect.flatMap(Schema.decodeEffect(ScimContract.V2User.ToDto)),
+              Effect.flatMap(replaceUser),
+            ),
           ),
         ),
         Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
@@ -599,9 +602,14 @@ export const makeService = Effect.gen(function* () {
   const deleteUser = Effect.fn("Scim.deleteUser")((id: User["id"]) =>
     Effect.all([DateTime.now, tenantIdEffect]).pipe(
       Effect.flatMap(([deletedAt, tenantId]) =>
-        usersRepository.updateById(id, { deletedAt }, tenantId),
+        Effect.all(
+          [
+            groupMembershipsRepository.updateByUserId(id, { deletedAt }, tenantId),
+            usersRepository.updateById(id, { deletedAt, status: "suspended" }, tenantId),
+          ],
+          { concurrency: "unbounded", discard: true },
+        ),
       ),
-      Effect.asVoid,
       Effect.catchTag("NoSuchElementError", () => new ScimContract.V2NotFoundError()),
     ),
   );

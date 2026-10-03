@@ -113,7 +113,7 @@ export const makeService = Effect.gen(function* () {
     2,
     Effect.fn("Scim.patch")((...args) =>
       Effect.try({
-        try: () => scimPatch(...args, { mutateDocument: false }),
+        try: () => scimPatch(...args),
         catch: (error) =>
           Match.value(error).pipe(
             Match.whenOr(

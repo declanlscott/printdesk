@@ -161,7 +161,7 @@ export const makeService = Effect.gen(function* () {
 
           // 1, 2: Begin transaction
           return db
-            .withTransaction(() =>
+            .useTransaction(() =>
               preprocessor.pipe(
                 Effect.tap(() => mutate(mutationV1)),
                 Effect.flatMap(postprocess),
@@ -177,7 +177,7 @@ export const makeService = Effect.gen(function* () {
                 ).pipe(
                   Effect.andThen(
                     // 10(ii)(c): Retry transaction again without actually performing the mutation
-                    db.withTransaction(() => preprocessor.pipe(Effect.flatMap(postprocess))),
+                    db.useTransaction(() => preprocessor.pipe(Effect.flatMap(postprocess))),
                   ),
                 ),
               ),

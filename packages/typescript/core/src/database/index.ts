@@ -116,7 +116,6 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
     });
 
     return {
-      withTransaction,
       useTransaction,
       useQueryBuilder,
     } as const;

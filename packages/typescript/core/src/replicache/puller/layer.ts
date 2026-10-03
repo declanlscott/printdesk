@@ -78,7 +78,7 @@ export const makeService = Effect.gen(function* () {
         );
 
       // 3: Begin transaction
-      return yield* db.withTransaction(
+      return yield* db.useTransaction(
         Effect.fn(function* () {
           const [previousClientView, clientGroup, maxClientViewVersion] = yield* Effect.all(
             [previousClientViewEffect, clientGroupEffect, maxClientViewVersionEffect],

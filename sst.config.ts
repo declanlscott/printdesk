@@ -30,7 +30,7 @@ export default $config({
         azuread: { version: "6.9.0" },
         cloudflare: {
           apiToken: cloudflareApiToken,
-          version: "6.15.0",
+          version: "6.18.0",
         },
         command: { version: "1.2.1" },
         docker: { version: "4.11.2" },

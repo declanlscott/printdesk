@@ -40,6 +40,7 @@ export const assets = new lib.cloudflare.Worker("AssetsWorker", {
     userAvatars: { queueId: userAvatarsQueue.id },
   },
   link: [assetsBucketTemplate, aws_, cloudflare_, identityProviders, issuer, r2S3Credentials],
+  transform: { worker: { cacheOptions: { enabled: true, crossVersionCache: true } } },
 });
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket");

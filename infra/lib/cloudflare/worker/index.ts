@@ -7,12 +7,32 @@ import * as R from "remeda";
 import { WorkerDomain } from "./domain";
 
 import { siteBuilder } from "~/sst/aws/helpers/site-builder";
-import { binding } from "~/sst/cloudflare";
+import { binding, DEFAULT_ACCOUNT_ID } from "~/sst/cloudflare";
+import { toMilliseconds } from "~/sst/duration";
+import type { DurationMinutes, DurationSeconds } from "~/sst/duration";
 import { VisibleError } from "~/sst/error";
 import { Link } from "~/sst/link";
 
 export interface WorkerArgs extends Omit<sst.cloudflare.WorkerArgs, "domain"> {
   domains?: $util.Input<Record<string, $util.Input<string>>>;
+  consumers?: $util.Input<
+    Record<
+      string,
+      $util.Input<{
+        queueId: $util.Input<string>;
+        dlq?: {
+          queue: $util.Input<string>;
+          maxRetries?: $util.Input<number>;
+          retryDelay?: $util.Input<DurationSeconds>;
+        };
+        batch?: {
+          size?: $util.Input<number>;
+          window?: $util.Input<DurationMinutes>;
+        };
+        maxConcurrency?: $util.Input<number>;
+      }>
+    >
+  >;
 }
 
 // TODO: Modify as needed
@@ -31,17 +51,6 @@ type Configuration = {
       period: number;
     };
   }>;
-  queues?: {
-    consumers: Array<{
-      queue: string;
-      max_batch_size?: number;
-      max_batch_timeout?: number;
-      max_retries?: number;
-      dead_letter_queue?: string;
-      max_concurrency?: number;
-      retry_delay?: number;
-    }>;
-  };
 };
 
 export class Worker extends $util.ComponentResource implements Link.Linkable {
@@ -49,6 +58,7 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
 
   #worker: sst.cloudflare.Worker;
   #domains: $util.Output<Record<string, WorkerDomain> | undefined>;
+  #consumers: $util.Output<Record<string, cloudflare.QueueConsumer> | undefined>;
 
   public constructor(
     name: string,
@@ -67,6 +77,35 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
               new WorkerDomain(
                 `${name}${key.charAt(0).toUpperCase() + key.slice(1)}Domain`,
                 { service: this.#worker.nodes.worker.scriptName, hostname: value },
+                { parent: this },
+              ),
+          )
+        : undefined,
+    );
+
+    this.#consumers = $output(args.consumers).apply((consumers) =>
+      consumers
+        ? R.mapValues(
+            consumers,
+            (args, key) =>
+              new cloudflare.QueueConsumer(
+                `${name}${key.charAt(0).toUpperCase() + key.slice(1)}QueueConsumer`,
+                {
+                  accountId: this.#worker.nodes.worker.accountId.apply(
+                    (id) => id ?? DEFAULT_ACCOUNT_ID,
+                  ),
+                  deadLetterQueue: args.dlq?.queue,
+                  queueId: args.queueId,
+                  scriptName: this.#worker.nodes.worker.scriptName,
+                  settings: {
+                    batchSize: $output(args.batch?.size ?? 10),
+                    maxConcurrency: args.maxConcurrency,
+                    maxRetries: args.dlq?.maxRetries,
+                    retryDelay: $output(args.dlq?.retryDelay ?? "0 seconds").apply(toMilliseconds),
+                    maxWaitTimeMs: $output(args.batch?.window ?? "5 seconds").apply(toMilliseconds),
+                  },
+                  type: "worker",
+                },
                 { parent: this },
               ),
           )
@@ -102,13 +141,6 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
                     namespace_id: binding.namespaceId,
                     // oxlint-disable-next-line typescript/no-non-null-assertion
                     simple: binding.simple!,
-                  });
-                  break;
-                case "queue":
-                  cfg.queues ??= { consumers: [] };
-                  cfg.queues.consumers.push({
-                    // oxlint-disable-next-line typescript/no-non-null-assertion
-                    queue: binding.queueName!,
                   });
                   break;
                 default:
@@ -178,6 +210,7 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
     return {
       worker: this.#worker,
       domains: this.#domains,
+      consumers: this.#consumers,
     };
   }
 

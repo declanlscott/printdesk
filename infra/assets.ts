@@ -35,16 +35,11 @@ export const userAvatarsQueueProperties = new sst.Linkable("UserAvatarsQueueProp
 export const assets = new lib.cloudflare.Worker("AssetsWorker", {
   handler: "packages/typescript/functions/assets/src/index.ts",
   domains: { assets: hostnames.properties.assets },
-  link: [
-    assetsBucketTemplate,
-    assetsInvalidationQueue,
-    aws_,
-    cloudflare_,
-    identityProviders,
-    issuer,
-    r2S3Credentials,
-    userAvatarsQueue,
-  ],
+  consumers: {
+    invalidation: { queueId: assetsInvalidationQueue.id },
+    userAvatars: { queueId: userAvatarsQueue.id },
+  },
+  link: [assetsBucketTemplate, aws_, cloudflare_, identityProviders, issuer, r2S3Credentials],
 });
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket");

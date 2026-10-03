@@ -33,12 +33,10 @@ export class Database extends Context.Service<Database>()("@printdesk/core/datab
       ) =>
         db
           .transaction((tx) =>
-            execute(tx).pipe(
-              Effect.provideServiceEffect(Transaction, Transaction.make(tx)),
-              Effect.scoped,
-            ),
+            execute(tx).pipe(Effect.provideServiceEffect(Transaction, Transaction.make(tx))),
           )
           .pipe(
+            Effect.scoped,
             Effect.mapError((error) =>
               Option.some(error).pipe(
                 Option.filter((e) => is(e, EffectDrizzleQueryError)),

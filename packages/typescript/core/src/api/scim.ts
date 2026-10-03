@@ -113,6 +113,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.delete("delete", "/:id", {
         params: { id: EntityId },
+        success: HttpApiSchema.NoContent,
         error: [
           ScimContract.V2ForbiddenError.pipe(contentType),
           ScimContract.V2NotFoundError.pipe(contentType),
@@ -182,6 +183,7 @@ export namespace Scim {
     .add(
       HttpApiEndpoint.delete("delete", "/:id", {
         params: { id: EntityId },
+        success: HttpApiSchema.NoContent,
         error: [
           ScimContract.V2ForbiddenError.pipe(contentType),
           ScimContract.V2NotFoundError.pipe(contentType),

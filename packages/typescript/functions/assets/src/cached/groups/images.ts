@@ -1,4 +1,5 @@
 import { AccessControl } from "@printdesk/core/access-control";
+import { CachedAssetsApi } from "@printdesk/core/api";
 import { ImagesFetcher } from "@printdesk/core/images/fetcher";
 import { ImagesPresigner } from "@printdesk/core/images/presigner";
 import { orDieWhenUnrespondable } from "@printdesk/core/utils";
@@ -7,14 +8,11 @@ import * as Layer from "effect/Layer";
 import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 import * as HttpApiError from "effect/unstable/httpapi/HttpApiError";
 
-import { Assets } from "../contract";
-import { imagesLayer } from "../lib/assets";
-import { authMiddlewareLayer } from "../middleware/auth";
-import { r2CredentialIdentityProviderMiddlewareLayer } from "../middleware/aws";
+import { imagesLayer } from "../../lib/assets";
 import { errorMiddlewareLayer } from "../middleware/error";
 
 export const baseImagesGroupLayer = HttpApiBuilder.group(
-  Assets,
+  CachedAssetsApi,
   "Images",
   Effect.fn(function* (handlers) {
     const fetcher = yield* ImagesFetcher;
@@ -44,10 +42,5 @@ export const baseImagesGroupLayer = HttpApiBuilder.group(
 );
 
 export const imagesGroupLayer = baseImagesGroupLayer.pipe(
-  Layer.provide([
-    imagesLayer,
-    authMiddlewareLayer,
-    errorMiddlewareLayer,
-    r2CredentialIdentityProviderMiddlewareLayer,
-  ]),
+  Layer.provide([imagesLayer, errorMiddlewareLayer]),
 );

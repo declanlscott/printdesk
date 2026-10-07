@@ -1,6 +1,8 @@
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
 import * as SchemaGetter from "effect/SchemaGetter";
+import * as SchemaIssue from "effect/SchemaIssue";
+import * as NetAddress from "effect/unstable/net/NetAddress";
 
 import { EntityId, Separator, ShortId, TenantId } from "../utils";
 import { Constants } from "../utils/constants";
@@ -16,6 +18,7 @@ export namespace AttributesContract {
   export const Output = Schema.Literal(Constants.KEY_LITERALS.OUTPUT);
   export const PapercutMfApi = Schema.Literal(Constants.KEY_LITERALS.PAPERCUT_MF_API);
   export const Room = Schema.Literal(Constants.KEY_LITERALS.ROOM);
+  export const Service = Schema.Literal(Constants.KEY_LITERALS.SERVICE);
   export const Tenant = Schema.Literal(Constants.KEY_LITERALS.TENANT);
   export const User = Schema.Literal(Constants.KEY_LITERALS.USER);
 
@@ -30,10 +33,36 @@ export namespace AttributesContract {
     ),
   );
 
-  export const IpFromString = Schema.TemplateLiteralParser([Ip, Separator, Schema.String]).pipe(
-    Schema.decodeTo(Schema.String, {
-      decode: SchemaGetter.transform(([, , ip]) => ip),
-      encode: SchemaGetter.transform((ip) => [Ip.literal, Separator.literal, ip]),
+  export class ServiceIp extends Schema.Class<ServiceIp>("ServiceIp")({
+    service: Schema.String,
+    ip: Schema.IpAddress,
+  }) {}
+  export const ServiceIpFromString = Schema.TemplateLiteralParser([
+    Service,
+    Separator,
+    Schema.String,
+    Separator,
+    Ip,
+    Separator,
+    Schema.String,
+  ]).pipe(
+    Schema.decodeTo(ServiceIp, {
+      decode: SchemaGetter.transformEffect(([, , service, , , , ip]) =>
+        NetAddress.ipFromString(ip).pipe(
+          Effect.fromResult,
+          Effect.mapError((e) => new SchemaIssue.InvalidValue({ message: e.message })),
+          Effect.map((ip) => ({ service, ip })),
+        ),
+      ),
+      encode: SchemaGetter.transform(({ service, ip }) => [
+        Service.literal,
+        Separator.literal,
+        service,
+        Separator.literal,
+        Ip.literal,
+        Separator.literal,
+        NetAddress.formatIp(ip),
+      ]),
     }),
   );
 
@@ -77,11 +106,16 @@ export namespace AttributesContract {
     }),
   );
 
-  export class TenantClientId extends Schema.Class<TenantClientId>("TenantClientId")({
+  export class ServiceTenantClientId extends Schema.Class<ServiceTenantClientId>("TenantClientId")({
+    service: Schema.String,
     tenantId: TenantId,
     clientId: EntityId,
   }) {}
-  export const TenantClientIdFromString = Schema.TemplateLiteralParser([
+  export const ServiceTenantClientIdFromString = Schema.TemplateLiteralParser([
+    Service,
+    Separator,
+    Schema.String,
+    Separator,
     Tenant,
     Separator,
     TenantId,
@@ -90,9 +124,17 @@ export namespace AttributesContract {
     Separator,
     EntityId,
   ]).pipe(
-    Schema.decodeTo(TenantClientId, {
-      decode: SchemaGetter.transform(([, , tenantId, , , , clientId]) => ({ tenantId, clientId })),
-      encode: SchemaGetter.transform(({ tenantId, clientId }) => [
+    Schema.decodeTo(ServiceTenantClientId, {
+      decode: SchemaGetter.transform(([, , service, , , , tenantId, , , , clientId]) => ({
+        service,
+        tenantId,
+        clientId,
+      })),
+      encode: SchemaGetter.transform(({ service, tenantId, clientId }) => [
+        Service.literal,
+        Separator.literal,
+        service,
+        Separator.literal,
         Tenant.literal,
         Separator.literal,
         TenantId.make(tenantId),
@@ -161,11 +203,16 @@ export namespace AttributesContract {
     }),
   );
 
-  export class TenantUserId extends Schema.Class<TenantUserId>("TenantUserId")({
+  export class ServiceTenantUserId extends Schema.Class<ServiceTenantUserId>("TenantUserId")({
+    service: Schema.String,
     tenantId: TenantId,
     userId: EntityId,
   }) {}
-  export const TenantUserIdFromString = Schema.TemplateLiteralParser([
+  export const ServiceTenantUserIdFromString = Schema.TemplateLiteralParser([
+    Service,
+    Separator,
+    Schema.String,
+    Separator,
     Tenant,
     Separator,
     TenantId,
@@ -174,9 +221,17 @@ export namespace AttributesContract {
     Separator,
     EntityId,
   ]).pipe(
-    Schema.decodeTo(TenantUserId, {
-      decode: SchemaGetter.transform(([, , tenantId, , , , userId]) => ({ tenantId, userId })),
-      encode: SchemaGetter.transform(({ tenantId, userId }) => [
+    Schema.decodeTo(ServiceTenantUserId, {
+      decode: SchemaGetter.transform(([, , service, , , , tenantId, , , , userId]) => ({
+        service,
+        tenantId,
+        userId,
+      })),
+      encode: SchemaGetter.transform(({ service, tenantId, userId }) => [
+        Service.literal,
+        Separator.literal,
+        service,
+        Separator.literal,
         Tenant.literal,
         Separator.literal,
         TenantId.make(tenantId),

@@ -15,11 +15,14 @@ class Resource:
         url: str
     class ApiGateway:
         type: str
-        class urls:
-            api: str
-            auth: str
     class ApiGatewayAwsPermissions:
         type: str
+    class ApiGatewayProperties:
+        type: str
+        class urls:
+            api: str
+            assets: str
+            auth: str
     class App:
         name: str
         stage: str
@@ -68,7 +71,7 @@ class Resource:
         arn: str
         name: str
         type: str
-    class AssetsAwsPermissions:
+    class Assets:
         type: str
     class AssetsBucketTemplate:
         endpoint: str
@@ -79,10 +82,8 @@ class Resource:
     class AssetsInvalidationQueueProperties:
         id: str
         type: str
-    class AssetsWorker:
+    class AssetsProperties:
         type: str
-        class urls:
-            assets: str
     class Aws:
         class account:
             id: str
@@ -132,6 +133,7 @@ class Resource:
             OUTPUT: str
             PAPERCUT_MF_API: str
             ROOM: str
+            SERVICE: str
             TENANT: str
             USER: str
         name: str

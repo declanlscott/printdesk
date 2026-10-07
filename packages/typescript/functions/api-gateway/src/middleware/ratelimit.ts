@@ -1,39 +1,39 @@
 import { getConnInfo } from "@hono/cloudflare-workers";
 import { AttributesContract } from "@printdesk/core/attributes/contract";
 import * as Match from "effect/Match";
+import * as Option from "effect/Option";
 import * as Redacted from "effect/Redacted";
 import * as Schema from "effect/Schema";
+import * as NetAddress from "effect/unstable/net/NetAddress";
 import { createMiddleware } from "hono/factory";
-import { HTTPException } from "hono/http-exception";
 
 import { resource } from "../lib/sst";
 
-const encodeKey = Schema.Union([
-  AttributesContract.IpFromString,
-  AttributesContract.TenantClientIdFromString,
-  AttributesContract.TenantUserIdFromString,
-]).pipe(Schema.encodeSync);
-
-export const ratelimit = createMiddleware(async function (c, next) {
-  const { success } = await resource.RateLimit.pipe(Redacted.value).limit({ key: getKey() });
-  if (!success) throw new HTTPException(429);
-
-  return next();
-
-  function getKey() {
-    const subject = c.get("subject");
-    if (!subject) return getKeyByIp();
-
-    return Match.valueTags(subject, {
-      ClientSubject: (client) => encodeKey({ tenantId: client.tenantId, clientId: client.id }),
-      UserSubject: (user) => encodeKey({ tenantId: user.tenantId, userId: user.id }),
-    });
-  }
-
-  function getKeyByIp() {
-    const ip = getConnInfo(c).remote.address;
-    if (!ip) throw new HTTPException(500, { message: "Missing remote IP" });
-
-    return encodeKey(ip);
-  }
-});
+export const ratelimit = (service: string) =>
+  createMiddleware((c, next) =>
+    Match.value(c.get("actor").properties).pipe(
+      Match.tag("ClientActor", (client) => ({
+        service,
+        tenantId: client.tenantId,
+        clientId: client.id,
+      })),
+      Match.tag("UserActor", (user) => ({ service, tenantId: user.tenantId, userId: user.id })),
+      Match.tag("PublicActor", () => ({
+        service,
+        ip: Option.fromUndefinedOr(getConnInfo(c).remote.address).pipe(
+          Option.getOrThrow,
+          NetAddress.ipFromStringUnsafe,
+        ),
+      })),
+      Match.orElseAbsurd,
+      // oxlint-disable-next-line effecttsgo/schema-sync
+      Schema.encodeSync(
+        Schema.Union([
+          AttributesContract.ServiceIpFromString,
+          AttributesContract.ServiceTenantClientIdFromString,
+          AttributesContract.ServiceTenantUserIdFromString,
+        ]),
+      ),
+      (key) => resource.RateLimit.pipe(Redacted.value).limit({ key }).then(next),
+    ),
+  );

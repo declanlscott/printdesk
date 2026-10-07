@@ -2,16 +2,33 @@ import { Constants } from "@printdesk/core/utils/constants";
 import * as Boolean from "effect/Boolean";
 import * as HashSet from "effect/HashSet";
 import * as Record from "effect/Record";
+import * as Redacted from "effect/Redacted";
+import { every } from "hono/combine";
 import { createMiddleware } from "hono/factory";
 import { proxy as honoProxy } from "hono/proxy";
 
+import { assets } from "../lib/assets";
 import { lambda } from "../lib/aws";
+import { resource } from "../lib/sst";
+import { ratelimit } from "./ratelimit";
 
 import type { BlankInput } from "hono/types";
 
-/**
- * @see https://github.com/mhart/aws4fetch/issues/77
- */
+const services = {
+  api: {
+    baseUrl: new URL(resource.Api.pipe(Redacted.value).url),
+    customFetch: (req) => lambda.fetch(req, { redirect: "manual" }),
+  },
+  auth: {
+    baseUrl: new URL(resource.Issuer.pipe(Redacted.value).url),
+    customFetch: (req) => lambda.fetch(req, { redirect: "manual" }),
+  },
+  assets: {
+    baseUrl: new URL("https://assets.printdesk.internal"),
+    customFetch: (req) => assets.fetch(req),
+  },
+} satisfies Record<string, { baseUrl: URL; customFetch: (req: Request) => Promise<Response> }>;
+
 const headerRemovalFilterSet = HashSet.make(
   Constants.FORWARDED_AUTHORIZATION_HEADER_NAME,
   "cf-connecting-ip",
@@ -21,22 +38,27 @@ const headerRemovalFilterSet = HashSet.make(
   "x-real-ip",
 );
 
-export const proxy = (origin: URL) =>
-  createMiddleware<BlankInput, `/${string}/:path{.+}`, BlankInput>(async function (c) {
-    const url = new URL(c.req.param("path"), origin);
-    url.search = new URL(c.req.url).search;
+export const proxy = (service: keyof typeof services) =>
+  every(
+    ratelimit(service),
+    createMiddleware<BlankInput, `/${string}/:path{.+}`, BlankInput>(function (c) {
+      const { baseUrl, customFetch } = services[service];
 
-    const headers = new Headers(
-      Record.filter(c.req.header(), (_, name) =>
-        headerRemovalFilterSet.pipe(HashSet.has(name.toLowerCase()), Boolean.not),
-      ),
-    );
-    const authorization = c.req.header("Authorization");
-    if (authorization) headers.set(Constants.FORWARDED_AUTHORIZATION_HEADER_NAME, authorization);
+      const url = new URL(c.req.param("path"), baseUrl);
+      url.search = new URL(c.req.url).search;
 
-    return await honoProxy(url, {
-      customFetch: (req) => lambda.fetch(req, { redirect: "manual" }),
-      headers,
-      raw: c.req.raw,
-    });
-  });
+      const headers = new Headers(
+        Record.filter(c.req.header(), (_, name) =>
+          headerRemovalFilterSet.pipe(HashSet.has(name.toLowerCase()), Boolean.not),
+        ),
+      );
+      const authorization = c.req.header("Authorization");
+      if (authorization) headers.set(Constants.FORWARDED_AUTHORIZATION_HEADER_NAME, authorization);
+
+      return honoProxy(url, {
+        customFetch,
+        headers,
+        raw: c.req.raw,
+      });
+    }),
+  );

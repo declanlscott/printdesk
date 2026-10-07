@@ -7,7 +7,7 @@ import { ViteResource } from "../lib/sst";
 
 export const Route = createFileRoute("/")({
   component: function () {
-    const api = ViteResource.useAtom("ApiGateway").pipe(Redacted.value).urls.api;
+    const api = ViteResource.useAtom("ApiGatewayProperties").pipe(Redacted.value).urls.api;
 
     const online = useAtomValue(NetworkMonitor.onlineAtom);
 

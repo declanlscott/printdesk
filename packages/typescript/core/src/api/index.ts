@@ -1,5 +1,6 @@
 import * as HttpApi from "effect/unstable/httpapi/HttpApi";
 
+import { Assets } from "./assets";
 import { Bootstrap } from "./bootstrap";
 import { Config } from "./config";
 import { AuthMiddleware } from "./middleware/auth";
@@ -20,3 +21,7 @@ export class Api extends HttpApi.make("Api")
   .addHttpApi(Bootstrap.Api.prefix("/bootstrap"))
   .middleware(ErrorMiddleware)
   .addHttpApi(Scim.Api.prefix("/scim")) {}
+
+export class CachedAssetsApi extends HttpApi.make("CachedAssetsApi")
+  .addHttpApi(Assets.Api)
+  .middleware(ErrorMiddleware) {}

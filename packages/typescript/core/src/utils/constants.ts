@@ -96,6 +96,7 @@ export namespace Constants {
     OUTPUT: "OUTPUT",
     PAPERCUT_MF_API: "PAPERCUT_MF_API",
     ROOM: "ROOM",
+    SERVICE: "SERVICE",
     TENANT: "TENANT",
     USER: "USER",
   } as const;

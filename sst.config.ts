@@ -30,7 +30,7 @@ export default $config({
         azuread: { version: "6.9.0" },
         cloudflare: {
           apiToken: cloudflareApiToken,
-          version: "6.18.0",
+          version: "6.21.0",
         },
         command: { version: "1.2.1" },
         docker: { version: "4.11.2" },
@@ -124,7 +124,7 @@ export default $config({
 
     $transform(sst.cloudflare.Worker, (args) => {
       // oxlint-disable-next-line unicorn/no-useless-fallback-in-spread
-      args.compatibility ??= { ...(args.compatibility ?? {}), date: "2026-09-23" };
+      args.compatibility ??= { ...(args.compatibility ?? {}), date: "2026-10-05" };
     });
 
     sst.Linkable.wrap(azuread.ApplicationRegistration, (app) => ({

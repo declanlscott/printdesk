@@ -18,4 +18,11 @@ export interface OpenauthVerifyOptions extends Omit<VerifyOptions, "refresh"> {
 
 export class Openauth extends Context.Service<Openauth, ServiceShape>()(
   "@printdesk/core/oauth/Openauth",
-) {}
+) {
+  public static readonly verify = (...args: Parameters<(typeof this)["Service"]["verify"]>) =>
+    this.use((openauth) => openauth.verify(...args));
+
+  public static readonly clientCredentials = (
+    ...args: Parameters<(typeof this)["Service"]["clientCredentials"]>
+  ) => this.use((openauth) => openauth.clientCredentials(...args));
+}

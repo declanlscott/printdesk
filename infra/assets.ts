@@ -1,5 +1,4 @@
-import { identityProviders, invokeIssuerFunctionUrl, issuer } from "./auth";
-import { hostnames } from "./dns";
+import { identityProviders, issuer } from "./auth";
 import * as lib from "./lib";
 import { aws_, cloudflare_ } from "./utils";
 
@@ -16,11 +15,6 @@ export const assetsBucketTemplate = new lib.templates.cloudflare.r2.Bucket("Asse
   identifier: "assets-bucket",
 });
 
-export const assetsAwsPermissions = new sst.Linkable("AssetsAwsPermissions", {
-  properties: {},
-  include: [invokeIssuerFunctionUrl],
-});
-
 export const assetsInvalidationQueue = new sst.cloudflare.Queue("AssetsInvalidationQueue");
 export const assetsInvalidationQueueProperties = new sst.Linkable(
   "AssetsInvalidationQueueProperties",
@@ -32,15 +26,22 @@ export const userAvatarsQueueProperties = new sst.Linkable("UserAvatarsQueueProp
   properties: { id: userAvatarsQueue.id },
 });
 
-export const assets = new lib.cloudflare.Worker("AssetsWorker", {
+export const assets = new lib.cloudflare.Worker("Assets", {
   handler: "packages/typescript/functions/assets/src/index.ts",
-  domains: { assets: hostnames.properties.assets },
   consumers: {
     invalidation: { queueId: assetsInvalidationQueue.id },
     userAvatars: { queueId: userAvatarsQueue.id },
   },
   link: [assetsBucketTemplate, aws_, cloudflare_, identityProviders, issuer, r2S3Credentials],
-  transform: { worker: { cacheOptions: { enabled: true, crossVersionCache: true } } },
+  transform: {
+    worker: {
+      cacheOptions: { enabled: true, crossVersionCache: true },
+      exports: {
+        default: { type: "worker", cache: { enabled: false } },
+        CachedAssets: { type: "worker", cache: { enabled: true } },
+      },
+    },
+  },
 });
 
 export const codeBucket = new sst.aws.Bucket("CodeBucket");

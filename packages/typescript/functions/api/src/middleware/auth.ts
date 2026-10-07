@@ -5,6 +5,6 @@ import * as Layer from "effect/Layer";
 
 import { openauthLayer } from "../lib/auth";
 
-export const authMiddlewareLayer = AuthMiddleware.layer({ forwardedHeader: true }).pipe(
+export const authMiddlewareLayer = AuthMiddleware.layer.pipe(
   Layer.provide([ActorLayerMap.layer, Oauth.AccessTokenLayerMap.layer, openauthLayer]),
 );

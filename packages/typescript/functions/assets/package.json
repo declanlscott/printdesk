@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@effect/tsgo": "catalog:",
+    "@types/node": "catalog:",
     "wrangler": "catalog:"
   }
 }

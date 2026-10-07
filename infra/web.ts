@@ -11,7 +11,7 @@ export const web = new lib.cloudflare.StaticSite("Web", {
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
     apexDomain,
-    apiGateway,
+    apiGateway.properties,
     environment,
     hostnames,
   ),
@@ -28,7 +28,7 @@ export const www = new sst.cloudflare.TanStackStart("Www", {
   environment: injectLinkables(
     Constants.VITE_RESOURCE_PREFIX,
     apexDomain,
-    apiGateway,
+    apiGateway.properties,
     environment,
     hostnames,
   ),

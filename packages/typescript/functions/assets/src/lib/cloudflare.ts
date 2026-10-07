@@ -25,4 +25,7 @@ export const makeR2S3Credentials = SstResource.useSync(Struct.get("R2S3Credentia
   Effect.map(Struct.get("credentials")),
 );
 
-export const r2S3CredentialsLayer = makeR2S3Credentials.pipe(Layer.effect(S3Credentials));
+export const r2S3CredentialsLayer = makeR2S3Credentials.pipe(
+  Layer.effect(S3Credentials),
+  Layer.provide(SstResource.layer),
+);

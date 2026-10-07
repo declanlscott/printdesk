@@ -1,4 +1,5 @@
 import { api, invokeApiFunctionUrl } from "./api";
+import { assets } from "./assets";
 import { invokeIssuerFunctionUrl, issuer } from "./auth";
 import { hostnames } from "./dns";
 import * as lib from "./lib";
@@ -20,7 +21,8 @@ export const apiGateway = new lib.cloudflare.Worker("ApiGateway", {
   domains: {
     api: hostnames.properties.api,
     auth: hostnames.properties.auth,
+    assets: hostnames.properties.assets,
   },
   placement: { region: `aws:${aws_.properties.region}` },
-  link: [aws_, api, hostnames, issuer, rateLimit, apiGatewayAwsPermissions],
+  link: [api, assets, aws_, hostnames, issuer, rateLimit, apiGatewayAwsPermissions],
 });

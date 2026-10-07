@@ -13,7 +13,7 @@ catalog:
   "@aws-sdk/client-dynamodb": ^3.1143.0
   "@aws-sdk/types": ^3.974.6
   "@cloudflare/vite-plugin": ^1.62.2
-  "@cloudflare/workers-types": ^4.20260702.1
+  "@cloudflare/workers-types": ^5.20261003.1
   "@effect/atom-react": 4.0.0-rc.117
   "@effect/platform-browser": 4.0.0-rc.117
   "@effect/platform-node": 4.0.0-rc.117
@@ -56,16 +56,6 @@ catalog:
   typescript: ^7.0.2
   vite: ^8.3.1
   wrangler: ^4.144.0
-
-minimumReleaseAgeExclude:
-  - "@effect/tsgo-darwin-arm64@0.47.2"
-  - "@effect/tsgo-darwin-x64@0.47.2"
-  - "@effect/tsgo-linux-arm64@0.47.2"
-  - "@effect/tsgo-linux-arm@0.47.2"
-  - "@effect/tsgo-linux-x64@0.47.2"
-  - "@effect/tsgo-win32-arm64@0.47.2"
-  - "@effect/tsgo-win32-x64@0.47.2"
-  - "@effect/tsgo@0.47.2"
 
 overrides:
   "@microsoft/kiota-abstractions": 1.0.0-preview.108

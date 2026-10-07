@@ -1,14 +1,11 @@
 import * as Duration from "effect/Duration";
 import * as Effect from "effect/Effect";
 import * as Schema from "effect/Schema";
-import * as SchemaGetter from "effect/SchemaGetter";
-import * as SchemaIssue from "effect/SchemaIssue";
-import * as SchemaTransformation from "effect/SchemaTransformation";
 import * as Struct from "effect/Struct";
-import * as Tuple from "effect/Tuple";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
-import { Actor } from "../actors";
-import { App } from "../app";
+import { ActorsContract } from "../actors/contract";
 import { IdentityProvidersContract } from "../identity/contract";
 import { UsersContract } from "../users/contract";
 import { NonEmptyString, TenantId } from "../utils";
@@ -27,33 +24,19 @@ export namespace AssetsContract {
     { httpApiStatus: 200 },
   ) {}
 
-  export const CacheSyntheticUrlFromKey = NonEmptyString.pipe(
-    Schema.decodeTo(Schema.URL, {
-      decode: SchemaGetter.transformEffect((key) =>
-        App.useSync(
-          (app) => new URL(`https://cache.${app.stage}.${app.name}.internal/assets/${key}`),
-        ),
-      ),
-      encode: SchemaGetter.forbidden(() => "Not implemented"),
-    }),
-  );
+  export const UserParams = ActorsContract.UserActor.mapFields(
+    Struct.omit(["_tag", "tenantId"]),
+  ).pipe(Schema.encodeKeys({ id: "__user_id", role: "__user_role" }));
 
-  export const CacheSyntheticUrlFromHashTag = Schema.URLFromString.pipe(
-    // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
-    Schema.encodeTo(Schema.TemplateLiteralParser([TenantId, ":" as string, Schema.String]), {
-      decode: SchemaGetter.transform(Tuple.get(2)),
-      encode: SchemaGetter.transformEffect((url) =>
-        Actor.tenantId.pipe(
-          Effect.mapBoth({
-            // oxlint-disable-next-line typescript/no-unnecessary-type-assertion
-            onSuccess: (tenantId) => Tuple.make(tenantId, ":" as string, url),
-            onFailure: (error) => new SchemaIssue.Forbidden({ message: error.message }),
-          }),
-        ),
-      ),
-    }),
-    Schema.encode(SchemaTransformation.stringFromBase64UrlString),
-  );
+  export const Props = ActorsContract.UserActor.mapFields(Struct.pick(["tenantId"]));
+
+  export class InvalidPropsError
+    extends Schema.TaggedError<InvalidPropsError>()("InvalidPropsError", { cause: Schema.Defect() })
+    implements HttpServerRespondable.Respondable
+  {
+    public [HttpServerRespondable.symbol] = () =>
+      HttpServerResponse.schemaJson(InvalidPropsError)(this, { status: 400 });
+  }
 
   export const InvalidationNotificationQueueMessage = Schema.Struct({
     _tag: Schema.tagDefaultOmit("InvalidationNotificationQueueMessage"),

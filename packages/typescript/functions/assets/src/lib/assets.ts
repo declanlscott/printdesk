@@ -2,7 +2,6 @@ import { Actor } from "@printdesk/core/actors";
 import { AssetsFetcher } from "@printdesk/core/assets/fetcher";
 import { AssetsPresigner } from "@printdesk/core/assets/presigner";
 import { S3Bucket } from "@printdesk/core/aws/s3/bucket";
-import { ResponseCache } from "@printdesk/core/cache/response";
 import { ImagesFetcher } from "@printdesk/core/images/fetcher";
 import { ImagesPresigner } from "@printdesk/core/images/presigner";
 import { tenantTemplate } from "@printdesk/core/utils";
@@ -11,7 +10,6 @@ import * as Layer from "effect/Layer";
 import * as Redacted from "effect/Redacted";
 import * as Struct from "effect/Struct";
 
-import { appLayer } from "./app";
 import { s3ClientCacheLayer } from "./aws";
 import { SstResource } from "./sst";
 
@@ -37,6 +35,5 @@ export const assetsS3BucketLayer = makeAssetsS3Bucket.pipe(
 export const imagesLayer = ImagesFetcher.layer.pipe(
   Layer.merge(ImagesPresigner.layer),
   Layer.provide([AssetsFetcher.layer, AssetsPresigner.layer]),
-  Layer.provide([appLayer, assetsS3BucketLayer, s3ClientCacheLayer, ResponseCache.layer]),
-  Layer.provide(SstResource.layer),
+  Layer.provide([assetsS3BucketLayer, s3ClientCacheLayer]),
 );

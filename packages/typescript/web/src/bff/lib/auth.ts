@@ -7,7 +7,7 @@ import * as Redacted from "effect/Redacted";
 import { ViteResource } from "./sst";
 
 export const openauthLayer = ViteResource.useSync(
-  (resource) => resource.ApiGateway.pipe(Redacted.value).urls.auth,
+  (resource) => resource.ApiGatewayProperties.pipe(Redacted.value).urls.auth,
 ).pipe(
   Effect.map((issuer) => Openauth.layer({ clientID: Constants.OPENAUTH_CLIENT_IDS.WEB, issuer })),
   Layer.unwrap,

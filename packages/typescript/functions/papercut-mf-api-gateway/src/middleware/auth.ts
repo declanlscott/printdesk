@@ -8,6 +8,7 @@ import * as Exit from "effect/Exit";
 import * as Match from "effect/Match";
 import * as Redacted from "effect/Redacted";
 import * as Result from "effect/Result";
+import * as Struct from "effect/Struct";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
@@ -27,7 +28,8 @@ export const auth = createMiddleware((c, next) =>
         HttpServerRequest.HttpServerRequest,
         HttpServerRequest.fromWeb(c.req.raw),
       ),
-      Effect.flatMap(({ accessToken }) => Openauth.use((openauth) => openauth.verify(accessToken))),
+      Effect.map(Struct.get("accessToken")),
+      Effect.flatMap(Openauth.verify),
       Effect.flatMap(({ subject }) =>
         AccessControl.every(
           Actor.tenantId.pipe(

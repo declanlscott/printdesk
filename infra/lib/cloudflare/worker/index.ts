@@ -39,9 +39,9 @@ export interface WorkerArgs extends Omit<sst.cloudflare.WorkerArgs, "domain"> {
 type Configuration = {
   $schema: string;
   name: string;
-  compatibility_date?: string;
-  compatibility_flags?: Array<string>;
-  main?: string;
+  main: string;
+  compatibility_date: string;
+  compatibility_flags: Array<string>;
   vars?: Record<string, string>;
   ratelimits?: Array<{
     name: string;
@@ -51,6 +51,22 @@ type Configuration = {
       period: number;
     };
   }>;
+  services?: Array<{
+    binding: string;
+    service: string;
+    entrypoint?: string;
+  }>;
+  cache?: {
+    enabled: boolean;
+    cross_version_cache?: boolean;
+  };
+  exports?: Record<
+    string,
+    {
+      type: string;
+      cache?: { enabled: boolean };
+    }
+  >;
 };
 
 export class Worker extends $util.ComponentResource implements Link.Linkable {
@@ -59,6 +75,9 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
   #worker: sst.cloudflare.Worker;
   #domains: $util.Output<Record<string, WorkerDomain> | undefined>;
   #consumers: $util.Output<Record<string, cloudflare.QueueConsumer> | undefined>;
+  #properties: sst.Linkable<{
+    urls: $util.Output<Record<string, $util.Output<string>> | undefined>;
+  }>;
 
   public constructor(
     name: string,
@@ -118,63 +137,101 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
       (bindings) => bindings.value as Array<cloudflare.types.output.WorkersScriptBinding>,
     );
 
+    const { packagePath, mainPath } = $output(args.handler).apply(function (handler) {
+      const handlerPath = Path.resolve(Path.join($cli.paths.root, handler));
+
+      const packagePath = findPackagePath(handlerPath);
+      const mainPath = Path.relative(packagePath, handlerPath);
+
+      return { packagePath, mainPath };
+    });
+
     $resolve({
       config: $jsonStringify(
         $resolve({
           name: this.#worker.nodes.worker.scriptName,
+          main: mainPath,
           bindings,
           compatibility_date: this.#worker.nodes.worker.compatibilityDate,
           compatibility_flags: this.#worker.nodes.worker.compatibilityFlags,
-        }).apply(({ name, bindings, compatibility_date, compatibility_flags }) =>
-          bindings.reduce(
-            (cfg, binding) => {
-              // TODO: Add other bindings as needed
-              switch (binding.type) {
-                case "plain_text":
-                  cfg.vars ??= {};
-                  cfg.vars[binding.name] = binding.text || "";
-                  break;
-                case "ratelimit":
-                  cfg.ratelimits ??= [];
-                  cfg.ratelimits.push({
-                    name: binding.name,
-                    namespace_id: binding.namespaceId,
-                    // oxlint-disable-next-line typescript/no-non-null-assertion
-                    simple: binding.simple!,
-                  });
-                  break;
-                default:
-                  break;
-              }
+          cacheOptions: this.#worker.nodes.worker.cacheOptions,
+          exports: this.#worker.nodes.worker.exports,
+        }).apply(
+          ({
+            name,
+            main,
+            compatibility_date,
+            compatibility_flags,
+            cacheOptions,
+            bindings,
+            exports,
+          }) =>
+            bindings.reduce(
+              (cfg, binding) => {
+                // TODO: Add other bindings as needed
+                switch (binding.type) {
+                  case "plain_text":
+                    cfg.vars ??= {};
+                    cfg.vars[binding.name] = binding.text || "";
+                    break;
+                  case "ratelimit":
+                    cfg.ratelimits ??= [];
+                    cfg.ratelimits.push({
+                      name: binding.name,
+                      namespace_id: binding.namespaceId,
+                      // oxlint-disable-next-line typescript/no-non-null-assertion
+                      simple: binding.simple!,
+                    });
+                    break;
+                  case "service":
+                    cfg.services ??= [];
+                    cfg.services.push({
+                      binding: binding.name,
+                      // oxlint-disable-next-line typescript/no-non-null-assertion
+                      service: binding.service!,
+                      ...(binding.entrypoint ? { entrypoint: binding.entrypoint } : undefined),
+                    });
+                    break;
+                  default:
+                    break;
+                }
 
-              return cfg;
-            },
-            {
-              $schema: "node_modules/wrangler/config-schema.json",
-              name,
-              compatibility_date,
-              compatibility_flags,
-            } as Configuration,
-          ),
+                return cfg;
+              },
+              {
+                $schema: "node_modules/wrangler/config-schema.json",
+                name,
+                main,
+                compatibility_date,
+                compatibility_flags,
+                ...(cacheOptions
+                  ? {
+                      cache: {
+                        enabled: cacheOptions.enabled,
+                        cross_version_cache: cacheOptions.crossVersionCache,
+                      },
+                    }
+                  : undefined),
+                ...(exports ? { exports } : undefined),
+              } as Configuration,
+            ),
         ),
         undefined,
         2,
       ),
-      path: $output(args.handler).apply((handler) =>
-        findPackagePath(Path.resolve(Path.join($cli.paths.root, handler))),
-      ),
+      packagePath,
       secrets: bindings.apply((bindings) =>
         bindings
           .filter((binding) => binding.type === "secret_text")
           .map((binding) => `${binding.name}='${binding.text || ""}'`)
           .join("\n"),
       ),
-    }).apply(({ config, path, secrets }) => {
-      const configPath = Path.resolve(Path.join(path, "wrangler.jsonc"));
+    }).apply(({ packagePath, config, secrets }) => {
+      const configPath = Path.resolve(Path.join(packagePath, "wrangler.jsonc"));
       mkdirSync(Path.dirname(configPath), { recursive: true });
       writeFileSync(configPath, config);
 
-      const secretsPath = Path.resolve(Path.join(path, ".dev.vars"));
+      const secretsPath = Path.resolve(Path.join(packagePath, ".dev.vars"));
       mkdirSync(Path.dirname(secretsPath), { recursive: true });
       writeFileSync(secretsPath, secrets);
 
@@ -182,11 +239,17 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
         `${name}Typegen`,
         {
           create: "vpx wrangler types",
-          dir: path,
-          triggers: [$util.secret(secrets)],
+          dir: packagePath,
+          triggers: [config, $util.secret(secrets)],
         },
         { parent: this },
       );
+    });
+
+    this.#properties = new sst.Linkable(`${name}Properties`, {
+      properties: {
+        urls: this.urls,
+      },
     });
 
     function findPackagePath(path: string) {
@@ -211,6 +274,7 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
       worker: this.#worker,
       domains: this.#domains,
       consumers: this.#consumers,
+      properties: this.#properties,
     };
   }
 
@@ -225,9 +289,12 @@ export class Worker extends $util.ComponentResource implements Link.Linkable {
 
   public getSSTLink() {
     return {
-      properties: {
-        urls: this.urls,
-      },
+      properties: {},
+      include: [this.binding],
     };
+  }
+
+  public get properties() {
+    return this.#properties;
   }
 }

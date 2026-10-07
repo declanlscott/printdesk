@@ -17,15 +17,17 @@ declare module "sst" {
       "type": "sst.aws.Function"
       "url": string
     }
-    "ApiGateway": {
-      "type": "pd.cloudflare.Worker"
-      "urls": {
-        "api": string
-        "auth": string
-      }
-    }
+    "ApiGateway": import("@cloudflare/workers-types").Service
     "ApiGatewayAwsPermissions": {
       "type": "sst.sst.Linkable"
+    }
+    "ApiGatewayProperties": {
+      "type": "sst.sst.Linkable"
+      "urls": {
+        "api": string
+        "assets": string
+        "auth": string
+      }
     }
     "AppconfigAgent": {
       "port": number
@@ -83,9 +85,7 @@ declare module "sst" {
       "name": string
       "type": "pd.templates.AwsIamRole"
     }
-    "AssetsAwsPermissions": {
-      "type": "sst.sst.Linkable"
-    }
+    "Assets": import("@cloudflare/workers-types").Service
     "AssetsBucketTemplate": {
       "endpoint": string
       "name": string
@@ -96,11 +96,8 @@ declare module "sst" {
       "id": string
       "type": "sst.sst.Linkable"
     }
-    "AssetsWorker": {
-      "type": "pd.cloudflare.Worker"
-      "urls": {
-        "assets": string
-      }
+    "AssetsProperties": {
+      "type": "sst.sst.Linkable"
     }
     "Aws": {
       "account": {
@@ -162,6 +159,7 @@ declare module "sst" {
         "OUTPUT": string
         "PAPERCUT_MF_API": string
         "ROOM": string
+        "SERVICE": string
         "TENANT": string
         "USER": string
       }

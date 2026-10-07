@@ -16,9 +16,7 @@ export const openauthLayer = issuerLayer(Constants.OPENAUTH_CLIENT_IDS.BOOTSTRAP
 export const papercutSyncClientAccessTokenLayer = Config.use(
   Struct.get("getPapercutMfSyncClientCredentials"),
 ).pipe(
-  Effect.flatMap((credentials) =>
-    Openauth.use((openauth) => openauth.clientCredentials(credentials)),
-  ),
+  Effect.flatMap(Openauth.clientCredentials),
   Effect.map(({ tokens }) => Oauth.AccessTokenLayerMap.get(tokens.access)),
   Layer.unwrap,
 );

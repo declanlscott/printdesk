@@ -4,20 +4,26 @@ import * as Effect from "effect/Effect";
 import * as Layer from "effect/Layer";
 import * as Schema from "effect/Schema";
 import * as String from "effect/String";
+import * as HttpServerRespondable from "effect/unstable/http/HttpServerRespondable";
+import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 import * as HttpApiMiddleware from "effect/unstable/httpapi/HttpApiMiddleware";
 
 const unexpectedServerErrorMessage = "unexpected server error";
-export class UnexpectedServerError extends Schema.Class<UnexpectedServerError>(
-  "UnexpectedServerError",
-)(
-  {
-    message: Schema.Literal(unexpectedServerErrorMessage).pipe(
-      Schema.withConstructorDefault(Effect.succeed(unexpectedServerErrorMessage)),
-    ),
-    ref: Schema.TemplateLiteral(["err_", Schema.String]),
-  },
-  { httpApiStatus: 500 },
-) {}
+export class UnexpectedServerError
+  extends Schema.Class<UnexpectedServerError>("UnexpectedServerError")(
+    {
+      message: Schema.Literal(unexpectedServerErrorMessage).pipe(
+        Schema.withConstructorDefault(Effect.succeed(unexpectedServerErrorMessage)),
+      ),
+      ref: Schema.TemplateLiteral(["err_", Schema.String]),
+    },
+    { httpApiStatus: 500 },
+  )
+  implements HttpServerRespondable.Respondable
+{
+  public [HttpServerRespondable.symbol] = () =>
+    HttpServerResponse.schemaJson(UnexpectedServerError)(this, { status: 500 });
+}
 
 export class ErrorMiddleware extends HttpApiMiddleware.Service<ErrorMiddleware>()(
   "@printdesk/core/api/ErrorMiddleware",

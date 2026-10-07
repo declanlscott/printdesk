@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "@aws-crypto/sha256-js": "catalog:",
-    "@aws-sdk/client-appconfig": "^3.1143.0",
-    "@aws-sdk/credential-providers": "^3.1143.0",
+    "@aws-sdk/client-appconfig": "^3.1146.0",
+    "@aws-sdk/credential-providers": "^3.1146.0",
     "@azure/identity": "^4.13.3",
     "@effect-aws/client-lambda": "workspace:@printdesk/effect-aws-client-lambda@*",
     "@effect-aws/client-s3": "workspace:@printdesk/effect-aws-client-s3@*",
@@ -47,6 +47,6 @@
     "@effect/tsgo": "catalog:",
     "@types/node": "catalog:",
     "drizzle-kit": "catalog:",
-    "pg": "^8.23.0"
+    "pg": "^8.23.1"
   }
 }

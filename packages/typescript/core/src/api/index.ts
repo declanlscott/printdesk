@@ -11,12 +11,12 @@ import { Replicache } from "./replicache";
 import { Scim } from "./scim";
 
 export class Api extends HttpApi.make("Api")
-  .addHttpApi(Bootstrap.Api.prefix("/bootstrap"))
   .addHttpApi(Config.Api.prefix("/config"))
   .addHttpApi(Orders.Api.prefix("/orders"))
   .addHttpApi(Papercut.MfApi.prefix("/papercut/mf"))
   .addHttpApi(Realtime.Api.prefix("/realtime"))
   .addHttpApi(Replicache.Api.prefix("/replicache"))
   .middleware(AuthMiddleware)
+  .addHttpApi(Bootstrap.Api.prefix("/bootstrap"))
   .middleware(ErrorMiddleware)
   .addHttpApi(Scim.Api.prefix("/scim")) {}

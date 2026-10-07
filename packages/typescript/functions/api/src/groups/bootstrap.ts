@@ -12,7 +12,6 @@ import * as HttpApiBuilder from "effect/unstable/httpapi/HttpApiBuilder";
 
 import { openauthLayer } from "../lib/auth";
 import { bootstrapLayer } from "../lib/bootstrap";
-import { authMiddlewareLayer } from "../middleware/auth";
 import { errorMiddlewareLayer } from "../middleware/error";
 
 export const baseBootstrapGroupLayer = HttpApiBuilder.group(
@@ -49,5 +48,5 @@ export const baseBootstrapGroupLayer = HttpApiBuilder.group(
 );
 
 export const bootstrapGroupLayer = baseBootstrapGroupLayer.pipe(
-  Layer.provide([authMiddlewareLayer, bootstrapLayer, errorMiddlewareLayer, openauthLayer]),
+  Layer.provide([bootstrapLayer, errorMiddlewareLayer, openauthLayer]),
 );

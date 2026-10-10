@@ -53,8 +53,6 @@ export const queue = ((batch, _env, ctx) =>
                 Effect.map(HttpClient.filterStatusOk),
               );
 
-              yield* Effect.logInfo({ user, tenantId, identityProvider });
-
               const { contentType, data } = yield* Match.value(identityProvider).pipe(
                 Match.when({ kind: Match.is(Constants.ENTRA_ID) }, (entraId) =>
                   Graph.use((graph) => graph.userPhoto(user.externalId)).pipe(
